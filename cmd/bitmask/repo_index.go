@@ -286,8 +286,8 @@ func (r *RepoIndex) Grep(query string) {
 	matchingPaths := r.PathsMatchingQuery(query)
 	falsePositive := 0
 	truePositive := 0
+	totalMatchCount := uint64(0)
 	for matchingPath := range matchingPaths {
-		hasMatch := false
 		textBytes, err := os.ReadFile(filepath.Join(r.Dir, matchingPath))
 		if err != nil {
 			continue
@@ -295,10 +295,11 @@ func (r *RepoIndex) Grep(query string) {
 		text := string(textBytes)
 		start := 0
 		end := strings.Index(text[start:], "\n")
+		matchCount := 0
 		for lineNumber, line := range strings.Split(text, "\n") {
 			columnNumber := strings.Index(line, query)
 			if columnNumber >= 0 {
-				hasMatch = true
+				matchCount++
 				prefix := line[0:columnNumber]
 				suffix := line[columnNumber+len(query):]
 				fmt.Printf(
@@ -315,7 +316,8 @@ func (r *RepoIndex) Grep(query string) {
 			end = strings.Index(text[end+1:], "\n")
 		}
 
-		if hasMatch {
+		totalMatchCount = totalMatchCount + uint64(matchCount)
+		if matchCount > 0 {
 			truePositive++
 		} else {
 			//fmt.Println(matchingPath)
@@ -325,7 +327,14 @@ func (r *RepoIndex) Grep(query string) {
 	end := time.Now()
 	elapsed := (end.UnixNano() - start.UnixNano()) / int64(time.Millisecond)
 	falsePositiveRatio := float64(falsePositive) / math.Max(1.0, float64(truePositive+falsePositive))
-	fmt.Printf("query '%v' time %vms fpr %v\n", query, elapsed, falsePositiveRatio)
+	fmt.Printf(
+		"query '%v' matches %v files %v time %vms fpr %v\n",
+		query,
+		totalMatchCount,
+		truePositive,
+		elapsed,
+		falsePositiveRatio,
+	)
 }
 
 func color(colorString string) func(...interface{}) string {

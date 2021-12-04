@@ -60,5 +60,6 @@ func BenchmarkQuery(b *testing.B) {
 	fmt.Printf("fp %v len %v\n", ratio, len(matchingPaths))
 }
 
+// TODO: correctness unit test
 // TODO CPU: serialize, deserialize
 // TODO Size: serialized file, in-memory index
