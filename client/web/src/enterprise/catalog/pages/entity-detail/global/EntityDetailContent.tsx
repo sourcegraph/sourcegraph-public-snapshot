@@ -91,6 +91,7 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                 {
                     icon: catalogEntityIconComponent(entity),
                     text: entity.name,
+                    to: entity.url,
                 },
             ].filter(isDefined)}
             tabs={tabs}

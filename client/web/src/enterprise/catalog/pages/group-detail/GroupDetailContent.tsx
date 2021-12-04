@@ -48,6 +48,7 @@ export const GroupDetailContent: React.FunctionComponent<Props> = ({ group }) =>
                 {
                     icon: CatalogGroupIcon,
                     text: group.name,
+                    to: group.url,
                 },
             ].filter(isDefined)}
             tabs={tabs}

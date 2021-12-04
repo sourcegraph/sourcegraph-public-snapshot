@@ -18,6 +18,9 @@
     margin-bottom: 0;
     line-height: unset;
     flex: 1 0;
+    a {
+        color: var(--body-color);
+    }
 }
 
 .divider {
