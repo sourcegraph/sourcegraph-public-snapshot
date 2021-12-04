@@ -187,7 +187,13 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 		return nil, ErrNameNotUnique
 	}
 
-	if err := s.store.CreateBatchSpec(ctx, batchSpec); err != nil {
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := tx.CreateBatchSpec(ctx, batchSpec); err != nil {
 		return nil, err
 	}
 
@@ -197,7 +203,7 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 		NamespaceOrgID:  opts.NamespaceOrgID,
 		BatchSpecID:     batchSpec.ID,
 	}
-	if err := s.store.CreateBatchChange(ctx, batchChange); err != nil {
+	if err := tx.CreateBatchChange(ctx, batchChange); err != nil {
 		return nil, err
 	}
 
