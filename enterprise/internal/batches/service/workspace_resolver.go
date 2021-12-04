@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	onlib "github.com/sourcegraph/sourcegraph/lib/batches/on"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
@@ -129,13 +130,7 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 }
 
 func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpec *batcheslib.BatchSpec) ([]*RepoRevision, error) {
-	// We have to track each repo that is matched, including whether the
-	// revisions should be overridden or not by future rules.
-	type repo struct {
-		overridable bool
-		revisions   map[string]*RepoRevision
-	}
-	repos := map[api.RepoID]*repo{}
+	agg := onlib.NewAggregator()
 
 	var errs error
 	// TODO: this could be trivially parallelised in the future.
@@ -146,42 +141,26 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 			continue
 		}
 
+		var result *onlib.RuleResult
+		if overridable {
+			result = agg.NewRuleResult(onlib.RepositoryRuleTypeQuery)
+		} else {
+			result = agg.NewRuleResult(onlib.RepositoryRuleTypeExplicit)
+		}
+
 		for _, rev := range revs {
 			// Skip repos where no branch exists.
 			if !rev.HasBranch() {
 				continue
 			}
 
-			if seenRepo, ok := repos[rev.Repo.ID]; ok {
-				// We've seen this repo previously, so we now need to ascertain
-				// whether we're overriding the previous revisions, or merging
-				// into them.
-				if seenRepo.overridable {
-					seenRepo.revisions = map[string]*RepoRevision{
-						rev.Branch: rev,
-					}
-				} else {
-					seenRepo.revisions[rev.Branch] = rev
-				}
-				seenRepo.overridable = overridable
-			} else {
-				// This is a new repo, so let's set up the state we need to
-				// track.
-				repos[rev.Repo.ID] = &repo{
-					overridable: overridable,
-					revisions: map[string]*RepoRevision{
-						rev.Branch: rev,
-					},
-				}
-			}
+			result.AddRepoRevision(rev.Repo.ID, rev)
 		}
 	}
 
 	repoRevs := []*RepoRevision{}
-	for _, r := range repos {
-		for _, rev := range r.revisions {
-			repoRevs = append(repoRevs, rev)
-		}
+	for _, rev := range agg.Revisions() {
+		repoRevs = append(repoRevs, rev.(*RepoRevision))
 	}
 	return repoRevs, errs
 }

@@ -253,11 +253,8 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 
 		want := []*RepoWorkspace{
 			buildRepoWorkspace(rs[0], "", "", []string{}),
-			// Note that this merges the two rs[1] results. (Also note that
-			// they're in alphabetical order here, in spite of the original
-			// ordering!)
+			// Note that only the last rs[1] result is included.
 			buildRepoWorkspace(rs[1], "a-different-non-default-branch", "c4a1", []string{}),
-			buildRepoWorkspace(rs[1], "non-default-branch", "d34db33f", []string{}),
 			// Note that this doesn't include rs[2] "main".
 			buildRepoWorkspace(rs[2], "other-non-default-branch", "c0ff33", []string{}),
 			buildRepoWorkspace(rs[2], "yet-another-non-default-branch", "b33a", []string{}),
