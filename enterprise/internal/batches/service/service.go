@@ -145,10 +145,10 @@ func (s *Service) WithStore(store *store.Store) *Service {
 }
 
 type CreateEmptyBatchChangeOpts struct {
-	NamespaceUserID int32 `json:"namespace_user_id"`
-	NamespaceOrgID  int32 `json:"namespace_org_id"`
+	NamespaceUserID int32
+	NamespaceOrgID  int32
 
-	Name string `json:"name"`
+	Name string
 }
 
 func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
