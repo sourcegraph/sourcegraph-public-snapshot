@@ -103,23 +103,28 @@ func TestFalseResults(t *testing.T) {
 // TODO CPU: serialize, deserialize
 // TODO Size: serialized file, in-memory index
 func TestFalsePositive(t *testing.T) {
-	file := "/Users/olafurpg/dev/sourcegraph/sourcegraph/client/web/src/nav/UserNavItem.story.tsx"
-	bytes, err := os.ReadFile(file)
-	if err != nil {
-		panic(err)
+	files := map[string]string{
+		"monitoring/definitions/git_server.go":     "Repository",
+		"client/web/src/nav/UserNavItem.story.tsx": "JVM",
 	}
-	fs := InMemoryFileSystem{
-		map[string]string{
-			file: string(bytes),
-		},
-	}
-	r, err := NewRepoIndex(&fs)
-	if err != nil {
-		panic(err)
-	}
-	query := "JVM"
-	paths := r.PathsMatchingQuerySync(query)
-	if len(paths) > 0 {
-		t.Fatalf("query '%v' triggered a false positive", query)
+	for file, query := range files {
+		abspath := filepath.Join("/Users/olafurpg/dev/sourcegraph/sourcegraph", file)
+		bytes, err := os.ReadFile(abspath)
+		if err != nil {
+			panic(err)
+		}
+		fs := InMemoryFileSystem{
+			map[string]string{
+				file: string(bytes),
+			},
+		}
+		r, err := NewRepoIndex(&fs)
+		if err != nil {
+			panic(err)
+		}
+		paths := r.PathsMatchingQuerySync(query)
+		if len(paths) > 0 {
+			t.Fatalf("query '%v' triggered a false positive in path '%v'", query, abspath)
+		}
 	}
 }
