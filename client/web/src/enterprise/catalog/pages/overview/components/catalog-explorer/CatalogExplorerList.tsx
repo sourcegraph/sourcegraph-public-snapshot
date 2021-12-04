@@ -20,7 +20,7 @@ import {
 } from '../../../../../../graphql-operations'
 import { CatalogEntityFiltersProps } from '../../../../core/entity-filters'
 
-import { CatalogEntityRow } from './CatalogEntityRow'
+import { CatalogEntityRow, CatalogEntityRowsHeader } from './CatalogEntityRow'
 import styles from './CatalogExplorerList.module.scss'
 import { CATALOG_ENTITIES_FOR_EXPLORER } from './gql'
 
@@ -69,11 +69,10 @@ export const CatalogExplorerList: React.FunctionComponent<Props> = ({
                 {error && <ConnectionError errors={[error.message]} />}
                 {connection?.nodes && connection?.nodes.length > 0 && (
                     <ConnectionList className={classNames(styles.table)} as="div">
-                        <div className={classNames('text-muted mt-2 small', itemStartClassName)}>Name</div>
-                        <div className="text-muted mt-2 small">Owner</div>
-                        <div className="text-muted mt-2 small">Lifecycle</div>
-                        <div className={classNames('text-muted mt-2 small', itemEndClassName)}>Description</div>
-                        <div className={classNames('border-top', styles.separator)} />
+                        <CatalogEntityRowsHeader
+                            itemStartClassName={itemStartClassName}
+                            itemEndClassName={itemEndClassName}
+                        />
                         {connection?.nodes?.map((node, index) => (
                             <CatalogEntityRow
                                 key={node.id}

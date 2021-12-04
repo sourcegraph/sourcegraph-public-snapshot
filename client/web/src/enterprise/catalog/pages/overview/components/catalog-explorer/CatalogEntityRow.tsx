@@ -2,7 +2,6 @@ import classNames from 'classnames'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-import { SummaryContainer } from '../../../../../../components/FilteredConnection/ui'
 import { CatalogEntityForExplorerFields } from '../../../../../../graphql-operations'
 import { CatalogEntityIcon } from '../../../../components/CatalogEntityIcon'
 import { EntityOwner } from '../../../../components/entity-owner/EntityOwner'
@@ -35,5 +34,17 @@ export const CatalogEntityRow: React.FunctionComponent<Props> = ({
         <span className="text-nowrap">{node.lifecycle.toLowerCase()}</span>
         <div className={classNames('text-muted text-truncate', itemEndClassName)}>{node.description}</div>
         <div className={classNames({ 'border-top': !noBorder }, styles.separator)} />
+    </>
+)
+
+export const CatalogEntityRowsHeader: React.FunctionComponent<
+    Pick<Props, 'itemStartClassName' | 'itemEndClassName'>
+> = ({ itemStartClassName, itemEndClassName }) => (
+    <>
+        <div className={classNames('text-muted mt-2 small', itemStartClassName)}>Name</div>
+        <div className="text-muted mt-2 small">Owner</div>
+        <div className="text-muted mt-2 small">Lifecycle</div>
+        <div className={classNames('text-muted mt-2 small', itemEndClassName)}>Description</div>
+        <div className={classNames('border-top', styles.separator)} />
     </>
 )
