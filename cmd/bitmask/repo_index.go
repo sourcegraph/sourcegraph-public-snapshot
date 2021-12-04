@@ -1,22 +1,18 @@
 package main
 
 import (
-	"bytes"
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
 	"io"
 	"math"
 	"os"
-	"os/exec"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/bits-and-blooms/bloom/v3"
-	"github.com/cockroachdb/errors"
 	"github.com/go-enry/go-enry/v2"
 )
 
@@ -211,43 +207,17 @@ func DeserializeRepoIndex(reader io.Reader) (*RepoIndex, error) {
 	return r, nil
 }
 
-func NewRepoIndex(dir string) (*RepoIndex, error) {
-	var branch bytes.Buffer
-	branchCmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
-	branchCmd.Dir = dir
-	branchCmd.Stdout = &branch
-	err := branchCmd.Run()
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to infer the default branch")
-	}
-	cmd := exec.Command(
-		"git",
-		"ls-files",
-		"-z",
-		"--with-tree",
-		strings.Trim(branch.String(), "\n"),
-	)
-	cmd.Dir = dir
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err = cmd.Run()
-
+func NewRepoIndex(fs FileSystem) (*RepoIndex, error) {
+	filenames, err := fs.ListRelativeFilenames()
 	if err != nil {
 		return nil, err
 	}
-	stdout := string(out.Bytes())
-	NUL := string([]byte{0})
-	lines := strings.Split(stdout, NUL)
-	indexes := make([]BlobIndex, len(lines))
-	for i, line := range lines {
-		//if line != "fs/nfs/write.c" {
-		//	continue
-		//}
+	indexes := make([]BlobIndex, len(filenames))
+	for i, filename := range filenames {
 		if i%100 == 0 {
 			fmt.Println(i)
 		}
-		abspath := path.Join(dir, line)
-		textBytes, err := os.ReadFile(abspath)
+		textBytes, err := fs.ReadRelativeFilename(filename)
 		if err != nil {
 			continue
 		}
@@ -258,7 +228,6 @@ func NewRepoIndex(dir string) (*RepoIndex, error) {
 		if bloomSize < 10_000 {
 			bloomSize = 10_000
 		}
-		//bloomBitCount := uint(math.Ceil(-1 * float64(bloomSize) * math.Log(targetFalsePositiveRatio) / math.Pow(math.Log(2), 2)))
 		filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
 		if enry.IsBinary(textBytes) {
 			continue
@@ -266,19 +235,17 @@ func NewRepoIndex(dir string) (*RepoIndex, error) {
 		onGrams(textBytes, func(b []byte) {
 			filter.Add(b)
 		})
-		sizeRatio := float64(filter.ApproximatedSize()) / float64(bloomSize)
+		//sizeRatio := float64(filter.ApproximatedSize()) / float64(bloomSize)
 		//fmt.Printf("%v %v %v\n", sizeRatio, filter.ApproximatedSize(), bloomSize)
-		if sizeRatio > 0.5 {
-		}
 		indexes = append(
 			indexes,
 			BlobIndex{
-				Path:   line,
+				Path:   filename,
 				Filter: filter,
 			},
 		)
 	}
-	return &RepoIndex{Dir: dir, Blobs: indexes}, nil
+	return &RepoIndex{Dir: fs.RootDir(), Blobs: indexes}, nil
 }
 
 func (r *RepoIndex) Grep(query string) {
@@ -345,6 +312,38 @@ func color(colorString string) func(...interface{}) string {
 	return sprint
 }
 
+func (r *RepoIndex) pathsMatchingQuerySync(
+	grams [][]byte,
+	batch []BlobIndex,
+	onMatch func(matchingPath string),
+) {
+	for _, index := range batch {
+		if index.Filter == nil {
+			continue
+		}
+		isMatch := len(grams) > 0
+		for _, gram := range grams {
+			//fmt.Printf("test %v %v\n", index.Filter.Test(gram))
+			if !index.Filter.Test(gram) {
+				isMatch = false
+				break
+			}
+		}
+		if isMatch {
+			onMatch(index.Path)
+		}
+	}
+}
+
+func (r *RepoIndex) PathsMatchingQuerySync(query string) []string {
+	grams := collectGrams(query)
+	var result []string
+	r.pathsMatchingQuerySync(grams, r.Blobs, func(matchingPath string) {
+		result = append(result, matchingPath)
+	})
+	return result
+}
+
 func (r *RepoIndex) PathsMatchingQuery(query string) chan string {
 	grams := collectGrams(query)
 	res := make(chan string, len(r.Blobs))
@@ -359,23 +358,9 @@ func (r *RepoIndex) PathsMatchingQuery(query string) chan string {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for _, index := range batch {
-				if index.Filter == nil {
-					continue
-				}
-				//fmt.Println(index.Filter.ApproximatedSize())
-				isMatch := len(grams) > 0
-				for _, gram := range grams {
-					//fmt.Printf("test %v %v\n", index.Filter.Test(gram))
-					if !index.Filter.Test(gram) {
-						isMatch = false
-						break
-					}
-				}
-				if isMatch {
-					res <- index.Path
-				}
-			}
+			r.pathsMatchingQuerySync(grams, batch, func(matchingPath string) {
+				res <- matchingPath
+			})
 		}()
 	}
 	wg.Wait()

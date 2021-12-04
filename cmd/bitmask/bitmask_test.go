@@ -60,6 +60,28 @@ func BenchmarkQuery(b *testing.B) {
 	fmt.Printf("fp %v len %v\n", ratio, len(matchingPaths))
 }
 
-// TODO: correctness unit test
+func TestNoFalseNegatives(t *testing.T) {
+	text := `Hello world,
+this is the world,
+this it the time!
+We all do our Best!
+The World is the best.
+`
+	fs := InMemoryFileSystem{map[string]string{"readme.md": text}}
+	r, err := NewRepoIndex(&fs)
+	if err != nil {
+		panic(err)
+	}
+	for i := range text {
+		for j := i + 1; j < len(text); j++ {
+			query := text[i:j]
+			matchingPathCount := len(r.PathsMatchingQuerySync(query))
+			if matchingPathCount == 0 {
+				t.Fatalf("query '%v' triggered a false negative", query)
+			}
+		}
+	}
+}
+
 // TODO CPU: serialize, deserialize
 // TODO Size: serialized file, in-memory index
