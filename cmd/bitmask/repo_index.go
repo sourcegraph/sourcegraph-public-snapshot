@@ -57,21 +57,21 @@ type Ngrams struct {
 func NewNgrams() Ngrams {
 	return Ngrams{
 		SeenHashes: map[uint64]struct{}{},
-		Unigram:    Ngram{Arity: 1, Hash: 0},
-		Bigram1:    Ngram{Arity: 2, Hash: 0},
-		Bigram2:    Ngram{Arity: 2, Hash: 0},
-		Trigram1:   Ngram{Arity: 3, Hash: 0},
-		Trigram2:   Ngram{Arity: 3, Hash: 0},
-		Trigram3:   Ngram{Arity: 3, Hash: 0},
-		Quadgram1:  Ngram{Arity: 4, Hash: 0},
-		Quadgram2:  Ngram{Arity: 4, Hash: 0},
-		Quadgram3:  Ngram{Arity: 4, Hash: 0},
-		Quadgram4:  Ngram{Arity: 4, Hash: 0},
-		Pentagram1: Ngram{Arity: 5, Hash: 0},
-		Pentagram2: Ngram{Arity: 5, Hash: 0},
-		Pentagram3: Ngram{Arity: 5, Hash: 0},
-		Pentagram4: Ngram{Arity: 5, Hash: 0},
-		Pentagram5: Ngram{Arity: 5, Hash: 0},
+		Unigram:    Ngram{Hash: 0},
+		Bigram1:    Ngram{Hash: 0},
+		Bigram2:    Ngram{Hash: 0},
+		Trigram1:   Ngram{Hash: 0},
+		Trigram2:   Ngram{Hash: 0},
+		Trigram3:   Ngram{Hash: 0},
+		Quadgram1:  Ngram{Hash: 0},
+		Quadgram2:  Ngram{Hash: 0},
+		Quadgram3:  Ngram{Hash: 0},
+		Quadgram4:  Ngram{Hash: 0},
+		Pentagram1: Ngram{Hash: 0},
+		Pentagram2: Ngram{Hash: 0},
+		Pentagram3: Ngram{Hash: 0},
+		Pentagram4: Ngram{Hash: 0},
+		Pentagram5: Ngram{Hash: 0},
 	}
 
 }
@@ -142,8 +142,7 @@ func (g *Ngrams) OnIndex(index int, b int32, onBytes func(b []byte)) {
 }
 
 type Ngram struct {
-	Hash  uint64
-	Arity int8
+	Hash uint64
 }
 
 func (g *Ngram) EmitHashAndClear(gs *Ngrams, onBytes func(b []byte)) {
