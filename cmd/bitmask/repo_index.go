@@ -25,7 +25,6 @@ const (
 	targetFalsePositiveRatio = 0.01
 	maxFileSize              = 1 << 20 // 1_048_576
 	bloomSizePadding         = 5
-	initialHashValue         = 1
 )
 
 type RepoIndex struct {
@@ -244,8 +243,8 @@ func NewRepoIndex(fs FileSystem) (*RepoIndex, error) {
 		onGrams(text, func(b []byte) {
 			filter.Add(b)
 		})
-		//sizeRatio := float64(filter.ApproximatedSize()) / float64(bloomSize)
-		//fmt.Printf("%v %v %v\n", sizeRatio, filter.ApproximatedSize(), bloomSize)
+		sizeRatio := float64(filter.ApproximatedSize()) / float64(bloomSize)
+		fmt.Printf("%v %v %v\n", sizeRatio, filter.ApproximatedSize(), bloomSize)
 		indexes = append(
 			indexes,
 			BlobIndex{

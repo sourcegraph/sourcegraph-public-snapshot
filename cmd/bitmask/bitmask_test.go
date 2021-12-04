@@ -104,8 +104,8 @@ func TestFalseResults(t *testing.T) {
 // TODO Size: serialized file, in-memory index
 func TestFalsePositive(t *testing.T) {
 	files := map[string]string{
-		"monitoring/definitions/git_server.go":     "Repository",
-		"client/web/src/nav/UserNavItem.story.tsx": "JVM",
+		"monitoring/definitions/git_server.go": "Repository",
+		//"client/web/src/nav/UserNavItem.story.tsx": "JVM",
 	}
 	for file, query := range files {
 		abspath := filepath.Join("/Users/olafurpg/dev/sourcegraph/sourcegraph", file)
