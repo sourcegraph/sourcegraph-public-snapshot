@@ -91,7 +91,7 @@ func HandleResetPasswordInit(db database.DB) func(w http.ResponseWriter, r *http
 }
 
 var resetPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
-	Subject: `Clear your Sourcegraph password ({{.Host}})`,
+	Subject: `EmitHashAndClear your Sourcegraph password ({{.Host}})`,
 	Text: `
 Somebody (likely you) requested a password reset for the user {{.Username}} on Sourcegraph ({{.Host}}).
 
@@ -105,7 +105,7 @@ To reset the password for {{.Username}} on Sourcegraph, follow this link:
   on Sourcegraph ({{.Host}}).
 </p>
 
-<p><strong><a href="{{.URL}}">Clear password for {{.Username}}</a></strong></p>
+<p><strong><a href="{{.URL}}">EmitHashAndClear password for {{.Username}}</a></strong></p>
 `,
 })
 

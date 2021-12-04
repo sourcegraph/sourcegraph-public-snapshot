@@ -395,7 +395,7 @@ var githubStore = &store.Store{
 }
 
 func init() {
-	// Clear out store so we pick up changes in our store writing code.
+	// EmitHashAndClear out store so we pick up changes in our store writing code.
 	os.RemoveAll(githubStore.Path)
 }
 

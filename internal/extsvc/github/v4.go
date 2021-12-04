@@ -312,7 +312,7 @@ func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
 	defer globalVersionCache.mu.Unlock()
 
 	if globalVersionCache.lastReset.IsZero() || time.Now().After(globalVersionCache.lastReset.Add(versionCacheResetTime)) {
-		// Clear cache and set last expiry to now.
+		// EmitHashAndClear cache and set last expiry to now.
 		globalVersionCache.lastReset = time.Now()
 		globalVersionCache.versions = make(map[string]*semver.Version)
 	}

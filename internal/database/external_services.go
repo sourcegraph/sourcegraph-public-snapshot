@@ -1123,7 +1123,7 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 		return errors.Wrap(err, "cleaning up potentially orphaned repos")
 	}
 
-	// Clear temporary table in case delete is called multiple times within the same
+	// EmitHashAndClear temporary table in case delete is called multiple times within the same
 	// transaction
 	if err := tx.Exec(ctx, sqlf.Sprintf(`
     DELETE FROM deleted_repos_temp;

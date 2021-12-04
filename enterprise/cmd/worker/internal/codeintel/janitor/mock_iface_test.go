@@ -2540,7 +2540,7 @@ func NewStrictMockLSIFStore() *MockLSIFStore {
 	return &MockLSIFStore{
 		ClearFunc: &LSIFStoreClearFunc{
 			defaultHook: func(context.Context, ...int) error {
-				panic("unexpected invocation of MockLSIFStore.Clear")
+				panic("unexpected invocation of MockLSIFStore.EmitHashAndClear")
 			},
 		},
 		DeleteOldPrivateSearchRecordsFunc: &LSIFStoreDeleteOldPrivateSearchRecordsFunc{
@@ -2588,7 +2588,7 @@ func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 	}
 }
 
-// LSIFStoreClearFunc describes the behavior when the Clear method of the
+// LSIFStoreClearFunc describes the behavior when the EmitHashAndClear method of the
 // parent MockLSIFStore instance is invoked.
 type LSIFStoreClearFunc struct {
 	defaultHook func(context.Context, ...int) error
@@ -2605,14 +2605,14 @@ func (m *MockLSIFStore) Clear(v0 context.Context, v1 ...int) error {
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the Clear method of the
+// SetDefaultHook sets function that is called when the EmitHashAndClear method of the
 // parent MockLSIFStore instance is invoked and the hook queue is empty.
 func (f *LSIFStoreClearFunc) SetDefaultHook(hook func(context.Context, ...int) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Clear method of the parent MockLSIFStore instance invokes the hook at the
+// EmitHashAndClear method of the parent MockLSIFStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
 func (f *LSIFStoreClearFunc) PushHook(hook func(context.Context, ...int) error) {
@@ -2668,7 +2668,7 @@ func (f *LSIFStoreClearFunc) History() []LSIFStoreClearFuncCall {
 }
 
 // LSIFStoreClearFuncCall is an object that describes an invocation of
-// method Clear on an instance of MockLSIFStore.
+// method EmitHashAndClear on an instance of MockLSIFStore.
 type LSIFStoreClearFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.

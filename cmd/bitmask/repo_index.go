@@ -57,25 +57,25 @@ type Ngrams struct {
 func NewNgrams() Ngrams {
 	return Ngrams{
 		SeenHashes: map[uint64]struct{}{},
-		Unigram:    Ngram{Hash: 0},
-		Bigram1:    Ngram{Hash: 0},
-		Bigram2:    Ngram{Hash: 0},
-		Trigram1:   Ngram{Hash: 0},
-		Trigram2:   Ngram{Hash: 0},
-		Trigram3:   Ngram{Hash: 0},
-		Quadgram1:  Ngram{Hash: 0},
-		Quadgram2:  Ngram{Hash: 0},
-		Quadgram3:  Ngram{Hash: 0},
-		Quadgram4:  Ngram{Hash: 0},
-		Pentagram1: Ngram{Hash: 0},
-		Pentagram2: Ngram{Hash: 0},
-		Pentagram3: Ngram{Hash: 0},
-		Pentagram4: Ngram{Hash: 0},
-		Pentagram5: Ngram{Hash: 0},
+		Unigram:    Ngram{Arity: 1, Hash: 0},
+		Bigram1:    Ngram{Arity: 2, Hash: 0},
+		Bigram2:    Ngram{Arity: 2, Hash: 0},
+		Trigram1:   Ngram{Arity: 3, Hash: 0},
+		Trigram2:   Ngram{Arity: 3, Hash: 0},
+		Trigram3:   Ngram{Arity: 3, Hash: 0},
+		Quadgram1:  Ngram{Arity: 4, Hash: 0},
+		Quadgram2:  Ngram{Arity: 4, Hash: 0},
+		Quadgram3:  Ngram{Arity: 4, Hash: 0},
+		Quadgram4:  Ngram{Arity: 4, Hash: 0},
+		Pentagram1: Ngram{Arity: 5, Hash: 0},
+		Pentagram2: Ngram{Arity: 5, Hash: 0},
+		Pentagram3: Ngram{Arity: 5, Hash: 0},
+		Pentagram4: Ngram{Arity: 5, Hash: 0},
+		Pentagram5: Ngram{Arity: 5, Hash: 0},
 	}
 
 }
-func (g *Ngrams) Update(index int, b byte) {
+func (g *Ngrams) Update(b int32) {
 	g.Unigram.Update(b)
 
 	g.Bigram1.Update(b)
@@ -97,78 +97,79 @@ func (g *Ngrams) Update(index int, b byte) {
 	g.Pentagram5.Update(b)
 }
 
-func (g *Ngrams) OnIndex(index int, b byte, onBytes func(b []byte)) {
-	g.Update(index, b)
-	g.Unigram.Clear(g, onBytes)
+func (g *Ngrams) OnIndex(index int, b int32, onBytes func(b []byte)) {
+	g.Update(b)
+
+	g.Unigram.EmitHashAndClear(g, onBytes)
 
 	switch index % 2 {
 	case 0:
-		g.Bigram1.Clear(g, onBytes)
+		g.Bigram1.EmitHashAndClear(g, onBytes)
 	case 1:
-		g.Bigram2.Clear(g, onBytes)
+		g.Bigram2.EmitHashAndClear(g, onBytes)
 	}
 
 	switch index % 3 {
 	case 0:
-		g.Trigram1.Clear(g, onBytes)
+		g.Trigram1.EmitHashAndClear(g, onBytes)
 	case 1:
-		g.Trigram2.Clear(g, onBytes)
+		g.Trigram2.EmitHashAndClear(g, onBytes)
 	case 2:
-		g.Trigram3.Clear(g, onBytes)
+		g.Trigram3.EmitHashAndClear(g, onBytes)
 	}
 	switch index % 4 {
 	case 0:
-		g.Quadgram1.Clear(g, onBytes)
+		g.Quadgram1.EmitHashAndClear(g, onBytes)
 	case 1:
-		g.Quadgram2.Clear(g, onBytes)
+		g.Quadgram2.EmitHashAndClear(g, onBytes)
 	case 2:
-		g.Quadgram3.Clear(g, onBytes)
+		g.Quadgram3.EmitHashAndClear(g, onBytes)
 	case 3:
-		g.Quadgram4.Clear(g, onBytes)
+		g.Quadgram4.EmitHashAndClear(g, onBytes)
 	}
 	switch index % 5 {
 	case 0:
-		g.Pentagram1.Clear(g, onBytes)
+		g.Pentagram1.EmitHashAndClear(g, onBytes)
 	case 1:
-		g.Pentagram2.Clear(g, onBytes)
+		g.Pentagram2.EmitHashAndClear(g, onBytes)
 	case 2:
-		g.Pentagram3.Clear(g, onBytes)
+		g.Pentagram3.EmitHashAndClear(g, onBytes)
 	case 3:
-		g.Pentagram4.Clear(g, onBytes)
+		g.Pentagram4.EmitHashAndClear(g, onBytes)
 	case 4:
-		g.Pentagram5.Clear(g, onBytes)
+		g.Pentagram5.EmitHashAndClear(g, onBytes)
 	}
 }
 
 type Ngram struct {
-	Hash uint64
+	Hash  uint64
+	Arity int8
 }
 
-func (g *Ngram) Clear(gs *Ngrams, onBytes func(b []byte)) {
-	if _, ok := gs.SeenHashes[g.Hash]; ok {
-		return
+func (g *Ngram) EmitHashAndClear(gs *Ngrams, onBytes func(b []byte)) {
+	if _, ok := gs.SeenHashes[g.Hash]; !ok {
+		gs.SeenHashes[g.Hash] = struct{}{}
+		hashedBytes := make([]byte, 8)
+		binary.LittleEndian.PutUint64(hashedBytes, g.Hash)
+		onBytes(hashedBytes)
 	}
-	gs.SeenHashes[g.Hash] = struct{}{}
-	hashedBytes := make([]byte, 8)
-	binary.LittleEndian.PutUint64(hashedBytes, g.Hash)
-	onBytes(hashedBytes)
 	g.Hash = 0
 }
 
-func (g *Ngram) Update(b byte) {
+func (g *Ngram) Update(b int32) {
 	g.Hash = 31*g.Hash + uint64(b)
 }
 
-func onGrams(textBytes []byte, onBytes func(b []byte)) {
+func onGrams(text string, onBytes func(b []byte)) {
 	ngrams := NewNgrams()
-	for i, b := range textBytes {
+	for i, b := range text {
 		ngrams.OnIndex(i, b, onBytes)
 	}
 }
 
 func collectGrams(query string) [][]byte {
 	var result [][]byte
-	onGrams([]byte(query), func(b []byte) {
+	onGrams(query, func(b []byte) {
 		result = append(result, b)
 	})
 	return result
@@ -224,15 +225,16 @@ func NewRepoIndex(fs FileSystem) (*RepoIndex, error) {
 		if len(textBytes) > maxFileSize {
 			continue
 		}
-		bloomSize := uint(len(textBytes) * bloomSizePadding)
+		if enry.IsBinary(textBytes) {
+			continue
+		}
+		text := string(textBytes)
+		bloomSize := uint(len(text) * bloomSizePadding)
 		if bloomSize < 10_000 {
 			bloomSize = 10_000
 		}
 		filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
-		if enry.IsBinary(textBytes) {
-			continue
-		}
-		onGrams(textBytes, func(b []byte) {
+		onGrams(text, func(b []byte) {
 			filter.Add(b)
 		})
 		//sizeRatio := float64(filter.ApproximatedSize()) / float64(bloomSize)

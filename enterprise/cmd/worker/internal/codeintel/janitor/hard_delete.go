@@ -86,7 +86,7 @@ func (d *hardDeleter) deleteBatch(ctx context.Context, ids []int) (err error) {
 	defer func() { err = tx.Done(err) }()
 
 	if err := d.lsifStore.Clear(ctx, ids...); err != nil {
-		return errors.Wrap(err, "lsifstore.Clear")
+		return errors.Wrap(err, "lsifstore.EmitHashAndClear")
 	}
 
 	if err := tx.HardDeleteUploadByID(ctx, ids...); err != nil {
