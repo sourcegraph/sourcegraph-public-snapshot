@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/cespare/xxhash/v2"
+	"github.com/schollz/progressbar/v3"
 	"io"
 	"math"
 	"os"
@@ -220,12 +221,15 @@ func NewRepoIndex(fs FileSystem) (*RepoIndex, error) {
 		return nil, err
 	}
 	indexes := make([]BlobIndex, len(filenames))
-	for i, filename := range filenames {
-		if i%100 == 0 {
-			fmt.Println(i)
-		}
+	bar := progressbar.Default(int64(len(filenames)))
+	for _, filename := range filenames {
+		bar.Add(1)
 		textBytes, err := fs.ReadRelativeFilename(filename)
 		if err != nil {
+			fmt.Printf("err %v\n", err)
+			continue
+		}
+		if len(textBytes) == 0 {
 			continue
 		}
 		if len(textBytes) > maxFileSize {

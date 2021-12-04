@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"github.com/cockroachdb/errors"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -111,7 +112,6 @@ func (g *ZipFileSystem) Close() error {
 func (g *ZipFileSystem) RootDir() string {
 	return ""
 }
-
 func (g *ZipFileSystem) ReadRelativeFilename(name string) ([]byte, error) {
 	open, err := g.Reader.Open(name)
 	if err != nil {
@@ -122,22 +122,17 @@ func (g *ZipFileSystem) ReadRelativeFilename(name string) ([]byte, error) {
 		return nil, err
 	}
 	if stat.IsDir() {
-		return nil, errors.Errorf("can't read directory %v", name)
+		return []byte{}, nil
 	}
-	b := make([]byte, stat.Size())
-	read, err := open.Read(b)
-	if err != nil {
-		return nil, err
-	}
-	if read != len(b) {
-		return nil, errors.Errorf("read %v, expected %v", read, len(b))
-	}
-	return b, nil
+	return ioutil.ReadAll(open)
 }
 
 func (g *ZipFileSystem) ListRelativeFilenames() ([]string, error) {
 	var names []string
 	for _, file := range g.Reader.File {
+		if strings.HasSuffix(file.Name, "/") {
+			continue
+		}
 		names = append(names, file.Name)
 	}
 	return names, nil
