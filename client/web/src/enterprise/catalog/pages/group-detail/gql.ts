@@ -9,6 +9,7 @@ const GROUP_MEMBERS_FRAGMENT = gql`
     fragment GroupMembersFields on Group {
         members {
             ...PersonLinkFields
+            avatarURL
         }
     }
     ${personLinkFieldsFragment}

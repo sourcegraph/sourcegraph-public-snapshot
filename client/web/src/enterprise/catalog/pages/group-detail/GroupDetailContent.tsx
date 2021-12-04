@@ -13,6 +13,7 @@ import { CatalogPage } from '../../components/catalog-area-header/CatalogPage'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 
 import styles from './GroupDetailContent.module.scss'
+import { GroupMembersTab } from './GroupMembersTab'
 import { GroupOverviewTab } from './GroupOverviewTab'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
@@ -42,23 +43,27 @@ export const GroupDetailContent: React.FunctionComponent<Props> = ({ group, ...p
                     text: 'Overview',
                     content: <GroupOverviewTab {...cardProps} group={group} />,
                 },
+                {
+                    path: 'members',
+                    exact: true,
+                    text: 'Members',
+                    content: <GroupMembersTab group={group} className="p-3" />,
+                },
                 // TODO(sqs): show group code/changes/etc. tabs
             ].filter(isDefined),
         [group]
     )
     return (
-        <>
-            <CatalogPage
-                path={[
-                    { icon: CatalogIcon, to: '/catalog' },
-                    ...group.ancestorGroups.map(group => ({ icon: CatalogGroupIcon, text: group.name, to: group.url })),
-                    {
-                        icon: CatalogGroupIcon,
-                        text: group.name,
-                    },
-                ].filter(isDefined)}
-                tabs={tabs}
-            />
-        </>
+        <CatalogPage
+            path={[
+                { icon: CatalogIcon, to: '/catalog' },
+                ...group.ancestorGroups.map(group => ({ icon: CatalogGroupIcon, text: group.name, to: group.url })),
+                {
+                    icon: CatalogGroupIcon,
+                    text: group.name,
+                },
+            ].filter(isDefined)}
+            tabs={tabs}
+        />
     )
 }
