@@ -39,7 +39,7 @@ export const CatalogPage: React.FunctionComponent<Props> = ({ path, tabs }) => {
                     </ul>
                 }
             />
-            <div className="w-100 p-3">
+            <div className="w-100">
                 <Switch>
                     {tabs.map(({ path, exact, content }) => (
                         <Route key={path} path={path ? `${match.url}/${path}` : match.url} exact={exact}>

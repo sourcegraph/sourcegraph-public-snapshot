@@ -70,11 +70,12 @@ func (r *groupResolver) Members() []*gql.PersonResolver {
 		seen    = map[string]struct{}{}
 	)
 	for _, member := range r.group.Members {
-		if _, seen := seen[member]; seen {
+		email := member + "@sourcegraph.com"
+		if _, seen := seen[email]; seen {
 			continue
 		}
-		members = append(members, gql.NewPersonResolver(r.db, "", member+"@sourcegraph.com", false))
-		seen[member] = struct{}{}
+		members = append(members, gql.NewPersonResolver(r.db, "", email, false))
+		seen[email] = struct{}{}
 	}
 	for _, childGroup := range r.ChildGroups() {
 		for _, member := range childGroup.Members() {

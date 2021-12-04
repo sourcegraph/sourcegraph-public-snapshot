@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom'
 import { GroupDetailFields } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
 import { CatalogEntityIcon } from '../../components/CatalogEntityIcon'
+import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 import { CatalogEntityStateIndicator } from '../overview/components/entity-state-indicator/EntityStateIndicator'
 
 import { GroupDetailContentCardProps } from './GroupDetailContent'
@@ -28,9 +29,13 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
     className,
 }) => (
     <div className={classNames('d-flex flex-column', className)}>
-        <div className="row">
-            <div className="col-md-3">
-                {group.title && <h2>{group.title}</h2>}
+        <div className="row no-gutters">
+            <div className="col-md-4 col-lg-3 border-right p-3">
+                <h2 className="d-flex align-items-center mb-1">
+                    <CatalogGroupIcon className="icon-inline mr-2" />
+                    {group.title || group.name}
+                </h2>
+                <div className="text-muted small mb-2">Group</div>
                 {group.description && <p className="mb-3">{group.description}</p>}
                 <div>
                     <Link
@@ -54,7 +59,7 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
                     <hr className="my-3" />
                 </div>
             </div>
-            <div className="col-md-9">
+            <div className="col-md-8 col-lg-9 p-3">
                 {group.childGroups && group.childGroups.length > 0 && (
                     <div className="mb-3">
                         <h4>Subgroups</h4>

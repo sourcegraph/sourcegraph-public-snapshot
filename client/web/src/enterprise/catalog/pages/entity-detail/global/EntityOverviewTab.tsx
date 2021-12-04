@@ -31,11 +31,11 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, clas
     <div className={classNames('d-flex flex-column', className)}>
         {entity.__typename === 'CatalogComponent' ? (
             <>
-                <div className="row">
-                    <div className="col-md-4 col-lg-3">
+                <div className="row no-gutters">
+                    <div className="col-md-4 col-lg-3 border-right p-3">
                         {entity.name && (
                             <h2 className="d-flex align-items-center mb-1">
-                                <CatalogEntityIcon entity={entity} className="icon-inline mr-1" /> {entity.name}
+                                <CatalogEntityIcon entity={entity} className="icon-inline mr-2" /> {entity.name}
                             </h2>
                         )}
                         <div className="text-muted small mb-2">
@@ -77,7 +77,7 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, clas
                             <hr className="my-3" />
                         </div>
                     </div>
-                    <div className="col-md-8 col-lg-9">
+                    <div className="col-md-8 col-lg-9 p-3">
                         <div className="card mb-3">
                             <ComponentSourceDefinitions
                                 catalogComponent={entity}
