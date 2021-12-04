@@ -123,7 +123,7 @@ func TestFalsePositive(t *testing.T) {
 			panic(err)
 		}
 		paths := r.PathsMatchingQuerySync(query)
-		if len(paths) > 0 {
+		if len(paths) > 0 && strings.Index(string(bytes), query) < 0 {
 			t.Fatalf("query '%v' triggered a false positive in path '%v'", query, abspath)
 		}
 	}
