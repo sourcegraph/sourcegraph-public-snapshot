@@ -28,7 +28,7 @@ interface Props {
 }
 
 export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, className }) => (
-    <div className="flex-1 align-self-stretch row no-gutters">
+    <div className={classNames('row no-gutters', className)}>
         <div className="col-md-4 col-lg-3 col-xl-2 border-right p-3">
             {entity.name && (
                 <h2 className="d-flex align-items-center mb-1">

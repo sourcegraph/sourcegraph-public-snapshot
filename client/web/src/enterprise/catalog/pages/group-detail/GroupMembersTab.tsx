@@ -16,13 +16,13 @@ interface Props extends GroupDetailContentCardProps {
 }
 
 export const GroupMembersTab: React.FunctionComponent<Props> = ({ group, className }) => (
-    <div className={classNames('container', className)}>
+    <div className={classNames('container p-3', className)}>
         {group.members && group.members.length > 0 && (
             <>
                 <h4>
                     {group.members.length} {pluralize('member', group.members.length)}
                 </h4>
-                <ul className="list-group">
+                <ul className="list-group card">
                     {group.members.map(member => (
                         <li key={member.email} className="list-group-item">
                             <LinkOrSpan to={member.user?.url}>

@@ -8,7 +8,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { CatalogEntityDetailFields } from '../../../../../graphql-operations'
 
-import { ComponentAuthors } from './ComponentAuthors'
+import { EntityContributors } from './EntityContributors'
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 import { ComponentSources } from './ComponentSources'
 import { EntityCodeOwners } from './EntityCodeOwners'
@@ -19,7 +19,7 @@ interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, S
 }
 
 export const EntityCodeTab: React.FunctionComponent<Props> = ({ entity, className, ...props }) => (
-    <div className={classNames('flex-1 align-self-stretch row no-gutters', className)}>
+    <div className={classNames('row no-gutters', className)}>
         <div className="col-md-8 col-lg-9 col-xl-10 p-3">
             {entity.__typename === 'CatalogComponent' && (
                 <>
@@ -33,7 +33,7 @@ export const EntityCodeTab: React.FunctionComponent<Props> = ({ entity, classNam
         </div>
         <div className="col-md-4 col-lg-3 col-xl-2 border-left p-3">
             <EntityCodeOwners entity={entity} className="mb-3" />
-            <ComponentAuthors catalogComponent={entity} className="mb-3" />
+            <EntityContributors catalogComponent={entity} className="mb-3" />
         </div>
     </div>
 )

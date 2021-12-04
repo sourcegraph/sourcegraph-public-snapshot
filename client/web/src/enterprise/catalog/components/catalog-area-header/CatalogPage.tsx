@@ -22,7 +22,7 @@ export const CatalogPage: React.FunctionComponent<Props> = ({ path, tabs }) => {
             <CatalogAreaHeader
                 path={path}
                 nav={
-                    <ul className="nav nav-tabs">
+                    <ul className="nav nav-tabs" style={{ marginBottom: '-1px' }}>
                         {tabs.map(({ path, exact, text }) => (
                             <li key={path} className="nav-item">
                                 <NavLink

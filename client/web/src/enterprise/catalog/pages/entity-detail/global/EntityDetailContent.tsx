@@ -14,10 +14,10 @@ import { CatalogGroupIcon } from '../../../components/CatalogGroupIcon'
 
 import { ComponentAPI } from './ComponentApi'
 import { ComponentDocumentation } from './ComponentDocumentation'
-import { ComponentUsage } from './ComponentUsage'
 import { EntityChangesTab } from './EntityChangesTab'
 import { EntityCodeTab } from './EntityCodeTab'
 import { EntityOverviewTab } from './EntityOverviewTab'
+import { EntityUsageTab } from './EntityUsageTab'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     entity: CatalogEntityDetailFields
@@ -72,7 +72,7 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                           path: 'usage',
                           text: 'Usage',
                           content: (
-                              <ComponentUsage {...props} catalogComponent={entity} className={TAB_CONTENT_CLASS_NAME} />
+                              <EntityUsageTab {...props} catalogComponent={entity} className={TAB_CONTENT_CLASS_NAME} />
                           ),
                       }
                     : null,

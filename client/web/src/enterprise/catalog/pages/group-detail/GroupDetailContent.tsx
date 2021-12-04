@@ -18,6 +18,8 @@ interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, S
     group: GroupDetailFields
 }
 
+const TAB_CONTENT_CLASS_NAME = 'flex-1 align-self-stretch'
+
 export const GroupDetailContent: React.FunctionComponent<Props> = ({ group }) => {
     const tabs = useMemo<React.ComponentProps<typeof CatalogPage>['tabs']>(
         () =>
@@ -26,13 +28,13 @@ export const GroupDetailContent: React.FunctionComponent<Props> = ({ group }) =>
                     path: '',
                     exact: true,
                     text: 'Overview',
-                    content: <GroupOverviewTab group={group} />,
+                    content: <GroupOverviewTab group={group} className={TAB_CONTENT_CLASS_NAME} />,
                 },
                 {
                     path: 'members',
                     exact: true,
                     text: 'Members',
-                    content: <GroupMembersTab group={group} className="p-3" />,
+                    content: <GroupMembersTab group={group} className={TAB_CONTENT_CLASS_NAME} />,
                 },
                 // TODO(sqs): show group code/changes/etc. tabs
             ].filter(isDefined),
