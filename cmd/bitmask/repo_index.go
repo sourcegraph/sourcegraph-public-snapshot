@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
+	"github.com/cespare/xxhash/v2"
 	"io"
 	"math"
 	"os"
@@ -58,21 +59,21 @@ type Ngrams struct {
 func NewNgrams() Ngrams {
 	return Ngrams{
 		SeenHashes: map[uint64]struct{}{},
-		Unigram:    Ngram{Hash: initialHashValue},
-		Bigram1:    Ngram{Hash: initialHashValue},
-		Bigram2:    Ngram{Hash: initialHashValue},
-		Trigram1:   Ngram{Hash: initialHashValue},
-		Trigram2:   Ngram{Hash: initialHashValue},
-		Trigram3:   Ngram{Hash: initialHashValue},
-		Quadgram1:  Ngram{Hash: initialHashValue},
-		Quadgram2:  Ngram{Hash: initialHashValue},
-		Quadgram3:  Ngram{Hash: initialHashValue},
-		Quadgram4:  Ngram{Hash: initialHashValue},
-		Pentagram1: Ngram{Hash: initialHashValue},
-		Pentagram2: Ngram{Hash: initialHashValue},
-		Pentagram3: Ngram{Hash: initialHashValue},
-		Pentagram4: Ngram{Hash: initialHashValue},
-		Pentagram5: Ngram{Hash: initialHashValue},
+		Unigram:    Ngram{Hash: xxhash.New()},
+		Bigram1:    Ngram{Hash: xxhash.New()},
+		Bigram2:    Ngram{Hash: xxhash.New()},
+		Trigram1:   Ngram{Hash: xxhash.New()},
+		Trigram2:   Ngram{Hash: xxhash.New()},
+		Trigram3:   Ngram{Hash: xxhash.New()},
+		Quadgram1:  Ngram{Hash: xxhash.New()},
+		Quadgram2:  Ngram{Hash: xxhash.New()},
+		Quadgram3:  Ngram{Hash: xxhash.New()},
+		Quadgram4:  Ngram{Hash: xxhash.New()},
+		Pentagram1: Ngram{Hash: xxhash.New()},
+		Pentagram2: Ngram{Hash: xxhash.New()},
+		Pentagram3: Ngram{Hash: xxhash.New()},
+		Pentagram4: Ngram{Hash: xxhash.New()},
+		Pentagram5: Ngram{Hash: xxhash.New()},
 	}
 
 }
@@ -143,21 +144,27 @@ func (g *Ngrams) OnIndex(index int, b int32, onBytes func(b []byte)) {
 }
 
 type Ngram struct {
-	Hash uint64
+	Hash *xxhash.Digest
 }
 
 func (g *Ngram) EmitHashAndClear(gs *Ngrams, onBytes func(b []byte)) {
-	if _, ok := gs.SeenHashes[g.Hash]; !ok {
-		gs.SeenHashes[g.Hash] = struct{}{}
+	hash := g.Hash.Sum64()
+	if _, ok := gs.SeenHashes[hash]; !ok {
+		gs.SeenHashes[hash] = struct{}{}
 		hashedBytes := make([]byte, 8)
-		binary.LittleEndian.PutUint64(hashedBytes, g.Hash)
+		binary.LittleEndian.PutUint64(hashedBytes, hash)
 		onBytes(hashedBytes)
 	}
-	g.Hash = initialHashValue
+	g.Hash.Reset()
 }
 
+var hashedBytes = make([]byte, 4)
+
 func (g *Ngram) Update(b int32) {
-	g.Hash = 31*g.Hash + uint64(b)
+	binary.BigEndian.PutUint32(hashedBytes, uint32(b))
+
+	// always returns len(hashedBytes), nil
+	_, _ = g.Hash.Write(hashedBytes)
 }
 
 func onGrams(text string, onBytes func(b []byte)) {
