@@ -4,7 +4,7 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { CatalogEntityCodeOwnersFields } from '../../../../../graphql-operations'
 
-import { PersonListRow } from './PersonListRow'
+import { PersonList } from './PersonList'
 
 interface Props {
     entity: CatalogEntityCodeOwnersFields
@@ -12,9 +12,10 @@ interface Props {
 }
 
 export const EntityCodeOwners: React.FunctionComponent<Props> = ({ entity: { codeOwners }, className }) => (
-    <PersonListRow
+    <PersonList
         title="Code owners"
         listTag="ol"
+        orientation="vertical"
         items={
             codeOwners
                 ? codeOwners.map(codeOwner => ({

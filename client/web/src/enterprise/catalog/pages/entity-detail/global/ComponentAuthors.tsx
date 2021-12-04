@@ -4,7 +4,7 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { CatalogComponentAuthorsFields } from '../../../../../graphql-operations'
 
-import { PersonListRow } from './PersonListRow'
+import { PersonList } from './PersonList'
 
 interface Props {
     catalogComponent: CatalogComponentAuthorsFields
@@ -12,9 +12,10 @@ interface Props {
 }
 
 export const ComponentAuthors: React.FunctionComponent<Props> = ({ catalogComponent: { authors }, className }) => (
-    <PersonListRow
+    <PersonList
         title="Authors"
         listTag="ol"
+        orientation="vertical"
         items={
             authors
                 ? authors.map(author => ({

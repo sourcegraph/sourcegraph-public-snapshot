@@ -16,7 +16,9 @@ interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, S
 }
 
 export const EntityChangesTab: React.FunctionComponent<Props> = ({ entity, className }) => (
-    <div className={classNames('container', className)}>
-        <ComponentCommits catalogComponent={entity} />
+    <div className={classNames('flex-1 align-self-stretch container my-3', className)}>
+        <div className="card">
+            <ComponentCommits catalogComponent={entity} />
+        </div>
     </div>
 )
