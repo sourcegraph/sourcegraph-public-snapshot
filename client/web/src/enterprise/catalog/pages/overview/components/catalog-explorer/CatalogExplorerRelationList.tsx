@@ -31,7 +31,7 @@ interface Props extends Pick<CatalogEntityFiltersProps, 'filters'>, CatalogExplo
 
 const FIRST = 20
 
-export const CatalogExplorerList: React.FunctionComponent<Props> = ({
+export const CatalogExplorerRelationList: React.FunctionComponent<Props> = ({
     filters,
     queryScope,
     className,

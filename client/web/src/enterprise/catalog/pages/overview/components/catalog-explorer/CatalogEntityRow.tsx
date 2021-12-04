@@ -9,18 +9,21 @@ import { CatalogEntityStateIndicator } from '../entity-state-indicator/EntitySta
 
 import styles from './CatalogExplorerList.module.scss'
 
-interface Props {
-    node: CatalogEntityForExplorerFields
+export interface CatalogExplorerRowStyleProps {
     itemStartClassName?: string
     itemEndClassName?: string
-    noBorder?: boolean
+    noBottomBorder?: boolean
+}
+
+interface Props extends CatalogExplorerRowStyleProps {
+    node: CatalogEntityForExplorerFields
 }
 
 export const CatalogEntityRow: React.FunctionComponent<Props> = ({
     node,
     itemStartClassName,
     itemEndClassName,
-    noBorder,
+    noBottomBorder,
 }) => (
     <>
         <h3 className={classNames('h6 font-weight-bold mb-0 d-flex align-items-center', itemStartClassName)}>
@@ -33,12 +36,12 @@ export const CatalogEntityRow: React.FunctionComponent<Props> = ({
         <EntityOwner owner={node.owner} className="text-nowrap" blankIfNone={true} />
         <span className="text-nowrap">{node.lifecycle.toLowerCase()}</span>
         <div className={classNames('text-muted text-truncate', itemEndClassName)}>{node.description}</div>
-        <div className={classNames({ 'border-top': !noBorder }, styles.separator)} />
+        <div className={classNames({ 'border-top': !noBottomBorder }, styles.separator)} />
     </>
 )
 
 export const CatalogEntityRowsHeader: React.FunctionComponent<
-    Pick<Props, 'itemStartClassName' | 'itemEndClassName'>
+    Pick<CatalogExplorerRowStyleProps, 'itemStartClassName' | 'itemEndClassName'>
 > = ({ itemStartClassName, itemEndClassName }) => (
     <>
         <div className={classNames('text-muted mt-2 small', itemStartClassName)}>Name</div>
