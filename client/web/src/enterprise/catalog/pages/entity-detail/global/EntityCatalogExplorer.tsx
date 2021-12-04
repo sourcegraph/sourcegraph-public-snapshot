@@ -23,12 +23,12 @@ export const EntityCatalogExplorer: React.FunctionComponent<Props> = ({ entity, 
 
     const [viewMode, setViewMode] = useViewModeTemporarySettings()
 
-    const queryScope = `entity:${entity}`
+    const queryScope = `relatedToEntity:${entity}`
 
     return (
         <div className={classNames('card', className)}>
             <CatalogExplorerViewOptionsRow
-                before={<h4 className="mb-0 mr-2 font-weight-bold">Components</h4>}
+                before={<h4 className="mb-0 mr-2 font-weight-bold">Relations</h4>}
                 toggle={<ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} />}
                 filters={filters}
                 onFiltersChange={onFiltersChange}

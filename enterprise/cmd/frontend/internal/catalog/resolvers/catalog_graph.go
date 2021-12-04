@@ -8,18 +8,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func makeGraphData(db database.DB, match func(*catalogComponentResolver) bool) *catalogGraphResolver {
-	if match == nil {
-		match = func(*catalogComponentResolver) bool { return true }
-	}
-
+func makeGraphData(db database.DB, q *queryMatcher) *catalogGraphResolver {
 	var graph catalogGraphResolver
 
 	components, _, edges := catalog.Data()
 	var entities []gql.CatalogEntity
 	for _, c := range components {
 		cr := &catalogComponentResolver{component: c, db: db}
-		entities = append(entities, cr)
+		if q != nil && q.matchNode(cr) {
+			entities = append(entities, cr)
+		}
 	}
 	graph.nodes = wrapInCatalogEntityInterfaceType(entities)
 
@@ -39,15 +37,13 @@ func makeGraphData(db database.DB, match func(*catalogComponentResolver) bool) *
 		if outNode == nil || inNode == nil {
 			continue
 		}
-		if match(outNode.CatalogEntity.(*catalogComponentResolver)) || match(inNode.CatalogEntity.(*catalogComponentResolver)) {
-			graph.edges = append(graph.edges, &catalogEntityRelationEdgeResolver{
-				type_:   gql.CatalogEntityRelationType(e.Type),
-				outNode: outNode,
-				inNode:  inNode,
-			})
-			edgeMatches[inNode] = struct{}{}
-			edgeMatches[outNode] = struct{}{}
-		}
+		graph.edges = append(graph.edges, &catalogEntityRelationEdgeResolver{
+			type_:   gql.CatalogEntityRelationType(e.Type),
+			outNode: outNode,
+			inNode:  inNode,
+		})
+		edgeMatches[inNode] = struct{}{}
+		edgeMatches[outNode] = struct{}{}
 	}
 
 	keepNodes := graph.nodes[:0]
@@ -68,7 +64,7 @@ func (r *catalogResolver) Graph(ctx context.Context, args *gql.CatalogGraphArgs)
 		query = *args.Query
 	}
 
-	return makeGraphData(r.db, getQueryMatcher(query)), nil
+	return makeGraphData(r.db, parseQuery(r.db, query)), nil
 }
 
 type catalogGraphResolver struct {

@@ -19,10 +19,10 @@ func allGroups(db database.DB) []*groupResolver {
 	return groupResolvers
 }
 
-func groupByID(id graphql.ID) *groupResolver {
+func groupByID(db database.DB, id graphql.ID) *groupResolver {
 	_, groups, _ := catalog.Data()
 	for _, g := range groups {
-		gr := &groupResolver{group: g}
+		gr := &groupResolver{group: g, db: db}
 		if gr.ID() == id {
 			return gr
 		}

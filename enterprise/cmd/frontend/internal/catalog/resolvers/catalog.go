@@ -18,11 +18,11 @@ func (r *catalogResolver) Entities(ctx context.Context, args *gql.CatalogEntitie
 	if args.Query != nil {
 		query = *args.Query
 	}
-	match := getQueryMatcher(query)
+	q := parseQuery(r.db, query)
 
 	var keep []gql.CatalogEntity
 	for _, c := range components {
-		if match(c) {
+		if q.matchNode(c) {
 			keep = append(keep, c)
 		}
 	}

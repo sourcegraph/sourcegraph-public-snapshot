@@ -36,7 +36,7 @@ func (r *rootResolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 			return entityByID(r.db, id), nil
 		},
 		"Group": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
-			return groupByID(id), nil
+			return groupByID(r.db, id), nil
 		},
 	}
 }
