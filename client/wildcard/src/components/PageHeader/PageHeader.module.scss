@@ -16,7 +16,8 @@ $path-icon-size: (22em / 26);
 }
 
 .heading {
-    display: flex;
+    // TODO(sqs): make it so last one is on its own line
+    // display: flex;
     flex-wrap: wrap;
     flex-grow: 1;
     align-items: center;
@@ -27,6 +28,7 @@ $path-icon-size: (22em / 26);
     margin-right: 0.5rem;
     color: var(--icon-color);
     font-weight: 400;
+    font-size: 60%;
 }
 
 .path {
@@ -40,6 +42,15 @@ $path-icon-size: (22em / 26);
     }
     &-text {
         margin-right: 0.5rem;
+    }
+
+    &:not(:last-child) {
+        font-weight: normal;
+        font-size: 60%;
+    }
+    &:last-child {
+        font-weight: bold;
+        display: flex;
     }
 }
 

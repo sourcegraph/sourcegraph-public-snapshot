@@ -13,6 +13,7 @@ import { CatalogEntityStateIndicator } from '../overview/components/entity-state
 
 import { GroupDetailContentCardProps } from './GroupDetailContent'
 import { GroupLink } from './GroupLink'
+import styles from './GroupOverviewTab.module.scss'
 
 interface Props extends GroupDetailContentCardProps {
     group: GroupDetailFields
@@ -31,39 +32,6 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
             <div className="col-md-3">
                 {group.title && <h2>{group.title}</h2>}
                 {group.description && <p className="mb-3">{group.description}</p>}
-                {(group.parentGroup || (group.childGroups && group.childGroups.length > 0)) && (
-                    <>
-                        <dl className="mb-2">
-                            {group.parentGroup && (
-                                <>
-                                    <dt className={classNames('mb-0 mr-2', titleClassName)}>Parent group</dt>
-                                    <dd className={classNames('mb-0 d-flex align-items-center position-relative')}>
-                                        <GroupLink group={group.parentGroup} className="stretched-link" />
-                                    </dd>
-                                </>
-                            )}
-                            {group.childGroups && group.childGroups.length > 0 && (
-                                <>
-                                    <dt className={classNames('mb-0 mr-2', titleClassName)}>Subgroups</dt>
-                                    <dd className="mb-0">
-                                        <ul className="list-unstyled mb-0">
-                                            {group.childGroups.map(childGroup => (
-                                                <li
-                                                    key={childGroup.id}
-                                                    className="d-flex align-items-center position-relative"
-                                                >
-                                                    <GroupLink group={childGroup} className="stretched-link" />
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </dd>
-                                </>
-                            )}
-                        </dl>
-                        <hr className="mb-3" />
-                    </>
-                )}
-
                 <div>
                     <Link
                         to={`/search?q=context:g/${group.name}`}
@@ -87,6 +55,26 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
                 </div>
             </div>
             <div className="col-md-9">
+                {group.childGroups && group.childGroups.length > 0 && (
+                    <div className="card mb-3">
+                        <header className={classNames(headerClassName)}>
+                            <h4 className={classNames('mb-0 mr-2', titleClassName)}>Subgroups</h4>
+                        </header>
+                        <ul className={styles.boxGrid}>
+                            {group.childGroups.map(childGroup => (
+                                <li key={childGroup.id} className={classNames('position-relative', styles.boxGridItem)}>
+                                    <GroupLink group={childGroup} className="stretched-link" />
+                                    {childGroup.description && (
+                                        <p className={classNames('mb-0 text-muted small', styles.boxGridItemBody)}>
+                                            {childGroup.description}
+                                        </p>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
                 {group.ownedEntities && group.ownedEntities.length > 0 && (
                     <div className="card mb-3">
                         <header className={classNames(headerClassName)}>

@@ -89,6 +89,7 @@ type GroupResolver interface {
 	Description() *string
 	URL() string
 	ParentGroup() GroupResolver
+	AncestorGroups() []GroupResolver
 	ChildGroups() []GroupResolver
 	Members() []*PersonResolver
 	OwnedEntities() []*CatalogEntityResolver

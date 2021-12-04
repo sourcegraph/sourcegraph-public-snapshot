@@ -12,6 +12,9 @@ export const CATALOG_ENTITY_OWNER_FRAGMENT = gql`
             }
             ... on Group {
                 ...GroupLinkFields
+                ancestorGroups {
+                    ...GroupLinkFields
+                }
             }
         }
     }

@@ -1,0 +1,20 @@
+.box-grid {
+    list-style-type: none;
+    margin-bottom: 0;
+    padding-left: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    grid-template-rows: 25vh;
+}
+
+.box-grid-item {
+    padding: calc(0.5 * var(--spacer));
+    overflow: hidden;
+}
+
+.box-grid-item-body {
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}

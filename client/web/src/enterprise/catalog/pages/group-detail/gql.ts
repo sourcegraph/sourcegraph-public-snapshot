@@ -23,6 +23,15 @@ const GROUP_PARENT_GROUP_FRAGMENT = gql`
     ${GROUP_LINK_FRAGMENT}
 `
 
+const GROUP_ANCESTOR_GROUPS_FRAGMENT = gql`
+    fragment GroupAncestorGroupsFields on Group {
+        ancestorGroups {
+            ...GroupLinkFields
+        }
+    }
+    ${GROUP_LINK_FRAGMENT}
+`
+
 const GROUP_CHILD_GROUPS_FRAGMENT = gql`
     fragment GroupChildGroupsFields on Group {
         childGroups {
@@ -58,11 +67,13 @@ const GROUP_DETAIL_FRAGMENT = gql`
         url
         ...GroupMembersFields
         ...GroupParentGroupFields
+        ...GroupAncestorGroupsFields
         ...GroupChildGroupsFields
         ...GroupOwnedEntitiesFields
     }
     ${GROUP_MEMBERS_FRAGMENT}
     ${GROUP_PARENT_GROUP_FRAGMENT}
+    ${GROUP_ANCESTOR_GROUPS_FRAGMENT}
     ${GROUP_CHILD_GROUPS_FRAGMENT}
     ${GROUP_OWNED_ENTITIES_FRAGMENT}
 `

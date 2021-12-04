@@ -54,13 +54,7 @@ export const GroupDetailContent: React.FunctionComponent<Props> = ({ group, ...p
             <PageHeader
                 path={[
                     { icon: CatalogIcon, to: '/catalog' },
-                    group.parentGroup
-                        ? {
-                              icon: CatalogGroupIcon,
-                              text: group.parentGroup.name,
-                              url: group.parentGroup.url,
-                          }
-                        : null,
+                    ...group.ancestorGroups.map(group => ({ icon: CatalogGroupIcon, text: group.name, to: group.url })),
                     {
                         icon: CatalogGroupIcon,
                         text: group.name,
@@ -68,14 +62,7 @@ export const GroupDetailContent: React.FunctionComponent<Props> = ({ group, ...p
                 ].filter(isDefined)}
                 actions={
                     // eslint-disable-next-line react/forbid-dom-props
-                    <nav className="d-flex align-items-center" style={{ marginBottom: '-5px' }}>
-                        {group.parentGroup && (
-                            <div className="d-inline-block mr-4">
-                                <span className="small font-weight-bold">Parent group</span>
-                                <br />
-                                <Link to={group.parentGroup.url}>{group.parentGroup.name}</Link>
-                            </div>
-                        )}
+                    <nav className="d-flex align-items-center">
                         <Link to="#" className="d-inline-block btn btn-secondary btn-sm p-2 mb-0">
                             <SettingsIcon className="icon-inline" />
                         </Link>

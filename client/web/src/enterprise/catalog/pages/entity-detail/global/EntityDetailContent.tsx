@@ -13,7 +13,6 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 import { CatalogIcon } from '../../../../../catalog'
 import { CatalogEntityDetailFields } from '../../../../../graphql-operations'
 import { catalogEntityIconComponent } from '../../../components/CatalogEntityIcon'
-import { EntityOwner } from '../../../components/entity-owner/EntityOwner'
 
 import { ComponentAPI } from './ComponentApi'
 import { ComponentDocumentation } from './ComponentDocumentation'
@@ -23,6 +22,8 @@ import { EntityCodeTab } from './EntityCodeTab'
 import styles from './EntityDetailContent.module.scss'
 import { EntityOverviewTab } from './EntityOverviewTab'
 import { TabRouter } from './TabRouter'
+
+import { CatalogGroupIcon } from '../../../components/CatalogGroupIcon'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     entity: CatalogEntityDetailFields
@@ -133,6 +134,11 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
             <PageHeader
                 path={[
                     { icon: CatalogIcon, to: '/catalog' },
+                    ...[...entity.owner.ancestorGroups, entity.owner].map(owner => ({
+                        icon: CatalogGroupIcon,
+                        text: owner.name,
+                        to: owner.url,
+                    })),
                     {
                         icon: catalogEntityIconComponent(entity),
                         text: entity.name,
@@ -145,11 +151,6 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                             <span className="small font-weight-bold">Lifecycle</span>
                             <br />
                             {entity.lifecycle.toLowerCase()}
-                        </div>
-                        <div className="text-body d-inline-block mr-4">
-                            <span className="small font-weight-bold">Owner</span>
-                            <br />
-                            <EntityOwner owner={entity.owner} />
                         </div>
                         <Link to="#" className="d-inline-block btn btn-secondary btn-sm p-2 mb-0">
                             <SettingsIcon className="icon-inline" />

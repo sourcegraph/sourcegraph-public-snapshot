@@ -53,6 +53,7 @@ type Group implements Node {
     description: String
     url: String!
     parentGroup: Group
+    ancestorGroups: [Group!]!
     childGroups: [Group!]!
     members: [Person!]!
     ownedEntities: [CatalogEntity!]!

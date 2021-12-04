@@ -37,6 +37,20 @@ func (r *groupResolver) ParentGroup() gql.GroupResolver {
 	return nil
 }
 
+func (r *groupResolver) AncestorGroups() []gql.GroupResolver {
+	var ancestors []gql.GroupResolver
+
+	cur := r
+	for {
+		cur = groupByName(r.db, cur.group.ParentGroup)
+		if cur == nil {
+			break
+		}
+		ancestors = append(ancestors, cur)
+	}
+	return ancestors
+}
+
 func (r *groupResolver) ChildGroups() []gql.GroupResolver {
 	var childGroups []gql.GroupResolver
 	for _, group := range allGroups(r.db) {
@@ -52,20 +66,20 @@ func (r *groupResolver) Members() []*gql.PersonResolver {
 		members []*gql.PersonResolver
 		seen    = map[string]struct{}{}
 	)
-	recordMember := func(member string) {
+	for _, member := range r.group.Members {
 		if _, seen := seen[member]; seen {
-			return
+			continue
 		}
 		members = append(members, gql.NewPersonResolver(r.db, "", member+"@sourcegraph.com", false))
 		seen[member] = struct{}{}
 	}
-
-	for _, member := range r.group.Members {
-		recordMember(member)
-	}
 	for _, childGroup := range r.ChildGroups() {
-		for _, member := range childGroup.(*groupResolver).group.Members {
-			recordMember(member)
+		for _, member := range childGroup.Members() {
+			if _, seen := seen[member.Email()]; seen {
+				continue
+			}
+			members = append(members, member)
+			seen[member.Email()] = struct{}{}
 		}
 	}
 
