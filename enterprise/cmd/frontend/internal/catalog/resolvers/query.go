@@ -17,12 +17,16 @@ func parseQuery(db database.DB, q string) *queryMatcher {
 	for _, part := range parts {
 		const (
 			relatedToEntityPrefix = "relatedToEntity:"
+			excludeEntityPrefix   = "-entity:"
 			groupPrefix           = "group:"
 		)
 		switch {
 		case strings.HasPrefix(part, relatedToEntityPrefix):
 			relatedToEntityID := graphql.ID(strings.TrimPrefix(part, relatedToEntityPrefix))
 			match.relatedToEntity = entityByID(db, relatedToEntityID)
+
+		case strings.HasPrefix(part, excludeEntityPrefix):
+			match.excludeEntity = graphql.ID(strings.TrimPrefix(part, excludeEntityPrefix))
 
 		case strings.HasPrefix(part, groupPrefix):
 			groupID := graphql.ID(strings.TrimPrefix(part, groupPrefix))
@@ -42,8 +46,9 @@ func parseQuery(db database.DB, q string) *queryMatcher {
 
 type queryMatcher struct {
 	literal         string
-	groups          []gql.GroupResolver
 	relatedToEntity *catalogComponentResolver
+	excludeEntity   graphql.ID
+	groups          []gql.GroupResolver
 
 	once                     sync.Once
 	relatedEntityNamesCached []string
@@ -92,5 +97,8 @@ func (q *queryMatcher) matchNode(c *catalogComponentResolver) bool {
 		return false
 	}
 
-	return isLiteralMatch && (len(q.groups) == 0 || isInAnyGroup(c, q.groups)) && (q.relatedToEntity == nil || isRelatedToEntity(c))
+	return isLiteralMatch &&
+		(q.relatedToEntity == nil || isRelatedToEntity(c)) &&
+		(c.ID() != q.excludeEntity) &&
+		(len(q.groups) == 0 || isInAnyGroup(c, q.groups))
 }

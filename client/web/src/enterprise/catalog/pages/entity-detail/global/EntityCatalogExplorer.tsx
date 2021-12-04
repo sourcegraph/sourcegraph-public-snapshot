@@ -37,7 +37,7 @@ export const EntityCatalogExplorer: React.FunctionComponent<Props> = ({ entity, 
             {viewMode === 'list' ? (
                 <CatalogExplorerList
                     filters={filters}
-                    queryScope={queryScope}
+                    queryScope={`${queryScope} -entity:${entity}`}
                     noBottomBorder={true}
                     itemStartClassName="pl-3"
                     itemEndClassName="pr-3"
