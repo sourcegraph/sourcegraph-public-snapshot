@@ -19,6 +19,8 @@ export const GroupCatalogExplorer: React.FunctionComponent<Props> = ({ group, cl
 
     const [viewMode, setViewMode] = useTemporarySetting('catalog.explorer.viewMode', 'list')
 
+    const queryScope = `group:${group}`
+
     return (
         <div className={classNames('card', className)}>
             <CatalogExplorerViewOptionsRow
@@ -48,13 +50,13 @@ export const GroupCatalogExplorer: React.FunctionComponent<Props> = ({ group, cl
             {viewMode === 'list' ? (
                 <CatalogExplorerList
                     filters={filters}
-                    queryScope={`group:${group}`}
+                    queryScope={queryScope}
                     noBottomBorder={true}
                     itemStartClassName="pl-3"
                     itemEndClassName="pr-3"
                 />
             ) : (
-                <OverviewEntityGraph filters={filters} queryScope={`group:${group}`} className="border-top" />
+                <OverviewEntityGraph filters={filters} queryScope={queryScope} className="border-top" />
             )}
         </div>
     )

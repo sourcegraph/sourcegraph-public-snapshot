@@ -19,9 +19,7 @@ func makeGraphData(db database.DB, match func(*catalogComponentResolver) bool) *
 	var entities []gql.CatalogEntity
 	for _, c := range components {
 		cr := &catalogComponentResolver{component: c, db: db}
-		if match(cr) {
-			entities = append(entities, cr)
-		}
+		entities = append(entities, cr)
 	}
 	graph.nodes = wrapInCatalogEntityInterfaceType(entities)
 
@@ -34,6 +32,7 @@ func makeGraphData(db database.DB, match func(*catalogComponentResolver) bool) *
 		return nil
 	}
 
+	edgeMatches := map[*gql.CatalogEntityResolver]struct{}{}
 	for _, e := range edges {
 		outNode := findNodeByName(e.Out)
 		inNode := findNodeByName(e.In)
@@ -46,8 +45,18 @@ func makeGraphData(db database.DB, match func(*catalogComponentResolver) bool) *
 				outNode: outNode,
 				inNode:  inNode,
 			})
+			edgeMatches[inNode] = struct{}{}
+			edgeMatches[outNode] = struct{}{}
 		}
 	}
+
+	keepNodes := graph.nodes[:0]
+	for _, node := range graph.nodes {
+		if _, edgeMatches := edgeMatches[node]; edgeMatches {
+			keepNodes = append(keepNodes, node)
+		}
+	}
+	graph.nodes = keepNodes
 
 	return &graph
 }

@@ -103,9 +103,12 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, activeNodeI
     }, [activeNodeID, graph.edges])
 
     const viewer = useRef<UncontrolledReactSVGPanZoom>(null)
-    const [dimensions, setDimensions] = useState({ width: 1000, height: 1000 })
+    const [dimensions, setDimensions] = useState({ width: 500, height: 500 })
     return (
-        <div className={classNames(className)} style={{ height: '80vh' }}>
+        <div
+            className={classNames(className)}
+            style={{ height: `${dimensions.height}px`, visibility: dimensions.width === 500 ? 'hidden' : '' }}
+        >
             <AutoSizer>
                 {({ height, width }) => (
                     <UncontrolledReactSVGPanZoom
