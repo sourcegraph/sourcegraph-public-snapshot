@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"github.com/loov/hrtime"
+	"github.com/schollz/progressbar/v3"
 	"github.com/sourcegraph/sourcegraph/cmd/bitmask"
 	"io"
 	"math"
@@ -30,8 +31,20 @@ var (
 			"Clone map from listener for newly accepted socket",
 		},
 	}
-	all        = []Corpus{flask, sourcegraph, kubernetes, linux}
-	querySizes = []int{1, 2, 3, 4, 5, 6, 7, 10, 15, 20}
+	chromium = Corpus{
+		Name: "chromium", URL: "https://github.com/chromium/chromium/archive/refs/tags/98.0.4747.1.zip",
+		Queries: []string{
+			"øø",
+			"799a",
+			"framm",
+			"params.has_value()",
+			"assert_true(params.has",
+			"EXPECT_EQ(kDownloadId, pa",
+			"CanShowContextMenuForParams",
+			"http://somehost/path?x=id%3Daaaa%26v%3D1.1%26uc&x=id%3Dbbbb%26v%3D2.0%26uc",
+		},
+	}
+	all = []Corpus{flask, sourcegraph, kubernetes, linux, chromium}
 )
 
 func main() {
@@ -97,7 +110,11 @@ func DownloadUrlAndCache(corpus *Corpus) (string, error) {
 		return "", err
 	}
 	defer out.Close()
-	_, err = io.Copy(out, resp.Body)
+	bar := progressbar.DefaultBytes(
+		resp.ContentLength,
+		"downloading",
+	)
+	_, err = io.Copy(io.MultiWriter(out, bar), resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -149,7 +166,7 @@ func (c *Corpus) run() error {
 				}
 			}
 			falsePositiveRatio := float64(falsePositives) / math.Max(1, float64(len(matchingPaths)))
-			fmt.Printf("paths %v fp %v (%v%%) \n", len(matchingPaths), falsePositives, falsePositiveRatio)
+			fmt.Printf("paths %v fp %v (%v%%) \n", len(matchingPaths), falsePositives, falsePositiveRatio*100)
 		}
 	}
 	return nil
