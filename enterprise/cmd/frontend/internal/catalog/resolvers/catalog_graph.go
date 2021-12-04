@@ -3,19 +3,25 @@ package resolvers
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/catalog"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func makeGraphData(db database.DB, filterID graphql.ID) *catalogGraphResolver {
+func makeGraphData(db database.DB, match func(*catalogComponentResolver) bool) *catalogGraphResolver {
+	if match == nil {
+		match = func(*catalogComponentResolver) bool { return true }
+	}
+
 	var graph catalogGraphResolver
 
 	components, _, edges := catalog.Data()
 	var entities []gql.CatalogEntity
 	for _, c := range components {
-		entities = append(entities, &catalogComponentResolver{component: c, db: db})
+		cr := &catalogComponentResolver{component: c, db: db}
+		if match(cr) {
+			entities = append(entities, cr)
+		}
 	}
 	graph.nodes = wrapInCatalogEntityInterfaceType(entities)
 
@@ -34,18 +40,26 @@ func makeGraphData(db database.DB, filterID graphql.ID) *catalogGraphResolver {
 		if outNode == nil || inNode == nil {
 			continue
 		}
-		graph.edges = append(graph.edges, &catalogEntityRelationEdgeResolver{
-			type_:   gql.CatalogEntityRelationType(e.Type),
-			outNode: outNode,
-			inNode:  inNode,
-		})
+		if match(outNode.CatalogEntity.(*catalogComponentResolver)) || match(inNode.CatalogEntity.(*catalogComponentResolver)) {
+			graph.edges = append(graph.edges, &catalogEntityRelationEdgeResolver{
+				type_:   gql.CatalogEntityRelationType(e.Type),
+				outNode: outNode,
+				inNode:  inNode,
+			})
+		}
 	}
 
 	return &graph
 }
 
-func (r *catalogResolver) Graph(ctx context.Context) (gql.CatalogGraphResolver, error) {
-	return makeGraphData(r.db, ""), nil
+func (r *catalogResolver) Graph(ctx context.Context, args *gql.CatalogGraphArgs) (gql.CatalogGraphResolver, error) {
+	// TODO(sqs): support literal query search
+	var query string
+	if args.Query != nil {
+		query = *args.Query
+	}
+
+	return makeGraphData(r.db, getQueryMatcher(query)), nil
 }
 
 type catalogGraphResolver struct {

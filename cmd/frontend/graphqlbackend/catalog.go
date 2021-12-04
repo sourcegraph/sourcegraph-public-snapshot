@@ -34,13 +34,17 @@ type GroupArgs struct {
 
 type CatalogResolver interface {
 	Entities(context.Context, *CatalogEntitiesArgs) (CatalogEntityConnectionResolver, error)
-	Graph(context.Context) (CatalogGraphResolver, error)
+	Graph(context.Context, *CatalogGraphArgs) (CatalogGraphResolver, error)
 }
 
 type CatalogEntitiesArgs struct {
 	Query *string
 	First *int32
 	After *string
+}
+
+type CatalogGraphArgs struct {
+	Query *string
 }
 
 type CatalogGraphResolver interface {

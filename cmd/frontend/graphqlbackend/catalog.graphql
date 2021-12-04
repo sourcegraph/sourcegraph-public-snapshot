@@ -10,7 +10,7 @@ extend type Query {
 
 type Catalog {
     entities(query: String, first: Int, after: String): CatalogEntityConnection!
-    graph: CatalogGraph!
+    graph(query: String): CatalogGraph!
 }
 
 enum CatalogEntityType {

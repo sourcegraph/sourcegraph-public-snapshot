@@ -20,6 +20,7 @@ export interface TemporarySettingsSchema {
     'signup.finishedWelcomeFlow': boolean
     'codemonitor.info.visible': boolean
     'catalog.sidebar.visible': boolean
+    'catalog.explorer.viewMode': 'list' | 'graph'
 }
 
 /**

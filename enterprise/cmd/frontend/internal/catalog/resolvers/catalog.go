@@ -20,24 +20,11 @@ func (r *catalogResolver) Entities(ctx context.Context, args *gql.CatalogEntitie
 	if args.Query != nil {
 		query = *args.Query
 	}
-	literal, groupID := parseQuery(query)
-	group := groupByID(groupID)
-	isComponentInGroup := func(c *catalogComponentResolver) bool {
-		if c.component.OwnedBy == group.group.Name {
-			return true
-		}
-		for _, dg := range group.DescendentGroups() {
-			if c.component.OwnedBy == dg.Name() {
-				return true
-			}
-		}
-		return false
-	}
+	match := getQueryMatcher(query)
 
 	var keep []gql.CatalogEntity
 	for _, c := range components {
-		match := strings.Contains(c.component.Name, literal) && (group == nil || isComponentInGroup(c))
-		if match {
+		if match(c) {
 			keep = append(keep, c)
 		}
 	}
@@ -56,4 +43,24 @@ func parseQuery(q string) (literal string, groupID graphql.ID) {
 		}
 	}
 	return
+}
+
+func getQueryMatcher(q string) func(*catalogComponentResolver) bool {
+	literal, groupID := parseQuery(q)
+	group := groupByID(groupID)
+	isComponentInGroup := func(c *catalogComponentResolver) bool {
+		if c.component.OwnedBy == group.group.Name {
+			return true
+		}
+		for _, dg := range group.DescendentGroups() {
+			if c.component.OwnedBy == dg.Name() {
+				return true
+			}
+		}
+		return false
+	}
+
+	return func(c *catalogComponentResolver) bool {
+		return strings.Contains(c.component.Name, literal) && (group == nil || isComponentInGroup(c))
+	}
 }

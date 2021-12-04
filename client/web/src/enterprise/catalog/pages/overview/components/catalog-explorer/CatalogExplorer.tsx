@@ -48,7 +48,7 @@ export const CatalogExplorer: React.FunctionComponent<Props> = () => {
                     <CatalogExplorerList filters={filters} />
                 </Route>
                 <Route path={`${match.path}/graph`} exact={true}>
-                    <OverviewEntityGraph className="border-top" />
+                    <OverviewEntityGraph filters={filters} className="border-top" />
                 </Route>
             </Switch>
         </>

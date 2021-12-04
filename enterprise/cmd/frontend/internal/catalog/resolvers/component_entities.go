@@ -7,7 +7,7 @@ import (
 )
 
 func (r *catalogComponentResolver) RelatedEntities(ctx context.Context) (gql.CatalogEntityRelatedEntityConnectionResolver, error) {
-	graph := makeGraphData(r.db, r.ID())
+	graph := makeGraphData(r.db, nil)
 	var edges []gql.CatalogEntityRelatedEntityEdgeResolver
 	for _, edge := range graph.edges {
 		if edge.OutNode().ID() == r.ID() {

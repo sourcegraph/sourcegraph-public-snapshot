@@ -5,15 +5,21 @@ import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 
 import { CatalogGraphResult, CatalogGraphVariables } from '../../../../../../graphql-operations'
 import { EntityGraph } from '../../../../components/entity-graph/EntityGraph'
+import { CatalogEntityFiltersProps } from '../../../../core/entity-filters'
 
 import { CATALOG_GRAPH } from './gql'
 
-interface Props {
+interface Props extends Pick<CatalogEntityFiltersProps, 'filters'> {
+    queryScope?: string
     className?: string
 }
 
-export const OverviewEntityGraph: React.FunctionComponent<Props> = ({ className }) => {
+export const OverviewEntityGraph: React.FunctionComponent<Props> = ({ filters, queryScope, className }) => {
     const { data, error, loading } = useQuery<CatalogGraphResult, CatalogGraphVariables>(CATALOG_GRAPH, {
+        variables: {
+            query: `${queryScope || ''} ${filters.query || ''}`,
+        },
+
         // Cache this data but always re-request it in the background when we revisit
         // this page to pick up newer changes.
         fetchPolicy: 'cache-and-network',
