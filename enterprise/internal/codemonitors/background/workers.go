@@ -177,7 +177,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	if numResults > 0 {
 		_, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
 		if err != nil {
-			return errors.Errorf("store.EnqueueActionJobsForQuery: %w", err)
+			return errors.Wrap(err, "store.EnqueueActionJobsForQuery")
 		}
 	}
 	// Log next_run and latest_result to table cm_queries.
@@ -189,7 +189,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	// Log the actual query we ran and whether we got any new results.
 	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, newQuery, numResults)
 	if err != nil {
-		return errors.Errorf("LogSearch: %w", err)
+		return errors.Wrap(err, "UpdateTriggerJobWithResults")
 	}
 	return nil
 }
@@ -208,7 +208,7 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 
 	j, ok := record.(*cm.ActionJob)
 	if !ok {
-		return errors.Errorf("type assertion failed")
+		return errors.Errorf("expected record of type *cm.ActionJob, got %T", record)
 	}
 
 	switch {
@@ -232,22 +232,22 @@ func (r *actionRunner) handleEmail(ctx context.Context, j *cm.ActionJob) error {
 
 	m, err := s.GetActionJobMetadata(ctx, j.ID)
 	if err != nil {
-		return errors.Errorf("store.GetActionJobMetadata: %w", err)
+		return errors.Wrap(err, "GetActionJobMetadata")
 	}
 
 	e, err := s.GetEmailAction(ctx, *j.Email)
 	if err != nil {
-		return errors.Errorf("store.ActionEmailByIDInt64: %w", err)
+		return errors.Wrap(err, "GetEmailAction")
 	}
 
 	recs, err := s.ListRecipients(ctx, cm.ListRecipientsOpts{EmailID: j.Email})
 	if err != nil {
-		return errors.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
+		return errors.Wrap(err, "ListRecipients")
 	}
 
 	data, err := email.NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
 	if err != nil {
-		return errors.Errorf("email.NewTemplateDataForNewSearchResults: %w", err)
+		return errors.Wrap(err, "NewTemplateDataForNewSearchResults")
 	}
 	for _, rec := range recs {
 		if rec.NamespaceOrgID != nil {
@@ -255,7 +255,7 @@ func (r *actionRunner) handleEmail(ctx context.Context, j *cm.ActionJob) error {
 			continue
 		}
 		if rec.NamespaceUserID == nil {
-			return errors.Errorf("nil recipient")
+			return errors.New("nil recipient")
 		}
 		err = email.SendEmailForNewSearchResult(ctx, *rec.NamespaceUserID, data)
 		if err != nil {
