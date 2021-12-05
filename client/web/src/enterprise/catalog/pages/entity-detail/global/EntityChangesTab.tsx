@@ -8,7 +8,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { CatalogEntityDetailFields } from '../../../../../graphql-operations'
 
-import { ComponentCommits } from './ComponentCommits'
+import { ComponentCommits } from './EntityCommits'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     entity: CatalogEntityDetailFields

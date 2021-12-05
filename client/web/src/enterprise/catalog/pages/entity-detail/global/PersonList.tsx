@@ -14,10 +14,14 @@ interface Item {
     text: string | React.ReactFragment
     textTooltip?: string
     date?: string
+    action?: React.ReactFragment
 }
 
 interface Props
-    extends Pick<React.ComponentPropsWithoutRef<typeof ScrollListHorizontal>, 'title' | 'listTag' | 'className'> {
+    extends Pick<
+        React.ComponentPropsWithoutRef<typeof ScrollListHorizontal>,
+        'title' | 'description' | 'listTag' | 'className' | 'listClassName'
+    > {
     items: Item[]
     orientation: 'horizontal' | 'vertical'
     primaryText?: 'person' | 'text'
@@ -53,10 +57,10 @@ export const PersonList: React.FunctionComponent<Props> = ({ items, orientation,
         </ScrollListHorizontal>
     ) : (
         <ScrollListVertical {...props}>
-            {items.map(({ person, text, textTooltip, date }) => (
-                <li key={person.email} className={classNames('list-group-item d-flex align-items-center')}>
+            {items.map(({ person, text, textTooltip, date, action }) => (
+                <li key={person.email} className={classNames('list-group-item p-2 d-flex align-items-center')}>
                     <UserAvatar className="icon-inline mr-2 " user={person} size={28} />
-                    <div>
+                    <div className="flex-1">
                         <PersonLink
                             person={person}
                             className={classNames(
@@ -76,6 +80,7 @@ export const PersonList: React.FunctionComponent<Props> = ({ items, orientation,
                             )}
                         </div>
                     </div>
+                    {action}
                 </li>
             ))}
         </ScrollListVertical>

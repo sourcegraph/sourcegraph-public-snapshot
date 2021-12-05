@@ -75,6 +75,10 @@ func (r *catalogComponentResolver) WhoKnows(ctx context.Context, args *gql.WhoKn
 		}
 	}
 
+	// Delete hi@sourcegraph.com dummy owner.
+	// TODO(sqs): Come up with a general way to omit these dummy entries.
+	delete(byEmail, "hi@sourcegraph.com")
+
 	// Score
 	for _, edge := range byEmail {
 		type reasonScore struct {

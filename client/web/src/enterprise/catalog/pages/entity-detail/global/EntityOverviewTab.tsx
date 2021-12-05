@@ -20,6 +20,7 @@ import { EntityOwner } from '../../../components/entity-owner/EntityOwner'
 
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 import { EntityCatalogExplorer } from './EntityCatalogExplorer'
+import { whoKnowsDescription } from './EntityWhoKnowsTab'
 import { OverviewStatusContexts } from './OverviewStatusContexts'
 
 interface Props {
@@ -68,7 +69,7 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, clas
                     #dev-frontend
                 </Link>
                 <hr className="my-3" />
-                <dl>
+                <dl className="mb-3">
                     <dt>Owner</dt>
                     <dd>
                         <EntityOwner owner={entity.owner} className="d-block" />
@@ -86,6 +87,13 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, clas
                     <dt>Lifecycle</dt>
                     <dd>{entity.lifecycle.toLowerCase()}</dd>
                 </dl>
+                <Link
+                    to={`${entity.url}/who-knows`}
+                    className="btn btn-outline-secondary mb-3"
+                    data-tooltip={whoKnowsDescription(entity)}
+                >
+                    Who knows...?
+                </Link>
             </div>
         </div>
         <div className="col-md-8 col-lg-9 col-xl-10 p-3">
