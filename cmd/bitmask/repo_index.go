@@ -27,6 +27,7 @@ var (
 )
 
 const (
+	Version                  = 1
 	targetFalsePositiveRatio = 0.01
 	maxFileSize              = 1 << 20 // 1_048_576
 	bloomSizePadding         = 5
@@ -288,10 +289,11 @@ func DeserializeRepoIndex(reader io.Reader) (*RepoIndex, error) {
 }
 
 func NewOnDiskRepoIndex(fs FileSystem, outputPath string) error {
-	file, err := os.CreateTemp("sg", "repo-index")
+	file, err := os.CreateTemp("", "repo-index")
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "NewOnDiskRepoIndex - failed to create temporary directory")
 	}
+	tmpName := file.Name()
 	defer func() {
 		if file != nil {
 			file.Close()
@@ -299,7 +301,7 @@ func NewOnDiskRepoIndex(fs FileSystem, outputPath string) error {
 	}()
 	filenames, err := fs.ListRelativeFilenames()
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "NewOnDiskRepoIndex - failed fs.ListRelativeFilenames")
 	}
 	for index := range repoIndexes(fs, filenames) {
 		_, err = index.WriteTo(file)
@@ -308,7 +310,12 @@ func NewOnDiskRepoIndex(fs FileSystem, outputPath string) error {
 		}
 	}
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "NewOnDiskRepoIndex - failed to write repo indexes")
+	}
+	err = file.Close()
+	file = nil
+	if err != nil {
+		return errors.Wrapf(err, "NewOnDiskRepoIndex - failed to close tmp file")
 	}
 	stat, err := os.Stat(outputPath)
 	if err == nil {
@@ -317,25 +324,28 @@ func NewOnDiskRepoIndex(fs FileSystem, outputPath string) error {
 		}
 		err = os.Remove(outputPath)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "NewOnDiskRepoIndex - failed to remove output path")
 		}
 	} else {
 		err = os.MkdirAll(filepath.Dir(outputPath), 0755)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "NewOnDiskRepoIndex - failed to MkdirAll")
 		}
 	}
-	target, err := os.Open(outputPath)
+	destination, err := os.Create(outputPath)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "NewOnDiskRepoIndex - failed to create tmp file (after closing it)")
 	}
+	defer destination.Close()
 
-	_, err = io.Copy(target, file)
+	source, err := os.Open(tmpName)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "NewOnDiskRepoIndex - failed to re-open tmp file")
 	}
-	err = file.Close()
-	file = nil
+	_, err = io.Copy(destination, source)
+	if err != nil {
+		return errors.Wrapf(err, "NewOnDiskRepoIndex - failed to copy from tmp file to destination path")
+	}
 	return err
 }
 

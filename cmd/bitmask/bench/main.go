@@ -3,8 +3,8 @@ package main
 import (
 	"crypto/md5"
 	"fmt"
+	"github.com/cockroachdb/errors"
 	"github.com/loov/hrtime"
-	"github.com/loov/hrtime/hrplot"
 	"github.com/schollz/progressbar/v3"
 	"github.com/sourcegraph/sourcegraph/cmd/bitmask"
 	"io"
@@ -53,17 +53,17 @@ var (
 	all = []Corpus{flask, sourcegraph, kubernetes, linux, chromium}
 )
 
+//func main() {
+//	fs, err := flask.LoadFileSystem()
+//	if err != nil {
+//		panic(err)
+//	}
+//	err = bitmask.NewOnDiskRepoIndex(fs, flask.indexCachePath())
+//	if err != nil {
+//		panic(err)
+//	}
+//}
 func main() {
-	fs, err := flask.LoadFileSystem()
-	if err != nil {
-		panic(err)
-	}
-	err = bitmask.NewOnDiskRepoIndex(fs, flask.indexCachePath())
-	if err != nil {
-		panic(err)
-	}
-}
-func main2() {
 	if len(os.Args) < 2 {
 		panic("missing argument for corpus name")
 	}
@@ -147,7 +147,47 @@ func (c *Corpus) LoadRepoIndex() (*bitmask.RepoIndex, error) {
 	if err != nil {
 		return nil, err
 	}
-	return bitmask.NewInMemoryRepoIndex(fs)
+	cached, err := c.loadCachedRepoIndex()
+	if err == nil && cached != nil {
+		return cached, nil
+	}
+
+	err = bitmask.NewOnDiskRepoIndex(fs, c.indexCachePath())
+	if err != nil {
+		return nil, err
+	}
+	return c.loadCachedRepoIndex()
+}
+
+func (c *Corpus) loadCachedRepoIndex() (*bitmask.RepoIndex, error) {
+	stat, err := os.Stat(c.indexCachePath())
+	if err != nil {
+		return nil, err
+	}
+	if !stat.Mode().IsRegular() {
+		return nil, errors.Errorf("no such file: %v", c.indexCachePath())
+	}
+	file, err := os.Open(c.indexCachePath())
+	if err != nil {
+		return nil, err
+	}
+	var blobs []bitmask.BlobIndex
+	index := &bitmask.BlobIndex{}
+	from, err := index.ReadFrom(file)
+	for from > 0 && err == nil {
+		blobs = append(blobs, *index)
+		from, err = index.ReadFrom(file)
+	}
+	//if err != nil {
+	//	return nil, errors
+	//}
+	result := &bitmask.RepoIndex{Blobs: blobs}
+	fs, err := c.LoadFileSystem()
+	if err != nil {
+		return nil, err
+	}
+	result.FS = fs
+	return result, nil
 }
 
 func (c *Corpus) zipCachePath() string {
@@ -160,7 +200,12 @@ func (c *Corpus) zipCachePath() string {
 func (c *Corpus) indexCachePath() string {
 	return filepath.Join(
 		os.TempDir(),
-		fmt.Sprintf("%v-%x.repo-index", c.Name, md5.Sum([]byte(c.URL))),
+		fmt.Sprintf(
+			"%v-%x.repo-index-v%v",
+			c.Name,
+			md5.Sum([]byte(c.URL)),
+			bitmask.Version,
+		),
 	)
 }
 
@@ -185,7 +230,6 @@ func (c *Corpus) run() error {
 		bench.Laps()
 		hg := bench.Histogram(5)
 		fmt.Println(hg)
-		hrplot.All("all.svg", bench)
 		if index.FS != nil {
 			falsePositives := 0
 			for _, p := range matchingPaths {
@@ -196,7 +240,7 @@ func (c *Corpus) run() error {
 				}
 			}
 			falsePositiveRatio := float64(falsePositives) / math.Max(1, float64(len(matchingPaths)))
-			fmt.Printf("paths %v fp %v (%.2f%%) \n", len(matchingPaths), falsePositives, falsePositiveRatio*100)
+			fmt.Printf("paths %v fp %v (%.2f%%)\n", len(matchingPaths), falsePositives, falsePositiveRatio*100)
 		}
 	}
 	return nil
