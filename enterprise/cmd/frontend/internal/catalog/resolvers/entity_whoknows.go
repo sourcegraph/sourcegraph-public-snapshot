@@ -60,6 +60,7 @@ func (r *catalogComponentResolver) WhoKnows(ctx context.Context, args *gql.WhoKn
 		}
 	}
 
+	maxCalls := 0
 	for _, caller := range callers {
 		email := caller.Node().Email()
 		e := byEmail[email]
@@ -68,79 +69,77 @@ func (r *catalogComponentResolver) WhoKnows(ctx context.Context, args *gql.WhoKn
 			byEmail[email] = e
 		}
 		e.callerEdge = caller.(*catalogComponentUsedByPersonEdgeResolver)
+
+		if e.callerEdge.data.LineCount > maxCalls {
+			maxCalls = e.callerEdge.data.LineCount
+		}
 	}
 
 	// Score
 	for _, edge := range byEmail {
-		var (
-			lastActivity     time.Time
-			lastActivityType string
-
-			authorCount         int
-			authorProportion    float64
-			codeOwnerProportion float64
-			callCount           int
-		)
-		if edge.authorEdge != nil {
-			authorCount = edge.authorEdge.data.LineCount
-			authorProportion = edge.authorEdge.AuthoredLineProportion()
-			if lastCommit := edge.authorEdge.data.LastCommitDate; lastCommit.After(lastActivity) {
-				lastActivity = lastCommit
-				lastActivityType = "Contributed"
-			}
-		}
-		if edge.codeOwnerEdge != nil {
-			codeOwnerProportion = edge.codeOwnerEdge.FileProportion()
-		}
-		if edge.callerEdge != nil {
-			callCount = edge.callerEdge.data.LineCount
-			if lastCommit := edge.callerEdge.data.LastCommitDate; lastCommit.After(lastActivity) {
-				lastActivity = lastCommit
-				lastActivityType = "Called API"
-			}
-		}
-
 		type reasonScore struct {
 			reason string
 			score  float64
 		}
 		var reasonScores []reasonScore
 
-		daysAgo := time.Since(lastActivity) / (24 * time.Hour)
-		reasonScores = append(reasonScores, reasonScore{
-			reason: fmt.Sprintf("%s %s", lastActivityType, humanize.Time(lastActivity)),
-			score:  5 / float64(daysAgo),
-		})
+		if edge.authorEdge != nil {
+			lastActivity := edge.authorEdge.data.LastCommitDate
+			if daysAgo := time.Since(lastActivity) / (24 * time.Hour); daysAgo < 45 {
+				reasonScores = append(reasonScores, reasonScore{
+					reason: fmt.Sprintf("Contributed %s", humanize.Time(lastActivity)),
+					score:  7 / float64(daysAgo),
+				})
+			}
 
-		if codeOwnerProportion > 0.03 {
-			reasonScores = append(reasonScores, reasonScore{
-				reason: fmt.Sprintf("Owns %.0f%% of the code", codeOwnerProportion*100),
-				score:  5 * codeOwnerProportion,
-			})
+			authorCount := edge.authorEdge.data.LineCount
+			authorProportion := edge.authorEdge.AuthoredLineProportion()
+			if authorCount > 50 || authorProportion > 0.05 {
+				const maxAuthorCountScale = 2500
+				scaledAuthorCount := float64(authorCount) / maxAuthorCountScale
+				if scaledAuthorCount > 1 {
+					scaledAuthorCount = 1
+				}
+				reasonScores = append(reasonScores, reasonScore{
+					reason: fmt.Sprintf("Major code contributor (%d lines, %.0f%%)", authorCount, authorProportion*100),
+					score:  5*scaledAuthorCount + 5*authorProportion,
+				})
+			}
+
 		}
 
-		if authorCount > 50 {
-			const maxAuthorCountScale = 2500
-			scaledAuthorCount := float64(authorCount) / maxAuthorCountScale
-			if scaledAuthorCount > 1 {
-				scaledAuthorCount = 1
+		if edge.codeOwnerEdge != nil {
+			if codeOwnerProportion := edge.codeOwnerEdge.FileProportion(); codeOwnerProportion > 0.03 {
+				reasonScores = append(reasonScores, reasonScore{
+					reason: fmt.Sprintf("Owns %.0f%% of the code", codeOwnerProportion*100),
+					score:  5 * codeOwnerProportion,
+				})
 			}
-			reasonScores = append(reasonScores, reasonScore{
-				reason: fmt.Sprintf("Major code contributor (%d lines, %.0f%%)", authorCount, authorProportion*100),
-				score:  scaledAuthorCount,
-			})
+
 		}
 
-		if callCount > 2 {
-			const maxCallCountScale = 200
-			scaledCallCount := float64(callCount) / maxCallCountScale
-			if scaledCallCount > 1 {
-				scaledCallCount = 1
+		if edge.callerEdge != nil {
+			lastActivity := edge.callerEdge.data.LastCommitDate
+			daysAgo := time.Since(lastActivity) / (24 * time.Hour)
+			recentlyCalled := daysAgo < 45
+			if recentlyCalled {
+				reasonScores = append(reasonScores, reasonScore{
+					reason: fmt.Sprintf("Called API %s", humanize.Time(lastActivity)),
+					score:  0.5 / float64(daysAgo),
+				})
 			}
-			reasonScores = append(reasonScores, reasonScore{
-				reason: fmt.Sprintf("Frequently calls the API (%d times)", callCount),
-				score:  scaledCallCount,
-			})
+
+			if callCount := edge.callerEdge.data.LineCount; callCount > 5 {
+				scaledCallCount := float64(callCount) / float64(maxCalls)
+				if recentlyCalled {
+					scaledCallCount *= 3
+				}
+				reasonScores = append(reasonScores, reasonScore{
+					reason: fmt.Sprintf("Frequently calls the API (%d times)", callCount),
+					score:  scaledCallCount,
+				})
+			}
+
 		}
 
 		sort.Slice(reasonScores, func(i, j int) bool { return reasonScores[i].score > reasonScores[j].score })
@@ -171,7 +170,7 @@ func (r *catalogComponentResolver) WhoKnows(ctx context.Context, args *gql.WhoKn
 
 	// Only take top.
 	const (
-		minScore = 0.15
+		minScore = 0.1
 		maxEdges = 10
 	)
 	for i, edge := range edges {
