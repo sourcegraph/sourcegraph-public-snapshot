@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
+import { Timestamp } from '../../../../../../components/time/Timestamp'
 import { CatalogEntityForExplorerFields, CatalogEntityRelationFields } from '../../../../../../graphql-operations'
 import { CatalogEntityIcon } from '../../../../components/CatalogEntityIcon'
 import { EntityOwner } from '../../../../components/entity-owner/EntityOwner'
@@ -41,6 +42,11 @@ export const CatalogEntityRow: React.FunctionComponent<Props> = ({
         </h3>
         <EntityOwner owner={node.owner} className="text-nowrap" blankIfNone={true} />
         <span className="text-nowrap">{node.lifecycle.toLowerCase()}</span>
+        {node.__typename === 'CatalogComponent' && node.commits ? (
+            <Timestamp className="text-nowrap" date={node.commits.nodes[0].author.date} noAbout={true} strict={true} />
+        ) : (
+            <span />
+        )}
         <div className={classNames('text-muted text-truncate', itemEndClassName)}>{node.description}</div>
         <div className={classNames({ 'border-top': !noBottomBorder }, styles.separator)} />
     </>
@@ -51,7 +57,7 @@ export const CatalogEntityRowsHeader: React.FunctionComponent<
         before?: string
     }
 > = ({ before, itemStartClassName, itemEndClassName }) => {
-    const columns = [before, 'Name', 'Owner', 'Lifecycle', 'Description'].filter(isDefined)
+    const columns = [before, 'Name', 'Owner', 'Lifecycle', 'Last commit', 'Description'].filter(isDefined)
     return (
         <>
             {!before && <span />}
