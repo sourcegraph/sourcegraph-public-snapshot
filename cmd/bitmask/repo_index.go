@@ -287,7 +287,59 @@ func DeserializeRepoIndex(reader io.Reader) (*RepoIndex, error) {
 	return r, nil
 }
 
-func NewRepoIndex(fs FileSystem) (*RepoIndex, error) {
+func NewOnDiskRepoIndex(fs FileSystem, outputPath string) error {
+	file, err := os.CreateTemp("sg", "repo-index")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if file != nil {
+			file.Close()
+		}
+	}()
+	filenames, err := fs.ListRelativeFilenames()
+	if err != nil {
+		return err
+	}
+	for index := range repoIndexes(fs, filenames) {
+		_, err = index.WriteTo(file)
+		if err != nil {
+			break
+		}
+	}
+	if err != nil {
+		return err
+	}
+	stat, err := os.Stat(outputPath)
+	if err == nil {
+		if stat.IsDir() {
+			return errors.Errorf("can't write to directory %v", outputPath)
+		}
+		err = os.Remove(outputPath)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = os.MkdirAll(filepath.Dir(outputPath), 0755)
+		if err != nil {
+			return err
+		}
+	}
+	target, err := os.Open(outputPath)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(target, file)
+	if err != nil {
+		return err
+	}
+	err = file.Close()
+	file = nil
+	return err
+}
+
+func NewInMemoryRepoIndex(fs FileSystem) (*RepoIndex, error) {
 	filenames, err := fs.ListRelativeFilenames()
 	if err != nil {
 		return nil, err

@@ -73,7 +73,7 @@ func BenchmarkQuery(b *testing.B) {
 
 func newRepoIndex(t *testing.T) *RepoIndex {
 	fs := InMemoryFileSystem{map[string]string{"readme.md": exampleText}}
-	r, err := NewRepoIndex(&fs)
+	r, err := NewInMemoryRepoIndex(&fs)
 	if err != nil {
 		t.Fatalf("failed to create repo index %v", err)
 	}
@@ -122,7 +122,7 @@ func FalsePositive(t *testing.T) {
 				file: string(bytes),
 			},
 		}
-		r, err := NewRepoIndex(&fs)
+		r, err := NewInMemoryRepoIndex(&fs)
 		if err != nil {
 			panic(err)
 		}

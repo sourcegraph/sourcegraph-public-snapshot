@@ -54,6 +54,16 @@ var (
 )
 
 func main() {
+	fs, err := flask.LoadFileSystem()
+	if err != nil {
+		panic(err)
+	}
+	err = bitmask.NewOnDiskRepoIndex(fs, flask.indexCachePath())
+	if err != nil {
+		panic(err)
+	}
+}
+func main2() {
 	if len(os.Args) < 2 {
 		panic("missing argument for corpus name")
 	}
@@ -97,10 +107,7 @@ type Corpus struct {
 }
 
 func DownloadUrlAndCache(corpus *Corpus) (string, error) {
-	path := filepath.Join(
-		os.TempDir(),
-		fmt.Sprintf("%v-%x.zip", corpus.Name, md5.Sum([]byte(corpus.URL))),
-	)
+	path := corpus.zipCachePath()
 	stat, err := os.Stat(path)
 	if err == nil && !stat.IsDir() && stat.Size() > 0 {
 		return path, nil
@@ -140,7 +147,21 @@ func (c *Corpus) LoadRepoIndex() (*bitmask.RepoIndex, error) {
 	if err != nil {
 		return nil, err
 	}
-	return bitmask.NewRepoIndex(fs)
+	return bitmask.NewInMemoryRepoIndex(fs)
+}
+
+func (c *Corpus) zipCachePath() string {
+	return filepath.Join(
+		os.TempDir(),
+		fmt.Sprintf("%v-%x.zip", c.Name, md5.Sum([]byte(c.URL))),
+	)
+}
+
+func (c *Corpus) indexCachePath() string {
+	return filepath.Join(
+		os.TempDir(),
+		fmt.Sprintf("%v-%x.repo-index", c.Name, md5.Sum([]byte(c.URL))),
+	)
 }
 
 func (c *Corpus) run() error {

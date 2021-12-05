@@ -22,7 +22,7 @@ func ReadCache(cacheDir string) (r *RepoIndex, err error) {
 }
 
 func WriteCache(dir, cacheDir string) error {
-	r, err := NewRepoIndex(&GitFileSystem{dir})
+	r, err := NewInMemoryRepoIndex(&GitFileSystem{dir})
 	if err != nil {
 		return err
 	}
