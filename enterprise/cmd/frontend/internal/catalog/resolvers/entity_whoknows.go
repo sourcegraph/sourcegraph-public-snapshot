@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
@@ -107,14 +108,14 @@ func (r *catalogComponentResolver) WhoKnows(ctx context.Context, args *gql.WhoKn
 
 		daysAgo := time.Since(lastActivity) / (24 * time.Hour)
 		reasonScores = append(reasonScores, reasonScore{
-			reason: fmt.Sprintf("%s %d days ago", lastActivityType, daysAgo),
-			score:  1 / (float64(daysAgo) * float64(daysAgo)),
+			reason: fmt.Sprintf("%s %s", lastActivityType, humanize.Time(lastActivity)),
+			score:  5 / float64(daysAgo),
 		})
 
-		if codeOwnerProportion > 0.1 {
+		if codeOwnerProportion > 0.03 {
 			reasonScores = append(reasonScores, reasonScore{
 				reason: fmt.Sprintf("Owns %.0f%% of the code", codeOwnerProportion*100),
-				score:  codeOwnerProportion,
+				score:  5 * codeOwnerProportion,
 			})
 		}
 
@@ -167,6 +168,19 @@ func (r *catalogComponentResolver) WhoKnows(ctx context.Context, args *gql.WhoKn
 		edges = append(edges, edge)
 	}
 	sort.Slice(edges, func(i, j int) bool { return edges[i].Score() > edges[j].Score() })
+
+	// Only take top.
+	const (
+		minScore = 0.15
+		maxEdges = 10
+	)
+	for i, edge := range edges {
+		if edge.Score() < minScore || i > maxEdges {
+			edges = edges[:i]
+			break
+		}
+	}
+
 	return edges, nil
 }
 

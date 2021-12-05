@@ -11,7 +11,7 @@ import { ScrollListHorizontal, ScrollListVertical } from './ScrollList'
 
 interface Item {
     person: PersonLinkFields & { avatarURL: string | null }
-    text: string
+    text: string | React.ReactFragment
     textTooltip?: string
     date?: string
 }
@@ -20,10 +20,11 @@ interface Props
     extends Pick<React.ComponentPropsWithoutRef<typeof ScrollListHorizontal>, 'title' | 'listTag' | 'className'> {
     items: Item[]
     orientation: 'horizontal' | 'vertical'
+    primaryText?: 'person' | 'text'
     className?: string
 }
 
-export const PersonList: React.FunctionComponent<Props> = ({ items, orientation, ...props }) =>
+export const PersonList: React.FunctionComponent<Props> = ({ items, orientation, primaryText = 'text', ...props }) =>
     orientation === 'horizontal' ? (
         <ScrollListHorizontal {...props}>
             {items.map(({ person, text, textTooltip, date }) => (
@@ -32,8 +33,14 @@ export const PersonList: React.FunctionComponent<Props> = ({ items, orientation,
                     className={classNames('list-group-item text-center pt-2', styles.itemHorizontal)}
                 >
                     <UserAvatar className="icon-inline" user={person} />
-                    <PersonLink person={person} className="text-muted small text-truncate d-block" />
-                    <div className={classNames(styles.itemText)} title={textTooltip}>
+                    <PersonLink
+                        person={person}
+                        className={classNames('small text-truncate d-block', primaryText === 'text' && 'text-muted')}
+                    />
+                    <div
+                        className={classNames(styles.itemText, primaryText === 'person' && 'text-muted')}
+                        title={textTooltip}
+                    >
                         {text}
                     </div>
                     {date && (
@@ -50,8 +57,17 @@ export const PersonList: React.FunctionComponent<Props> = ({ items, orientation,
                 <li key={person.email} className={classNames('list-group-item d-flex align-items-center')}>
                     <UserAvatar className="icon-inline mr-2 " user={person} size={28} />
                     <div>
-                        <PersonLink person={person} className="text-muted small text-truncate d-block" />
-                        <div className={classNames(styles.itemText)} title={textTooltip}>
+                        <PersonLink
+                            person={person}
+                            className={classNames(
+                                'small text-truncate d-block',
+                                primaryText === 'text' && 'text-muted'
+                            )}
+                        />
+                        <div
+                            className={classNames(styles.itemText, primaryText === 'person' && 'text-muted')}
+                            title={textTooltip}
+                        >
                             {text}
                             {date && (
                                 <span className={classNames('ml-1 text-muted', styles.itemDate)}>

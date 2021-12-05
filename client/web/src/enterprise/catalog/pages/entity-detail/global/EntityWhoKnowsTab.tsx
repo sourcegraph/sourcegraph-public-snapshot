@@ -1,12 +1,12 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { CatalogComponentWhoKnowsFields } from '../../../../../graphql-operations'
+import { CatalogEntityWhoKnowsFields } from '../../../../../graphql-operations'
 
 import { PersonList } from './PersonList'
 
 interface Props {
-    catalogComponent: CatalogComponentWhoKnowsFields
+    catalogComponent: CatalogEntityWhoKnowsFields
     className?: string
 }
 
@@ -17,9 +17,19 @@ export const EntityWhoKnowsTab: React.FunctionComponent<Props> = ({ catalogCompo
                 title="Who knows"
                 listTag="ol"
                 orientation="vertical"
-                items={whoKnows.slice(0, 10).map(({ node: person, score, reasons }) => ({
+                primaryText="person"
+                items={whoKnows.map(({ node: person, score, reasons }) => ({
                     person,
-                    text: reasons.join(', '),
+                    text: (
+                        <ul className="list-inline">
+                            {reasons.map((reason, index) => (
+                                <li key={index} className="list-inline-item">
+                                    {index !== 0 && <span className="mr-2">&bull;</span>}
+                                    {reason}
+                                </li>
+                            ))}
+                        </ul>
+                    ),
                     textTooltip: score.toFixed(1),
                 }))}
                 className={className}
