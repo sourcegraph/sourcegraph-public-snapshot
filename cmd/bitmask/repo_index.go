@@ -28,6 +28,7 @@ const (
 	targetFalsePositiveRatio = 0.01
 	maxFileSize              = 1 << 20 // 1_048_576
 	bloomSizePadding         = 5
+	maximumQueryNgrams       = 100
 )
 
 type RepoIndex struct {
@@ -180,7 +181,7 @@ func onGrams(text string, onBytes OnBytes) {
 	}
 }
 
-func CollectGrams(query string) [][]byte {
+func CollectQueryNgrams(query string) [][]byte {
 	var result [][]byte
 	var arities []int
 	onGrams(query, func(b []byte, arity int) {
@@ -203,6 +204,9 @@ func CollectGrams(query string) [][]byte {
 		}
 		return arities[i] > arities[j]
 	})
+	if len(result) > maximumQueryNgrams {
+		result = result[:maximumQueryNgrams]
+	}
 	return result
 }
 
@@ -381,7 +385,7 @@ func (r *RepoIndex) pathsMatchingQuerySync(
 }
 
 func (r *RepoIndex) PathsMatchingQuerySync(query string) []string {
-	grams := CollectGrams(query)
+	grams := CollectQueryNgrams(query)
 	var result []string
 	r.pathsMatchingQuerySync(grams, r.Blobs, func(matchingPath string) {
 		result = append(result, matchingPath)
@@ -390,7 +394,7 @@ func (r *RepoIndex) PathsMatchingQuerySync(query string) []string {
 }
 
 func (r *RepoIndex) PathsMatchingQuery(query string) chan string {
-	grams := CollectGrams(query)
+	grams := CollectQueryNgrams(query)
 	res := make(chan string, len(r.Blobs))
 	batchSize := 10_000
 	var wg sync.WaitGroup

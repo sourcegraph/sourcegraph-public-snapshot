@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"github.com/loov/hrtime"
+	"github.com/loov/hrtime/hrplot"
 	"github.com/schollz/progressbar/v3"
 	"github.com/sourcegraph/sourcegraph/cmd/bitmask"
 	"io"
@@ -19,8 +20,13 @@ var (
 		Name: "flask", URL: "https://github.com/pallets/flask/archive/refs/tags/2.0.2.zip",
 		Queries: []string{"Z", "62", "204", "text", "Text", "96.944917", "sqlite3", "flask.request.endpoint"},
 	}
-	sourcegraph = Corpus{Name: "sourcegraph", URL: "https://github.com/sourcegraph/sourcegraph/archive/refs/tags/v3.34.1.zip"}
-	kubernetes  = Corpus{Name: "kubernetes", URL: "https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.22.4.zip",
+	sourcegraph = Corpus{Name: "sourcegraph", URL: "https://github.com/sourcegraph/sourcegraph/archive/refs/tags/v3.34.1.zip",
+		Queries: []string{
+			"ö", "oö", "121", "OLA", "page", "Page", "Repository", "FileTree", "bloomf",
+			"COMMENT ON COLUMN lsif", "The identifier of the associated dump",
+		},
+	}
+	kubernetes = Corpus{Name: "kubernetes", URL: "https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.22.4.zip",
 		Queries: []string{"OPZ", "Q13", "rrra", "Resolver", "buildServiceResolver", "cache.ResourceEventHandlerFuncs"},
 	}
 	linux = Corpus{Name: "linux", URL: "https://github.com/torvalds/linux/archive/refs/tags/v5.16-rc3.zip",
@@ -156,6 +162,7 @@ func (c *Corpus) run() error {
 			}
 		}
 		fmt.Println(bench.Histogram(5))
+		hrplot.All("all.svg", bench)
 		if index.FS != nil {
 			falsePositives := 0
 			for _, p := range matchingPaths {
@@ -166,7 +173,7 @@ func (c *Corpus) run() error {
 				}
 			}
 			falsePositiveRatio := float64(falsePositives) / math.Max(1, float64(len(matchingPaths)))
-			fmt.Printf("paths %v fp %v (%v%%) \n", len(matchingPaths), falsePositives, falsePositiveRatio*100)
+			fmt.Printf("paths %v fp %v (%.2f%%) \n", len(matchingPaths), falsePositives, falsePositiveRatio*100)
 		}
 	}
 	return nil

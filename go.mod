@@ -325,6 +325,8 @@ require (
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/hashicorp/go-hclog v0.16.2 // indirect
 	github.com/loov/hrtime v1.0.3 // indirect
+	github.com/loov/hrtime/hrplot v1.0.2 // indirect
+	github.com/loov/plot v0.0.0-20200413101321-e09a6f01d2f5 // indirect
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
 	golang.org/x/perf v0.0.0-20211012211434-03971e389cd3 // indirect
 	k8s.io/klog/v2 v2.30.0 // indirect
