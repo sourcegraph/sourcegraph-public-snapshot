@@ -3,7 +3,7 @@ package dbconn
 import (
 	"database/sql"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migrations"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
 // NewFrontendDB creates a new connection to the frontend database. After successful connection,
@@ -16,7 +16,7 @@ import (
 //
 // This connection is not expected to be closed but last the life of the calling application.
 func NewFrontendDB(dsn, appName string, migrate bool) (*sql.DB, error) {
-	migrations := []*migrations.Schema{migrations.Frontend}
+	migrations := []*schemas.Schema{schemas.Frontend}
 	if !migrate {
 		migrations = nil
 	}
@@ -35,7 +35,7 @@ func NewFrontendDB(dsn, appName string, migrate bool) (*sql.DB, error) {
 //
 // This connection is not expected to be closed but last the life of the calling application.
 func NewCodeIntelDB(dsn, appName string, migrate bool) (*sql.DB, error) {
-	migrations := []*migrations.Schema{migrations.CodeIntel}
+	migrations := []*schemas.Schema{schemas.CodeIntel}
 	if !migrate {
 		migrations = nil
 	}
@@ -54,7 +54,7 @@ func NewCodeIntelDB(dsn, appName string, migrate bool) (*sql.DB, error) {
 //
 // This connection is not expected to be closed but last the life of the calling application.
 func NewCodeInsightsDB(dsn, appName string, migrate bool) (*sql.DB, error) {
-	migrations := []*migrations.Schema{migrations.CodeInsights}
+	migrations := []*schemas.Schema{schemas.CodeInsights}
 	if !migrate {
 		migrations = nil
 	}
