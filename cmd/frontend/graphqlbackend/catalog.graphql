@@ -42,6 +42,7 @@ interface CatalogEntity {
     status: CatalogEntityStatus!
     codeOwners: [CatalogEntityCodeOwnerEdge!]
     relatedEntities(query: String, first: Int, after: String): CatalogEntityRelatedEntityConnection!
+    whoKnows(query: String): [WhoKnowsEdge!]!
 }
 
 union EntityOwner = Person | Group
@@ -106,6 +107,12 @@ type CatalogEntityStatusContext implements Node {
     targetURL: String
 }
 
+type WhoKnowsEdge {
+    node: Person!
+    reasons: [String!]!
+    score: Float!
+}
+
 type CatalogEntityConnection {
     nodes: [CatalogEntity!]!
     totalCount: Int!
@@ -131,6 +138,7 @@ type CatalogComponent implements Node & CatalogEntity {
     status: CatalogEntityStatus!
     codeOwners: [CatalogEntityCodeOwnerEdge!]
     relatedEntities(query: String, first: Int, after: String): CatalogEntityRelatedEntityConnection!
+    whoKnows(query: String): [WhoKnowsEdge!]!
 
     kind: CatalogComponentKind!
 

@@ -18,6 +18,7 @@ import { EntityChangesTab } from './EntityChangesTab'
 import { EntityCodeTab } from './EntityCodeTab'
 import { EntityOverviewTab } from './EntityOverviewTab'
 import { EntityUsageTab } from './EntityUsageTab'
+import { EntityWhoKnowsTab } from './EntityWhoKnowsTab'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     entity: CatalogEntityDetailFields
@@ -73,6 +74,19 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                           text: 'Usage',
                           content: (
                               <EntityUsageTab {...props} catalogComponent={entity} className={TAB_CONTENT_CLASS_NAME} />
+                          ),
+                      }
+                    : null,
+                entity.__typename === 'CatalogComponent'
+                    ? {
+                          path: 'who-knows',
+                          text: 'Who knows',
+                          content: (
+                              <EntityWhoKnowsTab
+                                  {...props}
+                                  catalogComponent={entity}
+                                  className={TAB_CONTENT_CLASS_NAME}
+                              />
                           ),
                       }
                     : null,

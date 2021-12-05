@@ -4,6 +4,20 @@ import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
 import { gitCommitFragment } from '../../../../../repo/commits/RepositoryCommitsPage'
 import { CATALOG_ENTITY_OWNER_FRAGMENT } from '../../../components/entity-owner/gql'
 
+const CATALOG_ENTITY_WHO_KNOWS_FRAGMENT = gql`
+    fragment CatalogEntityWhoKnowsFields on CatalogEntity {
+        whoKnows {
+            node {
+                ...PersonLinkFields
+                avatarURL
+            }
+            reasons
+            score
+        }
+    }
+    ${personLinkFieldsFragment}
+`
+
 const CATALOG_ENTITY_CODE_OWNERS_FRAGMENT = gql`
     fragment CatalogEntityCodeOwnersFields on CatalogEntity {
         codeOwners {
@@ -220,6 +234,7 @@ export const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
         ...CatalogEntityOwnerFields
         ...CatalogEntityStatusFields
         ...CatalogEntityCodeOwnersFields
+        ...CatalogEntityWhoKnowsFields
         ... on CatalogComponent {
             kind
             ...CatalogComponentDocumentationFields
@@ -230,6 +245,7 @@ export const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
             ...CatalogComponentAPIFields
         }
     }
+    ${CATALOG_ENTITY_WHO_KNOWS_FRAGMENT}
     ${CATALOG_ENTITY_OWNER_FRAGMENT}
     ${CATALOG_ENTITY_STATUS_FRAGMENT}
     ${CATALOG_ENTITY_CODE_OWNERS_FRAGMENT}

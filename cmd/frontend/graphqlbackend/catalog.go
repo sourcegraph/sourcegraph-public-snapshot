@@ -67,6 +67,7 @@ type CatalogEntity interface {
 	Status(context.Context) (CatalogEntityStatusResolver, error)
 	CodeOwners(context.Context) (*[]CatalogEntityCodeOwnerEdgeResolver, error)
 	RelatedEntities(context.Context, *CatalogEntityRelatedEntitiesArgs) (CatalogEntityRelatedEntityConnectionResolver, error)
+	WhoKnows(context.Context, *WhoKnowsArgs) ([]WhoKnowsEdgeResolver, error)
 }
 
 type CatalogEntityRelatedEntitiesArgs struct {
@@ -138,6 +139,16 @@ type CatalogEntityRelatedEntityConnectionResolver interface {
 type CatalogEntityRelatedEntityEdgeResolver interface {
 	Node() *CatalogEntityResolver
 	Type() CatalogEntityRelationType
+}
+
+type WhoKnowsArgs struct {
+	Query *string
+}
+
+type WhoKnowsEdgeResolver interface {
+	Node() *PersonResolver
+	Reasons() []string
+	Score() float64
 }
 
 type CatalogEntityConnectionResolver interface {
