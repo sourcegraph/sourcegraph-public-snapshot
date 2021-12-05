@@ -12,7 +12,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/migrations"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
 // NewFastDB returns a clean database that will be deleted
@@ -110,7 +110,7 @@ func getDefaultPool() (*testDatabasePool, *url.URL, error) {
 			return
 		}
 
-		defaultErr = defaultPool.CleanUpOldDBs(context.Background(), migrations.Frontend, migrations.CodeIntel)
+		defaultErr = defaultPool.CleanUpOldDBs(context.Background(), schemas.Frontend, schemas.CodeIntel)
 	})
 	return defaultPool, defaultURL, defaultErr
 }
@@ -127,7 +127,7 @@ func newFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.DB {
 	ctx := context.Background()
 
 	// Get or create the template database
-	tdb, err := pool.GetTemplate(ctx, u, migrations.Frontend, migrations.CodeIntel)
+	tdb, err := pool.GetTemplate(ctx, u, schemas.Frontend, schemas.CodeIntel)
 	if err != nil {
 		t.Fatalf("failed to get or create template db: %s", err)
 	}
@@ -162,7 +162,7 @@ func newFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.DB {
 
 func newTxFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.Tx {
 	ctx := context.Background()
-	tdb, err := pool.GetTemplate(ctx, u, migrations.Frontend, migrations.CodeIntel)
+	tdb, err := pool.GetTemplate(ctx, u, schemas.Frontend, schemas.CodeIntel)
 	if err != nil {
 		t.Fatalf("failed to get or create template db: %s", err)
 	}

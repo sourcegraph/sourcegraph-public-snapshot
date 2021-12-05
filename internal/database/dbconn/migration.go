@@ -13,10 +13,10 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/httpfs"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migrations"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
-func migrateDB(db *sql.DB, schema *migrations.Schema) (func(), error) {
+func migrateDB(db *sql.DB, schema *schemas.Schema) (func(), error) {
 	m, err := newMigrate(db, schema)
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func migrateDB(db *sql.DB, schema *migrations.Schema) (func(), error) {
 
 // newMigrate returns a new configured migration object for the given database. The migration can
 // be subsequently run by invoking `dbconn.DoMigrate`.
-func newMigrate(db *sql.DB, schema *migrations.Schema) (*migrate.Migrate, error) {
+func newMigrate(db *sql.DB, schema *schemas.Schema) (*migrate.Migrate, error) {
 	driver, err := postgres.WithInstance(db, &postgres.Config{
 		MigrationsTable: schema.MigrationsTableName,
 	})

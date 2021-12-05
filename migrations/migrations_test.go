@@ -15,7 +15,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/httpfs"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	internalmigrations "github.com/sourcegraph/sourcegraph/internal/database/migrations"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/migrations"
 )
 
@@ -78,10 +78,10 @@ func TestMigrations(t *testing.T) {
 
 	for _, tt := range []struct {
 		name   string
-		schema *internalmigrations.Schema
+		schema *schemas.Schema
 	}{
-		{"Frontend", internalmigrations.Frontend},
-		{"CodeIntel", internalmigrations.CodeIntel},
+		{"Frontend", schemas.Frontend},
+		{"CodeIntel", schemas.CodeIntel},
 	} {
 
 		t.Logf("Running migrations in %s", tt.name)
@@ -91,7 +91,7 @@ func TestMigrations(t *testing.T) {
 
 // testMigrations runs all migrations up, then the migrations for the given database
 // all the way back down, then back up to check for syntax errors and reversibility.
-func testMigrations(t *testing.T, db *sql.DB, schema *internalmigrations.Schema) {
+func testMigrations(t *testing.T, db *sql.DB, schema *schemas.Schema) {
 	m := makeMigration(t, db, schema)
 
 	// All the way up
@@ -115,7 +115,7 @@ func testMigrations(t *testing.T, db *sql.DB, schema *internalmigrations.Schema)
 	}
 }
 
-func makeMigration(t *testing.T, db *sql.DB, schema *internalmigrations.Schema) *migrate.Migrate {
+func makeMigration(t *testing.T, db *sql.DB, schema *schemas.Schema) *migrate.Migrate {
 	driver, err := postgres.WithInstance(db, &postgres.Config{
 		MigrationsTable: schema.MigrationsTableName,
 	})
