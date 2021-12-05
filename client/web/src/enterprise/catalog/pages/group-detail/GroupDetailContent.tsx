@@ -18,7 +18,7 @@ interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, S
     group: GroupDetailFields
 }
 
-const TAB_CONTENT_CLASS_NAME = 'flex-1 align-self-stretch'
+const TAB_CONTENT_CLASS_NAME = 'flex-1 align-self-stretch overflow-auto'
 
 export const GroupDetailContent: React.FunctionComponent<Props> = ({ group }) => {
     const tabs = useMemo<React.ComponentProps<typeof CatalogPage>['tabs']>(

@@ -24,7 +24,7 @@ interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, S
     entity: CatalogEntityDetailFields
 }
 
-const TAB_CONTENT_CLASS_NAME = 'flex-1 align-self-stretch'
+const TAB_CONTENT_CLASS_NAME = 'flex-1 align-self-stretch overflow-auto'
 
 export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ...props }) => {
     const tabs = useMemo<React.ComponentProps<typeof CatalogPage>['tabs']>(
@@ -34,7 +34,7 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                     path: '',
                     exact: true,
                     text: 'Overview',
-                    content: <EntityOverviewTab entity={entity} className={TAB_CONTENT_CLASS_NAME} />,
+                    content: <EntityOverviewTab {...props} entity={entity} className={TAB_CONTENT_CLASS_NAME} />,
                 },
                 entity.__typename === 'CatalogComponent'
                     ? {

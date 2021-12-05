@@ -51,6 +51,7 @@ const CATALOG_ENTITY_STATUS_FRAGMENT = gql`
 const CATALOG_COMPONENT_DOCUMENTATION_FRAGMENT = gql`
     fragment CatalogComponentDocumentationFields on CatalogComponent {
         readme {
+            name
             richHTML
             url
         }

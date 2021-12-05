@@ -18,7 +18,7 @@ interface Props {
 export const CatalogPage: React.FunctionComponent<Props> = ({ path, tabs }) => {
     const match = useRouteMatch()
     return (
-        <>
+        <div className="flex-1 d-flex flex-column">
             <CatalogAreaHeader
                 path={path}
                 nav={
@@ -46,6 +46,6 @@ export const CatalogPage: React.FunctionComponent<Props> = ({ path, tabs }) => {
                     </Route>
                 ))}
             </Switch>
-        </>
+        </div>
     )
 }

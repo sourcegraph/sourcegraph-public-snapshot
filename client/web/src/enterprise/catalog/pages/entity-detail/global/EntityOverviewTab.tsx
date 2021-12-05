@@ -4,31 +4,39 @@ import FileAlertIcon from 'mdi-react/FileAlertIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import SlackIcon from 'mdi-react/SlackIcon'
-import React, { useRef, useState } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Timestamp } from '../../../../../components/time/Timestamp'
-import { CatalogComponentDocumentationFields, CatalogEntityDetailFields } from '../../../../../graphql-operations'
+import { CatalogEntityDetailFields } from '../../../../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../user/UserAvatar'
-import { Popover } from '../../../../insights/components/popover/Popover'
 import { CatalogEntityIcon } from '../../../components/CatalogEntityIcon'
 import { EntityOwner } from '../../../components/entity-owner/EntityOwner'
 
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 import { EntityCatalogExplorer } from './EntityCatalogExplorer'
+import { EntityInsights } from './EntityInsights'
 import { whoKnowsDescription } from './EntityWhoKnowsTab'
 import { OverviewStatusContexts } from './OverviewStatusContexts'
 
-interface Props {
+interface Props extends TelemetryProps, SettingsCascadeProps, PlatformContextProps {
     entity: CatalogEntityDetailFields
     className?: string
 }
 
-export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, className }) => (
+export const EntityOverviewTab: React.FunctionComponent<Props> = ({
+    entity,
+    className,
+    telemetryService,
+    settingsCascade,
+    platformContext,
+}) => (
     <div className={classNames('row no-gutters', className)}>
         <div className="col-md-4 col-lg-3 col-xl-2 border-right p-3">
             {entity.name && (
@@ -48,13 +56,10 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, clas
                     <SearchIcon className="icon-inline mr-1" /> Search...
                 </Link>
                 {entity.readme && (
-                    <div className="d-flex align-items-start">
-                        <Link to={entity.readme.url} className="d-flex align-items-center text-body mb-3 mr-2">
-                            <FileDocumentIcon className="icon-inline mr-2" />
-                            Documentation
-                        </Link>
-                        <FilePeekButton file={entity.readme} />
-                    </div>
+                    <Link to={entity.readme.url} className="d-flex align-items-center text-body mb-3 mr-2">
+                        <FileDocumentIcon className="icon-inline mr-2" />
+                        Documentation
+                    </Link>
                 )}
                 <Link to="#" className="d-flex align-items-center text-body mb-3">
                     <FileAlertIcon className="icon-inline mr-2" />
@@ -103,6 +108,25 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, clas
             </div>
             <OverviewStatusContexts entity={entity} itemClassName="mb-3" />
             <EntityCatalogExplorer entity={entity.id} className="mb-3" />
+            <EntityInsights
+                entity={entity.id}
+                className="mb-3"
+                telemetryService={telemetryService}
+                settingsCascade={settingsCascade}
+                platformContext={platformContext}
+            />
+            {entity.readme && (
+                <div className="card mb-3">
+                    <header className="card-header">
+                        <h4 className="card-title mb-0 font-weight-bold">
+                            <Link to={entity.readme.url} className="d-flex align-items-center text-body">
+                                <FileDocumentIcon className="icon-inline mr-2" /> {entity.readme.name}
+                            </Link>
+                        </h4>
+                    </header>
+                    <Markdown dangerousInnerHTML={entity.readme.richHTML} className="card-body p-3" />
+                </div>
+            )}
         </div>
     </div>
 )
@@ -125,24 +149,3 @@ const LastCommit: React.FunctionComponent<{
         </small>
     </div>
 )
-
-const FilePeekButton: React.FunctionComponent<{
-    file: NonNullable<CatalogComponentDocumentationFields['readme']>
-}> = ({ file }) => {
-    const targetButtonReference = useRef<HTMLButtonElement>(null)
-    const [isOpen, setIsOpen] = useState(false)
-
-    return (
-        <>
-            <button ref={targetButtonReference} type="button" className="badge badge-secondary">
-                peek
-            </button>
-            <Popover isOpen={isOpen} target={targetButtonReference} onVisibilityChange={setIsOpen}>
-                {/* eslint-disable-next-line react/forbid-dom-props */}
-                <div style={{ maxWidth: '75vw', maxHeight: '75vh' }} className="p-3">
-                    <Markdown dangerousInnerHTML={file.richHTML} />
-                </div>
-            </Popover>
-        </>
-    )
-}
