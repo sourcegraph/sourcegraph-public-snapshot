@@ -308,6 +308,7 @@ require (
 
 require (
 	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
+	github.com/ajstarks/svgo v0.0.0-20210923152817-c3b6e2f0c527 // indirect
 	github.com/aws/aws-sdk-go v1.40.45 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.0.0 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.0 // indirect
@@ -318,8 +319,13 @@ require (
 	github.com/cncf/xds/go v0.0.0-20211011173535-cb28da3451f1 // indirect
 	github.com/envoyproxy/go-control-plane v0.10.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.6.2 // indirect
+	github.com/fogleman/gg v1.3.0 // indirect
+	github.com/go-fonts/liberation v0.2.0 // indirect
 	github.com/go-kit/log v0.2.0 // indirect
+	github.com/go-latex/latex v0.0.0-20210823091927-c0d11ff05a81 // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
+	github.com/go-pdf/fpdf v0.5.0 // indirect
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
@@ -328,7 +334,9 @@ require (
 	github.com/loov/hrtime/hrplot v1.0.2 // indirect
 	github.com/loov/plot v0.0.0-20200413101321-e09a6f01d2f5 // indirect
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
+	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d // indirect
 	golang.org/x/perf v0.0.0-20211012211434-03971e389cd3 // indirect
+	gonum.org/v1/plot v0.10.0 // indirect
 	k8s.io/klog/v2 v2.30.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.0 // indirect
 )

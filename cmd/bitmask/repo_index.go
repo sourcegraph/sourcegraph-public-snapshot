@@ -1,10 +1,12 @@
 package bitmask
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
 	"github.com/cespare/xxhash/v2"
+	"github.com/cockroachdb/errors"
 	"github.com/schollz/progressbar/v3"
 	"io"
 	"math"
@@ -39,6 +41,48 @@ type RepoIndex struct {
 type BlobIndex struct {
 	Filter *bloom.BloomFilter
 	Path   string
+}
+
+func (b *BlobIndex) WriteTo(w io.Writer) (int64, error) {
+	var buf bytes.Buffer
+	var writtenByteCount int64
+	gob.NewEncoder(&buf).Encode(b)
+	data := buf.Bytes()
+	err := binary.Write(w, binary.BigEndian, uint64(len(data)))
+	writtenByteCount = 8
+	if err != nil {
+		return writtenByteCount, err
+	}
+	w.Write(data)
+	writtenByteCount = writtenByteCount + int64(len(data))
+	return writtenByteCount, nil
+}
+
+func (b *BlobIndex) ReadFrom(stream io.Reader) (int64, error) {
+	var length uint64
+	var readByteCount int64
+	err := binary.Read(stream, binary.BigEndian, &length)
+	if err != nil {
+		return readByteCount, err
+	}
+	readByteCount = 8
+	data := make([]byte, length)
+	read, err := stream.Read(data)
+	if err != nil {
+		return readByteCount, err
+	}
+	if uint64(read) != length {
+		return readByteCount, errors.Errorf("read(%v) != length(%v)", read, length)
+	}
+	readByteCount = readByteCount + int64(len(data))
+	other := &BlobIndex{}
+	err = gob.NewDecoder(bytes.NewReader(data)).Decode(other)
+	if err != nil {
+		return readByteCount, err
+	}
+	b.Path = other.Path
+	b.Filter = other.Filter
+	return readByteCount, nil
 }
 
 type Ngrams struct {
@@ -252,8 +296,9 @@ func NewRepoIndex(fs FileSystem) (*RepoIndex, error) {
 	for index := range repoIndexes(fs, filenames) {
 		indexes = append(indexes, index)
 	}
-	return &RepoIndex{Dir: fs.RootDir(), Blobs: indexes, FS: fs}, nil
+	return &RepoIndex{Blobs: indexes, FS: fs}, nil
 }
+
 func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 	res := make(chan BlobIndex, len(filenames))
 	bar := progressbar.Default(int64(len(filenames)))

@@ -15,7 +15,6 @@ import (
 type FileSystem interface {
 	ListRelativeFilenames() ([]string, error)
 	ReadRelativeFilename(name string) ([]byte, error)
-	RootDir() string
 }
 
 type InMemoryFileSystem struct {
@@ -85,6 +84,7 @@ func (g *GitFileSystem) ListRelativeFilenames() ([]string, error) {
 }
 
 type ZipFileSystem struct {
+	Path   string
 	Reader *zip.Reader
 	Closer io.Closer
 }
@@ -136,4 +136,18 @@ func (g *ZipFileSystem) ListRelativeFilenames() ([]string, error) {
 		names = append(names, file.Name)
 	}
 	return names, nil
+}
+
+func (g *ZipFileSystem) GobEncode() ([]byte, error) {
+	return []byte(g.Path), nil
+}
+
+func (g *ZipFileSystem) GobDecode(b []byte) error {
+	fs, err := NewZipFileSystem(string(b))
+	if err != nil {
+		return err
+	}
+	g.Closer = fs.Closer
+	g.Reader = fs.Reader
+	return nil
 }

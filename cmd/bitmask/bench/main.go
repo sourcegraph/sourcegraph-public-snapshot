@@ -161,7 +161,9 @@ func (c *Corpus) run() error {
 				matchingPaths = append(matchingPaths, path)
 			}
 		}
-		fmt.Println(bench.Histogram(5))
+		bench.Laps()
+		hg := bench.Histogram(5)
+		fmt.Println(hg)
 		hrplot.All("all.svg", bench)
 		if index.FS != nil {
 			falsePositives := 0
