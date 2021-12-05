@@ -2,7 +2,6 @@ import classNames from 'classnames'
 import EmailIcon from 'mdi-react/EmailIcon'
 import SlackIcon from 'mdi-react/SlackIcon'
 import React from 'react'
-import { Link } from 'react-router-dom'
 
 import { CatalogEntityDetailFields, CatalogEntityWhoKnowsFields } from '../../../../../graphql-operations'
 
@@ -44,12 +43,21 @@ export const EntityWhoKnowsTab: React.FunctionComponent<Props> = ({
                     textTooltip: score.toFixed(1),
                     action: (
                         <>
-                            <Link to={`mailto:${person.email}`} className="btn btn-secondary btn-sm mr-2">
+                            <a
+                                href={`https://slack.com/app_redirect?channel=@${person.email.slice(
+                                    0,
+                                    person.email.indexOf('@')
+                                )}`}
+                                target="_blank"
+                                rel="noopener"
+                                className="btn btn-secondary btn-sm mr-2"
+                            >
+                                <SlackIcon className="icon-inline" /> @
+                                {person.email.slice(0, person.email.indexOf('@'))}
+                            </a>
+                            <a href={`mailto:${person.email}`} className="btn btn-secondary btn-sm">
                                 <EmailIcon className="icon-inline" /> Email
-                            </Link>
-                            <Link to={`mailto:${person.email}`} className="btn btn-secondary btn-sm ">
-                                <SlackIcon className="icon-inline" /> Slack
-                            </Link>
+                            </a>
                         </>
                     ),
                 }))}

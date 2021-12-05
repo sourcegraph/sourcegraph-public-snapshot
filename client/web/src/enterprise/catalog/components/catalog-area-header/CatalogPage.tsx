@@ -30,7 +30,7 @@ export const CatalogPage: React.FunctionComponent<Props> = ({ path, tabs }) => {
                                     exact={exact}
                                     className="nav-link px-3"
                                     // TODO(sqs): hack so that active items when bolded don't shift the ones to the right over by a few px because bold text is wider
-                                    style={{ minWidth: '6rem' }}
+                                    style={{ minWidth: '7rem' }}
                                 >
                                     {text}
                                 </NavLink>
