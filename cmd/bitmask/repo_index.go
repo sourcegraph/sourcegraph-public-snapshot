@@ -30,7 +30,7 @@ const (
 	Version                  = 1
 	targetFalsePositiveRatio = 0.01
 	maxFileSize              = 1 << 20 // 1_048_576
-	bloomSizePadding         = 5
+	bloomSizePadding         = 2
 	maximumQueryNgrams       = 100
 )
 
@@ -219,11 +219,12 @@ func (g *Ngram) Update(b int32) {
 
 type OnBytes func(b []byte, arity int)
 
-func onGrams(text string, onBytes OnBytes) {
+func onGrams(text string, onBytes OnBytes) Ngrams {
 	ngrams := NewNgrams()
 	for i, b := range text {
 		ngrams.OnIndex(i, b, onBytes)
 	}
+	return ngrams
 }
 
 func CollectQueryNgrams(query string) [][]byte {
@@ -382,17 +383,18 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 			continue
 		}
 		text := string(textBytes)
-		bloomSize := uint(len(text) * bloomSizePadding)
-		if bloomSize < 10_000 {
-			bloomSize = 10_000
-		}
 		wg.Add(1)
 		go func(path string) {
 			defer wg.Done()
-			filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
-			onGrams(text, func(b []byte, arity int) {
-				filter.Add(b)
+			ngrams := onGrams(text, func(b []byte, arity int) {
 			})
+			bloomSize := uint(len(ngrams.SeenHashes))
+			filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
+			data := make([]byte, 8)
+			for hash := range ngrams.SeenHashes {
+				binary.LittleEndian.PutUint64(data, hash)
+				filter.Add(data)
+			}
 			res <- BlobIndex{Path: path, Filter: filter}
 		}(filename)
 	}

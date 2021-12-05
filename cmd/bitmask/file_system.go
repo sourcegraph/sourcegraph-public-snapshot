@@ -15,6 +15,7 @@ import (
 type FileSystem interface {
 	ListRelativeFilenames() ([]string, error)
 	ReadRelativeFilename(name string) ([]byte, error)
+	StatSize(name string) (int64, error)
 }
 
 type InMemoryFileSystem struct {
@@ -23,6 +24,11 @@ type InMemoryFileSystem struct {
 
 func (g *InMemoryFileSystem) RootDir() string {
 	return ""
+}
+
+func (g *InMemoryFileSystem) StatSize(name string) (int64, error) {
+	data, err := g.ReadRelativeFilename(name)
+	return int64(len(data)), err
 }
 
 func (g *InMemoryFileSystem) ReadRelativeFilename(name string) ([]byte, error) {
@@ -47,6 +53,14 @@ type GitFileSystem struct {
 
 func (g *GitFileSystem) RootDir() string {
 	return g.Dir
+}
+
+func (g *GitFileSystem) StatSize(name string) (int64, error) {
+	stat, err := os.Stat(path.Join(g.Dir, name))
+	if err != nil {
+		return 0, err
+	}
+	return stat.Size(), nil
 }
 
 func (g *GitFileSystem) ReadRelativeFilename(name string) ([]byte, error) {
@@ -112,6 +126,19 @@ func (g *ZipFileSystem) Close() error {
 func (g *ZipFileSystem) RootDir() string {
 	return ""
 }
+
+func (g *ZipFileSystem) StatSize(name string) (int64, error) {
+	open, err := g.Reader.Open(name)
+	if err != nil {
+		return 0, err
+	}
+	stat, err := open.Stat()
+	if err != nil {
+		return 0, err
+	}
+	return stat.Size(), nil
+}
+
 func (g *ZipFileSystem) ReadRelativeFilename(name string) ([]byte, error) {
 	open, err := g.Reader.Open(name)
 	if err != nil {
