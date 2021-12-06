@@ -1,13 +1,7 @@
 import classNames from 'classnames'
-import Check from 'mdi-react/CheckIcon'
-import Info from 'mdi-react/InfoCircleOutlineIcon'
-import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
 import React, { useCallback, useState } from 'react'
 import { noop } from 'rxjs'
 
-import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
-import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { Filter, Keyword } from '@sourcegraph/shared/src/search/query/token'
 import { Button } from '@sourcegraph/wildcard/src'
 
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
@@ -18,7 +12,8 @@ import { createRequiredValidator } from '../../../../../../components/form/valid
 import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
 
-import styles from './FormSeriesInput.module.scss'
+import { searchQueryValidator, Checks } from './search-query-validator'
+import { SearchQueryChecks } from './SearchQueryChecks'
 
 const requiredNameField = createRequiredValidator('Name is a required field for data series.')
 const validQuery = createRequiredValidator('Query is a required field for data series.')
@@ -61,91 +56,6 @@ interface FormSeriesInputProps {
     onChange?: (formValues: SearchBasedInsightSeries, valid: boolean) => void
 }
 
-const CheckListItem: React.FunctionComponent<{ valid?: boolean }> = ({ children, valid }) => {
-    const StatusIcon: React.FunctionComponent = () =>
-        valid ? (
-            <Check size={16} className="text-success icon-inline" style={{ top: '3px' }} />
-        ) : (
-            <RadioboxBlankIcon size={16} className="icon-inline" style={{ top: '3px' }} />
-        )
-    return (
-        <>
-            <StatusIcon /> {children}
-        </>
-    )
-}
-
-interface SearchQueryChecksProps {
-    checks: {
-        isValidRegex: boolean
-        isValidOperator: boolean
-        isValidPatternType: boolean
-        isNotRepoOrFile: boolean
-        isNotCommitOrDiff: boolean
-        isNoRepoFilter: boolean
-    }
-}
-const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> = ({ checks }) => (
-    <div className={classNames(styles.formSeriesInput)}>
-        <ul className={classNames(['mt-4 text-muted', styles.formSeriesInputSeriesCheck])}>
-            <li>
-                <CheckListItem valid={checks.isValidRegex}>
-                    Contains a properly formatted regular expression with at least one capture group
-                </CheckListItem>
-            </li>
-            <li>
-                <CheckListItem valid={checks.isValidOperator}>
-                    Does not contain boolean operator <code>AND</code> and <code>OR</code> (regular expression boolean
-                    operators can still be used)
-                </CheckListItem>
-            </li>
-            <li>
-                <CheckListItem valid={checks.isValidPatternType}>
-                    Does not contain <code>patternType:literal</code> and <code>patternType:structural</code>
-                </CheckListItem>
-            </li>
-            <li>
-                <CheckListItem valid={checks.isNotRepoOrFile}>
-                    The capture group matches file contents (not <code>repo</code> or <code>file</code>)
-                </CheckListItem>
-            </li>
-            <li>
-                <CheckListItem valid={checks.isNotCommitOrDiff}>
-                    Does not contain <code>commit</code> or <code>diff</code> search
-                </CheckListItem>
-            </li>
-            <li>
-                <CheckListItem valid={checks.isNoRepoFilter}>
-                    Does not contain the <code>repo:</code> filter as it will be added automatically if needed
-                </CheckListItem>
-            </li>
-        </ul>
-        <p className="mt-4 text-muted">
-            Tip: use <code>archived:no</code> or <code>fork:no</code> to exclude results from archived or forked
-            repositories. Explore{' '}
-            <a href="https://docs.sourcegraph.com/code_insights/references/common_use_cases">example queries</a> and
-            learn more about{' '}
-            <a href="https://docs.sourcegraph.com/code_insights/references/common_reasons_code_insights_may_not_match_search_results">
-                automatically generated data series
-            </a>
-            .
-        </p>
-        <p className="mt-4 text-muted">
-            <Info size={16} /> <b>Name</b> and <b>color</b> of each data seris will be generated automatically. Chart
-            will display <b>up to 20</b> data series.
-        </p>
-    </div>
-)
-
-const regexCheck = (value: string): boolean => {
-    try {
-        new RegExp(value)
-        return true
-    } catch {
-        return false
-    }
-}
-
 /** Displays form series input (three field - name field, query field and color picker). */
 export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = props => {
     const {
@@ -166,6 +76,45 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
 
     const hasNameControlledValue = !!name
     const hasQueryControlledValue = !!query
+
+    // Search query validators
+    const [checks, setChecks] = useState<Checks>({
+        isValidRegex: false,
+        isValidOperator: false,
+        isValidPatternType: false,
+        isNotRepoOrFile: false,
+        isNotCommitOrDiff: false,
+        isNoRepoFilter: false,
+    })
+
+    const {
+        isValidOperator,
+        isValidRegex,
+        isValidPatternType,
+        isNotRepoOrFile,
+        isNotCommitOrDiff,
+        isNoRepoFilter,
+    } = checks
+
+    const validateChecks = useCallback(
+        (value: string | undefined) => {
+            if (!value) {
+                return validQuery(value)
+            }
+            const validatedChecks = searchQueryValidator(value, {
+                isValidOperator,
+                isValidRegex,
+                isValidPatternType,
+                isNotRepoOrFile,
+                isNotCommitOrDiff,
+                isNoRepoFilter,
+            })
+            setChecks(validatedChecks)
+
+            return validQuery(value)
+        },
+        [isValidOperator, isValidRegex, isValidPatternType, isNotRepoOrFile, isNotCommitOrDiff, isNoRepoFilter]
+    )
 
     const { formAPI, handleSubmit, ref } = useForm({
         touched: showValidationErrorsOnMount,
@@ -202,82 +151,16 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         validators: { sync: requiredNameField },
     })
 
-    const colorField = useField({
-        name: 'seriesColor',
-        formApi: formAPI,
-    })
-
-    // Search query validators
-    const [checks, setChecks] = useState({
-        isValidRegex: false,
-        isValidOperator: false,
-        isValidPatternType: false,
-        isNotRepoOrFile: false,
-        isNotCommitOrDiff: false,
-        isNoRepoFilter: false,
-    })
-
-    const validateChecks = useCallback((value: string | undefined) => {
-        if (!value) {
-            return validQuery(value)
-        }
-        const tokens = scanSearchQuery(value)
-        console.log('🚀 ~ file: FormSeriesInput.tsx ~ line 226 ~ validateChecks ~ tokens', tokens)
-        const validatedChecks = { ...checks }
-
-        if (tokens.type === 'success') {
-            const filters = tokens.term.filter(token => token.type === 'filter') as Filter[]
-            const keywords = tokens.term.filter(token => token.type === 'keyword') as Keyword[]
-
-            const hasRepo = filters.some(
-                filter => resolveFilter(filter.field.value)?.type === FilterType.repo && filter.value
-            )
-
-            const hasFile = filters.some(
-                filter => resolveFilter(filter.field.value)?.type === FilterType.file && filter.value
-            )
-
-            const hasLiteralPattern = filters.some(
-                filter =>
-                    resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
-                    filter.value?.value === 'literal'
-            )
-
-            const hasStructuralPattern = filters.some(
-                filter =>
-                    resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
-                    filter.value?.value === 'structural'
-            )
-
-            const hasCommit = filters.some(
-                filter =>
-                    resolveFilter(filter.field.value)?.type === FilterType.type && filter.value?.value === 'commit'
-            )
-
-            const hasDiff = filters.some(
-                filter => resolveFilter(filter.field.value)?.type === FilterType.type && filter.value?.value === 'diff'
-            )
-
-            const hasAnd = keywords.some(filter => filter.kind === 'and')
-            const hasOr = keywords.some(filter => filter.kind === 'or')
-
-            validatedChecks.isValidRegex = regexCheck(value)
-            validatedChecks.isNotCommitOrDiff = !hasCommit && !hasDiff
-            validatedChecks.isNoRepoFilter = !hasRepo
-            validatedChecks.isNotRepoOrFile = !hasRepo && !hasFile
-            validatedChecks.isValidPatternType = !hasLiteralPattern && !hasStructuralPattern
-            validatedChecks.isValidOperator = !hasAnd && !hasOr
-        }
-        setChecks(validatedChecks)
-
-        return validQuery(value)
-    }, [])
-
     const queryField = useField({
         name: 'seriesQuery',
         formApi: formAPI,
         validators: { sync: validateChecks },
         disabled: isSearchQueryDisabled,
+    })
+
+    const colorField = useField({
+        name: 'seriesColor',
+        formApi: formAPI,
     })
 
     return (
