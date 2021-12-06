@@ -2,12 +2,12 @@ import classNames from 'classnames'
 import Check from 'mdi-react/CheckIcon'
 import Info from 'mdi-react/InfoCircleOutlineIcon'
 import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { noop } from 'rxjs'
 
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
+import { Filter, Keyword } from '@sourcegraph/shared/src/search/query/token'
 import { Button } from '@sourcegraph/wildcard/src'
 
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
@@ -137,7 +137,14 @@ const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> = ({ ch
     </div>
 )
 
-const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
+const regexCheck = (value: string): boolean => {
+    try {
+        new RegExp(value)
+        return true
+    } catch {
+        return false
+    }
+}
 
 /** Displays form series input (three field - name field, query field and color picker). */
 export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = props => {
@@ -195,95 +202,83 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         validators: { sync: requiredNameField },
     })
 
-    const queryField = useField({
-        name: 'seriesQuery',
-        formApi: formAPI,
-        validators: { sync: validQuery },
-        disabled: isSearchQueryDisabled,
-    })
-
     const colorField = useField({
         name: 'seriesColor',
         formApi: formAPI,
     })
 
     // Search query validators
-    const [isValidRegex, setIsValidRegex] = useState(false)
-    const [isValidOperator, setIsValidOperator] = useState(false)
-    const [isValidPatternType, setIsValidPatternType] = useState(false)
-    const [isNotRepoOrFile, setIsNotRepoOrFile] = useState(false)
-    const [isNotCommitOrDiff, setIsNotCommitOrDiff] = useState(false)
-    const [isNoRepoFilter, setIsNoRepoFilter] = useState(false)
+    const [checks, setChecks] = useState({
+        isValidRegex: false,
+        isValidOperator: false,
+        isValidPatternType: false,
+        isNotRepoOrFile: false,
+        isNotCommitOrDiff: false,
+        isNoRepoFilter: false,
+    })
 
-    const [queryState, nextQueryFieldChange] = useInputValidation(
-        useMemo(
-            () => ({
-                initialValue: queryField.input.value,
-                synchronousValidators: [
-                    (value: string) => {
-                        const tokens = scanSearchQuery(value)
+    const validateChecks = useCallback((value: string | undefined) => {
+        if (!value) {
+            return validQuery(value)
+        }
+        const tokens = scanSearchQuery(value)
+        console.log('🚀 ~ file: FormSeriesInput.tsx ~ line 226 ~ validateChecks ~ tokens', tokens)
+        const validatedChecks = { ...checks }
 
-                        const validRegex = false
-                        let validOperator = false
-                        let validPatternType = false
-                        const notRepoOrFile = false
-                        let notCommitOrDiff = false
-                        let noRepoFilter = false
+        if (tokens.type === 'success') {
+            const filters = tokens.term.filter(token => token.type === 'filter') as Filter[]
+            const keywords = tokens.term.filter(token => token.type === 'keyword') as Keyword[]
 
-                        if (tokens.type === 'success') {
-                            const filters = tokens.term.filter(token => token.type === 'filter')
+            const hasRepo = filters.some(
+                filter => resolveFilter(filter.field.value)?.type === FilterType.repo && filter.value
+            )
 
-                            notCommitOrDiff = !filters.some(
-                                filter =>
-                                    filter.type === 'filter' &&
-                                    resolveFilter(filter.field.value)?.type === FilterType.type &&
-                                    filter.value &&
-                                    isDiffOrCommit(filter.value.value)
-                            )
+            const hasFile = filters.some(
+                filter => resolveFilter(filter.field.value)?.type === FilterType.file && filter.value
+            )
 
-                            noRepoFilter = !filters.some(
-                                filter =>
-                                    filter.type === 'filter' &&
-                                    resolveFilter(filter.field.value)?.type === FilterType.repo &&
-                                    filter.value
-                            )
+            const hasLiteralPattern = filters.some(
+                filter =>
+                    resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
+                    filter.value?.value === 'literal'
+            )
 
-                            const hasLiteral = filters.some(
-                                filter =>
-                                    filter.type === 'filter' &&
-                                    resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
-                                    filter.value?.value === 'literal'
-                            )
+            const hasStructuralPattern = filters.some(
+                filter =>
+                    resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
+                    filter.value?.value === 'structural'
+            )
 
-                            const hasStructural = filters.some(
-                                filter =>
-                                    filter.type === 'filter' &&
-                                    resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
-                                    filter.value?.value === 'structural'
-                            )
+            const hasCommit = filters.some(
+                filter =>
+                    resolveFilter(filter.field.value)?.type === FilterType.type && filter.value?.value === 'commit'
+            )
 
-                            validPatternType = !(hasLiteral && hasStructural)
+            const hasDiff = filters.some(
+                filter => resolveFilter(filter.field.value)?.type === FilterType.type && filter.value?.value === 'diff'
+            )
 
-                            const hasAnd = filters.some(filter => filter.type === 'keyword' && filter.value === 'AND')
-                            const hasOr = filters.some(filter => filter.type === 'keyword' && filter.value === 'OR')
+            const hasAnd = keywords.some(filter => filter.kind === 'and')
+            const hasOr = keywords.some(filter => filter.kind === 'or')
 
-                            validOperator = !(hasAnd || hasOr)
-                        }
+            validatedChecks.isValidRegex = regexCheck(value)
+            validatedChecks.isNotCommitOrDiff = !hasCommit && !hasDiff
+            validatedChecks.isNoRepoFilter = !hasRepo
+            validatedChecks.isNotRepoOrFile = !hasRepo && !hasFile
+            validatedChecks.isValidPatternType = !hasLiteralPattern && !hasStructuralPattern
+            validatedChecks.isValidOperator = !hasAnd && !hasOr
+        }
+        setChecks(validatedChecks)
 
-                        setIsValidRegex(validRegex)
-                        setIsValidOperator(validOperator)
-                        setIsValidPatternType(validPatternType)
-                        setIsNotRepoOrFile(notRepoOrFile)
-                        setIsNotCommitOrDiff(notCommitOrDiff)
-                        setIsNoRepoFilter(noRepoFilter)
+        return validQuery(value)
+    }, [])
 
-                        return undefined
-                    },
-                ],
-            }),
-            [queryField.input.value]
-        )
-    )
+    const queryField = useField({
+        name: 'seriesQuery',
+        formApi: formAPI,
+        validators: { sync: validateChecks },
+        disabled: isSearchQueryDisabled,
+    })
 
     return (
         <div data-testid="series-form" ref={ref} className={classNames('d-flex flex-column', className)}>
@@ -305,18 +300,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                 description={
                     <span>
-                        {!isSearchQueryDisabled ? (
-                            <SearchQueryChecks
-                                checks={{
-                                    isValidRegex,
-                                    isValidOperator,
-                                    isValidPatternType,
-                                    isNotRepoOrFile,
-                                    isNotCommitOrDiff,
-                                    isNoRepoFilter,
-                                }}
-                            />
-                        ) : (
+                        {isSearchQueryDisabled && (
                             <>
                                 We don't yet allow editing queries for insights over all repos. To change the query,
                                 make a new insight. This is a known{' '}
@@ -333,9 +317,12 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                 }
                 valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.validState === 'VALID'}
                 error={queryField.meta.touched && queryField.meta.error}
+                errorInputState={queryField.meta.touched && queryField.meta.validState === 'INVALID'}
                 className="mt-4"
                 {...queryField.input}
             />
+
+            <SearchQueryChecks checks={checks} />
 
             <FormColorInput
                 name={`color group of ${index} series`}
