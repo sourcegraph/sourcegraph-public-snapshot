@@ -122,9 +122,9 @@ func (s BatchSpecState) Finished() bool {
 		s == BatchSpecStateCanceled
 }
 
-// FinishedUncanceled returns whether the execution of the BatchSpec ran
+// FinishedAndNotCanceled returns whether the execution of the BatchSpec ran
 // through and finished without being canceled.
-func (s BatchSpecState) FinishedUncanceled() bool {
+func (s BatchSpecState) FinishedAndNotCanceled() bool {
 	return s == BatchSpecStateCompleted || s == BatchSpecStateFailed
 }
 

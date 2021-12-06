@@ -398,7 +398,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	setJobFailed(t, ctx, bstore, jobs[1])
 	want.State = "FAILED"
 	want.FailureMessage = fmt.Sprintf("Failures:\n\n* %s\n", message1)
-	// We still want an applyURL
+	// We still want users to be able to apply batch specs that executed with errors
 	want.ApplyURL = &applyUrl
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
