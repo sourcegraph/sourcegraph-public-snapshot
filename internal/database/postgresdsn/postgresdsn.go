@@ -7,6 +7,9 @@ import (
 )
 
 func New(prefix, currentUser string, getenv func(string) string) string {
+	if prefix == "frontend" {
+		prefix = ""
+	}
 	if prefix != "" {
 		prefix = fmt.Sprintf("%s_", strings.ToUpper(prefix))
 	}
