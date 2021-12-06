@@ -71,6 +71,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - All version contexts functionality (deprecated in 3.33) is now removed. [#26267](https://github.com/sourcegraph/sourcegraph/issues/26267)
 - Query filter `repogroup` (deprecated in 3.33) is now removed. [#24277](https://github.com/sourcegraph/sourcegraph/issues/24277)
+- Sourcegraph no longer uses CSRF security tokens/cookies to prevent CSRF attacks. Instead, Sourcegraph now relies solely on browser's CORS policies (which were already in place.) In practice, this is just as safe and leads to a simpler CSRF threat model which reduces security risks associated with our threat model complexity. [#7658](https://github.com/sourcegraph/sourcegraph/pull/7658)
 - Notifications for saved searches (deprecated in v3.31.0) have been removed [#27912](https://github.com/sourcegraph/sourcegraph/pull/27912/files)
 
 ## 3.33.2
