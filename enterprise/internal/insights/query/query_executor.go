@@ -133,7 +133,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 		calculated = append(calculated, GeneratedTimeSeries{
 			Label:    value,
 			Points:   timeseries,
-			SeriesId: fmt.Sprintf("livepreview %d", seriesCount),
+			SeriesId: fmt.Sprintf("dynamic-series-%d", seriesCount),
 		})
 		seriesCount++
 	}

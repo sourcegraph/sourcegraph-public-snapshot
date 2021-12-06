@@ -663,15 +663,16 @@ func (s *InsightStore) SetSeriesEnabled(ctx context.Context, seriesId string, en
 }
 
 type MatchSeriesArgs struct {
-	Query             string
-	StepIntervalUnit  string
-	StepIntervalValue int
+	Query                     string
+	StepIntervalUnit          string
+	StepIntervalValue         int
+	GenerateFromCaptureGroups bool
 }
 
 func (s *InsightStore) FindMatchingSeries(ctx context.Context, args MatchSeriesArgs) (_ types.InsightSeries, found bool, _ error) {
 	where := sqlf.Sprintf(
-		"(repositories = '{}' OR repositories is NULL) AND query = %s AND sample_interval_unit = %s AND sample_interval_value = %s",
-		args.Query, args.StepIntervalUnit, args.StepIntervalValue,
+		"(repositories = '{}' OR repositories is NULL) AND query = %s AND sample_interval_unit = %s AND sample_interval_value = %s AND generated_from_capture_groups = %s",
+		args.Query, args.StepIntervalUnit, args.StepIntervalValue, args.GenerateFromCaptureGroups,
 	)
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, where)
