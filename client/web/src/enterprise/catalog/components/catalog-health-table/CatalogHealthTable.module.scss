@@ -28,10 +28,6 @@
     .col-owner {
         width: 0;
     }
-    .col-status-context {
-        // width: auto;
-        // width: 8rem;
-    }
 
     .header-combined-status {
         font-weight: bold !important;
@@ -44,10 +40,19 @@
         max-width: var(--status-cell-width);
     }
 
+    .header-entity-owner,
+    .cell-entity-owner {
+        padding-right: var(--spacer) !important;
+    }
+
     .cell-state {
         border: solid 3px var(--body-bg);
+        text-align: center;
+        font-weight: bold;
         a {
             color: inherit;
+            font-size: 1.15rem;
+            margin: -9px;
         }
     }
     .state-null {
@@ -56,26 +61,26 @@
     }
     .state-expected {
         background-color: var(--warning);
-        color: var(--warning);
+        color: var(--warning-4);
     }
     .state-error {
         background-color: var(--danger);
-        color: var(--danger);
+        color: var(--danger-4);
     }
     .state-failure {
         background-color: var(--danger);
-        color: var(--danger);
+        color: var(--danger-4);
     }
     .state-pending {
-        background-color: var(--subtle-bg);
-        color: var(--subtle-bg);
+        background-color: var(--warning);
+        color: var(--warning-4);
     }
     .state-success {
         background-color: var(--success);
-        color: var(--success);
+        color: var(--success-4);
     }
     .state-info {
         background-color: var(--success);
-        color: var(--success);
+        color: var(--success-4);
     }
 }

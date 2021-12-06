@@ -26,7 +26,7 @@ import {
     CatalogEntityRelationRowsHeader,
     CatalogExplorerRowStyleProps,
 } from './CatalogEntityRow'
-import styles from './CatalogExplorerList.module.scss'
+import styles from './CatalogExplorerRelationList.module.scss'
 import { CATALOG_ENTITY_RELATIONS_FOR_EXPLORER } from './gqlForRelation'
 
 interface Props extends Pick<CatalogEntityFiltersProps, 'filters'>, CatalogExplorerRowStyleProps {

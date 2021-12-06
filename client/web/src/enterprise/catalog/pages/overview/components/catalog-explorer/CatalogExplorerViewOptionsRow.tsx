@@ -44,7 +44,10 @@ export const CatalogExplorerViewOptionsRow: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <Form className={classNames(styles.form, className)} onSubmit={onSubmit}>
+        <Form
+            className={classNames(styles.form, before ? styles.formHasBefore : styles.formNoBefore, className)}
+            onSubmit={onSubmit}
+        >
             {before && <div>{before}</div>}
             {toggle}
             <div className={classNames('form-group mb-0')}>

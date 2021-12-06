@@ -106,7 +106,7 @@ const CatalogHealthTableContent: React.FunctionComponent<{
             .sort((a, b) => a.name.localeCompare(b.name))
     }, [nodes])
 
-    const TH_CLASS_NAME = 'text-muted small font-weight-normal'
+    const TH_CLASS_NAME = 'text-muted small font-weight-normal py-2'
 
     return (
         <>
@@ -151,53 +151,63 @@ const CatalogHealthTableContent: React.FunctionComponent<{
 const CatalogHealthTableRow: React.FunctionComponent<{
     node: CatalogEntityHealthFields
     statusContextNames: StatusContextNameAndTitle[]
-}> = ({ node, statusContextNames }) => (
-    <tr>
-        <td>
-            <h3 className={classNames('h6 font-weight-bold mb-0 d-flex align-items-center')}>
-                <Link to={node.url} className={classNames('d-block text-truncate')}>
-                    <CatalogEntityIcon
-                        entity={node}
-                        className={classNames('icon-inline mr-1 flex-shrink-0 text-muted')}
+}> = ({ node, statusContextNames }) => {
+    const score =
+        node.status.contexts.length > 0
+            ? node.status.contexts.filter(
+                  ({ state }) => state === CatalogEntityStatusState.SUCCESS || state === CatalogEntityStatusState.INFO
+              ).length / node.status.contexts.length
+            : 0
+    return (
+        <tr>
+            <td>
+                <h3 className={classNames('h6 font-weight-bold mb-0 d-flex align-items-center')}>
+                    <Link to={node.url} className={classNames('d-block text-truncate')}>
+                        <CatalogEntityIcon
+                            entity={node}
+                            className={classNames('icon-inline mr-1 flex-shrink-0 text-muted')}
+                        />
+                        {node.name}
+                    </Link>
+                    <CatalogEntityStateIndicator entity={node} className="ml-1" />
+                </h3>
+            </td>
+            <td className={styles.cellEntityOwner}>
+                <EntityOwner owner={node.owner} className="text-nowrap d-flex" blankIfNone={true} />
+            </td>
+            <CatalogEntityStatusStateCell
+                state={node.status.state}
+                targetURL={node.url}
+                description={`Combined status for ${node.name}: ${node.status.state.toLowerCase()}`}
+            >
+                {Math.round(100 * score)}%
+            </CatalogEntityStatusStateCell>
+            {statusContextNames.map(({ name: statusContextName }) => {
+                const status = node.status.contexts.find(statusContext => statusContext.name === statusContextName)
+                return (
+                    <CatalogEntityStatusStateCell
+                        key={statusContextName}
+                        state={status ? status.state : null}
+                        targetURL={status?.targetURL || node.url}
+                        description={
+                            status
+                                ? `${status.name} status for ${node.name}: ${status.state.toLowerCase()}${
+                                      status.description ? `\n${status.description}` : ''
+                                  }`
+                                : `No ${statusContextName} status for ${node.name}`
+                        }
                     />
-                    {node.name}
-                </Link>
-                <CatalogEntityStateIndicator entity={node} className="ml-1" />
-            </h3>
-        </td>
-        <td>
-            <EntityOwner owner={node.owner} className="text-nowrap" blankIfNone={true} />
-        </td>
-        <CatalogEntityStatusStateCell
-            state={node.status.state}
-            targetURL={node.url}
-            description={`Combined status for ${node.name}: ${node.status.state.toLowerCase()}`}
-        />
-        {statusContextNames.map(({ name: statusContextName }) => {
-            const status = node.status.contexts.find(statusContext => statusContext.name === statusContextName)
-            return (
-                <CatalogEntityStatusStateCell
-                    key={statusContextName}
-                    state={status ? status.state : null}
-                    targetURL={status?.targetURL || node.url}
-                    description={
-                        status
-                            ? `${status.name} status for ${node.name}: ${status.state.toLowerCase()}${
-                                  status.description ? `\n${status.description}` : ''
-                              }`
-                            : `No ${statusContextName} status for ${node.name}`
-                    }
-                />
-            )
-        })}
-    </tr>
-)
+                )
+            })}
+        </tr>
+    )
+}
 
 const CatalogEntityStatusStateCell: React.FunctionComponent<{
     state: CatalogEntityStatusState | null
     targetURL: string
     description?: string | null
-}> = ({ state, targetURL, description }) => (
+}> = ({ state, targetURL, description, children }) => (
     <td
         className={classNames(
             'position-relative',
@@ -208,6 +218,7 @@ const CatalogEntityStatusStateCell: React.FunctionComponent<{
     >
         <Link to={targetURL} className="d-block stretched-link">
             <span className="sr-only">{state ? state.toLowerCase() : 'none'}</span>
+            {children}
         </Link>
     </td>
 )

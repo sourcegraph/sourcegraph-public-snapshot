@@ -32,7 +32,7 @@ export const CatalogEntityRow: React.FunctionComponent<Props> = ({
     noBottomBorder,
 }) => (
     <>
-        {before ? <span className={classNames('text-nowrap', itemStartClassName)}>{before}</span> : <span />}
+        {before && <span className={classNames('text-nowrap', itemStartClassName)}>{before}</span>}
         <h3 className={classNames('h6 font-weight-bold mb-0 d-flex align-items-center', !before && itemStartClassName)}>
             <Link to={node.url} className={classNames('d-block text-truncate')}>
                 <CatalogEntityIcon entity={node} className={classNames('icon-inline mr-1 flex-shrink-0 text-muted')} />
@@ -60,7 +60,6 @@ export const CatalogEntityRowsHeader: React.FunctionComponent<
     const columns = [before, 'Name', 'Owner', 'Lifecycle', 'Last commit', 'Description'].filter(isDefined)
     return (
         <>
-            {!before && <span />}
             {columns.map((text, index) => (
                 <div
                     key={index}

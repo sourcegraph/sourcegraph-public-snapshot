@@ -1,6 +1,12 @@
 .form {
     display: grid;
-    grid-template-columns: [before] min-content [toggle] minmax(4rem, min-content) [query] 1fr;
     align-items: center;
     gap: 0.5rem;
+
+    &--no-before {
+        grid-template-columns: [toggle] minmax(4rem, min-content) [query] 1fr;
+    }
+    &--has-before {
+        grid-template-columns: [before] min-content [toggle] minmax(4rem, min-content) [query] 1fr;
+    }
 }
