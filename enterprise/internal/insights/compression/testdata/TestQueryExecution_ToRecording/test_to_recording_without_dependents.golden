@@ -1,4 +1,4 @@
-[]store.RecordSeriesPointArgs{store.RecordSeriesPointArgs{
+[]store.RecordSeriesPointArgs{{
 	SeriesID: "series1",
 	Point: store.SeriesPoint{
 		Time: time.Time{
