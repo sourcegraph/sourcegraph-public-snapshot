@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -442,7 +441,7 @@ var (
 
 func serviceConnections() conftypes.ServiceConnections {
 	serviceConnectionsOnce.Do(func() {
-		dsns, err := schemas.DSNsBySchema()
+		dsns, err := postgresdsn.DSNsBySchema()
 		if err != nil {
 			panic(err.Error())
 		}
