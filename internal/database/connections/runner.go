@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-
 func NewDefaultRunner(dsns map[string]string, appName string, observationContext *observation.Context) *runner.Runner {
 	operations := store.NewOperations(observationContext)
 	makeFactory := func(
@@ -27,9 +26,6 @@ func NewDefaultRunner(dsns map[string]string, appName string, observationContext
 		}
 	}
 
-
-
-
 	storeFactoryMap := map[string]runner.StoreFactory{
 		"frontend":     makeFactory("frontend", schemas.Frontend, NewFrontendDB),
 		"codeintel":    makeFactory("codeintel", schemas.CodeIntel, NewCodeIntelDB),
@@ -38,6 +34,3 @@ func NewDefaultRunner(dsns map[string]string, appName string, observationContext
 
 	return runner.NewRunner(storeFactoryMap)
 }
-
-
-

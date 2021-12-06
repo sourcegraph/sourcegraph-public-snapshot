@@ -64,9 +64,9 @@ func NewCodeInsightsDB(dsn, appName string, migrate bool) (*sql.DB, error) {
 	return db, err
 }
 
-// NewTestDB connects to the given data source and returns the handle. After successful
-// connection, the schema version of the database will be compared against an expected version and the
-// supplied migrations may be run (taking an advisory lock to ensure exclusive access).
+// NewTestDB connects to the given data source and returns the handle. After successful connection, the
+// schema version of the database will be compared against an expected version and the supplied migrations
+// may be run (taking an advisory lock to ensure exclusive access).
 //
 // This function returns a basestore-style callback that closes the database. This should be called instead
 // of calling Close directly on the database handle as it also handles closing migration objects associated
