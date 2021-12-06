@@ -1,7 +1,4 @@
-BEGIN;
-
-CREATE OR REPLACE FUNCTION set_repo_stars_null_to_zero()
-RETURNS void AS
+CREATE OR REPLACE PROCEDURE set_repo_stars_null_to_zero() AS
 $BODY$
 DECLARE
   remaining integer;
@@ -18,6 +15,8 @@ BEGIN
     ) s
     WHERE repo.id = s.id;
 
+    COMMIT;
+
     SELECT COUNT(*) INTO remaining FROM repo WHERE stars IS NULL;
 
     RAISE NOTICE 'repo_stars_not_null.up.sql: % remaining', remaining;
@@ -25,9 +24,3 @@ BEGIN
 END
 $BODY$
 LANGUAGE plpgsql;
-
-SELECT set_repo_stars_null_to_zero();
-
-ALTER TABLE repo
-  ALTER COLUMN stars SET NOT NULL,
-  ALTER COLUMN stars SET DEFAULT 0;
