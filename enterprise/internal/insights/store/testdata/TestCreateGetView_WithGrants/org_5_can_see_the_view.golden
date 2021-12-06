@@ -15,4 +15,5 @@
 	LineColor:          "blue",
 	SampleIntervalUnit: "MONTH",
 	PresentationType:   types.PresentationType("LINE"),
+	GenerationMethod:   types.GenerationMethod("search"),
 }}
