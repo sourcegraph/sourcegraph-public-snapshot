@@ -688,23 +688,26 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 	var seriesToAdd, matchingSeries types.InsightSeries
 	var foundSeries bool
 	var err error
+	var dynamic bool
+	if series.GeneratedFromCaptureGroups != nil {
+		dynamic = *series.GeneratedFromCaptureGroups
+	}
 
 	// Don't try to match on frontend series
 	if len(series.RepositoryScope.Repositories) == 0 {
 		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
-			Query:             series.Query,
-			StepIntervalUnit:  series.TimeScope.StepInterval.Unit,
-			StepIntervalValue: int(series.TimeScope.StepInterval.Value)})
+			Query:                     series.Query,
+			StepIntervalUnit:          series.TimeScope.StepInterval.Unit,
+			StepIntervalValue:         int(series.TimeScope.StepInterval.Value),
+			GenerateFromCaptureGroups: dynamic,
+		})
 		if err != nil {
 			return errors.Wrap(err, "FindMatchingSeries")
 		}
 	}
 
 	if !foundSeries {
-		var dynamic bool
-		if series.GeneratedFromCaptureGroups != nil {
-			dynamic = *series.GeneratedFromCaptureGroups
-		}
+
 		seriesToAdd, err = tx.CreateSeries(ctx, types.InsightSeries{
 			SeriesID:                   ksuid.New().String(),
 			Query:                      series.Query,
