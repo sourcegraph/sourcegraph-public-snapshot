@@ -25,11 +25,16 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Moving a changeset from draft state into published state was broken on GitLab code hosts. [#28239](https://github.com/sourcegraph/sourcegraph/pull/28239)
-- A bug introduced in 3.34 and 3.34.1 that resulted in certain repositories being missed in search results. [#28624](https://github.com/sourcegraph/sourcegraph/pull/28624)
 
 ### Removed
 
 -
+
+## 3.34.2
+
+### Fixed
+
+- A bug introduced in 3.34 and 3.34.1 that resulted in certain repositories being missed in search results. [#28624](https://github.com/sourcegraph/sourcegraph/pull/28624)
 
 ## 3.34.1
 

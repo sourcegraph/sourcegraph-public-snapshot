@@ -28,7 +28,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 
 	timescaleDSN := postgresdsn.New("codeinsights", username, os.Getenv)
-	initConn, closeInitConn, err := dbconn.ConnectRawForTestDatabase(timescaleDSN)
+	initConn, closeInitConn, err := newTestDB(timescaleDSN)
 	if err != nil {
 		t.Log("")
 		t.Log("README: To run these tests you need to have the codeinsights TimescaleDB running:")
@@ -63,7 +63,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 	u.Path = dbname
 	timescaleDSN = u.String()
-	db, closeDBConn, err := dbconn.ConnectRawForTestDatabase(timescaleDSN, schemas.CodeInsights)
+	db, closeDBConn, err := newTestDB(timescaleDSN, schemas.CodeInsights)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,4 +88,15 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 		//}
 	}
 	return db, cleanup
+}
+
+// newTestDB connects to the given data source and returns the handle. After successful connection, the
+// schema version of the database will be compared against an expected version and the supplied migrations
+// may be run (taking an advisory lock to ensure exclusive access).
+//
+// This function returns a basestore-style callback that closes the database. This should be called instead
+// of calling Close directly on the database handle as it also handles closing migration objects associated
+// with the handle.
+func newTestDB(dsn string, schemas ...*schemas.Schema) (*sql.DB, func(err error) error, error) {
+	return dbconn.ConnectInternal(dsn, "", "", schemas)
 }

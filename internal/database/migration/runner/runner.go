@@ -2,16 +2,12 @@ package runner
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type Runner struct {
@@ -24,32 +20,6 @@ func NewRunner(storeFactories map[string]StoreFactory) *Runner {
 	return &Runner{
 		storeFactories: storeFactories,
 	}
-}
-
-func NewDefaultRunner(dsns map[string]string, appName string, observationContext *observation.Context) *Runner {
-	operations := store.NewOperations(observationContext)
-	makeFactory := func(
-		name string,
-		schema *schemas.Schema,
-		factory func(dsn, appName string, migrate bool) (*sql.DB, error),
-	) StoreFactory {
-		return func() (Store, error) {
-			db, err := factory(dsns[name], appName, false)
-			if err != nil {
-				return nil, err
-			}
-
-			return store.NewWithDB(db, schema.MigrationsTableName, operations), nil
-		}
-	}
-
-	storeFactoryMap := map[string]StoreFactory{
-		"frontend":     makeFactory("frontend", schemas.Frontend, dbconn.NewFrontendDB),
-		"codeintel":    makeFactory("codeintel", schemas.CodeIntel, dbconn.NewCodeIntelDB),
-		"codeinsights": makeFactory("codeinsights", schemas.CodeInsights, dbconn.NewCodeInsightsDB),
-	}
-
-	return NewRunner(storeFactoryMap)
 }
 
 type Options struct {

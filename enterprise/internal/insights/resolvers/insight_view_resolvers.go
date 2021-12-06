@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/service"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 
 	"github.com/inconshreveable/log15"
@@ -386,12 +388,21 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 	if err != nil {
 		return nil, errors.Wrap(err, "CreateView")
 	}
+	repos := args.Input.RepositoryScope.Repositories
 	seriesToAdd, err := tx.CreateSeries(ctx, types.InsightSeries{
 		SeriesID:           ksuid.New().String(),
 		Query:              args.Input.Query,
 		CreatedAt:          time.Now(),
-		Repositories:       args.Input.RepositoryScope.Repositories,
+		Repositories:       repos,
 		SampleIntervalUnit: string(types.Month),
+		JustInTime:         service.IsJustInTime(repos),
+		// one might ask themselves why is the generation method a language stats method if this mutation is search insight? The answer is that search is ultimately the
+		// driver behind language stats, but global language stats behave differently than standard search. Long term the vision is that
+		// search will power this, and we can iterate over repos just like any other search insight. But for now, this is just something weird that we will have to live with.
+		// As a note, this does mean that this mutation doesn't even technically do what it is named - it does not create a 'search' insight, and with that in mind
+		// if we decide to support pie charts for other insights than language stats (which we likely will, say on arbitrary aggregations or capture groups) we will need to
+		// revisit this.
+		GenerationMethod: types.LanguageStats,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "CreateSeries")
@@ -693,8 +704,13 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 		dynamic = *series.GeneratedFromCaptureGroups
 	}
 
-	// Don't try to match on frontend series
-	if len(series.RepositoryScope.Repositories) == 0 {
+	err = validateLineChartSearchInsightInput(series)
+	if err != nil {
+		return err
+	}
+
+	// Don't try to match on just-in-time series, since they are not recorded
+	if !service.IsJustInTime(series.RepositoryScope.Repositories) {
 		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
 			Query:                     series.Query,
 			StepIntervalUnit:          series.TimeScope.StepInterval.Unit,
@@ -707,15 +723,17 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 	}
 
 	if !foundSeries {
-
+		repos := series.RepositoryScope.Repositories
 		seriesToAdd, err = tx.CreateSeries(ctx, types.InsightSeries{
 			SeriesID:                   ksuid.New().String(),
 			Query:                      series.Query,
 			CreatedAt:                  time.Now(),
-			Repositories:               series.RepositoryScope.Repositories,
+			Repositories:               repos,
 			SampleIntervalUnit:         series.TimeScope.StepInterval.Unit,
 			SampleIntervalValue:        int(series.TimeScope.StepInterval.Value),
 			GeneratedFromCaptureGroups: dynamic,
+			JustInTime:                 service.IsJustInTime(repos),
+			GenerationMethod:           searchGenerationMethod(series),
 		})
 		if err != nil {
 			return errors.Wrap(err, "CreateSeries")
@@ -735,6 +753,24 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 		return errors.Wrap(err, "AttachSeriesToView")
 	}
 	return nil
+}
+
+func validateLineChartSearchInsightInput(series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
+	var generated bool
+	if series.GeneratedFromCaptureGroups != nil {
+		generated = *series.GeneratedFromCaptureGroups
+	}
+	if len(series.RepositoryScope.Repositories) == 0 && generated {
+		return errors.New("generated capture group search insights are not supported globally")
+	}
+	return nil
+}
+
+func searchGenerationMethod(series graphqlbackend.LineChartSearchInsightDataSeriesInput) types.GenerationMethod {
+	if series.GeneratedFromCaptureGroups != nil && *series.GeneratedFromCaptureGroups {
+		return types.SearchCompute
+	}
+	return types.Search
 }
 
 func seriesFound(existingSeries types.InsightViewSeries, inputSeries []graphqlbackend.LineChartSearchInsightDataSeriesInput) bool {
