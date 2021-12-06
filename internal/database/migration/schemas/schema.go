@@ -1,12 +1,15 @@
 package schemas
 
 import (
+	"fmt"
 	"io/fs"
+	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/migrations"
 )
 
-// Schema describe a schema in one of our Postgres(-like) databases.
+// Schema describes a schema in one of our Postgres(-like) databases.
 type Schema struct {
 	// Name is the name of the schema.
 	Name string
@@ -16,24 +19,38 @@ type Schema struct {
 
 	// FS describes the raw migration assets of the schema.
 	FS fs.FS
+
+	// Definitions describes the parsed migration assets of the schema.
+	Definitions *definition.Definitions
 }
 
 var (
-	Frontend = &Schema{
-		Name:                "frontend",
-		MigrationsTableName: "schema_migrations",
-		FS:                  migrations.Frontend,
-	}
+	Frontend     = mustResolveSchema("frontend")
+	CodeIntel    = mustResolveSchema("codeintel")
+	CodeInsights = mustResolveSchema("codeinsights")
 
-	CodeIntel = &Schema{
-		Name:                "codeintel",
-		MigrationsTableName: "codeintel_schema_migrations",
-		FS:                  migrations.CodeIntel,
-	}
-
-	CodeInsights = &Schema{
-		Name:                "codeinsights",
-		MigrationsTableName: "codeinsights_schema_migrations",
-		FS:                  migrations.CodeInsights,
+	Schemas = []*Schema{
+		Frontend,
+		CodeIntel,
+		CodeInsights,
 	}
 )
+
+func mustResolveSchema(name string) *Schema {
+	fs, err := fs.Sub(migrations.QueryDefinitions, name)
+	if err != nil {
+		panic(fmt.Sprintf("malformed migration definitions %q: %s", name, err))
+	}
+
+	definitions, err := definition.ReadDefinitions(fs)
+	if err != nil {
+		panic(fmt.Sprintf("malformed migration definitions %q: %s", name, err))
+	}
+
+	return &Schema{
+		Name:                name,
+		MigrationsTableName: strings.TrimPrefix(fmt.Sprintf("%s_schema_migrations", name), "frontend_"),
+		FS:                  fs,
+		Definitions:         definitions,
+	}
+}
