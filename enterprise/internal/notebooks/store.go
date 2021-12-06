@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 
 	"github.com/cockroachdb/errors"
-
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -26,7 +25,7 @@ const (
 
 type ListNotebooksPageOptions struct {
 	First int32
-	After int32
+	After int64
 }
 
 type ListNotebooksOptions struct {
@@ -67,25 +66,34 @@ const notebooksPermissionsConditionFmtStr = `(
     -- Bypass permission check
     %s
     -- Happy path of public notebooks
-    OR n.public
+    OR notebooks.public
     -- Private notebooks are available only to its creator
-    OR (n.creator_user_id IS NOT NULL AND n.creator_user_id = %d)
+    OR (notebooks.creator_user_id IS NOT NULL AND notebooks.creator_user_id = %d)
 )`
 
-func notebooksPermissionsCondition(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
+var notebookColumns = []*sqlf.Query{
+	sqlf.Sprintf("notebooks.id"),
+	sqlf.Sprintf("notebooks.title"),
+	sqlf.Sprintf("notebooks.blocks"),
+	sqlf.Sprintf("notebooks.public"),
+	sqlf.Sprintf("notebooks.creator_user_id"),
+	sqlf.Sprintf("notebooks.created_at"),
+	sqlf.Sprintf("notebooks.updated_at"),
+}
+
+func notebooksPermissionsCondition(ctx context.Context, db dbutil.DB) *sqlf.Query {
 	a := actor.FromContext(ctx)
 	authenticatedUserID := int32(0)
 	bypassPermissionsCheck := a.Internal
 	if !bypassPermissionsCheck && a.IsAuthenticated() {
 		authenticatedUserID = a.UID
 	}
-	q := sqlf.Sprintf(notebooksPermissionsConditionFmtStr, bypassPermissionsCheck, authenticatedUserID)
-	return q, nil
+	return sqlf.Sprintf(notebooksPermissionsConditionFmtStr, bypassPermissionsCheck, authenticatedUserID)
 }
 
 const listNotebooksFmtStr = `
-SELECT n.id, n.title, n.blocks, n.public, n.creator_user_id, n.created_at, n.updated_at
-FROM notebooks n
+SELECT %s
+FROM notebooks
 WHERE
 	(%s) -- permission conditions
 	AND (%s) -- query conditions
@@ -101,79 +109,60 @@ func getNotebooksOrderByClause(orderBy NotebooksOrderByOption, descending bool) 
 	}
 	switch orderBy {
 	case NotebooksOrderByCreatedAt:
-		return sqlf.Sprintf("n.created_at " + orderDirection)
+		return sqlf.Sprintf("notebooks.created_at " + orderDirection)
 	case NotebooksOrderByUpdatedAt:
-		return sqlf.Sprintf("n.updated_at " + orderDirection)
+		return sqlf.Sprintf("notebooks.updated_at " + orderDirection)
 	case NotebooksOrderByID:
-		return sqlf.Sprintf("n.id " + orderDirection)
+		return sqlf.Sprintf("notebooks.id " + orderDirection)
 	}
 	panic("invalid NotebooksOrderByOption option")
 }
 
-func scanSingleNotebook(rows *sql.Rows) (*Notebook, error) {
-	notebooks, err := scanNotebooks(rows)
-	if err != nil {
+func scanNotebook(row *sql.Row) (*Notebook, error) {
+	var blocksJSON json.RawMessage
+	n := &Notebook{}
+	err := row.Scan(
+		&n.ID,
+		&n.Title,
+		&blocksJSON,
+		&n.Public,
+		&dbutil.NullInt32{N: &n.CreatorUserID},
+		&n.CreatedAt,
+		&n.UpdatedAt,
+	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotebookNotFound
+	} else if err != nil {
 		return nil, err
 	}
-	if len(notebooks) != 1 {
-		return nil, ErrNotebookNotFound
+	var blocks []NotebookBlock
+	if err = json.Unmarshal(blocksJSON, &blocks); err != nil {
+		return nil, err
 	}
-	return notebooks[0], nil
-}
-
-func scanNotebooks(rows *sql.Rows) ([]*Notebook, error) {
-	var out []*Notebook
-	for rows.Next() {
-		var blocksJSON json.RawMessage
-		n := &Notebook{}
-		err := rows.Scan(
-			&n.ID,
-			&n.Title,
-			&blocksJSON,
-			&n.Public,
-			&dbutil.NullInt32{N: &n.CreatorUserID},
-			&n.CreatedAt,
-			&n.UpdatedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-		var blocks []NotebookBlock
-		if err = json.Unmarshal(blocksJSON, &blocks); err != nil {
-			return nil, err
-		}
-		n.Blocks = blocks
-		out = append(out, n)
-	}
-	return out, nil
+	n.Blocks = blocks
+	return n, nil
 }
 
 func (s *notebooksStore) GetNotebook(ctx context.Context, id int64) (*Notebook, error) {
-	permissionsCond, err := notebooksPermissionsCondition(ctx, s.Handle().DB())
-	if err != nil {
-		return nil, err
-	}
-	rows, err := s.Query(
+	permissionsCond := notebooksPermissionsCondition(ctx, s.Handle().DB())
+	row := s.QueryRow(
 		ctx,
 		sqlf.Sprintf(
 			listNotebooksFmtStr,
+			sqlf.Join(notebookColumns, ","),
 			permissionsCond,
-			sqlf.Sprintf("n.id = %d", id),
+			sqlf.Sprintf("notebooks.id = %d", id),
 			getNotebooksOrderByClause(NotebooksOrderByID, false),
 			1, // limit
 			0, // offset
 		),
 	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	return scanSingleNotebook(rows)
+	return scanNotebook(row)
 }
 
 const insertNotebookFmtStr = `
 INSERT INTO notebooks (title, blocks, public, creator_user_id) VALUES (%s, %s, %s, %s)
-RETURNING id
+RETURNING %s
 `
 
 func (s *notebooksStore) CreateNotebook(ctx context.Context, n *Notebook) (*Notebook, error) {
@@ -186,12 +175,11 @@ func (s *notebooksStore) CreateNotebook(ctx context.Context, n *Notebook) (*Note
 	if err != nil {
 		return nil, err
 	}
-	var id int64
-	row := s.QueryRow(ctx, sqlf.Sprintf(insertNotebookFmtStr, n.Title, blocksJSON, n.Public, nullInt32Column(n.CreatorUserID)))
-	if err := row.Scan(&id); err != nil {
-		return nil, err
-	}
-	return s.GetNotebook(ctx, id)
+	row := s.QueryRow(
+		ctx,
+		sqlf.Sprintf(insertNotebookFmtStr, n.Title, blocksJSON, n.Public, nullInt32Column(n.CreatorUserID), sqlf.Join(notebookColumns, ",")),
+	)
+	return scanNotebook(row)
 }
 
 func nullInt32Column(n int32) *int32 {
