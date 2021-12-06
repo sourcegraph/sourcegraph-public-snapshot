@@ -53,16 +53,6 @@ var (
 	all = []Corpus{flask, sourcegraph, kubernetes, linux, chromium}
 )
 
-//func main() {
-//	fs, err := flask.LoadFileSystem()
-//	if err != nil {
-//		panic(err)
-//	}
-//	err = bitmask.NewOnDiskRepoIndex(fs, flask.indexCachePath())
-//	if err != nil {
-//		panic(err)
-//	}
-//}
 func main() {
 	if len(os.Args) < 2 {
 		panic("missing argument for corpus name")
@@ -143,6 +133,7 @@ func (c *Corpus) LoadFileSystem() (*bitmask.ZipFileSystem, error) {
 }
 
 func (c *Corpus) LoadRepoIndex() (*bitmask.RepoIndex, error) {
+	os.Remove(c.indexCachePath())
 	fs, err := c.LoadFileSystem()
 	if err != nil {
 		return nil, err
@@ -220,11 +211,10 @@ func (c *Corpus) run() error {
 		fmt.Println("== Query " + query)
 		fmt.Println(header)
 		bench := hrtime.NewBenchmark(50)
-		var matchingPaths []string
+		matchingPaths := map[string]struct{}{}
 		for bench.Next() {
-			matchingPaths = []string{}
 			for path := range index.PathsMatchingQuery(query) {
-				matchingPaths = append(matchingPaths, path)
+				matchingPaths[path] = struct{}{}
 			}
 		}
 		bench.Laps()
@@ -232,12 +222,20 @@ func (c *Corpus) run() error {
 		fmt.Println(hg)
 		if index.FS != nil {
 			falsePositives := 0
-			for _, p := range matchingPaths {
-				bytes, _ := index.FS.ReadRelativeFilename(p)
+			falseNegatives := []string{}
+			for _, p := range index.Blobs {
+				bytes, _ := index.FS.ReadRelativeFilename(p.Path)
 				text := string(bytes)
-				if strings.Index(text, query) < 0 {
+				_, isMatchingPath := matchingPaths[p.Path]
+				isPositive := strings.Index(text, query) >= 0
+				if isPositive && isMatchingPath {
 					falsePositives++
+				} else if isPositive && !isMatchingPath {
+					falseNegatives = append(falseNegatives, p.Path)
 				}
+			}
+			if len(falseNegatives) > 0 {
+				panic(fmt.Sprintf("false negatives %v", falseNegatives))
 			}
 			falsePositiveRatio := float64(falsePositives) / math.Max(1, float64(len(matchingPaths)))
 			fmt.Printf("paths %v fp %v (%.2f%%)\n", len(matchingPaths), falsePositives, falsePositiveRatio*100)

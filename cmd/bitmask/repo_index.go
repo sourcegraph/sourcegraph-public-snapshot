@@ -31,6 +31,8 @@ const (
 	targetFalsePositiveRatio = 0.01
 	maxFileSize              = 1 << 20 // 1_048_576
 	maximumQueryNgrams       = 100
+	MinArity                 = 1
+	MaxArity                 = 6
 )
 
 type RepoIndex struct {
@@ -197,6 +199,9 @@ type Ngram struct {
 }
 
 func (g *Ngram) EmitHashAndClear(gs *Ngrams, onBytes OnBytes) {
+	if g.Arity < MinArity || g.Arity > MaxArity {
+		return
+	}
 	hash := g.Hash.Sum64()
 	if _, ok := gs.SeenHashes[hash]; !ok {
 		gs.SeenHashes[hash] = struct{}{}
@@ -210,6 +215,9 @@ func (g *Ngram) EmitHashAndClear(gs *Ngrams, onBytes OnBytes) {
 var hashedBytes = make([]byte, 4)
 
 func (g *Ngram) Update(b int32) {
+	if g.Arity < MinArity || g.Arity > MaxArity {
+		return
+	}
 	binary.BigEndian.PutUint32(hashedBytes, uint32(b))
 
 	// always returns len(hashedBytes), nil
