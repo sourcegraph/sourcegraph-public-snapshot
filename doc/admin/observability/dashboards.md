@@ -2136,7 +2136,7 @@ Query: `max by(owner) (observability_test_metric_critical)`
 
 <br />
 
-### Frontend: Cloud KMS
+### Frontend: Cloud KMS and cache
 
 #### frontend: cloudkms_cryptographic_requests
 
@@ -2152,6 +2152,48 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101600`
 <summary>Technical details</summary>
 
 Query: `sum(increase(src_cloudkms_cryptographic_total[1m]))`
+
+</details>
+
+<br />
+
+#### frontend: encryption_cache_hit_ratio
+
+<p class="subtitle">Average encryption cache hit ratio per workload</p>
+
+- Encryption cache hit ratio (hits/(hits+misses)) - minimum across all instances of a workload.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101601` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `min by (kubernetes_name) (src_encryption_cache_hit_total/(src_encryption_cache_hit_total+src_encryption_cache_miss_total))`
+
+</details>
+
+<br />
+
+#### frontend: encryption_cache_evictions
+
+<p class="subtitle">Rate of encryption cache evictions - sum across all instances of a given workload</p>
+
+- Rate of encryption cache evictions (caused by cache exceeding its maximum size) - sum across all instances of a workload
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101602` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (kubernetes_name) (irate(src_encryption_cache_eviction_total[5m]))`
 
 </details>
 
