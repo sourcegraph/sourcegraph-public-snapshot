@@ -1,16 +1,16 @@
 import React, { ChangeEvent } from 'react'
 import { Link } from 'react-router-dom'
 
-import { SettingsSiteSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsSiteSubject, SettingsUserSubject } from '@sourcegraph/shared/out/src/settings/settings'
 
 import {
     isGlobalSubject,
     isOrganizationSubject,
     isUserSubject,
     SupportedInsightSubject,
-} from '../../core/types/subjects'
-import { FormGroup } from '../form/form-group/FormGroup'
-import { FormRadioInput } from '../form/form-radio-input/FormRadioInput'
+} from '../../../core/types/subjects'
+import { FormGroup } from '../../form/form-group/FormGroup'
+import { FormRadioInput } from '../../form/form-radio-input/FormRadioInput'
 
 export interface VisibilityPickerProps {
     /**
@@ -36,7 +36,7 @@ export interface VisibilityPickerProps {
 
 /**
  * Shared component for visibility field for creation UI pages.
- * */
+ */
 export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = props => {
     const { value, subjects, onChange, labelClassName } = props
 
