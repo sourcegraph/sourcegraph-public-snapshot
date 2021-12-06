@@ -18,6 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -25,11 +26,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	schema "github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func printConfigValidation() {
@@ -442,7 +442,7 @@ var (
 
 func serviceConnections() conftypes.ServiceConnections {
 	serviceConnectionsOnce.Do(func() {
-		dsns, err := schemas.DSNsBySchema()
+		dsns, err := postgresdsn.DSNsBySchema()
 		if err != nil {
 			panic(err.Error())
 		}

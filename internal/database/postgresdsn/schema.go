@@ -1,4 +1,4 @@
-package schemas
+package postgresdsn
 
 import (
 	"net/url"
@@ -7,19 +7,11 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	"github.com/sourcegraph/sourcegraph/lib/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
 func DSNsBySchema() (map[string]string, error) {
-	username := ""
-	if user, err := user.Current(); err == nil {
-		username = user.Username
-	}
-
-	dsns := make(map[string]string, len(SchemaNames))
-	for _, schemaName := range SchemaNames {
-		dsns[schemaName] = postgresdsn.New(schemaName, username, os.Getenv)
-	}
+	dsns := RawDSNsBySchema()
 
 	// We set this envvar in development to disable the following check
 	if os.Getenv("CODEINTEL_PG_ALLOW_SINGLE_DB") == "" {
@@ -30,6 +22,20 @@ func DSNsBySchema() (map[string]string, error) {
 	}
 
 	return dsns, nil
+}
+
+func RawDSNsBySchema() map[string]string {
+	username := ""
+	if user, err := user.Current(); err == nil {
+		username = user.Username
+	}
+
+	dsns := make(map[string]string, len(schemas.SchemaNames))
+	for _, schemaName := range schemas.SchemaNames {
+		dsns[schemaName] = New(schemaName, username, os.Getenv)
+	}
+
+	return dsns
 }
 
 // comparePostgresDSNs returns an error if one of the given Postgres DSN values are not a valid URL, or if

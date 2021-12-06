@@ -1,5 +1,3 @@
-// Package postgresdsn exposes functionality for building a Postgres DSN from the environment for a
-// given DB, deriving information from the current user and .
 package postgresdsn
 
 import (
