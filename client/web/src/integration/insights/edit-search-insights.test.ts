@@ -74,7 +74,7 @@ describe('Code insight edit insight page', () => {
 
     it('should update user/org settings if insight has been updated', async () => {
         const userSettings = {
-            'searchInsights.insight.teamSize': {},
+            'searchInsights.insight.teamSize': { series: [] },
             'searchInsights.insight.graphQLTypesMigration': {
                 title: 'Migration to new GraphQL TS types',
                 repositories: ['github.com/sourcegraph/sourcegraph'],
@@ -97,7 +97,9 @@ describe('Code insight edit insight page', () => {
         }
 
         const orgSettings = {
-            'searchInsights.insight.orgTeamSize': {},
+            'searchInsights.insight.orgTeamSize': {
+                series: [],
+            },
         }
 
         // Mock `Date.now` to stabilize timestamps
@@ -248,12 +250,12 @@ describe('Code insight edit insight page', () => {
 
         // Check that old user settings config doesn't have edited insight
         assert.deepStrictEqual(JSON.parse(deleteFromUserConfigRequest.contents), {
-            'searchInsights.insight.teamSize': {},
+            'searchInsights.insight.teamSize': { series: [] },
         })
 
         // Check that new org settings config has edited insight
         assert.deepStrictEqual(JSON.parse(addToOrgConfigRequest.contents), {
-            'searchInsights.insight.orgTeamSize': {},
+            'searchInsights.insight.orgTeamSize': { series: [] },
             'searchInsights.insight.testInsightTitle': {
                 title: 'Test insight title',
                 repositories: ['github.com/sourcegraph/sourcegraph', 'github.com/sourcegraph/about'],

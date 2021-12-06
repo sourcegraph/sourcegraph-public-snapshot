@@ -2,8 +2,8 @@
 	SeriesID: "job 2", SearchQuery: "our search 2",
 	PersistMode: "record",
 	DependentFrames: []time.Time{
-		time.Time{ext: 63713433600},
-		time.Time{ext: 63713433600},
+		{ext: 63713433600},
+		{ext: 63713433600},
 	},
 	ID: 2,
 }

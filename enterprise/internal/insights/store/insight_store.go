@@ -311,7 +311,7 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 		preds = append(preds, sqlf.Sprintf("series_id = %s", args.SeriesID))
 	}
 	if args.GlobalOnly {
-		preds = append(preds, sqlf.Sprintf("repositories IS NULL OR CARDINALITY(repositories) = 0"))
+		preds = append(preds, sqlf.Sprintf("(repositories IS NULL OR CARDINALITY(repositories) = 0)"))
 	}
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))

@@ -30,7 +30,7 @@ type CodeMonitorStore interface {
 	ListMonitors(context.Context, ListMonitorsOpts) ([]*Monitor, error)
 	CountMonitors(ctx context.Context, userID int32) (int32, error)
 
-	CreateQueryTrigger(ctx context.Context, monitorID int64, query string) error
+	CreateQueryTrigger(ctx context.Context, monitorID int64, query string) (*QueryTrigger, error)
 	UpdateQueryTrigger(ctx context.Context, id int64, query string) error
 	GetQueryTriggerForMonitor(ctx context.Context, monitorID int64) (*QueryTrigger, error)
 	ResetQueryTriggerTimestamps(ctx context.Context, queryID int64) error
@@ -51,16 +51,16 @@ type CodeMonitorStore interface {
 	GetEmailAction(ctx context.Context, emailID int64) (*EmailAction, error)
 	ListEmailActions(context.Context, ListActionsOpts) ([]*EmailAction, error)
 
-	CreateRecipient(ctx context.Context, emailID int64, userID, orgID *int32) error
+	CreateRecipient(ctx context.Context, emailID int64, userID, orgID *int32) (*Recipient, error)
 	DeleteRecipients(ctx context.Context, emailID int64) error
 	ListRecipients(context.Context, ListRecipientsOpts) ([]*Recipient, error)
 	CountRecipients(ctx context.Context, emailID int64) (int32, error)
 
 	ListActionJobs(context.Context, ListActionJobsOpts) ([]*ActionJob, error)
 	CountActionJobs(context.Context, ListActionJobsOpts) (int, error)
-	GetActionJobMetadata(ctx context.Context, recordID int) (*ActionJobMetadata, error)
-	GetActionJob(ctx context.Context, recordID int) (*ActionJob, error)
-	EnqueueActionJobsForQuery(ctx context.Context, queryID int64, triggerJob int32) error
+	GetActionJobMetadata(ctx context.Context, jobID int32) (*ActionJobMetadata, error)
+	GetActionJob(ctx context.Context, jobID int32) (*ActionJob, error)
+	EnqueueActionJobsForMonitor(ctx context.Context, monitorID int64, triggerJob int32) ([]*ActionJob, error)
 }
 
 // codeMonitorStore exposes methods to read and write codemonitors domain models

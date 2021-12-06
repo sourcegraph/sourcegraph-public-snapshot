@@ -9,7 +9,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/lib/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 )
 
 // TimescaleDB returns a handle to the Code Insights TimescaleDB instance.
@@ -62,7 +63,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 	u.Path = dbname
 	timescaleDSN = u.String()
-	db, closeDBConn, err := dbconn.ConnectRawForTestDatabase(timescaleDSN, dbconn.CodeInsights)
+	db, closeDBConn, err := dbconn.ConnectRawForTestDatabase(timescaleDSN, schemas.CodeInsights)
 	if err != nil {
 		t.Fatal(err)
 	}

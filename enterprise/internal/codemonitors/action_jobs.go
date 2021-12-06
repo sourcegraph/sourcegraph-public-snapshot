@@ -16,7 +16,7 @@ type ActionJob struct {
 	Email        *int64
 	Webhook      *int64
 	SlackWebhook *int64
-	TriggerEvent int
+	TriggerEvent int32
 
 	// Fields demanded by any dbworker.
 	State          string
@@ -164,10 +164,10 @@ func (s *codeMonitorStore) CountActionJobs(ctx context.Context, opts ListActionJ
 
 const enqueueActionEmailFmtStr = `
 WITH due AS (
-	SELECT e.id
-	FROM cm_emails e
-	INNER JOIN cm_queries q ON e.monitor = q.monitor
-	WHERE q.id = %s AND e.enabled = true
+	SELECT id
+	FROM cm_emails
+	WHERE monitor = %s 
+		AND enabled = true
 ),
 busy AS (
 	SELECT DISTINCT email as id FROM cm_action_jobs
@@ -176,12 +176,25 @@ busy AS (
 )
 INSERT INTO cm_action_jobs (email, trigger_event)
 SELECT id, %s::integer from due EXCEPT SELECT id, %s::integer from busy ORDER BY id
+RETURNING %s
 `
 
 // TODO(camdencheek): could/should we enqueue based on monitor ID rather than query ID? Would avoid joins above.
-func (s *codeMonitorStore) EnqueueActionJobsForQuery(ctx context.Context, queryID int64, triggerJobID int32) (err error) {
+func (s *codeMonitorStore) EnqueueActionJobsForMonitor(ctx context.Context, monitorID int64, triggerJobID int32) ([]*ActionJob, error) {
 	// TODO(camdencheek): Enqueue actions other than emails here
-	return s.Store.Exec(ctx, sqlf.Sprintf(enqueueActionEmailFmtStr, queryID, triggerJobID, triggerJobID))
+	q := sqlf.Sprintf(
+		enqueueActionEmailFmtStr,
+		monitorID,
+		triggerJobID,
+		triggerJobID,
+		sqlf.Join(ActionJobColumns, ","),
+	)
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanActionJobs(rows)
 }
 
 const getActionJobMetadataFmtStr = `
@@ -197,20 +210,20 @@ INNER JOIN cm_monitors cm on cm.id = cq.monitor
 WHERE caj.id = %s
 `
 
-func (s *codeMonitorStore) GetActionJobMetadata(ctx context.Context, recordID int) (*ActionJobMetadata, error) {
-	row := s.Store.QueryRow(ctx, sqlf.Sprintf(getActionJobMetadataFmtStr, recordID))
+func (s *codeMonitorStore) GetActionJobMetadata(ctx context.Context, jobID int32) (*ActionJobMetadata, error) {
+	row := s.Store.QueryRow(ctx, sqlf.Sprintf(getActionJobMetadataFmtStr, jobID))
 	m := &ActionJobMetadata{}
 	return m, row.Scan(&m.Description, &m.Query, &m.MonitorID, &m.NumResults)
 }
 
 const actionJobForIDFmtStr = `
-SELECT %s -- ActionJobsColumns
+SELECT %s -- ActionJobColumns
 FROM cm_action_jobs
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) GetActionJob(ctx context.Context, recordID int) (*ActionJob, error) {
-	q := sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), recordID)
+func (s *codeMonitorStore) GetActionJob(ctx context.Context, jobID int32) (*ActionJob, error) {
+	q := sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), jobID)
 	row := s.QueryRow(ctx, q)
 	return scanActionJob(row)
 }

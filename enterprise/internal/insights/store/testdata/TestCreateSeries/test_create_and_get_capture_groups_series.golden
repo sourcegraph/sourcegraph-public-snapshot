@@ -1,4 +1,4 @@
-[]types.InsightSeries{types.InsightSeries{
+[]types.InsightSeries{{
 	ID:                         1,
 	SeriesID:                   "capture-group-1",
 	Query:                      "well hello there",

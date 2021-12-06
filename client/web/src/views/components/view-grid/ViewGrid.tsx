@@ -11,33 +11,33 @@ import styles from './ViewGrid.module.scss'
 // (WidthProvider only listens to window resize events)
 const ResponsiveGridLayout = WidthProvider(Responsive)
 
-const breakpointNames = ['xs', 'sm', 'md', 'lg'] as const
+export const BREAKPOINTS_NAMES = ['xs', 'sm', 'md', 'lg'] as const
 
-type BreakpointName = typeof breakpointNames[number]
+export type BreakpointName = typeof BREAKPOINTS_NAMES[number]
 
 /** Minimum size in px after which a breakpoint is active. */
-const breakpoints: Record<BreakpointName, number> = { xs: 0, sm: 576, md: 768, lg: 992 } // no xl because TreePage's max-width is the xl breakpoint.
-const columns: Record<BreakpointName, number> = { xs: 1, sm: 6, md: 8, lg: 12 }
-const defaultItemsPerRow: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 2, lg: 3 }
-const minWidths: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 3, lg: 3 }
-const defaultHeight = 3.25
+export const BREAKPOINTS: Record<BreakpointName, number> = { xs: 0, sm: 576, md: 768, lg: 992 } // no xl because TreePage's max-width is the xl breakpoint.
+export const COLUMNS: Record<BreakpointName, number> = { xs: 1, sm: 6, md: 8, lg: 12 }
+export const DEFAULT_ITEMS_PER_ROW: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 2, lg: 3 }
+export const MIN_WIDTHS: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 3, lg: 3 }
+export const DEFAULT_HEIGHT = 3.25
 
-const viewsToReactGridLayouts = (viewIds: string[]): ReactGridLayouts => {
-    const reactGridLayouts = Object.fromEntries(
-        breakpointNames.map(
+const DEFAULT_VIEWS_LAYOUT_GENERATOR = (viewIds: string[]): ReactGridLayouts =>
+    Object.fromEntries(
+        BREAKPOINTS_NAMES.map(
             breakpointName =>
                 [
                     breakpointName,
                     viewIds.map(
                         (id, index): ReactGridLayout => {
-                            const width = columns[breakpointName] / defaultItemsPerRow[breakpointName]
+                            const width = COLUMNS[breakpointName] / DEFAULT_ITEMS_PER_ROW[breakpointName]
                             return {
                                 i: id,
-                                h: defaultHeight,
+                                h: DEFAULT_HEIGHT,
                                 w: width,
-                                x: (index * width) % columns[breakpointName],
-                                y: Math.floor((index * width) / columns[breakpointName]),
-                                minW: minWidths[breakpointName],
+                                x: (index * width) % COLUMNS[breakpointName],
+                                y: Math.floor((index * width) / COLUMNS[breakpointName]),
+                                minW: MIN_WIDTHS[breakpointName],
                                 minH: 2,
                             }
                         }
@@ -45,16 +45,25 @@ const viewsToReactGridLayouts = (viewIds: string[]): ReactGridLayouts => {
                 ] as const
         )
     )
-    return reactGridLayouts
-}
 
-export interface ViewGridProps extends TelemetryProps {
-    /**
-     * All view ids withing the grid component. Used to calculate
-     * layout for each grid element.
-     */
-    viewIds: string[]
+export type ViewGridProps =
+    | {
+          /**
+           * All view ids within the grid component. Used to calculate
+           * layouts for each grid element.
+           */
+          viewIds: string[]
+          layouts?: never
+      }
+    | {
+          /**
+           * Sets custom layout for react-grid-layout library.
+           */
+          layouts: ReactGridLayouts
+          viewIds?: never
+      }
 
+interface ViewGridCommonProps extends TelemetryProps {
     /** Custom classname for root element of the grid. */
     className?: string
 }
@@ -62,8 +71,8 @@ export interface ViewGridProps extends TelemetryProps {
 /**
  * Renders drag and drop and resizable views grid.
  */
-export const ViewGrid: React.FunctionComponent<PropsWithChildren<ViewGridProps>> = props => {
-    const { viewIds, telemetryService, children, className } = props
+export const ViewGrid: React.FunctionComponent<PropsWithChildren<ViewGridProps & ViewGridCommonProps>> = props => {
+    const { layouts, viewIds = [], telemetryService, children, className } = props
 
     const onResizeOrDragStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item) => {
@@ -93,9 +102,9 @@ export const ViewGrid: React.FunctionComponent<PropsWithChildren<ViewGridProps>>
         <div className={classNames(className, styles.viewGrid)}>
             <ResponsiveGridLayout
                 measureBeforeMount={true}
-                breakpoints={breakpoints}
-                layouts={viewsToReactGridLayouts(viewIds)}
-                cols={columns}
+                breakpoints={BREAKPOINTS}
+                layouts={layouts ?? DEFAULT_VIEWS_LAYOUT_GENERATOR(viewIds)}
+                cols={COLUMNS}
                 autoSize={true}
                 rowHeight={6 * 16}
                 containerPadding={[0, 0]}

@@ -1433,6 +1433,8 @@ type Settings struct {
 	Extensions map[string]bool `json:"extensions,omitempty"`
 	// ExtensionsActiveLoggers description: The Sourcegraph extensions, by ID (e.g. `my/extension`), whose logs should be visible in the console.
 	ExtensionsActiveLoggers []string `json:"extensions.activeLoggers,omitempty"`
+	// FileSidebarVisibleByDefault description: Whether the sidebar on the repo view should be open by default.
+	FileSidebarVisibleByDefault bool `json:"fileSidebarVisibleByDefault,omitempty"`
 	// Insights description: EXPERIMENTAL: Code Insights
 	Insights []*Insight `json:"insights,omitempty"`
 	// InsightsAllrepos description: EXPERIMENTAL: Backend-based Code Insights
@@ -1484,8 +1486,6 @@ type Settings struct {
 	SearchScopes []*SearchScope `json:"search.scopes,omitempty"`
 	// SearchUppercase description: REMOVED. Previously, when active, any uppercase characters in the pattern will make the entire query case-sensitive.
 	SearchUppercase *bool `json:"search.uppercase,omitempty"`
-	// SidebarToggle description: Whether the sidebar on the repo view should be open by default.
-	SidebarToggle bool `json:"sidebarToggle,omitempty"`
 }
 
 // SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.

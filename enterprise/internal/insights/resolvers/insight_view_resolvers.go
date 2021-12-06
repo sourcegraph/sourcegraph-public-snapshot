@@ -699,6 +699,10 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 	var seriesToAdd, matchingSeries types.InsightSeries
 	var foundSeries bool
 	var err error
+	var dynamic bool
+	if series.GeneratedFromCaptureGroups != nil {
+		dynamic = *series.GeneratedFromCaptureGroups
+	}
 
 	err = validateLineChartSearchInsightInput(series)
 	if err != nil {
@@ -708,19 +712,17 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 	// Don't try to match on just-in-time series, since they are not recorded
 	if !service.IsJustInTime(series.RepositoryScope.Repositories) {
 		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
-			Query:             series.Query,
-			StepIntervalUnit:  series.TimeScope.StepInterval.Unit,
-			StepIntervalValue: int(series.TimeScope.StepInterval.Value)})
+			Query:                     series.Query,
+			StepIntervalUnit:          series.TimeScope.StepInterval.Unit,
+			StepIntervalValue:         int(series.TimeScope.StepInterval.Value),
+			GenerateFromCaptureGroups: dynamic,
+		})
 		if err != nil {
 			return errors.Wrap(err, "FindMatchingSeries")
 		}
 	}
 
 	if !foundSeries {
-		var dynamic bool
-		if series.GeneratedFromCaptureGroups != nil {
-			dynamic = *series.GeneratedFromCaptureGroups
-		}
 		repos := series.RepositoryScope.Repositories
 		seriesToAdd, err = tx.CreateSeries(ctx, types.InsightSeries{
 			SeriesID:                   ksuid.New().String(),

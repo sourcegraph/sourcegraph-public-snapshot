@@ -1,4 +1,4 @@
-[]types.InsightViewSeries{types.InsightViewSeries{
+[]types.InsightViewSeries{{
 	ViewID:             1,
 	UniqueID:           "user1viewonly",
 	SeriesID:           "series1",

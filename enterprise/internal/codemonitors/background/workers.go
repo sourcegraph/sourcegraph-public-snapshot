@@ -176,7 +176,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		numResults = len(results.Data.Search.Results.Results)
 	}
 	if numResults > 0 {
-		err := s.EnqueueActionJobsForQuery(ctx, q.ID, triggerJob.ID)
+		_, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
 		if err != nil {
 			return errors.Errorf("store.EnqueueActionJobsForQuery: %w", err)
 		}
@@ -218,7 +218,7 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 		return errors.Errorf("type assertion failed")
 	}
 
-	m, err := s.GetActionJobMetadata(ctx, record.RecordID())
+	m, err := s.GetActionJobMetadata(ctx, j.ID)
 	if err != nil {
 		return errors.Errorf("store.GetActionJobMetadata: %w", err)
 	}
