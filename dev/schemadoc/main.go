@@ -20,7 +20,7 @@ import (
 	_ "github.com/lib/pq"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/connections"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
@@ -41,8 +41,8 @@ var schemas = map[string]struct {
 	destinationFilename string
 	factory             databaseFactory
 }{
-	"frontend":  {"schema.md", dbconn.NewFrontendDB},
-	"codeintel": {"schema.codeintel.md", dbconn.NewCodeIntelDB},
+	"frontend":  {"schema.md", connections.NewFrontendDB},
+	"codeintel": {"schema.codeintel.md", connections.NewCodeIntelDB},
 }
 
 // This script generates markdown formatted output containing descriptions of
