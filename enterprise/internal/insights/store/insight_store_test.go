@@ -241,7 +241,7 @@ func TestGet(t *testing.T) {
 func TestCreateSeries(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	now := time.Now().Truncate(time.Microsecond).Round(0)
+	now := time.Date(2021, 5, 1, 1, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 
 	store := NewInsightStore(timescale)
 	store.Now = func() time.Time {
@@ -287,6 +287,40 @@ func TestCreateSeries(t *testing.T) {
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected result from create insight series (want/got): %s", diff)
 		}
+	})
+	t.Run("test create and get capture groups series", func(t *testing.T) {
+		store := NewInsightStore(timescale)
+		sampleIntervalUnit := "MONTH"
+		_, err := store.CreateSeries(ctx, types.InsightSeries{
+			SeriesID:                   "capture-group-1",
+			Query:                      "well hello there",
+			Enabled:                    true,
+			SampleIntervalUnit:         sampleIntervalUnit,
+			SampleIntervalValue:        0,
+			OldestHistoricalAt:         now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:             now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter:         now,
+			LastSnapshotAt:             now,
+			NextSnapshotAfter:          now,
+			CreatedAt:                  now,
+			GeneratedFromCaptureGroups: true,
+		})
+		if err != nil {
+			return
+		}
+
+		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{
+			SeriesID: "capture-group-1",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) < 1 {
+			t.Fatal(err)
+		}
+		got[0].ID = 1 // normalizing this for test determinism
+
+		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 }
 

@@ -3,9 +3,9 @@ import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { Badge } from '../../components/Badge'
 
 import styles from './SearchContextCtaPrompt.module.scss'
 
@@ -56,7 +56,7 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
     return (
         <div className={classNames(styles.searchContextCtaPrompt)}>
             <div className={styles.searchContextCtaPromptTitle}>
-                <Badge className="mr-1" status="new" />
+                <ProductStatusBadge className="mr-1" status="new" />
                 <span>Search the code you care about</span>
             </div>
             <div className="text-muted">{copyText}</div>

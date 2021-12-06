@@ -11,6 +11,7 @@ import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
+import { fetchRepository, resolveRevision } from '../../repo/backend'
 import { StreamingSearchResultsListProps } from '../results/StreamingSearchResultsList'
 
 import { SearchNotebook } from './SearchNotebook'
@@ -80,7 +81,13 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                     path={[{ text: 'Search Notebook' }]}
                 />
                 <hr className="mt-2 mb-1 mx-3" />
-                <SearchNotebook {...props} blocks={blocks} onSerializeBlocks={onSerializeBlocks} />
+                <SearchNotebook
+                    {...props}
+                    blocks={blocks}
+                    onSerializeBlocks={onSerializeBlocks}
+                    resolveRevision={resolveRevision}
+                    fetchRepository={fetchRepository}
+                />
             </Page>
         </div>
     )

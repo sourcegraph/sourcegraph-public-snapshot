@@ -3,7 +3,7 @@ package commitgraph
 import (
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type Graph struct {
@@ -31,7 +31,7 @@ type LinkRelationship struct {
 
 // NewGraph creates a commit graph decorated with the set of uploads visible from that commit
 // based on the given commit graph and complete set of LSIF upload metadata.
-func NewGraph(commitGraph *gitserver.CommitGraph, commitGraphView *CommitGraphView) *Graph {
+func NewGraph(commitGraph *gitdomain.CommitGraph, commitGraphView *CommitGraphView) *Graph {
 	graph := commitGraph.Graph()
 	order := commitGraph.Order()
 

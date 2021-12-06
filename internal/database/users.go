@@ -7,6 +7,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -24,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
@@ -1142,8 +1143,8 @@ func LogPasswordEvent(ctx context.Context, db dbutil.DB, r *http.Request, name S
 }
 
 func hashPassword(password string) (sql.NullString, error) {
-	if dbtesting.MockHashPassword != nil {
-		return dbtesting.MockHashPassword(password)
+	if MockHashPassword != nil {
+		return MockHashPassword(password)
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -1153,8 +1154,8 @@ func hashPassword(password string) (sql.NullString, error) {
 }
 
 func validPassword(hash, password string) bool {
-	if dbtesting.MockValidPassword != nil {
-		return dbtesting.MockValidPassword(hash, password)
+	if MockValidPassword != nil {
+		return MockValidPassword(hash, password)
 	}
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
@@ -1278,4 +1279,25 @@ func (u *userStore) UserAllowedExternalServices(ctx context.Context, userID int3
 // many cyclic imports.
 func (u *userStore) CurrentUserAllowedExternalServices(ctx context.Context) (conf.ExternalServiceMode, error) {
 	return u.UserAllowedExternalServices(ctx, actor.FromContext(ctx).UID)
+}
+
+// MockHashPassword if non-nil is used instead of database.hashPassword. This is useful
+// when running tests since we can use a faster implementation.
+var (
+	MockHashPassword  func(password string) (sql.NullString, error)
+	MockValidPassword func(hash, password string) bool
+)
+
+func useFastPasswordMocks() {
+	// We can't care about security in tests, we care about speed.
+	MockHashPassword = func(password string) (sql.NullString, error) {
+		h := fnv.New64()
+		_, _ = io.WriteString(h, password)
+		return sql.NullString{Valid: true, String: strconv.FormatUint(h.Sum64(), 16)}, nil
+	}
+	MockValidPassword = func(hash, password string) bool {
+		h := fnv.New64()
+		_, _ = io.WriteString(h, password)
+		return hash == strconv.FormatUint(h.Sum64(), 16)
+	}
 }

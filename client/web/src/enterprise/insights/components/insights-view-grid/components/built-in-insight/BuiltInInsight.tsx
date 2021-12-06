@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
-import React, { useContext, useMemo, useState } from 'react'
+import React, { Ref, useContext, useMemo, useState } from 'react'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -21,6 +21,7 @@ interface BuiltInInsightProps<D extends keyof ViewContexts> extends TelemetryPro
     insight: SearchExtensionBasedInsight | LangStatsInsight
     where: D
     context: ViewContexts[D]
+    innerRef: Ref<HTMLElement>
 }
 
 /**

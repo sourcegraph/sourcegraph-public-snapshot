@@ -60,8 +60,6 @@ const config = {
     path.join(__dirname, 'client/shared/dev/mockResizeObserver.ts'),
     path.join(__dirname, 'client/shared/dev/mockUniqueId.ts'),
     path.join(__dirname, 'client/shared/dev/mockSentryBrowser.ts'),
-    // Enzyme setup file
-    path.join(__dirname, 'client/shared/dev/enzymeSetup.js'),
   ],
   setupFilesAfterEnv: [
     require.resolve('core-js/stable'),
@@ -69,7 +67,6 @@ const config = {
     require.resolve('@testing-library/jest-dom'),
   ],
   globalSetup: path.join(__dirname, 'client/shared/dev/jestGlobalSetup.js'),
-  snapshotSerializers: [path.join(__dirname, 'client/shared/dev/enzymeSerializer.js')],
 }
 
 module.exports = config

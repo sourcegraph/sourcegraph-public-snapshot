@@ -5,6 +5,8 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type Recipient struct {
@@ -14,13 +16,23 @@ type Recipient struct {
 	NamespaceOrgID  *int32
 }
 
+var recipientColumns = []*sqlf.Query{
+	sqlf.Sprintf("cm_recipients.id"),
+	sqlf.Sprintf("cm_recipients.email"),
+	sqlf.Sprintf("cm_recipients.namespace_user_id"),
+	sqlf.Sprintf("cm_recipients.namespace_org_id"),
+}
+
 const createRecipientFmtStr = `
 INSERT INTO cm_recipients (email, namespace_user_id, namespace_org_id)
 VALUES (%s,%s,%s)
+RETURNING %s
 `
 
-func (s *codeMonitorStore) CreateRecipient(ctx context.Context, emailID int64, userID, orgID *int32) error {
-	return s.Exec(ctx, sqlf.Sprintf(createRecipientFmtStr, emailID, userID, orgID))
+func (s *codeMonitorStore) CreateRecipient(ctx context.Context, emailID int64, userID, orgID *int32) (*Recipient, error) {
+	q := sqlf.Sprintf(createRecipientFmtStr, emailID, userID, orgID, sqlf.Join(recipientColumns, ","))
+	row := s.QueryRow(ctx, q)
+	return scanRecipient(row)
 }
 
 const deleteRecipientFmtStr = `
@@ -61,7 +73,7 @@ func (l ListRecipientsOpts) Limit() *sqlf.Query {
 }
 
 const readRecipientQueryFmtStr = `
-SELECT id, email, namespace_user_id, namespace_org_id
+SELECT %s -- recipientColumns
 FROM cm_recipients
 WHERE %s
 ORDER BY id ASC
@@ -71,6 +83,7 @@ LIMIT %s;
 func (s *codeMonitorStore) ListRecipients(ctx context.Context, args ListRecipientsOpts) ([]*Recipient, error) {
 	q := sqlf.Sprintf(
 		readRecipientQueryFmtStr,
+		sqlf.Join(recipientColumns, ","),
 		args.Conds(),
 		args.Limit(),
 	)
@@ -95,18 +108,24 @@ func (s *codeMonitorStore) CountRecipients(ctx context.Context, emailID int64) (
 }
 
 func scanRecipients(rows *sql.Rows) ([]*Recipient, error) {
-	var ms []*Recipient
+	var rs []*Recipient
 	for rows.Next() {
-		m := &Recipient{}
-		if err := rows.Scan(
-			&m.ID,
-			&m.Email,
-			&m.NamespaceUserID,
-			&m.NamespaceOrgID,
-		); err != nil {
+		r, err := scanRecipient(rows)
+		if err != nil {
 			return nil, err
 		}
-		ms = append(ms, m)
+		rs = append(rs, r)
 	}
-	return ms, rows.Err()
+	return rs, rows.Err()
+}
+
+func scanRecipient(scanner dbutil.Scanner) (*Recipient, error) {
+	var r Recipient
+	err := scanner.Scan(
+		&r.ID,
+		&r.Email,
+		&r.NamespaceUserID,
+		&r.NamespaceOrgID,
+	)
+	return &r, err
 }

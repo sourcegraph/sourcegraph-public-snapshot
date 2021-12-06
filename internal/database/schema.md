@@ -170,6 +170,7 @@ Foreign-key constraints:
  unsupported          | boolean                  |           | not null | false
  skipped              | boolean                  |           | not null | false
  cached_result_found  | boolean                  |           | not null | false
+ step_cache_results   | jsonb                    |           | not null | '{}'::jsonb
 Indexes:
     "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -1038,6 +1039,24 @@ Stores data points for a code insight that do not need to be queried directly, b
 **job_id**: Foreign key to the job that owns this record.
 
 **recording_time**: The time for which this dependency should be recorded at using the parents value.
+
+# Table "public.insights_settings_migration_jobs"
+```
+       Column        |            Type             | Collation | Nullable |                           Default                            
+---------------------+-----------------------------+-----------+----------+--------------------------------------------------------------
+ id                  | integer                     |           | not null | nextval('insights_settings_migration_jobs_id_seq'::regclass)
+ user_id             | integer                     |           |          | 
+ org_id              | integer                     |           |          | 
+ global              | boolean                     |           |          | 
+ settings_id         | integer                     |           | not null | 
+ total_insights      | integer                     |           | not null | 0
+ migrated_insights   | integer                     |           | not null | 0
+ total_dashboards    | integer                     |           | not null | 0
+ migrated_dashboards | integer                     |           | not null | 0
+ runs                | integer                     |           | not null | 0
+ completed_at        | timestamp without time zone |           |          | 
+
+```
 
 # Table "public.lsif_configuration_policies"
 ```
