@@ -15,10 +15,16 @@
     padding: 0.5rem;
 
     &:hover {
+        background-color: var(--body-bg) !important;
+    }
+
+    &[aria-selected='true'] {
         background-color: var(--body-bg);
     }
 }
 
 .suggestions-popover {
     background-color: var(--input-bg);
+    max-height: 18rem;
+    overflow: auto;
 }
