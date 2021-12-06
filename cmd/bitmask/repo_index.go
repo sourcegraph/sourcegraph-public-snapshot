@@ -30,7 +30,6 @@ const (
 	Version                  = 1
 	targetFalsePositiveRatio = 0.01
 	maxFileSize              = 1 << 20 // 1_048_576
-	bloomSizePadding         = 2
 	maximumQueryNgrams       = 100
 )
 
@@ -388,7 +387,7 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 			defer wg.Done()
 			ngrams := onGrams(text, func(b []byte, arity int) {
 			})
-			bloomSize := uint(len(ngrams.SeenHashes))
+			bloomSize := uint(padBloomSize(len(ngrams.SeenHashes)))
 			filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
 			data := make([]byte, 8)
 			for hash := range ngrams.SeenHashes {
@@ -401,6 +400,15 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 	wg.Wait()
 	close(res)
 	return res
+}
+
+func padBloomSize(size int) int {
+	if size < 5_000 {
+		return ((size + 99) / 100) * 100
+	} else if size < 50_000 {
+		return ((size + 999) / 1_000) * 1_000
+	}
+	return ((size + 9999) / 10_000) * 10_000
 }
 
 func (r *RepoIndex) Grep(query string) {

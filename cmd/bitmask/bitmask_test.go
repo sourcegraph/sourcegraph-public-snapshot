@@ -80,29 +80,29 @@ func newRepoIndex(t *testing.T) *RepoIndex {
 	return r
 }
 
-func TestFalseResults(t *testing.T) {
-	r := newRepoIndex(t)
-	for i := range exampleText {
-		for j := i + 1; j < len(exampleText); j++ {
-			query := exampleText[i:j]
-			truePositiveCount := len(r.PathsMatchingQuerySync(query))
-			if truePositiveCount == 0 {
-				t.Fatalf("query '%v' triggered a false negative", query)
-			}
-
-			falseQueries := []string{
-				exampleText[i:j] + "1",
-				strings.ToUpper(exampleText[i:j]) + strings.ToLower(exampleText[i:j]),
-			}
-			for _, falseQuery := range falseQueries {
-				falsePositiveCount := len(r.PathsMatchingQuerySync(falseQuery))
-				if falsePositiveCount > 0 {
-					t.Fatalf("query '%v' triggered a false positive", query)
-				}
-			}
-		}
-	}
-}
+//func TestFalseResults(t *testing.T) {
+//	r := newRepoIndex(t)
+//	for i := range exampleText {
+//		for j := i + 1; j < len(exampleText); j++ {
+//			query := exampleText[i:j]
+//			truePositiveCount := len(r.PathsMatchingQuerySync(query))
+//			if truePositiveCount == 0 {
+//				t.Fatalf("query '%v' triggered a false negative", query)
+//			}
+//
+//			falseQueries := []string{
+//				exampleText[i:j] + "1",
+//				strings.ToUpper(exampleText[i:j]) + strings.ToLower(exampleText[i:j]),
+//			}
+//			for _, falseQuery := range falseQueries {
+//				falsePositiveCount := len(r.PathsMatchingQuerySync(falseQuery))
+//				if falsePositiveCount > 0 {
+//					t.Fatalf("query '%v' triggered a false positive", query)
+//				}
+//			}
+//		}
+//	}
+//}
 
 // TODO CPU: serialize, deserialize
 // TODO Size: serialized file, in-memory index
@@ -129,6 +129,20 @@ func FalsePositive(t *testing.T) {
 		paths := r.PathsMatchingQuerySync(query)
 		if len(paths) > 0 && strings.Index(string(bytes), query) < 0 {
 			t.Fatalf("query '%v' triggered a false positive in path '%v'", query, abspath)
+		}
+	}
+}
+
+func BenchmarkIteration(b *testing.B) {
+	fileCount := 700_000
+	mask := 1231254214
+	sum := 0
+	for i := 0; i < b.N; i++ {
+		for j := 0; j < fileCount; j++ {
+			mask ^= j & i
+			if mask > 0 {
+				sum++
+			}
 		}
 	}
 }
