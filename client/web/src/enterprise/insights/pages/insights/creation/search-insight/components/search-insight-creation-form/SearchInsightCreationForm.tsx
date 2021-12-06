@@ -5,20 +5,17 @@ import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'
+import { CodeInsightTimeStepPicker, VisibilityPicker } from '../../../../../../components/creation-ui-kit'
 import { FormGroup } from '../../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
-import { FormRadioInput } from '../../../../../../components/form/form-radio-input/FormRadioInput'
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../../components/form/repositories-field/RepositoriesField'
-import { VisibilityPicker } from '../../../../../../components/visibility-picker/VisibilityPicker'
 import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
 import { CodeInsightsGqlBackend } from '../../../../../../core/backend/gql-api/code-insights-gql-backend'
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
-
-import styles from './SearchInsightCreationForm.module.scss'
 
 interface CreationSearchInsightFormProps {
     /** This component might be used in edit or creation insight case. */
@@ -156,7 +153,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     </small>
                 </label>
 
-                <hr className={styles.creationInsightFormSeparator} />
+                <hr className="my-4 w-100" />
             </FormGroup>
 
             <FormGroup
@@ -178,7 +175,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                 />
             </FormGroup>
 
-            <hr className={styles.creationInsightFormSeparator} />
+            <hr className="my-4 w-100" />
 
             <FormGroup name="chart settings group" title="Chart settings">
                 <FormInput
@@ -196,80 +193,21 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     <VisibilityPicker
                         subjects={subjects}
                         value={visibility.input.value}
-                        labelClassName={styles.creationInsightFormGroupLabel}
                         onChange={visibility.input.onChange}
                     />
                 )}
 
-                <FormGroup
-                    name="insight step group"
-                    title="Granularity: distance between data points"
-                    description="The prototype supports 7 datapoints, so your total x-axis timeframe is 6 times the distance between each point."
+                <CodeInsightTimeStepPicker
+                    {...stepValue.input}
+                    valid={stepValue.meta.touched && stepValue.meta.validState === 'VALID'}
                     error={stepValue.meta.touched && stepValue.meta.error}
-                    className="mt-4"
-                    labelClassName={styles.creationInsightFormGroupLabel}
-                    contentClassName="d-flex flex-wrap mb-n2"
-                >
-                    <FormInput
-                        placeholder="ex. 2"
-                        required={true}
-                        type="number"
-                        min={1}
-                        {...stepValue.input}
-                        valid={stepValue.meta.touched && stepValue.meta.validState === 'VALID'}
-                        errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
-                        className={classNames(styles.creationInsightFormStepInput)}
-                    />
-
-                    <FormRadioInput
-                        title="Hours"
-                        name="step"
-                        value="hours"
-                        checked={step.input.value === 'hours'}
-                        onChange={step.input.onChange}
-                        disabled={step.input.disabled}
-                        className="mr-3"
-                    />
-                    <FormRadioInput
-                        title="Days"
-                        name="step"
-                        value="days"
-                        checked={step.input.value === 'days'}
-                        onChange={step.input.onChange}
-                        disabled={step.input.disabled}
-                        className="mr-3"
-                    />
-                    <FormRadioInput
-                        title="Weeks"
-                        name="step"
-                        value="weeks"
-                        checked={step.input.value === 'weeks'}
-                        onChange={step.input.onChange}
-                        disabled={step.input.disabled}
-                        className="mr-3"
-                    />
-                    <FormRadioInput
-                        title="Months"
-                        name="step"
-                        value="months"
-                        checked={step.input.value === 'months'}
-                        onChange={step.input.onChange}
-                        disabled={step.input.disabled}
-                        className="mr-3"
-                    />
-                    <FormRadioInput
-                        title="Years"
-                        name="step"
-                        value="years"
-                        checked={step.input.value === 'years'}
-                        onChange={step.input.onChange}
-                        disabled={step.input.disabled}
-                        className="mr-3"
-                    />
-                </FormGroup>
+                    errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
+                    stepType={step.input.value}
+                    onStepTypeChange={step.input.onChange}
+                />
             </FormGroup>
 
-            <hr className={styles.creationInsightFormSeparator} />
+            <hr className="my-4 w-100" />
 
             <div className="d-flex flex-wrap align-items-center">
                 {submitErrors?.[FORM_ERROR] && <ErrorAlert className="w-100" error={submitErrors[FORM_ERROR]} />}
