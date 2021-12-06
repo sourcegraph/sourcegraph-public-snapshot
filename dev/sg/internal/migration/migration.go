@@ -29,22 +29,6 @@ import (
 var once sync.Once
 var out = stdout.Out
 
-// RunUp will migrate up the given number of steps.
-// If n is nil then all migrations are ran.
-func RunUp(database db.Database, n *int) error {
-	return doRunMigrations(database, n, "up", func(m *migrate.Migrate) error { return m.Up() })
-}
-
-// RunDown will migrate down the given number of steps.
-func RunDown(database db.Database, n *int) error {
-	// Negative ints mean that we're going down.
-	if n != nil {
-		*n = -1 * *n
-	}
-
-	return doRunMigrations(database, n, "down", func(m *migrate.Migrate) error { return m.Down() })
-}
-
 // RunFixup will run the fixup command.
 // The run parameter controls whether changes are actually executed, or just calculated.
 // When run is false, no changes are made.
@@ -292,45 +276,6 @@ func writeMigrationFiles(paths ...string) (err error) {
 		}
 	}
 
-	return nil
-}
-
-func doRunMigrations(database db.Database, n *int, name string, f func(*migrate.Migrate) error) error {
-	var line output.FancyLine
-	if n == nil {
-		line = output.Linef("", output.StyleBold, "Running all %s migrations", name)
-	} else {
-		line = output.Linef("", output.StyleBold, "Running %s migrations: %d", name, *n)
-	}
-
-	block := out.Block(line)
-	defer block.Close()
-
-	logger := mLogger{block: block, prefix: "  applying: "}
-	m, err := getMigrate(database, logger)
-	if err != nil {
-		block.WriteLine(output.Linef(output.EmojiFailure, output.StyleBold, "Could not get database"))
-		return err
-	}
-
-	if n == nil {
-		migrateErr := f(m)
-		if migrateErr == migrate.ErrNoChange {
-			block.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "No Changes"))
-			return nil
-		} else if migrateErr != nil {
-			block.WriteLine(output.Line(output.EmojiFailure, output.StyleSuccess, "ERR"))
-			return migrateErr
-		}
-	} else {
-		stepsErr := m.Steps(*n)
-		if stepsErr != nil {
-			block.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "Failed to apply migration steps: %s", stepsErr))
-			return stepsErr
-		}
-	}
-
-	block.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Succesfully ran migrations"))
 	return nil
 }
 
