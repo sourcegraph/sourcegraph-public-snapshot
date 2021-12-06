@@ -15,5 +15,3 @@ type Store interface {
 	Up(ctx context.Context, migration definition.Definition) error
 	Down(ctx context.Context, migration definition.Definition) error
 }
-
-type StoreFactory func() (Store, error)
