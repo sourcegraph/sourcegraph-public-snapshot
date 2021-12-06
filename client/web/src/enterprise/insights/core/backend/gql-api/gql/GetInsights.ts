@@ -39,6 +39,7 @@ export const INSIGHT_VIEW_FRAGMENT = gql`
                         value
                     }
                 }
+                isCalculated
             }
         }
     }

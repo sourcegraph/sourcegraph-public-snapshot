@@ -69,7 +69,7 @@ export const getInsightView = (insight: InsightViewNode): Insight | undefined =>
     switch (insight.presentation.__typename) {
         case 'LineChartInsightViewPresentation': {
             const isBackendInsight = insight.dataSeriesDefinitions.every(
-                series => series.repositoryScope.repositories.length === 0
+                series => series.isCalculated
             )
 
             const series = insight.presentation.seriesPresentation.map(series => ({
