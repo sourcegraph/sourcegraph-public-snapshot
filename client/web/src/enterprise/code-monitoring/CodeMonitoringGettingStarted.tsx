@@ -107,9 +107,9 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                         <div className={styles.startingPoint} key={monitor.title}>
                             <div className="card h-100">
                                 <div className="card-body p-3 d-flex flex-column">
-                                    <h3 className="mb-3">{monitor.title}</h3>
+                                    <h3>{monitor.title}</h3>
                                     <p className="text-muted flex-grow-1">{monitor.description}</p>
-                                    <Link to={createCodeMonitorUrl(monitor)}>Copy monitor</Link>
+                                    <Link to={createCodeMonitorUrl(monitor)}>Create copy of monitor</Link>
                                 </div>
                             </div>
                         </div>
