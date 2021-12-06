@@ -2,12 +2,19 @@ package repos_test
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"io"
 	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -1729,6 +1736,149 @@ func testDeleteExternalService(store *repos.Store) func(*testing.T) {
 
 		// We should have one deleted repo
 		assertDeletedRepoCount(ctx, t, store, 1)
+	}
+}
+
+func testAbortSyncWhenThereIsLastError(store *repos.Store) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		now := time.Now()
+
+		// create fake source
+		svc := &types.ExternalService{
+			Kind:            extsvc.KindGitHub,
+			DisplayName:     "Github - Test1",
+			Config:          `{"url": "https://github.com"}`,
+			CreatedAt:       now,
+			UpdatedAt:       now,
+			NamespaceUserID: 1337,
+			NamespaceOrgID:  1337101,
+		}
+
+		githubRepo := &types.Repo{
+			Name:     "github.com/org/foo",
+			Metadata: &github.Repository{},
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "foo-external-12345",
+				ServiceID:   "https://github.com/",
+				ServiceType: extsvc.TypeGitHub,
+			},
+		}
+
+		// configure DB mocks
+		extSvcStore := dbmock.NewMockExternalServiceStore()
+		extSvcStore.GetByIDFunc.SetDefaultReturn(svc, nil)
+		extSvcStore.UpsertFunc.SetDefaultReturn(nil)
+
+		errs := new(multierror.Error)
+		givenErr := errors.New("reached maximum allowed user added repos: site:1500/9999, user:2019/2000 (username: a)")
+		multierror.Append(errs, givenErr)
+		multierror.Append(errs, givenErr)
+
+		extSvcStore.GetLastSyncErrorFunc.SetDefaultReturn(errs.Error(), nil)
+
+		mockStore := &repos.Store{
+			Store:                basestore.NewWithDB(&dbtesting.MockDB{}, sql.TxOptions{ReadOnly: true}),
+			ExternalServiceStore: extSvcStore,
+		}
+
+		// configure configuration mock
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExternalServiceUserMode: "all",
+				UserReposMaxPerUser:     2000,
+			},
+		})
+		defer conf.Mock(nil)
+
+		// Sync first service
+		syncer := &repos.Syncer{
+			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+				s := repos.NewFakeSource(svc, nil, githubRepo)
+				return s, nil
+			},
+			Store: mockStore,
+			Now:   time.Now,
+		}
+		if err := syncer.SyncExternalService(ctx, svc.ID, 10*time.Second); err != nil {
+			if err.Error() != "skip sync because user reached maximum allowed user added repos" {
+				t.Fatal(err)
+			}
+		}
+	}
+}
+
+func testSyncIsNotAbortedWhenThereIsNoLastError(store *repos.Store) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		now := time.Now()
+
+		// create fake source
+		svc := &types.ExternalService{
+			Kind:            extsvc.KindGitHub,
+			DisplayName:     "Github - Test1",
+			Config:          `{"url": "https://github.com"}`,
+			CreatedAt:       now,
+			UpdatedAt:       now,
+			NamespaceUserID: 1337,
+			NamespaceOrgID:  1337101,
+		}
+
+		githubRepo := &types.Repo{
+			Name:     "github.com/org/foo",
+			Metadata: &github.Repository{},
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "foo-external-12345",
+				ServiceID:   "https://github.com/",
+				ServiceType: extsvc.TypeGitHub,
+			},
+		}
+
+		// configure DB mocks
+		extSvcStore := dbmock.NewMockExternalServiceStore()
+		extSvcStore.GetByIDFunc.SetDefaultReturn(svc, nil)
+		extSvcStore.UpsertFunc.SetDefaultReturn(nil)
+
+		errs := new(multierror.Error)
+		givenErr := errors.New("reached maximum allowed user added repos: site:1500/9999, user:2019/2000 (username: a)")
+		multierror.Append(errs, givenErr)
+		multierror.Append(errs, givenErr)
+
+		extSvcStore.GetLastSyncErrorFunc.SetDefaultReturn(errs.Error(), nil)
+
+		mockStore := &repos.Store{
+			Store:                basestore.NewWithDB(&dbtesting.MockDB{}, sql.TxOptions{ReadOnly: true}),
+			ExternalServiceStore: extSvcStore,
+		}
+
+		// configure configuration mock
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExternalServiceUserMode: "all",
+				UserReposMaxPerUser:     100000,
+				UserReposMaxPerSite:     100000,
+			},
+		})
+		defer conf.Mock(nil)
+
+		// Sync first service
+		syncer := &repos.Syncer{
+			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+				s := repos.NewFakeSource(svc, nil, githubRepo)
+				return s, nil
+			},
+			Store: mockStore,
+			Now:   time.Now,
+		}
+		if err := syncer.SyncExternalService(ctx, svc.ID, 10*time.Second); err != nil {
+			if err.Error() == "skip sync because user reached maximum allowed user added repos" {
+				t.Fatal(err)
+			}
+		}
 	}
 }
 
