@@ -9,8 +9,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/connections"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -63,5 +63,5 @@ func createRunFunc() (cliutil.RunFunc, error) {
 		return nil, err
 	}
 
-	return runner.NewDefaultRunner(dsns, appName, observationContext).Run, nil
+	return connections.NewDefaultRunner(dsns, appName, observationContext).Run, nil
 }
