@@ -14,7 +14,7 @@ import (
 
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/connections"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
@@ -176,7 +176,7 @@ func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
 
 func dbConnInternal(t testing.TB, cfg *url.URL, schemas []*schemas.Schema) (*sql.DB, func(err error) error) {
 	t.Helper()
-	db, close, err := dbconn.ConnectRawForTestDatabase(cfg.String(), schemas...)
+	db, close, err := connections.NewTestDB(cfg.String(), schemas...)
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}

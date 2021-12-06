@@ -1,8 +1,9 @@
-package dbconn
+package connections
 
 import (
 	"database/sql"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
@@ -21,7 +22,7 @@ func NewFrontendDB(dsn, appName string, migrate bool) (*sql.DB, error) {
 		migrations = nil
 	}
 
-	db, _, err := connect(dsn, appName, "frontend", migrations)
+	db, _, err := dbconn.ConnectInternal(dsn, appName, "frontend", migrations)
 	return db, err
 }
 
@@ -40,7 +41,7 @@ func NewCodeIntelDB(dsn, appName string, migrate bool) (*sql.DB, error) {
 		migrations = nil
 	}
 
-	db, _, err := connect(dsn, appName, "codeintel", migrations)
+	db, _, err := dbconn.ConnectInternal(dsn, appName, "codeintel", migrations)
 	return db, err
 }
 
@@ -59,6 +60,17 @@ func NewCodeInsightsDB(dsn, appName string, migrate bool) (*sql.DB, error) {
 		migrations = nil
 	}
 
-	db, _, err := connect(dsn, appName, "codeinsight", migrations)
+	db, _, err := dbconn.ConnectInternal(dsn, appName, "codeinsight", migrations)
 	return db, err
+}
+
+// NewTestDB connects to the given data source and returns the handle. After successful
+// connection, the schema version of the database will be compared against an expected version and the
+// supplied migrations may be run (taking an advisory lock to ensure exclusive access).
+//
+// This function returns a basestore-style callback that closes the database. This should be called instead
+// of calling Close directly on the database handle as it also handles closing migration objects associated
+// with the handle.
+func NewTestDB(dsn string, schemas ...*schemas.Schema) (*sql.DB, func(err error) error, error) {
+	return dbconn.ConnectInternal(dsn, "", "", schemas)
 }
