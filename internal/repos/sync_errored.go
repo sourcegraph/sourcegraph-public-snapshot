@@ -19,7 +19,10 @@ const syncInterval = 2 * time.Minute // TODO: decide on appropriate interval. Cu
 func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, rateLimiterRegistry *ratelimit.Registry) {
 	for {
 		log15.Info("running worker for SyncReposWithLastErrors", "time", time.Now())
-		s.SyncReposWithLastErrors(ctx, rateLimiterRegistry)
+		err := s.SyncReposWithLastErrors(ctx, rateLimiterRegistry, 1)
+		if err != nil {
+			log15.Error("Error syncing repos w/ errors", "err", err)
+		}
 
 		// Wait and run task again
 		time.Sleep(syncInterval)
@@ -30,11 +33,11 @@ func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, rateLimit
 // table, indicating there was an issue updating the repo, and syncs each of these repos. Repos which are no longer
 // visible (i.e. deleted or made private) will be deleted from the DB. Note that this is only being run in Sourcegraph
 // Dot com mode.
-func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiterRegistry *ratelimit.Registry) {
-	err := s.Store.GitserverReposStore.IterateWithNonemptyLastError(ctx, func(repo types.RepoGitserverStatus) error {
+func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiterRegistry *ratelimit.Registry, n int) error {
+	return s.Store.GitserverReposStore.IterateWithNonemptyLastError(ctx, func(repo types.RepoGitserverStatus) error {
 		codehost := extsvc.CodeHostOf(repo.Name, extsvc.PublicCodeHosts...)
 
-		err := waitForRateLimit(ctx, rateLimiterRegistry, codehost.ServiceID, 1)
+		err := waitForRateLimit(ctx, rateLimiterRegistry, codehost.ServiceID, n)
 		if err != nil {
 			return errors.Errorf("error waiting for rate limiter: %s", err)
 		}
@@ -44,9 +47,6 @@ func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiterRegistr
 		}
 		return nil
 	})
-	if err != nil {
-		log15.Error("Error syncing repos w/ errors", "err", err)
-	}
 }
 
 // TODO: this is copied from enterprise/cmd/repo-updater/internal/authz/perms_syncer.go, maybe this is worth putting
