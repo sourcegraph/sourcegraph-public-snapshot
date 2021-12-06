@@ -1,5 +1,6 @@
 .form-series-input {
     line-height: 1.6;
+    font-size: 0.75rem;
 
     &__series-check {
         list-style: none;
@@ -17,9 +18,9 @@
     }
 
     code {
-        background-color: lightblue;
+        background-color: #d6eaf1;
         padding: 1px;
-        border-radius: 2px;
+        border-radius: 4px;
         font-weight: 600;
     }
 }

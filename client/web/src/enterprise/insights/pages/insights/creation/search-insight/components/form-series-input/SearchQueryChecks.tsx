@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import Check from 'mdi-react/CheckIcon'
+import CloseIcon from 'mdi-react/CloseIcon'
 import Info from 'mdi-react/InfoCircleOutlineIcon'
-import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
 import React from 'react'
 
 import styles from './FormSeriesInput.module.scss'
@@ -17,19 +17,16 @@ interface SearchQueryChecksProps {
     }
 }
 
-const CheckListItem: React.FunctionComponent<{ valid?: boolean }> = ({ children, valid }) => {
-    const StatusIcon: React.FunctionComponent = () =>
-        valid ? (
-            <Check size={16} className="text-success icon-inline" style={{ top: '3px' }} />
-        ) : (
-            <RadioboxBlankIcon size={16} className="icon-inline" style={{ top: '3px' }} />
-        )
-    return (
-        <>
-            <StatusIcon /> {children}
-        </>
+const CheckListItem: React.FunctionComponent<{ valid?: boolean }> = ({ children, valid }) =>
+    valid ? (
+        <span>
+            <Check size={16} className="text-success icon-inline" style={{ top: '3px' }} /> {children}
+        </span>
+    ) : (
+        <span className="text-dark">
+            <CloseIcon size={16} className="text-danger icon-inline" style={{ top: '3px' }} /> {children}
+        </span>
     )
-}
 
 export const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> = ({ checks }) => (
     <div className={classNames(styles.formSeriesInput)}>
