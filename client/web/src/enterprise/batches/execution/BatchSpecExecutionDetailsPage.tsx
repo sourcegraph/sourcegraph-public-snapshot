@@ -221,9 +221,17 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                         )}
                         {batchSpec.applyURL && (
                             <span>
-                                <Link to={batchSpec.applyURL} className="btn btn-primary">
-                                    Preview
-                                </Link>
+                                {batchSpec.state === BatchSpecState.COMPLETED && (
+                                    <Link to={batchSpec.applyURL} className="btn btn-primary">
+                                        Preview
+                                    </Link>
+                                )}
+                                {batchSpec.state === BatchSpecState.FAILED && (
+                                    <Link to={batchSpec.applyURL} className="btn btn-outline-danger" data-tooltip="Execution didn't finish successfully in all workspaces. The batch spec might have less changeset specs than expected.">
+                                        <AlertCircleIcon className="icon-inline mb-0 mr-2 text-warning" />
+                                        Preview
+                                    </Link>
+                                )}
                             </span>
                         )}
                     </div>
