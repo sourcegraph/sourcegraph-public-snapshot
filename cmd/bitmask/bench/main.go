@@ -205,6 +205,19 @@ func (c *Corpus) run() error {
 	if err != nil {
 		return err
 	}
+	isMatch := map[string]map[string]struct{}{}
+	for _, query := range c.Queries {
+		isMatch[query] = map[string]struct{}{}
+	}
+	for _, p := range index.Blobs {
+		bytes, _ := index.FS.ReadRelativeFilename(p.Path)
+		text := string(bytes)
+		for _, query := range c.Queries {
+			if strings.Index(text, query) >= 0 {
+				isMatch[query][p.Path] = struct{}{}
+			}
+		}
+	}
 	for _, query := range c.Queries {
 		header := "=========" + strings.Repeat("=", len(query))
 		fmt.Println(header)
@@ -222,15 +235,13 @@ func (c *Corpus) run() error {
 		fmt.Println(hg)
 		if index.FS != nil {
 			falsePositives := 0
-			falseNegatives := []string{}
+			var falseNegatives []string
 			for _, p := range index.Blobs {
-				bytes, _ := index.FS.ReadRelativeFilename(p.Path)
-				text := string(bytes)
-				_, isMatchingPath := matchingPaths[p.Path]
-				isPositive := strings.Index(text, query) >= 0
-				if isPositive && isMatchingPath {
+				_, found := isMatch[query][p.Path]
+				_, isBloomFound := matchingPaths[p.Path]
+				if isBloomFound && !found {
 					falsePositives++
-				} else if isPositive && !isMatchingPath {
+				} else if found && !isBloomFound {
 					falseNegatives = append(falseNegatives, p.Path)
 				}
 			}
@@ -238,7 +249,13 @@ func (c *Corpus) run() error {
 				panic(fmt.Sprintf("false negatives %v", falseNegatives))
 			}
 			falsePositiveRatio := float64(falsePositives) / math.Max(1, float64(len(matchingPaths)))
-			fmt.Printf("paths %v fp %v (%.2f%%)\n", len(matchingPaths), falsePositives, falsePositiveRatio*100)
+			fmt.Printf(
+				"total %v tp %v fp %v (%.2f%%)\n",
+				len(matchingPaths),
+				len(matchingPaths)-falsePositives,
+				falsePositives,
+				falsePositiveRatio*100,
+			)
 		}
 	}
 	return nil

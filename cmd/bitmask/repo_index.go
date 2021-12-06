@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unsafe"
 
 	"github.com/bits-and-blooms/bloom/v3"
 	"github.com/go-enry/go-enry/v2"
@@ -32,7 +33,7 @@ const (
 	maxFileSize              = 1 << 20 // 1_048_576
 	maximumQueryNgrams       = 100
 	MinArity                 = 1
-	MaxArity                 = 6
+	MaxArity                 = 3
 )
 
 type RepoIndex struct {
@@ -205,19 +206,18 @@ func (g *Ngram) EmitHashAndClear(gs *Ngrams, onBytes OnBytes) {
 	hash := g.Hash.Sum64()
 	if _, ok := gs.SeenHashes[hash]; !ok {
 		gs.SeenHashes[hash] = struct{}{}
-		hashedBytes := make([]byte, 8)
+		hashedBytes := make([]byte, unsafe.Sizeof(int64(1)))
 		binary.LittleEndian.PutUint64(hashedBytes, hash)
 		onBytes(hashedBytes, g.Arity)
 	}
 	g.Hash.Reset()
 }
 
-var hashedBytes = make([]byte, 4)
-
 func (g *Ngram) Update(b int32) {
 	if g.Arity < MinArity || g.Arity > MaxArity {
 		return
 	}
+	var hashedBytes = make([]byte, unsafe.Sizeof(uint32(1)))
 	binary.BigEndian.PutUint32(hashedBytes, uint32(b))
 
 	// always returns len(hashedBytes), nil
@@ -395,9 +395,9 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 			defer wg.Done()
 			ngrams := onGrams(text, func(b []byte, arity int) {
 			})
-			bloomSize := uint(padBloomSize(len(ngrams.SeenHashes)))
+			bloomSize := uint(len(ngrams.SeenHashes))
 			filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
-			data := make([]byte, 8)
+			data := make([]byte, unsafe.Sizeof(uint64(1)))
 			for hash := range ngrams.SeenHashes {
 				binary.LittleEndian.PutUint64(data, hash)
 				filter.Add(data)
@@ -408,15 +408,6 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 	wg.Wait()
 	close(res)
 	return res
-}
-
-func padBloomSize(size int) int {
-	if size < 5_000 {
-		return ((size + 99) / 100) * 100
-	} else if size < 50_000 {
-		return ((size + 999) / 1_000) * 1_000
-	}
-	return ((size + 9999) / 10_000) * 10_000
 }
 
 func (r *RepoIndex) Grep(query string) {
