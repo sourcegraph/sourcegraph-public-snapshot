@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/squash"
+	"github.com/sourcegraph/sourcegraph/internal/database/connections"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
@@ -77,7 +78,7 @@ var (
 )
 
 func runMigration(ctx context.Context, options runner.Options) error {
-	return runner.NewDefaultRunner(postgresdsn.RawDSNsBySchema(), "sg", &observation.TestContext).Run(ctx, options)
+	return connections.NewDefaultRunner(postgresdsn.RawDSNsBySchema(), "sg", &observation.TestContext).Run(ctx, options)
 }
 
 func migrationAddExec(ctx context.Context, args []string) error {
