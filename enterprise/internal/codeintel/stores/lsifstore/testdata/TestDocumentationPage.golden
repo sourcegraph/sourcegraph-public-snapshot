@@ -13,8 +13,8 @@
 	},
 	Detail: protocol.MarkupContent{Kind: protocol.MarkupKind("markdown")},
 	Children: []precise.DocumentationNodeChild{
-		precise.DocumentationNodeChild{PathID: "/github.com"},
-		precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+		{PathID: "/github.com"},
+		{Node: &precise.DocumentationNode{
 			PathID: "/#const",
 			Documentation: protocol.Documentation{
 				Identifier: "const",
@@ -26,7 +26,7 @@
 			},
 			Detail: protocol.MarkupContent{Kind: protocol.MarkupKind("plaintext")},
 			Children: []precise.DocumentationNodeChild{
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#EdgeContains",
 					Documentation: protocol.Documentation{
 						Identifier: "EdgeContains",
@@ -46,7 +46,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#EdgeItem",
 					Documentation: protocol.Documentation{
 						Identifier: "EdgeItem",
@@ -66,7 +66,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#EdgeMoniker",
 					Documentation: protocol.Documentation{
 						Identifier: "EdgeMoniker",
@@ -86,7 +86,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#EdgeNext",
 					Documentation: protocol.Documentation{
 						Identifier: "EdgeNext",
@@ -106,7 +106,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#EdgeNextMoniker",
 					Documentation: protocol.Documentation{
 						Identifier: "EdgeNextMoniker",
@@ -126,7 +126,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#EdgePackageInformation",
 					Documentation: protocol.Documentation{
 						Identifier: "EdgePackageInformation",
@@ -146,7 +146,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#EdgeTextDocumentDeclaration",
 					Documentation: protocol.Documentation{
 						Identifier: "EdgeTextDocumentDeclaration",
@@ -166,7 +166,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#EdgeTextDocumentDefinition",
 					Documentation: protocol.Documentation{
 						Identifier: "EdgeTextDocumentDefinition",
@@ -186,7 +186,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#EdgeTextDocumentDiagnostic",
 					Documentation: protocol.Documentation{
 						Identifier: "EdgeTextDocumentDiagnostic",
@@ -206,7 +206,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#EdgeTextDocumentDocumentLink",
 					Documentation: protocol.Documentation{
 						Identifier: "EdgeTextDocumentDocumentLink",
@@ -226,7 +226,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#EdgeTextDocumentDocumentSymbol",
 					Documentation: protocol.Documentation{
 						Identifier: "EdgeTextDocumentDocumentSymbol",
@@ -246,7 +246,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#EdgeTextDocumentFoldingRange",
 					Documentation: protocol.Documentation{
 						Identifier: "EdgeTextDocumentFoldingRange",
@@ -266,7 +266,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#EdgeTextDocumentHover",
 					Documentation: protocol.Documentation{
 						Identifier: "EdgeTextDocumentHover",
@@ -286,7 +286,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#EdgeTextDocumentImplementation",
 					Documentation: protocol.Documentation{
 						Identifier: "EdgeTextDocumentImplementation",
@@ -306,7 +306,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#EdgeTextDocumentReferences",
 					Documentation: protocol.Documentation{
 						Identifier: "EdgeTextDocumentReferences",
@@ -326,7 +326,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#EdgeTextDocumentTypeDefinition",
 					Documentation: protocol.Documentation{
 						Identifier: "EdgeTextDocumentTypeDefinition",
@@ -346,7 +346,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#ElementEdge",
 					Documentation: protocol.Documentation{
 						Identifier: "ElementEdge",
@@ -366,7 +366,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#ElementVertex",
 					Documentation: protocol.Documentation{
 						Identifier: "ElementVertex",
@@ -386,7 +386,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#PositionEncoding",
 					Documentation: protocol.Documentation{
 						Identifier: "PositionEncoding",
@@ -406,7 +406,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#Version",
 					Documentation: protocol.Documentation{
 						Identifier: "Version",
@@ -426,7 +426,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexDeclarationResult",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexDeclarationResult",
@@ -446,7 +446,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexDefinitionResult",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexDefinitionResult",
@@ -466,7 +466,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexDianosticResult",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexDianosticResult",
@@ -486,7 +486,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexDocument",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexDocument",
@@ -506,7 +506,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexDocumentLinkResult",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexDocumentLinkResult",
@@ -526,7 +526,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexDocumentSymbolResult",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexDocumentSymbolResult",
@@ -546,7 +546,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexEvent",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexEvent",
@@ -566,7 +566,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexFoldingRangeResult",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexFoldingRangeResult",
@@ -586,7 +586,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexHoverResult",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexHoverResult",
@@ -606,7 +606,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexImplementationResult",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexImplementationResult",
@@ -626,7 +626,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexLocation",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexLocation",
@@ -646,7 +646,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexMetaData",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexMetaData",
@@ -666,7 +666,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexMoniker",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexMoniker",
@@ -686,7 +686,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexPackageInformation",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexPackageInformation",
@@ -706,7 +706,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexProject",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexProject",
@@ -726,7 +726,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexRange",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexRange",
@@ -746,7 +746,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexReferenceResult",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexReferenceResult",
@@ -766,7 +766,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexResultSet",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexResultSet",
@@ -786,7 +786,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexTypeDefinitionResult",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexTypeDefinitionResult",
@@ -808,7 +808,7 @@
 				}},
 			},
 		}},
-		precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+		{Node: &precise.DocumentationNode{
 			PathID: "/#type",
 			Documentation: protocol.Documentation{
 				Identifier: "type",
@@ -820,7 +820,7 @@
 			},
 			Detail: protocol.MarkupContent{Kind: protocol.MarkupKind("plaintext")},
 			Children: []precise.DocumentationNodeChild{
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#Contains",
 					Documentation: protocol.Documentation{
 						Identifier: "Contains",
@@ -835,7 +835,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype Contains struct {\n\tEdge\n\tOutV string   `json:\"outV\"`\n\tInVs []string `json:\"inVs\"`\n}\n```\n\nContains is an edge object that represents 1:n \"contains\" relation. \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/#NewContains",
 						Documentation: protocol.Documentation{
 							Identifier: "NewContains",
@@ -853,7 +853,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#DefinitionResult",
 					Documentation: protocol.Documentation{
 						Identifier: "DefinitionResult",
@@ -868,7 +868,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype DefinitionResult struct {\n\tVertex\n}\n```\n\nDefinitionResult connects a definition that is spread over multiple ranges or multiple documents. \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/#NewDefinitionResult",
 						Documentation: protocol.Documentation{
 							Identifier: "NewDefinitionResult",
@@ -886,7 +886,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#Document",
 					Documentation: protocol.Documentation{
 						Identifier: "Document",
@@ -901,7 +901,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype Document struct {\n\tVertex\n\t// The URI indicates the location of the document.\n\tURI string `json:\"uri\"`\n\t// The language identifier of the document.\n\tLanguageID string `json:\"languageId\"`\n\t// The contents of the the document.\n\tContents string `json:\"contents,omitempty\"`\n}\n```\n\nDocument is a vertex of document in the project. \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/#NewDocument",
 						Documentation: protocol.Documentation{
 							Identifier: "NewDocument",
@@ -919,7 +919,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#Edge",
 					Documentation: protocol.Documentation{
 						Identifier: "Edge",
@@ -936,7 +936,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#EdgeLabel",
 					Documentation: protocol.Documentation{
 						Identifier: "EdgeLabel",
@@ -953,7 +953,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#Element",
 					Documentation: protocol.Documentation{
 						Identifier: "Element",
@@ -970,7 +970,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#ElementType",
 					Documentation: protocol.Documentation{
 						Identifier: "ElementType",
@@ -987,7 +987,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#Event",
 					Documentation: protocol.Documentation{
 						Identifier: "Event",
@@ -1002,7 +1002,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype Event struct {\n\tVertex\n\t// The kind of event (begin or end).\n\tKind string `json:\"kind\"`\n\t// The type of element this event describes (project or document).\n\tScope string `json:\"scope\"`\n\t// The identifier of the data beginning or ending.\n\tData string `json:\"data\"`\n}\n```\n\nEvent is optional metadata emitted to give hints to consumers about the beginning and ending of new \"socpes\" (e.g. a project or document). \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/#NewEvent",
 						Documentation: protocol.Documentation{
 							Identifier: "NewEvent",
@@ -1020,7 +1020,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#HoverResult",
 					Documentation: protocol.Documentation{
 						Identifier: "HoverResult",
@@ -1035,7 +1035,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype HoverResult struct {\n\tVertex\n\t// The result contents as the hover information.\n\tResult hoverResult `json:\"result\"`\n}\n```\n\nHoverResult connects a hover that is spread over multiple ranges or multiple documents. \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/#NewHoverResult",
 						Documentation: protocol.Documentation{
 							Identifier: "NewHoverResult",
@@ -1053,7 +1053,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#Item",
 					Documentation: protocol.Documentation{
 						Identifier: "Item",
@@ -1069,7 +1069,7 @@
 						Value: "```Go\ntype Item struct {\n\tEdge\n\tOutV string   `json:\"outV\"`\n\tInVs []string `json:\"inVs\"`\n\t// The document the item belongs to.\n\tDocument string `json:\"document\"`\n\t// The relationship property of the item.\n\tProperty string `json:\"property,omitempty\"`\n}\n```\n\nItem is an edge object that represents \"item\" relation. \n\n",
 					},
 					Children: []precise.DocumentationNodeChild{
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#NewItem",
 							Documentation: protocol.Documentation{
 								Identifier: "NewItem",
@@ -1086,7 +1086,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#NewItemOfDefinitions",
 							Documentation: protocol.Documentation{
 								Identifier: "NewItemOfDefinitions",
@@ -1103,7 +1103,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#NewItemOfReferences",
 							Documentation: protocol.Documentation{
 								Identifier: "NewItemOfReferences",
@@ -1120,7 +1120,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#NewItemWithProperty",
 							Documentation: protocol.Documentation{
 								Identifier: "NewItemWithProperty",
@@ -1139,7 +1139,7 @@
 						}},
 					},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#MarkedString",
 					Documentation: protocol.Documentation{
 						Identifier: "MarkedString",
@@ -1155,7 +1155,7 @@
 						Value: "```Go\ntype MarkedString markedString\n```\n\nMarkedString is the object to describe marked string. \n\n",
 					},
 					Children: []precise.DocumentationNodeChild{
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#NewMarkedString",
 							Documentation: protocol.Documentation{
 								Identifier: "NewMarkedString",
@@ -1172,7 +1172,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#RawMarkedString",
 							Documentation: protocol.Documentation{
 								Identifier: "RawMarkedString",
@@ -1189,7 +1189,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#MarkedString.MarshalJSON",
 							Documentation: protocol.Documentation{
 								Identifier: "MarkedString.MarshalJSON",
@@ -1206,7 +1206,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#MarkedString.UnmarshalJSON",
 							Documentation: protocol.Documentation{
 								Identifier: "MarkedString.UnmarshalJSON",
@@ -1225,7 +1225,7 @@
 						}},
 					},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#MetaData",
 					Documentation: protocol.Documentation{
 						Identifier: "MetaData",
@@ -1240,7 +1240,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype MetaData struct {\n\tVertex\n\t// The version of the LSIF format using semver notation.\n\tVersion string `json:\"version\"`\n\t// The project root (in form of an URI) used to compute this dump.\n\tProjectRoot string `json:\"projectRoot\"`\n\t// The string encoding used to compute line and character values in\n\t// positions and ranges. Currently only 'utf-16' is support due to the\n\t// limitations in LSP.\n\tPositionEncoding string `json:\"positionEncoding\"`\n\t// The information about the tool that created the dump.\n\tToolInfo ToolInfo `json:\"toolInfo\"`\n}\n```\n\nMetaData contains basic information about the dump. \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/#NewMetaData",
 						Documentation: protocol.Documentation{
 							Identifier: "NewMetaData",
@@ -1258,7 +1258,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#Moniker",
 					Documentation: protocol.Documentation{
 						Identifier: "Moniker",
@@ -1273,7 +1273,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype Moniker struct {\n\tVertex\n\t// The kind of moniker (e.g. local, export, import).\n\tKind string `json:\"kind\"`\n\t// The kind of moniker, usually a language or package manager.\n\tScheme string `json:\"scheme\"`\n\t// The unique moniker identifier.\n\tIdentifier string `json:\"identifier\"`\n}\n```\n\nMoniker describes a unique name for a result set or range. \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/#NewMoniker",
 						Documentation: protocol.Documentation{
 							Identifier: "NewMoniker",
@@ -1291,7 +1291,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#MonikerEdge",
 					Documentation: protocol.Documentation{
 						Identifier: "MonikerEdge",
@@ -1306,7 +1306,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype MonikerEdge struct {\n\tEdge\n\tOutV string `json:\"outV\"`\n\tInV  string `json:\"inV\"`\n}\n```\n\nMonikerEdge connects a moniker to a range or result set. \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/#NewMonikerEdge",
 						Documentation: protocol.Documentation{
 							Identifier: "NewMonikerEdge",
@@ -1324,7 +1324,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#Next",
 					Documentation: protocol.Documentation{
 						Identifier: "Next",
@@ -1339,7 +1339,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype Next struct {\n\tEdge\n\tOutV string `json:\"outV\"`\n\tInV  string `json:\"inV\"`\n}\n```\n\nNext is an edge object that represents \"next\" relation. \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/#NewNext",
 						Documentation: protocol.Documentation{
 							Identifier: "NewNext",
@@ -1357,7 +1357,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#NextMonikerEdge",
 					Documentation: protocol.Documentation{
 						Identifier: "NextMonikerEdge",
@@ -1372,7 +1372,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype NextMonikerEdge struct {\n\tEdge\n\tOutV string `json:\"outV\"`\n\tInV  string `json:\"inV\"`\n}\n```\n\nNextMonikerEdge connects a moniker to another moniker. \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/#NewNextMonikerEdge",
 						Documentation: protocol.Documentation{
 							Identifier: "NewNextMonikerEdge",
@@ -1390,7 +1390,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#PackageInformation",
 					Documentation: protocol.Documentation{
 						Identifier: "PackageInformation",
@@ -1405,7 +1405,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype PackageInformation struct {\n\tVertex\n\t// The name of the package.\n\tName string `json:\"name\"`\n\t// The package manager.\n\tManager string `json:\"manager\"`\n\t// The version of the package.\n\tVersion string `json:\"version\"`\n}\n```\n\nPackageInformation describes a package for a moniker. \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/#NewPackageInformation",
 						Documentation: protocol.Documentation{
 							Identifier: "NewPackageInformation",
@@ -1423,7 +1423,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#PackageInformationEdge",
 					Documentation: protocol.Documentation{
 						Identifier: "PackageInformationEdge",
@@ -1438,7 +1438,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype PackageInformationEdge struct {\n\tEdge\n\tOutV string `json:\"outV\"`\n\tInV  string `json:\"inV\"`\n}\n```\n\nPackageInformationEdge connects a moniker and a package information vertex. \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/#NewPackageInformationEdge",
 						Documentation: protocol.Documentation{
 							Identifier: "NewPackageInformationEdge",
@@ -1456,7 +1456,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#Pos",
 					Documentation: protocol.Documentation{
 						Identifier: "Pos",
@@ -1473,7 +1473,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#Project",
 					Documentation: protocol.Documentation{
 						Identifier: "Project",
@@ -1488,7 +1488,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype Project struct {\n\tVertex\n\t// The kind of language of the dump.\n\tKind string `json:\"kind\"`\n}\n```\n\nProject declares the language of the dump. \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/#NewProject",
 						Documentation: protocol.Documentation{
 							Identifier: "NewProject",
@@ -1506,7 +1506,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#Range",
 					Documentation: protocol.Documentation{
 						Identifier: "Range",
@@ -1521,7 +1521,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype Range struct {\n\tVertex\n\t// The start position of the range.\n\tStart Pos `json:\"start\"`\n\t// The end position of the range.\n\tEnd Pos `json:\"end\"`\n}\n```\n\nRange contains range information of a vertex object. \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/#NewRange",
 						Documentation: protocol.Documentation{
 							Identifier: "NewRange",
@@ -1539,7 +1539,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#ReferenceResult",
 					Documentation: protocol.Documentation{
 						Identifier: "ReferenceResult",
@@ -1556,7 +1556,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#ResultSet",
 					Documentation: protocol.Documentation{
 						Identifier: "ResultSet",
@@ -1572,7 +1572,7 @@
 						Value: "```Go\ntype ResultSet struct {\n\tVertex\n}\n```\n\nResultSet acts as a hub to be able to store information common to a set of ranges. \n\n",
 					},
 					Children: []precise.DocumentationNodeChild{
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#NewReferenceResult",
 							Documentation: protocol.Documentation{
 								Identifier: "NewReferenceResult",
@@ -1589,7 +1589,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#NewResultSet",
 							Documentation: protocol.Documentation{
 								Identifier: "NewResultSet",
@@ -1608,7 +1608,7 @@
 						}},
 					},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#TextDocumentDefinition",
 					Documentation: protocol.Documentation{
 						Identifier: "TextDocumentDefinition",
@@ -1623,7 +1623,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype TextDocumentDefinition struct {\n\tEdge\n\tOutV string `json:\"outV\"`\n\tInV  string `json:\"inV\"`\n}\n```\n\nTextDocumentDefinition is an edge object that represents \"textDocument/definition\" relation. \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/#NewTextDocumentDefinition",
 						Documentation: protocol.Documentation{
 							Identifier: "NewTextDocumentDefinition",
@@ -1641,7 +1641,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#TextDocumentHover",
 					Documentation: protocol.Documentation{
 						Identifier: "TextDocumentHover",
@@ -1656,7 +1656,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype TextDocumentHover struct {\n\tEdge\n\tOutV string `json:\"outV\"`\n\tInV  string `json:\"inV\"`\n}\n```\n\nTextDocumentHover is an edge object that represents \"textDocument/hover\" relation. \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/#NewTextDocumentHover",
 						Documentation: protocol.Documentation{
 							Identifier: "NewTextDocumentHover",
@@ -1674,7 +1674,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#TextDocumentReferences",
 					Documentation: protocol.Documentation{
 						Identifier: "TextDocumentReferences",
@@ -1689,7 +1689,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype TextDocumentReferences struct {\n\tEdge\n\tOutV string `json:\"outV\"`\n\tInV  string `json:\"inV\"`\n}\n```\n\nTextDocumentReferences is an edge object that represents \"textDocument/references\" relation. \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/#NewTextDocumentReferences",
 						Documentation: protocol.Documentation{
 							Identifier: "NewTextDocumentReferences",
@@ -1707,7 +1707,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#ToolInfo",
 					Documentation: protocol.Documentation{
 						Identifier: "ToolInfo",
@@ -1724,7 +1724,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#Vertex",
 					Documentation: protocol.Documentation{
 						Identifier: "Vertex",
@@ -1741,7 +1741,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#VertexLabel",
 					Documentation: protocol.Documentation{
 						Identifier: "VertexLabel",
@@ -1758,7 +1758,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#Writer",
 					Documentation: protocol.Documentation{
 						Identifier: "Writer",
@@ -1774,7 +1774,7 @@
 						Value: "```Go\ntype Writer struct {\n\tw           io.Writer\n\taddContents bool\n\tid          int\n\tnumElements int\n}\n```\n\nWriter emits vertices and edges to the underlying writer. This struct will guarantee that unique identifiers are generated for each element. \n\n",
 					},
 					Children: []precise.DocumentationNodeChild{
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#NewWriter",
 							Documentation: protocol.Documentation{
 								Identifier: "NewWriter",
@@ -1791,7 +1791,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitBeginEvent",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitBeginEvent",
@@ -1808,7 +1808,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitContains",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitContains",
@@ -1825,7 +1825,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitDefinitionResult",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitDefinitionResult",
@@ -1842,7 +1842,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitDocument",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitDocument",
@@ -1859,7 +1859,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitEndEvent",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitEndEvent",
@@ -1876,7 +1876,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitHoverResult",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitHoverResult",
@@ -1893,7 +1893,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitItem",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitItem",
@@ -1910,7 +1910,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitItemOfDefinitions",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitItemOfDefinitions",
@@ -1927,7 +1927,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitItemOfReferences",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitItemOfReferences",
@@ -1944,7 +1944,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitMetaData",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitMetaData",
@@ -1961,7 +1961,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitMoniker",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitMoniker",
@@ -1978,7 +1978,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitMonikerEdge",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitMonikerEdge",
@@ -1995,7 +1995,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitNext",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitNext",
@@ -2012,7 +2012,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitPackageInformation",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitPackageInformation",
@@ -2029,7 +2029,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitPackageInformationEdge",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitPackageInformationEdge",
@@ -2046,7 +2046,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitProject",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitProject",
@@ -2063,7 +2063,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitRange",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitRange",
@@ -2080,7 +2080,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitReferenceResult",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitReferenceResult",
@@ -2097,7 +2097,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitResultSet",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitResultSet",
@@ -2114,7 +2114,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitTextDocumentDefinition",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitTextDocumentDefinition",
@@ -2131,7 +2131,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitTextDocumentHover",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitTextDocumentHover",
@@ -2148,7 +2148,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.EmitTextDocumentReferences",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.EmitTextDocumentReferences",
@@ -2165,7 +2165,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.NextID",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.NextID",
@@ -2182,7 +2182,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.NumElements",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.NumElements",
@@ -2199,7 +2199,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/#Writer.emit",
 							Documentation: protocol.Documentation{
 								Identifier: "Writer.emit",
@@ -2221,7 +2221,7 @@
 						}},
 					},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#hoverResult",
 					Documentation: protocol.Documentation{
 						Identifier: "hoverResult",
@@ -2241,7 +2241,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/#markedString",
 					Documentation: protocol.Documentation{
 						Identifier: "markedString",
