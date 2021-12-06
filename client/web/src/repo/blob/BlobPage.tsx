@@ -26,6 +26,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { SearchContextProps, SearchStreamingProps } from '../../search'
 import { StreamingSearchResultsListProps } from '../../search/results/StreamingSearchResultsList'
 import { toTreeURL } from '../../util/url'
+import { fetchRepository, resolveRevision } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -300,7 +301,12 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 </RepoHeaderContributionPortal>
             )}
             {isSearchNotebook && renderMode === 'rendered' && (
-                <RenderedSearchNotebookMarkdown {...props} markdown={blobInfoOrError.content} />
+                <RenderedSearchNotebookMarkdown
+                    {...props}
+                    markdown={blobInfoOrError.content}
+                    resolveRevision={resolveRevision}
+                    fetchRepository={fetchRepository}
+                />
             )}
             {!isSearchNotebook && blobInfoOrError.richHTML && renderMode === 'rendered' && (
                 <RenderedFile dangerousInnerHTML={blobInfoOrError.richHTML} location={props.location} />
