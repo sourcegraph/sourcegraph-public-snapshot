@@ -264,42 +264,24 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName) (repo *types.R
 		return nil, err
 	}
 
-	if repo == nil {
-		// We don't have this repo yet so we need to try and sync it now and we will block
-		// until syncing is complete.
-		repo, err, _ := s.syncGroup.Do(string(name), func() (interface{}, error) {
-			return s.syncRepo(ctx, codehost, name, nil)
-		})
-		if err != nil {
-			return nil, err
+	if repo != nil {
+		// Only public repos can be individually synced on sourcegraph.com
+		if repo.Private {
+			return nil, &database.RepoNotFoundErr{Name: name}
 		}
-		return repo.(*types.Repo), nil
+		// Don't sync the repo if it's been updated in the past 1 minute.
+		if s.Now().Sub(repo.UpdatedAt) < time.Minute {
+			return repo, nil
+		}
 	}
 
-	// Only public repos can be individually synced on sourcegraph.com
-	if repo.Private {
-		return nil, &database.RepoNotFoundErr{Name: name}
+	updatedRepo, err, _ := s.syncGroup.Do(string(name), func() (interface{}, error) {
+		return s.syncRepo(ctx, codehost, name, nil)
+	})
+	if err != nil {
+		return nil, err
 	}
-
-	// Sync the repo in the background if it wasn't updated in 1 minute.
-	if s.Now().Sub(repo.UpdatedAt) >= time.Minute {
-		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-			defer cancel()
-
-			// We don't care about the return value here, but we still want to ensure that
-			// only one is in flight at a time.
-			_, _, _ = s.syncGroup.Do(string(name), func() (interface{}, error) {
-				repo, err := s.syncRepo(ctx, codehost, name, repo)
-				if err != nil {
-					log15.Error("Error syncing repo in the background", "name", name, "error", err)
-				}
-				return repo, err
-			})
-		}()
-	}
-
-	return repo, nil
+	return updatedRepo.(*types.Repo), nil
 }
 
 func (s *Syncer) syncRepo(
