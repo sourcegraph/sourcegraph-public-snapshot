@@ -32,7 +32,7 @@ interface BackendInsightProps
     insight: SearchBackendBasedInsight
 
     innerRef: Ref<HTMLElement>
-    resizing: boolean
+    resizing?: boolean
 }
 
 /**
