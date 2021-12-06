@@ -221,23 +221,23 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                         )}
                         {batchSpec.applyURL && batchSpec.state === BatchSpecState.COMPLETED && (
                             <span>
-                                    <Link to={batchSpec.applyURL} className="btn btn-primary">
-                                        Preview
-                                    </Link>
+                                <Link to={batchSpec.applyURL} className="btn btn-primary">
+                                    Preview
+                                </Link>
                             </span>
-                                )}
-                                {batchSpec.applyURL && batchSpec.state === BatchSpecState.FAILED && (
-                                <span>
-                                    <Link
-                                        to={batchSpec.applyURL}
-                                        className="btn btn-outline-warning"
-                                        data-tooltip="Execution didn't finish successfully in all workspaces. The batch spec might have less changeset specs than expected."
-                                    >
-                                        <AlertCircleIcon className="icon-inline mb-0 mr-2 text-warning" />
-                                        Preview
-                                    </Link>
+                        )}
+                        {batchSpec.applyURL && batchSpec.state === BatchSpecState.FAILED && (
+                            <span>
+                                <Link
+                                    to={batchSpec.applyURL}
+                                    className="btn btn-outline-warning"
+                                    data-tooltip="Execution didn't finish successfully in all workspaces. The batch spec might have less changeset specs than expected."
+                                >
+                                    <AlertCircleIcon className="icon-inline mb-0 mr-2 text-warning" />
+                                    Preview
+                                </Link>
                             </span>
-                                )}
+                        )}
                     </div>
                 }
                 className="mb-3"
