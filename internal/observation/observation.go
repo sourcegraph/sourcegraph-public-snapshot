@@ -53,6 +53,7 @@ package observation
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
@@ -80,6 +81,8 @@ type Context struct {
 
 // TestContext is a behaviorless Context usable for unit tests.
 var TestContext = Context{Registerer: metrics.TestRegisterer}
+
+var TestOperation *Operation
 
 type ErrorFilterBehaviour uint8
 
@@ -231,7 +234,7 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 		elapsed := since.Seconds()
 		elapsedMs := since.Milliseconds()
 		defaultFinishFields := []log.Field{log.Float64("count", count), log.Float64("elapsed", elapsed)}
-		logFields := mergeLogFields(defaultFinishFields, finishArgs.LogFields)
+		logFields := mergeLogFields(defaultFinishFields, finishArgs.LogFields, args.LogFields)
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
 
 		var (
@@ -307,8 +310,10 @@ func (op *Operation) emitSentryError(err *error, logFields []log.Field) {
 
 	logs := make(map[string]string)
 	for _, field := range logFields {
-		logs[field.Key()] = field.String()
+		logs[field.Key()] = fmt.Sprintf("%v", field.Value())
 	}
+
+	logs["operation"] = op.name
 
 	op.context.Sentry.CaptureError(*err, logs)
 }

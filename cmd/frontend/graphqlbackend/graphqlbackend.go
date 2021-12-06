@@ -375,18 +375,7 @@ func NewSchema(
 		schemas = append(schemas, codeIntelSchema)
 		// Register NodeByID handlers.
 		for kind, res := range codeIntel.NodeResolvers() {
-			resolver.nodeByIDFns[kind] = func(kind string, f NodeByIDFunc) NodeByIDFunc {
-				return func(ctx context.Context, id graphql.ID) (Node, error) {
-					node, err := f(ctx, id)
-					if err != nil {
-						codeintelSentry.CaptureError(err, map[string]string{
-							"kind":      kind,
-							"graphqlID": string(id),
-						})
-					}
-					return node, err
-				}
-			}(kind, res)
+			resolver.nodeByIDFns[kind] = res
 		}
 	}
 

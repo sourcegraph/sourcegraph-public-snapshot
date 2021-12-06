@@ -3,10 +3,13 @@ package graphql
 import (
 	"context"
 
+	"github.com/opentracing/opentracing-go/log"
+
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type IndexConnectionResolver struct {
@@ -15,9 +18,10 @@ type IndexConnectionResolver struct {
 	indexesResolver  *resolvers.IndexesResolver
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
+	op               *observation.Operation
 }
 
-func NewIndexConnectionResolver(db database.DB, resolver resolvers.Resolver, indexesResolver *resolvers.IndexesResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver) gql.LSIFIndexConnectionResolver {
+func NewIndexConnectionResolver(db database.DB, resolver resolvers.Resolver, indexesResolver *resolvers.IndexesResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, op *observation.Operation) gql.LSIFIndexConnectionResolver {
 	return &IndexConnectionResolver{
 		db:               db,
 		resolver:         resolver,
@@ -34,19 +38,29 @@ func (r *IndexConnectionResolver) Nodes(ctx context.Context) ([]gql.LSIFIndexRes
 
 	resolvers := make([]gql.LSIFIndexResolver, 0, len(r.indexesResolver.Indexes))
 	for i := range r.indexesResolver.Indexes {
-		resolvers = append(resolvers, NewIndexResolver(r.db, r.resolver, r.indexesResolver.Indexes[i], r.prefetcher, r.locationResolver))
+		resolvers = append(resolvers, NewIndexResolver(r.db, r.resolver, r.indexesResolver.Indexes[i], r.prefetcher, r.locationResolver, r.op))
 	}
 	return resolvers, nil
 }
 
-func (r *IndexConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
+func (r *IndexConnectionResolver) TotalCount(ctx context.Context) (_ *int32, err error) {
+	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("indexConnectionResolver.field", "totalCount"),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if err := r.indexesResolver.Resolve(ctx); err != nil {
 		return nil, err
 	}
 	return toInt32(&r.indexesResolver.TotalCount), nil
 }
 
-func (r *IndexConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *IndexConnectionResolver) PageInfo(ctx context.Context) (_ *graphqlutil.PageInfo, err error) {
+	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("indexConnectionResolver.field", "pageInfo"),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if err := r.indexesResolver.Resolve(ctx); err != nil {
 		return nil, err
 	}

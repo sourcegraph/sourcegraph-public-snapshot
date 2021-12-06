@@ -62,7 +62,7 @@ func newResolver(ctx context.Context, db database.DB, observationContext *observ
 		observationContext,
 	)
 
-	return codeintelgqlresolvers.NewResolver(db, innerResolver), nil
+	return codeintelgqlresolvers.NewResolver(db, innerResolver, &observation.Context{Sentry: observationContext.Sentry}), nil
 }
 
 func newUploadHandler(services *Services) func(internal bool) http.Handler {
