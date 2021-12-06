@@ -2,6 +2,7 @@ package notebooks
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -36,7 +37,7 @@ func TestCreateAndGetNotebook(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	blocks := []NotebookBlock{
+	blocks := NotebookBlocks{
 		{ID: "1", Type: NotebookQueryBlockType, QueryInput: &NotebookQueryBlockInput{"repo:a b"}},
 		{ID: "2", Type: NotebookMarkdownBlockType, MarkdownInput: &NotebookMarkdownBlockInput{"# Title"}},
 		{ID: "3", Type: NotebookFileBlockType, FileInput: &NotebookFileBlockInput{
@@ -48,6 +49,7 @@ func TestCreateAndGetNotebook(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	fmt.Println(blocks[0].QueryInput, createdNotebook.Blocks[0].QueryInput, blocks[0].QueryInput.Text, createdNotebook.Blocks[0].QueryInput.Text)
 	if !reflect.DeepEqual(blocks, createdNotebook.Blocks) {
 		t.Fatalf("wanted %v blocks, got %v", blocks, createdNotebook.Blocks)
 	}
@@ -65,7 +67,7 @@ func TestCreatingNotebookWithInvalidBlock(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	blocks := []NotebookBlock{{ID: "1", Type: NotebookQueryBlockType}}
+	blocks := NotebookBlocks{{ID: "1", Type: NotebookQueryBlockType}}
 	notebook := &Notebook{Title: "Notebook Title", Blocks: blocks, Public: true, CreatorUserID: user.ID}
 	_, err = n.CreateNotebook(ctx, notebook)
 	if err == nil {
@@ -94,8 +96,8 @@ func TestNotebookPermissions(t *testing.T) {
 	}
 
 	createdNotebooks, err := createNotebooks(internalCtx, n, []*Notebook{
-		{Title: "Notebook User1 Public", Blocks: []NotebookBlock{}, Public: true, CreatorUserID: user1.ID},
-		{Title: "Notebook User1 Private", Blocks: []NotebookBlock{}, Public: false, CreatorUserID: user1.ID},
+		{Title: "Notebook User1 Public", Blocks: NotebookBlocks{}, Public: true, CreatorUserID: user1.ID},
+		{Title: "Notebook User1 Private", Blocks: NotebookBlocks{}, Public: false, CreatorUserID: user1.ID},
 	})
 	if err != nil {
 		t.Fatal(err)

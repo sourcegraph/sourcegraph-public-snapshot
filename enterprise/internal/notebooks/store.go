@@ -3,6 +3,7 @@ package notebooks
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"encoding/json"
 
 	"github.com/cockroachdb/errors"
@@ -32,6 +33,18 @@ type ListNotebooksOptions struct {
 	Query             string
 	OrderBy           NotebooksOrderByOption
 	OrderByDescending bool
+}
+
+func (blocks NotebookBlocks) Value() (driver.Value, error) {
+	return json.Marshal(blocks)
+}
+
+func (blocks *NotebookBlocks) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+	return json.Unmarshal(b, &blocks)
 }
 
 func Notebooks(db dbutil.DB) NotebooksStore {
@@ -119,12 +132,11 @@ func getNotebooksOrderByClause(orderBy NotebooksOrderByOption, descending bool) 
 }
 
 func scanNotebook(row *sql.Row) (*Notebook, error) {
-	var blocksJSON json.RawMessage
 	n := &Notebook{}
 	err := row.Scan(
 		&n.ID,
 		&n.Title,
-		&blocksJSON,
+		&n.Blocks,
 		&n.Public,
 		&dbutil.NullInt32{N: &n.CreatorUserID},
 		&n.CreatedAt,
@@ -135,11 +147,6 @@ func scanNotebook(row *sql.Row) (*Notebook, error) {
 	} else if err != nil {
 		return nil, err
 	}
-	var blocks []NotebookBlock
-	if err = json.Unmarshal(blocksJSON, &blocks); err != nil {
-		return nil, err
-	}
-	n.Blocks = blocks
 	return n, nil
 }
 
@@ -170,14 +177,9 @@ func (s *notebooksStore) CreateNotebook(ctx context.Context, n *Notebook) (*Note
 	if err != nil {
 		return nil, err
 	}
-
-	blocksJSON, err := json.Marshal(n.Blocks)
-	if err != nil {
-		return nil, err
-	}
 	row := s.QueryRow(
 		ctx,
-		sqlf.Sprintf(insertNotebookFmtStr, n.Title, blocksJSON, n.Public, nullInt32Column(n.CreatorUserID), sqlf.Join(notebookColumns, ",")),
+		sqlf.Sprintf(insertNotebookFmtStr, n.Title, n.Blocks, n.Public, nullInt32Column(n.CreatorUserID), sqlf.Join(notebookColumns, ",")),
 	)
 	return scanNotebook(row)
 }

@@ -18,7 +18,7 @@ func validateNotebookBlock(block NotebookBlock) error {
 	return nil
 }
 
-func validateNotebookBlocks(blocks []NotebookBlock) error {
+func validateNotebookBlocks(blocks NotebookBlocks) error {
 	blockIDs := map[string]struct{}{}
 	for _, block := range blocks {
 		err := validateNotebookBlock(block)
