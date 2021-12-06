@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/connections"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -125,7 +125,7 @@ func mustInitializeDB() *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	sqlDB, err := dbconn.NewFrontendDB(dsn, "precise-code-intel-worker", false)
+	sqlDB, err := connections.NewFrontendDB(dsn, "precise-code-intel-worker", false)
 	if err != nil {
 		log.Fatalf("Failed to connect to frontend database: %s", err)
 	}
@@ -151,7 +151,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-	db, err := dbconn.NewCodeIntelDB(dsn, "precise-code-intel-worker", true)
+	db, err := connections.NewCodeIntelDB(dsn, "precise-code-intel-worker", true)
 	if err != nil {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}

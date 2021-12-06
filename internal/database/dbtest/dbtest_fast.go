@@ -11,7 +11,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
@@ -202,7 +201,7 @@ func urlWithDB(u *url.URL, dbName string) *url.URL {
 }
 
 func newPoolFromURL(u *url.URL) (_ *testDatabasePool, _ func(err error) error, err error) {
-	db, closeDB, err := dbconn.ConnectRawForTestDatabase(u.String())
+	db, closeDB, err := newTestDB(u.String())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -213,7 +212,7 @@ func newPoolFromURL(u *url.URL) (_ *testDatabasePool, _ func(err error) error, e
 	_, _ = db.Exec("CREATE DATABASE dbtest_pool")
 
 	poolDBURL := urlWithDB(u, "dbtest_pool")
-	poolDB, closePoolDB, err := dbconn.ConnectRawForTestDatabase(poolDBURL.String())
+	poolDB, closePoolDB, err := newTestDB(poolDBURL.String())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -230,7 +229,7 @@ func newPoolFromURL(u *url.URL) (_ *testDatabasePool, _ func(err error) error, e
 			return nil, nil, err
 		}
 
-		poolDB, closePoolDB, err = dbconn.ConnectRawForTestDatabase(poolDBURL.String())
+		poolDB, closePoolDB, err = newTestDB(poolDBURL.String())
 		if err != nil {
 			return nil, nil, err
 		}

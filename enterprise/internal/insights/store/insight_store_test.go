@@ -38,10 +38,10 @@ func TestGet(t *testing.T) {
 	}
 
 	_, err = timescale.Exec(`INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at)
-                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null),
-									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null),
-									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1);`, now)
+                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method)
+                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search'),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search'),
+									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search');`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,6 +84,7 @@ func TestGet(t *testing.T) {
 				Label:               "label1",
 				LineColor:           "color1",
 				PresentationType:    types.Line,
+				GenerationMethod:    types.Search,
 			},
 			{
 				ViewID:              1,
@@ -103,6 +104,7 @@ func TestGet(t *testing.T) {
 				Label:               "label2",
 				LineColor:           "color2",
 				PresentationType:    types.Line,
+				GenerationMethod:    types.Search,
 			},
 			{
 				ViewID:              2,
@@ -122,6 +124,7 @@ func TestGet(t *testing.T) {
 				Label:               "second-label-2",
 				LineColor:           "second-color-2",
 				PresentationType:    types.Line,
+				GenerationMethod:    types.Search,
 			},
 		}
 
@@ -157,6 +160,7 @@ func TestGet(t *testing.T) {
 				Label:               "label1",
 				LineColor:           "color1",
 				PresentationType:    types.Line,
+				GenerationMethod:    types.Search,
 			},
 			{
 				ViewID:              1,
@@ -176,6 +180,7 @@ func TestGet(t *testing.T) {
 				Label:               "label2",
 				LineColor:           "color2",
 				PresentationType:    types.Line,
+				GenerationMethod:    types.Search,
 			},
 		}
 
@@ -210,6 +215,7 @@ func TestGet(t *testing.T) {
 				Label:               "label1",
 				LineColor:           "color1",
 				PresentationType:    types.Line,
+				GenerationMethod:    types.Search,
 			},
 			{
 				ViewID:              1,
@@ -229,6 +235,7 @@ func TestGet(t *testing.T) {
 				Label:               "label2",
 				LineColor:           "color2",
 				PresentationType:    types.Line,
+				GenerationMethod:    types.Search,
 			},
 		}
 
@@ -261,6 +268,7 @@ func TestCreateSeries(t *testing.T) {
 			NextSnapshotAfter:  now,
 			Enabled:            true,
 			SampleIntervalUnit: string(types.Month),
+			GenerationMethod:   types.Search,
 		}
 
 		got, err := store.CreateSeries(ctx, series)
@@ -280,6 +288,7 @@ func TestCreateSeries(t *testing.T) {
 			CreatedAt:          now,
 			Enabled:            true,
 			SampleIntervalUnit: string(types.Month),
+			GenerationMethod:   types.Search,
 		}
 
 		log15.Info("values", "want", want, "got", got)
@@ -304,6 +313,7 @@ func TestCreateSeries(t *testing.T) {
 			NextSnapshotAfter:          now,
 			CreatedAt:                  now,
 			GeneratedFromCaptureGroups: true,
+			GenerationMethod:           types.Search,
 		})
 		if err != nil {
 			return
@@ -395,6 +405,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 		NextSnapshotAfter:  now,
 		BackfillQueuedAt:   now,
 		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -469,6 +480,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 			NextSnapshotAfter:  now,
 			BackfillQueuedAt:   now,
 			SampleIntervalUnit: string(types.Month),
+			GenerationMethod:   types.Search,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -576,6 +588,7 @@ func TestUpdateViewSeries(t *testing.T) {
 			NextSnapshotAfter:  now,
 			Enabled:            true,
 			SampleIntervalUnit: string(types.Month),
+			GenerationMethod:   types.Search,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -636,6 +649,7 @@ func TestDeleteView(t *testing.T) {
 		NextSnapshotAfter:  now,
 		BackfillQueuedAt:   now,
 		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -692,6 +706,7 @@ func TestAttachSeriesView(t *testing.T) {
 			NextSnapshotAfter:   now,
 			SampleIntervalUnit:  string(types.Month),
 			SampleIntervalValue: 1,
+			GenerationMethod:    types.Search,
 		}
 		series, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -739,6 +754,7 @@ func TestAttachSeriesView(t *testing.T) {
 			Label:               "my label",
 			LineColor:           "my stroke",
 			PresentationType:    types.Line,
+			GenerationMethod:    types.Search,
 		}}
 
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -769,6 +785,7 @@ func TestRemoveSeriesFromView(t *testing.T) {
 			NextSnapshotAfter:   now,
 			SampleIntervalUnit:  string(types.Month),
 			SampleIntervalValue: 1,
+			GenerationMethod:    types.Search,
 		}
 		series, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -816,6 +833,7 @@ func TestRemoveSeriesFromView(t *testing.T) {
 			Label:               "my label",
 			LineColor:           "my stroke",
 			PresentationType:    types.Line,
+			GenerationMethod:    types.Search,
 		}}
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected result after attaching series to view (want/got): %s", diff)
@@ -875,6 +893,7 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 			NextSnapshotAfter:  now,
 			Enabled:            true,
 			SampleIntervalUnit: string(types.Month),
+			GenerationMethod:   types.Search,
 		}
 		created, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -883,6 +902,36 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 		want := []types.InsightSeries{created}
 
 		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("mismatched insight data series want/got: %v", diff)
+		}
+	})
+
+	t.Run("test create and get series just in time generation method", func(t *testing.T) {
+		series := types.InsightSeries{
+			SeriesID:           "unique-1-gm-jit",
+			Query:              "query-1-abc",
+			OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter: now,
+			LastSnapshotAt:     now,
+			NextSnapshotAfter:  now,
+			Enabled:            true,
+			SampleIntervalUnit: string(types.Month),
+			JustInTime:         true,
+			GenerationMethod:   types.Search,
+		}
+		created, err := store.CreateSeries(ctx, series)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []types.InsightSeries{created}
+
+		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{SeriesID: "unique-1-gm-jit"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -957,6 +1006,7 @@ func TestInsightStore_StampBackfill(t *testing.T) {
 		NextSnapshotAfter:  now,
 		Enabled:            true,
 		SampleIntervalUnit: string(types.Month),
+		GenerationMethod:   types.Search,
 	}
 	created, err := store.CreateSeries(ctx, series)
 	if err != nil {
@@ -1024,6 +1074,7 @@ func TestDirtyQueries(t *testing.T) {
 			SeriesID:           "asdf",
 			Query:              "qwerwre",
 			SampleIntervalUnit: string(types.Month),
+			GenerationMethod:   types.Search,
 		}
 
 		created, err := store.CreateSeries(ctx, series)
@@ -1093,6 +1144,7 @@ func TestDirtyQueriesAggregated(t *testing.T) {
 			SeriesID:           "asdf",
 			Query:              "qwerwre",
 			SampleIntervalUnit: string(types.Month),
+			GenerationMethod:   types.Search,
 		}
 
 		created, err := store.CreateSeries(ctx, series)
@@ -1159,6 +1211,7 @@ func TestSetSeriesEnabled(t *testing.T) {
 			NextSnapshotAfter:  now,
 			BackfillQueuedAt:   now,
 			SampleIntervalUnit: string(types.Month),
+			GenerationMethod:   types.Search,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -1223,6 +1276,7 @@ func TestFindMatchingSeries(t *testing.T) {
 		BackfillQueuedAt:    now,
 		SampleIntervalUnit:  string(types.Week),
 		SampleIntervalValue: 1,
+		GenerationMethod:    types.Search,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -1258,6 +1312,7 @@ func TestFindMatchingSeries(t *testing.T) {
 			SampleIntervalUnit:         string(types.Week),
 			SampleIntervalValue:        1,
 			GeneratedFromCaptureGroups: true,
+			GenerationMethod:           types.SearchCompute,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -1294,6 +1349,7 @@ func TestUpdateFrontendSeries(t *testing.T) {
 		BackfillQueuedAt:    now,
 		SampleIntervalUnit:  string(types.Week),
 		SampleIntervalValue: 1,
+		GenerationMethod:    types.Search,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -1317,6 +1373,7 @@ func TestUpdateFrontendSeries(t *testing.T) {
 			Enabled:             true,
 			SampleIntervalUnit:  "WEEK",
 			SampleIntervalValue: 1,
+			GenerationMethod:    "search",
 		}}).Equal(t, gotBeforeUpdate)
 
 		err = store.UpdateFrontendSeries(ctx, UpdateFrontendSeriesArgs{
@@ -1345,6 +1402,7 @@ func TestUpdateFrontendSeries(t *testing.T) {
 			Enabled:             true,
 			SampleIntervalUnit:  "MONTH",
 			SampleIntervalValue: 5,
+			GenerationMethod:    "search",
 		}}).Equal(t, gotAfterUpdate)
 	})
 }

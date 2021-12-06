@@ -9,20 +9,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
-// ConnectRawForTestDatabase connects to the given data source and returns the handle. After successful
-// connection, the schema version of the database will be compared against an expected version and the
-// supplied migrations may be run (taking an advisory lock to ensure exclusive access).
-//
-// This function returns a basestore-style callback that closes the database. This should be called instead
-// of calling Close directly on the database handle as it also handles closing migration objects associated
-// with the handle.
-func ConnectRawForTestDatabase(dsn string, schemas ...*schemas.Schema) (*sql.DB, func(err error) error, error) {
-	return connect(dsn, "", "", schemas)
-}
-
-// Connect to the given data source and return the handle. After successful connection, the schema version
-// of the database will be compared against an expected version and the supplied migrations may be run
-// (taking an advisory lock to ensure exclusive access).
+// ConnectInternal connects to the given data source and return the handle. After successful connection,
+// the schema version of the database will be compared against an expected version and the supplied migrations
+// may be run (taking an advisory lock to ensure exclusive access).
 //
 // This function returns a basestore-style callback that closes the database. This should be called
 // instead of calling Close directly on the database handle as it also handles closing migration objects
@@ -37,7 +26,7 @@ func ConnectRawForTestDatabase(dsn string, schemas ...*schemas.Schema) (*sql.DB,
 //
 // Note: github.com/jackc/pgx parses the environment as well. This function will also use the value
 // of PGDATASOURCE if supplied and dataSource is the empty string.
-func connect(dsn, appName, dbName string, schemas []*schemas.Schema) (*sql.DB, func(err error) error, error) {
+func ConnectInternal(dsn, appName, dbName string, schemas []*schemas.Schema) (*sql.DB, func(err error) error, error) {
 	cfg, err := buildConfig(dsn, appName)
 	if err != nil {
 		return nil, nil, err

@@ -1,8 +1,9 @@
-package dbconn
+package connections
 
 import (
 	"database/sql"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
@@ -21,7 +22,7 @@ func NewFrontendDB(dsn, appName string, migrate bool) (*sql.DB, error) {
 		migrations = nil
 	}
 
-	db, _, err := connect(dsn, appName, "frontend", migrations)
+	db, _, err := dbconn.ConnectInternal(dsn, appName, "frontend", migrations)
 	return db, err
 }
 
@@ -40,7 +41,7 @@ func NewCodeIntelDB(dsn, appName string, migrate bool) (*sql.DB, error) {
 		migrations = nil
 	}
 
-	db, _, err := connect(dsn, appName, "codeintel", migrations)
+	db, _, err := dbconn.ConnectInternal(dsn, appName, "codeintel", migrations)
 	return db, err
 }
 
@@ -59,6 +60,6 @@ func NewCodeInsightsDB(dsn, appName string, migrate bool) (*sql.DB, error) {
 		migrations = nil
 	}
 
-	db, _, err := connect(dsn, appName, "codeinsight", migrations)
+	db, _, err := dbconn.ConnectInternal(dsn, appName, "codeinsight", migrations)
 	return db, err
 }
