@@ -67,6 +67,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 import { asError } from '@sourcegraph/shared/src/util/errors'
+import { sha256 } from '@sourcegraph/shared/src/util/hashCode'
 import { asObservable } from '@sourcegraph/shared/src/util/rxjs/asObservable'
 import { isDefined, isInstanceOf, property } from '@sourcegraph/shared/src/util/types'
 import {
@@ -88,9 +89,14 @@ import { toTextDocumentPositionParameters } from '../../backend/extension-api-co
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
-import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
+import { resolveRevision, retryWhenCloneInProgressError, secureResolveRepo } from '../../repo/backend'
 import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
-import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, observeSourcegraphURL } from '../../util/context'
+import {
+    DEFAULT_SOURCEGRAPH_URL,
+    getPlatformName,
+    isDefaultSourcegraphUrl,
+    observeSourcegraphURL,
+} from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
@@ -684,7 +690,7 @@ export function handleCodeHost({
     const checkPrivateCloudError = async (error: any): Promise<boolean> =>
         !!(
             isRepoNotFoundErrorLike(error) &&
-            sourcegraphURL === DEFAULT_SOURCEGRAPH_URL &&
+            isDefaultSourcegraphUrl(sourcegraphURL) &&
             (await codeHost.getContext?.())?.privateRepository
         )
 
@@ -1306,7 +1312,7 @@ export const determineCodeHost = (sourcegraphURL?: string): CodeHost | undefined
     // Prevent repo lookups for code hosts that we know cannot have repositories
     // cloned on sourcegraph.com. Repo lookups trigger cloning, which will
     // inevitably fail in this case.
-    if (sourcegraphURL === DEFAULT_SOURCEGRAPH_URL) {
+    if (isDefaultSourcegraphUrl(sourcegraphURL)) {
         const { hostname } = new URL(location.href)
         const validCodeHost = CLOUD_CODE_HOST_HOSTS.some(cloudHost => cloudHost === hostname)
         if (!validCodeHost) {
@@ -1322,13 +1328,13 @@ export const determineCodeHost = (sourcegraphURL?: string): CodeHost | undefined
     return codeHost
 }
 
-export function injectCodeIntelligenceToCodeHost(
+export async function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
     codeHost: CodeHost,
     { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
     isExtension: boolean,
     showGlobalDebug = SHOW_DEBUG()
-): Subscription {
+): Promise<Subscription> {
     const subscriptions = new Subscription()
     const { platformContext, extensionsController } = initializeExtensions(
         codeHost,
@@ -1336,6 +1342,28 @@ export function injectCodeIntelligenceToCodeHost(
         isExtension
     )
     const { requestGraphQL } = platformContext
+
+    if (isDefaultSourcegraphUrl(sourcegraphURL) && codeHost.getContext) {
+        const doesRepoExist = await codeHost.getContext().then(async ({ privateRepository, rawRepoName }) => {
+            if (!privateRepository) {
+                // we can auto-clone public repos
+                return true
+            }
+            const hashedRepoName = await sha256(rawRepoName)
+            const doesRepoExist = await secureResolveRepo({
+                hashedRepoName,
+                requestGraphQL,
+            }).toPromise()
+
+            return doesRepoExist
+        })
+        if (!doesRepoExist) {
+            throw new Error(
+                `Code intelligence for private repository is not supported when using Sourcegraph URL ${DEFAULT_SOURCEGRAPH_URL}`
+            )
+        }
+    }
+
     subscriptions.add(extensionsController)
 
     const overrideSendTelemetry = observeSourcegraphURL(isExtension).pipe(

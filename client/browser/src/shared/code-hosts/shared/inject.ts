@@ -33,7 +33,7 @@ export async function injectCodeIntelligence(
             childList: true,
             subtree: true,
         }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
-        subscriptions.add(injectCodeIntelligenceToCodeHost(mutations, codeHost, urls, isExtension))
+        subscriptions.add(await injectCodeIntelligenceToCodeHost(mutations, codeHost, urls, isExtension))
     }
     return subscriptions
 }

@@ -3,7 +3,7 @@ import * as Sentry from '@sentry/browser'
 import { once } from 'lodash'
 
 import { isInPage } from '../context'
-import { DEFAULT_SOURCEGRAPH_URL, getExtensionVersion, observeSourcegraphURL } from '../util/context'
+import { getExtensionVersion, isDefaultSourcegraphUrl, observeSourcegraphURL } from '../util/context'
 import { observeOptionFlag } from '../util/optionFlags'
 
 const IS_EXTENSION = true
@@ -59,7 +59,7 @@ export function initSentry(script: 'content' | 'options' | 'background', codeHos
 
     observeSourcegraphURL(IS_EXTENSION).subscribe(url => {
         Sentry.configureScope(scope => {
-            scope.setTag('using_dot_com', url === DEFAULT_SOURCEGRAPH_URL ? 'true' : 'false')
+            scope.setTag('using_dot_com', isDefaultSourcegraphUrl(url) ? 'true' : 'false')
         })
     })
 }

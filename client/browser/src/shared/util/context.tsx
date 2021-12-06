@@ -5,7 +5,9 @@ import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 
 import { observeStorageKey } from '../../browser-extension/web-extension-api/storage'
 
-export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.com'
+// TODO: uncomment
+// export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.com'
+export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.test:3443'
 
 export function observeSourcegraphURL(isExtension: boolean): Observable<string> {
     if (isExtension) {
@@ -65,6 +67,6 @@ function isSafari(): boolean {
     return window.navigator.userAgent.includes('Safari') && !window.navigator.userAgent.includes('Chrome')
 }
 
-export function isDefaultSourcegraphUrl(url: string): boolean {
-    return url.replace(/\/$/, '') === DEFAULT_SOURCEGRAPH_URL
+export function isDefaultSourcegraphUrl(url?: string): boolean {
+    return url?.replace(/\/$/, '') === DEFAULT_SOURCEGRAPH_URL
 }

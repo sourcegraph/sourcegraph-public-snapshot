@@ -52,6 +52,38 @@ export const resolveRepo = memoizeObservable(
 )
 
 /**
+ * @returns Observable that emits if the repo exists on the instance.
+ * Emits the repo name on the Sourcegraph instance as affected by `repositoryPathPattern`.
+ * Errors with a `RepoNotFoundError` if the repo is not found.
+ */
+export const secureResolveRepo = memoizeObservable(
+    ({
+        hashedRepoName,
+        requestGraphQL,
+    }: { hashedRepoName: string } & Pick<PlatformContext, 'requestGraphQL'>): Observable<string> =>
+        requestGraphQL<GQL.IQuery>({
+            request: gql`
+                query SecureResolveRepo($hashedRepoName: String!) {
+                    pureRepository(hashedName: $hashedRepoName) {
+                        name
+                    }
+                }
+            `,
+            variables: { hashedRepoName },
+            mightContainPrivateInfo: true,
+        }).pipe(
+            map(dataOrThrowErrors),
+            map(({ repository }) => {
+                if (!repository?.name) {
+                    throw new RepoNotFoundError(hashedRepoName)
+                }
+                return repository.name
+            })
+        ),
+    ({ hashedRepoName }) => hashedRepoName
+)
+
+/**
  * @returns Observable that emits the commit ID. Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
 export const resolveRevision = memoizeObservable(
