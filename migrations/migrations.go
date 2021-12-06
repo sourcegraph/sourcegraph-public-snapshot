@@ -7,8 +7,8 @@ import (
 	"log"
 )
 
-//go:embed codeinsights/* codeintel/* frontend/*
-var content embed.FS
+//go:embed frontend/*.sql codeintel/*.sql codeinsights/*.sql
+var QueryDefinitions embed.FS
 
 var (
 	CodeInsights = mustSub("codeinsights")
@@ -17,7 +17,7 @@ var (
 )
 
 func mustSub(dir string) fs.FS {
-	f, err := fs.Sub(content, dir)
+	f, err := fs.Sub(QueryDefinitions, dir)
 	if err != nil {
 		log.Fatalf("could not create DB migration fs %s: %v", dir, err)
 	}
