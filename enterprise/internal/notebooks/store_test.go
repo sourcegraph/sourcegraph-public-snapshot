@@ -2,7 +2,6 @@ package notebooks
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -26,8 +25,8 @@ func createNotebooks(ctx context.Context, store NotebooksStore, notebooks []*Not
 }
 
 func TestCreateAndGetNotebook(t *testing.T) {
-	db := dbtest.NewDB(t)
 	t.Parallel()
+	db := dbtest.NewDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
 	n := Notebooks(db)
@@ -49,15 +48,14 @@ func TestCreateAndGetNotebook(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(blocks[0].QueryInput, createdNotebook.Blocks[0].QueryInput, blocks[0].QueryInput.Text, createdNotebook.Blocks[0].QueryInput.Text)
 	if !reflect.DeepEqual(blocks, createdNotebook.Blocks) {
 		t.Fatalf("wanted %v blocks, got %v", blocks, createdNotebook.Blocks)
 	}
 }
 
 func TestCreatingNotebookWithInvalidBlock(t *testing.T) {
-	db := dbtest.NewDB(t)
 	t.Parallel()
+	db := dbtest.NewDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
 	n := Notebooks(db)
@@ -80,8 +78,8 @@ func TestCreatingNotebookWithInvalidBlock(t *testing.T) {
 }
 
 func TestNotebookPermissions(t *testing.T) {
-	db := dbtest.NewDB(t)
 	t.Parallel()
+	db := dbtest.NewDB(t)
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
 	n := Notebooks(db)
