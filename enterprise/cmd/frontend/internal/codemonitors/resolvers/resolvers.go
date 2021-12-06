@@ -341,7 +341,7 @@ func sendTestEmail(ctx context.Context, recipient graphql.ID, description string
 
 func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) (actionIDs []graphql.ID, err error) {
 	emailActions, err := r.store.ListEmailActions(ctx, cm.ListActionsOpts{
-		MonitorID: intPtr(int(monitorID)),
+		MonitorID: &monitorID,
 	})
 	if err != nil {
 		return nil, err
@@ -599,7 +599,7 @@ func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, tr
 	// For now, we only support emails as actions. Once we add other actions such as
 	// webhooks, we have to query those tables here too.
 	es, err := r.store.ListEmailActions(ctx, cm.ListActionsOpts{
-		MonitorID: intPtr(int(monitorID)),
+		MonitorID: &monitorID,
 		After:     after,
 		First:     intPtr(int(args.First)),
 	})
