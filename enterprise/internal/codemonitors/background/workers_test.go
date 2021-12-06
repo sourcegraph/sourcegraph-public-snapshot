@@ -2,11 +2,15 @@ package background
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"net/url"
 	"testing"
 	"time"
 
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/slack-go/slack"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
@@ -92,4 +96,21 @@ func TestActionRunner(t *testing.T) {
 			require.Equal(t, want, got)
 		})
 	}
+}
+
+func TestSlackWebhook(t *testing.T) {
+	payload := &slack.WebhookMessage{
+		Blocks: &slack.Blocks{BlockSet: []slack.Block{
+			slack.NewSectionBlock(slack.NewTextBlockObject("plain_text", "New code monitoring event", false, false), nil, nil),
+			slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("`%s`", "repo:test"), false, true), nil, nil),
+			slack.NewSectionBlock(slack.NewTextBlockObject("plain_text", fmt.Sprintf("There were %d new search results for your query", 5), false, false), nil, nil),
+			slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", fmt.Sprintf(`<%s|View search on Sourcegraph>`, "https://google.com"), false, false), nil, nil),
+			slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", fmt.Sprintf(`<%s|View code monitor>`, "https://facebook.com"), false, false), nil, nil),
+		}},
+	}
+	b, _ := json.Marshal(payload)
+	println(string(b))
+
+	err := slack.PostWebhookCustomHTTPContext(context.Background(), "https://hooks.slack.com/services/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", http.DefaultClient, payload)
+	require.NoError(t, err)
 }
