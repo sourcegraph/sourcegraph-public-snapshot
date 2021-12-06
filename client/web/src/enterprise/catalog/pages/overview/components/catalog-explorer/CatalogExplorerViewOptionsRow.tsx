@@ -45,7 +45,7 @@ export const CatalogExplorerViewOptionsRow: React.FunctionComponent<Props> = ({
 
     return (
         <Form className={classNames(styles.form, className)} onSubmit={onSubmit}>
-            <div>{before}</div>
+            {before && <div>{before}</div>}
             {toggle}
             <div className={classNames('form-group mb-0')}>
                 <label htmlFor="entity-list-filters__query" className="sr-only">

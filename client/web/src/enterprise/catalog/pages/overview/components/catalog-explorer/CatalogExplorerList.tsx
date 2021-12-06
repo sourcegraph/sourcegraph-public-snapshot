@@ -91,7 +91,7 @@ export const CatalogExplorerList: React.FunctionComponent<Props> = ({
                             noun="entity"
                             pluralNoun="entities"
                             hasNextPage={hasNextPage}
-                            emptyElement={<p>No components found</p>}
+                            emptyElement={<p>No results found</p>}
                         />
                         {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
                     </SummaryContainer>

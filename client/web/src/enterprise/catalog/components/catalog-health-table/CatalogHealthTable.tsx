@@ -1,0 +1,222 @@
+import classNames from 'classnames'
+import React, { useMemo } from 'react'
+import { Link } from 'react-router-dom'
+
+import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+
+import { useConnection } from '../../../../components/FilteredConnection/hooks/useConnection'
+import {
+    ConnectionContainer,
+    ConnectionError,
+    ConnectionList,
+    ConnectionLoading,
+    SummaryContainer,
+    ConnectionSummary,
+    ShowMoreButton,
+} from '../../../../components/FilteredConnection/ui'
+import {
+    CatalogHealthResult,
+    CatalogHealthVariables,
+    CatalogEntityHealthFields,
+    CatalogEntityStatusFields,
+    CatalogEntityStatusState,
+} from '../../../../graphql-operations'
+import { CatalogEntityFiltersProps } from '../../core/entity-filters'
+import { CatalogEntityStateIndicator } from '../../pages/overview/components/entity-state-indicator/EntityStateIndicator'
+import { CatalogEntityIcon } from '../CatalogEntityIcon'
+import { EntityOwner } from '../entity-owner/EntityOwner'
+
+import styles from './CatalogHealthTable.module.scss'
+import { CATALOG_HEALTH } from './gql'
+
+interface Props extends Pick<CatalogEntityFiltersProps, 'filters'> {
+    queryScope?: string
+    className?: string
+}
+
+const FIRST = 20
+
+export const CatalogHealthTable: React.FunctionComponent<Props> = ({ filters, queryScope, className }) => {
+    const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
+        CatalogHealthResult,
+        CatalogHealthVariables,
+        CatalogEntityHealthFields
+    >({
+        query: CATALOG_HEALTH,
+        variables: {
+            query: `${queryScope || ''} ${filters.query || ''}`,
+            first: FIRST,
+            after: null,
+        },
+        options: {
+            useURL: true,
+            fetchPolicy: 'cache-and-network',
+        },
+        getConnection: result => {
+            const data = dataOrThrowErrors(result)
+            return data.catalog.entities
+        },
+    })
+
+    return (
+        <>
+            <ConnectionContainer className={className}>
+                {error && <ConnectionError errors={[error.message]} />}
+                {connection && connection.nodes.length > 0 && (
+                    <div className="table-responsive">
+                        <ConnectionList className={classNames('table border-bottom', styles.table)} as="table">
+                            <CatalogHealthTableContent nodes={connection.nodes} />
+                        </ConnectionList>
+                    </div>
+                )}
+                {loading && <ConnectionLoading className="my-2" />}
+                {connection && (
+                    <SummaryContainer centered={true}>
+                        <ConnectionSummary
+                            noSummaryIfAllNodesVisible={true}
+                            first={FIRST}
+                            connection={connection}
+                            noun="entity"
+                            pluralNoun="entities"
+                            hasNextPage={hasNextPage}
+                            emptyElement={<p>No results found</p>}
+                        />
+                        {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                    </SummaryContainer>
+                )}
+            </ConnectionContainer>
+        </>
+    )
+}
+
+type StatusContextNameAndTitle = Pick<CatalogEntityStatusFields['status']['contexts'][0], 'name' | 'title'>
+
+const CatalogHealthTableContent: React.FunctionComponent<{
+    nodes: CatalogEntityHealthFields[]
+}> = ({ nodes }) => {
+    const statusContextNames = useMemo<StatusContextNameAndTitle[]>(() => {
+        const nameTitle = new Map<string, string>()
+        for (const node of nodes) {
+            for (const statusContext of node.status.contexts) {
+                nameTitle.set(statusContext.name, statusContext.title)
+            }
+        }
+        return [...nameTitle.entries()]
+            .map(([name, title]) => ({ name, title }))
+            .sort((a, b) => a.name.localeCompare(b.name))
+    }, [nodes])
+
+    const TH_CLASS_NAME = 'text-muted small font-weight-normal'
+
+    return (
+        <>
+            <colgroup>
+                <col className={styles.colName} />
+                <col className={styles.colOwner} />
+                <col className={styles.colStatusContext} span={1 + statusContextNames.length} />
+            </colgroup>
+            <thead>
+                <tr>
+                    <th className={classNames(TH_CLASS_NAME, styles.headerEntityName)} scope="col">
+                        Name
+                    </th>
+                    <th className={classNames(TH_CLASS_NAME, styles.headerEntityOwner)} scope="col">
+                        Owner
+                    </th>
+                    <th className={classNames(TH_CLASS_NAME, styles.headerCombinedStatus)} scope="col">
+                        Overall
+                    </th>
+                    {statusContextNames.map(({ name, title }) => (
+                        <th
+                            key={name}
+                            className={classNames(TH_CLASS_NAME, 'text-truncate', styles.headerStatusContext)}
+                            scope="col"
+                            title={title ? name : undefined}
+                        >
+                            {title || name}
+                        </th>
+                    ))}
+                </tr>
+            </thead>
+
+            <tbody>
+                {nodes.map(node => (
+                    <CatalogHealthTableRow key={node.id} node={node} statusContextNames={statusContextNames} />
+                ))}
+            </tbody>
+        </>
+    )
+}
+
+const CatalogHealthTableRow: React.FunctionComponent<{
+    node: CatalogEntityHealthFields
+    statusContextNames: StatusContextNameAndTitle[]
+}> = ({ node, statusContextNames }) => (
+    <tr>
+        <td>
+            <h3 className={classNames('h6 font-weight-bold mb-0 d-flex align-items-center')}>
+                <Link to={node.url} className={classNames('d-block text-truncate')}>
+                    <CatalogEntityIcon
+                        entity={node}
+                        className={classNames('icon-inline mr-1 flex-shrink-0 text-muted')}
+                    />
+                    {node.name}
+                </Link>
+                <CatalogEntityStateIndicator entity={node} className="ml-1" />
+            </h3>
+        </td>
+        <td>
+            <EntityOwner owner={node.owner} className="text-nowrap" blankIfNone={true} />
+        </td>
+        <CatalogEntityStatusStateCell
+            state={node.status.state}
+            targetURL={node.url}
+            description={`Combined status for ${node.name}: ${node.status.state.toLowerCase()}`}
+        />
+        {statusContextNames.map(({ name: statusContextName }) => {
+            const status = node.status.contexts.find(statusContext => statusContext.name === statusContextName)
+            return (
+                <CatalogEntityStatusStateCell
+                    key={statusContextName}
+                    state={status ? status.state : null}
+                    targetURL={status?.targetURL || node.url}
+                    description={
+                        status
+                            ? `${status.name} status for ${node.name}: ${status.state.toLowerCase()}${
+                                  status.description ? `\n${status.description}` : ''
+                              }`
+                            : `No ${statusContextName} status for ${node.name}`
+                    }
+                />
+            )
+        })}
+    </tr>
+)
+
+const CatalogEntityStatusStateCell: React.FunctionComponent<{
+    state: CatalogEntityStatusState | null
+    targetURL: string
+    description?: string | null
+}> = ({ state, targetURL, description }) => (
+    <td
+        className={classNames(
+            'position-relative',
+            styles.cellState,
+            state ? CELL_CLASS_NAME_FOR_STATE[state] : styles.stateNull
+        )}
+        data-tooltip={description || undefined}
+    >
+        <Link to={targetURL} className="d-block stretched-link">
+            <span className="sr-only">{state ? state.toLowerCase() : 'none'}</span>
+        </Link>
+    </td>
+)
+
+const CELL_CLASS_NAME_FOR_STATE: Record<CatalogEntityStatusState, string> = {
+    EXPECTED: styles.stateExpected,
+    ERROR: styles.stateError,
+    FAILURE: styles.stateFailure,
+    PENDING: styles.statePending,
+    SUCCESS: styles.stateSuccess,
+    INFO: styles.stateInfo,
+}

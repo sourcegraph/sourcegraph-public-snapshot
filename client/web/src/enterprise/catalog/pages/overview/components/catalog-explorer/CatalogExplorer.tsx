@@ -2,6 +2,7 @@ import React from 'react'
 import { useLocation, useRouteMatch } from 'react-router'
 import { Switch, Route, NavLink } from 'react-router-dom'
 
+import { CatalogHealthTable } from '../../../../components/catalog-health-table/CatalogHealthTable'
 import { useCatalogEntityFilters } from '../../../../core/entity-filters'
 import { OverviewEntityGraph } from '../overview-content/OverviewEntityGraph'
 
@@ -37,6 +38,14 @@ export const CatalogExplorer: React.FunctionComponent<Props> = () => {
                         >
                             Graph
                         </NavLink>
+                        <NavLink
+                            to={{ pathname: '/catalog/health', search: location.search }}
+                            exact={true}
+                            className="btn border"
+                            activeClassName="btn-primary"
+                        >
+                            Health
+                        </NavLink>
                     </div>
                 }
                 filters={filters}
@@ -49,6 +58,9 @@ export const CatalogExplorer: React.FunctionComponent<Props> = () => {
                 </Route>
                 <Route path={`${match.path}/graph`} exact={true}>
                     <OverviewEntityGraph filters={filters} className="border-top" />
+                </Route>
+                <Route path={`${match.path}/health`} exact={true}>
+                    <CatalogHealthTable filters={filters} />
                 </Route>
             </Switch>
         </>
