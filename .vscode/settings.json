@@ -71,4 +71,7 @@
   "shellformat.flag": "-i 2 -ci",
   "vscode-graphql.useSchemaFileDefinitions": true,
   "jest.jestCommandLine": "yarn -s test",
+  "files.watcherExclude": {
+    "**/target": true,
+  },
 }

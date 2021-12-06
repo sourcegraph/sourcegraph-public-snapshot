@@ -206,10 +206,15 @@ func (c *Corpus) run() error {
 		return err
 	}
 	isMatch := map[string]map[string]struct{}{}
+	bar := progressbar.DefaultBytes(
+		int64(len(index.Blobs)),
+		"testing",
+	)
 	for _, query := range c.Queries {
 		isMatch[query] = map[string]struct{}{}
 	}
 	for _, p := range index.Blobs {
+		bar.Add(1)
 		bytes, _ := index.FS.ReadRelativeFilename(p.Path)
 		text := string(bytes)
 		for _, query := range c.Queries {

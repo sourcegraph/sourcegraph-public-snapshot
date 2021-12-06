@@ -264,7 +264,7 @@ func CollectQueryNgrams(query string) [][]byte {
 }
 
 func (r *RepoIndex) SerializeToFile(cacheDir string) (err error) {
-	_ = os.Remove(cacheDir)
+	//_ = os.Remove(cacheDir)
 	err = os.MkdirAll(filepath.Dir(cacheDir), 0755)
 	if err != nil {
 		return err
