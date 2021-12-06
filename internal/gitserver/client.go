@@ -1023,9 +1023,21 @@ func (c *Client) do(ctx context.Context, repo api.RepoName, method, uri string, 
 		return nil, err
 	}
 
+	// TODO(@bobheadxi): This is here for the purposes of backcompat, remove when
+	// deployments are updated.
+	req.Header.Set("X-Sourcegraph-Actor", func() string {
+		a := actor.FromContext(ctx)
+		if a == nil {
+			return "0"
+		}
+		if a.Internal {
+			return "internal"
+		}
+		return a.UIDString()
+	}())
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", c.UserAgent)
-	req.Header.Set("X-Sourcegraph-Actor", userFromContext(ctx))
 	req = req.WithContext(ctx)
 
 	if c.HTTPLimiter != nil {
@@ -1040,17 +1052,6 @@ func (c *Client) do(ctx context.Context, repo api.RepoName, method, uri string, 
 	defer ht.Finish()
 
 	return c.HTTPClient.Do(req)
-}
-
-func userFromContext(ctx context.Context) string {
-	a := actor.FromContext(ctx)
-	if a == nil {
-		return "0"
-	}
-	if a.Internal {
-		return "internal"
-	}
-	return a.UIDString()
 }
 
 // CreateCommitFromPatch will attempt to create a commit from a patch

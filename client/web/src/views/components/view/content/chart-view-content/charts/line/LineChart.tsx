@@ -1,8 +1,12 @@
 import { ParentSize } from '@visx/responsive'
 import { EventEmitterProvider } from '@visx/xychart'
-import React, { ReactElement } from 'react'
+import classNames from 'classnames'
+import React, { ReactElement, useContext } from 'react'
 
 import { getLineStroke, LineChartContent, LineChartContentProps } from './components/LineChartContent'
+import { ScrollBox } from './components/scroll-box/ScrollBox'
+import { MINIMAL_HORIZONTAL_LAYOUT_WIDTH, MINIMAL_SERIES_FOR_ASIDE_LEGEND } from './constants'
+import { LineChartLayoutOrientation, LineChartSettingsContext } from './line-chart-settings-provider'
 import styles from './LineChart.module.scss'
 
 export interface LineChartProps<Datum extends object> extends LineChartContentProps<Datum> {}
@@ -12,6 +16,7 @@ export interface LineChartProps<Datum extends object> extends LineChartContentPr
  */
 export function LineChart<Datum extends object>(props: LineChartProps<Datum>): ReactElement {
     const { width, height, ...otherProps } = props
+    const { layout } = useContext(LineChartSettingsContext)
     const hasLegend = props.series.every(line => !!line.name)
 
     if (!hasLegend) {
@@ -25,13 +30,22 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
         )
     }
 
+    const hasViewManySeries = otherProps.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
+    const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
+
+    const isHorizontal = layout
+        ? // If layout is defined explicitly in line chart setting context use its value
+          layout === LineChartLayoutOrientation.Horizontal
+        : // Otherwise apply internal logic (based on how many x space and series we have)
+          hasViewManySeries && hasEnoughXSpace
+
     return (
         <EventEmitterProvider>
             <div
                 aria-label="Line chart"
                 /* eslint-disable-next-line react/forbid-dom-props */
                 style={{ width, height }}
-                className={styles.lineChart}
+                className={classNames(styles.lineChart, { [styles.lineChartHorizontal]: isHorizontal })}
             >
                 {/*
                     In case if we have a legend to render we have to have responsive container for chart
@@ -41,7 +55,13 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
                     {({ width, height }) => <LineChartContent {...otherProps} width={width} height={height} />}
                 </ParentSize>
 
-                <ul aria-hidden={true} className={styles.legend}>
+                <ScrollBox
+                    as="ul"
+                    scrollEnabled={isHorizontal}
+                    aria-hidden={true}
+                    rootClassName={classNames({ [styles.legendHorizontal]: isHorizontal })}
+                    className={classNames(styles.legendContent, { [styles.legendContentHorizontal]: isHorizontal })}
+                >
                     {props.series.map(line => (
                         <li key={line.dataKey.toString()} className={styles.legendItem}>
                             <div
@@ -52,7 +72,7 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
                             {line.name}
                         </li>
                     ))}
-                </ul>
+                </ScrollBox>
             </div>
         </EventEmitterProvider>
     )

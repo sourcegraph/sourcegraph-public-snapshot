@@ -5,6 +5,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/service"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -86,14 +90,42 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 		filters = &i.view.Filters
 	}
 
-	for j := range i.view.Series {
-		resolvers = append(resolvers, &insightSeriesResolver{
-			insightsStore:   i.timeSeriesStore,
-			workerBaseStore: i.workerBaseStore,
-			series:          i.view.Series[j],
-			metadataStore:   i.insightStore,
-			filters:         *filters,
-		})
+	for j, current := range i.view.Series {
+		if current.GeneratedFromCaptureGroups {
+			// this works fine for now because these are all just-in-time series. As soon as we start including global / recorded
+			// series, we need to have some logic to either fetch from the database or calculate the time series.
+			expanded, err := expandCaptureGroupSeries(ctx, current, i.baseInsightResolver)
+			if err != nil {
+				return nil, errors.Wrapf(err, "expandCaptureGroupSeries for seriesID: %s", current.SeriesID)
+			}
+			resolvers = append(resolvers, expanded...)
+		} else {
+			resolvers = append(resolvers, &insightSeriesResolver{
+				insightsStore:   i.timeSeriesStore,
+				workerBaseStore: i.workerBaseStore,
+				series:          i.view.Series[j],
+				metadataStore:   i.insightStore,
+				filters:         *filters,
+			})
+		}
+	}
+	return resolvers, nil
+}
+
+func expandCaptureGroupSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver) ([]graphqlbackend.InsightSeriesResolver, error) {
+	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
+	interval := query.TimeInterval{
+		Unit:  definition.SampleIntervalUnit,
+		Value: definition.SampleIntervalValue,
+	}
+	generatedSeries, err := executor.Execute(ctx, definition.Query, definition.Repositories, interval)
+	if err != nil {
+		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
+	}
+
+	var resolvers []graphqlbackend.InsightSeriesResolver
+	for i := range generatedSeries {
+		resolvers = append(resolvers, &dynamicInsightSeriesResolver{generated: &generatedSeries[i]})
 	}
 
 	return resolvers, nil
@@ -140,6 +172,9 @@ func (s *searchInsightDataSeriesDefinitionResolver) TimeScope(ctx context.Contex
 	}
 
 	return &insightTimeScopeUnionResolver{resolver: intervalResolver}, nil
+}
+func (s *searchInsightDataSeriesDefinitionResolver) GeneratedFromCaptureGroups() (bool, error) {
+	return s.series.GeneratedFromCaptureGroups, nil
 }
 
 type insightIntervalTimeScopeResolver struct {
@@ -353,12 +388,21 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 	if err != nil {
 		return nil, errors.Wrap(err, "CreateView")
 	}
+	repos := args.Input.RepositoryScope.Repositories
 	seriesToAdd, err := tx.CreateSeries(ctx, types.InsightSeries{
 		SeriesID:           ksuid.New().String(),
 		Query:              args.Input.Query,
 		CreatedAt:          time.Now(),
-		Repositories:       args.Input.RepositoryScope.Repositories,
+		Repositories:       repos,
 		SampleIntervalUnit: string(types.Month),
+		JustInTime:         service.IsJustInTime(repos),
+		// one might ask themselves why is the generation method a language stats method if this mutation is search insight? The answer is that search is ultimately the
+		// driver behind language stats, but global language stats behave differently than standard search. Long term the vision is that
+		// search will power this, and we can iterate over repos just like any other search insight. But for now, this is just something weird that we will have to live with.
+		// As a note, this does mean that this mutation doesn't even technically do what it is named - it does not create a 'search' insight, and with that in mind
+		// if we decide to support pie charts for other insights than language stats (which we likely will, say on arbitrary aggregations or capture groups) we will need to
+		// revisit this.
+		GenerationMethod: types.LanguageStats,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "CreateSeries")
@@ -655,26 +699,41 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 	var seriesToAdd, matchingSeries types.InsightSeries
 	var foundSeries bool
 	var err error
+	var dynamic bool
+	if series.GeneratedFromCaptureGroups != nil {
+		dynamic = *series.GeneratedFromCaptureGroups
+	}
 
-	// Don't try to match on frontend series
-	if len(series.RepositoryScope.Repositories) == 0 {
+	err = validateLineChartSearchInsightInput(series)
+	if err != nil {
+		return err
+	}
+
+	// Don't try to match on just-in-time series, since they are not recorded
+	if !service.IsJustInTime(series.RepositoryScope.Repositories) {
 		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
-			Query:             series.Query,
-			StepIntervalUnit:  series.TimeScope.StepInterval.Unit,
-			StepIntervalValue: int(series.TimeScope.StepInterval.Value)})
+			Query:                     series.Query,
+			StepIntervalUnit:          series.TimeScope.StepInterval.Unit,
+			StepIntervalValue:         int(series.TimeScope.StepInterval.Value),
+			GenerateFromCaptureGroups: dynamic,
+		})
 		if err != nil {
 			return errors.Wrap(err, "FindMatchingSeries")
 		}
 	}
 
 	if !foundSeries {
+		repos := series.RepositoryScope.Repositories
 		seriesToAdd, err = tx.CreateSeries(ctx, types.InsightSeries{
-			SeriesID:            ksuid.New().String(),
-			Query:               series.Query,
-			CreatedAt:           time.Now(),
-			Repositories:        series.RepositoryScope.Repositories,
-			SampleIntervalUnit:  series.TimeScope.StepInterval.Unit,
-			SampleIntervalValue: int(series.TimeScope.StepInterval.Value),
+			SeriesID:                   ksuid.New().String(),
+			Query:                      series.Query,
+			CreatedAt:                  time.Now(),
+			Repositories:               repos,
+			SampleIntervalUnit:         series.TimeScope.StepInterval.Unit,
+			SampleIntervalValue:        int(series.TimeScope.StepInterval.Value),
+			GeneratedFromCaptureGroups: dynamic,
+			JustInTime:                 service.IsJustInTime(repos),
+			GenerationMethod:           searchGenerationMethod(series),
 		})
 		if err != nil {
 			return errors.Wrap(err, "CreateSeries")
@@ -694,6 +753,24 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 		return errors.Wrap(err, "AttachSeriesToView")
 	}
 	return nil
+}
+
+func validateLineChartSearchInsightInput(series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
+	var generated bool
+	if series.GeneratedFromCaptureGroups != nil {
+		generated = *series.GeneratedFromCaptureGroups
+	}
+	if len(series.RepositoryScope.Repositories) == 0 && generated {
+		return errors.New("generated capture group search insights are not supported globally")
+	}
+	return nil
+}
+
+func searchGenerationMethod(series graphqlbackend.LineChartSearchInsightDataSeriesInput) types.GenerationMethod {
+	if series.GeneratedFromCaptureGroups != nil && *series.GeneratedFromCaptureGroups {
+		return types.SearchCompute
+	}
+	return types.Search
 }
 
 func seriesFound(existingSeries types.InsightViewSeries, inputSeries []graphqlbackend.LineChartSearchInsightDataSeriesInput) bool {

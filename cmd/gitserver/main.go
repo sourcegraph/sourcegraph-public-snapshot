@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -139,9 +140,10 @@ func main() {
 	}
 
 	// Create Handler now since it also initializes state
-
 	// TODO: Why do we set server state as a side effect of creating our handler?
-	handler := ot.HTTPMiddleware(trace.HTTPTraceMiddleware(gitserver.Handler(), conf.DefaultClient()))
+	handler := gitserver.Handler()
+	handler = actor.HTTPMiddleware(handler)
+	handler = ot.HTTPMiddleware(trace.HTTPMiddleware(handler, conf.DefaultClient()))
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -257,34 +259,18 @@ func getPercent(p int) (int, error) {
 	return p, nil
 }
 
-// getStores initializes a connection to the database and returns RepoStore and
-// ExternalServiceStore.
+// getDB initializes a connection to the database and returns a dbutil.DB
 func getDB() (dbutil.DB, error) {
-	//
-	// START FLAILING
-
 	// Gitserver is an internal actor. We rely on the frontend to do authz checks for
 	// user requests.
 	//
 	// This call to SetProviders is here so that calls to GetProviders don't block.
 	authz.SetProviders(true, []authz.Provider{})
 
-	// END FLAILING
-	//
-
-	dsn := conf.Get().ServiceConnections().PostgresDSN
-	conf.Watch(func() {
-		newDSN := conf.Get().ServiceConnections().PostgresDSN
-		if dsn != newDSN {
-			// The DSN was changed (e.g. by someone modifying the env vars on
-			// the frontend). We need to respect the new DSN. Easiest way to do
-			// that is to restart our service (kubernetes/docker/goreman will
-			// handle starting us back up).
-			log.Fatalf("Detected repository DSN change, restarting to take effect: %q", newDSN)
-		}
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.PostgresDSN
 	})
-
-	return dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "gitserver"})
+	return dbconn.NewFrontendDB(dsn, "gitserver", false)
 }
 
 func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,
@@ -318,7 +304,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 	switch r.ExternalRepo.ServiceType {
 	case extsvc.TypePerforce:
 		var c schema.PerforceConnection
-		if err := extractOptions(c); err != nil {
+		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
 		return &server.PerforceDepotSyncer{
@@ -328,7 +314,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		}, nil
 	case extsvc.TypeJVMPackages:
 		var c schema.JVMPackagesConnection
-		if err := extractOptions(c); err != nil {
+		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
 		return &server.JVMPackagesSyncer{Config: &c, DBStore: codeintelDB}, nil

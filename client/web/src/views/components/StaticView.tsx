@@ -1,5 +1,5 @@
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
-import React from 'react'
+import React, { forwardRef } from 'react'
 
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -7,7 +7,9 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import * as View from './view'
 
-interface StaticView extends TelemetryProps, React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
+interface StaticViewProps
+    extends TelemetryProps,
+        React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
     content: ViewProviderResult
 }
 
@@ -15,7 +17,7 @@ interface StaticView extends TelemetryProps, React.DetailedHTMLProps<React.HTMLA
  * Component that renders insight-like extension card. Used by extension views in extension
  * consumers that have insight section (the search and the directory page).
  */
-export const StaticView: React.FunctionComponent<StaticView> = props => {
+export const StaticView = forwardRef<HTMLElement, StaticViewProps>((props, reference) => {
     const {
         content: { view, id: contentId },
         telemetryService,
@@ -31,6 +33,7 @@ export const StaticView: React.FunctionComponent<StaticView> = props => {
             subtitle={subtitle}
             className="insight-content-card"
             data-testid={`insight-card.${contentId}`}
+            innerRef={reference}
             {...otherProps}
         >
             {view === undefined ? (
@@ -47,4 +50,4 @@ export const StaticView: React.FunctionComponent<StaticView> = props => {
             )}
         </View.Root>
     )
-}
+})

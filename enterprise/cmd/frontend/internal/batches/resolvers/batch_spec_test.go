@@ -268,7 +268,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	admin := ct.CreateTestUser(t, db, true)
 	adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
 
-	rs, _ := ct.CreateTestRepos(t, ctx, db, 3)
+	rs, extSvc := ct.CreateTestRepos(t, ctx, db, 3)
 
 	bstore := store.New(db, &observation.TestContext, nil)
 
@@ -391,7 +391,6 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.ApplyURL = &applyUrl
 	want.FinishedAt = graphqlbackend.DateTime{Time: jobs[0].FinishedAt}
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
-	want.ApplyURL = nil
 
 	// 1/3 jobs is failed, 2/3 completed
 	message1 := "failure message"
@@ -399,6 +398,8 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	setJobFailed(t, ctx, bstore, jobs[1])
 	want.State = "FAILED"
 	want.FailureMessage = fmt.Sprintf("Failures:\n\n* %s\n", message1)
+	// We still want users to be able to apply batch specs that executed with errors
+	want.ApplyURL = &applyUrl
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
 	// 1/3 jobs is failed, 2/3 still processing
@@ -406,6 +407,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	setJobProcessing(t, ctx, bstore, jobs[2])
 	want.State = "PROCESSING"
 	want.FinishedAt = graphqlbackend.DateTime{}
+	want.ApplyURL = nil
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
 	// 3/3 jobs canceling and processing
@@ -434,6 +436,53 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 * canceled
 `
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+
+	// 1/3 jobs is failed, 2/3 completed, but produced invalid changeset specs
+	jobs[0].FinishedAt = minAgo(9)
+	jobs[1].FinishedAt = minAgo(15)
+	jobs[1].FailureMessage = &message1
+	jobs[2].FinishedAt = minAgo(30)
+	setJobCompleted(t, ctx, bstore, jobs[0])
+	setJobFailed(t, ctx, bstore, jobs[1])
+	setJobCompleted(t, ctx, bstore, jobs[2])
+
+	conflictingRef := "refs/heads/conflicting-head-ref"
+	for _, opts := range []ct.TestSpecOpts{
+		{HeadRef: conflictingRef, Repo: rs[0].ID, BatchSpec: spec.ID},
+		{HeadRef: conflictingRef, Repo: rs[0].ID, BatchSpec: spec.ID},
+	} {
+		spec := ct.CreateChangesetSpec(t, ctx, bstore, opts)
+
+		want.ChangesetSpecs.TotalCount += 1
+		want.ChangesetSpecs.Nodes = append(want.ChangesetSpecs.Nodes, apitest.ChangesetSpec{
+			ID:       string(marshalChangesetSpecRandID(spec.RandID)),
+			Typename: "VisibleChangesetSpec",
+			Description: apitest.ChangesetSpecDescription{
+				BaseRepository: apitest.Repository{
+					ID:   string(graphqlbackend.MarshalRepositoryID(rs[0].ID)),
+					Name: string(rs[0].Name),
+				},
+			},
+		})
+	}
+
+	want.State = "FAILED"
+	want.FailureMessage = fmt.Sprintf("Validating changeset specs resulted in an error:\n* 2 changeset specs in %s use the same branch: %s\n", rs[0].Name, conflictingRef)
+	want.ApplyURL = nil
+	want.DiffStat.Added = 20
+	want.DiffStat.Deleted = 4
+	want.DiffStat.Changed = 10
+
+	codeHosts = apitest.BatchChangesCodeHostsConnection{
+		TotalCount: 1,
+		Nodes: []apitest.BatchChangesCodeHost{
+			{ExternalServiceKind: extSvc.Kind, ExternalServiceURL: "https://github.com/"},
+		},
+	}
+	want.AllCodeHosts = codeHosts
+	want.OnlyWithoutCredential = codeHosts
+	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+
 }
 
 func queryAndAssertBatchSpec(t *testing.T, ctx context.Context, s *graphql.Schema, id string, want apitest.BatchSpec) {

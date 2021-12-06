@@ -13,10 +13,10 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -256,8 +256,8 @@ func scanCommitGraphMetadata(rows *sql.Rows, queryErr error) (updateToken, dirty
 func (s *Store) CalculateVisibleUploads(
 	ctx context.Context,
 	repositoryID int,
-	commitGraph *gitserver.CommitGraph,
-	refDescriptions map[string][]gitserver.RefDescription,
+	commitGraph *gitdomain.CommitGraph,
+	refDescriptions map[string][]gitdomain.RefDescription,
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
 	dirtyToken int,
@@ -785,13 +785,13 @@ type sanitizedCommitInput struct {
 func sanitizeCommitInput(
 	ctx context.Context,
 	graph *commitgraph.Graph,
-	refDescriptions map[string][]gitserver.RefDescription,
+	refDescriptions map[string][]gitdomain.RefDescription,
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
 ) *sanitizedCommitInput {
-	maxAges := map[gitserver.RefType]time.Duration{
-		gitserver.RefTypeBranch: maxAgeForNonStaleBranches,
-		gitserver.RefTypeTag:    maxAgeForNonStaleTags,
+	maxAges := map[gitdomain.RefType]time.Duration{
+		gitdomain.RefTypeBranch: maxAgeForNonStaleBranches,
+		gitdomain.RefTypeTag:    maxAgeForNonStaleTags,
 	}
 
 	nearestUploadsRowValues := make(chan []interface{})

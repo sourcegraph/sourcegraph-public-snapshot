@@ -3,49 +3,62 @@ package dbconn
 import (
 	"database/sql"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
-// Opts contain arguments passed to database connection initialisation functions.
-type Opts struct {
-	// DSN (data source name) is a URI like string containing all data needed to connect to the database.
-	DSN string
+// NewFrontendDB creates a new connection to the frontend database. After successful connection,
+// the schema version of the database will be compared against an expected version and migrations
+// may be run (taking an advisory lock to ensure exclusive access).
+//
+// TEMPORARY: The migrate flag controls whether or not migrations/version checks are performed on
+// the version. When false, we give back a handle without running any migrations and assume that
+// the database schema is up to date.
+//
+// This connection is not expected to be closed but last the life of the calling application.
+func NewFrontendDB(dsn, appName string, migrate bool) (*sql.DB, error) {
+	migrations := []*schemas.Schema{schemas.Frontend}
+	if !migrate {
+		migrations = nil
+	}
 
-	// DBName is used only for Prometheus metrics instead of whatever actual database name is set in DSN.
-	// This is needed because in our dev environment we use a single physical database (and DSN) for all our different
-	// logical databases.
-	DBName string
-
-	// AppName overrides the application_name in the DSN. This separate parameter is needed
-	// because we have multiple apps connecting to the same database, but have a single shared DSN configured.
-	AppName string
+	db, _, err := connect(dsn, appName, "frontend", migrations)
+	return db, err
 }
 
-// New connects to the given data source and returns the handle.
+// NewCodeIntelDB creates a new connection to the codeintel database. After successful connection,
+// the schema version of the database will be compared against an expected version and migrations
+// may be run (taking an advisory lock to ensure exclusive access).
 //
-// If dbname is set then metric will be reported for the returned handle.
-// dbname is used for its Prometheus label value instead of whatever actual value is set in dataSource.
-// This is needed because in our dev environment we use a single physical database (and DSN) for all our different
-// logical databases. app, however is set as the application_name in the connection string. This is needed
-// because we have multiple apps connecting to the same database, but have a single shared DSN.
+// TEMPORARY: The migrate flag controls whether or not migrations/version checks are performed on
+// the version. When false, we give back a handle without running any migrations and assume that
+// the database schema is up to date.
 //
-// Note: github.com/jackc/pgx parses the environment as well. This function will
-// also use the value of PGDATASOURCE if supplied and dataSource is the empty
-// string.
-func New(opts Opts) (*sql.DB, error) {
-	cfg, err := buildConfig(opts.DSN, opts.AppName)
-	if err != nil {
-		return nil, err
+// This connection is not expected to be closed but last the life of the calling application.
+func NewCodeIntelDB(dsn, appName string, migrate bool) (*sql.DB, error) {
+	migrations := []*schemas.Schema{schemas.CodeIntel}
+	if !migrate {
+		migrations = nil
 	}
 
-	db, err := newWithConfig(cfg)
-	if err != nil {
-		return nil, err
+	db, _, err := connect(dsn, appName, "codeintel", migrations)
+	return db, err
+}
+
+// NewCodeInsightsDB creates a new connection to the codeinsights database. After successful
+// connection, the schema version of the database will be compared against an expected version and
+// migrations may be run (taking an advisory lock to ensure exclusive access).
+//
+// TEMPORARY: The migrate flag controls whether or not migrations/version checks are performed on
+// the version. When false, we give back a handle without running any migrations and assume that
+// the database schema is up to date.
+//
+// This connection is not expected to be closed but last the life of the calling application.
+func NewCodeInsightsDB(dsn, appName string, migrate bool) (*sql.DB, error) {
+	migrations := []*schemas.Schema{schemas.CodeInsights}
+	if !migrate {
+		migrations = nil
 	}
 
-	if opts.DBName != "" {
-		prometheus.MustRegister(newMetricsCollector(db, opts.DBName, opts.AppName))
-	}
-
-	return db, nil
+	db, _, err := connect(dsn, appName, "codeinsight", migrations)
+	return db, err
 }

@@ -6,10 +6,12 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/migration"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -53,6 +55,13 @@ func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchabl
 		return err
 	}
 	enterpriseServices.InsightsResolver = resolvers.New(timescale, postgres)
+
+	insightsMigrator := migration.NewMigrator(timescale, postgres)
+	// This id (14) was defined arbitrarily in this migration file: 1528395945_settings_migration_out_of_band.up.sql.
+	if err := outOfBandMigrationRunner.Register(14, insightsMigrator, oobmigration.MigratorOptions{Interval: 10 * time.Second}); err != nil {
+		log.Fatalf("failed to register settings migration job: %v", err)
+	}
+
 	return nil
 }
 
@@ -61,20 +70,13 @@ func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchabl
 // which case, one's migration will win and the other caller will receive an error and should exit
 // and restart until the other finishes.)
 func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
-	timescaleDSN := conf.Get().ServiceConnections().CodeInsightsTimescaleDSN
-	conf.Watch(func() {
-		if newDSN := conf.Get().ServiceConnections().CodeInsightsTimescaleDSN; timescaleDSN != newDSN {
-			log.Fatalf("Detected codeinsights database DSN change, restarting to take effect: %s", newDSN)
-		}
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.CodeInsightsTimescaleDSN
 	})
-
-	db, err := dbconn.New(dbconn.Opts{DSN: timescaleDSN, DBName: "codeinsights", AppName: app})
+	db, err := dbconn.NewCodeInsightsDB(dsn, app, true)
 	if err != nil {
 		return nil, errors.Errorf("Failed to connect to codeinsights database: %s", err)
 	}
 
-	if _, err := dbconn.MigrateDB(db, dbconn.CodeInsights); err != nil {
-		return nil, errors.Errorf("Failed to perform codeinsights database migration: %s", err)
-	}
 	return db, nil
 }

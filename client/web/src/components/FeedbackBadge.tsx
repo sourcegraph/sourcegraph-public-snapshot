@@ -1,9 +1,10 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Badge, BadgeProps } from './Badge'
+import { ProductStatusBadge } from '@sourcegraph/wildcard'
+import type { BaseProductStatusBadgeProps } from '@sourcegraph/wildcard/src/components/Badge'
 
-interface FeedbackBadgeProps extends BadgeProps {
+interface FeedbackBadgeProps extends BaseProductStatusBadgeProps {
     /** Render a mailto href to share feedback */
     feedback: {
         mailto: string
@@ -23,7 +24,7 @@ export const FeedbackBadge: React.FunctionComponent<FeedbackBadgeProps> = props 
 
     return (
         <div className={classNames('d-flex', 'align-items-center', className)}>
-            <Badge tooltip={tooltip} status={status} className="text-uppercase" />
+            <ProductStatusBadge tooltip={tooltip} status={status} className="text-uppercase" />
             <a href={`mailto:${mailto}`} className="ml-2" target="_blank" rel="noopener noreferrer">
                 {text || 'Share feedback'}
             </a>

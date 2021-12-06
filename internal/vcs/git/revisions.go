@@ -60,8 +60,8 @@ var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 //
 // Error cases:
 // * Repo does not exist: gitdomain.RepoNotExistError
-// * Commit does not exist: RevisionNotFoundError
-// * Empty repository: RevisionNotFoundError
+// * Commit does not exist: gitdomain.RevisionNotFoundError
+// * Empty repository: gitdomain.RevisionNotFoundError
 // * Other unexpected errors.
 func ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error) {
 	if Mocks.ResolveRevision != nil {

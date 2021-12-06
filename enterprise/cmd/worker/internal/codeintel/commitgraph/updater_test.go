@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestUpdater(t *testing.T) {
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		"a",
 		"b a",
 	})
@@ -25,7 +25,7 @@ func TestUpdater(t *testing.T) {
 
 	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.CommitGraphFunc.SetDefaultReturn(graph, nil)
-	mockGitserverClient.RefDescriptionsFunc.SetDefaultReturn(map[string][]gitserver.RefDescription{
+	mockGitserverClient.RefDescriptionsFunc.SetDefaultReturn(map[string][]gitdomain.RefDescription{
 		"b": {{IsDefaultBranch: true}},
 	}, nil)
 
@@ -71,7 +71,7 @@ func TestUpdaterNoUploads(t *testing.T) {
 	mockLocker.LockFunc.SetDefaultReturn(true, func(err error) error { return err }, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.RefDescriptionsFunc.SetDefaultReturn(map[string][]gitserver.RefDescription{
+	mockGitserverClient.RefDescriptionsFunc.SetDefaultReturn(map[string][]gitdomain.RefDescription{
 		"b": {{IsDefaultBranch: true}},
 	}, nil)
 
@@ -104,7 +104,7 @@ func TestUpdaterLocked(t *testing.T) {
 	mockLocker.LockFunc.SetDefaultReturn(false, nil, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
-	mockGitserverClient.RefDescriptionsFunc.SetDefaultReturn(map[string][]gitserver.RefDescription{
+	mockGitserverClient.RefDescriptionsFunc.SetDefaultReturn(map[string][]gitdomain.RefDescription{
 		"b": {{IsDefaultBranch: true}},
 	}, nil)
 
