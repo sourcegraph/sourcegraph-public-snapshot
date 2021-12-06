@@ -1,0 +1,57 @@
+package schemas
+
+import (
+	"net/url"
+	"os"
+	"os/user"
+
+	"github.com/cockroachdb/errors"
+
+	"github.com/sourcegraph/sourcegraph/lib/postgresdsn"
+)
+
+func DSNsBySchema() (map[string]string, error) {
+	username := ""
+	if user, err := user.Current(); err == nil {
+		username = user.Username
+	}
+
+	dsns := make(map[string]string, len(SchemaNames))
+	for _, schemaName := range SchemaNames {
+		dsns[schemaName] = postgresdsn.New(schemaName, username, os.Getenv)
+	}
+
+	// We set this envvar in development to disable the following check
+	if os.Getenv("CODEINTEL_PG_ALLOW_SINGLE_DB") == "" {
+		// Ensure that the code intelligence database is not pointing at the frontend database
+		if err := comparePostgresDSNs("frontend", "codeintel", dsns["frontend"], dsns["codeintel"]); err != nil {
+			return nil, err
+		}
+	}
+
+	return dsns, nil
+}
+
+// comparePostgresDSNs returns an error if one of the given Postgres DSN values are not a valid URL, or if
+// they are both valid URLs but point to the same database. We consider two DSNs to be the same when they
+// specify the same host, port, and path. It's possible that different hosts/ports map to the same physical
+// machine, so we could conceivably return false negatives here and the tricksy site-admin may have pulled
+// the wool over our eyes. This shouldn't actually affect anything operationally in the near-term, but may
+// just make migrations harder when we need to have them manually separate the data.
+func comparePostgresDSNs(name1, name2, dsn1, dsn2 string) error {
+	url1, err := url.Parse(dsn1)
+	if err != nil {
+		return errors.Errorf("illegal Postgres DSN: %s", dsn1)
+	}
+
+	url2, err := url.Parse(dsn2)
+	if err != nil {
+		return errors.Errorf("illegal Postgres DSN: %s", dsn2)
+	}
+
+	if url1.Host == url2.Host && url1.Path == url2.Path {
+		return errors.Errorf("%s and %s databases must be distinct: %s and %s seem to refer to the same database", name1, name2, dsn1, dsn2)
+	}
+
+	return nil
+}
