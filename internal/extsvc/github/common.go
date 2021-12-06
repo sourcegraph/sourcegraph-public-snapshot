@@ -1677,15 +1677,13 @@ func nodeIDCacheKey(id string) string                   { return "1:" + id }
 var GetRepositoryMock func(ctx context.Context, owner, name string) (*Repository, error)
 
 // cachedGetRepository caches the getRepositoryFromAPI call.
-func (c *V3Client) cachedGetRepository(ctx context.Context, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error), nocache bool) (*Repository, error) {
-	if !nocache {
-		if cached := c.getRepositoryFromCache(ctx, key); cached != nil {
-			reposGitHubCacheCounter.WithLabelValues("hit").Inc()
-			if cached.NotFound {
-				return nil, ErrRepoNotFound
-			}
-			return &cached.Repository, nil
+func (c *V3Client) cachedGetRepository(ctx context.Context, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error)) (*Repository, error) {
+	if cached := c.getRepositoryFromCache(ctx, key); cached != nil {
+		reposGitHubCacheCounter.WithLabelValues("hit").Inc()
+		if cached.NotFound {
+			return nil, ErrRepoNotFound
 		}
+		return &cached.Repository, nil
 	}
 
 	repo, keys, err := getRepositoryFromAPI(ctx)
