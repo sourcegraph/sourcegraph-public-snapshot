@@ -1116,14 +1116,11 @@ type Query {
         cloneURL: String
     ): RepositoryRedirect
     """
-    Looks up a repository by either name or cloneURL. When the repository does not exist on the server
-    and "disablePublicRepoRedirects" is "false" in the site configuration, it returns a Redirect to
-    an external Sourcegraph URL that may have this repository instead. Otherwise, this query returns
-    null.
+    Looks up a repository by hashed name.
     """
     pureRepository(
         """
-        Query the hashed repository name, for example "github.com/gorilla/mux" -> TODO:.
+        Query the repository by hashed name.
         """
         hashedName: String
     ): Repository

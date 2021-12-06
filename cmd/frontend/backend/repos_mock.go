@@ -16,7 +16,7 @@ import (
 type MockRepos struct {
 	Get                func(v0 context.Context, id api.RepoID) (*types.Repo, error)
 	GetByName          func(v0 context.Context, name api.RepoName) (*types.Repo, error)
-	GetByHashedName    func(v0 context.Context, name api.HashedRepoName) (*types.Repo, error)  // TODO:
+	GetByHashedName    func(v0 context.Context, name api.RepoHashedName) (*types.Repo, error)  // TODO:
 	List               func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error)
 	GetCommit          func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*gitdomain.Commit, error)
 	ResolveRev         func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)

@@ -36,8 +36,6 @@ type Repo struct {
 	//
 	// Previously, this was called RepoURI.
 	Name api.RepoName
-	// HashedName is the repository hashed name for this repository (e.g., "github.com/user/repo"->TODO:)
-	HashedName api.HashedRepoName
 	// URI is the full name for this repository (e.g.,
 	// "github.com/user/repo"). See the documentation for the Name field.
 	URI string

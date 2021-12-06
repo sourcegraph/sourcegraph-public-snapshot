@@ -44,7 +44,7 @@ import (
 type RepoNotFoundErr struct {
 	ID         api.RepoID
 	Name       api.RepoName
-	HashedName api.HashedRepoName
+	HashedName api.RepoHashedName
 }
 
 func (e *RepoNotFoundErr) Error() string {
@@ -74,7 +74,7 @@ type RepoStore interface {
 	Get(context.Context, api.RepoID) (*types.Repo, error)
 	GetByIDs(context.Context, ...api.RepoID) ([]*types.Repo, error)
 	GetByName(context.Context, api.RepoName) (*types.Repo, error)
-	GetByHashedName(context.Context, api.HashedRepoName) (*types.Repo, error)
+	GetByHashedName(context.Context, api.RepoHashedName) (*types.Repo, error)
 	GetFirstRepoNamesByCloneURL(context.Context, string) (api.RepoName, error)
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
@@ -236,15 +236,14 @@ func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 	return repos[0], repos[0].IsBlocked()
 }
 
-// GetByHashedName returns the repository with the given hashedName from the
-// database, or an error.
+// GetByHashedName returns the repository with the given hashedName from the database, or an error.
 //
-// HashedName is the hashed name for this repository (e.g., "github.com/user/repo" => TODO:)
+// RepoHashedName is the repository hashed name.
 //
 // When a repo isn't found or has been blocked, an error is returned.
-func (s *repoStore) GetByHashedName(ctx context.Context, hashedRepoName api.HashedRepoName) (_ *types.Repo, err error) {
+func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.RepoHashedName) (_ *types.Repo, err error) {
 	if Mocks.Repos.GetByHashedName != nil {
-		return Mocks.Repos.GetByHashedName(ctx, hashedRepoName)
+		return Mocks.Repos.GetByHashedName(ctx, repoHashedName)
 	}
 
 	tr, ctx := trace.New(ctx, "repos.GetByHashedName", "")
@@ -254,7 +253,7 @@ func (s *repoStore) GetByHashedName(ctx context.Context, hashedRepoName api.Hash
 	}()
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
-		HashedNames:    []string{string(hashedRepoName)},
+		HashedNames:    []string{string(repoHashedName)},
 		LimitOffset:    &LimitOffset{Limit: 1},
 		IncludeBlocked: true,
 	})
@@ -263,7 +262,7 @@ func (s *repoStore) GetByHashedName(ctx context.Context, hashedRepoName api.Hash
 	}
 
 	if len(repos) == 0 {
-		return nil, &RepoNotFoundErr{HashedName: api.HashedRepoName(hashedRepoName)}
+		return nil, &RepoNotFoundErr{HashedName: api.RepoHashedName(repoHashedName)}
 	}
 
 	return repos[0], repos[0].IsBlocked()
@@ -420,7 +419,6 @@ var minimalRepoColumns = []string{
 var repoColumns = []string{
 	"repo.id",
 	"repo.name",
-	// "repo.hashed_name",
 	"repo.private",
 	"repo.external_id",
 	"repo.external_service_type",
@@ -981,24 +979,13 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	}
 
 	if len(opt.HashedNames) > 0 {
-		lowerNames := make([]string, len(opt.HashedNames))
+		lowerHashedNames := make([]string, len(opt.HashedNames))
 		for i, name := range opt.HashedNames {
-			lowerNames[i] = strings.ToLower(name)
+			lowerHashedNames[i] = strings.ToLower(name)
 		}
 
-		// Performance improvement
-		//
-		// Comparing JUST the name field will use the repo_name_unique index, which is
-		// a unique btree index over the citext name field. This tends to be a VERY SLOW
-		// comparison over a large table. We were seeing query plans growing linearly with
-		// the size of the result set such that each unique index scan would take ~0.1ms.
-		// This adds up as we regularly query 10k-40k repositories at a time.
-		//
-		// This condition instead forces the use of a btree index repo_name_idx defined over
-		// (lower(name::text) COLLATE "C"). This is a MUCH faster comparison as it does not
-		// need to fold the casing of either the input value nor the value in the index.
-
-		where = append(where, sqlf.Sprintf(`lower(hashed_name::text) COLLATE "C" = ANY (%s::text[])`, pq.Array(lowerNames)))
+		// This will use the repo_hashed_name_idx
+		where = append(where, sqlf.Sprintf(`encode(sha256(lower(name)::bytea), 'hex') = ANY (%s::text[])`, pq.Array((lowerHashedNames))))
 	}
 
 	if len(opt.URIs) > 0 {

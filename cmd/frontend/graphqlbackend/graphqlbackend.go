@@ -600,9 +600,9 @@ func (r *schemaResolver) PureRepository(ctx context.Context, args *struct {
 	HashedName *string
 }) (*RepositoryResolver, error) {
 	if args.HashedName == nil {
-		return nil, errors.New("Hashed Repo Name is required")
+		return nil, errors.New("RepoHashedName is required")
 	}
-	repo, err := backend.NewRepos(r.db.Repos()).GetByHashedName(ctx, api.HashedRepoName(*args.HashedName))
+	repo, err := backend.NewRepos(r.db.Repos()).GetByHashedName(ctx, api.RepoHashedName(*args.HashedName))
 	if err != nil {
 		return nil, err
 	}

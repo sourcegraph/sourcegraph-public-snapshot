@@ -103,8 +103,8 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	}
 }
 
-// GetByHashedName retrieves the repository with the given hashed repository name
-func (s *repos) GetByHashedName(ctx context.Context, name api.HashedRepoName) (_ *types.Repo, err error) {
+// GetByHashedName retrieves the repository with the given repository hashed name
+func (s *repos) GetByHashedName(ctx context.Context, name api.RepoHashedName) (_ *types.Repo, err error) {
 	if Mocks.Repos.GetByHashedName != nil {
 		return Mocks.Repos.GetByHashedName(ctx, name)
 	}
