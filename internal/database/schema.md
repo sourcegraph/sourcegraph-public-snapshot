@@ -1569,6 +1569,8 @@ Foreign-key constraints:
  updated_at      | timestamp with time zone |           | not null | now()
 Indexes:
     "notebooks_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "blocks_is_array" CHECK (jsonb_typeof(blocks) = 'array'::text)
 Foreign-key constraints:
     "notebooks_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 
