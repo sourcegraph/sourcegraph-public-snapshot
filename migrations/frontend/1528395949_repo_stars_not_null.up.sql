@@ -1,0 +1,7 @@
+BEGIN;
+
+UPDATE repo SET stars = 0 WHERE stars IS NULL;
+
+ALTER TABLE repo ALTER COLUMN stars SET NOT NULL;
+
+COMMIT;
