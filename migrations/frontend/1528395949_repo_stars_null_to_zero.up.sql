@@ -19,7 +19,7 @@ BEGIN
 
     SELECT COUNT(*) INTO remaining FROM repo WHERE stars IS NULL;
 
-    RAISE NOTICE 'repo_stars_not_null.up.sql: % remaining', remaining;
+    RAISE NOTICE 'repo_stars_null_to_zero: % remaining rows', remaining;
   END LOOP;
 END
 $BODY$
