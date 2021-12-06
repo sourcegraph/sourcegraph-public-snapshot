@@ -10,7 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/lib/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 )
 
 // TimescaleDB returns a handle to the Code Insights TimescaleDB instance.
