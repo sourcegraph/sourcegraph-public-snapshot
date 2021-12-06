@@ -235,6 +235,7 @@ var allowedPrometheusFieldNames = map[[2]string]struct{}{
 	{"Query", "repositories"}:                   {},
 	{"Query", "repository"}:                     {},
 	{"Query", "repositoryRedirect"}:             {},
+	{"Query", "pureRepository"}:                 {},
 	{"Query", "search"}:                         {},
 	{"Query", "settingsSubject"}:                {},
 	{"Query", "site"}:                           {},
@@ -593,6 +594,19 @@ func (r *repositoryRedirect) ToRepository() (*RepositoryResolver, bool) {
 
 func (r *repositoryRedirect) ToRedirect() (*RedirectResolver, bool) {
 	return r.redirect, r.redirect != nil
+}
+
+func (r *schemaResolver) PureRepository(ctx context.Context, args *struct {
+	HashedName *string
+}) (*RepositoryResolver, error) {
+	if args.HashedName == nil {
+		return nil, errors.New("Hashed Repo Name is required")
+	}
+	repo, err := backend.NewRepos(r.db.Repos()).GetByHashedName(ctx, api.HashedRepoName(*args.HashedName))
+	if err != nil {
+		return nil, err
+	}
+	return NewRepositoryResolver(r.db, repo), nil
 }
 
 func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
