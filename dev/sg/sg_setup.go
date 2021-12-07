@@ -767,7 +767,7 @@ func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory)
 func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
 	writeFingerPointingLine("Trying my hardest to fix %q automatically...", dep.name)
 
-	cmd := sourceExec(ctx, dep.InstructionsCommands(ctx))
+	cmd := execFreshShell(ctx, dep.InstructionsCommands(ctx))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -949,10 +949,10 @@ func guessUserShell() (string, string, error) {
 	return shell, filepath.Join(home, shellrc), nil
 }
 
-// sourceExec returns a command wrapped in a new shell process, enabling
+// execFreshShell returns a command wrapped in a new shell process, enabling
 // changes added by various checks to be run. This negates the new to ask the
 // user to restart sg for many checks.
-func sourceExec(ctx context.Context, cmd string) *exec.Cmd {
+func execFreshShell(ctx context.Context, cmd string) *exec.Cmd {
 	command := fmt.Sprintf("source %s || true; %s", getUserShellConfigPath(ctx), cmd)
 	return exec.CommandContext(ctx, getUserShellPath(ctx), "-c", command)
 }
@@ -960,7 +960,7 @@ func sourceExec(ctx context.Context, cmd string) *exec.Cmd {
 // combinedSourceExec runs a command in a fresh shell environment,
 // and returns stderr and stdout combined, along with an error.
 func combinedSourceExec(ctx context.Context, cmd string) ([]byte, error) {
-	return sourceExec(ctx, cmd).CombinedOutput()
+	return execFreshShell(ctx, cmd).CombinedOutput()
 }
 
 func checkInPath(cmd string) func(context.Context) error {
