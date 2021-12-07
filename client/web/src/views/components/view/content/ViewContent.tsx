@@ -105,7 +105,6 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
                             content={content}
                             viewID={viewID}
                             telemetryService={props.telemetryService}
-                            className={styles.chart}
                         />
                     </React.Fragment>
                 ) : null
