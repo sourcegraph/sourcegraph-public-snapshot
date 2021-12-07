@@ -12,3 +12,5 @@ snapshot:
     }
 discovery:
   disable-cache: true
+  allowed-hostnames:
+    - sourcegraph.test
