@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -37,6 +38,26 @@ var (
 	}
 )
 
+type userContextKey struct{}
+type userContext struct {
+	shellPath       string
+	shellConfigPath string
+}
+
+func buildUserContext(userContext userContext, ctx context.Context) context.Context {
+	return context.WithValue(ctx, userContextKey{}, userContext)
+}
+
+func getUserShellPath(ctx context.Context) string {
+	v := ctx.Value(userContextKey{}).(userContext)
+	return v.shellPath
+}
+
+func getUserShellConfigPath(ctx context.Context) string {
+	v := ctx.Value(userContextKey{}).(userContext)
+	return v.shellConfigPath
+}
+
 func setupExec(ctx context.Context, args []string) error {
 	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 		out.WriteLine(output.Linef("", output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
@@ -47,6 +68,24 @@ func setupExec(ctx context.Context, args []string) error {
 	if overridesOS, ok := os.LookupEnv("SG_FORCE_OS"); ok {
 		currentOS = overridesOS
 	}
+
+	// extract user environment general informations
+	shellPath, shellConfigPath, err := guessUserShell()
+	if err != nil {
+		return err
+	}
+	userContext := userContext{shellPath: shellPath, shellConfigPath: shellConfigPath}
+	ctx = buildUserContext(userContext, ctx)
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for range c {
+			writeOrangeLine("\n💡 You may need to restart your shell for the changes to work in this terminal.")
+			writeOrangeLine("   Close this terminal and open a new one or type the following command and press ENTER: " + filepath.Base(getUserShellPath(ctx)))
+			os.Exit(0)
+		}
+	}()
 
 	var categories []dependencyCategory
 	if currentOS == "darwin" {
@@ -59,7 +98,7 @@ func setupExec(ctx context.Context, args []string) error {
 
 	// Check whether we're in the sourcegraph/sourcegraph repository so we can
 	// skip categories/dependencies that depend on the repository.
-	_, err := root.RepositoryRoot()
+	_, err = root.RepositoryRoot()
 	inRepo := err == nil
 
 	failed := []int{}
@@ -77,6 +116,7 @@ func setupExec(ctx context.Context, args []string) error {
 		writeOrangeLine("-------------------------------------")
 		writeOrangeLine("|        Welcome to sg setup!       |")
 		writeOrangeLine("-------------------------------------")
+		writeOrangeLine("Quit any time by typing ctrl-c\n")
 
 		for i, category := range categories {
 			idx := i + 1
@@ -89,9 +129,7 @@ func setupExec(ctx context.Context, args []string) error {
 			}
 
 			pending := out.Pending(output.Linef("", output.StylePending, "%d. %s - Determining status...", idx, category.name))
-			for _, dep := range category.dependencies {
-				dep.Update(ctx)
-			}
+			category.Update(ctx)
 			pending.Destroy()
 
 			if combined := category.CombinedState(); combined {
@@ -233,10 +271,24 @@ NOTE: You can ignore this if you're not a Sourcegraph employee.
 	{
 		name:               "Programming languages & tooling",
 		requiresRepository: true,
-		// TODO: Can we provide an autofix here that installs asdf, reloads shell, installs language versions?
+		autoFixing:         true,
+		// autoFixingDependencies are only accounted for it the user asks to fix the category. Otherwise, they'll never be
+		// checked nor print an error, because the only thing that matters to run Sourcegraph are the final dependencies
+		// defined in the dependencies field itself.
+		autoFixingDependencies: []*dependency{
+			{
+				name:  "asdf",
+				check: checkCommandOutputContains("asdf", "version"),
+				instructionsCommandsBuilder: stringCommandBuilder(func(ctx context.Context) string {
+					// Uses `&&` to avoid appending the shell config on failed installations attempts.
+					return `brew install asdf && echo ". ${HOMEBREW_PREFIX:-/usr/local}/opt/asdf/libexec/asdf.sh" >> ` + getUserShellConfigPath(ctx)
+				}),
+			},
+		},
 		dependencies: []*dependency{
 			{
-				name: "go", check: checkInPath("go"),
+				name:  "go",
+				check: combineChecks(checkInPath("go"), checkCommandOutputContains("go version", "go version")),
 				instructionsComment: `` +
 					`Souregraph requires Go to be installed.
 
@@ -254,7 +306,8 @@ asdf install golang
 `,
 			},
 			{
-				name: "yarn", check: checkInPath("yarn"),
+				name:  "yarn",
+				check: combineChecks(checkInPath("yarn"), checkCommandOutputContains("yarn version", "yarn version")),
 				instructionsComment: `` +
 					`Souregraph requires Yarn to be installed.
 
@@ -274,7 +327,7 @@ asdf install yarn
 			},
 			{
 				name:  "node",
-				check: checkInPath("node"),
+				check: combineChecks(checkInPath("node"), checkCommandOutputContains(`node -e "console.log(\"foobar\")"`, "foobar")),
 				instructionsComment: `` +
 					`Souregraph requires Node.JS to be installed.
 
@@ -288,7 +341,7 @@ programming languages and tools. Find out how to install asdf here:
 Once you have asdf, execute the commands below.`,
 				instructionsCommands: `
 asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git 
-echo 'legacy_version_file = yes' >> ~/.asdfrc
+grep -s "legacy_version_file = yes" ~/.asdfrc >/dev/null || echo 'legacy_version_file = yes' >> ~/.asdfrc
 asdf install nodejs
 `,
 			},
@@ -689,6 +742,16 @@ func printCategoryHeaderAndDependencies(categoryIdx int, category *dependencyCat
 }
 
 func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory) error {
+	// for go through sub dependencies that may be required to fix the dependencies themselves.
+	for _, dep := range category.autoFixingDependencies {
+		if dep.IsMet() {
+			continue
+		}
+		if err := fixDependencyAutomatically(ctx, dep); err != nil {
+			return err
+		}
+	}
+	// now go through the real dependencies
 	for _, dep := range category.dependencies {
 		if dep.IsMet() {
 			continue
@@ -705,16 +768,7 @@ func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory)
 func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
 	writeFingerPointingLine("Trying my hardest to fix %q automatically...", dep.name)
 
-	// Look up which shell the user is using, because that's most likely the
-	// one that has all the environment correctly setup.
-	shell, ok := os.LookupEnv("SHELL")
-	if !ok {
-		// If we can't find the shell in the environment, we fall back to `bash`
-		shell = "bash"
-	}
-
-	// The most common shells (bash, zsh, fish, ash) support the `-c` flag.
-	cmd := exec.CommandContext(ctx, shell, "-c", dep.instructionsCommands)
+	cmd := execFreshShell(ctx, dep.InstructionsCommands(ctx))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -782,7 +836,7 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 
 		// If we don't have anything do run, we simply print instructions to
 		// the user
-		if dep.instructionsCommands == "" {
+		if dep.InstructionsCommands(ctx) == "" {
 			writeFingerPointingLine("Hit return once you're done")
 			waitForReturn()
 		} else {
@@ -795,7 +849,7 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 			}
 			out.Write("")
 
-			out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.instructionsCommands)))
+			out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.InstructionsCommands(ctx))))
 
 			choice, err := getChoice(map[int]string{
 				1: "I'll fix this manually (either by running the command or doing something else)",
@@ -842,8 +896,7 @@ func removeEntry(s []int, val int) (result []int) {
 
 func checkCommandOutputContains(cmd, contains string) func(context.Context) error {
 	return func(ctx context.Context) error {
-		elems := strings.Split(cmd, " ")
-		out, _ := exec.Command(elems[0], elems[1:]...).CombinedOutput()
+		out, _ := combinedSourceExec(ctx, cmd)
 		if !strings.Contains(string(out), contains) {
 			return errors.Newf("command output of %q doesn't contain %q", cmd, contains)
 		}
@@ -875,11 +928,48 @@ func checkFileContains(fileName, content string) func(context.Context) error {
 	}
 }
 
+func guessUserShell() (string, string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", "", err
+	}
+	// Look up which shell the user is using, because that's most likely the
+	// one that has all the environment correctly setup.
+	shell, ok := os.LookupEnv("SHELL")
+	var shellrc string
+	if !ok {
+		// If we can't find the shell in the environment, we fall back to `bash`
+		shell = "bash"
+	}
+	switch {
+	case strings.Contains(shell, "bash"):
+		shellrc = ".bashrc"
+	case strings.Contains(shell, "zsh"):
+		shellrc = ".zshrc"
+	}
+	return shell, filepath.Join(home, shellrc), nil
+}
+
+// execFreshShell returns a command wrapped in a new shell process, enabling
+// changes added by various checks to be run. This negates the new to ask the
+// user to restart sg for many checks.
+func execFreshShell(ctx context.Context, cmd string) *exec.Cmd {
+	command := fmt.Sprintf("source %s || true; %s", getUserShellConfigPath(ctx), cmd)
+	return exec.CommandContext(ctx, getUserShellPath(ctx), "-c", command)
+}
+
+// combinedSourceExec runs a command in a fresh shell environment,
+// and returns stderr and stdout combined, along with an error.
+func combinedSourceExec(ctx context.Context, cmd string) ([]byte, error) {
+	return execFreshShell(ctx, cmd).CombinedOutput()
+}
+
 func checkInPath(cmd string) func(context.Context) error {
 	return func(ctx context.Context) error {
-		_, err := exec.LookPath(cmd)
+		hashCmd := fmt.Sprintf("hash %s 2>/dev/null", cmd)
+		_, err := combinedSourceExec(ctx, hashCmd)
 		if err != nil {
-			return err
+			return errors.Newf("executable %q not found in $PATH", cmd)
 		}
 		return nil
 	}
@@ -985,12 +1075,20 @@ type dependency struct {
 
 	err error
 
-	instructionsComment    string
-	instructionsCommands   string
-	requiresSgSetupRestart bool
+	instructionsComment         string
+	instructionsCommands        string
+	instructionsCommandsBuilder commandBuilder
+	requiresSgSetupRestart      bool
 }
 
 func (d *dependency) IsMet() bool { return d.err == nil }
+
+func (d *dependency) InstructionsCommands(ctx context.Context) string {
+	if d.instructionsCommandsBuilder != nil {
+		return d.instructionsCommandsBuilder.Build(ctx)
+	}
+	return d.instructionsCommands
+}
 
 func (d *dependency) Update(ctx context.Context) {
 	d.err = nil
@@ -1001,8 +1099,9 @@ type dependencyCategory struct {
 	name         string
 	dependencies []*dependency
 
-	autoFixing         bool
-	requiresRepository bool
+	autoFixing             bool
+	autoFixingDependencies []*dependency
+	requiresRepository     bool
 }
 
 func (cat *dependencyCategory) CombinedState() bool {
@@ -1021,6 +1120,15 @@ func (cat *dependencyCategory) CombinedStateNonEmployees() bool {
 		}
 	}
 	return true
+}
+
+func (cat *dependencyCategory) Update(ctx context.Context) {
+	for _, dep := range cat.autoFixingDependencies {
+		dep.Update(ctx)
+	}
+	for _, dep := range cat.dependencies {
+		dep.Update(ctx)
+	}
 }
 
 func getNumberOutOf(numbers []int) (int, error) {
@@ -1074,6 +1182,18 @@ func getChoice(choices map[int]string) (int, error) {
 			return s, nil
 		}
 		writeFailureLine("Invalid choice")
+	}
+}
+
+func combineChecks(checks ...dependencyCheck) dependencyCheck {
+	return func(ctx context.Context) (err error) {
+		for _, chk := range checks {
+			err = chk(ctx)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 }
 
@@ -1168,4 +1288,14 @@ func pemDecodeSingleCert(pemDER []byte) (*x509.Certificate, error) {
 		return nil, fmt.Errorf("expected PEM block type to be CERTIFICATE, but got '%s'", pemBlock.Type)
 	}
 	return x509.ParseCertificate(pemBlock.Bytes)
+}
+
+type commandBuilder interface {
+	Build(context.Context) string
+}
+
+type stringCommandBuilder func(context.Context) string
+
+func (l stringCommandBuilder) Build(ctx context.Context) string {
+	return l(ctx)
 }
