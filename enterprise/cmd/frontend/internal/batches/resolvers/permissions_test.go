@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -115,6 +116,39 @@ func TestPermissionLevels(t *testing.T) {
 		}
 
 		return cs.RandID, cs.ID
+	}
+
+	createBatchSpecFromRaw := func(t *testing.T, s *store.Store, userID int32) (randID string, id int64) {
+		t.Helper()
+
+		// We're using the service method here since it also creates a resolution job
+		svc := service.New(s)
+		spec, err := svc.CreateBatchSpecFromRaw(actor.WithInternalActor(ctx), service.CreateBatchSpecFromRawOpts{
+			RawSpec:         ct.TestRawBatchSpecYAML,
+			NamespaceUserID: userID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return spec.RandID, spec.ID
+	}
+
+	createBatchSpecWorkspace := func(t *testing.T, s *store.Store, batchSpecID int64) (id int64) {
+		t.Helper()
+
+		ws := &btypes.BatchSpecWorkspace{
+			BatchSpecID: batchSpecID,
+			RepoID:      repo.ID,
+			Steps: []batcheslib.Step{
+				{Container: "alpine:3", Run: "echo lol"},
+			},
+		}
+		if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+			t.Fatal(err)
+		}
+
+		return ws.ID
 	}
 
 	cleanUpBatchChanges := func(t *testing.T, s *store.Store) {
@@ -681,10 +715,17 @@ func TestPermissionLevels(t *testing.T) {
 					}`, userID)
 				},
 			},
-			// TODO: Add tests for "CreateBatchSpecFromRaw"
-			// TODO: Add tests for "ExecuteBatchSpec"
-			// TODO: Add tests for "ReplaceBatchSpecInput"
-			// TODO: Add tests for "RetryBatchSpecWorkspaceExecution"
+			{
+				name: "createBatchSpecFromRaw",
+				mutationFunc: func(userID string) string {
+					return fmt.Sprintf(`
+					mutation {
+						createBatchSpecFromRaw(namespace: %q, batchSpec: "name: testing") {
+							id
+						}
+					}`, userID)
+				},
+			},
 		}
 
 		for _, m := range mutations {
@@ -734,6 +775,131 @@ func TestPermissionLevels(t *testing.T) {
 							}
 						}
 					})
+				}
+			})
+		}
+	})
+
+	t.Run("batch spec execution mutations", func(t *testing.T) {
+		mutations := []struct {
+			name         string
+			mutationFunc func(batchSpecID, workspaceID string) string
+		}{
+			{
+				name: "executeBatchSpec",
+				mutationFunc: func(batchSpecID, _ string) string {
+					return fmt.Sprintf(`mutation { executeBatchSpec(batchSpec: %q) { id } }`, batchSpecID)
+				},
+			},
+			{
+				name: "replaceBatchSpecInput",
+				mutationFunc: func(batchSpecID, _ string) string {
+					return fmt.Sprintf(`mutation { replaceBatchSpecInput(previousSpec: %q, batchSpec: "name: testing2") { id } }`, batchSpecID)
+				},
+			},
+			{
+				name: "retryBatchSpecWorkspaceExecution",
+				mutationFunc: func(_, workspaceID string) string {
+					return fmt.Sprintf(`mutation { retryBatchSpecWorkspaceExecution(batchSpecWorkspaces: [%q]) { alwaysNil } }`, workspaceID)
+				},
+			},
+			// TODO: Once implemented, add test for CancelBatchSpecWorkspaceExecution
+			// TODO: Once implemented, add test for RetryBatchSpecExecution
+			// TODO: Once implemented, add test for EnqueueBatchSpecWorkspaceExecution
+			// TODO: Once implemented, add test for ToggleBatchSpecAutoApply
+			// TODO: Once implemented, add test for DeleteBatchSpec
+		}
+
+		for _, m := range mutations {
+			t.Run(m.name, func(t *testing.T) {
+				tests := []struct {
+					name            string
+					currentUser     int32
+					batchSpecAuthor int32
+					wantAuthErr     bool
+
+					// If batches.restrictToAdmins is enabled, should an error
+					// be generated?
+					wantDisabledErr bool
+				}{
+					{
+						name:            "unauthorized",
+						currentUser:     userID,
+						batchSpecAuthor: adminID,
+						wantAuthErr:     true,
+						wantDisabledErr: true,
+					},
+					{
+						name:            "authorized batch change owner",
+						currentUser:     userID,
+						batchSpecAuthor: userID,
+						wantAuthErr:     false,
+						wantDisabledErr: true,
+					},
+					{
+						name:            "authorized site-admin",
+						currentUser:     adminID,
+						batchSpecAuthor: userID,
+						wantAuthErr:     false,
+						wantDisabledErr: false,
+					},
+				}
+
+				for _, tc := range tests {
+					for _, restrict := range []bool{true, false} {
+						t.Run(fmt.Sprintf("%s restrict: %v", tc.name, restrict), func(t *testing.T) {
+							cleanUpBatchChanges(t, cstore)
+
+							batchSpecRandID, batchSpecID := createBatchSpecFromRaw(t, cstore, tc.batchSpecAuthor)
+							workspaceID := createBatchSpecWorkspace(t, cstore, batchSpecID)
+
+							mutation := m.mutationFunc(
+								string(marshalBatchSpecRandID(batchSpecRandID)),
+								string(marshalBatchSpecWorkspaceID(workspaceID)),
+							)
+
+							actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+
+							conf.Mock(&conf.Unified{
+								SiteConfiguration: schema.SiteConfiguration{
+									BatchChangesRestrictToAdmins: &restrict,
+								},
+							})
+							defer conf.Mock(nil)
+
+							var response struct{}
+							errs := apitest.Exec(actorCtx, t, s, nil, &response, mutation)
+
+							// We don't care about other errors, we only want to
+							// check that we didn't get an auth error.
+							if restrict && tc.wantDisabledErr {
+								if len(errs) != 1 {
+									t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
+								}
+								if !strings.Contains(errs[0].Error(), "batch changes are disabled for non-site-admin users") {
+									t.Fatalf("wrong error: %s %T", errs[0], errs[0])
+								}
+							} else if tc.wantAuthErr {
+								if len(errs) != 1 {
+									t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
+								}
+								if !strings.Contains(errs[0].Error(), "must be authenticated") {
+									t.Fatalf("wrong error: %s %T", errs[0], errs[0])
+								}
+							} else {
+								// We don't care about other errors, we only
+								// want to check that we didn't get an auth
+								// or site admin error.
+								for _, e := range errs {
+									if strings.Contains(e.Error(), "must be authenticated") {
+										t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
+									} else if strings.Contains(e.Error(), "batch changes are disabled for non-site-admin users") {
+										t.Fatalf("site admin error wrongly returned: %s %T", errs[0], errs[0])
+									}
+								}
+							}
+						})
+					}
 				}
 			})
 		}
