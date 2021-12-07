@@ -10,6 +10,7 @@ import (
 )
 
 func benchmarkQuery(b *testing.B, c Corpus, query string) {
+	bitmask.IsProgressBarEnabled = false
 	index, err := c.LoadRepoIndex()
 	if err != nil {
 		panic(err)

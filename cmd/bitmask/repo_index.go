@@ -32,8 +32,6 @@ const (
 	targetFalsePositiveRatio = 0.01
 	maxFileSize              = 1 << 20 // 1_048_576
 	maximumQueryNgrams       = 100
-	MinArity                 = 1
-	MaxArity                 = 3
 )
 
 var IsProgressBarEnabled = true

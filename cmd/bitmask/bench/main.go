@@ -143,7 +143,7 @@ func (c *Corpus) LoadFileSystem() (*bitmask.ZipFileSystem, error) {
 }
 
 func (c *Corpus) LoadRepoIndex() (*bitmask.RepoIndex, error) {
-	os.Remove(c.indexCachePath())
+	//os.Remove(c.indexCachePath())
 	fs, err := c.LoadFileSystem()
 	if err != nil {
 		return nil, err
