@@ -262,7 +262,7 @@ func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.Repo
 	}
 
 	if len(repos) == 0 {
-		return nil, &RepoNotFoundErr{HashedName: api.RepoHashedName(repoHashedName)}
+		return nil, &RepoNotFoundErr{HashedName: repoHashedName}
 	}
 
 	return repos[0], repos[0].IsBlocked()
