@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/hashicorp/go-multierror"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
@@ -27,7 +29,7 @@ func NewDefaultRunner(dsns map[string]string, appName string, observationContext
 
 			if err := store.EnsureSchemaTable(ctx); err != nil {
 				if closeErr := db.Close(); closeErr != nil {
-					err = multierror.Appedn(err, closeErr)
+					err = multierror.Append(err, closeErr)
 				}
 
 				return nil, err
