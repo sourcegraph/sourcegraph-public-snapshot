@@ -77,6 +77,7 @@ type UserStore interface {
 	RandomizePasswordAndClearPasswordResetRateLimit(context.Context, int32) error
 	RenewPasswordResetCode(context.Context, int32) (string, error)
 	SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error
+	SetTosAccepted(ctx context.Context, id int32) error
 	SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error)
 	SetTag(ctx context.Context, userID int32, tag string, present bool) error
 	Tags(context.Context, int32) (map[string]bool, error)
@@ -654,7 +655,7 @@ func logUserDeletionEvent(ctx context.Context, db dbutil.DB, id int32, name Secu
 	SecurityEventLogs(db).LogEvent(ctx, event)
 }
 
-// SetIsSiteAdmin sets the the user with given ID to be or not to be the site admin.
+// SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin.
 func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
 	if Mocks.Users.SetIsSiteAdmin != nil {
 		return Mocks.Users.SetIsSiteAdmin(id, isSiteAdmin)
@@ -667,6 +668,16 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 	}
 
 	err := u.Store.Exec(ctx, sqlf.Sprintf("UPDATE users SET site_admin=%s WHERE id=%s", isSiteAdmin, id))
+	return err
+}
+
+// SetTosAccepted sets the user with the given ID to have accepted the terms of service.
+func (u *userStore) SetTosAccepted(ctx context.Context, id int32) error {
+	if Mocks.Users.SetIsSiteAdmin != nil {
+		return Mocks.Users.SetTosAccepted(id)
+	}
+
+	err := u.Store.Exec(ctx, sqlf.Sprintf("UPDATE users SET tos_accepted=TRUE WHERE id=%s", id))
 	return err
 }
 
@@ -907,7 +918,7 @@ func (u *userStore) getOneBySQL(ctx context.Context, q *sqlf.Query) (*types.User
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.User, error) {
-	q := sqlf.Sprintf("SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags, u.invalidated_sessions_at FROM users u %s", query)
+	q := sqlf.Sprintf("SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags, u.invalidated_sessions_at, u.tos_accepted FROM users u %s", query)
 	rows, err := u.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -918,7 +929,7 @@ func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.U
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt)
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted)
 		if err != nil {
 			return nil, err
 		}

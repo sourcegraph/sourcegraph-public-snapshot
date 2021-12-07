@@ -660,6 +660,7 @@ type User struct {
 	BuiltinAuth           bool
 	Tags                  []string
 	InvalidatedSessionsAt time.Time
+	TosAccepted           bool
 }
 
 type Org struct {
