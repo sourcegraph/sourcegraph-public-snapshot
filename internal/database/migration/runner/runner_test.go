@@ -162,7 +162,7 @@ func testRunner(store Store) *Runner {
 	storeFactories := make(map[string]StoreFactory, len(testSchemas))
 
 	for _, testSchema := range testSchemas {
-		storeFactories[testSchema.Name] = func() (Store, error) {
+		storeFactories[testSchema.Name] = func(ctx context.Context) (Store, error) {
 			return store, nil
 		}
 	}

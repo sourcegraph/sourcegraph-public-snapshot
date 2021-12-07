@@ -13,7 +13,7 @@ type Runner struct {
 	storeFactories map[string]StoreFactory
 }
 
-type StoreFactory func() (Store, error)
+type StoreFactory func(ctx context.Context) (Store, error)
 
 func NewRunner(storeFactories map[string]StoreFactory) *Runner {
 	return &Runner{
@@ -91,7 +91,7 @@ func (r *Runner) prepareStores(ctx context.Context, schemaNames []string) (map[s
 			return nil, fmt.Errorf("unknown schema %q", schemaName)
 		}
 
-		store, err := storeFactory()
+		store, err := storeFactory(ctx)
 		if err != nil {
 			return nil, err
 		}
