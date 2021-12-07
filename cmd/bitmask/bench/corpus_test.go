@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/sourcegraph/sourcegraph/cmd/bitmask"
 	"math"
-	"os"
 	"strings"
 	"testing"
 )
@@ -81,16 +80,16 @@ func loadCorpus(b *testing.B, corpus Corpus) {
 			fmt.Println(b.Filter.K())
 		}
 	}
-	stat, err := os.Stat(corpus.indexCachePath())
-	if err != nil {
-		panic(err)
-	}
-	b.ReportMetric(float64(stat.Size()), "index-disk-size")
-	stat, err = os.Stat(corpus.zipCachePath())
-	if err != nil {
-		panic(err)
-	}
-	b.ReportMetric(float64(stat.Size()), "archive-disk-size")
+	//stat, err := os.Stat(corpus.indexCachePath())
+	//if err != nil {
+	//	panic(err)
+	//}
+	//b.ReportMetric(float64(stat.Size()), "index-disk-size")
+	//stat, err = os.Stat(corpus.zipCachePath())
+	//if err != nil {
+	//	panic(err)
+	//}
+	//b.ReportMetric(float64(stat.Size()), "archive-disk-size")
 	indexedBlobsSize := int64(0)
 	bloomFilterBinaryStorageSize := 0
 	for _, blob := range index.Blobs {
