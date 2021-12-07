@@ -187,6 +187,8 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 	}
 	fetchQueueSize.Dec()
 
+	ctx, cancel := context.WithCancel(ctx)
+
 	fetching.Inc()
 	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch")
 	ext.Component.Set(span, "store")
