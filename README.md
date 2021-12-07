@@ -37,7 +37,7 @@ The fastest way to run Sourcegraph self-hosted is with the Docker container. See
 
 ### Sourcegraph OSS
 
-1. Go through [Quickstart](doc/dev/getting-started/quickstart.md) to install `sg` and dependencies
+1. Go through [Quickstart](https://docs.sourcegraph.com/dev/setup/quickstart.md) to install `sg` and dependencies
 1. Start the development environment in OSS mode:
    ```sh
    sg start oss
