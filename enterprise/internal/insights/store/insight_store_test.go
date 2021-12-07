@@ -245,6 +245,80 @@ func TestGet(t *testing.T) {
 	})
 }
 
+func TestGetAllOnDashboard(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Now().Truncate(time.Microsecond).Round(0)
+
+	_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id)
+									VALUES (1, 'test title', 'test description', 'unique-1'),
+									       (2, 'test title 2', 'test description 2', 'unique-2'),
+										   (3, 'test title 3', 'test description 3', 'unique-3'),
+										   (4, 'test title 4', 'test description 4', 'unique-4')`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = timescale.Exec(`INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
+                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method)
+                            VALUES  ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search'),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search'),
+									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search');`, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = timescale.Exec(`INSERT INTO insight_view_series (insight_view_id, insight_series_id, label, stroke)
+									VALUES  (1, 1, 'label1-1', 'color1'),
+											(2, 2, 'label2-2', 'color2'),
+											(3, 1, 'label3-1', 'color3'),
+											(4, 2, 'label4-2', 'color4');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = timescale.Exec(`INSERT INTO dashboard (id, title) VALUES  (1, 'dashboard 1');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = timescale.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
+									VALUES  (1, 2),
+											(1, 1),
+											(1, 4),
+											(1, 3);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+
+	t.Run("test get all on dashboard", func(t *testing.T) {
+		store := NewInsightStore(timescale)
+		got, err := store.GetAllOnDashboard(ctx, InsightsOnDashboardQueryArgs{DashboardID: 1})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test get first 2 on dashboard", func(t *testing.T) {
+		store := NewInsightStore(timescale)
+		got, err := store.GetAllOnDashboard(ctx, InsightsOnDashboardQueryArgs{DashboardID: 1, Limit: 2})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test get after 2 on dashboard", func(t *testing.T) {
+		store := NewInsightStore(timescale)
+		got, err := store.GetAllOnDashboard(ctx, InsightsOnDashboardQueryArgs{DashboardID: 1, After: "2"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+}
+
 func TestCreateSeries(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
