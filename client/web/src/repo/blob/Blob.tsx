@@ -19,7 +19,6 @@ import {
 import {
     catchError,
     concatMap,
-    delay,
     distinctUntilChanged,
     filter,
     first,
@@ -340,14 +339,15 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         )
     )
 
+    // Trigger line highlighting after React has finished putting new lines into the DOM via
+    // `dangerouslySetInnerHTML`.
+    useEffect(() => codeViewElements.next(codeViewReference.current))
+
     // Line highlighting when position in hash changes
     useObservable(
         useMemo(
             () =>
-                locationPositions.pipe(
-                    withLatestFrom(codeViewElements.pipe(filter(isDefined))),
-                    // Waits until React has finished `dangerouslySetInnerHTML`.
-                    delay(0),
+                combineLatest([locationPositions, codeViewElements.pipe(filter(isDefined))]).pipe(
                     tap(([position, codeView]) => {
                         const codeCells = getCodeElementsInRange({
                             codeView,
