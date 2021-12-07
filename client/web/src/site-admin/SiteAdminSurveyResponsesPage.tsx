@@ -7,7 +7,7 @@ import { Subscription } from 'rxjs'
 
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { Badge } from '@sourcegraph/wildcard'
-import { BadgeProps } from '@sourcegraph/wildcard/src/components/Badge'
+import { BADGE_VARIANTS } from '@sourcegraph/wildcard/src/components/Badge/constants'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -38,7 +38,7 @@ interface SurveyResponseNodeProps {
 
 interface SurveyResponseNodeState {}
 
-function scoreToClassSuffix(score: number): BadgeProps['variant'] {
+function scoreToClassSuffix(score: number): typeof BADGE_VARIANTS[number] {
     return score > 8 ? 'success' : score > 6 ? 'info' : 'danger'
 }
 

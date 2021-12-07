@@ -44,7 +44,10 @@ a.badge:focus {
 }
 
 .pill {
+    // Preserve original Bootstrap padding values
+    // stylelint-disable-next-line declaration-property-unit-whitelist
     padding-right: 0.6em;
+    // stylelint-disable-next-line declaration-property-unit-whitelist
     padding-left: 0.6em;
     border-radius: 10rem;
 }
