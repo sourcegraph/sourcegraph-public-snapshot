@@ -96,17 +96,11 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
         hoverOverlayElements,
     ])
 
-    const closeButtonClicks = useMemo(() => new Subject<MouseEvent>(), [])
-    const nextCloseButtonClick = useCallback((event: MouseEvent): void => closeButtonClicks.next(event), [
-        closeButtonClicks,
-    ])
-
     const componentRerenders = useMemo(() => new Subject<void>(), [])
 
     const hoverifier = useMemo(
         () =>
             createHoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>({
-                closeButtonClicks,
                 hoverOverlayElements,
                 hoverOverlayRerenders: componentRerenders.pipe(
                     withLatestFrom(hoverOverlayElements, containerElements),
@@ -125,14 +119,7 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
                     getDocumentHighlights(getLSPTextDocumentPositionParameters(hoveredToken), { extensionsController }),
                 getActions: context => getHoverActions({ extensionsController, platformContext }, context),
             }),
-        [
-            closeButtonClicks,
-            containerElements,
-            extensionsController,
-            hoverOverlayElements,
-            platformContext,
-            componentRerenders,
-        ]
+        [containerElements, extensionsController, hoverOverlayElements, platformContext, componentRerenders]
     )
     useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
 
@@ -187,7 +174,6 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
                         location={location}
                         platformContext={platformContext}
                         hoverRef={nextOverlayElement}
-                        onCloseButtonClick={nextCloseButtonClick}
                     />
                 )}
             </Container>

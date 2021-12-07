@@ -47,7 +47,6 @@ export const emitLoading = <TResult, TEmpty>(
     return merge(
         // `undefined` is used here as opposed to `emptyResultValue` to distinguish between "no result" and the time
         // between invocation and when a loader is shown.
-        // See for example "DEFERRED HOVER OVERLAY PINNING" in hoverifier.ts
         [undefined],
         // Show a loader if the provider is loading, has no result yet and hasn't emitted after LOADER_DELAY.
         // combineLatest() is used here to block on the loader delay.

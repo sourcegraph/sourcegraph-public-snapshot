@@ -1,5 +1,5 @@
 import { isEqual } from 'lodash'
-import { EMPTY, NEVER, Observable, of, Subject, Subscription } from 'rxjs'
+import { EMPTY, NEVER, of, Subject, Subscription } from 'rxjs'
 import { delay, distinctUntilChanged, filter, first, map, takeWhile } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 
@@ -54,7 +54,6 @@ describe('Hoverifier', () => {
 
             scheduler.run(({ cold, expectObservable }) => {
                 const hoverifier = createHoverifier({
-                    closeButtonClicks: NEVER,
                     hoverOverlayElements: of(null),
                     hoverOverlayRerenders: EMPTY,
                     getHover: createStubHoverProvider({ range: hoverRange }, LOADER_DELAY + delayTime),
@@ -116,7 +115,6 @@ describe('Hoverifier', () => {
 
             scheduler.run(({ cold, expectObservable }) => {
                 const hoverifier = createHoverifier({
-                    closeButtonClicks: NEVER,
                     hoverOverlayElements: of(null),
                     hoverOverlayRerenders: EMPTY,
                     getHover: createStubHoverProvider(hover, delayTime),
@@ -169,7 +167,6 @@ describe('Hoverifier', () => {
     it('highlights document highlights', async () => {
         for (const codeViewProps of testcases) {
             const hoverifier = createHoverifier({
-                closeButtonClicks: NEVER,
                 hoverOverlayElements: of(null),
                 hoverOverlayRerenders: EMPTY,
                 getHover: createStubHoverProvider(),
@@ -220,7 +217,6 @@ describe('Hoverifier', () => {
     it.skip('hides the hover overlay when the hovered token intersects with a scrollBoundary', async () => {
         const gitHubCodeView = testcases[1]
         const hoverifier = createHoverifier({
-            closeButtonClicks: NEVER,
             hoverOverlayElements: of(null),
             hoverOverlayRerenders: EMPTY,
             getHover: createStubHoverProvider({
@@ -277,7 +273,6 @@ describe('Hoverifier', () => {
 
             scheduler.run(({ cold, expectObservable }) => {
                 const hoverifier = createHoverifier({
-                    closeButtonClicks: new Observable<MouseEvent>(),
                     hoverOverlayElements: of(null),
                     hoverOverlayRerenders: EMPTY,
                     getHover: createStubHoverProvider(hover, LOADER_DELAY + hoverDelayTime),
@@ -349,7 +344,6 @@ describe('Hoverifier', () => {
 
             scheduler.run(({ cold, expectObservable }) => {
                 const hoverifier = createHoverifier({
-                    closeButtonClicks: new Observable<MouseEvent>(),
                     hoverOverlayElements: of(null),
                     hoverOverlayRerenders: EMPTY,
                     getHover: createStubHoverProvider(hover),
@@ -413,7 +407,6 @@ describe('Hoverifier', () => {
                 const hoverOverlayElement = document.createElement('div')
 
                 const hoverifier = createHoverifier({
-                    closeButtonClicks: new Observable<MouseEvent>(),
                     hoverOverlayElements: of(hoverOverlayElement),
                     hoverOverlayRerenders: EMPTY,
                     getHover: createStubHoverProvider(hover),
@@ -484,7 +477,6 @@ describe('Hoverifier', () => {
 
             scheduler.run(({ cold, expectObservable }) => {
                 const hoverifier = createHoverifier({
-                    closeButtonClicks: new Observable<MouseEvent>(),
                     hoverOverlayElements: of(null),
                     hoverOverlayRerenders: EMPTY,
                     getHover: createStubHoverProvider(hover),
@@ -571,7 +563,6 @@ describe('Hoverifier', () => {
                 }
 
                 const hoverifier = createHoverifier({
-                    closeButtonClicks: new Observable<MouseEvent>(),
                     hoverOverlayElements: of(null),
                     hoverOverlayRerenders: EMPTY,
                     getHover,
@@ -626,7 +617,6 @@ describe('Hoverifier', () => {
         it('hides the hover overlay when the code view is unhoverified', async () => {
             for (const codeView of testcases) {
                 const hoverifier = createHoverifier({
-                    closeButtonClicks: NEVER,
                     hoverOverlayElements: of(null),
                     hoverOverlayRerenders: EMPTY,
                     // It's important that getHover() and getActions() emit something
@@ -666,7 +656,6 @@ describe('Hoverifier', () => {
         it('does not hide the hover overlay when a different code view is unhoverified', async () => {
             for (const codeViewProps of testcases) {
                 const hoverifier = createHoverifier({
-                    closeButtonClicks: NEVER,
                     hoverOverlayElements: of(null),
                     hoverOverlayRerenders: EMPTY,
                     getHover: createStubHoverProvider(),

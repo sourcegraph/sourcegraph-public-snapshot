@@ -95,7 +95,6 @@ export const WebHoverOverlay: React.FunctionComponent<
         <HoverOverlay
             {...propsToUse}
             className={classNames('card', styles.webHoverOverlay)}
-            closeButtonClassName={classNames('btn btn-icon', styles.webHoverOverlayCloseButton)}
             actionItemClassName="btn btn-sm btn-secondary border-0"
             badgeClassName="badge badge-sm badge-secondary"
             onAlertDismissed={onAlertDismissed}

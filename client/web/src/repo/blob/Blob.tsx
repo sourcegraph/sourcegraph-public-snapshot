@@ -4,18 +4,7 @@ import * as H from 'history'
 import iterate from 'iterare'
 import { isEqual } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-    BehaviorSubject,
-    combineLatest,
-    merge,
-    EMPTY,
-    from,
-    fromEvent,
-    of,
-    ReplaySubject,
-    Subject,
-    Subscription,
-} from 'rxjs'
+import { BehaviorSubject, combineLatest, merge, EMPTY, from, fromEvent, of, ReplaySubject, Subscription } from 'rxjs'
 import {
     catchError,
     concatMap,
@@ -245,15 +234,11 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         }
     }, [blobInfo, nextBlobInfoChange, viewerUpdates])
 
-    const closeButtonClicks = useMemo(() => new Subject<MouseEvent>(), [])
-    const nextCloseButtonClick = useCallback((click: MouseEvent) => closeButtonClicks.next(click), [closeButtonClicks])
-
     const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | undefined>()
 
     const hoverifier = useMemo(
         () =>
             createHoverifier<HoverContext, HoverMerged, ActionItemAction>({
-                closeButtonClicks,
                 hoverOverlayElements,
                 hoverOverlayRerenders: rerenders.pipe(
                     withLatestFrom(hoverOverlayElements, blobElements),
@@ -283,7 +268,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             hoverOverlayElements,
             blobElements,
             rerenders,
-            closeButtonClicks,
         ]
     )
 
@@ -620,7 +604,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         nav={url => props.history.push(url)}
                         hoveredTokenElement={hoverState.hoveredTokenElement}
                         hoverRef={nextOverlayElement}
-                        onCloseButtonClick={nextCloseButtonClick}
                         extensionsController={extensionsController}
                     />
                 )}

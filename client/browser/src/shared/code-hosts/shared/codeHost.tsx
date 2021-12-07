@@ -371,9 +371,6 @@ function initCodeIntelligence({
 } {
     const subscription = new Subscription()
 
-    /** Emits when the close button was clicked */
-    const closeButtonClicks = new Subject<MouseEvent>()
-
     /** Emits whenever the ref callback for the hover element is called */
     const hoverOverlayElements = new Subject<HTMLElement | null>()
 
@@ -396,7 +393,6 @@ function initCodeIntelligence({
         HoverMerged,
         ActionItemAction
     >({
-        closeButtonClicks,
         hoverOverlayElements,
         hoverOverlayRerenders: containerComponentUpdates.pipe(
             withLatestFrom(hoverOverlayElements),
@@ -468,7 +464,6 @@ function initCodeIntelligence({
     > {
         private subscription = new Subscription()
         private nextOverlayElement = hoverOverlayElements.next.bind(hoverOverlayElements)
-        private nextCloseButtonClick = closeButtonClicks.next.bind(closeButtonClicks)
 
         constructor(props: {}) {
             super(props)
@@ -510,7 +505,6 @@ function initCodeIntelligence({
                     extensionsController={extensionsController}
                     platformContext={platformContext}
                     location={H.createLocation(window.location)}
-                    onCloseButtonClick={this.nextCloseButtonClick}
                     onAlertDismissed={onHoverAlertDismissed}
                     isBranded={true}
                 />

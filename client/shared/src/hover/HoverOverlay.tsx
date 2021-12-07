@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 import React, { CSSProperties } from 'react'
 
 import { ActionItem, ActionItemComponentProps } from '../actions/ActionItem'
@@ -29,7 +28,6 @@ export type { HoverContext }
 export interface HoverOverlayClassProps {
     /** An optional class name to apply to the outermost element of the HoverOverlay */
     className?: string
-    closeButtonClassName?: string
 
     iconClassName?: string
     badgeClassName?: string
@@ -52,8 +50,6 @@ export interface HoverOverlayProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
     /** A ref callback to get the root overlay element. Use this to calculate the position. */
     hoverRef?: React.Ref<HTMLDivElement>
-    /** Called when the close button is clicked */
-    onCloseButtonClick?: (event: MouseEvent) => void
     isBranded?: boolean
 }
 
@@ -79,11 +75,9 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
         platformContext,
         telemetryService,
         extensionsController,
-        showCloseButton,
         location,
 
         className,
-        closeButtonClassName,
         iconClassName,
         badgeClassName,
         actionItemClassName,
@@ -92,7 +86,6 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
 
         getAlertClassName,
         onAlertDismissed,
-        onCloseButtonClick,
 
         isBranded,
     } = props
@@ -116,23 +109,9 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                 data-testid="hover-overlay-contents"
                 className={classNames(
                     style.hoverOverlayContents,
-                    hoverOrError === LOADING && style.hoverOverlayContentsLoading,
-                    showCloseButton && style.hoverOverlayContentsWithCloseButton
+                    hoverOrError === LOADING && style.hoverOverlayContentsLoading
                 )}
             >
-                {showCloseButton && (
-                    <button
-                        type="button"
-                        onClick={onCloseButtonClick ? transformMouseEvent(onCloseButtonClick) : undefined}
-                        className={classNames(
-                            hoverOverlayStyle.closeButton,
-                            closeButtonClassName,
-                            hoverOrError === LOADING && hoverOverlayStyle.closeButtonLoading
-                        )}
-                    >
-                        <CloseIcon className={iconClassName} />
-                    </button>
-                )}
                 <HoverOverlayContents
                     hoverOrError={hoverOrError}
                     iconClassName={iconClassName}

@@ -34,7 +34,6 @@ import {
     delay,
     startWith,
 } from 'rxjs/operators'
-import { Key } from 'ts-key-enum'
 
 import { Position, Range } from '@sourcegraph/extension-api-types'
 
@@ -78,11 +77,6 @@ export interface HoverifierOptions<C extends object, D, A> {
          */
         relativeElement: HTMLElement
     }>
-
-    /**
-     * Emit on this Observable when the close button in the HoverOverlay was clicked
-     */
-    closeButtonClicks: Subscribable<MouseEvent>
 
     hoverOverlayElements: Subscribable<HTMLElement | null>
 
@@ -277,8 +271,6 @@ export interface HoverState<C extends object, D, A> {
 interface InternalHoverifierState<C extends object, D, A> {
     hoverOrError?: typeof LOADING | (HoverAttachment & D) | null | ErrorLike
 
-    hoverOverlayIsFixed: boolean
-
     /** The desired position of the hover overlay */
     hoverOverlayPosition?: { left: number; top: number }
 
@@ -320,7 +312,7 @@ interface InternalHoverifierState<C extends object, D, A> {
  * (because there is no content, or because it is still loading).
  */
 const shouldRenderOverlay = (state: InternalHoverifierState<{}, {}, {}>): boolean =>
-    !(!state.hoverOverlayIsFixed && state.mouseIsMoving) &&
+    !state.mouseIsMoving &&
     ((!!state.hoverOrError && state.hoverOrError !== LOADING) ||
         (!!state.actionsOrError &&
             state.actionsOrError !== LOADING &&
@@ -345,7 +337,6 @@ const internalToExternalState = <C extends object, D, A>(
               overlayPosition: internalState.hoverOverlayPosition,
               hoverOrError: internalState.hoverOrError,
               hoveredToken: internalState.hoveredToken,
-              showCloseButton: internalState.hoverOverlayIsFixed,
               actionsOrError: internalState.actionsOrError,
           }
         : undefined,
@@ -404,7 +395,6 @@ export type ContextResolver<C extends object> = (hoveredToken: HoveredToken) => 
  * @template A The type of an action.
  */
 export function createHoverifier<C extends object, D, A>({
-    closeButtonClicks,
     hoverOverlayElements,
     hoverOverlayRerenders,
     getHover,
@@ -418,7 +408,6 @@ export function createHoverifier<C extends object, D, A>({
     // Shared between all hoverified code views
     const container = createObservableStateContainer<InternalHoverifierState<C, D, A>>({
         hoveredTokenElement: undefined,
-        hoverOverlayIsFixed: false,
         hoveredToken: undefined,
         hoverOrError: undefined,
         hoverOverlayPosition: undefined,
@@ -495,8 +484,6 @@ export function createHoverifier<C extends object, D, A>({
             ...rest,
         })),
         debounceTime(MOUSEOVER_DELAY),
-        // Do not consider mouseovers while overlay is pinned
-        filter(() => !container.values.hoverOverlayIsFixed),
         switchMap(({ adjustPosition, codeView, resolveContext, position, ...rest }) =>
             adjustPosition && position
                 ? from(
@@ -601,9 +588,7 @@ export function createHoverifier<C extends object, D, A>({
     )
 
     const resolvedPositions = resolvedPositionEvents.pipe(
-        // Suppress emissions from other events that refer to the same position as the current one. This makes it
-        // so the overlay doesn't temporarily disappear when, e.g., clicking to pin the overlay when it's already
-        // visible due to a mouseover.
+        // Suppress emissions from other events that refer to the same position as the current one.
         distinctUntilChanged((a, b) => isEqual(a.position, b.position))
     )
 
@@ -967,24 +952,12 @@ export function createHoverifier<C extends object, D, A>({
 
     const resetHover = (): void => {
         container.update({
-            hoverOverlayIsFixed: false,
             hoverOverlayPosition: undefined,
             hoverOrError: undefined,
             hoveredToken: undefined,
             actionsOrError: undefined,
         })
     }
-
-    // When the close button is clicked, unpin, hide and reset the hover
-    subscription.add(
-        merge(
-            closeButtonClicks,
-            fromEvent<KeyboardEvent>(window, 'keydown').pipe(filter(event => event.key === Key.Escape))
-        ).subscribe(event => {
-            event.preventDefault()
-            resetHover()
-        })
-    )
 
     // LOCATION CHANGES
     subscription.add(

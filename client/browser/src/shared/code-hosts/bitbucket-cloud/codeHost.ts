@@ -163,7 +163,6 @@ export const bitbucketCloudCodeHost: CodeHost = {
     },
     hoverOverlayClassProps: {
         className: suffix('hover-overlay'),
-        closeButtonClassName: suffix('hover-overlay__close'),
         badgeClassName: suffix('hover-overlay__badge'),
         actionItemClassName: suffix('hover-overlay__action-item'),
         actionItemPressedClassName: suffix('hover-overlay__action-item-pressed'),
