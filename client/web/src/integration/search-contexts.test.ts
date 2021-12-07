@@ -234,7 +234,7 @@ describe('Search contexts', () => {
         )
 
         // Take Snapshot
-        await percySnapshotWithVariants(driver.page, 'Create context page')
+        await percySnapshotWithVariants(driver.page, 'Create search context page')
 
         // Click create
         await driver.page.click('[data-testid="search-context-submit-button"]')
