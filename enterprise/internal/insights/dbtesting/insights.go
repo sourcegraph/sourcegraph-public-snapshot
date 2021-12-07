@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/test"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 )
