@@ -1075,7 +1075,6 @@ type dependency struct {
 	instructionsComment         string
 	instructionsCommands        string
 	instructionsCommandsBuilder commandBuilder
-	autoFixingCommands          string
 	requiresSgSetupRestart      bool
 }
 
