@@ -80,7 +80,6 @@ func (s *Store) Version(ctx context.Context) (version int, dirty bool, ok bool, 
 	return 0, false, false, nil
 }
 
-// TODO - test
 func (s *Store) Lock(ctx context.Context) (_ bool, _ func(err error) error, err error) {
 	key := locker.StringKey(fmt.Sprintf("%s:migrations", s.migrationsTable))
 
