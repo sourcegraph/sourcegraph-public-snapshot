@@ -1,8 +1,7 @@
 import React, { useRef, useState } from 'react'
 
-import { Button } from '@sourcegraph/wildcard/src'
+import { Button, ProductStatusBadge } from '@sourcegraph/wildcard/src'
 
-import { Badge } from '../../../../components/Badge'
 import { FeedbackPromptContent } from '../../../../nav/Feedback/FeedbackPrompt'
 import { flipRightPosition } from '../context-menu/utils'
 import { Popover } from '../popover/Popover'
@@ -16,7 +15,7 @@ export const BetaFeedbackPanel: React.FunctionComponent = () => {
     return (
         <div className="d-flex align-items-center">
             <a href="https://docs.sourcegraph.com/code_insights#code-insights-beta" target="_blank" rel="noopener">
-                <Badge status="beta" className="text-uppercase" />
+                <ProductStatusBadge status="beta" className="text-uppercase" />
             </a>
 
             <Button ref={buttonReference} variant="link" size="sm">
@@ -39,3 +38,4 @@ export const BetaFeedbackPanel: React.FunctionComponent = () => {
         </div>
     )
 }
+

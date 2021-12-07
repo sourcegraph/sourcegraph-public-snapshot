@@ -5,7 +5,7 @@ import { Redirect } from 'react-router-dom'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../components/Page'
 import { CodeInsightsIcon } from '../../../components'
