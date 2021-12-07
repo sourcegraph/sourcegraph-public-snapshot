@@ -3,12 +3,17 @@ package store
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -76,6 +81,27 @@ func (s *Store) Version(ctx context.Context) (version int, dirty bool, ok bool, 
 	return 0, false, false, nil
 }
 
+// TODO - test
+func (s *Store) Lock(ctx context.Context) (bool, func(err error) error, error) {
+	// TODO - observe
+
+	key := locker.StringKey(fmt.Sprintf("%s:migrations", s.migrationsTable))
+
+	if err := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_lock(%s, %s)`, key, 0)); err != nil {
+		return false, nil, err
+	}
+
+	close := func(err error) error {
+		if unlockErr := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_unlock(%s, %s)`, key, 0)); unlockErr == nil {
+			err = multierror.Append(err, unlockErr)
+		}
+
+		return err
+	}
+
+	return true, close, nil
+}
+
 func (s *Store) Up(ctx context.Context, definition definition.Definition) (err error) {
 	ctx, endObservation := s.operations.up.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -102,6 +128,18 @@ func (s *Store) runMigrationQuery(ctx context.Context, definition definition.Def
 	if err := s.setVersion(ctx, expectedCurrentVersion, definition.ID); err != nil {
 		return err
 	}
+
+	ctx2, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go func() {
+		select {
+		case <-time.After(time.Second):
+			log15.Error("Long query", "query", query.Query(sqlf.PostgresBindVar), "args", query.Args())
+		case <-ctx2.Done():
+			return
+		}
+	}()
 
 	if err := s.Exec(ctx, query); err != nil {
 		return err
