@@ -3,12 +3,16 @@ package store
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -74,6 +78,29 @@ func (s *Store) Version(ctx context.Context) (version int, dirty bool, ok bool, 
 	}
 
 	return 0, false, false, nil
+}
+
+func (s *Store) Lock(ctx context.Context) (_ bool, _ func(err error) error, err error) {
+	key := locker.StringKey(fmt.Sprintf("%s:migrations", s.migrationsTable))
+
+	ctx, endObservation := s.operations.lock.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int32("key", key),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if err := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_lock(%s, %s)`, key, 0)); err != nil {
+		return false, nil, err
+	}
+
+	close := func(err error) error {
+		if unlockErr := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_unlock(%s, %s)`, key, 0)); unlockErr != nil {
+			err = multierror.Append(err, unlockErr)
+		}
+
+		return err
+	}
+
+	return true, close, nil
 }
 
 func (s *Store) Up(ctx context.Context, definition definition.Definition) (err error) {
