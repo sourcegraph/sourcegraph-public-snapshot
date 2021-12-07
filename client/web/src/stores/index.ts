@@ -11,3 +11,4 @@
 
 export { useNavbarQueryState } from './navbarSearchQueryState'
 export { useThemeState } from './themeState'
+export { useExperimentalFeatures, setExperimentalFeaturesFromSettings } from './experimentalFeatures'

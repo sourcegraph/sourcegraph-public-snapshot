@@ -1,5 +1,6 @@
 import { isEqual } from 'lodash'
-import React, { memo } from 'react'
+import React, { memo, useCallback, useState } from 'react'
+import { Layout, Layouts } from 'react-grid-layout'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -7,7 +8,7 @@ import { ViewGrid } from '../../../../views'
 import { Insight } from '../../core/types'
 
 import { SmartInsight } from './components/smart-insight/SmartInsight'
-import { insightLayoutGenerator } from './utils/grid-layout-generator'
+import { insightLayoutGenerator, recalculateGridLayout } from './utils/grid-layout-generator'
 
 interface SmartInsightsViewGridProps extends TelemetryProps {
     /**
@@ -26,13 +27,34 @@ const INSIGHT_PAGE_CONTEXT = {}
 export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGridProps> = memo(props => {
     const { telemetryService, insights } = props
 
+    const [layouts, setLayouts] = useState<Layouts>(insightLayoutGenerator(insights))
+    const [resizingView, setResizeView] = useState<Layout | null>(null)
+
+    const handleLayoutChange = useCallback(
+        (currentLayout: Layout[], allLayouts: Layouts): void => {
+            setLayouts(recalculateGridLayout(allLayouts, insights))
+        },
+        [insights]
+    )
+
+    const handleResizeStop = useCallback((item: Layout) => {
+        setResizeView(null)
+    }, [])
+
     return (
-        <ViewGrid layouts={insightLayoutGenerator(insights)} telemetryService={telemetryService}>
+        <ViewGrid
+            layouts={layouts}
+            telemetryService={telemetryService}
+            onResizeStart={setResizeView}
+            onResizeStop={handleResizeStop}
+            onLayoutChange={handleLayoutChange}
+        >
             {insights.map(insight => (
                 <SmartInsight
                     key={insight.id}
                     insight={insight}
                     telemetryService={telemetryService}
+                    resizing={resizingView?.i === insight.id}
                     // Set execution insight context explicitly since this grid component is used
                     // only for the dashboard (insights) page
                     where="insightsPage"

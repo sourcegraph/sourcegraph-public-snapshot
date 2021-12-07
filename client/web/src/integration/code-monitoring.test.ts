@@ -61,10 +61,51 @@ describe('Code monitoring', () => {
                     final: JSON.stringify({}),
                 },
             }),
+            ListUserCodeMonitors: () => ({
+                node: {
+                    __typename: 'User',
+                    monitors: {
+                        nodes: [
+                            {
+                                id: 'Q29kZU1vbml0b3I6Mg==',
+                                description: 'Test123',
+                                enabled: true,
+                                actions: {
+                                    nodes: [
+                                        {
+                                            enabled: true,
+                                            id: 'Q29kZU1vbml0b3JBY3Rpb25FbWFpbDoy',
+                                            recipients: {
+                                                nodes: [{ id: 'VXNlcjoyNDc=' }],
+                                            },
+                                        },
+                                    ],
+                                },
+                                trigger: {
+                                    id: 'Q29kZU1vbml0b3JUcmlnZ2VyUXVlcnk6Mg==',
+                                    query:
+                                        'type:diff repo:sourcegraph/sourcegraph after:\\"1 week ago\\" filtered  patternType:literal',
+                                },
+                            },
+                        ],
+                        __typename: 'MonitorConnection',
+                        pageInfo: { endCursor: null, hasNextPage: false },
+                        totalCount: 1,
+                    },
+                },
+            }),
         })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
+
+    describe('Code monitoring', () => {
+        it('is styled correctly', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/code-monitoring')
+            await driver.page.waitForSelector('[data-testid="code-monitoring-page"]')
+            await percySnapshotWithVariants(driver.page, 'Code monitor list')
+        })
+    })
 
     describe('Code monitoring form advances sequentially', () => {
         it('validates trigger query input', async () => {

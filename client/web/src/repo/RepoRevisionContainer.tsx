@@ -75,8 +75,6 @@ export interface RepoRevisionContainerContext
 
     globbing: boolean
 
-    showSearchNotebook: boolean
-
     isMacPlatform: boolean
 
     isSourcegraphDotCom: boolean
@@ -122,8 +120,6 @@ interface RepoRevisionContainerProps
     history: H.History
 
     globbing: boolean
-
-    showSearchNotebook: boolean
 
     isMacPlatform: boolean
 

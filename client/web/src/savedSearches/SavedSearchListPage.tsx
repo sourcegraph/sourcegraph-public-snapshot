@@ -136,7 +136,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className={styles.savedSearchListPage}>
+            <div className={styles.savedSearchListPage} data-testid="saved-searches-list-page">
                 <PageHeader
                     path={[{ text: 'Saved searches' }]}
                     headingElement="h2"
