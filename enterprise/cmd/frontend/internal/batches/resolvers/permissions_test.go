@@ -646,46 +646,7 @@ func TestPermissionLevels(t *testing.T) {
 								string(marshalBatchSpecRandID(batchSpecRandID)),
 							)
 
-							actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-
-							conf.Mock(&conf.Unified{
-								SiteConfiguration: schema.SiteConfiguration{
-									BatchChangesRestrictToAdmins: &restrict,
-								},
-							})
-							defer conf.Mock(nil)
-
-							var response struct{}
-							errs := apitest.Exec(actorCtx, t, s, nil, &response, mutation)
-
-							// We don't care about other errors, we only want to
-							// check that we didn't get an auth error.
-							if restrict && tc.wantDisabledErr {
-								if len(errs) != 1 {
-									t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
-								}
-								if !strings.Contains(errs[0].Error(), "batch changes are disabled for non-site-admin users") {
-									t.Fatalf("wrong error: %s %T", errs[0], errs[0])
-								}
-							} else if tc.wantAuthErr {
-								if len(errs) != 1 {
-									t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
-								}
-								if !strings.Contains(errs[0].Error(), "must be authenticated") {
-									t.Fatalf("wrong error: %s %T", errs[0], errs[0])
-								}
-							} else {
-								// We don't care about other errors, we only
-								// want to check that we didn't get an auth
-								// or site admin error.
-								for _, e := range errs {
-									if strings.Contains(e.Error(), "must be authenticated") {
-										t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
-									} else if strings.Contains(e.Error(), "batch changes are disabled for non-site-admin users") {
-										t.Fatalf("site admin error wrongly returned: %s %T", errs[0], errs[0])
-									}
-								}
-							}
+							assertAuthorizationResponse(t, ctx, s, nil, mutation, tc.currentUser, restrict, tc.wantDisabledErr, tc.wantAuthErr)
 						})
 					}
 				}
@@ -753,27 +714,7 @@ func TestPermissionLevels(t *testing.T) {
 						}
 						mutation := m.mutationFunc(namespaceID)
 
-						actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-
-						var response struct{}
-						errs := apitest.Exec(actorCtx, t, s, nil, &response, mutation)
-
-						if tc.wantAuthErr {
-							if len(errs) != 1 {
-								t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
-							}
-							if !strings.Contains(errs[0].Error(), "not authenticated") {
-								t.Fatalf("wrong error: %s %T", errs[0], errs[0])
-							}
-						} else {
-							// We don't care about other errors, we only want to
-							// check that we didn't get an auth error.
-							for _, e := range errs {
-								if strings.Contains(e.Error(), "must be site admin") {
-									t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
-								}
-							}
-						}
+						assertAuthorizationResponse(t, ctx, s, nil, mutation, tc.currentUser, false, false, tc.wantAuthErr)
 					})
 				}
 			})
@@ -858,46 +799,7 @@ func TestPermissionLevels(t *testing.T) {
 								string(marshalBatchSpecWorkspaceID(workspaceID)),
 							)
 
-							actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-
-							conf.Mock(&conf.Unified{
-								SiteConfiguration: schema.SiteConfiguration{
-									BatchChangesRestrictToAdmins: &restrict,
-								},
-							})
-							defer conf.Mock(nil)
-
-							var response struct{}
-							errs := apitest.Exec(actorCtx, t, s, nil, &response, mutation)
-
-							// We don't care about other errors, we only want to
-							// check that we didn't get an auth error.
-							if restrict && tc.wantDisabledErr {
-								if len(errs) != 1 {
-									t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
-								}
-								if !strings.Contains(errs[0].Error(), "batch changes are disabled for non-site-admin users") {
-									t.Fatalf("wrong error: %s %T", errs[0], errs[0])
-								}
-							} else if tc.wantAuthErr {
-								if len(errs) != 1 {
-									t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
-								}
-								if !strings.Contains(errs[0].Error(), "must be authenticated") {
-									t.Fatalf("wrong error: %s %T", errs[0], errs[0])
-								}
-							} else {
-								// We don't care about other errors, we only
-								// want to check that we didn't get an auth
-								// or site admin error.
-								for _, e := range errs {
-									if strings.Contains(e.Error(), "must be authenticated") {
-										t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
-									} else if strings.Contains(e.Error(), "batch changes are disabled for non-site-admin users") {
-										t.Fatalf("site admin error wrongly returned: %s %T", errs[0], errs[0])
-									}
-								}
-							}
+							assertAuthorizationResponse(t, ctx, s, nil, mutation, tc.currentUser, restrict, tc.wantDisabledErr, tc.wantAuthErr)
 						})
 					}
 				}
@@ -951,10 +853,6 @@ func TestPermissionLevels(t *testing.T) {
 					pruneUserCredentials(t, db, key)
 					pruneSiteCredentials(t, cstore)
 
-					var res struct {
-						CreateBatchChangesCredential apitest.BatchChangesCredential
-					}
-
 					input := map[string]interface{}{
 						"externalServiceKind": extsvc.KindGitHub,
 						"externalServiceURL":  "https://github.com/",
@@ -973,27 +871,7 @@ func TestPermissionLevels(t *testing.T) {
 						) { id }
 					}`
 
-					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-					errors := apitest.Exec(actorCtx, t, s, input, &res, mutationCreateBatchChangesCredential)
-					if tc.wantAuthErr {
-						if len(errors) != 1 {
-							t.Fatalf("expected 1 error, but got %d: %s", len(errors), errors)
-						}
-						if !strings.Contains(errors[0].Error(), "must be authenticated") && !strings.Contains(errors[0].Error(), "must be site admin") {
-							t.Fatalf("wrong error: %s %T", errors[0], errors[0])
-						}
-					} else {
-						// We don't care about other errors, we only want to
-						// check that we didn't get an auth error.
-						for _, e := range errors {
-							if strings.Contains(e.Error(), "must be authenticated") {
-								t.Fatalf("auth error wrongly returned: %s %T", errors[0], errors[0])
-							}
-							if strings.Contains(e.Error(), "must be site admin") {
-								t.Fatalf("auth error wrongly returned: %s %T", errors[0], errors[0])
-							}
-						}
-					}
+					assertAuthorizationResponse(t, ctx, s, input, mutationCreateBatchChangesCredential, tc.currentUser, false, false, tc.wantAuthErr)
 				})
 			}
 		})
@@ -1067,10 +945,6 @@ func TestPermissionLevels(t *testing.T) {
 						batchChangesCredentialID = marshalBatchChangesCredentialID(cred.ID, true)
 					}
 
-					var res struct {
-						DeleteBatchChangesCredential apitest.EmptyResponse
-					}
-
 					input := map[string]interface{}{
 						"batchChangesCredential": batchChangesCredentialID,
 					}
@@ -1079,27 +953,7 @@ func TestPermissionLevels(t *testing.T) {
 						deleteBatchChangesCredential(batchChangesCredential: $batchChangesCredential) { alwaysNil }
 					}`
 
-					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-					errors := apitest.Exec(actorCtx, t, s, input, &res, mutationDeleteBatchChangesCredential)
-					if tc.wantAuthErr {
-						if len(errors) != 1 {
-							t.Fatalf("expected 1 error, but got %d: %s", len(errors), errors)
-						}
-						if !strings.Contains(errors[0].Error(), "must be authenticated") && !strings.Contains(errors[0].Error(), "must be site admin") {
-							t.Fatalf("wrong error: %s %T", errors[0], errors[0])
-						}
-					} else {
-						// We don't care about other errors, we only want to
-						// check that we didn't get an auth error.
-						for _, e := range errors {
-							if strings.Contains(e.Error(), "must be authenticated") {
-								t.Fatalf("auth error wrongly returned: %s %T", errors[0], errors[0])
-							}
-							if strings.Contains(e.Error(), "must be site admin") {
-								t.Fatalf("auth error wrongly returned: %s %T", errors[0], errors[0])
-							}
-						}
-					}
+					assertAuthorizationResponse(t, ctx, s, input, mutationDeleteBatchChangesCredential, tc.currentUser, false, false, tc.wantAuthErr)
 				})
 			}
 		})
@@ -1642,3 +1496,62 @@ query {
   }
 }
 `
+
+func assertAuthorizationResponse(
+	t *testing.T,
+	ctx context.Context,
+	s *graphql.Schema,
+	input map[string]interface{},
+	mutation string,
+	userID int32,
+	restrictToAdmins, wantDisabledErr, wantAuthErr bool,
+) {
+	// t.Helper()
+
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			BatchChangesRestrictToAdmins: &restrictToAdmins,
+		},
+	})
+	defer conf.Mock(nil)
+
+	var response struct{}
+	errs := apitest.Exec(actorCtx, t, s, input, &response, mutation)
+
+	errLooksLikeAuthErr := func(err error) bool {
+		return strings.Contains(err.Error(), "must be authenticated") ||
+			strings.Contains(err.Error(), "not authenticated") ||
+			strings.Contains(err.Error(), "must be site admin")
+	}
+
+	// We don't care about other errors, we only want to
+	// check that we didn't get an auth error.
+	if restrictToAdmins && wantDisabledErr {
+		if len(errs) != 1 {
+			t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
+		}
+		if !strings.Contains(errs[0].Error(), "batch changes are disabled for non-site-admin users") {
+			t.Fatalf("wrong error: %s %T", errs[0], errs[0])
+		}
+	} else if wantAuthErr {
+		if len(errs) != 1 {
+			t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
+		}
+		if !errLooksLikeAuthErr(errs[0]) {
+			t.Fatalf("wrong error: %s %T", errs[0], errs[0])
+		}
+	} else {
+		// We don't care about other errors, we only
+		// want to check that we didn't get an auth
+		// or site admin error.
+		for _, e := range errs {
+			if errLooksLikeAuthErr(e) {
+				t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
+			} else if strings.Contains(e.Error(), "batch changes are disabled for non-site-admin users") {
+				t.Fatalf("site admin error wrongly returned: %s %T", errs[0], errs[0])
+			}
+		}
+	}
+}
