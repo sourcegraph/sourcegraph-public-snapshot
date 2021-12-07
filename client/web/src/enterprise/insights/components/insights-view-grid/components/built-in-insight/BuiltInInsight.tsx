@@ -21,6 +21,7 @@ interface BuiltInInsightProps<D extends keyof ViewContexts> extends TelemetryPro
     where: D
     context: ViewContexts[D]
     innerRef: Ref<HTMLElement>
+    resizing: boolean
 }
 
 /**
@@ -32,7 +33,7 @@ interface BuiltInInsightProps<D extends keyof ViewContexts> extends TelemetryPro
  * main work thread instead of using Extension API.
  */
 export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsightProps<D>): React.ReactElement {
-    const { insight, telemetryService, where, context, ...otherProps } = props
+    const { insight, resizing, telemetryService, where, context, ...otherProps } = props
     const { getBuiltInInsightData } = useContext(CodeInsightsBackendContext)
     const { dashboard } = useContext(DashboardInsightsContext)
 
@@ -68,7 +69,9 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
                 />
             }
         >
-            {!data || loading || isDeleting ? (
+            {resizing ? (
+                <View.Banner>Resizing</View.Banner>
+            ) : !data || loading || isDeleting ? (
                 <View.LoadingContent text={isDeleting ? 'Deleting code insight' : 'Loading code insight'} />
             ) : isErrorLike(data.view) ? (
                 <View.ErrorContent error={data.view} title={insight.id} />
