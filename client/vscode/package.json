@@ -101,6 +101,13 @@
           ],
           "default": "",
           "description": "The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/settings/tokens"
+        },
+        "sourcegraph.corsUrl": {
+          "type": [
+            "string"
+          ],
+          "default": "",
+          "description": "CORS headers are necessary for the extension to fetch data when using VS Code Web."
         }
       }
     },
@@ -114,8 +121,10 @@
   },
   "scripts": {
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",
-    "build": "webpack",
-    "dev": "NODE_ENV=development webpack",
+    "build": "webpack --config-name extension:node --config-name webviews",
+    "build:web": "webpack --config-name extension:webworker --config-name webviews",
+    "dev": "NODE_ENV=development webpack --config-name extension:node --config-name webviews",
+    "dev:web": "NODE_ENV=development webpack --config-name extension:webworker --config-name webviews",
     "watch": "webpack --watch",
     "test": "echo \"No tests exist yet\" && exit 1"
   },

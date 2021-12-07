@@ -6,55 +6,57 @@ const path = require('path')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
 /** @type {import('webpack').Configuration}*/
-const extensionConfig = {
-  target: 'node', // vscode extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
-  entry: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
-  // target: 'webworker',
-  // entry: './src/extension-web.ts',
-  output: {
-    // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'extension.js',
-    library: {
-      type: 'umd',
-    },
-    globalObject: 'globalThis',
-    devtoolModuleFilenameTemplate: '../[resource-path]',
-  },
-  devtool: 'source-map',
-  externals: {
-    vscode: 'commonjs vscode', // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
-  },
-  resolve: {
-    // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
-    extensions: ['.ts', '.tsx', '.js', '.jsx'],
-    alias: {
-      path: require.resolve('path-browserify'),
-    },
-    fallback: {
-      process: require.resolve('process/browser'),
-      path: require.resolve('path-browserify'),
-      stream: require.resolve('stream-browserify'),
-      assert: require.resolve('assert'),
-      os: require.resolve('os-browserify/browser'),
-      util: require.resolve('util'),
-    },
-  },
-  module: {
-    rules: [
-      {
-        test: /\.tsx?$/,
-        exclude: /node_modules/,
-        use: [
-          {
-            loader: 'ts-loader',
-          },
-        ],
+function getExtensionConfig(targetParameter) {
+  // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
+  const entryFile = targetParameter === 'node' ? './src/extension.ts' : './src/extension-web.ts'
+  return {
+    name: `extension:${targetParameter}`,
+    target: targetParameter, // vscode extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
+    entry: entryFile,
+    output: {
+      // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
+      path: path.resolve(__dirname, 'dist'),
+      filename: 'extension.js',
+      library: {
+        type: 'umd',
       },
-    ],
-  },
+      globalObject: 'globalThis',
+      devtoolModuleFilenameTemplate: '../[resource-path]',
+    },
+    devtool: 'source-map',
+    externals: {
+      vscode: 'commonjs vscode', // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
+    },
+    resolve: {
+      // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
+      extensions: ['.ts', '.tsx', '.js', '.jsx'],
+      alias: {
+        path: require.resolve('path-browserify'),
+      },
+      fallback: {
+        process: require.resolve('process/browser'),
+        path: require.resolve('path-browserify'),
+        stream: require.resolve('stream-browserify'),
+        assert: require.resolve('assert'),
+        os: require.resolve('os-browserify/browser'),
+        util: require.resolve('util'),
+      },
+    },
+    module: {
+      rules: [
+        {
+          test: /\.tsx?$/,
+          exclude: /node_modules/,
+          use: [
+            {
+              loader: 'ts-loader',
+            },
+          ],
+        },
+      ],
+    },
+  }
 }
-
 const rootPath = path.resolve(__dirname, '../../')
 const vscodeWorkspacePath = path.resolve(rootPath, 'client', 'vscode')
 const vscodeSourcePath = path.resolve(vscodeWorkspacePath, 'src')
@@ -83,9 +85,10 @@ const extensionHostWebviewPath = path.resolve(webviewSourcePath, 'extension-host
 const extensionHostWorker = /main\.worker\.ts$/
 
 /** @type {import('webpack').Configuration}*/
+
 const webviewConfig = {
+  name: 'webviews',
   target: 'web',
-  // target: 'webworker',
   entry: {
     searchPanel: [path.resolve(searchPanelWebviewPath, 'index.tsx')],
     searchSidebar: [path.resolve(searchSidebarWebviewPath, 'index.tsx')],
@@ -103,7 +106,7 @@ const webviewConfig = {
   resolve: {
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
-    alias: {
+    fallback: {
       path: require.resolve('path-browserify'),
       stream: require.resolve('stream-browserify'),
       process: require.resolve('process/browser'),
@@ -156,4 +159,7 @@ const webviewConfig = {
   },
 }
 
-module.exports = [webviewConfig, extensionConfig]
+// module.exports = [getExtensionConfig('node'), getWebviewConfig('node')]
+module.exports = function () {
+  return Promise.all([getExtensionConfig('node'), getExtensionConfig('webworker'), webviewConfig])
+}

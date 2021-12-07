@@ -28,7 +28,7 @@
         "--extensionDevelopmentKind=web"
       ],
       "outFiles": ["${workspaceRoot}/client/vscode/dist/extension.js"],
-      "preLaunchTask": "build-vscode-dev",
+      "preLaunchTask": "build-vscode-dev-web",
     },
     {
       "name": "Launch VS Code Tests",

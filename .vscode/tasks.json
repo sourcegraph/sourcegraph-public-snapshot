@@ -123,5 +123,11 @@
       "path": "client/vscode/",
       "script": "dev",
     },
+    {
+      "label": "build-vscode-dev-web",
+      "type": "npm",
+      "path": "client/vscode/",
+      "script": "dev:web",
+    },
   ],
 }
