@@ -26,7 +26,11 @@ func NewDefaultRunner(dsns map[string]string, appName string, observationContext
 			store := store.NewWithDB(db, schema.MigrationsTableName, operations)
 
 			if err := store.EnsureSchemaTable(ctx); err != nil {
-				return nil, db.Close()
+				if closeErr := db.Close(); closeErr != nil {
+					err = multierror.Appedn(err, closeErr)
+				}
+
+				return nil, err
 			}
 
 			return store, nil
