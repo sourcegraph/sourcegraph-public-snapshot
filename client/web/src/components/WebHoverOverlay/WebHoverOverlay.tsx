@@ -1,5 +1,7 @@
 import classNames from 'classnames'
-import React, { useCallback, useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect } from 'react'
+import { fromEvent } from 'rxjs'
+import { finalize, tap } from 'rxjs/operators'
 
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -53,18 +55,17 @@ export const WebHoverOverlay: React.FunctionComponent<
         }
     }, [hoveredToken?.filePath, hoveredToken?.line, hoveredToken?.character, onHoverShown, hoverHasValue])
 
-    const def = useMemo(() => {
+    useEffect(() => {
+        const token = props.hoveredTokenElement
+
         const action =
             Array.isArray(props.actionsOrError) &&
             props.actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded')
         if (!action) {
             return undefined
         }
-        return urlForClientCommandOpen(action.action, props.location.hash)
-    }, [props.actionsOrError, props.location])
+        const def = urlForClientCommandOpen(action.action, props.location.hash)
 
-    useEffect(() => {
-        const token = props.hoveredTokenElement
         if (!token || !def || !props.nav) {
             return
         }
@@ -74,22 +75,22 @@ export const WebHoverOverlay: React.FunctionComponent<
         const oldCursor = token.style.cursor
         token.style.cursor = 'pointer'
 
-        const listener = (): void => {
-            const selection = window.getSelection()
-            if (selection !== null && selection.toString() !== '') {
-                return
-            }
+        const subscription = fromEvent(token, 'click')
+            .pipe(
+                tap(() => {
+                    const selection = window.getSelection()
+                    if (selection !== null && selection.toString() !== '') {
+                        return
+                    }
 
-            nav(def)
-        }
+                    nav(def)
+                }),
+                finalize(() => (token.style.cursor = oldCursor))
+            )
+            .subscribe()
 
-        token.addEventListener('click', listener)
-
-        return () => {
-            token.removeEventListener('click', listener)
-            token.style.cursor = oldCursor
-        }
-    }, [props.hoveredTokenElement, def, props.nav])
+        return () => subscription.unsubscribe()
+    }, [props.actionsOrError, props.hoveredTokenElement, props.location.hash, props.nav])
 
     return (
         <HoverOverlay
