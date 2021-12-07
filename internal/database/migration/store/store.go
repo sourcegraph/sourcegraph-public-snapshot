@@ -93,7 +93,7 @@ func (s *Store) Lock(ctx context.Context) (_ bool, _ func(err error) error, err 
 	}
 
 	close := func(err error) error {
-		if unlockErr := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_unlock(%s, %s)`, key, 0)); unlockErr == nil {
+		if unlockErr := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_unlock(%s, %s)`, key, 0)); unlockErr != nil {
 			err = multierror.Append(err, unlockErr)
 		}
 
