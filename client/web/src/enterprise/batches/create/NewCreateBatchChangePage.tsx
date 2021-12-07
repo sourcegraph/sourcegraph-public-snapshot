@@ -54,6 +54,11 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
     isLightTheme,
     settingsCascade,
 }) => {
+    const [
+        createEmptyBatchChange,
+        { data: createEmptyBatchChangeData, loading: createEmptyBatchChangeLoading },
+    ] = useMutation<CreateEmptyBatchChangeResult, CreateEmptyBatchChangeVariables>(CREATE_EMPTY_BATCH_CHANGE)
+
     const { namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade)
 
     // The namespace selected for creating the new batch spec under.
