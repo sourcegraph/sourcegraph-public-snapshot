@@ -1,6 +1,14 @@
 import classNames from 'classnames'
+import { noop } from 'lodash'
 import React, { PropsWithChildren, useCallback, useMemo } from 'react'
-import { Layout as ReactGridLayout, Layouts as ReactGridLayouts, Responsive, WidthProvider } from 'react-grid-layout'
+import {
+    Layout,
+    Layout as ReactGridLayout,
+    Layouts,
+    Layouts as ReactGridLayouts,
+    Responsive,
+    WidthProvider,
+} from 'react-grid-layout'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
@@ -66,16 +74,29 @@ export type ViewGridProps =
 interface ViewGridCommonProps extends TelemetryProps {
     /** Custom classname for root element of the grid. */
     className?: string
+
+    onLayoutChange?: (currentLayout: Layout[], allLayouts: Layouts) => void
+    onResizeStart?: (newItem: Layout) => void
+    onResizeStop?: (newItem: Layout) => void
 }
 
 /**
  * Renders drag and drop and resizable views grid.
  */
 export const ViewGrid: React.FunctionComponent<PropsWithChildren<ViewGridProps & ViewGridCommonProps>> = props => {
-    const { layouts, viewIds = [], telemetryService, children, className } = props
+    const {
+        layouts,
+        viewIds = [],
+        telemetryService,
+        children,
+        className,
+        onLayoutChange,
+        onResizeStart = noop,
+        onResizeStop = noop,
+    } = props
 
-    const onResizeOrDragStart: ReactGridLayout.ItemCallback = useCallback(
-        (_layout, item) => {
+    const trackUICustomization = useCallback(
+        (item: Layout) => {
             try {
                 telemetryService.log(
                     'InsightUICustomization',
@@ -87,6 +108,28 @@ export const ViewGrid: React.FunctionComponent<PropsWithChildren<ViewGridProps &
             }
         },
         [telemetryService]
+    )
+
+    const handleResizeStart: ReactGridLayout.ItemCallback = useCallback(
+        (_layout, item, newItem) => {
+            onResizeStart(newItem)
+            trackUICustomization(item)
+        },
+        [trackUICustomization, onResizeStart]
+    )
+
+    const handleResizeStop: ReactGridLayout.ItemCallback = useCallback(
+        (_layout, item, newItem) => {
+            onResizeStop(newItem)
+        },
+        [onResizeStop]
+    )
+
+    const handleDragStart: ReactGridLayout.ItemCallback = useCallback(
+        (_layout, item, newItem) => {
+            trackUICustomization(item)
+        },
+        [trackUICustomization]
     )
 
     // For Firefox we can't use css transform/translate to put view grid item in right place.
@@ -110,8 +153,11 @@ export const ViewGrid: React.FunctionComponent<PropsWithChildren<ViewGridProps &
                 containerPadding={[0, 0]}
                 useCSSTransforms={useCSSTransforms}
                 margin={[12, 12]}
-                onResizeStart={onResizeOrDragStart}
-                onDragStart={onResizeOrDragStart}
+                onResizeStart={handleResizeStart}
+                onResizeStop={handleResizeStop}
+                onResize={console.log}
+                onLayoutChange={onLayoutChange}
+                onDragStart={handleDragStart}
             >
                 {children}
             </ResponsiveGridLayout>

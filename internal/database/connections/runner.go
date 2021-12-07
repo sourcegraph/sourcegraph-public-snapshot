@@ -1,7 +1,10 @@
 package connections
 
 import (
+	"context"
 	"database/sql"
+
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -16,13 +19,23 @@ func NewDefaultRunner(dsns map[string]string, appName string, observationContext
 		schema *schemas.Schema,
 		factory func(dsn, appName string, migrate bool) (*sql.DB, error),
 	) runner.StoreFactory {
-		return func() (runner.Store, error) {
+		return func(ctx context.Context) (runner.Store, error) {
 			db, err := factory(dsns[name], appName, false)
 			if err != nil {
 				return nil, err
 			}
 
-			return store.NewWithDB(db, schema.MigrationsTableName, operations), nil
+			store := store.NewWithDB(db, schema.MigrationsTableName, operations)
+
+			if err := store.EnsureSchemaTable(ctx); err != nil {
+				if closeErr := db.Close(); closeErr != nil {
+					err = multierror.Append(err, closeErr)
+				}
+
+				return nil, err
+			}
+
+			return store, nil
 		}
 	}
 
