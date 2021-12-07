@@ -20,7 +20,7 @@ import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
-import { GlobalStore, useGlobalStore } from '../../stores/global'
+import { useNavbarQueryState } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { canSubmitSearch, submitSearch, SubmitSearchParameters } from '../helpers'
 import { SearchBox } from '../input/SearchBox'
@@ -28,6 +28,7 @@ import { useSearchOnboardingTour } from '../input/SearchOnboardingTour'
 import { QuickLinks } from '../QuickLinks'
 
 import styles from './SearchPageInput.module.scss'
+import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -55,7 +56,7 @@ interface Props
     autoFocus?: boolean
 }
 
-const queryStateSelector = (state: GlobalStore): CaseSensitivityProps => ({
+const queryStateSelector = (state: NavbarQueryState): CaseSensitivityProps => ({
     caseSensitive: state.searchCaseSensitivity,
     setCaseSensitivity: state.setSearchCaseSensitivity,
 })
@@ -65,7 +66,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     const [userQueryState, setUserQueryState] = useState({
         query: props.queryPrefix ? props.queryPrefix : '',
     })
-    const { caseSensitive, setCaseSensitivity } = useGlobalStore(queryStateSelector, shallow)
+    const { caseSensitive, setCaseSensitivity } = useNavbarQueryState(queryStateSelector, shallow)
 
     useEffect(() => {
         setUserQueryState({ query: props.queryPrefix || '' })

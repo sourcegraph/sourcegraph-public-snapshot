@@ -25,7 +25,7 @@ import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { useGlobalStore } from '../../stores/global'
+import { useNavbarQueryState } from '../../stores'
 import { SearchBetaIcon } from '../CtaIcons'
 import { getSubmittedSearchesCount, submitSearch } from '../helpers'
 
@@ -81,7 +81,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         extensionsController: { extHostAPI: extensionHostAPI },
     } = props
 
-    const caseSensitive = useGlobalStore(state => state.searchCaseSensitivity)
+    const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
 
     // Log view event on first load
     useEffect(

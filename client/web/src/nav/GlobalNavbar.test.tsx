@@ -13,7 +13,7 @@ import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared
 
 import { SearchPatternType } from '../graphql-operations'
 import { ThemePreference } from '../stores/themeState'
-import { useGlobalStore } from '../stores/global'
+import { useNavbarQueryState } from '../stores'
 
 import { GlobalNavbar } from './GlobalNavbar'
 
@@ -66,7 +66,7 @@ describe('GlobalNavbar', () => {
     setLinkComponent(({ children, ...props }) => <a {...props}>{children}</a>)
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
     beforeEach(() => {
-        useGlobalStore.setState({ searchCaseSensitivity: false })
+        useNavbarQueryState.setState({ searchCaseSensitivity: false })
     })
 
     test('default', () => {

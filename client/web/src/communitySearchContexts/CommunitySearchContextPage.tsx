@@ -33,7 +33,7 @@ import {
 } from '../search'
 import { submitSearch } from '../search/helpers'
 import { SearchPageInput } from '../search/home/SearchPageInput'
-import { useGlobalStore } from '../stores/global'
+import { useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -76,7 +76,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
             props.telemetryService.logViewEvent(`CommunitySearchContext:${props.communitySearchContextMetadata.spec}`),
         [props.communitySearchContextMetadata.spec, props.telemetryService]
     )
-    const caseSensitive = useGlobalStore(state => state.searchCaseSensitivity)
+    const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
 
     const contextQuery = `context:${props.communitySearchContextMetadata.spec}`
 

@@ -21,7 +21,7 @@ import {
 
 import { AuthenticatedUser } from '../../auth'
 import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
-import { useGlobalStore } from '../../stores/global'
+import { useNavbarQueryState } from '../../stores'
 import * as helpers from '../helpers'
 
 import { generateMockedResponses } from './sidebar/Revisions.mocks'
@@ -80,11 +80,11 @@ describe('StreamingSearchResults', () => {
     } as AuthenticatedUser
 
     beforeEach(() => {
-        useGlobalStore.setState({ searchCaseSensitivity: false })
+        useNavbarQueryState.setState({ searchCaseSensitivity: false })
     })
 
     it('should call streaming search API with the right parameters from URL', async () => {
-        useGlobalStore.setState({ searchCaseSensitivity: true })
+        useNavbarQueryState.setState({ searchCaseSensitivity: true })
         const searchSpy = sinon.spy(defaultProps.streamSearch)
 
         renderWrapper(

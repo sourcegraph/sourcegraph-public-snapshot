@@ -63,7 +63,7 @@ import {
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { useThemeProps } from './theme'
-import { useGlobalStore } from './stores/global'
+import { useNavbarQueryState } from './stores'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
@@ -152,7 +152,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         setSelectedSearchContextSpec,
     } = props
 
-    const setQueryStateFromURL = useGlobalStore(state => state.setQueryStateFromURL)
+    const setQueryStateFromURL = useNavbarQueryState(state => state.setQueryStateFromURL)
     useEffect(() => setQueryStateFromURL(location.search), [setQueryStateFromURL, location.search])
 
     const { query = '', patternType } = useMemo(() => parseSearchURL(location.search), [location.search])

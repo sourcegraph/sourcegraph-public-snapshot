@@ -83,8 +83,7 @@ import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
-import { setExperimentalFeaturesFromSettings } from './stores'
-import { useGlobalStore } from './stores/global'
+import { useNavbarQueryState, setExperimentalFeaturesFromSettings } from './stores'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -246,7 +245,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         // This will be updated with the default in settings when the web app mounts.
         const urlPatternType = parsedSearchURL.patternType || SearchPatternType.literal
 
-        useGlobalStore.getState().setQueryStateFromURL(window.location.search)
+        useNavbarQueryState.getState().setQueryStateFromURL(window.location.search)
 
         this.state = {
             settingsCascade: EMPTY_SETTINGS_CASCADE,
@@ -297,7 +296,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             ]).subscribe(
                 ([settingsCascade, authenticatedUser]) => {
                     setExperimentalFeaturesFromSettings(settingsCascade)
-                    useGlobalStore.getState().setQueryStateFromSettings(settingsCascade)
+                    useNavbarQueryState.getState().setQueryStateFromSettings(settingsCascade)
                     this.setState(state => ({
                         settingsCascade,
                         authenticatedUser,

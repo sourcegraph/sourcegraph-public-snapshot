@@ -13,7 +13,7 @@ import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHel
 
 import { SearchPatternType } from '../../graphql-operations'
 import { ThemePreference } from '../../stores/themeState'
-import { useGlobalStore } from '../../stores/global'
+import { useNavbarQueryState } from '../../stores'
 import { authUser } from '../panels/utils'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
@@ -78,7 +78,7 @@ describe('SearchPage', () => {
     }
 
     beforeEach(() => {
-        useGlobalStore.setState({ searchCaseSensitivity: false })
+        useNavbarQueryState.setState({ searchCaseSensitivity: false })
     })
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {
