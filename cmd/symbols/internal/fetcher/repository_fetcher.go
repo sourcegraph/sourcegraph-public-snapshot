@@ -48,7 +48,7 @@ func (f *repositoryFetcher) FetchRepositoryArchive(ctx context.Context, args typ
 	requestCh := make(chan parseRequestOrError)
 
 	// Just skip this repo as it's clogging the pipes in Cloud
-	if string(args.Repo) == "github.com/sourcegraph/megarepo" {
+	if string(args.Repo) == "github.com/sgtest/megarepo" {
 		close(requestCh)
 		return requestCh
 	}
