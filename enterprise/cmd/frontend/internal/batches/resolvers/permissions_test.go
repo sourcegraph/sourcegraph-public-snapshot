@@ -513,6 +513,62 @@ func TestPermissionLevels(t *testing.T) {
 				})
 			}
 		})
+
+		t.Run("BatchSpecWorkspaceByID", func(t *testing.T) {
+			tests := []struct {
+				name        string
+				currentUser int32
+				user        int32
+				wantErr     bool
+			}{
+				{
+					name:        "site-admin viewing other user",
+					currentUser: adminID,
+					user:        userID,
+					wantErr:     false,
+				},
+				{
+					name:        "non-site-admin viewing other's workspace",
+					currentUser: userID,
+					user:        adminID,
+					wantErr:     true,
+				},
+				{
+					name:        "non-site-admin viewing own workspace",
+					currentUser: userID,
+					user:        userID,
+					wantErr:     false,
+				},
+			}
+
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					_, batchSpecID := createBatchSpecFromRaw(t, cstore, tc.user)
+					workspaceID := createBatchSpecWorkspace(t, cstore, batchSpecID)
+
+					graphqlID := string(marshalBatchSpecWorkspaceID(workspaceID))
+
+					var res struct{ Node apitest.BatchSpecWorkspace }
+
+					input := map[string]interface{}{"id": graphqlID}
+					query := `query($id: ID!) { node(id: $id) { ... on BatchSpecWorkspace { id } } }`
+
+					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+
+					errors := apitest.Exec(actorCtx, t, s, input, &res, query)
+					if !tc.wantErr && len(errors) != 0 {
+						t.Fatalf("got error but didn't expect one: %v", errors)
+					} else if tc.wantErr && len(errors) == 0 {
+						t.Fatal("expected error but got none")
+					}
+					if !tc.wantErr {
+						if have, want := res.Node.ID, graphqlID; have != want {
+							t.Fatalf("invalid node returned, wanted ID=%q, have=%q", want, have)
+						}
+					}
+				})
+			}
+		})
 	})
 
 	t.Run("batch change mutations", func(t *testing.T) {
