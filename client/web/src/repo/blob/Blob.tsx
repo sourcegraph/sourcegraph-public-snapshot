@@ -19,6 +19,7 @@ import {
 import {
     catchError,
     concatMap,
+    delay,
     distinctUntilChanged,
     filter,
     first,
@@ -345,6 +346,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             () =>
                 locationPositions.pipe(
                     withLatestFrom(codeViewElements.pipe(filter(isDefined))),
+                    // Waits until React has finished `dangerouslySetInnerHTML`.
+                    delay(0),
                     tap(([position, codeView]) => {
                         const codeCells = getCodeElementsInRange({
                             codeView,
