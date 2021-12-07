@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 )
 
+// memoryStore implements runner.Store but writes to migration metadata to any
+// underlying persistence layer.
 type memoryStore struct {
 	db         *sql.DB
 	version    int
