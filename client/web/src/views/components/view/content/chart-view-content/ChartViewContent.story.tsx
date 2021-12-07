@@ -7,8 +7,9 @@ import { ChartContent } from 'sourcegraph'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../components/WebStory'
-import { LINE_CHART_CONTENT_MOCK } from '../../../../mocks/charts-content'
+import { LINE_CHART_CONTENT_MOCK, LINE_CHART_WITH_MANY_LINES } from '../../../../mocks/charts-content'
 
+import { LineChartLayoutOrientation, LineChartSettingsContext } from './charts/line'
 import { ChartViewContent } from './ChartViewContent'
 import styles from './ChartViewContent.story.module.scss'
 
@@ -275,4 +276,43 @@ add('Pie chart', () => (
             ],
         }}
     />
+))
+
+add('Line chart with horizontal layout', () => (
+    <>
+        <article>
+            <h3>Middle width chart 2 lines</h3>
+            <p>Legend block should be below the chart</p>
+            <ChartViewContent {...commonProps} content={LINE_CHART_CONTENT_MOCK} />
+        </article>
+
+        <article>
+            <h3>Big width chart 2 lines</h3>
+            <p>
+                Legend block should be below the chart even if we have enough space, but we have small number of series
+            </p>
+            <ChartViewContent {...commonProps} className={styles.chartLg} content={LINE_CHART_CONTENT_MOCK} />
+        </article>
+
+        <article>
+            <h3>Middle width chart with many lines</h3>
+            <p>Legend is placed below cause we don't have enough X space to put it aside</p>
+            <ChartViewContent {...commonProps} content={LINE_CHART_WITH_MANY_LINES} />
+        </article>
+
+        <article>
+            <h3>Big width chart with many lines</h3>
+            <p>Legend is placed aside because we have enought X space</p>
+            <ChartViewContent {...commonProps} className={styles.chartLg} content={LINE_CHART_WITH_MANY_LINES} />
+        </article>
+
+        <article>
+            <h3>Middle width chart with many lines with explicit chart layout</h3>
+            <LineChartSettingsContext.Provider
+                value={{ zeroYAxisMin: false, layout: LineChartLayoutOrientation.Horizontal }}
+            >
+                <ChartViewContent {...commonProps} content={LINE_CHART_WITH_MANY_LINES} />
+            </LineChartSettingsContext.Provider>
+        </article>
+    </>
 ))

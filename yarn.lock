@@ -5161,10 +5161,10 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-grid-layout@0.17.2":
-  version "0.17.2"
-  resolved "https://registry.npmjs.org/@types/react-grid-layout/-/react-grid-layout-0.17.2.tgz#43d59d2c342988966d2567b95a2c52b4f38b8f08"
-  integrity sha512-iLKQ5rI9KyPGs/BlWmeBfoikRnoOmTuddK8V5mOCgJ46e2JaecZuPhuIX1kV0mkQSk6X3XoEZALVW0XQbz9g5Q==
+"@types/react-grid-layout@1.3.0":
+  version "1.3.0"
+  resolved "https://registry.npmjs.org/@types/react-grid-layout/-/react-grid-layout-1.3.0.tgz#aa00b2b8de350aa7f6c570e69d7a0daf571de24c"
+  integrity sha512-Pytm7lvm4h91yN9CpdjV8IpU/hgVRHrUhDEIX593e4Mx9V14Pr3gWtj21WHzy5bDqU//jnGGVVSYJ3QVuI1NaQ==
   dependencies:
     "@types/react" "*"
 
@@ -8274,7 +8274,7 @@ class-utils@^0.3.5:
     isobject "^3.0.0"
     static-extend "^0.1.1"
 
-classnames@2.x, classnames@^2.2.3, classnames@^2.2.5, classnames@^2.2.6, classnames@^2.3.1:
+classnames@2.3.1, classnames@^2.2.3, classnames@^2.2.5, classnames@^2.2.6, classnames@^2.3.1:
   version "2.3.1"
   resolved "https://registry.npmjs.org/classnames/-/classnames-2.3.1.tgz#dfcfa3891e306ec1dad105d0e88f4417b8535e8e"
   integrity sha512-OlQdbZ7gLfGarSqxesMesDa5uz7KFbID8Kpq/SxIoNGDqY8lSYs0D+hhtBXhcdB3rcbXArFr7vlHheLk1voeNA==
@@ -19262,16 +19262,16 @@ react-focus-lock@^2.3.1, react-focus-lock@^2.4.1:
     use-callback-ref "^1.2.1"
     use-sidecar "^1.0.1"
 
-react-grid-layout@^0.18.3:
-  version "0.18.3"
-  resolved "https://registry.npmjs.org/react-grid-layout/-/react-grid-layout-0.18.3.tgz#4f9540199f35211077eae0aa5bc83096a672c39c"
-  integrity sha512-lHkrk941Tk5nTwZPa9uj6ttHBT0VehSHwEhWbINBJKvM1GRaFNOefvjcuxSyuCI5JWjVUP+Qm3ARt2470AlxMA==
+react-grid-layout@1.3.0:
+  version "1.3.0"
+  resolved "https://registry.npmjs.org/react-grid-layout/-/react-grid-layout-1.3.0.tgz#ca8a3e13e62ee2162fa658b1eec4b8eec0203dbd"
+  integrity sha512-WqFwybAItXu0AaSt9YL8+9xE5YotIzMcCYE0Q9XBqSKNyShTxPbC0LjObV/tOWZoADNWJ+osseVfRoZsjzwWXg==
   dependencies:
-    classnames "2.x"
+    classnames "2.3.1"
     lodash.isequal "^4.0.0"
     prop-types "^15.0.0"
     react-draggable "^4.0.0"
-    react-resizable "^1.9.0"
+    react-resizable "^3.0.4"
 
 react-helmet-async@^1.0.7:
   version "1.0.9"
@@ -19379,10 +19379,10 @@ react-remove-scroll@^2.3.0:
     use-callback-ref "^1.2.3"
     use-sidecar "^1.0.1"
 
-react-resizable@^1.9.0:
-  version "1.10.1"
-  resolved "https://registry.npmjs.org/react-resizable/-/react-resizable-1.10.1.tgz#f0c2cf1d83b3470b87676ce6d6b02bbe3f4d8cd4"
-  integrity sha512-Jd/bKOKx6+19NwC4/aMLRu/J9/krfxlDnElP41Oc+oLiUWs/zwV1S9yBfBZRnqAwQb6vQ/HRSk3bsSWGSgVbpw==
+react-resizable@^3.0.4:
+  version "3.0.4"
+  resolved "https://registry.npmjs.org/react-resizable/-/react-resizable-3.0.4.tgz#aa20108eff28c52c6fddaa49abfbef8abf5e581b"
+  integrity sha512-StnwmiESiamNzdRHbSSvA65b0ZQJ7eVQpPusrSmcpyGKzC0gojhtO62xxH6YOBmepk9dQTBi9yxidL3W4s3EBA==
   dependencies:
     prop-types "15.x"
     react-draggable "^4.0.3"

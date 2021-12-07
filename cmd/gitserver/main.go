@@ -26,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/connections"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -259,8 +259,7 @@ func getPercent(p int) (int, error) {
 	return p, nil
 }
 
-// getStores initializes a connection to the database and returns RepoStore and
-// ExternalServiceStore.
+// getDB initializes a connection to the database and returns a dbutil.DB
 func getDB() (dbutil.DB, error) {
 	// Gitserver is an internal actor. We rely on the frontend to do authz checks for
 	// user requests.
@@ -271,7 +270,7 @@ func getDB() (dbutil.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	return dbconn.NewFrontendDB(dsn, "gitserver", false)
+	return connections.NewFrontendDB(dsn, "gitserver", false)
 }
 
 func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,

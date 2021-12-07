@@ -13,7 +13,7 @@ type ViewCardElementProps = React.DetailedHTMLProps<Omit<React.HTMLAttributes<HT
 export interface ViewCardProps extends ViewCardElementProps {
     title?: string
     subtitle?: string
-    innerRef?: React.RefObject<HTMLElement>
+    innerRef?: React.Ref<HTMLElement>
 
     /**
      * Custom card actions (like filter buttons) that render element right next to three dots

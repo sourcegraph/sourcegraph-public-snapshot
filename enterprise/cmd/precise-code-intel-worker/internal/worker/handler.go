@@ -106,7 +106,7 @@ func (h *handler) handle(ctx context.Context, upload store.Upload, traceLog obse
 		return false, errors.Wrap(err, "Repos.Get")
 	}
 
-	if requeued, err := requeueIfCloning(ctx, db, h.workerStore, upload, repo); err != nil || requeued {
+	if requeued, err := requeueIfCloningOrCommitUnknown(ctx, db, h.workerStore, upload, repo); err != nil || requeued {
 		return requeued, err
 	}
 
@@ -227,24 +227,37 @@ func inTransaction(ctx context.Context, dbStore DBStore, fn func(tx DBStore) err
 	return fn(tx)
 }
 
-// CloneInProgressDelay is the delay between processing attempts when a repo is currently being cloned.
-const CloneInProgressDelay = time.Minute
+// requeueDelay is the delay between processing attempts to process a record when waiting on
+// gitserver to refresh. We'll requeue a record with this delay while the repo is cloning or
+// while we're waiting for a commit to become available to the remote code host.
+const requeueDelay = time.Minute
 
-// requeueIfCloning ensures that the repo and revision are resolvable. If the repo does not exist, or
-// if the repo has finished cloning and the revision does not exist, then the upload will fail to process.
-// If the repo is currently cloning, then we'll requeue the upload to be tried again later. This will not
-// increase the reset count of the record (so this doesn't count against the upload as a legitimate attempt).
-func requeueIfCloning(ctx context.Context, db database.DB, workerStore dbworkerstore.Store, upload store.Upload, repo *types.Repo) (requeued bool, _ error) {
+// requeueIfCloningOrCommitUnknown ensures that the repo and revision are resolvable. If the repo is currently
+// cloning or if the commit does not exist, then the upload will be requeued and this function returns a true
+// valued flag. Otherwise, the repo does not exist or there is an unexpected infrastructure error, which we'll
+// fail on.
+func requeueIfCloningOrCommitUnknown(ctx context.Context, db database.DB, workerStore dbworkerstore.Store, upload store.Upload, repo *types.Repo) (requeued bool, _ error) {
 	_, err := backend.NewRepos(db.Repos()).ResolveRev(ctx, repo, upload.Commit)
-	if err == nil || !gitdomain.IsCloneInProgress(err) {
-		return false, errors.Wrap(err, "Repos.ResolveRev")
+	if err == nil {
+		// commit is resolvable
+		return false, nil
 	}
 
-	if err := workerStore.Requeue(ctx, upload.ID, time.Now().UTC().Add(CloneInProgressDelay)); err != nil {
+	var reason string
+	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		reason = "commit not found"
+	} else if gitdomain.IsCloneInProgress(err) {
+		reason = "repository still cloning"
+	} else {
+		return false, errors.Wrap(err, "repos.ResolveRev")
+	}
+
+	after := time.Now().UTC().Add(requeueDelay)
+
+	if err := workerStore.Requeue(ctx, upload.ID, after); err != nil {
 		return false, errors.Wrap(err, "store.Requeue")
 	}
-
-	log15.Warn("Requeued LSIF upload record (repository still cloning)", "id", upload.ID)
+	log15.Warn("Requeued LSIF upload record", "id", upload.ID, "reason", reason)
 	return true, nil
 }
 

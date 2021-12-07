@@ -5,11 +5,10 @@ import { Omit } from 'utility-types'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
-import { Badge } from '../components/Badge'
 import { NamespaceProps } from '../namespaces'
 
 import styles from './SavedSearchForm.module.scss'
@@ -205,9 +204,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
 
                 {!props.defaultValues?.notify && (
                     <Container className="d-flex p-3 align-items-start">
-                        <Badge status="new" className="mr-3">
-                            New
-                        </Badge>
+                        <ProductStatusBadge status="new" className="mr-3" />
                         <span>
                             Watch for changes to your code and trigger email notifications, webhooks, and more with{' '}
                             <Link to="/code-monitoring">code monitoring →</Link>

@@ -1,6 +1,5 @@
 import classNames from 'classnames'
-import PuzzleIcon from 'mdi-react/PuzzleIcon'
-import React, { useContext, useMemo, useState } from 'react'
+import React, { Ref, useContext, useMemo, useState } from 'react'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -21,6 +20,7 @@ interface BuiltInInsightProps<D extends keyof ViewContexts> extends TelemetryPro
     insight: SearchExtensionBasedInsight | LangStatsInsight
     where: D
     context: ViewContexts[D]
+    innerRef: Ref<HTMLElement>
 }
 
 /**
@@ -69,13 +69,9 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
             }
         >
             {!data || loading || isDeleting ? (
-                <View.LoadingContent
-                    text={isDeleting ? 'Deleting code insight' : 'Loading code insight'}
-                    description={insight.id}
-                    icon={PuzzleIcon}
-                />
+                <View.LoadingContent text={isDeleting ? 'Deleting code insight' : 'Loading code insight'} />
             ) : isErrorLike(data.view) ? (
-                <View.ErrorContent error={data.view} title={insight.id} icon={PuzzleIcon} />
+                <View.ErrorContent error={data.view} title={insight.id} />
             ) : (
                 data.view && (
                     <LineChartSettingsContext.Provider value={{ zeroYAxisMin }}>

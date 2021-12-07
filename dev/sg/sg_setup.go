@@ -21,8 +21,8 @@ import (
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/lib/output"
-	"github.com/sourcegraph/sourcegraph/lib/postgresdsn"
 )
 
 var (
@@ -1081,8 +1081,8 @@ func retryCheck(check dependencyCheck, retries int, sleep time.Duration) depende
 	return func(ctx context.Context) (err error) {
 		for i := 0; i < retries; i++ {
 			err = check(ctx)
-			if err != nil {
-				return err
+			if err == nil {
+				return nil
 			}
 			time.Sleep(sleep)
 		}

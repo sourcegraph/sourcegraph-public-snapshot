@@ -200,6 +200,7 @@ type SearchInsightDataSeriesDefinitionResolver interface {
 	Query(ctx context.Context) (string, error)
 	RepositoryScope(ctx context.Context) (InsightRepositoryScopeResolver, error)
 	TimeScope(ctx context.Context) (InsightTimeScope, error)
+	GeneratedFromCaptureGroups() (bool, error)
 }
 
 type InsightPresentation interface {
@@ -335,11 +336,12 @@ type InsightViewFiltersInput struct {
 }
 
 type LineChartSearchInsightDataSeriesInput struct {
-	SeriesId        *string
-	Query           string
-	TimeScope       TimeScopeInput
-	RepositoryScope RepositoryScopeInput
-	Options         LineChartDataSeriesOptionsInput
+	SeriesId                   *string
+	Query                      string
+	TimeScope                  TimeScopeInput
+	RepositoryScope            RepositoryScopeInput
+	Options                    LineChartDataSeriesOptionsInput
+	GeneratedFromCaptureGroups *bool
 }
 
 type LineChartDataSeriesOptionsInput struct {

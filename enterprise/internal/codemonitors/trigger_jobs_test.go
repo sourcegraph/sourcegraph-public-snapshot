@@ -53,10 +53,8 @@ func TestDeleteOldJobLogs(t *testing.T) {
 	require.NoError(t, err)
 	defer rows.Close()
 
-	var (
-		rowCount int
-		id       int
-	)
+	rowCount := 0
+	var id int32
 	for rows.Next() {
 		rowCount++
 		if rowCount > 1 {
@@ -65,5 +63,5 @@ func TestDeleteOldJobLogs(t *testing.T) {
 		err = rows.Scan(&id)
 		require.NoError(t, err)
 	}
-	require.Equal(t, 2, id)
+	require.Equal(t, secondTriggerJobID, id)
 }

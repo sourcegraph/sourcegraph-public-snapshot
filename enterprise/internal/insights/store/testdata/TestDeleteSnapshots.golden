@@ -1,4 +1,4 @@
-[]store.SeriesPoint{store.SeriesPoint{
+[]store.SeriesPoint{{
 	SeriesID: "one",
 	Time: time.Time{
 		ext: 63766868400,
