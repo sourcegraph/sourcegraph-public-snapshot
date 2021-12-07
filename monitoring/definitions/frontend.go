@@ -149,6 +149,7 @@ func Frontend() *monitoring.Container {
 								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 								- **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the 'indexed-search.Deployment.yaml' if regularly hitting max CPU utilization.
 								- **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing 'cpus:' of the zoekt-webserver container in 'docker-compose.yml' if regularly hitting max CPU utilization.
+								- This alert may indicate that your instance is struggling to process symbols queries on a monorepo, [learn more here](../how-to/monorepo-issues.md).
 							`,
 						},
 						{
@@ -164,6 +165,7 @@ func Frontend() *monitoring.Container {
 								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 								- **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the 'indexed-search.Deployment.yaml' if regularly hitting max CPU utilization.
 								- **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing 'cpus:' of the zoekt-webserver container in 'docker-compose.yml' if regularly hitting max CPU utilization.
+								- This alert may indicate that your instance is struggling to process symbols queries on a monorepo, [learn more here](../how-to/monorepo-issues.md).
 							`,
 						},
 					},
