@@ -56,4 +56,4 @@ export const BitbucketStyles: Story = props => (
 )
 BitbucketStyles.storyName = 'Bitbucket styles'
 
-export const Branded: Story = () => <BitbucketStyles isBranded={true} />
+export const Branded: Story = () => <BitbucketStyles useBrandedLogo={true} />

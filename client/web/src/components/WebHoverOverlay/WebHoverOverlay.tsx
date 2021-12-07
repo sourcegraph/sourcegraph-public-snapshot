@@ -53,6 +53,7 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverT
     return (
         <HoverOverlay
             {...propsToUse}
+            useBrandedBadge={true}
             className={classNames('card', styles.webHoverOverlay)}
             closeButtonClassName={classNames('btn btn-icon', styles.webHoverOverlayCloseButton)}
             actionItemClassName="btn btn-sm btn-secondary border-0"

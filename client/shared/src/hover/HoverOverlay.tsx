@@ -32,7 +32,7 @@ export interface HoverOverlayClassProps {
     closeButtonClassName?: string
 
     iconClassName?: string
-    customBadgeClassName?: string
+    badgeClassName?: string
 
     actionItemClassName?: string
     actionItemPressedClassName?: string
@@ -54,7 +54,12 @@ export interface HoverOverlayProps
     hoverRef?: React.Ref<HTMLDivElement>
     /** Called when the close button is clicked */
     onCloseButtonClick?: (event: MouseEvent) => void
-    isBranded?: boolean
+
+    /** Show Sourcegraph logo alongside prompt */
+    useBrandedLogo?: boolean
+
+    /** Show Sourcegraph branded badges */
+    useBrandedBadge?: boolean
 }
 
 const getOverlayStyle = (overlayPosition: HoverOverlayProps['overlayPosition']): CSSProperties =>
@@ -85,7 +90,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
         className,
         closeButtonClassName,
         iconClassName,
-        customBadgeClassName,
+        badgeClassName,
         actionItemClassName,
         actionItemPressedClassName,
         contentClassName,
@@ -94,7 +99,8 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
         onAlertDismissed,
         onCloseButtonClick,
 
-        isBranded,
+        useBrandedLogo,
+        useBrandedBadge,
     } = props
 
     useLogTelemetryEvent(props)
@@ -136,7 +142,8 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                 <HoverOverlayContents
                     hoverOrError={hoverOrError}
                     iconClassName={iconClassName}
-                    customBadgeClassName={customBadgeClassName}
+                    useBrandedBadge={useBrandedBadge}
+                    badgeClassName={badgeClassName}
                     errorAlertClassName={getAlertClassName?.(NotificationType.Error)}
                     contentClassName={contentClassName}
                 />
@@ -183,7 +190,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                             ))}
                         </div>
 
-                        {isBranded && <HoverOverlayLogo className={hoverOverlayStyle.overlayLogo} />}
+                        {useBrandedLogo && <HoverOverlayLogo className={hoverOverlayStyle.overlayLogo} />}
                     </div>
                 )}
         </div>

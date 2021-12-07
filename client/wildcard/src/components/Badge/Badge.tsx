@@ -26,9 +26,9 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
      */
     href?: string
     /**
-     * If the Badge should not use any branded styles
+     * If the Badge should use branded styles. Defaults to true.
      */
-    unstyled?: boolean
+    branded?: boolean
     /**
      * Used to change the element that is rendered.
      */
@@ -46,13 +46,13 @@ export const Badge: React.FunctionComponent<BadgeProps> = ({
     pill,
     tooltip,
     className,
-    unstyled,
+    branded = true,
     href,
     as: Component = 'span',
     ...otherProps
 }) => {
     const brandedClassName =
-        !unstyled && classNames(styles.badge, variant && styles[variant], small && styles.sm, pill && styles.pill)
+        branded && classNames(styles.badge, variant && styles[variant], small && styles.sm, pill && styles.pill)
 
     const commonProps = {
         'data-tooltip': tooltip,

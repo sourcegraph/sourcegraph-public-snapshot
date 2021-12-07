@@ -17,10 +17,14 @@ interface HoverOverlayContentProps {
     aggregatedBadges: HoverMerged['aggregatedBadges']
     index: number
     /**
-     * Allows usage on other code hosts.
-     * We can inherit the badge styles of the code host rather than use our branded styles.
+     * Use our branded badge. For use in Sourcegraph branded applications.
      */
-    customBadgeClassName?: string
+    useBrandedBadge?: boolean
+    /**
+     * Allows custom styles
+     * Primarily used to inherit custom badge styles for use on a different code host.
+     */
+    badgeClassName?: string
     errorAlertClassName?: string
     contentClassName?: string
 }
@@ -34,7 +38,7 @@ function tryMarkdownRender(content: string): string | Error {
 }
 
 export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentProps> = props => {
-    const { content, aggregatedBadges = [], index, errorAlertClassName, customBadgeClassName } = props
+    const { content, aggregatedBadges = [], index, errorAlertClassName, badgeClassName, useBrandedBadge } = props
 
     if (content.kind !== 'markdown') {
         return (
@@ -63,12 +67,14 @@ export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentPro
             {aggregatedBadges.map(({ text, linkURL, hoverMessage }) => (
                 <small key={text} className={classNames(hoverOverlayStyle.badge)}>
                     <Badge
-                        unstyled={Boolean(customBadgeClassName)}
-                        className={classNames('test-hover-badge', customBadgeClassName, hoverOverlayStyle.badgeLabel)}
+                        branded={Boolean(useBrandedBadge)}
+                        {...(useBrandedBadge && {
+                            variant: 'secondary',
+                            small: true,
+                        })}
+                        className={classNames('test-hover-badge', badgeClassName, hoverOverlayStyle.badgeLabel)}
                         href={linkURL}
                         tooltip={hoverMessage}
-                        variant="secondary"
-                        small={true}
                     >
                         {text}
                     </Badge>
