@@ -10,7 +10,6 @@ import (
 
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner/testdata"
@@ -149,7 +148,7 @@ func testStoreWithVersion(db *sql.DB, version int) *MockStore {
 	}
 
 	store := NewMockStore()
-	store.HandleFunc.SetDefaultReturn(basestore.NewHandleWithDB(db, sql.TxOptions{}))
+	store.LockFunc.SetDefaultReturn(true, func(err error) error { return err }, nil)
 	store.UpFunc.SetDefaultHook(migrationHook)
 	store.DownFunc.SetDefaultHook(migrationHook)
 	store.VersionFunc.SetDefaultHook(func(ctx context.Context) (int, bool, bool, error) {
