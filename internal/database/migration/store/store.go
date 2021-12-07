@@ -4,12 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -82,10 +81,13 @@ func (s *Store) Version(ctx context.Context) (version int, dirty bool, ok bool, 
 }
 
 // TODO - test
-func (s *Store) Lock(ctx context.Context) (bool, func(err error) error, error) {
-	// TODO - observe
-
+func (s *Store) Lock(ctx context.Context) (_ bool, _ func(err error) error, err error) {
 	key := locker.StringKey(fmt.Sprintf("%s:migrations", s.migrationsTable))
+
+	ctx, endObservation := s.operations.lock.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int32("key", key),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	if err := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_lock(%s, %s)`, key, 0)); err != nil {
 		return false, nil, err
@@ -128,18 +130,6 @@ func (s *Store) runMigrationQuery(ctx context.Context, definition definition.Def
 	if err := s.setVersion(ctx, expectedCurrentVersion, definition.ID); err != nil {
 		return err
 	}
-
-	ctx2, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	go func() {
-		select {
-		case <-time.After(time.Second):
-			log15.Error("Long query", "query", query.Query(sqlf.PostgresBindVar), "args", query.Args())
-		case <-ctx2.Done():
-			return
-		}
-	}()
 
 	if err := s.Exec(ctx, query); err != nil {
 		return err

@@ -84,6 +84,10 @@ func TestVersion(t *testing.T) {
 	}
 }
 
+func TestLock(t *testing.T) {
+	// TODO - write test
+}
+
 func TestUp(t *testing.T) {
 	db := dbtest.NewDB(t)
 	store := testStore(db)
