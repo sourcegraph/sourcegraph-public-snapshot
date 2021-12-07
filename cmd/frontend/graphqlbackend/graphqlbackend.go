@@ -601,6 +601,14 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 	CloneURL   *string
 	HashedName *string
 }) (*repositoryRedirect, error) {
+	if args.HashedName != nil {
+		// Query by repository hashed name
+		repo, err := backend.NewRepos(r.db.Repos()).GetByHashedName(ctx, api.RepoHashedName(*args.HashedName))
+		if err != nil {
+			return nil, err
+		}
+		return &repositoryRedirect{repo: NewRepositoryResolver(r.db, repo)}, nil
+	}
 	var name api.RepoName
 	if args.Name != nil {
 		// Query by name
@@ -616,13 +624,6 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 			// Clone URL could not be mapped to a code host
 			return nil, nil
 		}
-	} else if args.HashedName != nil {
-		// Query by repository hashed name
-		repo, err := backend.NewRepos(r.db.Repos()).GetByHashedName(ctx, api.RepoHashedName(*args.HashedName))
-		if err != nil {
-			return nil, err
-		}
-		return &repositoryRedirect{repo: NewRepositoryResolver(r.db, repo)}, nil
 	} else {
 		return nil, errors.New("neither name nor cloneURL given")
 	}
