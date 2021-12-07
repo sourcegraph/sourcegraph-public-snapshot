@@ -23,6 +23,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.18.0
 	github.com/aws/smithy-go v1.9.0
 	github.com/beevik/etree v1.1.0
+	github.com/bits-and-blooms/bloom/v3 v3.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/cespare/xxhash v1.1.0
 	github.com/cespare/xxhash/v2 v2.1.2
@@ -95,6 +96,7 @@ require (
 	github.com/kr/text v0.2.0
 	github.com/kylelemons/godebug v1.1.0
 	github.com/lib/pq v1.10.4
+	github.com/loov/hrtime v1.0.3
 	github.com/machinebox/graphql v0.2.2
 	github.com/mattn/go-sqlite3 v1.14.9
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
@@ -275,7 +277,6 @@ require (
 	github.com/snabb/diagio v1.0.0 // indirect
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
-	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/src-d/gcfg v1.4.0 // indirect
 	github.com/stretchr/objx v0.3.0 // indirect
@@ -308,35 +309,22 @@ require (
 
 require (
 	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
-	github.com/ajstarks/svgo v0.0.0-20210923152817-c3b6e2f0c527 // indirect
 	github.com/aws/aws-sdk-go v1.40.45 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.0.0 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.0 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.0.0 // indirect
-	github.com/bits-and-blooms/bloom/v3 v3.1.0 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.3.0 // indirect
 	github.com/cncf/udpa/go v0.0.0-20210930031921-04548b0d99d4 // indirect
 	github.com/cncf/xds/go v0.0.0-20211011173535-cb28da3451f1 // indirect
 	github.com/envoyproxy/go-control-plane v0.10.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.6.2 // indirect
-	github.com/fogleman/gg v1.3.0 // indirect
-	github.com/go-fonts/liberation v0.2.0 // indirect
 	github.com/go-kit/log v0.2.0 // indirect
-	github.com/go-latex/latex v0.0.0-20210823091927-c0d11ff05a81 // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
-	github.com/go-pdf/fpdf v0.5.0 // indirect
-	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/hashicorp/go-hclog v0.16.2 // indirect
-	github.com/loov/hrtime v1.0.3 // indirect
-	github.com/loov/hrtime/hrplot v1.0.2 // indirect
-	github.com/loov/plot v0.0.0-20200413101321-e09a6f01d2f5 // indirect
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
-	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d // indirect
-	golang.org/x/perf v0.0.0-20211012211434-03971e389cd3 // indirect
-	gonum.org/v1/plot v0.10.0 // indirect
 	k8s.io/klog/v2 v2.30.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.0 // indirect
 )
