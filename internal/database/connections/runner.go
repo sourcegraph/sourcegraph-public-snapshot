@@ -17,9 +17,7 @@ func NewDefaultRunner(dsns map[string]string, appName string, observationContext
 		schema *schemas.Schema,
 		factory func(dsn, appName string, migrate bool) (*sql.DB, error),
 	) runner.StoreFactory {
-		return func() (runner.Store, error) {
-			ctx := context.Background() // TODO - make a param
-
+		return func(ctx context.Context) (runner.Store, error) {
 			db, err := factory(dsns[name], appName, false)
 			if err != nil {
 				return nil, err
