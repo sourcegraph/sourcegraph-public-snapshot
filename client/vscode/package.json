@@ -43,12 +43,12 @@
       {
         "command": "sourcegraph.copyFileLink",
         "category": "Sourcegraph",
-        "title": "Copy Sourcegraph link to file"
+        "title": "Sourcegraph: Copy link to file"
       },
       {
         "command": "sourcegraph.openInBrowser",
         "category": "Sourcegraph",
-        "title": "Open file in browser"
+        "title": "Sourcegraph: Open file in browser"
       }
     ],
     "viewsContainers": {
@@ -106,7 +106,7 @@
           "type": [
             "string"
           ],
-          "default": null,
+          "default": "",
           "description": "CORS headers are necessary for the extension to fetch data when using VS Code Web."
         }
       }
@@ -117,7 +117,21 @@
         "key": "ctrl+shift+8",
         "mac": "cmd+shift+8"
       }
-    ]
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "shellExecutionSupported || !isWeb || !virtualWorkspace",
+          "command": "sourcegraph.openInBrowser",
+          "group": "navigation"
+        },
+        {
+          "when": "shellExecutionSupported || !isWeb || !virtualWorkspace",
+          "command": "sourcegraph.copyFileLink",
+          "group": "9_cutcopypaste"
+        }
+      ]
+    }
   },
   "scripts": {
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",

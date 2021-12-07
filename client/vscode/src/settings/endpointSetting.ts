@@ -31,6 +31,6 @@ export function endpointPortSetting(): number {
 
 export function endpointCorsSetting(): string {
     // has default value = null
-    const corsUrl = readConfiguration().get<string>('corsUrl')
-    return corsUrl === 'string' ? new URL('', corsUrl).origin : ''
+    const corsUrl = readConfiguration().get<string>('corsUrl')!
+    return corsUrl !== '' ? new URL('', corsUrl).origin : ''
 }
