@@ -1,6 +1,9 @@
 import classNames from 'classnames'
+import { noop } from 'lodash'
 import React, { useCallback, useMemo, useState } from 'react'
+import { useHistory } from 'react-router'
 
+import { useMutation } from '@sourcegraph/shared/src/graphql/apollo'
 import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graphql/schema'
 import {
     SettingsCascadeProps,
@@ -10,12 +13,14 @@ import {
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { Button, Container, Input, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
+import { CreateEmptyBatchChangeResult, CreateEmptyBatchChangeVariables } from '../../../graphql-operations'
 import { Settings } from '../../../schema/settings.schema'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
+import { CREATE_EMPTY_BATCH_CHANGE } from './backend'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import helloWorldSample from './library/hello-world.batch.yaml'
 import { LibraryPane } from './library/LibraryPane'
@@ -54,10 +59,23 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
     isLightTheme,
     settingsCascade,
 }) => {
+    const [isSettingsFormOpen, setIsSettingsFormOpen] = useState(true)
+    const [nameInput, setNameInput] = useState('')
+
     const [
         createEmptyBatchChange,
         { data: createEmptyBatchChangeData, loading: createEmptyBatchChangeLoading },
     ] = useMutation<CreateEmptyBatchChangeResult, CreateEmptyBatchChangeVariables>(CREATE_EMPTY_BATCH_CHANGE)
+
+    const history = useHistory()
+    const handleCancel = (): void => history.goBack()
+    const handleCreate = (): void => {
+        createEmptyBatchChange({
+            variables: { namespace: selectedNamespace.id, name: nameInput },
+        })
+            .then(() => setIsSettingsFormOpen(false))
+            .catch(noop)
+    }
 
     const { namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade)
 
@@ -174,27 +192,19 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
 
     return (
         <div className="d-flex flex-column p-4 w-100 h-100">
-            <div className="d-flex flex-0 justify-content-between">
-                <div className="flex-1">
-                    <PageHeader
-                        path={[
-                            { icon: BatchChangesIcon },
-                            {
-                                to: getNamespaceBatchChangesURL(selectedNamespace),
-                                text: getNamespaceDisplayName(selectedNamespace),
-                            },
-                            { text: 'Create batch change' },
-                        ]}
-                        className="flex-1 pb-2"
-                        description="Run custom code over hundreds of repositories and manage the resulting changesets."
-                    />
-
-                    <NamespaceSelector
-                        namespaces={namespaces}
-                        selectedNamespace={selectedNamespace.id}
-                        onSelect={setSelectedNamespace}
-                    />
-                </div>
+            <div className="d-flex flex-0 justify-content-between align-items-start">
+                <PageHeader
+                    path={[
+                        { icon: BatchChangesIcon },
+                        {
+                            to: getNamespaceBatchChangesURL(selectedNamespace),
+                            text: getNamespaceDisplayName(selectedNamespace),
+                        },
+                        { text: createEmptyBatchChangeData?.createEmptyBatchChange.name || 'Create batch change' },
+                    ]}
+                    className="flex-1 pb-2"
+                    description="Run custom code over hundreds of repositories and manage the resulting changesets."
+                />
                 <div className="d-flex flex-column flex-0 align-items-center justify-content-center">
                     <ButtonTooltip
                         type="button"
@@ -216,32 +226,60 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                     </div>
                 </div>
             </div>
-            <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1')}>
-                <LibraryPane onReplaceItem={clearErrorsAndHandleCodeChange} />
-                <div className={styles.editorContainer}>
-                    <MonacoBatchSpecEditor
-                        isLightTheme={isLightTheme}
-                        value={code}
-                        onChange={clearErrorsAndHandleCodeChange}
-                    />
+
+            {isSettingsFormOpen ? (
+                <div className={styles.settingsContainer}>
+                    <h4>Batch specification settings</h4>
+                    <Container>
+                        <NamespaceSelector
+                            namespaces={namespaces}
+                            selectedNamespace={selectedNamespace.id}
+                            onSelect={setSelectedNamespace}
+                        />
+                        <Input
+                            className={styles.nameInput}
+                            label="Batch change name"
+                            value={nameInput}
+                            onChange={event => setNameInput(event.target.value)}
+                        />
+                    </Container>
+                    <div className="mt-3 align-self-end">
+                        <Button variant="secondary" outline={true} className="mr-2" onClick={handleCancel}>
+                            Cancel
+                        </Button>
+                        <Button variant="primary" onClick={handleCreate} disabled={createEmptyBatchChangeLoading}>
+                            Create
+                        </Button>
+                    </div>
                 </div>
-                <div
-                    className={classNames(
-                        styles.workspacesPreviewContainer,
-                        'd-flex flex-column align-items-center pl-4'
-                    )}
-                >
-                    {errors}
-                    <WorkspacesPreview
-                        batchSpecID={batchSpecID}
-                        currentPreviewRequestTime={currentPreviewRequestTime}
-                        previewDisabled={previewDisabled}
-                        preview={() => previewBatchSpec(debouncedCode)}
-                        batchSpecStale={batchSpecStale}
-                        excludeRepo={excludeRepo}
-                    />
+            ) : (
+                <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1')}>
+                    <LibraryPane onReplaceItem={clearErrorsAndHandleCodeChange} />
+                    <div className={styles.editorContainer}>
+                        <MonacoBatchSpecEditor
+                            isLightTheme={isLightTheme}
+                            value={code}
+                            onChange={clearErrorsAndHandleCodeChange}
+                        />
+                    </div>
+                    <div
+                        className={classNames(
+                            styles.workspacesPreviewContainer,
+                            'd-flex flex-column align-items-center pl-4'
+                        )}
+                    >
+                        {errors}
+                        <WorkspacesPreview
+                            batchSpecID={batchSpecID}
+                            currentPreviewRequestTime={currentPreviewRequestTime}
+                            previewDisabled={previewDisabled}
+                            preview={() => previewBatchSpec(debouncedCode)}
+                            batchSpecStale={batchSpecStale}
+                            excludeRepo={excludeRepo}
+                        />
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     )
 }
