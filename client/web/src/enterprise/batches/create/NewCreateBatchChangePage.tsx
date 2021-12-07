@@ -64,7 +64,11 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
 
     const [
         createEmptyBatchChange,
-        { data: createEmptyBatchChangeData, loading: createEmptyBatchChangeLoading },
+        {
+            data: createEmptyBatchChangeData,
+            loading: createEmptyBatchChangeLoading,
+            error: createEmptyBatchChangeError,
+        },
     ] = useMutation<CreateEmptyBatchChangeResult, CreateEmptyBatchChangeVariables>(CREATE_EMPTY_BATCH_CHANGE)
 
     const history = useHistory()
@@ -231,6 +235,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                 <div className={styles.settingsContainer}>
                     <h4>Batch specification settings</h4>
                     <Container>
+                        {createEmptyBatchChangeError && <ErrorAlert error={createEmptyBatchChangeError} />}
                         <NamespaceSelector
                             namespaces={namespaces}
                             selectedNamespace={selectedNamespace.id}
