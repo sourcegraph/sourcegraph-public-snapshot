@@ -141,7 +141,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                         tooltip={badge.hoverMessage}
                         variant="secondary"
                         small={true}
-                        className="text-uppercase file-match__badge"
+                        className="text-muted text-uppercase file-match__badge"
                     >
                         {badge.text}
                     </Badge>

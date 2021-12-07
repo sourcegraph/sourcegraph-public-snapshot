@@ -22,7 +22,7 @@ interface HoverOverlayContentProps {
     useBrandedBadge?: boolean
     /**
      * Allows custom styles
-     * Primarily used to inherit custom badge styles for use on a different code host.
+     * Primarily used to inherit different styles for use on a code host.
      */
     badgeClassName?: string
     errorAlertClassName?: string
