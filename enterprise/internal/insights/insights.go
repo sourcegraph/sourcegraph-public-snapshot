@@ -73,7 +73,7 @@ func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeInsightsTimescaleDSN
 	})
-	db, err := connections.NewCodeInsightsDB(dsn, app, true)
+	db, err := connections.NewCodeInsightsDB(dsn, app, true, &observation.TestContext)
 	if err != nil {
 		return nil, errors.Errorf("Failed to connect to codeinsights database: %s", err)
 	}
