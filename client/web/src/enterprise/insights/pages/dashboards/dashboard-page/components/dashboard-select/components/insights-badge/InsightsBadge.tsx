@@ -12,6 +12,11 @@ interface BadgeProps {
     className?: string
 }
 
+/**
+ * A wrapper around the Wildcard badge component with some slightly different styling.
+ * We can't use the standard "secondary" variant here because the selected select option
+ * already uses this color for the background. We use this style variant to avoid visual merging/overlapping.
+ */
 export const InsightsBadge: React.FunctionComponent<BadgeProps> = props => {
     const { value, className } = props
 
