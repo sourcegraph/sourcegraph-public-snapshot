@@ -2053,6 +2053,11 @@ type BatchSpecWorkspaceStep {
     container: String!
 
     """
+    The if condition, under which the step is executed. Null, if not set.
+    """
+    ifCondition: String
+
+    """
     True, if a cached result has been found.
 
     TODO: Not yet implemented.

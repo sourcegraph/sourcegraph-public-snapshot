@@ -19,6 +19,7 @@ import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { BatchSpecState, BatchSpecWorkspaceState } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
@@ -34,12 +35,14 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { LogOutput } from '@sourcegraph/web/src/components/LogOutput'
 import { Timeline, TimelineStage } from '@sourcegraph/web/src/components/Timeline'
-import { Badge, Container, PageHeader, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
+import { Badge, PageHeader, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { ErrorAlert } from '../../../components/alerts'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
+import { Timestamp } from '../../../components/time/Timestamp'
 import {
     BatchSpecExecutionFields,
     BatchSpecWorkspaceChangesetSpecFields,
@@ -49,6 +52,7 @@ import {
     Scalars,
 } from '../../../graphql-operations'
 import { BatchSpec } from '../BatchSpec'
+import { BatchChangePreviewPage } from '../preview/BatchChangePreviewPage'
 import { queryChangesetSpecFileDiffs } from '../preview/list/backend'
 import { ChangesetSpecFileDiffConnection } from '../preview/list/ChangesetSpecFileDiffConnection'
 
@@ -65,6 +69,7 @@ import styles from './BatchSpecExecutionDetailsPage.module.scss'
 
 export interface BatchSpecExecutionDetailsPageProps extends ThemeProps {
     batchSpecID: Scalars['ID']
+    authenticatedUser: AuthenticatedUser
 
     /** For testing only. */
     fetchBatchSpecExecution?: typeof _fetchBatchSpecExecution
@@ -74,9 +79,13 @@ export interface BatchSpecExecutionDetailsPageProps extends ThemeProps {
     expandStage?: string
 }
 
-export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExecutionDetailsPageProps> = ({
+export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
+    BatchSpecExecutionDetailsPageProps & TelemetryProps
+> = ({
     batchSpecID,
     isLightTheme,
+    authenticatedUser,
+    telemetryService,
     fetchBatchSpecExecution = _fetchBatchSpecExecution,
     queryBatchSpecWorkspaces,
 }) => {
@@ -122,6 +131,8 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
         }
     }, [batchSpecID])
 
+    const [selectedIndex, setSelectedIndex] = useState<number>()
+
     // Is loading.
     if (batchSpec === undefined) {
         return (
@@ -150,15 +161,22 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                         text: batchSpec.namespace.namespaceName,
                     },
                     {
-                        text: (
-                            <>
-                                {batchSpec.description.name} <BatchSpecStateBadge state={batchSpec.state} />
-                            </>
-                        ),
+                        text: batchSpec.description.name,
                     },
                 ]}
+                byline={
+                    <>
+                        Created <Timestamp date={batchSpec.createdAt} /> by{' '}
+                        <Link to={batchSpec.creator!.url}>
+                            {batchSpec.creator?.displayName || batchSpec.creator?.username}
+                        </Link>
+                    </>
+                }
                 actions={
                     <div className="d-flex">
+                        <span className="align-self-center">
+                            <BatchSpecStateBadge state={batchSpec.state} />
+                        </span>
                         {batchSpec.startedAt && (
                             <div className="mx-2 text-center text-muted">
                                 <h3>
@@ -229,11 +247,13 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                                         )}
                                     </button>
                                 )}
-                                {batchSpec.applyURL && batchSpec.state === BatchSpecState.COMPLETED && (
-                                    <Link to={batchSpec.applyURL} className="btn btn-primary">
-                                        Preview
-                                    </Link>
-                                )}
+                                {selectedIndex !== 2 &&
+                                    batchSpec.applyURL &&
+                                    batchSpec.state === BatchSpecState.COMPLETED && (
+                                        <Link to={batchSpec.applyURL} className="btn btn-primary">
+                                            Preview
+                                        </Link>
+                                    )}
                                 {batchSpec.viewerCanRetry && batchSpec.state !== BatchSpecState.COMPLETED && (
                                     // TODO: Add a second button to allow retrying an entire batch spec,
                                     // including completed jobs.
@@ -251,16 +271,18 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                                         )}
                                     </button>
                                 )}
-                                {batchSpec.applyURL && batchSpec.state === BatchSpecState.FAILED && (
-                                    <Link
-                                        to={batchSpec.applyURL}
-                                        className="btn btn-outline-warning"
-                                        data-tooltip="Execution didn't finish successfully in all workspaces. The batch spec might have less changeset specs than expected."
-                                    >
-                                        <AlertCircleIcon className="icon-inline mb-0 mr-2 text-warning" />
-                                        Preview
-                                    </Link>
-                                )}
+                                {selectedIndex !== 2 &&
+                                    batchSpec.applyURL &&
+                                    batchSpec.state === BatchSpecState.FAILED && (
+                                        <Link
+                                            to={batchSpec.applyURL}
+                                            className="btn btn-outline-warning"
+                                            data-tooltip="Execution didn't finish successfully in all workspaces. The batch spec might have less changeset specs than expected."
+                                        >
+                                            <AlertCircleIcon className="icon-inline mb-0 mr-2 text-warning" />
+                                            Preview
+                                        </Link>
+                                    )}
                             </div>
                             {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}
                             {isErrorLike(isRetrying) && <ErrorAlert error={isRetrying} />}
@@ -272,22 +294,54 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
 
             {batchSpec.failureMessage && <ErrorAlert error={batchSpec.failureMessage} />}
 
-            <Collapsible title="Input spec" wholeTitleClickable={false} titleClassName="flex-grow-1" className="mb-3">
-                <BatchSpec originalInput={batchSpec.originalInput} className={styles.batchSpec} />
-            </Collapsible>
-            <div className="d-flex mb-3">
-                <div className={styles.workspacesListContainer}>
-                    <h3 className="mb-2">Workspaces</h3>
-                    <WorkspacesList
-                        batchSpecID={batchSpec.id}
-                        selectedNode={selectedWorkspace ?? undefined}
-                        queryBatchSpecWorkspaces={queryBatchSpecWorkspaces}
-                    />
-                </div>
-                <div className="flex-grow-1">
-                    <SelectedWorkspace workspace={selectedWorkspace} isLightTheme={isLightTheme} />
-                </div>
-            </div>
+            <Tabs size="medium" defaultIndex={1} className="mb-3" onChange={setSelectedIndex}>
+                <TabList>
+                    <Tab key="batch-spec">1. Batch spec</Tab>
+                    <Tab key="execution">2. Execution</Tab>
+                    <Tab key="preview" disabled={!batchSpec.applyURL}>
+                        3. Preview
+                    </Tab>
+                </TabList>
+                <TabPanels>
+                    <TabPanel key="batch-spec">
+                        <div className={styles.editorLayoutContainer}>
+                            <BatchSpec
+                                originalInput={batchSpec.originalInput}
+                                isLightTheme={isLightTheme}
+                                className={classNames(styles.batchSpec, 'mt-3')}
+                            />
+                        </div>
+                    </TabPanel>
+                    <TabPanel key="execution">
+                        <div className="d-flex mt-3">
+                            <div className={styles.workspacesListContainer}>
+                                <h3 className="mb-2">Workspaces</h3>
+                                <WorkspacesList
+                                    batchSpecID={batchSpec.id}
+                                    selectedNode={selectedWorkspace ?? undefined}
+                                    queryBatchSpecWorkspaces={queryBatchSpecWorkspaces}
+                                />
+                            </div>
+                            <div className="flex-grow-1">
+                                <SelectedWorkspace workspace={selectedWorkspace} isLightTheme={isLightTheme} />
+                            </div>
+                        </div>
+                    </TabPanel>
+                    <TabPanel key="preview">
+                        <div className="mt-3">
+                            <BatchChangePreviewPage
+                                authenticatedUser={authenticatedUser}
+                                telemetryService={telemetryService}
+                                history={history}
+                                isLightTheme={isLightTheme}
+                                batchSpecID={batchSpec.id}
+                                location={history.location}
+                                headerComponent={() => null}
+                            />
+                        </div>
+                    </TabPanel>
+                </TabPanels>
+            </Tabs>
         </div>
     )
 }
@@ -363,15 +417,19 @@ const SelectedWorkspace: React.FunctionComponent<{ workspace: Scalars['ID'] | nu
 }) => {
     if (workspace === null) {
         return (
-            <Container>
-                <h3 className="text-center mb-0">Select a workspace to view details.</h3>
-            </Container>
+            <div className="card">
+                <div className="card-body">
+                    <h3 className="text-center mb-0">Select a workspace to view details.</h3>
+                </div>
+            </div>
         )
     }
     return (
-        <Container>
-            <WorkspaceDetails id={workspace} isLightTheme={isLightTheme} />
-        </Container>
+        <div className="card">
+            <div className="card-body">
+                <WorkspaceDetails id={workspace} isLightTheme={isLightTheme} />
+            </div>
+        </div>
     )
 }
 
@@ -427,7 +485,7 @@ const WorkspaceDetails: React.FunctionComponent<
             </div>
             <div className="text-muted mb-3">
                 {workspace.path && <>{workspace.path} | </>}
-                <SourceBranchIcon className="icon-inline" /> {workspace.branch.abbrevName}
+                <SourceBranchIcon className="icon-inline" /> base: <strong>{workspace.branch.abbrevName}</strong>
                 {workspace.startedAt && (
                     <>
                         {' '}
@@ -468,7 +526,6 @@ const WorkspaceDetails: React.FunctionComponent<
                     ))}
                 </>
             )}
-            <h4>Steps</h4>
             {workspace.steps.map((step, index) => (
                 <WorkspaceStep
                     step={step}
@@ -582,97 +639,103 @@ const WorkspaceStep: React.FunctionComponent<
 
     return (
         <Collapsible
-            className="card mb-2"
+            className="mb-2"
             titleClassName="w-100"
             title={
-                <div className="card-body">
-                    <div className="d-flex justify-content-between">
-                        <div className="flex-grow-1">
-                            <StepStateIcon step={step} /> <strong>Step {stepIndex + 1}</strong>{' '}
-                            <span className="text-monospace">{step.run.slice(0, 25)}...</span>
-                        </div>
-                        <div>{step.diffStat && <DiffStat {...step.diffStat} expandedCounts={true} />}</div>
-                        <span className="text-monospace ml-2">
-                            <StepTimer step={step} />
-                        </span>
+                <div className="d-flex justify-content-between">
+                    <div className="flex-grow-1">
+                        <StepStateIcon step={step} /> Step {stepIndex + 1}{' '}
+                        <span className="text-monospace text-muted">{step.run.slice(0, 25)}...</span>
                     </div>
+                    <div>{step.diffStat && <DiffStat {...step.diffStat} expandedCounts={true} />}</div>
+                    <span className="text-monospace text-muted ml-2">
+                        <StepTimer step={step} />
+                    </span>
                 </div>
             }
         >
-            <div className="p-2">
-                {!step.skipped && (
-                    <Tabs size="small">
-                        <TabList>
-                            <Tab key="logs">Logs</Tab>
-                            <Tab key="output-variables">Output variables</Tab>
-                            <Tab key="diff">Diff</Tab>
-                            <Tab key="files-env">Files / Env</Tab>
-                            <Tab key="command-container">Commands / container</Tab>
-                        </TabList>
-                        <TabPanels>
-                            <TabPanel key="logs">
-                                <div className="p-2">
-                                    {!step.startedAt && <p className="text-muted">Step not started yet</p>}
-                                    {step.startedAt && outputLines && <LogOutput text={outputLines.join('\n')} />}
-                                </div>
-                            </TabPanel>
-                            <TabPanel key="output-variables">
-                                <div className="p-2">
-                                    {!step.startedAt && <p className="text-muted">Step not started yet</p>}
-                                    {step.environment.length === 0 && (
-                                        <p className="text-muted mb-0">No output variables specified</p>
-                                    )}
-                                    <ul>
-                                        {step.outputVariables?.map(variable => (
-                                            <li key={variable.name}>
-                                                {variable.name}: {variable.value}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </TabPanel>
-                            <TabPanel key="diff">
-                                <div className="p-2">
-                                    {!step.startedAt && <p className="text-muted">Step not started yet</p>}
-                                    {step.startedAt && (
-                                        <WorkspaceStepFileDiffConnection
-                                            isLightTheme={isLightTheme}
-                                            step={stepIndex + 1}
-                                            workspaceID={workspaceID}
-                                        />
-                                    )}
-                                </div>
-                            </TabPanel>
-                            <TabPanel key="files-env">
-                                <div className="p-2">
-                                    {step.environment.length === 0 && (
-                                        <p className="text-muted mb-0">No environment variables specified</p>
-                                    )}
-                                    <ul>
-                                        {step.environment.map(variable => (
-                                            <li key={variable.name}>
-                                                {variable.name}: {variable.value}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </TabPanel>
-                            <TabPanel key="command-container">
-                                <div className="p-2 pb-0">
-                                    <LogOutput text={step.run} className="mb-2" />
-                                    <p className="mb-0">
-                                        Using container <span className="text-monospace">{step.container}</span>
-                                    </p>
-                                </div>
-                            </TabPanel>
-                        </TabPanels>
-                    </Tabs>
-                )}
-                {step.skipped && (
-                    <p className="mb-0">
-                        <strong>Step has been skipped.</strong>
-                    </p>
-                )}
+            <div className={classNames('card mt-2', styles.stepCard)}>
+                <div className="card-body">
+                    {!step.skipped && (
+                        <Tabs size="small" behavior="forceRender">
+                            <TabList>
+                                <Tab key="logs">Logs</Tab>
+                                <Tab key="output-variables">Output variables</Tab>
+                                <Tab key="diff">Diff</Tab>
+                                <Tab key="files-env">Files / Env</Tab>
+                                <Tab key="command-container">Commands / container</Tab>
+                            </TabList>
+                            <TabPanels>
+                                <TabPanel key="logs">
+                                    <div className="p-2">
+                                        {!step.startedAt && <p className="text-muted mb-0">Step not started yet</p>}
+                                        {step.startedAt && outputLines && <LogOutput text={outputLines.join('\n')} />}
+                                    </div>
+                                </TabPanel>
+                                <TabPanel key="output-variables">
+                                    <div className="p-2">
+                                        {!step.startedAt && <p className="text-muted mb-0">Step not started yet</p>}
+                                        {step.outputVariables?.length === 0 && (
+                                            <p className="text-muted mb-0">No output variables specified</p>
+                                        )}
+                                        <ul className="mb-0">
+                                            {step.outputVariables?.map(variable => (
+                                                <li key={variable.name}>
+                                                    {variable.name}: {variable.value}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </TabPanel>
+                                <TabPanel key="diff">
+                                    <div className="p-2">
+                                        {!step.startedAt && <p className="text-muted mb-0">Step not started yet</p>}
+                                        {step.startedAt && (
+                                            <WorkspaceStepFileDiffConnection
+                                                isLightTheme={isLightTheme}
+                                                step={stepIndex + 1}
+                                                workspaceID={workspaceID}
+                                            />
+                                        )}
+                                    </div>
+                                </TabPanel>
+                                <TabPanel key="files-env">
+                                    <div className="p-2">
+                                        {step.environment.length === 0 && (
+                                            <p className="text-muted mb-0">No environment variables specified</p>
+                                        )}
+                                        <ul className="mb-0">
+                                            {step.environment.map(variable => (
+                                                <li key={variable.name}>
+                                                    {variable.name}: {variable.value}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </TabPanel>
+                                <TabPanel key="command-container">
+                                    <div className="p-2 pb-0">
+                                        {step.ifCondition !== null && (
+                                            <>
+                                                <h4>If condition</h4>
+                                                <LogOutput text={step.ifCondition} className="mb-2" />
+                                            </>
+                                        )}
+                                        <h4>Command</h4>
+                                        <LogOutput text={step.run} className="mb-2" />
+                                        <h4>Container</h4>
+                                        <p className="text-monospace mb-0">{step.container}</p>
+                                    </div>
+                                </TabPanel>
+                            </TabPanels>
+                        </Tabs>
+                    )}
+                    {step.skipped && (
+                        <p className="mb-0">
+                            <strong>Step has been skipped.</strong>
+                        </p>
+                    )}
+                </div>
             </div>
         </Collapsible>
     )

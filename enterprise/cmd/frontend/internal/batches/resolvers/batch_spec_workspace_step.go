@@ -29,6 +29,14 @@ func (r *batchSpecWorkspaceStepResolver) Container() string {
 	return r.step.Container
 }
 
+func (r *batchSpecWorkspaceStepResolver) IfCondition() *string {
+	cond := r.step.IfCondition()
+	if cond == "" {
+		return nil
+	}
+	return &cond
+}
+
 func (r *batchSpecWorkspaceStepResolver) CachedResultFound() bool {
 	return r.stepInfo.StartedAt.IsZero() && r.cachedResult != nil
 }

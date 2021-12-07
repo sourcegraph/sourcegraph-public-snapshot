@@ -4,8 +4,8 @@
 }
 
 .batch-spec {
-    max-height: 400px;
-    overflow-y: auto;
+    min-height: 400px;
+    height: 100%;
 }
 
 .workspaces-list {
@@ -23,4 +23,15 @@
 
 .workspace-selected {
     background-color: var(--color-bg-1);
+}
+
+.step-card {
+    background-color: var(--body-bg);
+}
+
+.editor-layout-container {
+    // Default of min-height: auto when this element is display: flex allows children to
+    // set its height. We want to keep this fixed and have children overflow: auto
+    // instead.
+    min-height: 0;
 }

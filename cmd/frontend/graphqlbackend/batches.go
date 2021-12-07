@@ -807,6 +807,7 @@ type BatchSpecWorkspaceStagesResolver interface {
 type BatchSpecWorkspaceStepResolver interface {
 	Run() string
 	Container() string
+	IfCondition() *string
 	CachedResultFound() bool
 	Skipped() bool
 	OutputLines(ctx context.Context, args *BatchSpecWorkspaceStepOutputLinesArgs) (*[]string, error)

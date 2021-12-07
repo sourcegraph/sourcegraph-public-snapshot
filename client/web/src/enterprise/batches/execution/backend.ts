@@ -82,6 +82,7 @@ const batchSpecWorkspaceFieldsFragment = gql`
             deleted
         }
         container
+        ifCondition
         cachedResultFound
         skipped
         outputLines
@@ -152,6 +153,7 @@ const batchSpecExecutionFieldsFragment = gql`
             id
             url
             displayName
+            username
         }
         namespace {
             id
