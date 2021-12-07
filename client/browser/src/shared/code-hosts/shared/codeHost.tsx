@@ -36,7 +36,7 @@ import {
 import { NotificationType, HoverAlert } from 'sourcegraph'
 
 import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { ActionItemAction, urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
@@ -477,6 +477,48 @@ function initCodeIntelligence({
                 hoverifier.hoverStateUpdates.subscribe(update => {
                     this.setState(update)
                 })
+            )
+            this.subscription.add(
+                hoverifier.hoverStateUpdates
+                    .pipe(
+                        switchMap(({ hoveredTokenElement: token, hoverOverlayProps }) => {
+                            if (token === undefined) {
+                                return EMPTY
+                            }
+                            if (hoverOverlayProps === undefined) {
+                                return EMPTY
+                            }
+
+                            const { actionsOrError } = hoverOverlayProps
+                            const action =
+                                Array.isArray(actionsOrError) &&
+                                actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded')
+                            if (!action) {
+                                return EMPTY
+                            }
+
+                            const def = urlForClientCommandOpen(action.action, window.location.hash)
+                            if (!def) {
+                                return EMPTY
+                            }
+
+                            const oldCursor = token.style.cursor
+                            token.style.cursor = 'pointer'
+
+                            return fromEvent(token, 'click').pipe(
+                                tap(() => {
+                                    const selection = window.getSelection()
+                                    if (selection !== null && selection.toString() !== '') {
+                                        return
+                                    }
+
+                                    window.location.href = def
+                                }),
+                                finalize(() => (token.style.cursor = oldCursor))
+                            )
+                        })
+                    )
+                    .subscribe()
             )
             if (codeHost.isLightTheme) {
                 this.subscription.add(
