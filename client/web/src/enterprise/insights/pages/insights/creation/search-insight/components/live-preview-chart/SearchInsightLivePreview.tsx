@@ -97,7 +97,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
     return (
         <LivePreviewContainer
             dataOrError={dataOrError}
-            loading={loading}
+            loading={!disabled && loading}
             disabled={disabled}
             defaultMock={DEFAULT_MOCK_CHART_CONTENT}
             mockMessage={
