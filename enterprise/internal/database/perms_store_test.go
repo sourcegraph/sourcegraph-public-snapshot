@@ -2141,9 +2141,9 @@ func testPermsStore_DeleteAllRepoPermissionsForUser(db *sql.DB) func(*testing.T)
 		}
 
 		// set pagination to 4 for this test
-		oldPageSize := deleteAllPermissionsForUserPageSize
-		deleteAllPermissionsForUserPageSize = 4
-		defer func() { deleteAllPermissionsForUserPageSize = oldPageSize }()
+		oldPageSize := deleteAllRepoPermissionsForUserPageSize
+		deleteAllRepoPermissionsForUserPageSize = 4
+		defer func() { deleteAllRepoPermissionsForUserPageSize = oldPageSize }()
 
 		// Remove all repo permissions for user=1
 		if err := s.DeleteAllRepoPermissionsForUser(ctx, 1); err != nil {

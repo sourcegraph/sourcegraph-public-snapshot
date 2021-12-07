@@ -1210,24 +1210,25 @@ func (s *PermsStore) execute(ctx context.Context, q *sqlf.Query, vs ...interface
 // (typically user the workerutil package).
 // This method is idempotent and can be safely called multiple times with the same arguments.
 //
-// 🚨 SECURITY: This method must only be called when the explicit permissions API is enabled.
+// 🚨 SECURITY: This method must only be called when the explicit permissions API is enabled
+// and only by the users worker job process of the worker service.
 // It is the caller's responsibility to ensure that it's the case.
 func (s *PermsStore) DeleteAllRepoPermissionsForUser(ctx context.Context, userID int32) (err error) {
 	if Mocks.Perms.DeleteAllPermissionsForUser != nil {
 		return Mocks.Perms.DeleteAllPermissionsForUser(ctx, userID)
 	}
 
-	ctx, save := s.observe(ctx, "DeleteAllPermissionsForUser", "")
+	ctx, save := s.observe(ctx, "DeleteAllRepoPermissionsForUser", "")
 	defer func() {
 		save(&err, otlog.Int32("userID", userID))
 	}()
 
 	if s.InTransaction() {
-		return errors.Wrap(err, "DeleteAllPermissionsForUser must not be called from within a transaction")
+		return errors.Wrap(err, "DeleteAllRepoPermissionsForUser must not be called from within a transaction")
 	}
 
 	for {
-		hasNextPage, err := s.batchDeleteAllPermissionsForUser(ctx, userID)
+		hasNextPage, err := s.batchDeleteRepoAllPermissionsForUser(ctx, userID)
 		if err != nil {
 			return errors.Wrap(err, "batch delete all repo permissions for user")
 		}
@@ -1240,14 +1241,14 @@ func (s *PermsStore) DeleteAllRepoPermissionsForUser(ctx context.Context, userID
 	return nil
 }
 
-func (s *PermsStore) batchDeleteAllPermissionsForUser(ctx context.Context, userID int32) (hasNextPage bool, err error) {
+func (s *PermsStore) batchDeleteRepoAllPermissionsForUser(ctx context.Context, userID int32) (hasNextPage bool, err error) {
 	txs, err := s.Transact(ctx)
 	if err != nil {
 		return false, err
 	}
 	defer func() { err = txs.Done(err) }()
 
-	q := deleteAllUserRepositoryPermissionsQuery(userID, deleteAllPermissionsForUserPageSize)
+	q := deleteAllUserRepoPermissionsQuery(userID, deleteAllRepoPermissionsForUserPageSize)
 
 	res, err := s.ExecResult(ctx, q)
 	if err != nil {
@@ -1261,9 +1262,9 @@ func (s *PermsStore) batchDeleteAllPermissionsForUser(ctx context.Context, userI
 	return n > 0, nil
 }
 
-// deleteAllUserRepositoryPermissionsQuery updates all rows contain the given user id
+// deleteAllUserRepoPermissionsQuery updates all rows contain the given user id
 // up to the limit defined by defaultDeleteAllPermissionsForUserPageSize.
-func deleteAllUserRepositoryPermissionsQuery(userID int32, pageSize int32) *sqlf.Query {
+func deleteAllUserRepoPermissionsQuery(userID int32, pageSize int32) *sqlf.Query {
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:PermsStore.DeleteAllPermissionsForUser
 WITH cte AS (
@@ -1287,17 +1288,17 @@ FROM cte
 	)
 }
 
-// deleteAllPermissionsForUserPageSize restricts page size for DeleteAllPermissionsForUser to
+// deleteAllRepoPermissionsForUserPageSize restricts page size for DeleteAllPermissionsForUser to
 // avoid locking the whole table in case the user has access to all repositories.
 //
 // May be modified for testing.
-var deleteAllPermissionsForUserPageSize int32 = defaultDeleteAllPermissionsForUserPageSize
+var deleteAllRepoPermissionsForUserPageSize int32 = defaultDeleteAllRepoPermissionsForUserPageSize
 
-// defaultDeleteAllPermissionsForUserPageSize sets a default for deleteAllPermissionsForUserPageSize.
+// defaultDeleteAllRepoPermissionsForUserPageSize sets a default for deleteAllPermissionsForUserPageSize.
 //
 // Value set to avoid locking all repository permissions in case a user
 // has access to all repos.
-const defaultDeleteAllPermissionsForUserPageSize = 10_000
+const defaultDeleteAllRepoPermissionsForUserPageSize = 10_000
 
 // permsLoadValues contains return values of (*PermsStore).load method.
 type permsLoadValues struct {
