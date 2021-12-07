@@ -4,7 +4,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
+import { useMutation, useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graphql/schema'
 import {
     SettingsCascadeProps,
@@ -25,11 +25,13 @@ import {
     GetBatchChangeVariables,
     OrgAreaOrganizationFields,
     UserAreaUserFields,
+    CreateEmptyBatchChangeVariables,
+    CreateEmptyBatchChangeResult,
 } from '../../../graphql-operations'
 import { Settings } from '../../../schema/settings.schema'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
-import { GET_BATCH_CHANGE } from './backend'
+import { GET_BATCH_CHANGE, CREATE_EMPTY_BATCH_CHANGE } from './backend'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import helloWorldSample from './library/hello-world.batch.yaml'
 import { LibraryPane } from './library/LibraryPane'
@@ -131,6 +133,11 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
     // TODO: This will always be available once the "Create" form from the other
     // branch is ready.
     const batchSpecID = batchChange?.currentSpec.id
+
+    const [
+        createEmptyBatchChange,
+        { data: createEmptyBatchChangeData, loading: createEmptyBatchChangeLoading },
+    ] = useMutation<CreateEmptyBatchChangeResult, CreateEmptyBatchChangeVariables>(CREATE_EMPTY_BATCH_CHANGE)
 
     const { namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade, namespace)
 

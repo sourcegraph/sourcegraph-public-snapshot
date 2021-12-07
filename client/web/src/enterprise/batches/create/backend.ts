@@ -54,6 +54,15 @@ export const EXECUTE_BATCH_SPEC = gql`
 //     }
 // `
 
+export const CREATE_EMPTY_BATCH_CHANGE = gql`
+    mutation CreateEmptyBatchChange($namespace: ID!, $name: String!) {
+        createEmptyBatchChange(namespace: $namespace, name: $name) {
+            id
+            name
+        }
+    }
+`
+
 export const REPLACE_BATCH_SPEC_INPUT = gql`
     mutation ReplaceBatchSpecInput($previousSpec: ID!, $spec: String!, $noCache: Boolean!) {
         replaceBatchSpecInput(previousSpec: $previousSpec, batchSpec: $spec, noCache: $noCache) {
