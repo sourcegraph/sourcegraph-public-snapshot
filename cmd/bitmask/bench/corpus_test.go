@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/sourcegraph/sourcegraph/cmd/bitmask"
 	"math"
 	"os"
@@ -64,6 +65,7 @@ func BenchmarkQueryChromiumMedium(b *testing.B) { benchmarkMediumQuery(b, chromi
 func BenchmarkQueryChromiumLong(b *testing.B)   { benchmarkLongQuery(b, chromium) }
 
 func loadCorpus(b *testing.B, corpus Corpus) {
+	bitmask.IsProgressBarEnabled = false
 	var index *bitmask.RepoIndex
 	var err error
 	for i := 0; i < b.N; i++ {
@@ -73,6 +75,11 @@ func loadCorpus(b *testing.B, corpus Corpus) {
 		}
 	}
 	b.StopTimer()
+	for _, b := range index.Blobs {
+		if b.Filter.K() > 7 {
+			fmt.Println(b.Filter.K())
+		}
+	}
 	stat, err := os.Stat(corpus.indexCachePath())
 	if err != nil {
 		panic(err)

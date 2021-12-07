@@ -36,6 +36,8 @@ const (
 	MaxArity                 = 3
 )
 
+var IsProgressBarEnabled = true
+
 type RepoIndex struct {
 	Dir   string
 	Blobs []BlobIndex
@@ -89,6 +91,7 @@ func (b *BlobIndex) ReadFrom(stream io.Reader) (int64, error) {
 }
 
 type Ngrams struct {
+	Int64Bytes []byte
 	SeenHashes map[uint64]struct{}
 	Unigram    Ngram
 	Bigram1    Ngram
@@ -96,19 +99,20 @@ type Ngrams struct {
 	Trigram1   Ngram
 	Trigram2   Ngram
 	Trigram3   Ngram
-	Quadgram1  Ngram
-	Quadgram2  Ngram
-	Quadgram3  Ngram
-	Quadgram4  Ngram
-	Pentagram1 Ngram
-	Pentagram2 Ngram
-	Pentagram3 Ngram
-	Pentagram4 Ngram
-	Pentagram5 Ngram
+	//Quadgram1  Ngram
+	//Quadgram2  Ngram
+	//Quadgram3  Ngram
+	//Quadgram4  Ngram
+	//Pentagram1 Ngram
+	//Pentagram2 Ngram
+	//Pentagram3 Ngram
+	//Pentagram4 Ngram
+	//Pentagram5 Ngram
 }
 
 func NewNgrams() Ngrams {
 	return Ngrams{
+		Int64Bytes: make([]byte, unsafe.Sizeof(uint64(0))),
 		SeenHashes: map[uint64]struct{}{},
 		Unigram:    Ngram{Arity: 1, Hash: xxhash.New()},
 		Bigram1:    Ngram{Arity: 2, Hash: xxhash.New()},
@@ -116,38 +120,38 @@ func NewNgrams() Ngrams {
 		Trigram1:   Ngram{Arity: 3, Hash: xxhash.New()},
 		Trigram2:   Ngram{Arity: 3, Hash: xxhash.New()},
 		Trigram3:   Ngram{Arity: 3, Hash: xxhash.New()},
-		Quadgram1:  Ngram{Arity: 4, Hash: xxhash.New()},
-		Quadgram2:  Ngram{Arity: 4, Hash: xxhash.New()},
-		Quadgram3:  Ngram{Arity: 4, Hash: xxhash.New()},
-		Quadgram4:  Ngram{Arity: 4, Hash: xxhash.New()},
-		Pentagram1: Ngram{Arity: 5, Hash: xxhash.New()},
-		Pentagram2: Ngram{Arity: 5, Hash: xxhash.New()},
-		Pentagram3: Ngram{Arity: 5, Hash: xxhash.New()},
-		Pentagram4: Ngram{Arity: 5, Hash: xxhash.New()},
-		Pentagram5: Ngram{Arity: 5, Hash: xxhash.New()},
+		//Quadgram1:  Ngram{Arity: 4, Hash: xxhash.New()},
+		//Quadgram2:  Ngram{Arity: 4, Hash: xxhash.New()},
+		//Quadgram3:  Ngram{Arity: 4, Hash: xxhash.New()},
+		//Quadgram4:  Ngram{Arity: 4, Hash: xxhash.New()},
+		//Pentagram1: Ngram{Arity: 5, Hash: xxhash.New()},
+		//Pentagram2: Ngram{Arity: 5, Hash: xxhash.New()},
+		//Pentagram3: Ngram{Arity: 5, Hash: xxhash.New()},
+		//Pentagram4: Ngram{Arity: 5, Hash: xxhash.New()},
+		//Pentagram5: Ngram{Arity: 5, Hash: xxhash.New()},
 	}
 
 }
 func (g *Ngrams) Update(b int32) {
-	g.Unigram.Update(b)
+	g.Unigram.Update(g, b)
 
-	g.Bigram1.Update(b)
-	g.Bigram2.Update(b)
+	g.Bigram1.Update(g, b)
+	g.Bigram2.Update(g, b)
 
-	g.Trigram1.Update(b)
-	g.Trigram2.Update(b)
-	g.Trigram3.Update(b)
+	g.Trigram1.Update(g, b)
+	g.Trigram2.Update(g, b)
+	g.Trigram3.Update(g, b)
 
-	g.Quadgram1.Update(b)
-	g.Quadgram2.Update(b)
-	g.Quadgram3.Update(b)
-	g.Quadgram4.Update(b)
-
-	g.Pentagram1.Update(b)
-	g.Pentagram2.Update(b)
-	g.Pentagram3.Update(b)
-	g.Pentagram4.Update(b)
-	g.Pentagram5.Update(b)
+	//g.Quadgram1.Update(b)
+	//g.Quadgram2.Update(b)
+	//g.Quadgram3.Update(b)
+	//g.Quadgram4.Update(b)
+	//
+	//g.Pentagram1.Update(b)
+	//g.Pentagram2.Update(b)
+	//g.Pentagram3.Update(b)
+	//g.Pentagram4.Update(b)
+	//g.Pentagram5.Update(b)
 }
 
 func (g *Ngrams) OnIndex(index int, b int32, onBytes OnBytes) {
@@ -170,28 +174,28 @@ func (g *Ngrams) OnIndex(index int, b int32, onBytes OnBytes) {
 	case 2:
 		g.Trigram3.EmitHashAndClear(g, onBytes)
 	}
-	switch index % 4 {
-	case 0:
-		g.Quadgram1.EmitHashAndClear(g, onBytes)
-	case 1:
-		g.Quadgram2.EmitHashAndClear(g, onBytes)
-	case 2:
-		g.Quadgram3.EmitHashAndClear(g, onBytes)
-	case 3:
-		g.Quadgram4.EmitHashAndClear(g, onBytes)
-	}
-	switch index % 5 {
-	case 0:
-		g.Pentagram1.EmitHashAndClear(g, onBytes)
-	case 1:
-		g.Pentagram2.EmitHashAndClear(g, onBytes)
-	case 2:
-		g.Pentagram3.EmitHashAndClear(g, onBytes)
-	case 3:
-		g.Pentagram4.EmitHashAndClear(g, onBytes)
-	case 4:
-		g.Pentagram5.EmitHashAndClear(g, onBytes)
-	}
+	//switch index % 4 {
+	//case 0:
+	//	g.Quadgram1.EmitHashAndClear(g, onBytes)
+	//case 1:
+	//	g.Quadgram2.EmitHashAndClear(g, onBytes)
+	//case 2:
+	//	g.Quadgram3.EmitHashAndClear(g, onBytes)
+	//case 3:
+	//	g.Quadgram4.EmitHashAndClear(g, onBytes)
+	//}
+	//switch index % 5 {
+	//case 0:
+	//	g.Pentagram1.EmitHashAndClear(g, onBytes)
+	//case 1:
+	//	g.Pentagram2.EmitHashAndClear(g, onBytes)
+	//case 2:
+	//	g.Pentagram3.EmitHashAndClear(g, onBytes)
+	//case 3:
+	//	g.Pentagram4.EmitHashAndClear(g, onBytes)
+	//case 4:
+	//	g.Pentagram5.EmitHashAndClear(g, onBytes)
+	//}
 }
 
 type Ngram struct {
@@ -200,28 +204,26 @@ type Ngram struct {
 }
 
 func (g *Ngram) EmitHashAndClear(gs *Ngrams, onBytes OnBytes) {
-	if g.Arity < MinArity || g.Arity > MaxArity {
-		return
-	}
+	//if g.Arity < MinArity || g.Arity > MaxArity {
+	//	return
+	//}
 	hash := g.Hash.Sum64()
 	if _, ok := gs.SeenHashes[hash]; !ok {
 		gs.SeenHashes[hash] = struct{}{}
-		hashedBytes := make([]byte, unsafe.Sizeof(int64(1)))
-		binary.LittleEndian.PutUint64(hashedBytes, hash)
-		onBytes(hashedBytes, g.Arity)
+		binary.LittleEndian.PutUint64(gs.Int64Bytes, hash)
+		onBytes(gs.Int64Bytes, g.Arity)
 	}
 	g.Hash.Reset()
 }
 
-func (g *Ngram) Update(b int32) {
-	if g.Arity < MinArity || g.Arity > MaxArity {
-		return
-	}
-	var hashedBytes = make([]byte, unsafe.Sizeof(uint32(1)))
-	binary.BigEndian.PutUint32(hashedBytes, uint32(b))
+func (g *Ngram) Update(gs *Ngrams, b int32) {
+	//if g.Arity < MinArity || g.Arity > MaxArity {
+	//	return
+	//}
+	binary.BigEndian.PutUint64(gs.Int64Bytes, uint64(b))
 
 	// always returns len(hashedBytes), nil
-	_, _ = g.Hash.Write(hashedBytes)
+	_, _ = g.Hash.Write(gs.Int64Bytes)
 }
 
 type OnBytes func(b []byte, arity int)
@@ -371,10 +373,15 @@ func NewInMemoryRepoIndex(fs FileSystem) (*RepoIndex, error) {
 
 func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 	res := make(chan BlobIndex, len(filenames))
-	bar := progressbar.Default(int64(len(filenames)))
+	var bar *progressbar.ProgressBar
+	if IsProgressBarEnabled {
+		bar = progressbar.Default(int64(len(filenames)))
+	}
 	var wg sync.WaitGroup
 	for _, filename := range filenames {
-		bar.Add(1)
+		if IsProgressBarEnabled {
+			bar.Add(1)
+		}
 		textBytes, err := fs.ReadRelativeFilename(filename)
 		if err != nil {
 			fmt.Printf("err %v\n", err)
@@ -393,8 +400,9 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 		wg.Add(1)
 		go func(path string) {
 			defer wg.Done()
-			ngrams := onGrams(text, func(b []byte, arity int) {
-			})
+			for i := range text {
+
+			}
 			bloomSize := uint(len(ngrams.SeenHashes))
 			filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
 			data := make([]byte, unsafe.Sizeof(uint64(1)))

@@ -1,0 +1,7 @@
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/bitmask/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkLoadKubernetes-12    	       2	 525879155 ns/op	  53625347 archive-disk-size	  46390728 bloom-storage-size	         0.2836 compression-ratio	  50243106 index-disk-size	 163572693 indexed-blobs-size	401909772 B/op	 4882454 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/bitmask/bench	2.497s
