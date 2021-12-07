@@ -186,8 +186,7 @@ func TestPermissionLevels(t *testing.T) {
 					queryBatchChange := `
 				  query($batchChange: ID!) {
 				    node(id: $batchChange) { ... on BatchChange { id, viewerCanAdminister } }
-				  }
-                `
+				  }`
 
 					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
 					apitest.MustExec(actorCtx, t, s, input, &res, queryBatchChange)
@@ -245,8 +244,7 @@ func TestPermissionLevels(t *testing.T) {
 					queryBatchSpec := `
 				  query($batchSpec: ID!) {
 				    node(id: $batchSpec) { ... on BatchSpec { id, viewerCanAdminister } }
-				  }
-                `
+				  }`
 
 					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
 					apitest.MustExec(actorCtx, t, s, input, &res, queryBatchSpec)
@@ -301,8 +299,7 @@ func TestPermissionLevels(t *testing.T) {
 					queryCodeHosts := `
 				  query($user: ID!) {
 				    node(id: $user) { ... on User { batchChangesCodeHosts { totalCount } } }
-				  }
-                `
+				  }`
 
 					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
 					errors := apitest.Exec(actorCtx, t, s, input, &res, queryCodeHosts)
@@ -392,8 +389,7 @@ func TestPermissionLevels(t *testing.T) {
 					queryCodeHosts := `
 				  query($id: ID!) {
 				    node(id: $id) { ... on BatchChangesCredential { id } }
-				  }
-                `
+				  }`
 
 					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
 					errors := apitest.Exec(actorCtx, t, s, input, &res, queryCodeHosts)
@@ -405,206 +401,6 @@ func TestPermissionLevels(t *testing.T) {
 					if !tc.wantErr {
 						if have, want := res.Node.ID, string(graphqlID); have != want {
 							t.Fatalf("invalid node returned, wanted ID=%q, have=%q", want, have)
-						}
-					}
-				})
-			}
-		})
-
-		t.Run("CreateBatchChangesCredential", func(t *testing.T) {
-			tests := []struct {
-				name        string
-				currentUser int32
-				user        int32
-				wantAuthErr bool
-			}{
-				{
-					name:        "site-admin for other user",
-					currentUser: adminID,
-					user:        userID,
-					wantAuthErr: false,
-				},
-				{
-					name:        "non-site-admin for other user",
-					currentUser: userID,
-					user:        adminID,
-					wantAuthErr: true,
-				},
-				{
-					name:        "non-site-admin for self",
-					currentUser: userID,
-					user:        userID,
-					wantAuthErr: false,
-				},
-
-				{
-					name:        "site-admin for site-wide",
-					currentUser: adminID,
-					user:        0,
-					wantAuthErr: false,
-				},
-				{
-					name:        "non-site-admin for site-wide",
-					currentUser: userID,
-					user:        0,
-					wantAuthErr: true,
-				},
-			}
-
-			for _, tc := range tests {
-				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db, key)
-					pruneSiteCredentials(t, cstore)
-
-					var res struct {
-						CreateBatchChangesCredential apitest.BatchChangesCredential
-					}
-
-					input := map[string]interface{}{
-						"externalServiceKind": extsvc.KindGitHub,
-						"externalServiceURL":  "https://github.com/",
-						"credential":          "SOSECRET",
-					}
-					if tc.user != 0 {
-						input["user"] = graphqlbackend.MarshalUserID(tc.user)
-					}
-					mutationCreateBatchChangesCredential := `
-					mutation($user: ID, $externalServiceKind: ExternalServiceKind!, $externalServiceURL: String!, $credential: String!) {
-						createBatchChangesCredential(
-							user: $user,
-							externalServiceKind: $externalServiceKind,
-							externalServiceURL: $externalServiceURL,
-							credential: $credential
-						) { id }
-					}
-                	`
-
-					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-					errors := apitest.Exec(actorCtx, t, s, input, &res, mutationCreateBatchChangesCredential)
-					if tc.wantAuthErr {
-						if len(errors) != 1 {
-							t.Fatalf("expected 1 error, but got %d: %s", len(errors), errors)
-						}
-						if !strings.Contains(errors[0].Error(), "must be authenticated") && !strings.Contains(errors[0].Error(), "must be site admin") {
-							t.Fatalf("wrong error: %s %T", errors[0], errors[0])
-						}
-					} else {
-						// We don't care about other errors, we only want to
-						// check that we didn't get an auth error.
-						for _, e := range errors {
-							if strings.Contains(e.Error(), "must be authenticated") {
-								t.Fatalf("auth error wrongly returned: %s %T", errors[0], errors[0])
-							}
-							if strings.Contains(e.Error(), "must be site admin") {
-								t.Fatalf("auth error wrongly returned: %s %T", errors[0], errors[0])
-							}
-						}
-					}
-				})
-			}
-		})
-
-		t.Run("DeleteBatchChangesCredential", func(t *testing.T) {
-			tests := []struct {
-				name        string
-				currentUser int32
-				user        int32
-				wantAuthErr bool
-			}{
-				{
-					name:        "site-admin for other user",
-					currentUser: adminID,
-					user:        userID,
-					wantAuthErr: false,
-				},
-				{
-					name:        "non-site-admin for other user",
-					currentUser: userID,
-					user:        adminID,
-					wantAuthErr: true,
-				},
-				{
-					name:        "non-site-admin for self",
-					currentUser: userID,
-					user:        userID,
-					wantAuthErr: false,
-				},
-
-				{
-					name:        "site-admin for site-credential",
-					currentUser: adminID,
-					user:        0,
-					wantAuthErr: false,
-				},
-				{
-					name:        "non-site-admin for site-credential",
-					currentUser: userID,
-					user:        0,
-					wantAuthErr: true,
-				},
-			}
-
-			for _, tc := range tests {
-				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db, key)
-					pruneSiteCredentials(t, cstore)
-
-					var batchChangesCredentialID graphql.ID
-					if tc.user != 0 {
-						cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-							Domain:              database.UserCredentialDomainBatches,
-							ExternalServiceID:   "https://github.com/",
-							ExternalServiceType: extsvc.TypeGitHub,
-							UserID:              tc.user,
-						}, &auth.OAuthBearerToken{Token: "SOSECRET"})
-						if err != nil {
-							t.Fatal(err)
-						}
-						batchChangesCredentialID = marshalBatchChangesCredentialID(cred.ID, false)
-					} else {
-						cred := &btypes.SiteCredential{
-							ExternalServiceID:   "https://github.com/",
-							ExternalServiceType: extsvc.TypeGitHub,
-						}
-						token := &auth.OAuthBearerToken{Token: "SOSECRET"}
-						if err := cstore.CreateSiteCredential(ctx, cred, token); err != nil {
-							t.Fatal(err)
-						}
-						batchChangesCredentialID = marshalBatchChangesCredentialID(cred.ID, true)
-					}
-
-					var res struct {
-						DeleteBatchChangesCredential apitest.EmptyResponse
-					}
-
-					input := map[string]interface{}{
-						"batchChangesCredential": batchChangesCredentialID,
-					}
-					mutationDeleteBatchChangesCredential := `
-					mutation($batchChangesCredential: ID!) {
-						deleteBatchChangesCredential(batchChangesCredential: $batchChangesCredential) { alwaysNil }
-					}
-                `
-
-					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-					errors := apitest.Exec(actorCtx, t, s, input, &res, mutationDeleteBatchChangesCredential)
-					if tc.wantAuthErr {
-						if len(errors) != 1 {
-							t.Fatalf("expected 1 error, but got %d: %s", len(errors), errors)
-						}
-						if !strings.Contains(errors[0].Error(), "must be authenticated") && !strings.Contains(errors[0].Error(), "must be site admin") {
-							t.Fatalf("wrong error: %s %T", errors[0], errors[0])
-						}
-					} else {
-						// We don't care about other errors, we only want to
-						// check that we didn't get an auth error.
-						for _, e := range errors {
-							if strings.Contains(e.Error(), "must be authenticated") {
-								t.Fatalf("auth error wrongly returned: %s %T", errors[0], errors[0])
-							}
-							if strings.Contains(e.Error(), "must be site admin") {
-								t.Fatalf("auth error wrongly returned: %s %T", errors[0], errors[0])
-							}
 						}
 					}
 				})
@@ -937,6 +733,206 @@ func TestPermissionLevels(t *testing.T) {
 				}
 			})
 		}
+	})
+
+	t.Run("credentials mutations", func(t *testing.T) {
+		t.Run("CreateBatchChangesCredential", func(t *testing.T) {
+			tests := []struct {
+				name        string
+				currentUser int32
+				user        int32
+				wantAuthErr bool
+			}{
+				{
+					name:        "site-admin for other user",
+					currentUser: adminID,
+					user:        userID,
+					wantAuthErr: false,
+				},
+				{
+					name:        "non-site-admin for other user",
+					currentUser: userID,
+					user:        adminID,
+					wantAuthErr: true,
+				},
+				{
+					name:        "non-site-admin for self",
+					currentUser: userID,
+					user:        userID,
+					wantAuthErr: false,
+				},
+
+				{
+					name:        "site-admin for site-wide",
+					currentUser: adminID,
+					user:        0,
+					wantAuthErr: false,
+				},
+				{
+					name:        "non-site-admin for site-wide",
+					currentUser: userID,
+					user:        0,
+					wantAuthErr: true,
+				},
+			}
+
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					pruneUserCredentials(t, db, key)
+					pruneSiteCredentials(t, cstore)
+
+					var res struct {
+						CreateBatchChangesCredential apitest.BatchChangesCredential
+					}
+
+					input := map[string]interface{}{
+						"externalServiceKind": extsvc.KindGitHub,
+						"externalServiceURL":  "https://github.com/",
+						"credential":          "SOSECRET",
+					}
+					if tc.user != 0 {
+						input["user"] = graphqlbackend.MarshalUserID(tc.user)
+					}
+					mutationCreateBatchChangesCredential := `
+					mutation($user: ID, $externalServiceKind: ExternalServiceKind!, $externalServiceURL: String!, $credential: String!) {
+						createBatchChangesCredential(
+							user: $user,
+							externalServiceKind: $externalServiceKind,
+							externalServiceURL: $externalServiceURL,
+							credential: $credential
+						) { id }
+					}`
+
+					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+					errors := apitest.Exec(actorCtx, t, s, input, &res, mutationCreateBatchChangesCredential)
+					if tc.wantAuthErr {
+						if len(errors) != 1 {
+							t.Fatalf("expected 1 error, but got %d: %s", len(errors), errors)
+						}
+						if !strings.Contains(errors[0].Error(), "must be authenticated") && !strings.Contains(errors[0].Error(), "must be site admin") {
+							t.Fatalf("wrong error: %s %T", errors[0], errors[0])
+						}
+					} else {
+						// We don't care about other errors, we only want to
+						// check that we didn't get an auth error.
+						for _, e := range errors {
+							if strings.Contains(e.Error(), "must be authenticated") {
+								t.Fatalf("auth error wrongly returned: %s %T", errors[0], errors[0])
+							}
+							if strings.Contains(e.Error(), "must be site admin") {
+								t.Fatalf("auth error wrongly returned: %s %T", errors[0], errors[0])
+							}
+						}
+					}
+				})
+			}
+		})
+
+		t.Run("DeleteBatchChangesCredential", func(t *testing.T) {
+			tests := []struct {
+				name        string
+				currentUser int32
+				user        int32
+				wantAuthErr bool
+			}{
+				{
+					name:        "site-admin for other user",
+					currentUser: adminID,
+					user:        userID,
+					wantAuthErr: false,
+				},
+				{
+					name:        "non-site-admin for other user",
+					currentUser: userID,
+					user:        adminID,
+					wantAuthErr: true,
+				},
+				{
+					name:        "non-site-admin for self",
+					currentUser: userID,
+					user:        userID,
+					wantAuthErr: false,
+				},
+
+				{
+					name:        "site-admin for site-credential",
+					currentUser: adminID,
+					user:        0,
+					wantAuthErr: false,
+				},
+				{
+					name:        "non-site-admin for site-credential",
+					currentUser: userID,
+					user:        0,
+					wantAuthErr: true,
+				},
+			}
+
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					pruneUserCredentials(t, db, key)
+					pruneSiteCredentials(t, cstore)
+
+					var batchChangesCredentialID graphql.ID
+					if tc.user != 0 {
+						cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
+							Domain:              database.UserCredentialDomainBatches,
+							ExternalServiceID:   "https://github.com/",
+							ExternalServiceType: extsvc.TypeGitHub,
+							UserID:              tc.user,
+						}, &auth.OAuthBearerToken{Token: "SOSECRET"})
+						if err != nil {
+							t.Fatal(err)
+						}
+						batchChangesCredentialID = marshalBatchChangesCredentialID(cred.ID, false)
+					} else {
+						cred := &btypes.SiteCredential{
+							ExternalServiceID:   "https://github.com/",
+							ExternalServiceType: extsvc.TypeGitHub,
+						}
+						token := &auth.OAuthBearerToken{Token: "SOSECRET"}
+						if err := cstore.CreateSiteCredential(ctx, cred, token); err != nil {
+							t.Fatal(err)
+						}
+						batchChangesCredentialID = marshalBatchChangesCredentialID(cred.ID, true)
+					}
+
+					var res struct {
+						DeleteBatchChangesCredential apitest.EmptyResponse
+					}
+
+					input := map[string]interface{}{
+						"batchChangesCredential": batchChangesCredentialID,
+					}
+					mutationDeleteBatchChangesCredential := `
+					mutation($batchChangesCredential: ID!) {
+						deleteBatchChangesCredential(batchChangesCredential: $batchChangesCredential) { alwaysNil }
+					}`
+
+					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+					errors := apitest.Exec(actorCtx, t, s, input, &res, mutationDeleteBatchChangesCredential)
+					if tc.wantAuthErr {
+						if len(errors) != 1 {
+							t.Fatalf("expected 1 error, but got %d: %s", len(errors), errors)
+						}
+						if !strings.Contains(errors[0].Error(), "must be authenticated") && !strings.Contains(errors[0].Error(), "must be site admin") {
+							t.Fatalf("wrong error: %s %T", errors[0], errors[0])
+						}
+					} else {
+						// We don't care about other errors, we only want to
+						// check that we didn't get an auth error.
+						for _, e := range errors {
+							if strings.Contains(e.Error(), "must be authenticated") {
+								t.Fatalf("auth error wrongly returned: %s %T", errors[0], errors[0])
+							}
+							if strings.Contains(e.Error(), "must be site admin") {
+								t.Fatalf("auth error wrongly returned: %s %T", errors[0], errors[0])
+							}
+						}
+					}
+				})
+			}
+		})
 	})
 }
 

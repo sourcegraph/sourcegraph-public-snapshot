@@ -43,10 +43,12 @@ type NotebookBlock struct {
 	FileInput     *NotebookFileBlockInput     `json:"fileInput,omitempty"`
 }
 
+type NotebookBlocks []NotebookBlock
+
 type Notebook struct {
 	ID            int64
 	Title         string
-	Blocks        []NotebookBlock
+	Blocks        NotebookBlocks
 	Public        bool
 	CreatorUserID int32
 	CreatedAt     time.Time

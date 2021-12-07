@@ -105,8 +105,6 @@ export interface RepoContainerContext
 
     globbing: boolean
 
-    showSearchNotebook: boolean
-
     isMacPlatform: boolean
 
     isSourcegraphDotCom: boolean
@@ -146,7 +144,6 @@ interface RepoContainerProps
     authenticatedUser: AuthenticatedUser | null
     history: H.History
     globbing: boolean
-    showSearchNotebook: boolean
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
 }

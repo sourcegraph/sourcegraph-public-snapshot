@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -168,5 +169,8 @@ func readQueryFromFile(fs fs.FS, filepath string) (*sqlf.Query, error) {
 		return nil, err
 	}
 
-	return sqlf.Sprintf(string(contents)), nil
+	normalizedQuery := string(contents)
+	normalizedQuery = strings.ReplaceAll(normalizedQuery, "%", "%%")
+
+	return sqlf.Sprintf(normalizedQuery), nil
 }
