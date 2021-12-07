@@ -444,7 +444,7 @@ func (c *V3Client) GetRepository(ctx context.Context, owner, name string) (*Repo
 		return repo, keys, err
 	}
 
-	return c.cachedGetRepository(ctx, key, getRepoFromAPI, true)
+	return c.cachedGetRepository(ctx, key, getRepoFromAPI)
 }
 
 // GetOrganization gets an org from GitHub by its login.
