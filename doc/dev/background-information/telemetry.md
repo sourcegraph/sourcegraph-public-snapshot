@@ -14,6 +14,41 @@ Examples of builtin actions include `goToDefinition`, `goToDefinition.preloaded`
 
 Examples of extension actions include [`git.blame.toggle` from sourcegraph/git-extras](https://sourcegraph.com/extensions/sourcegraph/git-extras/-/contributions). An extension's action IDs are specified in its extension manifest and can be viewed on the **Contributions** tab of its extension registry listing.
 
-## Browser extension telemetry
+## Browser extension telemetry (not native integration)
 
-> NOTE: This section is incomplete.
+#### Action telemetry
+
+Browser extension telemetry data is sent only to the connected Sourcegraph instance URL (except in aggregate form as documented in "[Pings](../../admin/pings.md)"). 
+
+**The telemetry is enabled if one of the following conditions are valid:**
+  - if NOT in Firefox. TODO: clarify why?
+  - if connected to self-hosted Sourcegraph instance URL
+  - if `Send telemetry` is enabled in OptionPopupPage
+
+**All browser extension events are triggered with:**
+- `source`: `CODEHOSTINTEGRATION`
+- `anonymizedUserId`: generated user ID, stored in browser local storage
+- `sourcegraphURL`: connected/configured SourcegraphURL
+- `platform`: detected platform name
+
+**Following events are triggered from the browser extension:**
+- `hover`: when successfully showing non-empty/non-error hover information
+- `action.id`: Sourcegraph extension action ID
+  - when clicking any action from the command palette
+  - or when clicking from the code view toolbar (e.g., open in VsCode)
+
+  - > NOTE: Seems like we don't pass telemetryService to Sourcegraph extensions in Bext as we do in Web.
+
+#### UTM markers
+- `utm_source={platform-name}&utm_campaign=global-search`: Github enhanced search feature (item in search dropdown)
+- `utm_source=omnibox`: Browser omnibox (a.k.a 'src'). Note: Supported in Chrome and Firefox
+- `/sign-in?close=true&utm_source={platform-name}`: SignIn button instead of ViewOnSourcegraph when connected to self-hosted instance. TODO: Clarify if signIn button still works properly
+- `?utm_source={platform-name}`: "View File In Sourcegraph" button in file editor toolbar
+- `?utm_source={platform-name}`: "View Diff In Sourcegraph" button in file editor toolbar
+- `?utm_source={platform-name}`: "View Repo In Sourcegraph" button on the top
+
+
+#### Error logging (Sentry)
+
+All errors in background/content scripts are automatically logged by Sentry if `Allow Error Reporting` is enabled.
+> Note: stack trace might include sensitive information stored in variables.
