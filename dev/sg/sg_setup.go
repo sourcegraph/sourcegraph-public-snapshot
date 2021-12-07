@@ -272,6 +272,9 @@ NOTE: You can ignore this if you're not a Sourcegraph employee.
 		name:               "Programming languages & tooling",
 		requiresRepository: true,
 		autoFixing:         true,
+		// autoFixingDependencies are only accounted for it the user asks to fix the category. Otherwise, they'll never be
+		// checked nor print an error, because the only thing that matters to run Sourcegraph are the final dependencies
+		// defined in the dependencies field itself.
 		autoFixingDependencies: []*dependency{
 			{
 				name:  "asdf",
