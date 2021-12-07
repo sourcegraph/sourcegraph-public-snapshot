@@ -52,8 +52,7 @@ export const Badge: React.FunctionComponent<BadgeProps> = ({
     ...otherProps
 }) => {
     const brandedClassName =
-        !unstyled &&
-        classNames(styles.badge, variant && styles[variant], small && styles.sm, pill && styles.pill, className)
+        !unstyled && classNames(styles.badge, variant && styles[variant], small && styles.sm, pill && styles.pill)
 
     const commonProps = {
         'data-tooltip': tooltip,
