@@ -1,7 +1,7 @@
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard/out/src'
+import { Button } from '@sourcegraph/wildcard/src'
 
 import { ErrorAlert } from '../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
