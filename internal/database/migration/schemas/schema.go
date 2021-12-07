@@ -3,10 +3,10 @@ package schemas
 import (
 	"io/fs"
 
-	"github.com/sourcegraph/sourcegraph/migrations"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 )
 
-// Schema describe a schema in one of our Postgres(-like) databases.
+// Schema describes a schema in one of our Postgres(-like) databases.
 type Schema struct {
 	// Name is the name of the schema.
 	Name string
@@ -16,24 +16,7 @@ type Schema struct {
 
 	// FS describes the raw migration assets of the schema.
 	FS fs.FS
+
+	// Definitions describes the parsed migration assets of the schema.
+	Definitions *definition.Definitions
 }
-
-var (
-	Frontend = &Schema{
-		Name:                "frontend",
-		MigrationsTableName: "schema_migrations",
-		FS:                  migrations.Frontend,
-	}
-
-	CodeIntel = &Schema{
-		Name:                "codeintel",
-		MigrationsTableName: "codeintel_schema_migrations",
-		FS:                  migrations.CodeIntel,
-	}
-
-	CodeInsights = &Schema{
-		Name:                "codeinsights",
-		MigrationsTableName: "codeinsights_schema_migrations",
-		FS:                  migrations.CodeInsights,
-	}
-)

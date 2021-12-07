@@ -432,7 +432,7 @@ func Frontend() *monitoring.Container {
 			},
 
 			{
-				Title:  "Cloud KMS",
+				Title:  "Cloud KMS and cache",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -446,6 +446,28 @@ func Frontend() *monitoring.Container {
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
 								- Revert recent commits that cause extensive listing from "external_services" and/or "user_external_accounts" tables.
+							`,
+						},
+						{
+							Name:        "encryption_cache_hit_ratio",
+							Description: "average encryption cache hit ratio per workload",
+							Query:       `min by (kubernetes_name) (src_encryption_cache_hit_total/(src_encryption_cache_hit_total+src_encryption_cache_miss_total))`,
+							NoAlert:     true,
+							Panel:       monitoring.Panel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `
+								- Encryption cache hit ratio (hits/(hits+misses)) - minimum across all instances of a workload.
+							`,
+						},
+						{
+							Name:        "encryption_cache_evictions",
+							Description: "rate of encryption cache evictions - sum across all instances of a given workload",
+							Query:       `sum by (kubernetes_name) (irate(src_encryption_cache_eviction_total[5m]))`,
+							NoAlert:     true,
+							Panel:       monitoring.Panel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `
+								- Rate of encryption cache evictions (caused by cache exceeding its maximum size) - sum across all instances of a workload
 							`,
 						},
 					},

@@ -312,7 +312,7 @@
         "$ref": "#/definitions/QuickLink"
       }
     },
-    "sidebarToggle": {
+    "fileSidebarVisibleByDefault": {
       "description": "Whether the sidebar on the repo view should be open by default.",
       "type": "boolean",
       "default": true

@@ -34,7 +34,7 @@ if go list ./cmd/... ./enterprise/cmd/... |
   grep -Ev "$allowed" |
   xargs go list -f "$template" |
   grep "github.com/sourcegraph/sourcegraph/internal/database/dbconn"; then
-  echo "Error: the above service(s) are not allowed to import pkg/database/dbconn"
+  echo "Error: the above service(s) are not allowed to import internal/database/dbconn"
   echo "^^^ +++"
   exit 1
 fi

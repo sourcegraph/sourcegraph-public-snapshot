@@ -167,12 +167,7 @@ func (r *batchSpecResolver) Namespace(ctx context.Context) (*graphqlbackend.Name
 }
 
 func (r *batchSpecResolver) ApplyURL(ctx context.Context) (*string, error) {
-	state, err := r.computeState(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if r.batchSpec.CreatedFromRaw && state != btypes.BatchSpecStateCompleted {
+	if r.batchSpec.CreatedFromRaw && !r.finishedExecutionWithoutValidationErrors(ctx) {
 		return nil, nil
 	}
 
@@ -531,6 +526,20 @@ func (r *batchSpecResolver) computeResolutionJob(ctx context.Context) (*btypes.B
 		}
 	})
 	return r.resolution, r.resolutionErr
+}
+
+func (r *batchSpecResolver) finishedExecutionWithoutValidationErrors(ctx context.Context) bool {
+	state, err := r.computeState(ctx)
+	if err != nil {
+		return false
+	}
+
+	if !state.FinishedAndNotCanceled() {
+		return false
+	}
+
+	validationErr := r.validateChangesetSpecs(ctx)
+	return validationErr == nil
 }
 
 func (r *batchSpecResolver) validateChangesetSpecs(ctx context.Context) error {

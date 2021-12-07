@@ -1,6 +1,5 @@
 import classNames from 'classnames'
 import { camelCase } from 'lodash'
-import DatabaseIcon from 'mdi-react/DatabaseIcon'
 import React, { Ref, useCallback, useContext, useRef, useState } from 'react'
 import { useMergeRefs } from 'use-callback-ref'
 
@@ -163,13 +162,9 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
             })}
         >
             {loading || isDeleting ? (
-                <View.LoadingContent
-                    text={isDeleting ? 'Deleting code insight' : 'Loading code insight'}
-                    description={insight.id}
-                    icon={DatabaseIcon}
-                />
+                <View.LoadingContent text={isDeleting ? 'Deleting code insight' : 'Loading code insight'} />
             ) : isErrorLike(error) ? (
-                <View.ErrorContent error={error} title={insight.id} icon={DatabaseIcon}>
+                <View.ErrorContent error={error} title={insight.id}>
                     {error instanceof InsightInProcessError ? (
                         <div className="alert alert-info m-0">{error.message}</div>
                     ) : null}
