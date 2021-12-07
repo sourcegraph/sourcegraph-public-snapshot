@@ -18,16 +18,16 @@ type UploadConnectionResolver struct {
 	uploadsResolver  *resolvers.UploadsResolver
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
-	op               *observation.Operation
+	errTracer        *observation.ErrorTracer
 }
 
-func NewUploadConnectionResolver(db database.DB, resolver resolvers.Resolver, uploadsResolver *resolvers.UploadsResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, op *observation.Operation) gql.LSIFUploadConnectionResolver {
+func NewUploadConnectionResolver(db database.DB, resolver resolvers.Resolver, uploadsResolver *resolvers.UploadsResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTracer *observation.ErrorTracer) gql.LSIFUploadConnectionResolver {
 	return &UploadConnectionResolver{
 		resolver:         resolver,
 		uploadsResolver:  uploadsResolver,
 		prefetcher:       prefetcher,
 		locationResolver: locationResolver,
-		op:               op,
+		errTracer:        errTracer,
 	}
 }
 
@@ -38,16 +38,13 @@ func (r *UploadConnectionResolver) Nodes(ctx context.Context) ([]gql.LSIFUploadR
 
 	resolvers := make([]gql.LSIFUploadResolver, 0, len(r.uploadsResolver.Uploads))
 	for i := range r.uploadsResolver.Uploads {
-		resolvers = append(resolvers, NewUploadResolver(r.db, r.resolver, r.uploadsResolver.Uploads[i], r.prefetcher, r.locationResolver, r.op))
+		resolvers = append(resolvers, NewUploadResolver(r.db, r.resolver, r.uploadsResolver.Uploads[i], r.prefetcher, r.locationResolver, r.errTracer))
 	}
 	return resolvers, nil
 }
 
 func (r *UploadConnectionResolver) TotalCount(ctx context.Context) (_ *int32, err error) {
-	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("uploadConnectionResolver.field", "totalCount"),
-	}})
-	defer endObservation(1, observation.Args{})
+	defer r.errTracer.Collect(&err, log.String("uploadConnectionResolver.field", "totalCount"))
 
 	if err := r.uploadsResolver.Resolve(ctx); err != nil {
 		return nil, err
@@ -56,10 +53,7 @@ func (r *UploadConnectionResolver) TotalCount(ctx context.Context) (_ *int32, er
 }
 
 func (r *UploadConnectionResolver) PageInfo(ctx context.Context) (_ *graphqlutil.PageInfo, err error) {
-	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("uploadConnectionResolver.field", "pageInfo"),
-	}})
-	defer endObservation(1, observation.Args{})
+	defer r.errTracer.Collect(&err, log.String("uploadConnectionResolver.field", "pageInfo"))
 
 	if err := r.uploadsResolver.Resolve(ctx); err != nil {
 		return nil, err

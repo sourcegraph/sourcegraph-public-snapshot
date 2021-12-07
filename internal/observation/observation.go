@@ -56,6 +56,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -151,8 +153,38 @@ type Operation struct {
 type TraceLogger func(fields ...log.Field)
 
 // FinishFunc is the shape of the function returned by With and should be invoked within
-// a defer directly before the observed function returns.
+// a defer directly before the observed function returns or when a context is cancelled
+// with OnCancel.
 type FinishFunc func(count float64, args Args)
+
+// OnCancel allows for ending an observation when a context is cancelled as opposed to the
+// more common scenario of when the observed function returns through a defer. This can
+// be used for continuing an observation beyond the lifetime of a function if that function
+// returns more units of work that you want to observe as part of the original function.
+func (f FinishFunc) OnCancel(ctx context.Context, count float64, args Args) {
+	go func() {
+		<-ctx.Done()
+		f(count, args)
+	}()
+}
+
+type ErrorTracer struct {
+	multi       *multierror.Error
+	extraFields []log.Field
+}
+
+func NewErrorTracer() *ErrorTracer { return &ErrorTracer{multi: &multierror.Error{}} }
+
+func (e *ErrorTracer) Collect(err *error, fields ...log.Field) {
+	if err != nil && *err != nil {
+		e.multi.Errors = append(e.multi.Errors, *err)
+		e.extraFields = append(e.extraFields, fields...)
+	}
+}
+
+func (e *ErrorTracer) Error() string {
+	return e.multi.Error()
+}
 
 // Args configures the observation behavior of an invocation of an operation.
 type Args struct {
@@ -184,7 +216,34 @@ func (args Args) LogFieldPairs() []interface{} {
 	return pairs
 }
 
-// With prepares the necessary timers, loggers, and metrics to observe the invocation  of an
+// WithErrors prepares the necessary timers, loggers, and metrics to observe the invocation of an
+// operation. This method returns a modified context, an multi-error capturing type and a function to be deferred until the
+// end of the operation. It can be used with FinishFunc.OnCancel to capture multiple async errors.
+func (op *Operation) WithErrors(ctx context.Context, root *error, args Args) (context.Context, *ErrorTracer, FinishFunc) {
+	ctx, collector, _, endObservation := op.WithErrorsAndLogger(ctx, root, args)
+	return ctx, collector, endObservation
+}
+
+// WithErrorsAndLogger prepares the necessary timers, loggers, and metrics to observe the invocation of an
+// operation. This method returns a modified context, an multi-error capturing type, a function that will add a log field
+// to the active trace, and a function to be deferred until the end of the operation. It can be used with
+// FinishFunc.OnCancel to capture multiple async errors.
+func (op *Operation) WithErrorsAndLogger(ctx context.Context, root *error, args Args) (context.Context, *ErrorTracer, TraceLogger, FinishFunc) {
+	collector := NewErrorTracer()
+	err := error(collector)
+	ctx, traceLogger, endObservation := op.WithAndLogger(ctx, &err, args)
+	if root != nil {
+		endObservation = func(count float64, args Args) {
+			if *root != nil {
+				collector.multi.Errors = append(collector.multi.Errors, *root)
+			}
+			endObservation(count, args)
+		}
+	}
+	return ctx, collector, traceLogger, endObservation
+}
+
+// With prepares the necessary timers, loggers, and metrics to observe the invocation of an
 // operation. This method returns a modified context and a function to be deferred until the
 // end of the operation.
 func (op *Operation) With(ctx context.Context, err *error, args Args) (context.Context, FinishFunc) {
@@ -236,6 +295,10 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 		defaultFinishFields := []log.Field{log.Float64("count", count), log.Float64("elapsed", elapsed)}
 		logFields := mergeLogFields(defaultFinishFields, finishArgs.LogFields, args.LogFields)
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
+
+		if multi := new(ErrorTracer); err != nil && errors.As(*err, &multi) {
+			logFields = append(logFields, multi.extraFields...)
+		}
 
 		var (
 			logErr     = op.applyErrorFilter(err, EmitForLogs)

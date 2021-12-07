@@ -17,7 +17,7 @@ func TestRanges(t *testing.T) {
 	db := database.NewDB(nil)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), observation.TestOperation)
+	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), nil)
 
 	args := &gql.LSIFRangesArgs{StartLine: 10, EndLine: 20}
 	if _, err := resolver.Ranges(context.Background(), args); err != nil {
@@ -39,7 +39,7 @@ func TestDefinitions(t *testing.T) {
 	db := database.NewDB(nil)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), observation.TestOperation)
+	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), nil)
 
 	args := &gql.LSIFQueryPositionArgs{Line: 10, Character: 15}
 	if _, err := resolver.Definitions(context.Background(), args); err != nil {
@@ -61,7 +61,7 @@ func TestReferences(t *testing.T) {
 	db := database.NewDB(nil)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), observation.TestOperation)
+	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), nil)
 
 	offset := int32(25)
 	cursor := base64.StdEncoding.EncodeToString([]byte("test-cursor"))
@@ -100,7 +100,7 @@ func TestReferencesDefaultLimit(t *testing.T) {
 	db := database.NewDB(nil)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), observation.TestOperation)
+	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), nil)
 
 	args := &gql.LSIFPagedQueryPositionArgs{
 		LSIFQueryPositionArgs: gql.LSIFQueryPositionArgs{
@@ -126,7 +126,7 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 	db := database.NewDB(nil)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), observation.TestOperation)
+	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), observation.NewErrorTracer())
 
 	offset := int32(-1)
 	args := &gql.LSIFPagedQueryPositionArgs{
@@ -147,7 +147,7 @@ func TestHover(t *testing.T) {
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
 	mockResolver.HoverFunc.SetDefaultReturn("text", lsifstore.Range{}, true, nil)
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), observation.TestOperation)
+	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), nil)
 
 	args := &gql.LSIFQueryPositionArgs{Line: 10, Character: 15}
 	if _, err := resolver.Hover(context.Background(), args); err != nil {
@@ -169,7 +169,7 @@ func TestDiagnostics(t *testing.T) {
 	db := database.NewDB(nil)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), observation.TestOperation)
+	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), nil)
 
 	offset := int32(25)
 	args := &gql.LSIFDiagnosticsArgs{
@@ -192,7 +192,7 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 	db := database.NewDB(nil)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), observation.TestOperation)
+	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), nil)
 
 	args := &gql.LSIFDiagnosticsArgs{
 		ConnectionArgs: graphqlutil.ConnectionArgs{},
@@ -214,7 +214,7 @@ func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
 	db := database.NewDB(nil)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), observation.TestOperation)
+	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), nil)
 
 	offset := int32(-1)
 	args := &gql.LSIFDiagnosticsArgs{

@@ -21,10 +21,10 @@ type IndexResolver struct {
 	index            store.Index
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
-	op               *observation.Operation
+	traceErrs        *observation.ErrorTracer
 }
 
-func NewIndexResolver(db database.DB, resolver resolvers.Resolver, index store.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, op *observation.Operation) gql.LSIFIndexResolver {
+func NewIndexResolver(db database.DB, resolver resolvers.Resolver, index store.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTrace *observation.ErrorTracer) gql.LSIFIndexResolver {
 	if index.AssociatedUploadID != nil {
 		// Request the next batch of upload fetches to contain the record's associated
 		// upload id, if one exists it exists. This allows the prefetcher.GetUploadByID
@@ -39,7 +39,7 @@ func NewIndexResolver(db database.DB, resolver resolvers.Resolver, index store.I
 		index:            index,
 		prefetcher:       prefetcher,
 		locationResolver: locationResolver,
-		op:               op,
+		traceErrs:        errTrace,
 	}
 }
 
@@ -70,25 +70,21 @@ func (r *IndexResolver) AssociatedUpload(ctx context.Context) (_ gql.LSIFUploadR
 		return nil, nil
 	}
 
-	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	defer r.traceErrs.Collect(&err,
 		log.String("indexResolver.field", "associatedUpload"),
 		log.Int("associatedUpload", *r.index.AssociatedUploadID),
-	}})
-	defer endObservation(1, observation.Args{})
+	)
 
 	upload, exists, err := r.prefetcher.GetUploadByID(ctx, *r.index.AssociatedUploadID)
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	return NewUploadResolver(r.db, r.resolver, upload, r.prefetcher, r.locationResolver, r.op), nil
+	return NewUploadResolver(r.db, r.resolver, upload, r.prefetcher, r.locationResolver, r.traceErrs), nil
 }
 
 func (r *IndexResolver) ProjectRoot(ctx context.Context) (_ *gql.GitTreeEntryResolver, err error) {
-	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("indexResolver.field", "projectRoot"),
-	}})
-	defer endObservation(1, observation.Args{})
+	defer r.traceErrs.Collect(&err, log.String("indexResolver.field", "projectRoot"))
 
 	return r.locationResolver.Path(ctx, api.RepoID(r.index.RepositoryID), r.index.Commit, r.index.Root)
 }

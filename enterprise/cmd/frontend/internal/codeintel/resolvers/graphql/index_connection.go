@@ -18,10 +18,10 @@ type IndexConnectionResolver struct {
 	indexesResolver  *resolvers.IndexesResolver
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
-	op               *observation.Operation
+	errTracer        *observation.ErrorTracer
 }
 
-func NewIndexConnectionResolver(db database.DB, resolver resolvers.Resolver, indexesResolver *resolvers.IndexesResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, op *observation.Operation) gql.LSIFIndexConnectionResolver {
+func NewIndexConnectionResolver(db database.DB, resolver resolvers.Resolver, indexesResolver *resolvers.IndexesResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTracer *observation.ErrorTracer) gql.LSIFIndexConnectionResolver {
 	return &IndexConnectionResolver{
 		db:               db,
 		resolver:         resolver,
@@ -38,16 +38,13 @@ func (r *IndexConnectionResolver) Nodes(ctx context.Context) ([]gql.LSIFIndexRes
 
 	resolvers := make([]gql.LSIFIndexResolver, 0, len(r.indexesResolver.Indexes))
 	for i := range r.indexesResolver.Indexes {
-		resolvers = append(resolvers, NewIndexResolver(r.db, r.resolver, r.indexesResolver.Indexes[i], r.prefetcher, r.locationResolver, r.op))
+		resolvers = append(resolvers, NewIndexResolver(r.db, r.resolver, r.indexesResolver.Indexes[i], r.prefetcher, r.locationResolver, r.errTracer))
 	}
 	return resolvers, nil
 }
 
 func (r *IndexConnectionResolver) TotalCount(ctx context.Context) (_ *int32, err error) {
-	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("indexConnectionResolver.field", "totalCount"),
-	}})
-	defer endObservation(1, observation.Args{})
+	defer r.errTracer.Collect(&err, log.String("indexConnectionResolver.field", "totalCount"))
 
 	if err := r.indexesResolver.Resolve(ctx); err != nil {
 		return nil, err
@@ -56,10 +53,7 @@ func (r *IndexConnectionResolver) TotalCount(ctx context.Context) (_ *int32, err
 }
 
 func (r *IndexConnectionResolver) PageInfo(ctx context.Context) (_ *graphqlutil.PageInfo, err error) {
-	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("indexConnectionResolver.field", "pageInfo"),
-	}})
-	defer endObservation(1, observation.Args{})
+	defer r.errTracer.Collect(&err, log.String("indexConnectionResolver.field", "pageInfo"))
 
 	if err := r.indexesResolver.Resolve(ctx); err != nil {
 		return nil, err

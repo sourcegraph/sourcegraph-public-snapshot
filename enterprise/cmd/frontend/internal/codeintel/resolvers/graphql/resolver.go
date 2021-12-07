@@ -67,10 +67,10 @@ func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 
 // 🚨 SECURITY: dbstore layer handles authz for GetUploadByID
 func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ gql.LSIFUploadResolver, err error) {
-	ctx, endObservation := r.observationContext.lsifUploadByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceErrs, endObservation := r.observationContext.lsifUploadByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("uploadID", string(id)),
 	}})
-	defer endObservation(1, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	uploadID, err := unmarshalLSIFUploadGQLID(id)
 	if err != nil {
@@ -86,13 +86,13 @@ func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ gql.LSI
 		return nil, err
 	}
 
-	return NewUploadResolver(r.db, r.resolver, upload, prefetcher, r.locationResolver, r.observationContext.lsifUploadByID), nil
+	return NewUploadResolver(r.db, r.resolver, upload, prefetcher, r.locationResolver, traceErrs), nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetUploads
 func (r *Resolver) LSIFUploads(ctx context.Context, args *gql.LSIFUploadsQueryArgs) (_ gql.LSIFUploadConnectionResolver, err error) {
 	// ctx, endObservation := r.observationContext.lsifUploads.With(ctx, &err, observation.Args{})
-	// defer endObservation(1, observation.Args{})
+	// endObservation.EndOnCancel(ctx, 1, observation.Args{})
 
 	// Delegate behavior to LSIFUploadsByRepo with no specified repository identifier
 	return r.LSIFUploadsByRepo(ctx, &gql.LSIFRepositoryUploadsQueryArgs{LSIFUploadsQueryArgs: args})
@@ -100,10 +100,10 @@ func (r *Resolver) LSIFUploads(ctx context.Context, args *gql.LSIFUploadsQueryAr
 
 // 🚨 SECURITY: dbstore layer handles authz for GetUploads
 func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFRepositoryUploadsQueryArgs) (_ gql.LSIFUploadConnectionResolver, err error) {
-	ctx, endObservation := r.observationContext.lsifUploadsByRepo.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceErrs, endObservation := r.observationContext.lsifUploadsByRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoID", string(args.RepositoryID)),
 	}})
-	defer endObservation(1, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	opts, err := makeGetUploadsOptions(ctx, args)
 	if err != nil {
@@ -114,7 +114,7 @@ func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFReposito
 	// the same graphQL request, not across different request.
 	prefetcher := NewPrefetcher(r.resolver)
 
-	return NewUploadConnectionResolver(r.db, r.resolver, r.resolver.UploadConnectionResolver(opts), prefetcher, r.locationResolver, r.observationContext.lsifUploadsByRepo), nil
+	return NewUploadConnectionResolver(r.db, r.resolver, r.resolver.UploadConnectionResolver(opts), prefetcher, r.locationResolver, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
@@ -122,7 +122,7 @@ func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphq
 	ctx, endObservation := r.observationContext.deleteLsifUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("uploadID", string(args.ID)),
 	}})
-	defer endObservation(1, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -148,10 +148,10 @@ func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ gql.LSIF
 		return nil, errAutoIndexingNotEnabled
 	}
 
-	ctx, endObservation := r.observationContext.lsifIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceErrs, endObservation := r.observationContext.lsifIndexByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("indexID", string(id)),
 	}})
-	defer endObservation(1, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	indexID, err := unmarshalLSIFIndexGQLID(id)
 	if err != nil {
@@ -167,17 +167,17 @@ func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ gql.LSIF
 		return nil, err
 	}
 
-	return NewIndexResolver(r.db, r.resolver, index, prefetcher, r.locationResolver, r.observationContext.lsifIndexByID), nil
+	return NewIndexResolver(r.db, r.resolver, index, prefetcher, r.locationResolver, traceErrs), nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetIndexes
 func (r *Resolver) LSIFIndexes(ctx context.Context, args *gql.LSIFIndexesQueryArgs) (_ gql.LSIFIndexConnectionResolver, err error) {
-	ctx, endObservation := r.observationContext.lsifIndexes.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
 	}
+
+	ctx, endObservation := r.observationContext.lsifIndexes.With(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	// Delegate behavior to LSIFIndexesByRepo with no specified repository identifier
 	return r.LSIFIndexesByRepo(ctx, &gql.LSIFRepositoryIndexesQueryArgs{LSIFIndexesQueryArgs: args})
@@ -185,14 +185,14 @@ func (r *Resolver) LSIFIndexes(ctx context.Context, args *gql.LSIFIndexesQueryAr
 
 // 🚨 SECURITY: dbstore layer handles authz for GetIndexes
 func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFRepositoryIndexesQueryArgs) (_ gql.LSIFIndexConnectionResolver, err error) {
-	ctx, endObservation := r.observationContext.lsifIndexesByRepo.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(args.RepositoryID)),
-	}})
-	defer endObservation(1, observation.Args{})
-
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
 	}
+
+	ctx, traceErrs, endObservation := r.observationContext.lsifIndexesByRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repoID", string(args.RepositoryID)),
+	}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	opts, err := makeGetIndexesOptions(ctx, args)
 	if err != nil {
@@ -203,7 +203,7 @@ func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFReposito
 	// the same graphQL request, not across different request.
 	prefetcher := NewPrefetcher(r.resolver)
 
-	return NewIndexConnectionResolver(r.db, r.resolver, r.resolver.IndexConnectionResolver(opts), prefetcher, r.locationResolver, r.observationContext.lsifIndexesByRepo), nil
+	return NewIndexConnectionResolver(r.db, r.resolver, r.resolver.IndexConnectionResolver(opts), prefetcher, r.locationResolver, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence index data
@@ -237,7 +237,7 @@ func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ gql.CodeIn
 	ctx, endObservation := r.observationContext.commitGraph.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoID", string(id)),
 	}})
-	defer endObservation(1, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	repositoryID, err := gql.UnmarshalRepositoryID(id)
 	if err != nil {
@@ -249,10 +249,10 @@ func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ gql.CodeIn
 
 // 🚨 SECURITY: Only site admins may queue auto-index jobs
 func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *gql.QueueAutoIndexJobsForRepoArgs) (_ []gql.LSIFIndexResolver, err error) {
-	ctx, endObservation := r.observationContext.queueAutoIndexJobsForRepo.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceErrs, endObservation := r.observationContext.queueAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoID", string(args.Repository)),
 	}})
-	defer endObservation(1, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -287,30 +287,30 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *gql.Queu
 
 	resolvers := make([]gql.LSIFIndexResolver, 0, len(indexes))
 	for i := range indexes {
-		resolvers = append(resolvers, NewIndexResolver(r.db, r.resolver, indexes[i], prefetcher, r.locationResolver, r.observationContext.queueAutoIndexJobsForRepo))
+		resolvers = append(resolvers, NewIndexResolver(r.db, r.resolver, indexes[i], prefetcher, r.locationResolver, traceErrs))
 	}
 	return resolvers, nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for query resolution
 func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (_ gql.GitBlobLSIFDataResolver, err error) {
-	ctx, endObservation := r.observationContext.gitBlobLsifData.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	ctx, errTracer, endObservation := r.observationContext.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	resolver, err := r.resolver.QueryResolver(ctx, args)
 	if err != nil || resolver == nil {
 		return nil, err
 	}
 
-	return NewQueryResolver(resolver, r.locationResolver, r.observationContext.gitBlobLsifData), nil
+	return NewQueryResolver(resolver, r.locationResolver, errTracer), nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetConfigurationPolicyByID
 func (r *Resolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (_ gql.CodeIntelligenceConfigurationPolicyResolver, err error) {
-	ctx, endObservation := r.observationContext.configurationPolicyByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceErrs, endObservation := r.observationContext.configurationPolicyByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("configPolicyID", string(id)),
 	}})
-	defer endObservation(1, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	configurationPolicyID, err := unmarshalConfigurationPolicyGQLID(id)
 	if err != nil {
@@ -322,15 +322,15 @@ func (r *Resolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (
 		return nil, err
 	}
 
-	return NewConfigurationPolicyResolver(r.db, configurationPolicy, r.observationContext.configurationPolicyByID), nil
+	return NewConfigurationPolicyResolver(r.db, configurationPolicy, traceErrs), nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetConfigurationPolicies
 func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, args *gql.CodeIntelligenceConfigurationPoliciesArgs) (_ gql.CodeIntelligenceConfigurationPolicyConnectionResolver, err error) {
-	ctx, endObservation := r.observationContext.configurationPolicies.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceErrs, endObservation := r.observationContext.configurationPolicies.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoID", string(*args.Repository)),
 	}})
-	defer endObservation(1, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
@@ -368,13 +368,13 @@ func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, ar
 		return nil, err
 	}
 
-	return NewCodeIntelligenceConfigurationPolicyConnectionResolver(r.db, policies, totalCount, r.observationContext.configurationPolicies), nil
+	return NewCodeIntelligenceConfigurationPolicyConnectionResolver(r.db, policies, totalCount, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *gql.CreateCodeIntelligenceConfigurationPolicyArgs) (_ gql.CodeIntelligenceConfigurationPolicyResolver, err error) {
-	ctx, endObservation := r.observationContext.createConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
-	defer endObservation(1, observation.Args{})
+	ctx, traceErrs, endObservation := r.observationContext.createConfigurationPolicy.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -412,7 +412,7 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		return nil, err
 	}
 
-	return NewConfigurationPolicyResolver(r.db, configurationPolicy, r.observationContext.createConfigurationPolicy), nil
+	return NewConfigurationPolicyResolver(r.db, configurationPolicy, traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
@@ -459,7 +459,7 @@ func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context
 	ctx, endObservation := r.observationContext.deleteConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("configPolicyID", string(args.Policy)),
 	}})
-	defer endObservation(1, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -479,10 +479,10 @@ func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context
 
 // 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
 func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_ gql.IndexConfigurationResolver, err error) {
-	_, endObservation := r.observationContext.indexConfiguration.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	_, traceErrs, endObservation := r.observationContext.indexConfiguration.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoID", string(id)),
 	}})
-	defer endObservation(1, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
@@ -493,7 +493,7 @@ func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_ gql
 		return nil, err
 	}
 
-	return NewIndexConfigurationResolver(r.resolver, int(repositoryID), r.observationContext.indexConfiguration), nil
+	return NewIndexConfigurationResolver(r.resolver, int(repositoryID), traceErrs), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence indexing configuration

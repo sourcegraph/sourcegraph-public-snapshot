@@ -14,10 +14,10 @@ type codeIntelligenceConfigurationPolicyConnectionResolver struct {
 	db         database.DB
 	policies   []dbstore.ConfigurationPolicy
 	totalCount int
-	op         *observation.Operation
+	errTracer  *observation.ErrorTracer
 }
 
-func NewCodeIntelligenceConfigurationPolicyConnectionResolver(db database.DB, policies []dbstore.ConfigurationPolicy, totalCount int, op *observation.Operation) gql.CodeIntelligenceConfigurationPolicyConnectionResolver {
+func NewCodeIntelligenceConfigurationPolicyConnectionResolver(db database.DB, policies []dbstore.ConfigurationPolicy, totalCount int, errTracer *observation.ErrorTracer) gql.CodeIntelligenceConfigurationPolicyConnectionResolver {
 	return &codeIntelligenceConfigurationPolicyConnectionResolver{
 		db:         db,
 		policies:   policies,
@@ -28,7 +28,7 @@ func NewCodeIntelligenceConfigurationPolicyConnectionResolver(db database.DB, po
 func (r *codeIntelligenceConfigurationPolicyConnectionResolver) Nodes(ctx context.Context) ([]gql.CodeIntelligenceConfigurationPolicyResolver, error) {
 	resolvers := make([]gql.CodeIntelligenceConfigurationPolicyResolver, 0, len(r.policies))
 	for _, policy := range r.policies {
-		resolvers = append(resolvers, NewConfigurationPolicyResolver(r.db, policy, r.op))
+		resolvers = append(resolvers, NewConfigurationPolicyResolver(r.db, policy, r.errTracer))
 	}
 
 	return resolvers, nil
