@@ -375,6 +375,13 @@ func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.Date
 		return nil, nil
 	}
 
+	// 🚨 SECURITY: If the user didn't create the batch spec or is not a
+	// site-admin, we shouldn't show this information.
+	ok, err := r.computeCanAdminister(ctx)
+	if err != nil || !ok {
+		return nil, nil
+	}
+
 	state, err := r.computeState(ctx)
 	if err != nil {
 		return nil, err
@@ -397,6 +404,13 @@ func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.Date
 
 func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
 	if !r.batchSpec.CreatedFromRaw {
+		return nil, nil
+	}
+
+	// 🚨 SECURITY: If the user didn't create the batch spec or is not a
+	// site-admin, we shouldn't show this information.
+	ok, err := r.computeCanAdminister(ctx)
+	if err != nil || !ok {
 		return nil, nil
 	}
 
