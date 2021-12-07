@@ -27,6 +27,7 @@
     "onView:sourcegraph.searchSidebar"
   ],
   "main": "./dist/extension.js",
+  "browser": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
@@ -117,5 +118,14 @@
     "dev": "NODE_ENV=development webpack",
     "watch": "webpack --watch",
     "test": "echo \"No tests exist yet\" && exit 1"
+  },
+  "devDependencies": {
+    "process": "^0.11.10",
+    "@types/vscode": "^1.59.0",
+    "ts-loader": "^9.2.2",
+    "webpack": "^5.38.1",
+    "webpack-cli": "^4.7.0",
+    "@types/webpack-env": "^1.16.0",
+    "stream-browserify": "^3.0.0"
   }
 }

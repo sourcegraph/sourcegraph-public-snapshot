@@ -1,5 +1,4 @@
 import { once } from 'lodash'
-import open from 'open'
 import * as vscode from 'vscode'
 
 import { log } from '../log'
@@ -57,7 +56,7 @@ const promptUserForAccessTokenSetting = once(
             )
 
             if (userChoice === openBrowserMessage) {
-                await open(`${endpointSetting()}/user/settings/tokens`)
+                await vscode.env.openExternal(vscode.Uri.parse(`${endpointSetting()}/user/settings/tokens`))
                 const newToken = await vscode.window.showInputBox({
                     title: 'Paste your Sourcegraph access token here',
                     ignoreFocusOut: true,

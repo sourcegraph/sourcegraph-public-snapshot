@@ -19,6 +19,18 @@
       "preLaunchTask": "build-vscode-dev",
     },
     {
+      "name": "Launch VS Code Web Extension",
+      "type": "pwa-extensionHost",
+      "debugWebWorkerHost": true,
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
+        "--extensionDevelopmentKind=web"
+      ],
+      "outFiles": ["${workspaceRoot}/client/vscode/dist/extension.js"],
+      "preLaunchTask": "build-vscode-dev",
+    },
+    {
       "name": "Launch VS Code Tests",
       "type": "extensionHost",
       "request": "launch",
