@@ -1506,7 +1506,7 @@ func assertAuthorizationResponse(
 	userID int32,
 	restrictToAdmins, wantDisabledErr, wantAuthErr bool,
 ) {
-	// t.Helper()
+	t.Helper()
 
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
