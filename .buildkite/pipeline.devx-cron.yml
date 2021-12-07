@@ -9,3 +9,4 @@ steps:
     if: build.message == "report-red-time"
     command:
       - dev/bkstats/run.sh
+    agents: { queue: standard }
