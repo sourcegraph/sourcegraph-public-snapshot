@@ -1,6 +1,6 @@
 compression.BackfillPlan{
 	Executions: []*compression.QueryExecution{
-		&compression.QueryExecution{RecordingTime: time.Time{
+		{RecordingTime: time.Time{
 			ext: 63713433600,
 		}},
 	},

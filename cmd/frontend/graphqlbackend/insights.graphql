@@ -643,6 +643,11 @@ input LineChartSearchInsightDataSeriesInput {
     The scope of time.
     """
     timeScope: TimeScopeInput!
+
+    """
+    Whether or not to generate the timeseries results from the query capture groups. Defaults to false if not provided.
+    """
+    generatedFromCaptureGroups: Boolean
 }
 
 """
@@ -852,6 +857,11 @@ type SearchInsightDataSeriesDefinition {
     The scope of time for which the insight data is generated.
     """
     timeScope: InsightTimeScope!
+
+    """
+    Whether or not the the time series are derived from the captured groups of the search results.
+    """
+    generatedFromCaptureGroups: Boolean!
 }
 
 """

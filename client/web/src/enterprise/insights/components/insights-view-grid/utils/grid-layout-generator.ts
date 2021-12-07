@@ -9,7 +9,20 @@ import {
     MIN_WIDTHS,
 } from '../../../../../views'
 import { MINIMAL_SERIES_FOR_ASIDE_LEGEND } from '../../../../../views/components/view/content/chart-view-content/charts/line/constants'
-import { Insight, isSearchBasedInsight } from '../../../core/types'
+import { Insight, isSearchBasedInsight, SearchBasedInsight } from '../../../core/types'
+
+const MIN_WIDTHS_LANDSCAPE_MODE: Record<BreakpointName, number> = { xs: 1, sm: 3, md: 4, lg: 4 }
+
+const isManySeriesInsight = (insight: Insight): insight is SearchBasedInsight =>
+    isSearchBasedInsight(insight) && insight.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
+
+const getMinWidth = (breakpoint: BreakpointName, insight: Insight): number =>
+    isManySeriesInsight(insight) ? MIN_WIDTHS_LANDSCAPE_MODE[breakpoint] : MIN_WIDTHS[breakpoint]
+
+const getMinHeight = (insight: Insight): number =>
+    isManySeriesInsight(insight)
+        ? Math.min(DEFAULT_HEIGHT + insight.series.length * 0.1, DEFAULT_HEIGHT * 2)
+        : DEFAULT_HEIGHT
 
 /**
  * Custom Code Insight Grid layout generator. For different screens (xs, sm, md, lg) it
@@ -51,18 +64,17 @@ export const insightLayoutGenerator = (insights: Insight[]): ReactGridLayouts =>
             case 'sm':
             case 'md': {
                 return insights.map((insight, index) => {
-                    const isManySeriesChart =
-                        isSearchBasedInsight(insight) && insight.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
                     const width = COLUMNS[breakpointName] / DEFAULT_ITEMS_PER_ROW[breakpointName]
+
                     return {
                         i: insight.id,
                         // Increase height of chart block if view has many data series
-                        h: isManySeriesChart ? DEFAULT_HEIGHT * insight.series.length * 0.3 : DEFAULT_HEIGHT,
+                        h: getMinHeight(insight),
                         w: width,
                         x: (index * width) % COLUMNS[breakpointName],
                         y: Math.floor((index * width) / COLUMNS[breakpointName]),
-                        minW: MIN_WIDTHS[breakpointName],
-                        minH: isManySeriesChart ? DEFAULT_HEIGHT * insight.series.length * 0.15 : DEFAULT_HEIGHT,
+                        minW: getMinWidth(breakpointName, insight),
+                        minH: getMinHeight(insight),
                     }
                 })
             }
@@ -96,7 +108,7 @@ export const insightLayoutGenerator = (insights: Insight[]): ReactGridLayouts =>
                                         w: width,
                                         x: 0,
                                         y: grid.length,
-                                        minW: MIN_WIDTHS[breakpointName],
+                                        minW: getMinWidth(breakpointName, insight),
                                         minH: DEFAULT_HEIGHT,
                                     },
                                 ])
@@ -108,7 +120,7 @@ export const insightLayoutGenerator = (insights: Insight[]): ReactGridLayouts =>
                                     w: width,
                                     x: lastRowCurrentWidth,
                                     y: grid.length - 1,
-                                    minW: MIN_WIDTHS[breakpointName],
+                                    minW: getMinWidth(breakpointName, insight),
                                     minH: DEFAULT_HEIGHT,
                                 })
                             }
@@ -121,4 +133,34 @@ export const insightLayoutGenerator = (insights: Insight[]): ReactGridLayouts =>
             }
         }
     }
+}
+
+export const recalculateGridLayout = (nextLayouts: ReactGridLayouts, insights: Insight[]): ReactGridLayouts => {
+    const keys = (Object.keys(nextLayouts) as unknown) as BreakpointName[]
+    const insightsMap = Object.fromEntries(insights.map(insight => [insight.id, insight]))
+    const adjustedLayouts: ReactGridLayouts = {}
+
+    for (const key of keys) {
+        const layout = nextLayouts[key]
+
+        adjustedLayouts[key] = layout.map(item => {
+            const insight = insightsMap[item.i]
+
+            const isManySeriesChart =
+                isSearchBasedInsight(insight) && insight.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
+
+            if (isManySeriesChart && item.minW === item.w) {
+                item.minH = getMinHeight(insight)
+                item.h = item.h > (item.minH ?? 0) ? item.h : getMinHeight(insight)
+            } else {
+                item.minH = DEFAULT_HEIGHT
+            }
+
+            item.h = item.minH > item.h ? item.minH : item.h
+
+            return item
+        })
+    }
+
+    return adjustedLayouts
 }

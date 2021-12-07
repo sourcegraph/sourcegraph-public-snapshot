@@ -143,7 +143,8 @@ func TestDeleteSourcedCommits(t *testing.T) {
 		Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
 		Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
 		Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
-		Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(7), State: "uploading"},
+		Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(7), State: "uploading", UploadedAt: now.Add(-time.Minute * 90)},
+		Upload{ID: 7, RepositoryID: 52, Commit: makeCommit(7), State: "queued", UploadedAt: now.Add(-time.Minute * 30)},
 	)
 	insertIndexes(t, db,
 		Index{ID: 1, RepositoryID: 50, Commit: makeCommit(3)},
@@ -153,18 +154,21 @@ func TestDeleteSourcedCommits(t *testing.T) {
 		Index{ID: 5, RepositoryID: 50, Commit: makeCommit(1)},
 	)
 
-	uploadsUpdated, indexesUpdated, err := store.DeleteSourcedCommits(context.Background(), 52, makeCommit(7), now)
+	uploadsUpdated, uploadsDeleted, indexesDeleted, err := store.DeleteSourcedCommits(context.Background(), 52, makeCommit(7), time.Hour, now)
 	if err != nil {
 		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
 	}
-	if uploadsUpdated != 2 {
-		t.Fatalf("unexpected uploads updated. want=%d have=%d", 1, uploadsUpdated)
+	if uploadsUpdated != 1 {
+		t.Fatalf("unexpected number of uploads updated. want=%d have=%d", 1, uploadsUpdated)
 	}
-	if indexesUpdated != 1 {
-		t.Fatalf("unexpected indexes updated. want=%d have=%d", 1, indexesUpdated)
+	if uploadsDeleted != 2 {
+		t.Fatalf("unexpected number of uploads deleted. want=%d have=%d", 2, uploadsDeleted)
+	}
+	if indexesDeleted != 1 {
+		t.Fatalf("unexpected number of indexes deleted. want=%d have=%d", 1, indexesDeleted)
 	}
 
-	uploadStates, err := getUploadStates(db, 1, 2, 3, 4, 5, 6)
+	uploadStates, err := getUploadStates(db, 1, 2, 3, 4, 5, 6, 7)
 	if err != nil {
 		t.Fatalf("unexpected error fetching upload states: %s", err)
 	}
@@ -175,6 +179,7 @@ func TestDeleteSourcedCommits(t *testing.T) {
 		4: "completed",
 		5: "deleting",
 		6: "deleted",
+		7: "queued",
 	}
 	if diff := cmp.Diff(expectedUploadStates, uploadStates); diff != "" {
 		t.Errorf("unexpected upload states (-want +got):\n%s", diff)

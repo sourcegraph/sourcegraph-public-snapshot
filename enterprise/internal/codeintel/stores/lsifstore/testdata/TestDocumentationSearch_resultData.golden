@@ -1,5 +1,5 @@
 []precise.DocumentationSearchResult{
-	precise.DocumentationSearchResult{
+	{
 		ID:       136,
 		RepoID:   9,
 		PathID:   "/github.com/sourcegraph/lsif-go/cmd/lsif-go#realMain",
@@ -13,7 +13,7 @@
 		SearchKey: "main.realMain",
 		Label:     "func realMain() error",
 	},
-	precise.DocumentationSearchResult{
+	{
 		ID:        127,
 		RepoID:    9,
 		PathID:    "/github.com/sourcegraph/lsif-go/internal/gomod#InferModuleVersion",
@@ -24,7 +24,7 @@
 		SearchKey: "gomod.InferModuleVersion",
 		Label:     "func InferModuleVersion(projectRoot string) (string, error)",
 	},
-	precise.DocumentationSearchResult{
+	{
 		ID:       149,
 		RepoID:   9,
 		PathID:   "/github.com/sourcegraph/lsif-go/internal/index#indexer.emitImportMoniker",
@@ -38,7 +38,7 @@
 		SearchKey: "index.indexer.emitImportMoniker",
 		Label:     "func (i *indexer) emitImportMoniker(sourceID, identifier string) error",
 	},
-	precise.DocumentationSearchResult{
+	{
 		ID:       148,
 		RepoID:   9,
 		PathID:   "/github.com/sourcegraph/lsif-go/internal/index#indexer.emitExportMoniker",
@@ -52,7 +52,7 @@
 		SearchKey: "index.indexer.emitExportMoniker",
 		Label:     "func (i *indexer) emitExportMoniker(sourceID, identifier string) error",
 	},
-	precise.DocumentationSearchResult{
+	{
 		ID:       124,
 		RepoID:   9,
 		PathID:   "/#Writer.emit",
@@ -66,7 +66,7 @@
 		SearchKey: "protocol.Writer.emit",
 		Label:     "func (w *Writer) emit(v interface{}) error",
 	},
-	precise.DocumentationSearchResult{
+	{
 		ID:        118,
 		RepoID:    9,
 		PathID:    "/#Writer.EmitResultSet",
@@ -77,7 +77,7 @@
 		SearchKey: "protocol.Writer.EmitResultSet",
 		Label:     "func (w *Writer) EmitResultSet() (string, error)",
 	},
-	precise.DocumentationSearchResult{
+	{
 		ID:        117,
 		RepoID:    9,
 		PathID:    "/#Writer.EmitReferenceResult",
@@ -88,7 +88,7 @@
 		SearchKey: "protocol.Writer.EmitReferenceResult",
 		Label:     "func (w *Writer) EmitReferenceResult() (string, error)",
 	},
-	precise.DocumentationSearchResult{
+	{
 		ID:        102,
 		RepoID:    9,
 		PathID:    "/#Writer.EmitDefinitionResult",
@@ -99,7 +99,7 @@
 		SearchKey: "protocol.Writer.EmitDefinitionResult",
 		Label:     "func (w *Writer) EmitDefinitionResult() (string, error)",
 	},
-	precise.DocumentationSearchResult{
+	{
 		ID:        63,
 		RepoID:    9,
 		PathID:    "/#MarkedString.UnmarshalJSON",
@@ -110,7 +110,7 @@
 		SearchKey: "protocol.MarkedString.UnmarshalJSON",
 		Label:     "func (m *MarkedString) UnmarshalJSON(data []byte) error",
 	},
-	precise.DocumentationSearchResult{
+	{
 		ID:       145,
 		RepoID:   9,
 		PathID:   "/github.com/sourcegraph/lsif-go/internal/index#indexer.Index",

@@ -37,6 +37,8 @@ type Store struct {
 	Tracer trace.Tracer
 	// RepoStore is a database.RepoStore using the same database handle.
 	RepoStore database.RepoStore
+	// GitserverReposStore is a database.GitserverReposStore using the same database handle.
+	GitserverReposStore database.GitserverRepoStore
 	// ExternalServiceStore is a database.ExternalServiceStore using the same database handle.
 	ExternalServiceStore database.ExternalServiceStore
 
@@ -50,6 +52,7 @@ func NewStore(db dbutil.DB, txOpts sql.TxOptions) *Store {
 	return &Store{
 		Store:                s,
 		RepoStore:            database.ReposWith(s),
+		GitserverReposStore:  database.NewGitserverReposWith(s),
 		ExternalServiceStore: database.ExternalServicesWith(s),
 		Log:                  log15.Root(),
 		Tracer:               trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -60,6 +63,7 @@ func (s *Store) With(other basestore.ShareableStore) *Store {
 	return &Store{
 		Store:                s.Store.With(other),
 		RepoStore:            s.RepoStore.With(other),
+		GitserverReposStore:  s.GitserverReposStore.With(other),
 		ExternalServiceStore: s.ExternalServiceStore.With(other),
 		Log:                  s.Log,
 		Metrics:              s.Metrics,

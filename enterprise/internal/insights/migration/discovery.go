@@ -330,12 +330,16 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 			temp.SampleIntervalUnit = string(interval.unit)
 			temp.SampleIntervalValue = interval.value
 			temp.SeriesID = ksuid.New().String() // this will cause some orphan records, but we can't use the query to match because of repo / time scope. We will purge orphan records at the end of this job.
+			temp.JustInTime = true
+			temp.GenerationMethod = types.Search
 		} else if batch == backend {
 			temp.SampleIntervalUnit = string(types.Month)
 			temp.SampleIntervalValue = 1
 			temp.NextRecordingAfter = insights.NextRecording(time.Now())
 			temp.NextSnapshotAfter = insights.NextSnapshot(time.Now())
 			temp.SeriesID = ksuid.New().String()
+			temp.JustInTime = false
+			temp.GenerationMethod = types.Search
 		}
 
 		var series types.InsightSeries
