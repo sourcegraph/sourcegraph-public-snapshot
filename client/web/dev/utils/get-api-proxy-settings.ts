@@ -25,6 +25,12 @@ export const getAPIProxySettings = ({ apiURL }: GetAPIProxySettingsOptions): Opt
             proxyResponse.headers['set-cookie'] = cookies
         }
     },
+    onProxyReq: proxyRequest => {
+        // Not really clear why, but the `changeOrigin: true` setting does NOT add the correct
+        // Origin header to requests sent to k8s.sgdev.org, which e.g. breaks sign in and more. So
+        // we add it ourselves.
+        proxyRequest.setHeader('Origin', apiURL)
+    },
     // TODO: share with `client/web/gulpfile.js`
     // Avoid crashing on "read ECONNRESET".
     onError: () => undefined,
