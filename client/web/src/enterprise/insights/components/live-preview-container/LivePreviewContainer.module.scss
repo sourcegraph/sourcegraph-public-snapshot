@@ -12,6 +12,16 @@
     &__chart {
         width: 100%;
         height: 100%;
+
+        [data-chart-size-root], [data-line-chart-size-root] {
+            min-height: 15rem;
+        }
+
+        @media (--md-breakpoint-down) {
+            [data-chart-size-root], [data-line-chart-size-root] {
+                min-height: 20rem;
+            }
+        }
     }
 
     &__chart--with-mock {

@@ -3,6 +3,7 @@
 .content {
     display: flex;
     flex-wrap: wrap;
+    align-items: flex-start;
 
     &__form {
         display: flex;
@@ -21,7 +22,6 @@
 
         flex-basis: 25rem;
         flex-shrink: 0;
-        height: 20rem;
     }
 
     @media (--md-breakpoint-down) {
