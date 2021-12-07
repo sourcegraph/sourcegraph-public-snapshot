@@ -1271,7 +1271,7 @@ WITH cte AS (
 	SELECT repo_id, user_ids_ints
 	FROM repo_permissions
 	WHERE
-		%s = ANY (user_ids_ints)
+		idx(user_ids_ints, %s) != 0
 	LIMIT %s
 	FOR UPDATE
 )
