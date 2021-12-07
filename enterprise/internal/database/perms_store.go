@@ -1261,9 +1261,8 @@ func (s *PermsStore) batchDeleteAllPermissionsForUser(ctx context.Context, userI
 	return n > 0, nil
 }
 
-// upsertUserPermissionsQuery upserts single row of user permissions, it does the
-// same thing as upsertUserPermissionsBatchQuery but also updates "synced_at"
-// column to the value of p.SyncedAt field.
+// deleteAllUserRepositoryPermissionsQuery updates all rows contain the given user id
+// up to the limit defined by defaultDeleteAllPermissionsForUserPageSize.
 func deleteAllUserRepositoryPermissionsQuery(userID int32, pageSize int32) *sqlf.Query {
 	const format = `
 -- source: enterprise/internal/database/perms_store.go:PermsStore.DeleteAllPermissionsForUser
