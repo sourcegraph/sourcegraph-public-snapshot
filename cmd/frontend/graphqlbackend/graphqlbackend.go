@@ -603,7 +603,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 }) (*repositoryRedirect, error) {
 	if args.HashedName != nil {
 		// Query by repository hashed name
-		repo, err := backend.NewRepos(r.db.Repos()).GetByHashedName(ctx, api.RepoHashedName(*args.HashedName))
+		repo, err := r.db.Repos().GetByHashedName(ctx, api.RepoHashedName(*args.HashedName))
 		if err != nil {
 			return nil, err
 		}
