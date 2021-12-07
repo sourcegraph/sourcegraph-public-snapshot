@@ -31,7 +31,7 @@ import { SearchBackendBasedInsight } from '../../types/insight/search-insight'
 import { SupportedInsightSubject } from '../../types/subjects'
 import { CodeInsightsBackend } from '../code-insights-backend'
 import {
-    BackendInsightData,
+    BackendInsightData, CaptureInsightSettings,
     DashboardCreateInput,
     DashboardCreateResult,
     DashboardDeleteInput,
@@ -53,6 +53,7 @@ import { InsightInProcessError } from '../utils/errors'
 import { parseDashboardScope } from '../utils/parse-dashboard-scope'
 
 import { createInsight } from './gql-handlers/create-insight'
+import { getCaptureGroupInsightsPreview } from './gql-handlers/get-capture-group-insight-preivew';
 import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
 import { GET_INSIGHTS_GQL, INSIGHT_VIEW_FRAGMENT } from './gql/GetInsights'
 import { GET_INSIGHTS_DASHBOARDS_GQL } from './gql/GetInsightsDashboards'
@@ -470,6 +471,9 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     public getLangStatsInsightContent = <D extends keyof ViewContexts>(
         input: GetLangStatsInsightContentInput<D>
     ): Promise<PieChartContent<any>> => getLangStatsInsightContent(input.insight, input.options)
+
+    public getCaptureInsightContent = (input: CaptureInsightSettings): Promise<LineChartContent<any, string>> =>
+        getCaptureGroupInsightsPreview(this.apolloClient, input)
 
     // Repositories API
     public getRepositorySuggestions = getRepositorySuggestions
