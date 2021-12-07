@@ -228,22 +228,54 @@ func (g *Ngram) Update(gs *Ngrams, b int32) {
 
 type OnBytes func(b []byte, arity int)
 
-func onGrams(text string, onBytes OnBytes) Ngrams {
-	ngrams := NewNgrams()
-	for i, b := range text {
-		ngrams.OnIndex(i, b, onBytes)
+var bigramArity = uint64(2) << 62
+var trigramArity = uint64(3) << 62
+
+func ngramArity(n uint64) int8 {
+	if (trigramArity & n) == trigramArity {
+		return 3
 	}
-	return ngrams
+	if (bigramArity & n) == bigramArity {
+		return 2
+	}
+	return 1
+}
+func onGrams(text string) map[uint64]struct{} {
+	seen := map[uint64]struct{}{}
+	ch1 := uint64(0)
+	ch2 := uint64(0)
+	i := 0
+	for _, ch0 := range text {
+		unigram := uint64(ch0)
+		seen[unigram] = struct{}{}
+		if i > 1 {
+			bigram := unigram | (ch1 << 20) | (uint64(2) << 62)
+			seen[bigram] = struct{}{}
+		}
+		if i > 2 {
+			trigram := unigram | (ch1 << 20) | (ch2 << 41) | (uint64(3) << 62)
+			seen[trigram] = struct{}{}
+		}
+		ch2 = ch1
+		ch1 = unigram
+		i++
+	}
+	return seen
 }
 
 func CollectQueryNgrams(query string) [][]byte {
-	var result [][]byte
-	var arities []int
-	onGrams(query, func(b []byte, arity int) {
-		arities = append(arities, arity)
-		result = append(result, b)
-	})
-	randomNumbers := make([]int, len(arities))
+	ngrams := onGrams(query)
+	result := make([][]byte, len(ngrams))
+	arities := make([]int8, len(ngrams))
+	i := 0
+	for hash := range ngrams {
+		data := make([]byte, unsafe.Sizeof(hash))
+		binary.LittleEndian.PutUint64(data, hash)
+		result[i] = data
+		arities[i] = ngramArity(hash)
+		i++
+	}
+	randomNumbers := make([]int, len(ngrams))
 	for i := range randomNumbers {
 		randomNumbers[i] = rand.Int()
 	}
@@ -400,13 +432,11 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 		wg.Add(1)
 		go func(path string) {
 			defer wg.Done()
-			for i := range text {
-
-			}
-			bloomSize := uint(len(ngrams.SeenHashes))
+			ngrams := onGrams(text)
+			bloomSize := uint(len(ngrams))
 			filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
 			data := make([]byte, unsafe.Sizeof(uint64(1)))
-			for hash := range ngrams.SeenHashes {
+			for hash := range ngrams {
 				binary.LittleEndian.PutUint64(data, hash)
 				filter.Add(data)
 			}
