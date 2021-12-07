@@ -1,4 +1,4 @@
-package email
+package background
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/txemail"

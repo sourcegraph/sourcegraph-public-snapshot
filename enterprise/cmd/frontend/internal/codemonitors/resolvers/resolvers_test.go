@@ -16,7 +16,7 @@ import (
 	batchesApitest "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors/resolvers/apitest"
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -1137,8 +1137,8 @@ func TestTriggerTestEmailAction(t *testing.T) {
 		t.Skip()
 	}
 
-	got := email.TemplateDataNewSearchResults{}
-	email.MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *email.TemplateDataNewSearchResults) error {
+	got := background.TemplateDataNewSearchResults{}
+	background.MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *background.TemplateDataNewSearchResults) error {
 		got = *data
 		return nil
 	}
@@ -1169,7 +1169,7 @@ func TestTriggerTestEmailAction(t *testing.T) {
 }
 
 func TestMonitorKindEqualsResolvers(t *testing.T) {
-	got := email.MonitorKind
+	got := background.MonitorKind
 	want := MonitorKind
 
 	if got != want {

@@ -7,4 +7,3 @@ type actionArgs struct {
 	QueryURL           string
 	NumResults         int
 }
-

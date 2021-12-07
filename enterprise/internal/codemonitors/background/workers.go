@@ -11,7 +11,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -245,7 +244,7 @@ func (r *actionRunner) handleEmail(ctx context.Context, j *cm.ActionJob) error {
 		return errors.Wrap(err, "ListRecipients")
 	}
 
-	data, err := email.NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
+	data, err := NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
 	if err != nil {
 		return errors.Wrap(err, "NewTemplateDataForNewSearchResults")
 	}
@@ -257,7 +256,7 @@ func (r *actionRunner) handleEmail(ctx context.Context, j *cm.ActionJob) error {
 		if rec.NamespaceUserID == nil {
 			return errors.New("nil recipient")
 		}
-		err = email.SendEmailForNewSearchResult(ctx, *rec.NamespaceUserID, data)
+		err = SendEmailForNewSearchResult(ctx, *rec.NamespaceUserID, data)
 		if err != nil {
 			return err
 		}
@@ -287,12 +286,12 @@ func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *cm.ActionJob) 
 	}
 
 	utmSource := "code-monitor-slack-webhook"
-	searchURL, err := email.GetSearchURL(ctx, m.Query, utmSource)
+	searchURL, err := GetSearchURL(ctx, m.Query, utmSource)
 	if err != nil {
 		return errors.Wrap(err, "GetSearchURL")
 	}
 
-	codeMonitorURL, err := email.GetCodeMonitorURL(ctx, w.Monitor, utmSource)
+	codeMonitorURL, err := GetCodeMonitorURL(ctx, w.Monitor, utmSource)
 	if err != nil {
 		return errors.Wrap(err, "GetCodeMonitorURL")
 	}
