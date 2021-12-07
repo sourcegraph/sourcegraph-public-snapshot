@@ -1445,6 +1445,32 @@ func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatc
 	return &batchSpecConnectionResolver{store: r.store, opts: opts}, nil
 }
 
+func (r *Resolver) CreateEmptyBatchChange(ctx context.Context, args *graphqlbackend.CreateEmptyBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
+	// TODO(ssbc): currently admin only.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	svc := service.New(r.store)
+
+	var uid, oid int32
+	if err := graphqlbackend.UnmarshalNamespaceID(args.Namespace, &uid, &oid); err != nil {
+		return nil, err
+	}
+
+	batchChange, err := svc.CreateEmptyBatchChange(ctx, service.CreateEmptyBatchChangeOpts{
+		NamespaceUserID: uid,
+		NamespaceOrgID:  oid,
+		Name:            args.Name,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
+}
+
 func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlbackend.CreateBatchSpecFromRawArgs) (graphqlbackend.BatchSpecResolver, error) {
 	// TODO(ssbc): currently admin only.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
@@ -1453,6 +1479,7 @@ func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlback
 
 	svc := service.New(r.store)
 	batchSpec, err := svc.CreateBatchSpecFromRaw(ctx, service.CreateBatchSpecFromRawOpts{
+		// TODO: Handle namespace like for CreateEmptyBatchChange
 		NamespaceUserID:  actor.FromContext(ctx).UID,
 		RawSpec:          args.BatchSpec,
 		AllowIgnored:     args.AllowIgnored,
