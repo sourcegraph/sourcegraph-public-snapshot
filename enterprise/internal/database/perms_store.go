@@ -1198,6 +1198,108 @@ func (s *PermsStore) execute(ctx context.Context, q *sqlf.Query, vs ...interface
 	return rows.Close()
 }
 
+// DeleteAllPermissionsForUser analyzes ALL rows of the `repo_permissions` table and removes
+// the given user id from each one of them, if found.
+//
+// This method will potentially modify all rows of the `repo_permissions` table and is expected
+// to take time.
+// It must not be called from within a transaction.
+// To avoid locking all rows during the update, it will operate in batch and open a new transaction
+// for each batch.
+// If the methods fails while processing a batch, it is the caller's responsibility to handle the retry strategy
+// (typically user the workerutil package).
+// This method is idempotent and can be safely called multiple times with the same arguments.
+//
+// 🚨 SECURITY: This method must only be called when the explicit permissions API is enabled.
+// It is the caller's responsibility to ensure that it's the case.
+func (s *PermsStore) DeleteAllRepoPermissionsForUser(ctx context.Context, userID int32) (err error) {
+	if Mocks.Perms.DeleteAllPermissionsForUser != nil {
+		return Mocks.Perms.DeleteAllPermissionsForUser(ctx, userID)
+	}
+
+	ctx, save := s.observe(ctx, "DeleteAllPermissionsForUser", "")
+	defer func() {
+		save(&err, otlog.Int32("userID", userID))
+	}()
+
+	if s.InTransaction() {
+		return errors.Wrap(err, "DeleteAllPermissionsForUser must not be called from within a transaction")
+	}
+
+	for {
+		hasNextPage, err := s.batchDeleteAllPermissionsForUser(ctx, userID)
+		if err != nil {
+			return errors.Wrap(err, "batch delete all repo permissions for user")
+		}
+
+		if !hasNextPage {
+			break
+		}
+	}
+
+	return nil
+}
+
+func (s *PermsStore) batchDeleteAllPermissionsForUser(ctx context.Context, userID int32) (hasNextPage bool, err error) {
+	txs, err := s.Transact(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer func() { err = txs.Done(err) }()
+
+	q := deleteAllUserRepositoryPermissionsQuery(userID, deleteAllPermissionsForUserPageSize)
+
+	res, err := s.ExecResult(ctx, q)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+
+	return n > 0, nil
+}
+
+// upsertUserPermissionsQuery upserts single row of user permissions, it does the
+// same thing as upsertUserPermissionsBatchQuery but also updates "synced_at"
+// column to the value of p.SyncedAt field.
+func deleteAllUserRepositoryPermissionsQuery(userID int32, pageSize int32) *sqlf.Query {
+	const format = `
+-- source: enterprise/internal/database/perms_store.go:PermsStore.DeleteAllPermissionsForUser
+WITH cte AS (
+	SELECT repo_id, user_ids_ints
+	FROM repo_permissions
+	WHERE
+		%s = ANY (user_ids_ints)
+	LIMIT %s
+	FOR UPDATE
+)
+UPDATE repo_permissions
+SET user_ids_ints = array_remove(cte.user_ids_ints, %s)
+FROM cte
+`
+
+	return sqlf.Sprintf(
+		format,
+		userID,
+		pageSize,
+		userID,
+	)
+}
+
+// deleteAllPermissionsForUserPageSize restricts page size for DeleteAllPermissionsForUser to
+// avoid locking the whole table in case the user has access to all repositories.
+//
+// May be modified for testing.
+var deleteAllPermissionsForUserPageSize int32 = defaultDeleteAllPermissionsForUserPageSize
+
+// defaultDeleteAllPermissionsForUserPageSize sets a default for deleteAllPermissionsForUserPageSize.
+//
+// Value set to avoid locking all repository permissions in case a user
+// has access to all repos.
+const defaultDeleteAllPermissionsForUserPageSize = 10_000
+
 // permsLoadValues contains return values of (*PermsStore).load method.
 type permsLoadValues struct {
 	id        int32           // An integer ID

@@ -2120,6 +2120,62 @@ func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(*testing.T)
 	}
 }
 
+func testPermsStore_DeleteAllRepoPermissionsForUser(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		s := Perms(db, clock)
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+		})
+
+		ctx := context.Background()
+
+		// Set permissions for 2 users over 10 repos
+		for i := int32(1); i <= 10; i++ {
+			if err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
+				RepoID:  i,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(1, 2),
+			}); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		// set pagination to 4 for this test
+		oldPageSize := deleteAllPermissionsForUserPageSize
+		deleteAllPermissionsForUserPageSize = 4
+		defer func() { deleteAllPermissionsForUserPageSize = oldPageSize }()
+
+		// Remove all repo permissions for user=1
+		if err := s.DeleteAllRepoPermissionsForUser(ctx, 1); err != nil {
+			t.Fatal(err)
+		}
+
+		expectRepoPerm := func(repoID int32, ids ...uint32) {
+			p := authz.RepoPermissions{
+				RepoID: repoID,
+				Perm:   authz.Read,
+			}
+			err := s.LoadRepoPermissions(ctx, &p)
+			if err != nil {
+				t.Fatalf("repoID %d: %v", repoID, err)
+			}
+			if !p.UserIDs.Equals(roaring.BitmapOf(ids...)) {
+				t.Fatalf("repo %d permissions mismatch: got %v, want %v", repoID, bitmapToArray(p.UserIDs), ids)
+			}
+		}
+
+		// Check user=1 should not have permissions for any repo
+		for i := int32(1); i <= 10; i++ {
+			expectRepoPerm(i, 2)
+		}
+
+		// Call the function again on the same user should not fail
+		if err := s.DeleteAllRepoPermissionsForUser(ctx, 1); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
 func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := Perms(db, time.Now)
