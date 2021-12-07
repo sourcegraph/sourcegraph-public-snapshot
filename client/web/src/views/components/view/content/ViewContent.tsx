@@ -1,6 +1,5 @@
 import classNames from 'classnames'
 import { isObject } from 'lodash'
-import { MdiReactIconComponentType } from 'mdi-react'
 import React, { useEffect, useRef } from 'react'
 import { View, MarkupContent } from 'sourcegraph'
 
@@ -15,7 +14,6 @@ import { hasProperty } from '@sourcegraph/shared/src/util/types'
 import { ErrorAlert } from '../../../../components/alerts'
 
 import { ChartViewContent } from './chart-view-content/ChartViewContent'
-import { ViewDescription } from './description/ViewDescription'
 import styles from './ViewContent.module.scss'
 
 const isMarkupContent = (input: unknown): input is MarkupContent =>
@@ -119,35 +117,30 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
 export interface ViewErrorContentProps {
     title: string
     error: ErrorLike
-    icon: MdiReactIconComponentType
 }
 
 export const ViewErrorContent: React.FunctionComponent<ViewErrorContentProps> = props => {
-    const { error, title, icon, children } = props
+    const { error, title, children } = props
 
     return (
         <div className="h-100 w-100 d-flex flex-column">
             {children || <ErrorAlert data-testid={`${title} view error`} className="m-0" error={error} />}
-            <ViewDescription className="mt-auto" title={title} icon={icon} />
         </div>
     )
 }
 
 export interface ViewLoadingContentProps {
     text: string
-    description: string
-    icon: MdiReactIconComponentType
 }
 
 export const ViewLoadingContent: React.FunctionComponent<ViewLoadingContentProps> = props => {
-    const { text, description, icon } = props
+    const { text } = props
 
     return (
         <div className="h-100 w-100 d-flex flex-column">
             <span className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
                 <LoadingSpinner /> {text}
             </span>
-            <ViewDescription className="mt-auto" title={description} icon={icon} />
         </div>
     )
 }
