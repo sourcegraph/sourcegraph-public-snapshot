@@ -280,7 +280,7 @@ NOTE: You can ignore this if you're not a Sourcegraph employee.
 				check: checkCommandOutputContains("asdf", "version"),
 				instructionsCommandsBuilder: stringCommandBuilder(func(ctx context.Context) string {
 					// Uses `&&` to avoid appending the shell config on failed installations attempts.
-					return `brew install asdf && echo ". $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.sh" >> ` + getUserShellConfigPath(ctx)
+					return `brew install asdf && echo ". ${HOMEBREW_PREFIX:-/usr/local}/opt/asdf/libexec/asdf.sh" >> ` + getUserShellConfigPath(ctx)
 				}),
 			},
 		},
