@@ -1,0 +1,80 @@
+[]types.InsightViewSeries{
+	{
+		ViewID:          4,
+		DashboardViewID: 3,
+		UniqueID:        "unique-4",
+		SeriesID:        "series-id-2",
+		Title:           "test title 4",
+		Description:     "test description 4",
+		Query:           "query-2",
+		CreatedAt: time.Time{
+			wall: 872715000,
+			ext:  63774508602,
+		},
+		OldestHistoricalAt: time.Time{
+			wall: 872715000,
+			ext:  63774508602,
+		},
+		LastRecordedAt: time.Time{
+			wall: 872715000,
+			ext:  63774508602,
+		},
+		NextRecordingAfter: time.Time{
+			wall: 872715000,
+			ext:  63774508602,
+		},
+		LastSnapshotAt: time.Time{
+			wall: 872715000,
+			ext:  63774508602,
+		},
+		NextSnapshotAfter: time.Time{
+			wall: 872715000,
+			ext:  63774508602,
+		},
+		Label:               "label4-2",
+		LineColor:           "color4",
+		SampleIntervalUnit:  "MONTH",
+		SampleIntervalValue: 1,
+		PresentationType:    types.PresentationType("LINE"),
+		GenerationMethod:    types.GenerationMethod("search"),
+	},
+	{
+		ViewID:          3,
+		DashboardViewID: 4,
+		UniqueID:        "unique-3",
+		SeriesID:        "series-id-1",
+		Title:           "test title 3",
+		Description:     "test description 3",
+		Query:           "query-1",
+		CreatedAt: time.Time{
+			wall: 872715000,
+			ext:  63774508602,
+		},
+		OldestHistoricalAt: time.Time{
+			wall: 872715000,
+			ext:  63774508602,
+		},
+		LastRecordedAt: time.Time{
+			wall: 872715000,
+			ext:  63774508602,
+		},
+		NextRecordingAfter: time.Time{
+			wall: 872715000,
+			ext:  63774508602,
+		},
+		LastSnapshotAt: time.Time{
+			wall: 872715000,
+			ext:  63774508602,
+		},
+		NextSnapshotAfter: time.Time{
+			wall: 872715000,
+			ext:  63774508602,
+		},
+		Label:               "label3-1",
+		LineColor:           "color3",
+		SampleIntervalUnit:  "MONTH",
+		SampleIntervalValue: 1,
+		PresentationType:    types.PresentationType("LINE"),
+		GenerationMethod:    types.GenerationMethod("search"),
+	},
+}
