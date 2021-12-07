@@ -681,6 +681,10 @@ func TestPermissionLevels(t *testing.T) {
 					}`, userID)
 				},
 			},
+			// TODO: Add tests for "CreateBatchSpecFromRaw"
+			// TODO: Add tests for "ExecuteBatchSpec"
+			// TODO: Add tests for "ReplaceBatchSpecInput"
+			// TODO: Add tests for "RetryBatchSpecWorkspaceExecution"
 		}
 
 		for _, m := range mutations {
