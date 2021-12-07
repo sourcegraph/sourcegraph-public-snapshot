@@ -11,6 +11,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
+	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -163,15 +164,20 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 
 	// Construct and parse the batch spec YAML of just the provided name to validate the
 	// pattern of the name is okay
-	rawSpec := "name: " + opts.Name
-	spec, err := batcheslib.ParseBatchSpec([]byte(rawSpec), batcheslib.ParseBatchSpecOptions{})
+	rawSpec, err := yaml.Marshal(struct {
+		Name string `yaml:"name"`
+	}{Name: opts.Name})
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling name")
+	}
+	spec, err := batcheslib.ParseBatchSpec(rawSpec, batcheslib.ParseBatchSpecOptions{})
 	if err != nil {
 		return nil, err
 	}
 
 	actor := actor.FromContext(ctx)
 	batchSpec := &btypes.BatchSpec{
-		RawSpec:         rawSpec,
+		RawSpec:         string(rawSpec),
 		Spec:            spec,
 		NamespaceUserID: opts.NamespaceUserID,
 		NamespaceOrgID:  opts.NamespaceOrgID,

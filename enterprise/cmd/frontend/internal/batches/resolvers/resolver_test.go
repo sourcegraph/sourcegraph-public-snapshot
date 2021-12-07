@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -586,6 +587,23 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 
 	if response.CreateEmptyBatchChange.ID == "" {
 		t.Fatalf("expected batch change to be created, but was not")
+	}
+
+	// This case should fail because the name fails validation
+	input3 := map[string]interface{}{
+		"namespace": namespaceID,
+		"name":      "not: valid:\nname",
+	}
+
+	errors = apitest.Exec(actorCtx, t, s, input3, &response, mutationCreateEmptyBatchChange)
+
+	if len(errors) != 1 {
+		t.Fatalf("expected single errors, but got none")
+	}
+
+	expError := "The batch change name can only contain word characters, dots and dashes."
+	if have, want := errors[0].Message, expError; !strings.Contains(have, "The batch change name can only contain word characters, dots and dashes.") {
+		t.Fatalf("wrong error. want to contain=%q, have=%q", want, have)
 	}
 }
 
