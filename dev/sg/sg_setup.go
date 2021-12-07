@@ -27,8 +27,6 @@ import (
 )
 
 var (
-	userShell    string
-	userShellRC  string
 	setupFlagSet = flag.NewFlagSet("sg setup", flag.ExitOnError)
 	setupCommand = &ffcli.Command{
 		Name:       "setup",
