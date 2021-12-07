@@ -50,7 +50,17 @@ var (
 			"http://somehost/path?x=id%3Daaaa%26v%3D1.1%26uc&x=id%3Dbbbb%26v%3D2.0%26uc",
 		},
 	}
-	all = []Corpus{flask, sourcegraph, kubernetes, linux, chromium}
+	megarepo = Corpus{
+		Name: "megarepo", URL: "https://github.com/sgtest/megarepo/zipball/11c726fd66bb6252cb8e9c0af8933f5ba0fb1e8d",
+		Queries: []string{
+			"áð",
+			"FolderStru",
+			"44a1",
+			"FolderStru",
+			"http://github.com/PolymerElements/iron-a11y-announcer.git",
+		},
+	}
+	all = []Corpus{flask, sourcegraph, kubernetes, linux, chromium, megarepo}
 )
 
 func main() {
