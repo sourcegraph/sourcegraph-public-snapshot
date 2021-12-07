@@ -24,7 +24,7 @@ exports[`SearchStatsPage limitHit 1`] = `
         </svg>
          Code statistics 
         <small
-          class="badge badge-secondary text-uppercase ml-2"
+          class="badge secondary text-uppercase ml-2"
         >
           Experimental
         </small>
@@ -89,7 +89,7 @@ exports[`SearchStatsPage renders 1`] = `
         </svg>
          Code statistics 
         <small
-          class="badge badge-secondary text-uppercase ml-2"
+          class="badge secondary text-uppercase ml-2"
         >
           Experimental
         </small>

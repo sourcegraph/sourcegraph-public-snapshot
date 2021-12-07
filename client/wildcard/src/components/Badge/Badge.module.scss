@@ -57,7 +57,7 @@ a.badge:focus {
 }
 
 a.badge {
-    transition: $btn-transition;
+    transition: var(--badge-transition);
 }
 
 // Base Variants
