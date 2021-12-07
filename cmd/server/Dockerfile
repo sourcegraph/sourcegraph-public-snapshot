@@ -33,14 +33,12 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 # hadolint ignore=DL3018
-RUN apk add --no-cache \
-    # Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
-    git \
+RUN apk add --no-cache -verbose \
+    # We require git>=2.30 because we use git maintenance.
+    'git>=2.30' \
     git-p4 \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
-
-# hadolint ignore=DL3018
-RUN apk update && apk add --no-cache --verbose \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.14/main  \
+    && apk add --no-cache --verbose \
     # NOTE that the Postgres version we run is different
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:
