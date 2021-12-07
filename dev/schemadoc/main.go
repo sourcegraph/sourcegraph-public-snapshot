@@ -23,6 +23,7 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type runFunc func(quiet bool, cmd ...string) (string, error)
@@ -35,7 +36,7 @@ var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 var versionRe = lazyregexp.New(`\b12\.\d+\b`)
 
-type databaseFactory func(dsn string, appName string, migrate bool) (*sql.DB, error)
+type databaseFactory func(dsn string, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error)
 
 var schemas = map[string]struct {
 	destinationFilename string
@@ -112,7 +113,7 @@ func generateAndWrite(name string, factory databaseFactory, dataSource string, c
 		return errors.Wrap(err, fmt.Sprintf("run: %s", out))
 	}
 
-	db, err := factory(dataSource, "", true)
+	db, err := factory(dataSource, "", true, &observation.TestContext)
 	if err != nil {
 		return err
 	}

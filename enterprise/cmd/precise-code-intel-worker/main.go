@@ -125,7 +125,7 @@ func mustInitializeDB() *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	sqlDB, err := connections.NewFrontendDB(dsn, "precise-code-intel-worker", false)
+	sqlDB, err := connections.NewFrontendDB(dsn, "precise-code-intel-worker", false, &observation.TestContext)
 	if err != nil {
 		log.Fatalf("Failed to connect to frontend database: %s", err)
 	}
@@ -151,7 +151,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-	db, err := connections.NewCodeIntelDB(dsn, "precise-code-intel-worker", true)
+	db, err := connections.NewCodeIntelDB(dsn, "precise-code-intel-worker", true, &observation.TestContext)
 	if err != nil {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}

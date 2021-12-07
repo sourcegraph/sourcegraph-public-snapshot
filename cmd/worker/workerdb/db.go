@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // Init initializes and returns a connection to the frontend database.
@@ -25,7 +26,7 @@ var initDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{}, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	db, err := connections.NewFrontendDB(dsn, "worker", false)
+	db, err := connections.NewFrontendDB(dsn, "worker", false, &observation.TestContext)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}

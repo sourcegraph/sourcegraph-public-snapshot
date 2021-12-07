@@ -37,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -116,7 +117,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	sqlDB, err := connections.NewFrontendDB(dsn, "repo-updater", false)
+	sqlDB, err := connections.NewFrontendDB(dsn, "repo-updater", false, &observation.TestContext)
 	if err != nil {
 		log.Fatalf("failed to initialize database store: %v", err)
 	}
