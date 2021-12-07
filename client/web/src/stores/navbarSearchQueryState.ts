@@ -122,7 +122,7 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
 /**
  * Update or initialize query state related data from URL search parameters
  */
-export function setQueryStateFromURL(urlParameters: string) {
+export function setQueryStateFromURL(urlParameters: string): void {
     // This will be updated with the default in settings when the web app mounts.
     const parsedSearchURL = parseSearchURL(urlParameters)
     if (parsedSearchURL.query) {
@@ -136,7 +136,7 @@ export function setQueryStateFromURL(urlParameters: string) {
 /**
  * Update or initialize query state related data from settings
  */
-export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Settings>) {
+export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Settings>): void {
     const caseSensitive = defaultCaseSensitiveFromSettings(settings)
     if (caseSensitive) {
         useNavbarQueryState.setState({ searchCaseSensitivity: caseSensitive })
