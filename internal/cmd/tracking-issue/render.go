@@ -11,7 +11,7 @@ import (
 // RenderTrackingIssue renders the work section of the given tracking issue.
 func RenderTrackingIssue(context IssueContext) string {
 	assignees := findAssignees(context.Match(NewMatcher(
-		nonTrackingLabels(context.trackingIssue.Labels),
+		context.trackingIssue.IdentifyingLabels(),
 		context.trackingIssue.Milestone,
 		"",
 		false,
@@ -21,7 +21,7 @@ func RenderTrackingIssue(context IssueContext) string {
 
 	for _, assignee := range assignees {
 		assigneeContext := context.Match(NewMatcher(
-			nonTrackingLabels(context.trackingIssue.Labels),
+			context.trackingIssue.IdentifyingLabels(),
 			context.trackingIssue.Milestone,
 			assignee,
 			assignee == "",

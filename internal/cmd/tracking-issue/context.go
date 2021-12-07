@@ -77,7 +77,7 @@ func matchingTrackingIssues(trackingIssue *Issue, issues []*Issue, pullRequests 
 		var top *Issue
 		top, stack = stack[0], stack[1:]
 
-		if len(top.Labels) != 2 || !strings.HasPrefix(nonTrackingLabels(top.Labels)[0], "team/") {
+		if len(top.Labels) != 2 || !strings.HasPrefix(top.IdentifyingLabels()[0], "team/") {
 			matchingTrackingIssues = append(matchingTrackingIssues, top)
 		}
 

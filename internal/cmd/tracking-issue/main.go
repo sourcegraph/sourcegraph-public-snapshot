@@ -15,10 +15,11 @@ import (
 )
 
 const (
-	beginWorkMarker        = "<!-- BEGIN WORK -->"
-	endWorkMarker          = "<!-- END WORK -->"
-	beginAssigneeMarkerFmt = "<!-- BEGIN ASSIGNEE: %s -->"
-	endAssigneeMarker      = "<!-- END ASSIGNEE -->"
+	beginWorkMarker           = "<!-- BEGIN WORK -->"
+	endWorkMarker             = "<!-- END WORK -->"
+	beginAssigneeMarkerFmt    = "<!-- BEGIN ASSIGNEE: %s -->"
+	endAssigneeMarker         = "<!-- END ASSIGNEE -->"
+	optionalLabelMarkerRegexp = "<!-- OPTIONAL LABEL: (.*) -->"
 )
 
 func main() {
