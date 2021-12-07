@@ -145,6 +145,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
     const { executeBatchSpec, isLoading: isExecuting, error: executeError } = useExecuteBatchSpec(batchSpecID)
 
     // Disable the execute button if any of the following are true:
+    // * The batch change has not been created yet
     // * the batch spec code is invalid
     // * there was an error with the preview
     // * we're already in the middle of previewing or executing
@@ -153,7 +154,8 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
     // * the current workspaces evaluation is not complete
     const [disableExecution, executionTooltip] = useMemo(() => {
         const disableExecution = Boolean(
-            isValid !== true ||
+            createEmptyBatchChangeData === undefined ||
+                isValid !== true ||
                 previewError ||
                 isLoadingPreview ||
                 isExecuting ||
@@ -163,7 +165,9 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
         )
         // The execution tooltip only shows if the execute button is disabled, and explains why.
         const executionTooltip =
-            isValid === false || previewError
+            createEmptyBatchChangeData === undefined
+                ? "There's nothing to run yet."
+                : isValid === false || previewError
                 ? "There's a problem with your batch spec."
                 : !batchSpecID
                 ? 'Preview workspaces first before you run.'
@@ -175,6 +179,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
 
         return [disableExecution, executionTooltip]
     }, [
+        createEmptyBatchChangeData,
         batchSpecID,
         isValid,
         previewError,
