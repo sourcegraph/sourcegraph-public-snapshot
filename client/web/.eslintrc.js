@@ -9,7 +9,7 @@ module.exports = {
   overrides: [
     ...baseConfig.overrides,
     {
-      files: ['src/stores/global.ts', 'src/__mocks__/zustand.ts'],
+      files: ['src/stores/**.ts', 'src/__mocks__/zustand.ts'],
       rules: { 'no-restricted-imports': 'off' },
     },
   ],
@@ -21,7 +21,8 @@ module.exports = {
           {
             name: 'zustand',
             importNames: ['default'],
-            message: 'Avoid creating multiple global stores. Use the existing store in client/web/src/stores/global.ts',
+            message:
+              'Our Zustand stores should be created in a single place. Create this store in client/web/src/stores',
           },
         ],
       },
