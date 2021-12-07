@@ -12,7 +12,7 @@ import { toSourcegraphLanguage } from './code-intel/languages'
 import { SourcegraphDefinitionProvider } from './code-intel/SourcegraphDefinitionProvider'
 import { SourcegraphHoverProvider } from './code-intel/SourcegraphHoverProvider'
 import { SourcegraphReferenceProvider } from './code-intel/SourcegraphReferenceProvider'
-import { openSourcegraphUriCommand } from './commands.ts/openSourcegraphUriCommand'
+import { openSourcegraphUriCommand } from './commands/openSourcegraphUriCommand'
 import { FilesTreeDataProvider } from './file-system/FilesTreeDataProvider'
 import { SourcegraphFileSystemProvider } from './file-system/SourcegraphFileSystemProvider'
 import { SourcegraphUri } from './file-system/SourcegraphUri'
@@ -33,7 +33,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const instanceHostname = endpointHostnameSetting()
 
     vscode.workspace.onDidChangeConfiguration(event => {
-        if (event.affectsConfiguration('sourcegraph.url')) {
+        if (event.affectsConfiguration('sourcegraph.url') || event.affectsConfiguration('sourcegraph.corsUrl')) {
             const newSourcegraphUrl = vscode.workspace.getConfiguration('sourcegraph').get('url')
             if (initialSourcegraphUrl !== newSourcegraphUrl) {
                 invalidateClient()

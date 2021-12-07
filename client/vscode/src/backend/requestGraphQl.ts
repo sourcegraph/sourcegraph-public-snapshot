@@ -1,10 +1,12 @@
+import vscode from 'vscode'
+
 import { checkOk, isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
 import { GRAPHQL_URI } from '@sourcegraph/shared/src/graphql/constants'
 import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { accessTokenSetting, handleAccessTokenError } from '../settings/accessTokenSetting'
-import { endpointSetting } from '../settings/endpointSetting'
+import { endpointSetting, endpointCorsSetting } from '../settings/endpointSetting'
 
 let invalidated = false
 
@@ -32,12 +34,17 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
 
     const sourcegraphURL = endpointSetting()
     const accessToken = accessTokenSetting()
+    const corsUrl = endpointCorsSetting()
     if (accessToken) {
         headers.push(['Authorization', `token ${accessToken}`])
     }
     try {
+        // Add CORS when available
+        const searchUrl = corsUrl
+            ? `${new URL('/', corsUrl).href}${new URL(apiURL, sourcegraphURL).href}`
+            : new URL(apiURL, sourcegraphURL).href
         const response = checkOk(
-            await fetch(new URL(apiURL, sourcegraphURL).href, {
+            await fetch(searchUrl, {
                 body: JSON.stringify({
                     query: request,
                     variables,
@@ -54,6 +61,9 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
         if (isHTTPAuthError(error)) {
             await handleAccessTokenError(accessToken ?? '')
         }
+        await vscode.window.showErrorMessage(
+            'Fail to connect to endpoint. Please make sure you have CORS configured in your setting if you are on VS Code Web.'
+        )
         throw asError(error)
     }
 }

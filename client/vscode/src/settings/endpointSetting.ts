@@ -28,3 +28,9 @@ export function endpointPortSetting(): number {
     const port = new URL(endpointSetting()).port
     return port ? parseInt(port, 10) : 443
 }
+
+export function endpointCorsSetting(): string {
+    // has default value = null
+    const corsUrl = readConfiguration().get<string>('corsUrl')
+    return corsUrl === 'string' ? new URL('', corsUrl).origin : ''
+}
