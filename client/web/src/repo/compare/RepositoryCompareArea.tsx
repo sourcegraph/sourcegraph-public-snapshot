@@ -212,6 +212,8 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                     <WebHoverOverlay
                         {...this.props}
                         {...this.state.hoverOverlayProps}
+                        nav={url => this.props.history.push(url)}
+                        hoveredTokenElement={this.state.hoveredTokenElement}
                         telemetryService={this.props.telemetryService}
                         hoverRef={this.nextOverlayElement}
                     />

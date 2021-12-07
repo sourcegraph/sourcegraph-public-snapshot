@@ -299,6 +299,8 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                     <WebHoverOverlay
                         {...this.props}
                         {...this.state.hoverOverlayProps}
+                        nav={url => this.props.history.push(url)}
+                        hoveredTokenElement={this.state.hoveredTokenElement}
                         telemetryService={this.props.telemetryService}
                         hoverRef={this.nextOverlayElement}
                     />

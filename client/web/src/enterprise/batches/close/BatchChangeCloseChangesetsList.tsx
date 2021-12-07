@@ -168,6 +168,8 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
                 {hoverState?.hoverOverlayProps && (
                     <WebHoverOverlay
                         {...hoverState.hoverOverlayProps}
+                        nav={url => history.push(url)}
+                        hoveredTokenElement={hoverState.hoveredTokenElement}
                         telemetryService={telemetryService}
                         extensionsController={extensionsController}
                         isLightTheme={isLightTheme}
