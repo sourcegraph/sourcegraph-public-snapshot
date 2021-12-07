@@ -2,8 +2,9 @@ import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 import React from 'react'
 
+import { Badge } from '@sourcegraph/wildcard'
+
 import { HoverMerged } from '../../../api/client/types/hover'
-import { LinkOrSpan } from '../../../components/LinkOrSpan'
 import { asError } from '../../../util/errors'
 import { renderMarkdown } from '../../../util/markdown'
 import hoverOverlayStyle from '../../HoverOverlay.module.scss'
@@ -15,7 +16,11 @@ interface HoverOverlayContentProps {
     content: HoverMerged['contents'][number]
     aggregatedBadges: HoverMerged['aggregatedBadges']
     index: number
-    badgeClassName?: string
+    /**
+     * Allows usage on other code hosts.
+     * We can inherit the badge styles of the code host rather than use our branded styles.
+     */
+    customBadgeClassName?: string
     errorAlertClassName?: string
     contentClassName?: string
 }
@@ -29,7 +34,7 @@ function tryMarkdownRender(content: string): string | Error {
 }
 
 export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentProps> = props => {
-    const { content, aggregatedBadges = [], index, errorAlertClassName, badgeClassName } = props
+    const { content, aggregatedBadges = [], index, errorAlertClassName, customBadgeClassName } = props
 
     if (content.kind !== 'markdown') {
         return (
@@ -57,15 +62,16 @@ export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentPro
             {index !== 0 && <hr />}
             {aggregatedBadges.map(({ text, linkURL, hoverMessage }) => (
                 <small key={text} className={classNames(hoverOverlayStyle.badge)}>
-                    <LinkOrSpan
-                        to={linkURL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        data-tooltip={hoverMessage}
-                        className={classNames('test-hover-badge', badgeClassName, hoverOverlayStyle.badgeLabel)}
+                    <Badge
+                        unstyled={Boolean(customBadgeClassName)}
+                        className={classNames('test-hover-badge', customBadgeClassName, hoverOverlayStyle.badgeLabel)}
+                        href={linkURL}
+                        tooltip={hoverMessage}
+                        variant="secondary"
+                        small={true}
                     >
                         {text}
-                    </LinkOrSpan>
+                    </Badge>
                 </small>
             ))}
             <span

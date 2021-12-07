@@ -462,7 +462,7 @@ export const githubCodeHost: CodeHost = {
         actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
         closeButtonClassName: 'btn-octicon p-0 hover-overlay__close-button--github',
-        badgeClassName: 'label hover-overlay__badge--github',
+        customBadgeClassName: 'label hover-overlay__badge--github',
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames, 'flash-full'),
         iconClassName,
     },

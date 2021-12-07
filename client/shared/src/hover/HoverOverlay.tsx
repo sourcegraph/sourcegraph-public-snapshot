@@ -32,7 +32,7 @@ export interface HoverOverlayClassProps {
     closeButtonClassName?: string
 
     iconClassName?: string
-    badgeClassName?: string
+    customBadgeClassName?: string
 
     actionItemClassName?: string
     actionItemPressedClassName?: string
@@ -85,7 +85,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
         className,
         closeButtonClassName,
         iconClassName,
-        badgeClassName,
+        customBadgeClassName,
         actionItemClassName,
         actionItemPressedClassName,
         contentClassName,
@@ -136,7 +136,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                 <HoverOverlayContents
                     hoverOrError={hoverOrError}
                     iconClassName={iconClassName}
-                    badgeClassName={badgeClassName}
+                    customBadgeClassName={customBadgeClassName}
                     errorAlertClassName={getAlertClassName?.(NotificationType.Error)}
                     contentClassName={contentClassName}
                 />
