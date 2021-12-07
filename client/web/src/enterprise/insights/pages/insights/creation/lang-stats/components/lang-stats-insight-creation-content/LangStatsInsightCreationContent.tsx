@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
-import styles from '../../../../../../components/creation-ui-kit/CreationUIKit.module.scss'
+import styles from '../../../../../../components/creation-ui-kit/CreationUiKit.module.scss'
 import { useAsyncInsightTitleValidator } from '../../../../../../components/form/hooks/use-async-insight-title-validator'
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../../components/form/hooks/useForm'

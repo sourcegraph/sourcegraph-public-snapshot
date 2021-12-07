@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
-import styles from '../../../../../../components/creation-ui-kit/CreationUIKit.module.scss'
+import styles from '../../../../../../components/creation-ui-kit/CreationUiKit.module.scss'
 import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { CreateInsightFormFields } from '../../types'
