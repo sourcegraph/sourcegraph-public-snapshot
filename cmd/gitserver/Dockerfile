@@ -32,14 +32,11 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 
 # hadolint ignore=DL3018
 RUN apk add --no-cache \
-    # Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
-    git \
+    # We require git>=2.30 because we use git maintenance.
+    'git>=2.30' \
     git-p4 \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
-
-
-# hadolint ignore=DL3018
-RUN apk add --no-cache \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.14/main  \
+    && apk add --no-cache \
     openssh-client \
     python2 \
     python3
