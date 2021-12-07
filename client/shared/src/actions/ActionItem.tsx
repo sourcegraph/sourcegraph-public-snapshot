@@ -229,8 +229,8 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 ? this.props.action.actionItem.pressed
                 : undefined
 
-        const altTo = this.props.altAction && urlForClientCommandOpen(this.props.altAction, this.props.location)
-        const primaryTo = urlForClientCommandOpen(this.props.action, this.props.location)
+        const altTo = this.props.altAction && urlForClientCommandOpen(this.props.altAction, this.props.location.hash)
+        const primaryTo = urlForClientCommandOpen(this.props.action, this.props.location.hash)
         const to = primaryTo || altTo
         // Open in new tab if an external link
         const newTabProps =
@@ -297,7 +297,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
         // Record action ID (but not args, which might leak sensitive data).
         this.props.telemetryService.log(action.id)
 
-        if (urlForClientCommandOpen(action, this.props.location)) {
+        if (urlForClientCommandOpen(action, this.props.location.hash)) {
             if (event.currentTarget.tagName === 'A' && event.currentTarget.hasAttribute('href')) {
                 // Do not execute the command. The <LinkOrButton>'s default event handler will do what we want (which
                 // is to open a URL). The only case where this breaks is if both the action and alt action are "open"
@@ -327,7 +327,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
 
 export function urlForClientCommandOpen(
     action: Pick<Evaluated<ActionContribution>, 'command' | 'commandArguments'>,
-    location: H.Location
+    locationHash: string
 ): string | undefined {
     if (action.command === 'open' && action.commandArguments) {
         const url = action.commandArguments[0]
@@ -342,7 +342,7 @@ export function urlForClientCommandOpen(
         if (typeof url !== 'string') {
             return undefined
         }
-        return urlForOpenPanel(url, location.hash)
+        return urlForOpenPanel(url, locationHash)
     }
 
     return undefined

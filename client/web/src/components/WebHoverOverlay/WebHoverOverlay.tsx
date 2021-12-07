@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -53,23 +53,23 @@ export const WebHoverOverlay: React.FunctionComponent<
         }
     }, [hoveredToken?.filePath, hoveredToken?.line, hoveredToken?.character, onHoverShown, hoverHasValue])
 
-    const def = (() => {
+    const def = useMemo(() => {
         const action =
             Array.isArray(props.actionsOrError) &&
             props.actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded')
         if (!action) {
             return undefined
         }
-        return urlForClientCommandOpen(action.action, props.location)
-    })()
-
-    const nav = props.nav
+        return urlForClientCommandOpen(action.action, props.location.hash)
+    }, [props.actionsOrError, props.location])
 
     useEffect(() => {
         const token = props.hoveredTokenElement
-        if (!token || !def || !nav) {
+        if (!token || !def || !props.nav) {
             return
         }
+
+        const nav = props.nav
 
         const oldCursor = token.style.cursor
         token.style.cursor = 'pointer'
@@ -89,7 +89,7 @@ export const WebHoverOverlay: React.FunctionComponent<
             token.removeEventListener('click', listener)
             token.style.cursor = oldCursor
         }
-    }, [props.hoveredTokenElement, def, nav])
+    }, [props.hoveredTokenElement, def, props.nav])
 
     return (
         <HoverOverlay
