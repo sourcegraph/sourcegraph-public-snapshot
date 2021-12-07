@@ -59,7 +59,7 @@ type operations struct {
 	referenceIDsAndFilters                      *observation.Operation
 	referencesForUpload                         *observation.Operation
 	refreshCommitResolvability                  *observation.Operation
-	repoIDsByGlobPattern                        *observation.Operation
+	repoIDsByGlobPatterns                       *observation.Operation
 	repoName                                    *observation.Operation
 	requeue                                     *observation.Operation
 	requeueIndex                                *observation.Operation
@@ -84,7 +84,7 @@ type operations struct {
 	writeVisibleUploads        *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context, metrics *metrics.OperationMetrics) *operations {
+func newOperations(observationContext *observation.Context, metrics *metrics.REDMetrics) *operations {
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.dbstore.%s", name),
@@ -154,7 +154,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		referenceIDsAndFilters:              op("ReferenceIDsAndFilters"),
 		referencesForUpload:                 op("ReferencesForUpload"),
 		refreshCommitResolvability:          op("RefreshCommitResolvability"),
-		repoIDsByGlobPattern:                op("repoIDsByGlobPattern"),
+		repoIDsByGlobPatterns:               op("repoIDsByGlobPatterns"),
 		repoName:                            op("RepoName"),
 		requeue:                             op("Requeue"),
 		requeueIndex:                        op("RequeueIndex"),

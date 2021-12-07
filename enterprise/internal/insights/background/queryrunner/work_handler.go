@@ -85,8 +85,6 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		return err
 	}
 
-	log15.Info("dequeue_job", "job", *job)
-
 	series, err := r.getSeries(ctx, job.SeriesID)
 	if err != nil {
 		return err

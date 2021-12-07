@@ -10,7 +10,6 @@ import classNames from 'classnames'
 import React, { useState } from 'react'
 import 'storybook-addon-designs'
 
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
 
@@ -19,10 +18,8 @@ import { CodeSnippet } from '../../components/CodeSnippet'
 import { Form } from '../../components/Form'
 
 import { AlertsStory } from './AlertsStory'
-import { BadgeVariants } from './BadgeVariants/BadgeVariants'
 import { CardsStory } from './CardsStory'
 import { ColorVariants } from './ColorVariants'
-import { SEMANTIC_COLORS } from './constants'
 import { FormFieldVariants } from './FormFieldVariants'
 import { TextStory } from './TextStory'
 import { preventDefault } from './utils'
@@ -248,142 +245,6 @@ Alerts.parameters = {
             name: 'Figma Dark',
             url:
                 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A525',
-        },
-    ],
-}
-
-export const Badges: Story = () => (
-    <>
-        <h1>Badges</h1>
-        <p>
-            <a href="https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+count:1000+badge+badge-&patternType=literal">
-                Usages
-            </a>{' '}
-            | <a href="https://getbootstrap.com/docs/4.5/components/badge/">Bootstrap Documentation</a>{' '}
-        </p>
-        <p>Badges are used for labelling and displaying small counts.</p>
-
-        <h2>Scaling</h2>
-        <p>
-            Badges scale to match the size of the immediate parent element by using relative font sizing and{' '}
-            <code>em</code> units for padding.
-        </p>
-        <p>
-            Use a superscript <code>{'<sup></sup>'}</code> to position the badge top-right of a word in <code>h1</code>{' '}
-            headings. Do not use a superscript for smaller text, because the font size would become too small.
-        </p>
-        <table className="table">
-            <tbody>
-                <tr>
-                    <td>
-                        <code>{'<h1>'}</code> + <code>{'<sup>'}</code>
-                    </td>
-                    <td>
-                        <h1>
-                            Lorem{' '}
-                            <sup>
-                                <span className="badge badge-secondary">ipsum</span>
-                            </sup>
-                        </h1>
-                        <small>Use a superscript to align the badge top-right of the heading text.</small>
-                    </td>
-                </tr>
-                {(['h2', 'h3', 'h4', 'h5', 'h6'] as const).map(Heading => (
-                    <tr key={Heading}>
-                        <td>
-                            <code>{`<${Heading}>`}</code>
-                        </td>
-                        <td>
-                            <Heading>
-                                Lorem <span className="badge badge-secondary">ipsum</span>
-                            </Heading>
-                        </td>
-                    </tr>
-                ))}
-                <tr>
-                    <td>Regular text</td>
-                    <td>
-                        Lorem <span className="badge badge-secondary">ipsum</span>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <code>{'<small>'}</code>
-                    </td>
-                    <td>
-                        <small>
-                            Lorem <span className="badge badge-secondary">ipsum</span>
-                        </small>
-                        <p>
-                            <small className="text-danger">
-                                Discouraged because the text becomes too small to read.
-                            </small>
-                        </p>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-
-        <h2>Reference</h2>
-        <BadgeVariants variants={[...SEMANTIC_COLORS, 'outline-secondary']} />
-        <h3>Size</h3>
-        <p>We can also make our badges smaller.</p>
-        <BadgeVariants small={true} variants={['primary', 'secondary']} />
-        <h2>Pill badges</h2>
-        <p>Pill badges are commonly used to display counts.</p>
-        <div className="mb-4">
-            Matches <span className="badge badge-pill badge-secondary">321+</span>
-        </div>
-        <div>
-            <ul className="nav nav-tabs mb-2">
-                <li className="nav-item">
-                    <a className="nav-link active" href="/" onClick={preventDefault}>
-                        <span>
-                            <span className="text-content" data-test-tab="Comments">
-                                Comments
-                            </span>{' '}
-                            <span className="badge badge-pill badge-secondary">14</span>
-                        </span>
-                    </a>
-                </li>
-                <li className="nav-item">
-                    <a className="nav-link" href="/" onClick={preventDefault}>
-                        <span>
-                            <span className="text-content" data-test-tab="Changed files">
-                                Changed files
-                            </span>{' '}
-                            <span className="badge badge-pill badge-secondary">6</span>
-                        </span>
-                    </a>
-                </li>
-            </ul>
-
-            <span>No content here!</span>
-        </div>
-
-        <h2>Links</h2>
-
-        <p>
-            <LinkOrSpan className="badge badge-secondary" to="http://google.com">
-                Tooltip
-            </LinkOrSpan>
-        </p>
-    </>
-)
-
-Badges.parameters = {
-    design: [
-        {
-            type: 'figma',
-            name: 'Figma - Light',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6149',
-        },
-        {
-            type: 'figma',
-            name: 'Figma - Dark',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6448',
         },
     ],
 }

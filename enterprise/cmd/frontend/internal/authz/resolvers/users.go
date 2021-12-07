@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -21,7 +20,7 @@ var _ graphqlbackend.UserConnectionResolver = &userConnectionResolver{}
 // userConnectionResolver resolves a list of user from the roaring bitmap with pagination.
 type userConnectionResolver struct {
 	ids *roaring.Bitmap
-	db  dbutil.DB
+	db  database.DB
 
 	first int32
 	after *string
@@ -76,7 +75,7 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, *g
 
 func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbackend.UserResolver, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -86,14 +85,14 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbackend.U
 	}
 	resolvers := make([]*graphqlbackend.UserResolver, len(users))
 	for i := range users {
-		resolvers[i] = graphqlbackend.NewUserResolver(database.NewDB(r.db), users[i])
+		resolvers[i] = graphqlbackend.NewUserResolver(r.db, users[i])
 	}
 	return resolvers, nil
 }
 
 func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return -1, err
 	}
 
@@ -102,7 +101,7 @@ func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) 
 
 func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

@@ -9,7 +9,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/lib/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 )
 
 // TimescaleDB returns a handle to the Code Insights TimescaleDB instance.
@@ -27,7 +28,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 
 	timescaleDSN := postgresdsn.New("codeinsights", username, os.Getenv)
-	initConn, err := dbconn.NewRaw(timescaleDSN)
+	initConn, closeInitConn, err := newTestDB(timescaleDSN)
 	if err != nil {
 		t.Log("")
 		t.Log("README: To run these tests you need to have the codeinsights TimescaleDB running:")
@@ -62,20 +63,17 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 	u.Path = dbname
 	timescaleDSN = u.String()
-	db, err = dbconn.NewRaw(timescaleDSN)
+	db, closeDBConn, err := newTestDB(timescaleDSN, schemas.CodeInsights)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Perform DB migrations.
-	if err := dbconn.MigrateDB(db, dbconn.CodeInsights); err != nil {
-		t.Fatalf("Failed to perform codeinsights database migration: %s", err)
-	}
 	cleanup = func() {
-		if err := db.Close(); err != nil {
+		if err := closeDBConn(nil); err != nil {
 			t.Log(err)
 		}
-		defer initConn.Close()
+		defer closeInitConn(nil)
 		// It would be nice to cleanup by dropping the test DB we just created. But we can't:
 		//
 		// 	dropping test database ERROR: database "insights_test_testresolver_insights" is being accessed by other users (SQLSTATE 55006)
@@ -90,4 +88,15 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 		//}
 	}
 	return db, cleanup
+}
+
+// newTestDB connects to the given data source and returns the handle. After successful connection, the
+// schema version of the database will be compared against an expected version and the supplied migrations
+// may be run (taking an advisory lock to ensure exclusive access).
+//
+// This function returns a basestore-style callback that closes the database. This should be called instead
+// of calling Close directly on the database handle as it also handles closing migration objects associated
+// with the handle.
+func newTestDB(dsn string, schemas ...*schemas.Schema) (*sql.DB, func(err error) error, error) {
+	return dbconn.ConnectInternal(dsn, "", "", schemas)
 }

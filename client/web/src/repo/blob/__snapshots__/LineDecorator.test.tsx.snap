@@ -1,201 +1,60 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`LineDecorator renders multiple attachments 1`] = `
-<Memo()
-  codeViewElements="[Subject]"
-  decorations={
-    Array [
-      Object {
-        "after": Object {
-          "contentText": "attachment from extension one",
-        },
-        "range": Object {
-          "end": Object {
-            "character": 0,
-            "line": 0,
-          },
-          "start": Object {
-            "character": 0,
-            "line": 0,
-          },
-        },
-      },
-      Object {
-        "after": Object {
-          "contentText": "attachment from extension two",
-        },
-        "range": Object {
-          "end": Object {
-            "character": 0,
-            "line": 0,
-          },
-          "start": Object {
-            "character": 0,
-            "line": 0,
-          },
-        },
-      },
-    ]
-  }
-  getCodeElementFromLineNumber={[Function]}
-  isLightTheme={false}
-  line={1}
-  portalID="line-decoration-attachment-1"
+<td
+  class="code"
 >
-  <Portal
-    containerInfo={
-      <div
-        data-line-decoration-attachment-portal="true"
-        id="line-decoration-attachment-1"
-      >
-        <span
-          class="lineDecorationAttachment"
-          data-line-decoration-attachment="true"
-          rel="noreferrer noopener"
-        >
-          <span
-            class="contents"
-            data-contents="attachment from extension one"
-            data-line-decoration-attachment-content="true"
-          />
-        </span>
-        <span
-          class="lineDecorationAttachment"
-          data-line-decoration-attachment="true"
-          rel="noreferrer noopener"
-        >
-          <span
-            class="contents"
-            data-contents="attachment from extension two"
-            data-line-decoration-attachment-content="true"
-          />
-        </span>
-      </div>
-    }
+  <div
+    data-line-decoration-attachment-portal="true"
+    data-testid="line-decoration"
+    id="line-decoration-attachment-1"
   >
-    <LinkOrSpan
-      className="lineDecorationAttachment"
-      data-line-decoration-attachment={true}
-      key="attachment from extension one-0"
+    <span
+      class="lineDecorationAttachment"
+      data-line-decoration-attachment="true"
       rel="noreferrer noopener"
     >
       <span
-        className="lineDecorationAttachment"
-        data-line-decoration-attachment={true}
-        rel="noreferrer noopener"
-      >
-        <span
-          className="contents"
-          data-contents="attachment from extension one"
-          data-line-decoration-attachment-content={true}
-          style={
-            Object {
-              "backgroundColor": undefined,
-              "color": undefined,
-            }
-          }
-        />
-      </span>
-    </LinkOrSpan>
-    <LinkOrSpan
-      className="lineDecorationAttachment"
-      data-line-decoration-attachment={true}
-      key="attachment from extension two-1"
+        class="contents"
+        data-contents="attachment from extension one"
+        data-line-decoration-attachment-content="true"
+      />
+    </span>
+    <span
+      class="lineDecorationAttachment"
+      data-line-decoration-attachment="true"
       rel="noreferrer noopener"
     >
       <span
-        className="lineDecorationAttachment"
-        data-line-decoration-attachment={true}
-        rel="noreferrer noopener"
-      >
-        <span
-          className="contents"
-          data-contents="attachment from extension two"
-          data-line-decoration-attachment-content={true}
-          style={
-            Object {
-              "backgroundColor": undefined,
-              "color": undefined,
-            }
-          }
-        />
-      </span>
-    </LinkOrSpan>
-  </Portal>
-</Memo()>
+        class="contents"
+        data-contents="attachment from extension two"
+        data-line-decoration-attachment-content="true"
+      />
+    </span>
+  </div>
+</td>
 `;
 
 exports[`LineDecorator renders one attachment 1`] = `
-<Memo()
-  codeViewElements="[Subject]"
-  decorations={
-    Array [
-      Object {
-        "after": Object {
-          "contentText": "test content",
-        },
-        "range": Object {
-          "end": Object {
-            "character": 0,
-            "line": 0,
-          },
-          "start": Object {
-            "character": 0,
-            "line": 0,
-          },
-        },
-      },
-    ]
-  }
-  getCodeElementFromLineNumber={[Function]}
-  isLightTheme={false}
-  line={1}
-  portalID="line-decoration-attachment-1"
+<td
+  class="code"
 >
-  <Portal
-    containerInfo={
-      <div
-        data-line-decoration-attachment-portal="true"
-        id="line-decoration-attachment-1"
-      >
-        <span
-          class="lineDecorationAttachment"
-          data-line-decoration-attachment="true"
-          rel="noreferrer noopener"
-        >
-          <span
-            class="contents"
-            data-contents="test content"
-            data-line-decoration-attachment-content="true"
-          />
-        </span>
-      </div>
-    }
+  <div
+    data-line-decoration-attachment-portal="true"
+    data-testid="line-decoration"
+    id="line-decoration-attachment-1"
   >
-    <LinkOrSpan
-      className="lineDecorationAttachment"
-      data-line-decoration-attachment={true}
-      key="test content-0"
+    <span
+      class="lineDecorationAttachment"
+      data-line-decoration-attachment="true"
       rel="noreferrer noopener"
     >
       <span
-        className="lineDecorationAttachment"
-        data-line-decoration-attachment={true}
-        rel="noreferrer noopener"
-      >
-        <span
-          className="contents"
-          data-contents="test content"
-          data-line-decoration-attachment-content={true}
-          style={
-            Object {
-              "backgroundColor": undefined,
-              "color": undefined,
-            }
-          }
-        />
-      </span>
-    </LinkOrSpan>
-  </Portal>
-</Memo()>
+        class="contents"
+        data-contents="test content"
+        data-line-decoration-attachment-content="true"
+      />
+    </span>
+  </div>
+</td>
 `;

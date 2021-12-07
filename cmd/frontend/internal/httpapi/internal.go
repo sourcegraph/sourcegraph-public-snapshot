@@ -25,19 +25,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
-	repoName := api.RepoName(mux.Vars(r)["RepoName"])
-	repo, err := backend.Repos.GetByName(r.Context(), repoName)
-	if err != nil {
-		return err
+func serveReposGetByName(db database.DB) func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		repoName := api.RepoName(mux.Vars(r)["RepoName"])
+		repo, err := backend.NewRepos(db.Repos()).GetByName(r.Context(), repoName)
+		if err != nil {
+			return err
+		}
+		data, err := json.Marshal(repo)
+		if err != nil {
+			return err
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(data)
+		return nil
 	}
-	data, err := json.Marshal(repo)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(data)
-	return nil
 }
 
 func servePhabricatorRepoCreate(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
@@ -153,94 +155,6 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "Encode")
 	}
 	return nil
-}
-
-func serveSavedQueriesListAll(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		// List settings for all users, orgs, etc.
-		settings, err := database.SavedSearches(db).ListAll(r.Context())
-		if err != nil {
-			return errors.Wrap(err, "database.SavedSearches.ListAll")
-		}
-
-		queries := make([]api.SavedQuerySpecAndConfig, 0, len(settings))
-		for _, s := range settings {
-			var spec api.SavedQueryIDSpec
-			if s.Config.UserID != nil {
-				spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: s.Config.UserID}, Key: s.Config.Key}
-			} else if s.Config.OrgID != nil {
-				spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{Org: s.Config.OrgID}, Key: s.Config.Key}
-			}
-
-			queries = append(queries, api.SavedQuerySpecAndConfig{
-				Spec:   spec,
-				Config: s.Config,
-			})
-		}
-
-		if err := json.NewEncoder(w).Encode(queries); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-
-		return nil
-	}
-}
-
-func serveSavedQueriesGetInfo(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var query string
-		err := json.NewDecoder(r.Body).Decode(&query)
-		if err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-		info, err := database.QueryRunnerState(db).Get(r.Context(), query)
-		if err != nil {
-			return errors.Wrap(err, "SavedQueries.Get")
-		}
-		if err := json.NewEncoder(w).Encode(info); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
-	}
-}
-
-func serveSavedQueriesSetInfo(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var info *api.SavedQueryInfo
-		err := json.NewDecoder(r.Body).Decode(&info)
-		if err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-		err = database.QueryRunnerState(db).Set(r.Context(), &database.SavedQueryInfo{
-			Query:        info.Query,
-			LastExecuted: info.LastExecuted,
-			LatestResult: info.LatestResult,
-			ExecDuration: info.ExecDuration,
-		})
-		if err != nil {
-			return errors.Wrap(err, "SavedQueries.Set")
-		}
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("OK"))
-		return nil
-	}
-}
-
-func serveSavedQueriesDeleteInfo(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var query string
-		err := json.NewDecoder(r.Body).Decode(&query)
-		if err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-		err = database.QueryRunnerState(db).Delete(r.Context(), query)
-		if err != nil {
-			return errors.Wrap(err, "SavedQueries.Delete")
-		}
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("OK"))
-		return nil
-	}
 }
 
 func serveSettingsGetForSubject(db database.DB) func(w http.ResponseWriter, r *http.Request) error {

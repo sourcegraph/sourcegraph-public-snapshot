@@ -66,8 +66,7 @@ type CliStep struct {
 }
 
 type DequeueRequest struct {
-	ExecutorName     string `json:"executorName"`
-	ExecutorHostname string `json:"executorHostname"`
+	ExecutorName string `json:"executorName"`
 }
 
 type AddExecutionLogEntryRequest struct {

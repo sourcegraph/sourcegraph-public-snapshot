@@ -26,7 +26,7 @@ type operations struct {
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewOperationMetrics(
+	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_gitserver",
 		metrics.WithLabels("op"),
@@ -42,7 +42,7 @@ func newOperations(observationContext *observation.Context) *operations {
 				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					return observation.EmitForNone
 				}
-				return observation.EmitForAll
+				return observation.EmitForDefault
 			},
 		})
 	}

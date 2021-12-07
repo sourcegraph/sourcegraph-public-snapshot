@@ -15,12 +15,13 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
       >
         <div>
           <div
-            class="test-search-result result-container"
+            class="test-search-result resultContainer resultContainer"
+            data-result-type="content"
             data-testid="result-container"
             role="none"
           >
             <div
-              class="result-container__header"
+              class="header"
             >
               <svg
                 class="mdi-icon icon-inline flex-shrink-0"
@@ -34,10 +35,10 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 />
               </svg>
               <div
-                class="result-container__header-divider mx-1"
+                class="mx-1 headerDivider"
               />
               <div
-                class="result-container__header-title test-search-result-label"
+                class="headerTitle test-search-result-label"
                 data-testid="result-container-header"
               >
                 <span
@@ -73,7 +74,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   </a>
                 </div>
                 <span
-                  class="result-container__header-description ml-2"
+                  class="ml-2 headerDescription"
                 />
               </div>
               <small>
@@ -81,18 +82,20 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               </small>
             </div>
             <div
-              class="file-match-children"
+              class="fileMatchChildren"
+              data-testid="file-match-children"
             >
               <div>
                 <div
-                  class="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
+                  class="test-file-match-children-item-wrapper itemCodeWrapper"
                 >
                   <a
-                    class="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
+                    class="test-file-match-children-item item itemClickable"
+                    data-testid="file-match-children-item"
                     href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
                   >
                     <code
-                      class="codeExcerpt file-match-children__item-code-excerpt"
+                      class="codeExcerpt"
                       data-testid="code-excerpt"
                     >
                       <table>
@@ -234,12 +237,13 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       >
         <div>
           <div
-            class="test-search-result result-container"
+            class="test-search-result resultContainer resultContainer"
+            data-result-type="content"
             data-testid="result-container"
             role="none"
           >
             <div
-              class="result-container__header"
+              class="header"
             >
               <svg
                 class="mdi-icon icon-inline flex-shrink-0"
@@ -253,10 +257,10 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 />
               </svg>
               <div
-                class="result-container__header-divider mx-1"
+                class="mx-1 headerDivider"
               />
               <div
-                class="result-container__header-title test-search-result-label"
+                class="headerTitle test-search-result-label"
                 data-testid="result-container-header"
               >
                 <span
@@ -294,7 +298,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   </a>
                 </div>
                 <span
-                  class="result-container__header-description ml-2"
+                  class="ml-2 headerDescription"
                 />
               </div>
               <small>
@@ -302,18 +306,20 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               </small>
             </div>
             <div
-              class="file-match-children"
+              class="fileMatchChildren"
+              data-testid="file-match-children"
             >
               <div>
                 <div
-                  class="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
+                  class="test-file-match-children-item-wrapper itemCodeWrapper"
                 >
                   <a
-                    class="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
+                    class="test-file-match-children-item item itemClickable"
+                    data-testid="file-match-children-item"
                     href="/github.com/foo/bar/-/blob/file1.txt?L2:1&subtree=true"
                   >
                     <code
-                      class="codeExcerpt file-match-children__item-code-excerpt"
+                      class="codeExcerpt"
                       data-testid="code-excerpt"
                     >
                       <table>
@@ -408,12 +414,13 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
       >
         <div>
           <div
-            class="test-search-result result-container"
+            class="test-search-result resultContainer resultContainer"
+            data-result-type="content"
             data-testid="result-container"
             role="none"
           >
             <div
-              class="result-container__header"
+              class="header"
             >
               <svg
                 class="mdi-icon icon-inline flex-shrink-0"
@@ -427,10 +434,10 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 />
               </svg>
               <div
-                class="result-container__header-divider mx-1"
+                class="mx-1 headerDivider"
               />
               <div
-                class="result-container__header-title test-search-result-label"
+                class="headerTitle test-search-result-label"
                 data-testid="result-container-header"
               >
                 <span
@@ -466,7 +473,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   </a>
                 </div>
                 <span
-                  class="result-container__header-description ml-2"
+                  class="ml-2 headerDescription"
                 />
               </div>
               <small>
@@ -474,18 +481,20 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               </small>
             </div>
             <div
-              class="file-match-children"
+              class="fileMatchChildren"
+              data-testid="file-match-children"
             >
               <div>
                 <div
-                  class="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
+                  class="test-file-match-children-item-wrapper itemCodeWrapper"
                 >
                   <a
-                    class="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
+                    class="test-file-match-children-item item itemClickable"
+                    data-testid="file-match-children-item"
                     href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
                   >
                     <code
-                      class="codeExcerpt file-match-children__item-code-excerpt"
+                      class="codeExcerpt"
                       data-testid="code-excerpt"
                     >
                       <table>

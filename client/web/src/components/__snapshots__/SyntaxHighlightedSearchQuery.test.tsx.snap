@@ -1,97 +1,74 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`SyntaxHighlightedSearchQuery should syntax highlight filter 1`] = `
-<SyntaxHighlightedSearchQuery
-  query="repo:sourcegraph lang:go"
->
+<DocumentFragment>
   <span
-    className="text-monospace search-query-link"
+    class="text-monospace search-query-link"
   >
     <span
-      className="search-filter-keyword"
+      class="search-filter-keyword"
     >
-      repo
-      :
+      repo:
     </span>
-    sourcegraph
-     
+    sourcegraph 
     <span
-      className="search-filter-keyword"
+      class="search-filter-keyword"
     >
-      lang
-      :
+      lang:
     </span>
     go
   </span>
-</SyntaxHighlightedSearchQuery>
+</DocumentFragment>
 `;
 
 exports[`SyntaxHighlightedSearchQuery should syntax highlight filter and operator 1`] = `
-<SyntaxHighlightedSearchQuery
-  query="repo:sourcegraph test and spec"
->
+<DocumentFragment>
   <span
-    className="text-monospace search-query-link"
+    class="text-monospace search-query-link"
   >
     <span
-      className="search-filter-keyword"
+      class="search-filter-keyword"
     >
-      repo
-      :
+      repo:
     </span>
-    sourcegraph
-     
-    test
-     
+    sourcegraph test 
     <span
-      className="search-keyword"
-      key="22"
+      class="search-keyword"
     >
       and
     </span>
-     
-    spec
+     spec
   </span>
-</SyntaxHighlightedSearchQuery>
+</DocumentFragment>
 `;
 
 exports[`SyntaxHighlightedSearchQuery should syntax highlight negated filter 1`] = `
-<SyntaxHighlightedSearchQuery
-  query="-lang:ts test"
->
+<DocumentFragment>
   <span
-    className="text-monospace search-query-link"
+    class="text-monospace search-query-link"
   >
     <span
-      className="search-filter-keyword"
+      class="search-filter-keyword"
     >
-      -lang
-      :
+      -lang:
     </span>
-    ts
-     
-    test
+    ts test
   </span>
-</SyntaxHighlightedSearchQuery>
+</DocumentFragment>
 `;
 
 exports[`SyntaxHighlightedSearchQuery should syntax highlight operator 1`] = `
-<SyntaxHighlightedSearchQuery
-  query="test or spec"
->
+<DocumentFragment>
   <span
-    className="text-monospace search-query-link"
+    class="text-monospace search-query-link"
   >
-    test
-     
+    test 
     <span
-      className="search-keyword"
-      key="5"
+      class="search-keyword"
     >
       or
     </span>
-     
-    spec
+     spec
   </span>
-</SyntaxHighlightedSearchQuery>
+</DocumentFragment>
 `;

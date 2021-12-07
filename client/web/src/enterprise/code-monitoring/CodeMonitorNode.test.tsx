@@ -1,4 +1,4 @@
-import { mount } from 'enzyme'
+import { render, screen } from '@testing-library/react'
 import * as H from 'history'
 import * as React from 'react'
 import sinon from 'sinon'
@@ -10,7 +10,7 @@ describe('CreateCodeMonitorPage', () => {
     const history = H.createMemoryHistory()
 
     test('Does not show "Send test email" option when showCodeMonitoringTestEmailButton is false', () => {
-        const component = mount(
+        render(
             <CodeMonitorNode
                 toggleCodeMonitorEnabled={sinon.spy()}
                 location={history.location}
@@ -19,11 +19,11 @@ describe('CreateCodeMonitorPage', () => {
                 showCodeMonitoringTestEmailButton={false}
             />
         )
-        expect(component.find('.test-send-test-email').length).toBe(0)
+        expect(screen.queryByRole('button', { name: /Send test email/ })).not.toBeInTheDocument()
     })
 
     test('Shows "Send test email" option to site admins on enabled code monitors', () => {
-        const component = mount(
+        render(
             <CodeMonitorNode
                 toggleCodeMonitorEnabled={sinon.spy()}
                 location={history.location}
@@ -32,7 +32,7 @@ describe('CreateCodeMonitorPage', () => {
                 showCodeMonitoringTestEmailButton={true}
             />
         )
-        expect(component.find('.test-send-test-email').length).toBe(1)
+        expect(screen.getByRole('button', { name: /Send test email/ })).toBeInTheDocument()
     })
 
     test('Does not show "Send test email" option when code monitor is disabled', () => {
@@ -40,7 +40,7 @@ describe('CreateCodeMonitorPage', () => {
             ...mockCodeMonitorFields,
             enabled: false,
         }
-        const component = mount(
+        render(
             <CodeMonitorNode
                 toggleCodeMonitorEnabled={sinon.spy()}
                 location={history.location}
@@ -49,11 +49,11 @@ describe('CreateCodeMonitorPage', () => {
                 showCodeMonitoringTestEmailButton={true}
             />
         )
-        expect(component.find('.test-send-test-email').length).toBe(0)
+        expect(screen.queryByRole('button', { name: /Send test email/ })).not.toBeInTheDocument()
     })
 
     test('Does not show "Send test email" option to non-site admins', () => {
-        const component = mount(
+        render(
             <CodeMonitorNode
                 toggleCodeMonitorEnabled={sinon.spy()}
                 location={history.location}
@@ -62,6 +62,6 @@ describe('CreateCodeMonitorPage', () => {
                 showCodeMonitoringTestEmailButton={true}
             />
         )
-        expect(component.find('.test-send-test-email').length).toBe(0)
+        expect(screen.queryByRole('button', { name: /Send test email/ })).not.toBeInTheDocument()
     })
 })

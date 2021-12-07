@@ -21,5 +21,19 @@ module.exports = {
       },
     ],
   },
-  overrides: baseConfig.overrides,
+  overrides: [
+    ...baseConfig.overrides,
+    {
+      files: ['src/codeintellify/testdata/**'],
+      rules: {
+        'no-sync': 'warn',
+      },
+    },
+    {
+      files: ['src/codeintellify/*.test.*', 'src/codeintellify/testutils/**'],
+      rules: {
+        'import/extensions': ['error', 'never', { html: 'always' }],
+      },
+    },
+  ],
 }

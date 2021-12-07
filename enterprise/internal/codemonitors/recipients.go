@@ -4,11 +4,9 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/cockroachdb/errors"
-	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type Recipient struct {
@@ -18,99 +16,83 @@ type Recipient struct {
 	NamespaceOrgID  *int32
 }
 
-func (s *codeMonitorStore) CreateRecipients(ctx context.Context, recipients []graphql.ID, emailID int64) (err error) {
-	for _, r := range recipients {
-		err = s.createRecipient(ctx, r, emailID)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+var recipientColumns = []*sqlf.Query{
+	sqlf.Sprintf("cm_recipients.id"),
+	sqlf.Sprintf("cm_recipients.email"),
+	sqlf.Sprintf("cm_recipients.namespace_user_id"),
+	sqlf.Sprintf("cm_recipients.namespace_org_id"),
 }
 
-func (s *codeMonitorStore) DeleteRecipients(ctx context.Context, emailID int64) (err error) {
-	var q *sqlf.Query
-	q, err = deleteRecipientsQuery(ctx, emailID)
-	if err != nil {
-		return err
-	}
-	err = s.Exec(ctx, q)
-	if err != nil {
-		return err
-	}
-	return nil
+const createRecipientFmtStr = `
+INSERT INTO cm_recipients (email, namespace_user_id, namespace_org_id)
+VALUES (%s,%s,%s)
+RETURNING %s
+`
+
+func (s *codeMonitorStore) CreateRecipient(ctx context.Context, emailID int64, userID, orgID *int32) (*Recipient, error) {
+	q := sqlf.Sprintf(createRecipientFmtStr, emailID, userID, orgID, sqlf.Join(recipientColumns, ","))
+	row := s.QueryRow(ctx, q)
+	return scanRecipient(row)
 }
 
-func (s *codeMonitorStore) RecipientsForEmailIDInt64(ctx context.Context, emailID int64, args *graphqlbackend.ListRecipientsArgs) ([]*Recipient, error) {
-	q, err := readRecipientQuery(ctx, emailID, args)
-	if err != nil {
-		return nil, err
+const deleteRecipientFmtStr = `
+DELETE FROM cm_recipients
+WHERE email = %s
+`
+
+func (s *codeMonitorStore) DeleteRecipients(ctx context.Context, emailID int64) error {
+	q := sqlf.Sprintf(
+		deleteRecipientFmtStr,
+		emailID,
+	)
+	return s.Exec(ctx, q)
+}
+
+type ListRecipientsOpts struct {
+	EmailID *int64
+	First   *int
+	After   *int64
+}
+
+func (l ListRecipientsOpts) Conds() *sqlf.Query {
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if l.EmailID != nil {
+		conds = append(conds, sqlf.Sprintf("email = %s", *l.EmailID))
 	}
+	if l.After != nil {
+		conds = append(conds, sqlf.Sprintf("id > %s", *l.After))
+	}
+	return sqlf.Join(conds, "AND")
+}
+
+func (l ListRecipientsOpts) Limit() *sqlf.Query {
+	if l.First == nil {
+		return sqlf.Sprintf("ALL")
+	}
+	return sqlf.Sprintf("%s", *l.First)
+}
+
+const readRecipientQueryFmtStr = `
+SELECT %s -- recipientColumns
+FROM cm_recipients
+WHERE %s
+ORDER BY id ASC
+LIMIT %s;
+`
+
+func (s *codeMonitorStore) ListRecipients(ctx context.Context, args ListRecipientsOpts) ([]*Recipient, error) {
+	q := sqlf.Sprintf(
+		readRecipientQueryFmtStr,
+		sqlf.Join(recipientColumns, ","),
+		args.Conds(),
+		args.Limit(),
+	)
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	ms, err := scanRecipients(rows)
-	if err != nil {
-		return nil, err
-	}
-	return ms, nil
-}
-
-func scanRecipients(rows *sql.Rows) (ms []*Recipient, err error) {
-	for rows.Next() {
-		m := &Recipient{}
-		if err := rows.Scan(
-			&m.ID,
-			&m.Email,
-			&m.NamespaceUserID,
-			&m.NamespaceOrgID,
-		); err != nil {
-			return nil, err
-		}
-		ms = append(ms, m)
-	}
-	err = rows.Close()
-	if err != nil {
-		return nil, err
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return ms, nil
-}
-
-const allRecipientsForEmailIDInt64FmtStr = `
-SELECT id, email, namespace_user_id, namespace_org_id
-FROM cm_recipients
-WHERE email = %s
-`
-
-func (s *codeMonitorStore) AllRecipientsForEmailIDInt64(ctx context.Context, emailID int64) (rs []*Recipient, err error) {
-	var rows *sql.Rows
-	rows, err = s.Query(ctx, sqlf.Sprintf(allRecipientsForEmailIDInt64FmtStr, emailID))
-	if err != nil {
-		return nil, errors.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
-	}
-	defer func() { err = rows.Close() }()
 	return scanRecipients(rows)
-}
-
-const createRecipientFmtStr = `
-INSERT INTO cm_recipients (email, namespace_user_id, namespace_org_id)
-VALUES (%s,%s,%s)`
-
-func (s *codeMonitorStore) createRecipient(ctx context.Context, recipient graphql.ID, emailID int64) (err error) {
-	var (
-		userID int32
-		orgID  int32
-	)
-	err = graphqlbackend.UnmarshalNamespaceID(recipient, &userID, &orgID)
-	if err != nil {
-		return err
-	}
-	return s.Exec(ctx, sqlf.Sprintf(createRecipientFmtStr, emailID, nilOrInt32(userID), nilOrInt32(orgID)))
 }
 
 const totalCountRecipientsFmtStr = `
@@ -119,45 +101,31 @@ FROM cm_recipients
 WHERE email = %s
 `
 
-func (s *codeMonitorStore) TotalCountRecipients(ctx context.Context, emailID int64) (count int32, err error) {
-	err = s.QueryRow(ctx, sqlf.Sprintf(totalCountRecipientsFmtStr, emailID)).Scan(&count)
+func (s *codeMonitorStore) CountRecipients(ctx context.Context, emailID int64) (int32, error) {
+	var count int32
+	err := s.QueryRow(ctx, sqlf.Sprintf(totalCountRecipientsFmtStr, emailID)).Scan(&count)
 	return count, err
 }
 
-const deleteRecipientFmtStr = `DELETE FROM cm_recipients WHERE email = %s`
-
-func deleteRecipientsQuery(ctx context.Context, emailId int64) (*sqlf.Query, error) {
-	return sqlf.Sprintf(
-		deleteRecipientFmtStr,
-		emailId,
-	), nil
+func scanRecipients(rows *sql.Rows) ([]*Recipient, error) {
+	var rs []*Recipient
+	for rows.Next() {
+		r, err := scanRecipient(rows)
+		if err != nil {
+			return nil, err
+		}
+		rs = append(rs, r)
+	}
+	return rs, rows.Err()
 }
 
-const readRecipientQueryFmtStr = `
-SELECT id, email, namespace_user_id, namespace_org_id
-FROM cm_recipients
-WHERE email = %s
-AND id > %s
-ORDER BY id ASC
-LIMIT %s;
-`
-
-func readRecipientQuery(ctx context.Context, emailId int64, args *graphqlbackend.ListRecipientsArgs) (*sqlf.Query, error) {
-	after, err := unmarshalAfter(args.After)
-	if err != nil {
-		return nil, err
-	}
-	return sqlf.Sprintf(
-		readRecipientQueryFmtStr,
-		emailId,
-		after,
-		args.First,
-	), nil
-}
-
-func nilOrInt32(n int32) *int32 {
-	if n == 0 {
-		return nil
-	}
-	return &n
+func scanRecipient(scanner dbutil.Scanner) (*Recipient, error) {
+	var r Recipient
+	err := scanner.Scan(
+		&r.ID,
+		&r.Email,
+		&r.NamespaceUserID,
+		&r.NamespaceOrgID,
+	)
+	return &r, err
 }

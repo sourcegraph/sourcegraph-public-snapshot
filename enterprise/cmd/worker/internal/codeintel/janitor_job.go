@@ -70,12 +70,12 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 	routines := []goroutine.BackgroundRoutine{
 		// Reconciliation and denormalization
 		janitor.NewDeletedRepositoryJanitor(dbStoreShim, janitorConfigInst.CleanupTaskInterval, metrics),
-		janitor.NewUnknownCommitJanitor(dbStoreShim, janitorConfigInst.CommitResolverMinimumTimeSinceLastCheck, janitorConfigInst.CommitResolverBatchSize, janitorConfigInst.CommitResolverTaskInterval, metrics),
+		janitor.NewUnknownCommitJanitor(dbStoreShim, janitorConfigInst.CommitResolverMinimumTimeSinceLastCheck, janitorConfigInst.CommitResolverBatchSize, janitorConfigInst.CommitResolverMaximumCommitLag, janitorConfigInst.CommitResolverTaskInterval, metrics),
 		janitor.NewRepositoryPatternMatcher(dbStoreShim, lsifStoreShim, janitorConfigInst.CleanupTaskInterval, janitorConfigInst.ConfigurationPolicyMembershipBatchSize, metrics),
 
 		// Expiration
 		janitor.NewAbandonedUploadJanitor(dbStoreShim, janitorConfigInst.UploadTimeout, janitorConfigInst.CleanupTaskInterval, metrics),
-		janitor.NewUploadExpirer(dbStoreShim, policyMatcher, janitorConfigInst.RepositoryProcessDelay, janitorConfigInst.RepositoryBatchSize, janitorConfigInst.UploadProcessDelay, janitorConfigInst.UploadBatchSize, janitorConfigInst.CommitBatchSize, janitorConfigInst.BranchesCacheMaxKeys, janitorConfigInst.CleanupTaskInterval, metrics),
+		janitor.NewUploadExpirer(dbStoreShim, policyMatcher, janitorConfigInst.RepositoryProcessDelay, janitorConfigInst.RepositoryBatchSize, janitorConfigInst.UploadProcessDelay, janitorConfigInst.UploadBatchSize, janitorConfigInst.PolicyBatchSize, janitorConfigInst.CommitBatchSize, janitorConfigInst.BranchesCacheMaxKeys, janitorConfigInst.CleanupTaskInterval, metrics),
 		janitor.NewExpiredUploadDeleter(dbStoreShim, janitorConfigInst.CleanupTaskInterval, metrics),
 		janitor.NewHardDeleter(dbStoreShim, lsifStoreShim, janitorConfigInst.CleanupTaskInterval, metrics),
 

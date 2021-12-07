@@ -22,8 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
+	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -103,16 +105,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	progress := progressAggregator{
 		Start:        start,
 		Limit:        inputs.MaxResults(),
-		Trace:        trace.URL(trace.ID(ctx)),
+		Trace:        trace.URL(trace.ID(ctx), conf.ExternalURL()),
 		DisplayLimit: displayLimit,
+		RepoNamer:    repoNamer(ctx, h.db),
 	}
 
 	sendProgress := func() {
 		_ = eventWriter.Event("progress", progress.Current())
-	}
-
-	filters := &streaming.SearchFilters{
-		Globbing: false, // TODO
 	}
 
 	// Store marshalled matches and flush periodically or when we go over
@@ -137,6 +136,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pingTicker := time.NewTicker(h.pingTickerInterval)
 	defer pingTicker.Stop()
 
+	filters := &streaming.SearchFilters{}
+
 	first := true
 	handleEvent := func(event streaming.SearchEvent) {
 		progress.Update(event)
@@ -158,10 +159,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if progress.Stats.Repos == nil {
-			progress.Stats.Repos = make(map[api.RepoID]types.MinimalRepo)
-		}
-
 		for i, match := range event.Results {
 			repo := match.RepoName()
 
@@ -170,10 +167,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// searched repos that user shouldn't have access to.
 			if md, ok := repoMetadata[repo.ID]; !ok || md.Name != repo.Name {
 				continue
-			}
-
-			if _, ok := progress.Stats.Repos[repo.ID]; !ok {
-				progress.Stats.Repos[repo.ID] = repo
 			}
 
 			eventMatch := fromMatch(match, repoMetadata)
@@ -265,7 +258,7 @@ LOOP:
 
 	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
 	if honey.Enabled() || isSlow {
-		ev := honey.SearchEvent(ctx, honey.SearchEventArgs{
+		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
 			OriginalQuery: inputs.OriginalQuery,
 			Typ:           "stream",
 			Source:        string(trace.RequestSource(ctx)),
@@ -629,10 +622,6 @@ func GuessSource(r *http.Request) trace.SourceType {
 	// We send some automated search requests in order to measure baseline search perf. Track the source of these.
 	if match := searchBlitzUserAgentRegexp.FindStringSubmatch(userAgent); match != nil {
 		return trace.SourceType("searchblitz_" + match[1])
-	}
-
-	if userAgent == "sourcegraph/query-runner" {
-		return trace.SourceQueryRunner
 	}
 
 	return trace.SourceOther

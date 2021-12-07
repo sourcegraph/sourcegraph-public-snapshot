@@ -4,12 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"net/http"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/repoupdater"
@@ -19,8 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/connections"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -32,12 +33,16 @@ type Services struct {
 	repoStore   database.RepoStore
 	uploadStore uploadstore.Store
 
+	// shared with executorqueue
+	InternalUploadHandler http.Handler
+	ExternalUploadHandler http.Handler
+
 	locker          *locker.Locker
 	gitserverClient *gitserver.Client
 	indexEnqueuer   *enqueuer.IndexEnqueuer
 }
 
-func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db dbutil.DB) (*Services, error) {
+func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db database.DB) (*Services, error) {
 	if err := config.UploadStoreConfig.Validate(); err != nil {
 		return nil, errors.Errorf("failed to load config: %s", err)
 	}
@@ -61,6 +66,21 @@ func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db
 		log.Fatalf("Failed to initialize upload store: %s", err)
 	}
 
+	// Initialize http endpoints
+	operations := httpapi.NewOperations(observationContext)
+	newUploadHandler := func(internal bool) http.Handler {
+		return httpapi.NewUploadHandler(
+			db,
+			&httpapi.DBStoreShim{Store: dbStore},
+			uploadStore,
+			internal,
+			httpapi.DefaultValidatorByCodeHost,
+			operations,
+		)
+	}
+	internalUploadHandler := newUploadHandler(true)
+	externalUploadHandler := newUploadHandler(false)
+
 	// Initialize gitserver client
 	gitserverClient := gitserver.New(dbStore, observationContext)
 	repoUpdaterClient := repoupdater.New(observationContext)
@@ -74,6 +94,9 @@ func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db
 		repoStore:   database.ReposWith(dbStore.Store),
 		uploadStore: uploadStore,
 
+		InternalUploadHandler: internalUploadHandler,
+		ExternalUploadHandler: externalUploadHandler,
+
 		locker:          locker,
 		gitserverClient: gitserverClient,
 		indexEnqueuer:   indexEnqueuer,
@@ -81,21 +104,12 @@ func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db
 }
 
 func mustInitializeCodeIntelDB() *sql.DB {
-	postgresDSN := conf.Get().ServiceConnections().CodeIntelPostgresDSN
-	conf.Watch(func() {
-		if newDSN := conf.Get().ServiceConnections().CodeIntelPostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("Detected database DSN change, restarting to take effect: %s", newDSN)
-		}
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.CodeIntelPostgresDSN
 	})
-
-	db, err := dbconn.New(dbconn.Opts{DSN: postgresDSN, DBName: "codeintel", AppName: "frontend"})
+	db, err := connections.NewCodeIntelDB(dsn, "frontend", true)
 	if err != nil {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}
-
-	if err := dbconn.MigrateDB(db, dbconn.CodeIntel); err != nil {
-		log.Fatalf("Failed to perform codeintel database migration: %s", err)
-	}
-
 	return db
 }

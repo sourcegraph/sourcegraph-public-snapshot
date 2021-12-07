@@ -21,6 +21,9 @@ type MockDB struct {
 	// AuthzFunc is an instance of a mock function object controlling the
 	// behavior of the method Authz.
 	AuthzFunc *DBAuthzFunc
+	// ConfFunc is an instance of a mock function object controlling the
+	// behavior of the method Conf.
+	ConfFunc *DBConfFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *DBDoneFunc
@@ -39,6 +42,12 @@ type MockDB struct {
 	// FeatureFlagsFunc is an instance of a mock function object controlling
 	// the behavior of the method FeatureFlags.
 	FeatureFlagsFunc *DBFeatureFlagsFunc
+	// GitserverReposFunc is an instance of a mock function object
+	// controlling the behavior of the method GitserverRepos.
+	GitserverReposFunc *DBGitserverReposFunc
+	// GlobalStateFunc is an instance of a mock function object controlling
+	// the behavior of the method GlobalState.
+	GlobalStateFunc *DBGlobalStateFunc
 	// NamespacesFunc is an instance of a mock function object controlling
 	// the behavior of the method Namespaces.
 	NamespacesFunc *DBNamespacesFunc
@@ -115,6 +124,11 @@ func NewMockDB() *MockDB {
 				return nil
 			},
 		},
+		ConfFunc: &DBConfFunc{
+			defaultHook: func() database.ConfStore {
+				return nil
+			},
+		},
 		DoneFunc: &DBDoneFunc{
 			defaultHook: func(error) error {
 				return nil
@@ -142,6 +156,16 @@ func NewMockDB() *MockDB {
 		},
 		FeatureFlagsFunc: &DBFeatureFlagsFunc{
 			defaultHook: func() database.FeatureFlagStore {
+				return nil
+			},
+		},
+		GitserverReposFunc: &DBGitserverReposFunc{
+			defaultHook: func() database.GitserverRepoStore {
+				return nil
+			},
+		},
+		GlobalStateFunc: &DBGlobalStateFunc{
+			defaultHook: func() database.GlobalStateStore {
 				return nil
 			},
 		},
@@ -248,6 +272,168 @@ func NewMockDB() *MockDB {
 	}
 }
 
+// NewStrictMockDB creates a new mock of the DB interface. All methods panic
+// on invocation, unless overwritten.
+func NewStrictMockDB() *MockDB {
+	return &MockDB{
+		AccessTokensFunc: &DBAccessTokensFunc{
+			defaultHook: func() database.AccessTokenStore {
+				panic("unexpected invocation of MockDB.AccessTokens")
+			},
+		},
+		AuthzFunc: &DBAuthzFunc{
+			defaultHook: func() database.AuthzStore {
+				panic("unexpected invocation of MockDB.Authz")
+			},
+		},
+		ConfFunc: &DBConfFunc{
+			defaultHook: func() database.ConfStore {
+				panic("unexpected invocation of MockDB.Conf")
+			},
+		},
+		DoneFunc: &DBDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockDB.Done")
+			},
+		},
+		EventLogsFunc: &DBEventLogsFunc{
+			defaultHook: func() database.EventLogStore {
+				panic("unexpected invocation of MockDB.EventLogs")
+			},
+		},
+		ExecContextFunc: &DBExecContextFunc{
+			defaultHook: func(context.Context, string, ...interface{}) (sql.Result, error) {
+				panic("unexpected invocation of MockDB.ExecContext")
+			},
+		},
+		ExecutorsFunc: &DBExecutorsFunc{
+			defaultHook: func() database.ExecutorStore {
+				panic("unexpected invocation of MockDB.Executors")
+			},
+		},
+		ExternalServicesFunc: &DBExternalServicesFunc{
+			defaultHook: func() database.ExternalServiceStore {
+				panic("unexpected invocation of MockDB.ExternalServices")
+			},
+		},
+		FeatureFlagsFunc: &DBFeatureFlagsFunc{
+			defaultHook: func() database.FeatureFlagStore {
+				panic("unexpected invocation of MockDB.FeatureFlags")
+			},
+		},
+		GitserverReposFunc: &DBGitserverReposFunc{
+			defaultHook: func() database.GitserverRepoStore {
+				panic("unexpected invocation of MockDB.GitserverRepos")
+			},
+		},
+		GlobalStateFunc: &DBGlobalStateFunc{
+			defaultHook: func() database.GlobalStateStore {
+				panic("unexpected invocation of MockDB.GlobalState")
+			},
+		},
+		NamespacesFunc: &DBNamespacesFunc{
+			defaultHook: func() database.NamespaceStore {
+				panic("unexpected invocation of MockDB.Namespaces")
+			},
+		},
+		OrgInvitationsFunc: &DBOrgInvitationsFunc{
+			defaultHook: func() database.OrgInvitationStore {
+				panic("unexpected invocation of MockDB.OrgInvitations")
+			},
+		},
+		OrgMembersFunc: &DBOrgMembersFunc{
+			defaultHook: func() database.OrgMemberStore {
+				panic("unexpected invocation of MockDB.OrgMembers")
+			},
+		},
+		OrgsFunc: &DBOrgsFunc{
+			defaultHook: func() database.OrgStore {
+				panic("unexpected invocation of MockDB.Orgs")
+			},
+		},
+		PhabricatorFunc: &DBPhabricatorFunc{
+			defaultHook: func() database.PhabricatorStore {
+				panic("unexpected invocation of MockDB.Phabricator")
+			},
+		},
+		QueryContextFunc: &DBQueryContextFunc{
+			defaultHook: func(context.Context, string, ...interface{}) (*sql.Rows, error) {
+				panic("unexpected invocation of MockDB.QueryContext")
+			},
+		},
+		QueryRowContextFunc: &DBQueryRowContextFunc{
+			defaultHook: func(context.Context, string, ...interface{}) *sql.Row {
+				panic("unexpected invocation of MockDB.QueryRowContext")
+			},
+		},
+		ReposFunc: &DBReposFunc{
+			defaultHook: func() database.RepoStore {
+				panic("unexpected invocation of MockDB.Repos")
+			},
+		},
+		SavedSearchesFunc: &DBSavedSearchesFunc{
+			defaultHook: func() database.SavedSearchStore {
+				panic("unexpected invocation of MockDB.SavedSearches")
+			},
+		},
+		SearchContextsFunc: &DBSearchContextsFunc{
+			defaultHook: func() database.SearchContextsStore {
+				panic("unexpected invocation of MockDB.SearchContexts")
+			},
+		},
+		SettingsFunc: &DBSettingsFunc{
+			defaultHook: func() database.SettingsStore {
+				panic("unexpected invocation of MockDB.Settings")
+			},
+		},
+		SubRepoPermsFunc: &DBSubRepoPermsFunc{
+			defaultHook: func() database.SubRepoPermsStore {
+				panic("unexpected invocation of MockDB.SubRepoPerms")
+			},
+		},
+		TemporarySettingsFunc: &DBTemporarySettingsFunc{
+			defaultHook: func() database.TemporarySettingsStore {
+				panic("unexpected invocation of MockDB.TemporarySettings")
+			},
+		},
+		TransactFunc: &DBTransactFunc{
+			defaultHook: func(context.Context) (database.DB, error) {
+				panic("unexpected invocation of MockDB.Transact")
+			},
+		},
+		UserCredentialsFunc: &DBUserCredentialsFunc{
+			defaultHook: func(encryption.Key) database.UserCredentialsStore {
+				panic("unexpected invocation of MockDB.UserCredentials")
+			},
+		},
+		UserEmailsFunc: &DBUserEmailsFunc{
+			defaultHook: func() database.UserEmailsStore {
+				panic("unexpected invocation of MockDB.UserEmails")
+			},
+		},
+		UserExternalAccountsFunc: &DBUserExternalAccountsFunc{
+			defaultHook: func() database.UserExternalAccountsStore {
+				panic("unexpected invocation of MockDB.UserExternalAccounts")
+			},
+		},
+		UserPublicReposFunc: &DBUserPublicReposFunc{
+			defaultHook: func() database.UserPublicRepoStore {
+				panic("unexpected invocation of MockDB.UserPublicRepos")
+			},
+		},
+		UsersFunc: &DBUsersFunc{
+			defaultHook: func() database.UserStore {
+				panic("unexpected invocation of MockDB.Users")
+			},
+		},
+		WebhookLogsFunc: &DBWebhookLogsFunc{
+			defaultHook: func(encryption.Key) database.WebhookLogStore {
+				panic("unexpected invocation of MockDB.WebhookLogs")
+			},
+		},
+	}
+}
+
 // NewMockDBFrom creates a new mock of the MockDB interface. All methods
 // delegate to the given implementation, unless overwritten.
 func NewMockDBFrom(i database.DB) *MockDB {
@@ -257,6 +443,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		AuthzFunc: &DBAuthzFunc{
 			defaultHook: i.Authz,
+		},
+		ConfFunc: &DBConfFunc{
+			defaultHook: i.Conf,
 		},
 		DoneFunc: &DBDoneFunc{
 			defaultHook: i.Done,
@@ -275,6 +464,12 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		FeatureFlagsFunc: &DBFeatureFlagsFunc{
 			defaultHook: i.FeatureFlags,
+		},
+		GitserverReposFunc: &DBGitserverReposFunc{
+			defaultHook: i.GitserverRepos,
+		},
+		GlobalStateFunc: &DBGlobalStateFunc{
+			defaultHook: i.GlobalState,
 		},
 		NamespacesFunc: &DBNamespacesFunc{
 			defaultHook: i.Namespaces,
@@ -534,6 +729,105 @@ func (c DBAuthzFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBAuthzFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBConfFunc describes the behavior when the Conf method of the parent
+// MockDB instance is invoked.
+type DBConfFunc struct {
+	defaultHook func() database.ConfStore
+	hooks       []func() database.ConfStore
+	history     []DBConfFuncCall
+	mutex       sync.Mutex
+}
+
+// Conf delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Conf() database.ConfStore {
+	r0 := m.ConfFunc.nextHook()()
+	m.ConfFunc.appendCall(DBConfFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Conf method of the
+// parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBConfFunc) SetDefaultHook(hook func() database.ConfStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Conf method of the parent MockDB instance invokes the hook at the front
+// of the queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *DBConfFunc) PushHook(hook func() database.ConfStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBConfFunc) SetDefaultReturn(r0 database.ConfStore) {
+	f.SetDefaultHook(func() database.ConfStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBConfFunc) PushReturn(r0 database.ConfStore) {
+	f.PushHook(func() database.ConfStore {
+		return r0
+	})
+}
+
+func (f *DBConfFunc) nextHook() func() database.ConfStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBConfFunc) appendCall(r0 DBConfFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBConfFuncCall objects describing the
+// invocations of this function.
+func (f *DBConfFunc) History() []DBConfFuncCall {
+	f.mutex.Lock()
+	history := make([]DBConfFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBConfFuncCall is an object that describes an invocation of method Conf
+// on an instance of MockDB.
+type DBConfFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.ConfStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBConfFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBConfFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -1151,6 +1445,205 @@ func (c DBFeatureFlagsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBFeatureFlagsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBGitserverReposFunc describes the behavior when the GitserverRepos
+// method of the parent MockDB instance is invoked.
+type DBGitserverReposFunc struct {
+	defaultHook func() database.GitserverRepoStore
+	hooks       []func() database.GitserverRepoStore
+	history     []DBGitserverReposFuncCall
+	mutex       sync.Mutex
+}
+
+// GitserverRepos delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) GitserverRepos() database.GitserverRepoStore {
+	r0 := m.GitserverReposFunc.nextHook()()
+	m.GitserverReposFunc.appendCall(DBGitserverReposFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GitserverRepos
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBGitserverReposFunc) SetDefaultHook(hook func() database.GitserverRepoStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GitserverRepos method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBGitserverReposFunc) PushHook(hook func() database.GitserverRepoStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBGitserverReposFunc) SetDefaultReturn(r0 database.GitserverRepoStore) {
+	f.SetDefaultHook(func() database.GitserverRepoStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBGitserverReposFunc) PushReturn(r0 database.GitserverRepoStore) {
+	f.PushHook(func() database.GitserverRepoStore {
+		return r0
+	})
+}
+
+func (f *DBGitserverReposFunc) nextHook() func() database.GitserverRepoStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBGitserverReposFunc) appendCall(r0 DBGitserverReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBGitserverReposFuncCall objects describing
+// the invocations of this function.
+func (f *DBGitserverReposFunc) History() []DBGitserverReposFuncCall {
+	f.mutex.Lock()
+	history := make([]DBGitserverReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBGitserverReposFuncCall is an object that describes an invocation of
+// method GitserverRepos on an instance of MockDB.
+type DBGitserverReposFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.GitserverRepoStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBGitserverReposFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBGitserverReposFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBGlobalStateFunc describes the behavior when the GlobalState method of
+// the parent MockDB instance is invoked.
+type DBGlobalStateFunc struct {
+	defaultHook func() database.GlobalStateStore
+	hooks       []func() database.GlobalStateStore
+	history     []DBGlobalStateFuncCall
+	mutex       sync.Mutex
+}
+
+// GlobalState delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) GlobalState() database.GlobalStateStore {
+	r0 := m.GlobalStateFunc.nextHook()()
+	m.GlobalStateFunc.appendCall(DBGlobalStateFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GlobalState method
+// of the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBGlobalStateFunc) SetDefaultHook(hook func() database.GlobalStateStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GlobalState method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBGlobalStateFunc) PushHook(hook func() database.GlobalStateStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBGlobalStateFunc) SetDefaultReturn(r0 database.GlobalStateStore) {
+	f.SetDefaultHook(func() database.GlobalStateStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBGlobalStateFunc) PushReturn(r0 database.GlobalStateStore) {
+	f.PushHook(func() database.GlobalStateStore {
+		return r0
+	})
+}
+
+func (f *DBGlobalStateFunc) nextHook() func() database.GlobalStateStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBGlobalStateFunc) appendCall(r0 DBGlobalStateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBGlobalStateFuncCall objects describing
+// the invocations of this function.
+func (f *DBGlobalStateFunc) History() []DBGlobalStateFuncCall {
+	f.mutex.Lock()
+	history := make([]DBGlobalStateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBGlobalStateFuncCall is an object that describes an invocation of method
+// GlobalState on an instance of MockDB.
+type DBGlobalStateFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.GlobalStateStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBGlobalStateFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBGlobalStateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

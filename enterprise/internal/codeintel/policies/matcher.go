@@ -8,8 +8,8 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type Matcher struct {
@@ -80,11 +80,11 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int
 	for commit, refDescriptions := range refDescriptions {
 		for _, refDescription := range refDescriptions {
 			switch refDescription.Type {
-			case gitserver.RefTypeTag:
+			case gitdomain.RefTypeTag:
 				// Match tagged commits
 				m.matchTaggedCommits(context, commit, refDescription, now)
 
-			case gitserver.RefTypeBranch:
+			case gitdomain.RefTypeBranch:
 				// Match tips of branches
 				m.matchBranchHeads(context, commit, refDescription, now)
 			}
@@ -132,7 +132,7 @@ type branchRequestMeta struct {
 
 // matchTaggedCommits determines if the given commit (described by the tag-type ref given description) matches any tag-type
 // policies. For each match, a commit/policy pair will be added to the given context.
-func (m *Matcher) matchTaggedCommits(context matcherContext, commit string, refDescription gitserver.RefDescription, now time.Time) {
+func (m *Matcher) matchTaggedCommits(context matcherContext, commit string, refDescription gitdomain.RefDescription, now time.Time) {
 	visitor := func(policy dbstore.ConfigurationPolicy) {
 		policyDuration, _ := m.extractor(policy)
 
@@ -150,7 +150,7 @@ func (m *Matcher) matchTaggedCommits(context matcherContext, commit string, refD
 // policies. For each match, a commit/policy pair will be added to the given context. This method also adds matches for the tip
 // of the default branch (if configured to do so), and adds bookkeeping metadata to the context's branchRequests field when a
 // matching policy's intermediate commits should be checked.
-func (m *Matcher) matchBranchHeads(context matcherContext, commit string, refDescription gitserver.RefDescription, now time.Time) {
+func (m *Matcher) matchBranchHeads(context matcherContext, commit string, refDescription gitdomain.RefDescription, now time.Time) {
 	if refDescription.IsDefaultBranch && m.includeTipOfDefaultBranch {
 		// Add a match with no associated policy for the tip of the default branch
 		context.commitMap[commit] = append(context.commitMap[commit], PolicyMatch{
@@ -263,7 +263,7 @@ func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContex
 	return nil
 }
 
-func (m *Matcher) forEachMatchingPolicy(context matcherContext, refDescription gitserver.RefDescription, targetObjectType dbstore.GitObjectType, f func(policy dbstore.ConfigurationPolicy), now time.Time) {
+func (m *Matcher) forEachMatchingPolicy(context matcherContext, refDescription gitdomain.RefDescription, targetObjectType dbstore.GitObjectType, f func(policy dbstore.ConfigurationPolicy), now time.Time) {
 	for _, policy := range context.policies {
 		if policy.Type == targetObjectType && m.policyMatchesRefDescription(context, policy, refDescription, now) {
 			f(policy)
@@ -271,7 +271,7 @@ func (m *Matcher) forEachMatchingPolicy(context matcherContext, refDescription g
 	}
 }
 
-func (m *Matcher) policyMatchesRefDescription(context matcherContext, policy dbstore.ConfigurationPolicy, refDescription gitserver.RefDescription, now time.Time) bool {
+func (m *Matcher) policyMatchesRefDescription(context matcherContext, policy dbstore.ConfigurationPolicy, refDescription gitdomain.RefDescription, now time.Time) bool {
 	if !context.patterns[policy.Pattern].Match(refDescription.Name) {
 		// Name doesn't match policy's pattern
 		return false

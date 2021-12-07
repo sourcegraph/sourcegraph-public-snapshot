@@ -25,6 +25,7 @@ import (
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -53,9 +54,9 @@ func NewHandler(db database.DB, m *mux.Router, schema *graphql.Schema, githubWeb
 	})
 
 	// Set handlers for the installed routes.
-	m.Get(apirouter.RepoShield).Handler(trace.Route(handler(serveRepoShield)))
+	m.Get(apirouter.RepoShield).Handler(trace.Route(handler(serveRepoShield(db))))
 
-	m.Get(apirouter.RepoRefresh).Handler(trace.Route(handler(serveRepoRefresh)))
+	m.Get(apirouter.RepoRefresh).Handler(trace.Route(handler(serveRepoRefresh(db))))
 
 	gh := webhooks.GitHubWebhook{
 		ExternalServices: database.ExternalServices(db),
@@ -87,7 +88,7 @@ func NewHandler(db database.DB, m *mux.Router, schema *graphql.Schema, githubWeb
 	m.Get(apirouter.SrcCliVersion).Handler(trace.Route(handler(srcCliVersionServe)))
 	m.Get(apirouter.SrcCliDownload).Handler(trace.Route(handler(srcCliDownloadServe)))
 
-	m.Get(apirouter.Registry).Handler(trace.Route(handler(registry.HandleRegistry)))
+	m.Get(apirouter.Registry).Handler(trace.Route(handler(registry.HandleRegistry(db))))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
@@ -120,7 +121,7 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 
 	// zoekt-indexserver endpoints
 	indexer := &searchIndexerServer{
-		ListIndexable:       backend.Repos.ListIndexable,
+		ListIndexable:       backend.NewRepos(db.Repos()).ListIndexable,
 		RepoStore:           database.Repos(db),
 		SearchContextsStore: database.SearchContexts(db),
 		Indexers:            search.Indexers(),
@@ -130,12 +131,8 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(indexer.serveConfiguration)))
 	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(indexer.serveList)))
 
-	m.Get(apirouter.ReposGetByName).Handler(trace.Route(handler(serveReposGetByName)))
+	m.Get(apirouter.ReposGetByName).Handler(trace.Route(handler(serveReposGetByName(db))))
 	m.Get(apirouter.SettingsGetForSubject).Handler(trace.Route(handler(serveSettingsGetForSubject(db))))
-	m.Get(apirouter.SavedQueriesListAll).Handler(trace.Route(handler(serveSavedQueriesListAll(db))))
-	m.Get(apirouter.SavedQueriesGetInfo).Handler(trace.Route(handler(serveSavedQueriesGetInfo(db))))
-	m.Get(apirouter.SavedQueriesSetInfo).Handler(trace.Route(handler(serveSavedQueriesSetInfo(db))))
-	m.Get(apirouter.SavedQueriesDeleteInfo).Handler(trace.Route(handler(serveSavedQueriesDeleteInfo(db))))
 	m.Get(apirouter.OrgsListUsers).Handler(trace.Route(handler(serveOrgsListUsers(db))))
 	m.Get(apirouter.OrgsGetByName).Handler(trace.Route(handler(serveOrgsGetByName(db))))
 	m.Get(apirouter.UsersGetByUsername).Handler(trace.Route(handler(serveUsersGetByUsername(db))))
@@ -211,7 +208,7 @@ func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 	}
 	http.Error(w, displayErrBody, status)
 	traceID := trace.ID(r.Context())
-	traceURL := trace.URL(traceID)
+	traceURL := trace.URL(traceID, conf.ExternalURL())
 
 	if status < 200 || status >= 500 {
 		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", traceURL, "traceID", traceID)

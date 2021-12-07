@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 
 	"github.com/coreos/go-oidc"
 )
@@ -50,7 +49,7 @@ type userClaims struct {
 // a new session and session cookie. The expiration of the session is the expiration of the OIDC ID Token.
 //
 // 🚨 SECURITY
-func Middleware(db dbutil.DB) *auth.Middleware {
+func Middleware(db database.DB) *auth.Middleware {
 	return &auth.Middleware{
 		API: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +66,7 @@ func Middleware(db dbutil.DB) *auth.Middleware {
 
 // handleOpenIDConnectAuth performs OpenID Connect authentication (if configured) for HTTP requests,
 // both API requests and non-API requests.
-func handleOpenIDConnectAuth(db dbutil.DB, w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
+func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
 	// Fixup URL path. We use "/.auth/callback" as the redirect URI for OpenID Connect, but the rest
 	// of this middleware's handlers expect paths of "/.auth/openidconnect/...", so add the
 	// "openidconnect" path component. We can't change the redirect URI because it is hardcoded in
@@ -113,7 +112,7 @@ var mockVerifyIDToken func(rawIDToken string) *oidc.IDToken
 // (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) on the Relying Party's end.
 //
 // 🚨 SECURITY
-func authHandler(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
+func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 		case "/login":

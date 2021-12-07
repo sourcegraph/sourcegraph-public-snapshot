@@ -25,11 +25,6 @@
     # repo-updater
     - 127.0.0.1:6074
 - labels:
-    job: query-runner
-  targets:
-    # query-runner
-    - 127.0.0.1:6067
-- labels:
     job: zoekt-indexserver
   targets:
     # zoekt-indexserver

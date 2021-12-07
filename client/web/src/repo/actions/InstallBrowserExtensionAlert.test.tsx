@@ -1,4 +1,4 @@
-import { mount } from 'enzyme'
+import { render } from '@testing-library/react'
 import { noop } from 'lodash'
 import React from 'react'
 
@@ -19,7 +19,7 @@ describe('InstallBrowserExtensionAlert', () => {
         for (const integrationType of integrationTypes) {
             test(`${serviceKind ?? 'none'} (${integrationType})`, () => {
                 expect(
-                    mount(
+                    render(
                         <InstallBrowserExtensionAlert
                             isChrome={integrationType === 'Chrome'}
                             onAlertDismissed={noop}
@@ -37,7 +37,7 @@ describe('InstallBrowserExtensionAlert', () => {
                                     : []
                             }
                         />
-                    )
+                    ).asFragment()
                 ).toMatchSnapshot()
             })
         }

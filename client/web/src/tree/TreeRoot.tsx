@@ -17,6 +17,7 @@ import {
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
@@ -36,7 +37,7 @@ const errorWidth = (width?: string): { width: string } => ({
     width: width ? `${width}px` : 'auto',
 })
 
-export interface TreeRootProps extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps {
+export interface TreeRootProps extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, TelemetryProps {
     location: H.Location
     activeNode: TreeNode
     activePath: string

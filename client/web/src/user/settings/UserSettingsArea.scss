@@ -1,9 +1,0 @@
-@import './profile/UserProfileFormFields';
-@import './profile/UserSettingsProfilePage.scss';
-@import './repositories/UserSettingsRepositoriesPage';
-
-// Move these rules from UserSettingsSidebar.scss in css module migrations of UserSettingsSidebar,
-// these should be addressed when doing css modules migration for UserSettingsArea
-.user-settings-sidebar {
-    width: 12.5rem;
-}

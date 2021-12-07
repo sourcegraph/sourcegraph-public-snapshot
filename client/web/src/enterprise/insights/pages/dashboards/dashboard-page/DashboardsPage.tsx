@@ -5,9 +5,8 @@ import { Redirect } from 'react-router-dom'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, PageHeader } from '@sourcegraph/wildcard'
+import { Button, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
-import { Badge } from '../../../../../components/Badge'
 import { Page } from '../../../../../components/Page'
 import { FeedbackPromptContent } from '../../../../../nav/Feedback/FeedbackPrompt'
 import { CodeInsightsIcon } from '../../../components'
@@ -85,7 +84,7 @@ const PageAnnotation: React.FunctionComponent = () => {
     return (
         <div className="d-flex align-items-center">
             <a href="https://docs.sourcegraph.com/code_insights#code-insights-beta" target="_blank" rel="noopener">
-                <Badge status="beta" className="text-uppercase" />
+                <ProductStatusBadge status="beta" className="text-uppercase" />
             </a>
 
             <Button ref={buttonReference} variant="link" size="sm">

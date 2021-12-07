@@ -18,11 +18,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 const numRoutines = 5
@@ -31,7 +29,7 @@ const numCommits = 10 // per repo
 const numPaths = 10   // per commit
 
 func TestCachedLocationResolver(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Cleanup(func() {
 		database.Mocks.Repos.Get = nil
@@ -50,9 +48,9 @@ func TestCachedLocationResolver(t *testing.T) {
 	}
 
 	var commitCalls uint32
-	git.Mocks.GetCommit = func(commitID api.CommitID) (*gitapi.Commit, error) {
+	git.Mocks.GetCommit = func(commitID api.CommitID) (*gitdomain.Commit, error) {
 		atomic.AddUint32(&commitCalls, 1)
-		return &gitapi.Commit{ID: commitID}, nil
+		return &gitdomain.Commit{ID: commitID}, nil
 	}
 
 	cachedResolver := NewCachedLocationResolver(db)
@@ -170,7 +168,7 @@ func TestCachedLocationResolver(t *testing.T) {
 }
 
 func TestCachedLocationResolverUnknownRepository(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Cleanup(func() {
 		database.Mocks.Repos.Get = nil
@@ -200,7 +198,7 @@ func TestCachedLocationResolverUnknownRepository(t *testing.T) {
 }
 
 func TestCachedLocationResolverUnknownCommit(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Cleanup(func() {
 		database.Mocks.Repos.Get = nil
@@ -234,7 +232,7 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 }
 
 func TestResolveLocations(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Cleanup(func() {
 		database.Mocks.Repos.Get = nil
@@ -253,8 +251,8 @@ func TestResolveLocations(t *testing.T) {
 		return api.CommitID(spec), nil
 	}
 
-	backend.Mocks.Repos.GetCommit = func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*gitapi.Commit, error) {
-		return &gitapi.Commit{ID: commitID}, nil
+	backend.Mocks.Repos.GetCommit = func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*gitdomain.Commit, error) {
+		return &gitdomain.Commit{ID: commitID}, nil
 	}
 
 	r1 := lsifstore.Range{Start: lsifstore.Position{Line: 11, Character: 12}, End: lsifstore.Position{Line: 13, Character: 14}}

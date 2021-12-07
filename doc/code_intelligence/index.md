@@ -62,12 +62,14 @@ Code intelligence provides advanced code navigation features that let developers
   - [Go to definition](explanations/features.md#go-to-definition)
   - [Find references](explanations/features.md#find-references)
   - [Symbol search](explanations/features.md#symbol-search)
+- [Precise code intelligence uploads](explanations/uploads.md)
 - [Writing an indexer](explanations/writing_an_indexer.md)
 - <span class="badge badge-experimental">Experimental</span> [Auto-indexing](explanations/auto_indexing.md)
 - <span class="badge badge-experimental">Experimental</span> [Auto-indexing inference](explanations/auto_indexing_inference.md)
 
 ## [References](references/index.md)
 
+- [Environment variables](references/envvars.md)
 - [Troubleshooting](references/troubleshooting.md)
 - [Sourcegraph recommended indexers](references/indexers.md)
 - [LSIF.dev](https://lsif.dev/)

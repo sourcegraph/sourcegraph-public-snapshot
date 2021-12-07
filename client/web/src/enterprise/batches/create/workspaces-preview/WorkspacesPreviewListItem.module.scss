@@ -7,13 +7,17 @@
     background-color: var(--subtle-bg-2);
 }
 
+.overflow {
+    overflow-wrap: anywhere;
+}
+
 .link {
     display: block;
     font-size: 1rem;
     padding-bottom: 0.125rem;
 }
 
-.link-disabled {
+.link-stale {
     color: var(--text-disabled);
 }
 

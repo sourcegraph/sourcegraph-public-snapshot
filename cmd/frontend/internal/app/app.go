@@ -38,7 +38,7 @@ func NewHandler(db database.DB) http.Handler {
 	r.Get(router.Favicon).Handler(trace.Route(http.HandlerFunc(favicon)))
 	r.Get(router.OpenSearch).Handler(trace.Route(http.HandlerFunc(openSearch)))
 
-	r.Get(router.RepoBadge).Handler(trace.Route(errorutil.Handler(serveRepoBadge)))
+	r.Get(router.RepoBadge).Handler(trace.Route(errorutil.Handler(serveRepoBadge(db))))
 
 	// Redirects
 	r.Get(router.OldToolsRedirect).Handler(trace.Route(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +50,7 @@ func NewHandler(db database.DB) http.Handler {
 	})))
 
 	if envvar.SourcegraphDotComMode() {
-		r.Get(router.GoSymbolURL).Handler(trace.Route(errorutil.Handler(serveGoSymbolURL)))
+		r.Get(router.GoSymbolURL).Handler(trace.Route(errorutil.Handler(serveGoSymbolURL(db))))
 	}
 
 	r.Get(router.UI).Handler(ui.Router())
@@ -65,7 +65,7 @@ func NewHandler(db database.DB) http.Handler {
 
 	r.Get(router.CheckUsernameTaken).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleCheckUsernameTaken(db))))
 
-	r.Get(router.RegistryExtensionBundle).Handler(trace.Route(gziphandler.GzipHandler(http.HandlerFunc(registry.HandleRegistryExtensionBundle))))
+	r.Get(router.RegistryExtensionBundle).Handler(trace.Route(gziphandler.GzipHandler(registry.HandleRegistryExtensionBundle(db))))
 
 	// Usage statistics ZIP download
 	r.Get(router.UsageStatsDownload).Handler(trace.Route(http.HandlerFunc(usageStatsArchiveHandler(db))))

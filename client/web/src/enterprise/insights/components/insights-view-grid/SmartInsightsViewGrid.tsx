@@ -7,6 +7,7 @@ import { ViewGrid } from '../../../../views'
 import { Insight } from '../../core/types'
 
 import { SmartInsight } from './components/smart-insight/SmartInsight'
+import { insightLayoutGenerator } from './utils/grid-layout-generator'
 
 interface SmartInsightsViewGridProps extends TelemetryProps {
     /**
@@ -26,7 +27,7 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
     const { telemetryService, insights } = props
 
     return (
-        <ViewGrid viewIds={insights.map(insight => insight.id)} telemetryService={telemetryService}>
+        <ViewGrid layouts={insightLayoutGenerator(insights)} telemetryService={telemetryService}>
             {insights.map(insight => (
                 <SmartInsight
                     key={insight.id}

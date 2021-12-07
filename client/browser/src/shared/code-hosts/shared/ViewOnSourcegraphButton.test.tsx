@@ -14,7 +14,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                     <ViewOnSourcegraphButton
                         codeHostType="test-codehost"
                         sourcegraphURL="https://test.com"
-                        getContext={() => ({ rawRepoName: 'test', privateRepository: false })}
+                        context={{ rawRepoName: 'test', privateRepository: false }}
                         className="test"
                         repoExistsOrError={true}
                         minimalUI={false}
@@ -30,7 +30,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                     <ViewOnSourcegraphButton
                         codeHostType="test-codehost"
                         sourcegraphURL="https://test.com"
-                        getContext={() => ({ rawRepoName: 'test', privateRepository: false })}
+                        context={{ rawRepoName: 'test', privateRepository: false }}
                         className="test"
                         repoExistsOrError={true}
                         minimalUI={true}
@@ -46,11 +46,11 @@ describe('<ViewOnSourcegraphButton />', () => {
                     <ViewOnSourcegraphButton
                         codeHostType="test-codehost"
                         sourcegraphURL="https://test.com"
-                        getContext={() => ({
+                        context={{
                             rawRepoName: 'test',
                             revision: 'test',
                             privateRepository: false,
-                        })}
+                        }}
                         className="test"
                         repoExistsOrError={true}
                         minimalUI={false}
@@ -68,11 +68,11 @@ describe('<ViewOnSourcegraphButton />', () => {
                     <ViewOnSourcegraphButton
                         codeHostType="test-codehost"
                         sourcegraphURL="https://sourcegraph.com"
-                        getContext={() => ({
+                        context={{
                             rawRepoName: 'test',
                             revision: 'test',
                             privateRepository: false,
-                        })}
+                        }}
                         className="test"
                         repoExistsOrError={false}
                         onConfigureSourcegraphClick={noop}
@@ -89,11 +89,11 @@ describe('<ViewOnSourcegraphButton />', () => {
                     <ViewOnSourcegraphButton
                         codeHostType="test-codehost"
                         sourcegraphURL="https://sourcegraph.test"
-                        getContext={() => ({
+                        context={{
                             rawRepoName: 'test',
                             revision: 'test',
                             privateRepository: false,
-                        })}
+                        }}
                         className="test"
                         repoExistsOrError={false}
                         onConfigureSourcegraphClick={noop}
@@ -115,11 +115,11 @@ describe('<ViewOnSourcegraphButton />', () => {
                                 <ViewOnSourcegraphButton
                                     codeHostType="test-codehost"
                                     sourcegraphURL="https://test.com"
-                                    getContext={() => ({
+                                    context={{
                                         rawRepoName: 'test',
                                         revision: 'test',
                                         privateRepository: false,
-                                    })}
+                                    }}
                                     showSignInButton={true}
                                     className="test"
                                     repoExistsOrError={new HTTPStatusError(new Response('', { status: 401 }))}
@@ -140,11 +140,11 @@ describe('<ViewOnSourcegraphButton />', () => {
                         <ViewOnSourcegraphButton
                             codeHostType="test-codehost"
                             sourcegraphURL="https://test.com"
-                            getContext={() => ({
+                            context={{
                                 rawRepoName: 'test',
                                 revision: 'test',
                                 privateRepository: false,
-                            })}
+                            }}
                             showSignInButton={true}
                             className="test"
                             repoExistsOrError={new Error('Something unknown happened!')}

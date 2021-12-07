@@ -173,6 +173,104 @@ func NewMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 	}
 }
 
+// NewStrictMockUserExternalAccountsStore creates a new mock of the
+// UserExternalAccountsStore interface. All methods panic on invocation,
+// unless overwritten.
+func NewStrictMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
+	return &MockUserExternalAccountsStore{
+		AssociateUserAndSaveFunc: &UserExternalAccountsStoreAssociateUserAndSaveFunc{
+			defaultHook: func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error {
+				panic("unexpected invocation of MockUserExternalAccountsStore.AssociateUserAndSave")
+			},
+		},
+		CountFunc: &UserExternalAccountsStoreCountFunc{
+			defaultHook: func(context.Context, database.ExternalAccountsListOptions) (int, error) {
+				panic("unexpected invocation of MockUserExternalAccountsStore.Count")
+			},
+		},
+		CreateUserAndSaveFunc: &UserExternalAccountsStoreCreateUserAndSaveFunc{
+			defaultHook: func(context.Context, database.NewUser, extsvc.AccountSpec, extsvc.AccountData) (int32, error) {
+				panic("unexpected invocation of MockUserExternalAccountsStore.CreateUserAndSave")
+			},
+		},
+		DeleteFunc: &UserExternalAccountsStoreDeleteFunc{
+			defaultHook: func(context.Context, int32) error {
+				panic("unexpected invocation of MockUserExternalAccountsStore.Delete")
+			},
+		},
+		DoneFunc: &UserExternalAccountsStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockUserExternalAccountsStore.Done")
+			},
+		},
+		ExecResultFunc: &UserExternalAccountsStoreExecResultFunc{
+			defaultHook: func(context.Context, *sqlf.Query) (sql.Result, error) {
+				panic("unexpected invocation of MockUserExternalAccountsStore.ExecResult")
+			},
+		},
+		GetFunc: &UserExternalAccountsStoreGetFunc{
+			defaultHook: func(context.Context, int32) (*extsvc.Account, error) {
+				panic("unexpected invocation of MockUserExternalAccountsStore.Get")
+			},
+		},
+		HandleFunc: &UserExternalAccountsStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockUserExternalAccountsStore.Handle")
+			},
+		},
+		InsertFunc: &UserExternalAccountsStoreInsertFunc{
+			defaultHook: func(context.Context, int32, extsvc.AccountSpec, extsvc.AccountData) error {
+				panic("unexpected invocation of MockUserExternalAccountsStore.Insert")
+			},
+		},
+		ListFunc: &UserExternalAccountsStoreListFunc{
+			defaultHook: func(context.Context, database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
+				panic("unexpected invocation of MockUserExternalAccountsStore.List")
+			},
+		},
+		ListBySQLFunc: &UserExternalAccountsStoreListBySQLFunc{
+			defaultHook: func(context.Context, *sqlf.Query) ([]*extsvc.Account, error) {
+				panic("unexpected invocation of MockUserExternalAccountsStore.ListBySQL")
+			},
+		},
+		LookupUserAndSaveFunc: &UserExternalAccountsStoreLookupUserAndSaveFunc{
+			defaultHook: func(context.Context, extsvc.AccountSpec, extsvc.AccountData) (int32, error) {
+				panic("unexpected invocation of MockUserExternalAccountsStore.LookupUserAndSave")
+			},
+		},
+		QueryRowFunc: &UserExternalAccountsStoreQueryRowFunc{
+			defaultHook: func(context.Context, *sqlf.Query) *sql.Row {
+				panic("unexpected invocation of MockUserExternalAccountsStore.QueryRow")
+			},
+		},
+		TouchExpiredFunc: &UserExternalAccountsStoreTouchExpiredFunc{
+			defaultHook: func(context.Context, int32) error {
+				panic("unexpected invocation of MockUserExternalAccountsStore.TouchExpired")
+			},
+		},
+		TouchLastValidFunc: &UserExternalAccountsStoreTouchLastValidFunc{
+			defaultHook: func(context.Context, int32) error {
+				panic("unexpected invocation of MockUserExternalAccountsStore.TouchLastValid")
+			},
+		},
+		TransactFunc: &UserExternalAccountsStoreTransactFunc{
+			defaultHook: func(context.Context) (database.UserExternalAccountsStore, error) {
+				panic("unexpected invocation of MockUserExternalAccountsStore.Transact")
+			},
+		},
+		WithFunc: &UserExternalAccountsStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.UserExternalAccountsStore {
+				panic("unexpected invocation of MockUserExternalAccountsStore.With")
+			},
+		},
+		WithEncryptionKeyFunc: &UserExternalAccountsStoreWithEncryptionKeyFunc{
+			defaultHook: func(encryption.Key) database.UserExternalAccountsStore {
+				panic("unexpected invocation of MockUserExternalAccountsStore.WithEncryptionKey")
+			},
+		},
+	}
+}
+
 // NewMockUserExternalAccountsStoreFrom creates a new mock of the
 // MockUserExternalAccountsStore interface. All methods delegate to the
 // given implementation, unless overwritten.

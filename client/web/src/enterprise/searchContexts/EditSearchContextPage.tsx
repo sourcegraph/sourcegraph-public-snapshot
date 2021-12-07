@@ -4,8 +4,8 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
-import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
 import {
     Scalars,
     SearchContextEditInput,
@@ -99,7 +99,7 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSea
                         <SearchContextForm {...props} searchContext={searchContextOrError} onSubmit={onSubmit} />
                     )}
                     {isErrorLike(searchContextOrError) && (
-                        <div className="alert alert-danger">
+                        <div data-testid="search-contexts-alert-danger" className="alert alert-danger">
                             Error while loading the search context: <strong>{searchContextOrError.message}</strong>
                         </div>
                     )}

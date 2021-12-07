@@ -15,7 +15,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -65,7 +67,7 @@ type WorkspaceResolver interface {
 type WorkspaceResolverBuilder func(tx *store.Store) WorkspaceResolver
 
 func NewWorkspaceResolver(s *store.Store) WorkspaceResolver {
-	return &workspaceResolver{store: s, frontendInternalURL: api.InternalClient.URL + "/.internal"}
+	return &workspaceResolver{store: s, frontendInternalURL: internalapi.Client.URL + "/.internal"}
 }
 
 type workspaceResolver struct {
@@ -338,7 +340,8 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 	}
 
 	// 🚨 SECURITY: We use database.Repos.List to check whether the user has access to
-	// the repositories or not.
+	// the repositories or not. We also impersonate on the internal search request to
+	// properly respect these permissions.
 	accessibleRepos, err := wr.store.Repos().List(ctx, database.ReposListOptions{IDs: repoIDs})
 	if err != nil {
 		return nil, err
@@ -370,10 +373,14 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 	}
 	req = req.WithContext(ctx)
 
-	// We don't set an auth token here and don't authenticate on the users
-	// behalf in any way, because we will fetch the repositories from the
-	// database later and check for repository permissions that way.
 	req.Header.Set("User-Agent", internalSearchClientUserAgent)
+
+	// We impersonate as the user who initiated this search. This is to properly
+	// scope repository permissions while running the search.
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return errors.New("no user set in workspaceResolver.runSearch")
+	}
 
 	resp, err := httpcli.InternalClient.Do(req)
 	if err != nil {
@@ -545,9 +552,14 @@ func findWorkspaces(
 	workspaceMatchers := make(map[batcheslib.WorkspaceConfiguration]glob.Glob)
 	var errs *multierror.Error
 	for _, conf := range spec.Workspaces {
-		g, err := glob.Compile(conf.In)
+		in := conf.In
+		// Empty `in` should fall back to matching all, instead of nothing.
+		if in == "" {
+			in = "*"
+		}
+		g, err := glob.Compile(in)
 		if err != nil {
-			errs = multierror.Append(errs, batcheslib.NewValidationError(errors.Errorf("failed to compile glob %q: %v", conf.In, err)))
+			errs = multierror.Append(errs, batcheslib.NewValidationError(errors.Errorf("failed to compile glob %q: %v", in, err)))
 		}
 		workspaceMatchers[conf] = g
 	}

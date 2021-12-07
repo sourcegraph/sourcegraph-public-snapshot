@@ -8,8 +8,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 type refsArgs struct {
@@ -70,7 +70,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 			}
 
 			if ok {
-				date := func(c *gitapi.Commit) time.Time {
+				date := func(c *gitdomain.Commit) time.Time {
 					if c.Committer == nil {
 						return c.Author.Date
 					}

@@ -48,6 +48,8 @@ func NewConfig(now time.Time) Config {
 		commit = os.Getenv("BUILDKITE_COMMIT")
 		branch = os.Getenv("BUILDKITE_BRANCH")
 		tag    = os.Getenv("BUILDKITE_TAG")
+		// evaluates what type of pipeline run this is
+		runType = computeRunType(tag, branch)
 		// defaults to 0
 		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
 	)
@@ -64,7 +66,12 @@ func NewConfig(now time.Time) Config {
 	var changedFiles []string
 	diffCommand := []string{"diff", "--name-only"}
 	if commit != "" {
-		diffCommand = append(diffCommand, "origin/main..."+commit)
+		if runType.Is(MainBranch) {
+			// We run builds on every commit in main, so on main, just look at the diff of the current commit.
+			diffCommand = append(diffCommand, "@^")
+		} else {
+			diffCommand = append(diffCommand, "origin/main..."+commit)
+		}
 	} else {
 		diffCommand = append(diffCommand, "origin/main...")
 		// for testing
@@ -76,16 +83,20 @@ func NewConfig(now time.Time) Config {
 		changedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
 	}
 
-	// evaluates what type of pipeline run this is
-	runType := computeRunType(tag, branch)
-
 	// special tag adjustments based on run type
 	switch {
 	case runType.Is(TaggedRelease):
+		// This tag is used for publishing versioned releases.
+		//
 		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
 		tag = strings.TrimPrefix(tag, "v")
-	default:
+	case runType.Is(MainBranch):
+		// This tag is used for deploying continuously. Only ever generate this on the
+		// main branch.
 		tag = fmt.Sprintf("%05d_%s_%.7s", buildNumber, now.Format("2006-01-02"), commit)
+	default:
+		// Encode branch inside build tag by default.
+		tag = fmt.Sprintf("%s_%05d_%s_%.7s", strings.ReplaceAll(branch, "/", "-"), buildNumber, now.Format("2006-01-02"), commit)
 	}
 	if runType.Is(ImagePatch, ImagePatchNoTest, ExecutorPatchNoTest) {
 		// Add additional patch suffix

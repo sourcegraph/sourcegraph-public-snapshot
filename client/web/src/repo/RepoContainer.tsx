@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -51,7 +52,7 @@ import {
     SearchStreamingProps,
 } from '../search'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
-import { useGlobalStore } from '../stores/global'
+import { useNavbarQueryState } from '../stores'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
@@ -59,6 +60,7 @@ import { parseBrowserRepoURL } from '../util/url'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { InstallBrowserExtensionAlert, isFirefoxCampaignActive } from './actions/InstallBrowserExtensionAlert'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
+import styles from './RepoContainer.module.scss'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevisionContainer, RepoRevisionContainerRoute } from './RepoRevisionContainer'
@@ -254,7 +256,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             <button
                                 type="button"
                                 id="repo-popover"
-                                className="btn btn-sm btn-outline-secondary repo-container__repo-change"
+                                className={classNames('btn btn-sm btn-outline-secondary', styles.repoChange)}
                                 aria-label="Change repository"
                             >
                                 <ChevronDownIcon className="icon-inline" />
@@ -268,12 +270,15 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             fade={false}
                             popperClassName="border-0"
                         >
-                            <RepositoriesPopover currentRepo={repoOrError.id} />
+                            <RepositoriesPopover
+                                currentRepo={repoOrError.id}
+                                telemetryService={props.telemetryService}
+                            />
                         </UncontrolledPopover>
                     </>
                 ),
             }
-        }, [repoOrError, resolvedRevisionOrError])
+        }, [repoOrError, resolvedRevisionOrError, props.telemetryService])
     )
 
     // Update the workspace roots service to reflect the current repo / resolved revision
@@ -313,7 +318,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     // Update the navbar query to reflect the current repo / revision
     const { globbing } = props
-    const onNavbarQueryChange = useGlobalStore(state => state.setQueryState)
+    const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     useEffect(() => {
         let query = searchQueryForRepoRevision(repoName, globbing, revision)
         if (filePath) {
@@ -412,7 +417,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     }
 
     return (
-        <div className="repo-container test-repo-container w-100 d-flex flex-column">
+        <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
             {(showExtensionAlert || showFirefoxAddonAlert) && (
                 <InstallBrowserExtensionAlert
                     isChrome={IS_CHROME}

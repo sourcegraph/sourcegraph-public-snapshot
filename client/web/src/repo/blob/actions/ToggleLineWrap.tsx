@@ -5,9 +5,9 @@ import { filter } from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { WrapDisabledIcon } from '@sourcegraph/shared/src/components/icons'
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 
 import { eventLogger } from '../../../tracking/eventLogger'
+import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
 
 /**
@@ -74,25 +74,26 @@ export class ToggleLineWrap extends React.PureComponent<
     public render(): JSX.Element | null {
         if (this.props.actionType === 'dropdown') {
             return (
-                <ButtonLink onSelect={this.onClick} className="btn repo-header__file-action">
+                <RepoHeaderActionButtonLink className="btn" file={true} onSelect={this.onClick}>
                     {this.state.value ? (
                         <WrapDisabledIcon className="icon-inline" />
                     ) : (
                         <WrapIcon className="icon-inline" />
                     )}
                     <span>{this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)</span>
-                </ButtonLink>
+                </RepoHeaderActionButtonLink>
             )
         }
 
         return (
-            <ButtonLink
+            <RepoHeaderActionButtonLink
+                className="btn btn-icon"
+                file={false}
                 onSelect={this.onClick}
                 data-tooltip={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}
-                className="btn btn-icon repo-header__action"
             >
                 {this.state.value ? <WrapDisabledIcon className="icon-inline" /> : <WrapIcon className="icon-inline" />}
-            </ButtonLink>
+            </RepoHeaderActionButtonLink>
         )
     }
 

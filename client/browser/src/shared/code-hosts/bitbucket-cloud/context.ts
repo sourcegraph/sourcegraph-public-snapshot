@@ -1,14 +1,14 @@
 import { CodeHostContext } from '../shared/codeHost'
 import { RepoURLParseError } from '../shared/errors'
 
-export function getContext(): CodeHostContext {
+export async function getContext(): Promise<CodeHostContext> {
     const rawRepoName = getRawRepoName()
 
-    return {
+    return Promise.resolve({
         rawRepoName,
         revision: '',
         privateRepository: false,
-    }
+    })
 }
 
 export function getRawRepoName(): string {

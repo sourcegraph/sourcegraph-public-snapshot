@@ -2,6 +2,9 @@ import { fromEvent, concat, Observable, of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError, filter, map, mapTo, publishReplay, refCount, take } from 'rxjs/operators'
 
+import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+
 import { IS_CHROME } from '../marketing/util'
 import { observeQuerySelector } from '../util/dom'
 
@@ -20,9 +23,22 @@ export const browserExtensionMessageReceived = (extensionMarker
     : // If not, listen for a registration event
       fromEvent<CustomEvent>(document, 'sourcegraph:browser-extension-registration').pipe(
           take(1),
-          map(({ detail }) => ({
-              platform: detail?.platform,
-          }))
+          map(({ detail }) => {
+              try {
+                  return { platform: detail?.platform }
+              } catch (error) {
+                  // Temporary to fix issues on Firefox (https://github.com/sourcegraph/sourcegraph/issues/25998)
+                  if (
+                      isFirefox() &&
+                      isErrorLike(error) &&
+                      error.message.includes('Permission denied to access property "platform"')
+                  ) {
+                      return { platform: 'firefox-extension' }
+                  }
+
+                  throw error
+              }
+          })
       )
 ).pipe(
     // Replay the same latest value for every subscriber

@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -20,7 +19,7 @@ const providerType = "http-header"
 // requests to both the app and API and add headers.
 //
 // See the "func middleware" docs for more information.
-func Middleware(db dbutil.DB) *auth.Middleware {
+func Middleware(db database.DB) *auth.Middleware {
 	return &auth.Middleware{
 		API: middleware(db),
 		App: middleware(db),
@@ -37,7 +36,7 @@ func Middleware(db dbutil.DB) *auth.Middleware {
 // http://localhost:4080. See `-h` for flag help.
 //
 // 🚨 SECURITY
-func middleware(db dbutil.DB) func(next http.Handler) http.Handler {
+func middleware(db database.DB) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		const misconfiguredMessage = "Misconfigured http-header auth provider."
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +92,7 @@ func middleware(db dbutil.DB) func(next http.Handler) http.Handler {
 					return
 				}
 			}
-			userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), database.NewDB(db), auth.GetAndSaveUserOp{
+			userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), db, auth.GetAndSaveUserOp{
 				UserProps: database.NewUser{Username: username, Email: rawEmail, EmailIsVerified: true},
 				ExternalAccount: extsvc.AccountSpec{
 					ServiceType: providerType,

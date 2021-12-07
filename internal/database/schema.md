@@ -39,7 +39,7 @@ Referenced by:
  closed_at          | timestamp with time zone |           |          | 
  batch_spec_id      | bigint                   |           | not null | 
  last_applier_id    | bigint                   |           |          | 
- last_applied_at    | timestamp with time zone |           | not null | 
+ last_applied_at    | timestamp with time zone |           |          | 
 Indexes:
     "batch_changes_pkey" PRIMARY KEY, btree (id)
     "batch_changes_namespace_org_id" btree (namespace_org_id)
@@ -170,6 +170,7 @@ Foreign-key constraints:
  unsupported          | boolean                  |           | not null | false
  skipped              | boolean                  |           | not null | false
  cached_result_found  | boolean                  |           | not null | false
+ step_cache_results   | jsonb                    |           | not null | '{}'::jsonb
 Indexes:
     "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -461,7 +462,7 @@ Referenced by:
  changed_at        | timestamp with time zone |           | not null | now()
  changed_by        | integer                  |           | not null | 
  enabled           | boolean                  |           | not null | true
- namespace_user_id | integer                  |           |          | 
+ namespace_user_id | integer                  |           | not null | 
  namespace_org_id  | integer                  |           |          | 
 Indexes:
     "cm_monitors_pkey" PRIMARY KEY, btree (id)
@@ -477,6 +478,8 @@ Referenced by:
     TABLE "cm_webhooks" CONSTRAINT "cm_webhooks_monitor_fkey" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
 
 ```
+
+**namespace_org_id**: DEPRECATED: code monitors cannot be owned by an org
 
 # Table "public.cm_queries"
 ```
@@ -944,16 +947,15 @@ Referenced by:
 
 # Table "public.gitserver_repos"
 ```
-        Column         |           Type           | Collation | Nullable |      Default       
------------------------+--------------------------+-----------+----------+--------------------
- repo_id               | integer                  |           | not null | 
- clone_status          | text                     |           | not null | 'not_cloned'::text
- last_external_service | bigint                   |           |          | 
- shard_id              | text                     |           | not null | 
- last_error            | text                     |           |          | 
- updated_at            | timestamp with time zone |           | not null | now()
- last_fetched          | timestamp with time zone |           | not null | now()
- last_changed          | timestamp with time zone |           | not null | now()
+    Column    |           Type           | Collation | Nullable |      Default       
+--------------+--------------------------+-----------+----------+--------------------
+ repo_id      | integer                  |           | not null | 
+ clone_status | text                     |           | not null | 'not_cloned'::text
+ shard_id     | text                     |           | not null | 
+ last_error   | text                     |           |          | 
+ updated_at   | timestamp with time zone |           | not null | now()
+ last_fetched | timestamp with time zone |           | not null | now()
+ last_changed | timestamp with time zone |           | not null | now()
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text
@@ -1037,6 +1039,24 @@ Stores data points for a code insight that do not need to be queried directly, b
 **job_id**: Foreign key to the job that owns this record.
 
 **recording_time**: The time for which this dependency should be recorded at using the parents value.
+
+# Table "public.insights_settings_migration_jobs"
+```
+       Column        |            Type             | Collation | Nullable |                           Default                            
+---------------------+-----------------------------+-----------+----------+--------------------------------------------------------------
+ id                  | integer                     |           | not null | nextval('insights_settings_migration_jobs_id_seq'::regclass)
+ user_id             | integer                     |           |          | 
+ org_id              | integer                     |           |          | 
+ global              | boolean                     |           |          | 
+ settings_id         | integer                     |           | not null | 
+ total_insights      | integer                     |           | not null | 0
+ migrated_insights   | integer                     |           | not null | 0
+ total_dashboards    | integer                     |           | not null | 0
+ migrated_dashboards | integer                     |           | not null | 0
+ runs                | integer                     |           | not null | 0
+ completed_at        | timestamp without time zone |           |          | 
+
+```
 
 # Table "public.lsif_configuration_policies"
 ```
@@ -1536,6 +1556,26 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.notebooks"
+```
+     Column      |           Type           | Collation | Nullable |                Default                
+-----------------+--------------------------+-----------+----------+---------------------------------------
+ id              | bigint                   |           | not null | nextval('notebooks_id_seq'::regclass)
+ title           | citext                   |           | not null | 
+ blocks          | jsonb                    |           | not null | '[]'::jsonb
+ public          | boolean                  |           | not null | 
+ creator_user_id | integer                  |           |          | 
+ created_at      | timestamp with time zone |           | not null | now()
+ updated_at      | timestamp with time zone |           | not null | now()
+Indexes:
+    "notebooks_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "blocks_is_array" CHECK (jsonb_typeof(blocks) = 'array'::text)
+Foreign-key constraints:
+    "notebooks_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+
+```
+
 # Table "public.org_invitations"
 ```
       Column       |           Type           | Collation | Nullable |                   Default                   
@@ -1853,7 +1893,7 @@ Referenced by:
  deleted_at            | timestamp with time zone |           |          | 
  metadata              | jsonb                    |           | not null | '{}'::jsonb
  private               | boolean                  |           | not null | false
- stars                 | integer                  |           |          | 
+ stars                 | integer                  |           | not null | 0
  blocked               | jsonb                    |           |          | 
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
@@ -1938,6 +1978,7 @@ Indexes:
 Indexes:
     "saved_searches_pkey" PRIMARY KEY, btree (id)
 Check constraints:
+    "saved_searches_notifications_disabled" CHECK (notify_owner = false AND notify_slack = false)
     "user_or_org_id_not_null" CHECK (user_id IS NOT NULL AND org_id IS NULL OR org_id IS NOT NULL AND user_id IS NULL)
 Foreign-key constraints:
     "saved_searches_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
@@ -2314,6 +2355,7 @@ Referenced by:
     TABLE "external_services" CONSTRAINT "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "notebooks" CONSTRAINT "notebooks_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
     TABLE "org_invitations" CONSTRAINT "org_invitations_sender_user_id_fkey" FOREIGN KEY (sender_user_id) REFERENCES users(id)
     TABLE "org_members" CONSTRAINT "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT

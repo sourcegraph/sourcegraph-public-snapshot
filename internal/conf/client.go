@@ -11,7 +11,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -260,7 +260,7 @@ func (c *client) fetchAndUpdate() error {
 	if c.passthrough != nil {
 		newConfig, err = c.passthrough.Read(ctx)
 	} else {
-		newConfig, err = api.InternalClient.Configuration(ctx)
+		newConfig, err = internalapi.Client.Configuration(ctx)
 	}
 	if err != nil {
 		return errors.Wrap(err, "unable to fetch new configuration")

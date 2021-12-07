@@ -25,8 +25,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/connections"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -108,23 +109,14 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	clock := func() time.Time { return time.Now().UTC() }
 
-	dsn := conf.Get().ServiceConnections().PostgresDSN
-	conf.Watch(func() {
-		newDSN := conf.Get().ServiceConnections().PostgresDSN
-		if dsn != newDSN {
-			// The DSN was changed (e.g. by someone modifying the env vars on
-			// the frontend). We need to respect the new DSN. Easiest way to do
-			// that is to restart our service (kubernetes/docker/goreman will
-			// handle starting us back up).
-			log.Fatalf("Detected repository DSN change, restarting to take effect: %q", newDSN)
-		}
-	})
-
 	if err := keyring.Init(ctx); err != nil {
 		log.Fatalf("error initialising encryption keyring: %v", err)
 	}
 
-	sqlDB, err := dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "repo-updater"})
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.PostgresDSN
+	})
+	sqlDB, err := connections.NewFrontendDB(dsn, "repo-updater", false)
 	if err != nil {
 		log.Fatalf("failed to initialize database store: %v", err)
 	}
@@ -203,7 +195,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}()
 	server.Syncer = syncer
 
-	go syncScheduler(ctx, scheduler, gitserver.DefaultClient, store)
+	go syncScheduler(ctx, scheduler, store)
 
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 
@@ -339,7 +331,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(authzBypass(handler))),
+		Handler:      ot.HTTPMiddleware(trace.HTTPMiddleware(authzBypass(handler), conf.DefaultClient())),
 	})
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }
@@ -419,7 +411,7 @@ func watchSyncer(
 // syncScheduler will periodically list the cloned repositories on gitserver and
 // update the scheduler with the list. It also ensures that if any of our default
 // repos are missing from the cloned list they will be added for cloning ASAP.
-func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store *repos.Store) {
+func syncScheduler(ctx context.Context, sched scheduler, store *repos.Store) {
 	baseRepoStore := database.ReposWith(store)
 
 	doSync := func() {

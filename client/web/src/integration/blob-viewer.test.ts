@@ -1162,14 +1162,14 @@ describe('Blob viewer', () => {
                 await driver.page.reload()
 
                 // Alert should not show up now that the user has dismissed it once
-                await driver.page.waitForSelector('.repo-header')
+                await driver.page.waitForSelector('[data-testid="repo-header"]')
                 // `browserExtensionInstalled` emits false after 500ms, so
-                // wait 500ms after .repo-header is visible, at which point we know
+                // wait 500ms after [data-testid="repo-header"] is visible, at which point we know
                 // that `RepoContainer` has subscribed to `browserExtensionInstalled`.
                 // After this point, we know whether or not the alert will be displayed for this page load.
                 await driver.page.waitFor(500)
                 assert(
-                    !(await driver.page.$('.install-browser-extension-alert')),
+                    !(await driver.page.$('[data-testid="install-browser-extension-alert"]')),
                     'Expected "Install browser extension" alert to not be displayed before user dismisses it once'
                 )
             })

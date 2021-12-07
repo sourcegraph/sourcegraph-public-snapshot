@@ -342,7 +342,18 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(db database.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver, dotcom DotcomRootResolver, searchContexts SearchContextsResolver) (*graphql.Schema, error) {
+func NewSchema(
+	db database.DB,
+	batchChanges BatchChangesResolver,
+	codeIntel CodeIntelResolver,
+	insights InsightsResolver,
+	authz AuthzResolver,
+	codeMonitors CodeMonitorsResolver,
+	license LicenseResolver,
+	dotcom DotcomRootResolver,
+	searchContexts SearchContextsResolver,
+	orgRepositoryResolver OrgRepositoryResolver,
+) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
 
@@ -415,6 +426,12 @@ func NewSchema(db database.DB, batchChanges BatchChangesResolver, codeIntel Code
 		}
 	}
 
+	if orgRepositoryResolver != nil {
+		EnterpriseResolvers.orgRepositoryResolver = orgRepositoryResolver
+		resolver.OrgRepositoryResolver = orgRepositoryResolver
+		schemas = append(schemas, orgSchema)
+	}
+
 	schemas = append(schemas, computeSchema)
 
 	return graphql.ParseSchema(
@@ -438,6 +455,7 @@ type schemaResolver struct {
 	LicenseResolver
 	DotcomRootResolver
 	SearchContextsResolver
+	OrgRepositoryResolver
 
 	db                database.DB
 	repoupdaterClient *repoupdater.Client
@@ -513,6 +531,7 @@ var EnterpriseResolvers = struct {
 	licenseResolver        LicenseResolver
 	dotcomResolver         DotcomRootResolver
 	searchContextsResolver SearchContextsResolver
+	orgRepositoryResolver  OrgRepositoryResolver
 }{}
 
 // DEPRECATED
@@ -657,7 +676,7 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 	}
 	var codeHost int64
 	if args.CodeHost != nil {
-		codeHost, err = unmarshalExternalServiceID(*args.CodeHost)
+		codeHost, err = UnmarshalExternalServiceID(*args.CodeHost)
 		if err != nil {
 			return nil, err
 		}
@@ -687,7 +706,7 @@ func (r *schemaResolver) CodeHostSyncDue(ctx context.Context, args *struct {
 	}
 	ids := make([]int64, len(args.IDs))
 	for i, gqlID := range args.IDs {
-		id, err := unmarshalExternalServiceID(gqlID)
+		id, err := UnmarshalExternalServiceID(gqlID)
 		if err != nil {
 			return false, errors.New("unable to unmarshal id")
 		}

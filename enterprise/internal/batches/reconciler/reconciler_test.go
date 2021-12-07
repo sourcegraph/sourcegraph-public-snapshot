@@ -10,7 +10,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -39,7 +39,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	defer state.Unmock()
 
 	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
-	defer func() { internalClient = api.InternalClient }()
+	defer func() { internalClient = internalapi.Client }()
 
 	githubPR := buildGithubPR(time.Now(), btypes.ChangesetExternalStateOpen)
 	githubHeadRef := git.EnsureRefPrefix(githubPR.HeadRefName)

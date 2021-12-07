@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // Stats contains fields that should be returned by all funcs
@@ -16,9 +15,8 @@ type Stats struct {
 	// IsLimitHit is true if we do not have all results that match the query.
 	IsLimitHit bool
 
-	// Repos that were matched by the repo-related filters. This should only
-	// be set once by search, when we have resolved Repos.
-	Repos map[api.RepoID]types.MinimalRepo
+	// Repos that were matched by the repo-related filters.
+	Repos map[api.RepoID]struct{}
 
 	// Status is a RepoStatusMap of repository search statuses.
 	Status search.RepoStatusMap
@@ -46,11 +44,11 @@ func (c *Stats) Update(other *Stats) {
 	c.IsIndexUnavailable = c.IsIndexUnavailable || other.IsIndexUnavailable
 
 	if c.Repos == nil && len(other.Repos) > 0 {
-		c.Repos = make(map[api.RepoID]types.MinimalRepo, len(other.Repos))
+		c.Repos = make(map[api.RepoID]struct{}, len(other.Repos))
 	}
-	for id, r := range other.Repos {
+	for id := range other.Repos {
 		if _, ok := c.Repos[id]; !ok {
-			c.Repos[id] = r
+			c.Repos[id] = struct{}{}
 		}
 	}
 

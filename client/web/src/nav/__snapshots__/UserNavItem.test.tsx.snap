@@ -1,462 +1,222 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`UserNavItem simple 1`] = `
-<MemoryRouter>
-  <Router
-    history="[History]"
+<DocumentFragment>
+  <div
+    aria-label="User. Open menu"
+    class="py-0 btn-group"
   >
-    <UserNavItem
-      authenticatedUser={
-        Object {
-          "avatarURL": null,
-          "displayName": "alice doe",
-          "organizations": Object {
-            "nodes": Array [
-              Object {
-                "displayName": "Acme Corp",
-                "id": "0",
-                "name": "acme",
-                "settingsURL": "/organizations/acme/settings",
-                "url": "/organizations/acme",
-              },
-              Object {
-                "displayName": "Beta Inc",
-                "id": "1",
-                "name": "beta",
-                "settingsURL": "/organizations/beta/settings",
-                "url": "/organizations/beta",
-              },
-            ],
-          },
-          "session": Object {
-            "canSignOut": true,
-          },
-          "settingsURL": "#",
-          "siteAdmin": true,
-          "username": "alice",
-        }
-      }
-      codeHostIntegrationMessaging="browser-extension"
-      isExtensionAlertAnimating={false}
-      isLightTheme={true}
-      location="[Location path=/]"
-      onThemePreferenceChange={[Function]}
-      showDotComMarketing={true}
-      showRepositorySection={true}
-      showSearchContext={true}
-      showSearchContextManagement={true}
-      themePreference="light"
+    <a
+      aria-expanded="false"
+      aria-haspopup="true"
+      class="bg-transparent d-flex align-items-center test-user-nav-item-toggle nav-link"
+      href="#"
     >
-      <ButtonDropdown
-        aria-label="User. Open menu"
-        className="py-0"
-        isOpen={false}
-        toggle={[Function]}
+      <div
+        class="position-relative"
       >
-        <Dropdown
-          a11y={true}
-          active={false}
-          addonType={false}
-          aria-label="User. Open menu"
-          className="py-0"
-          direction="down"
-          group={true}
-          inNavbar={false}
-          isOpen={false}
-          nav={false}
-          setActiveFromChild={false}
-          toggle={[Function]}
+        <div
+          class="align-items-center d-flex"
         >
-          <Manager>
-            <div
-              aria-label="User. Open menu"
-              className="py-0 btn-group"
-              onKeyDown={[Function]}
+          <div
+            class="userAvatar icon-inline avatar"
+            id="target-user-avatar"
+          >
+            ad
+          </div>
+          <svg
+            class="mdi-icon icon-inline"
+            fill="currentColor"
+            height="24"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+            />
+          </svg>
+        </div>
+      </div>
+    </a>
+    <div
+      aria-hidden="true"
+      class="dropdownMenu dropdown-menu dropdown-menu-right"
+      role="menu"
+      tabindex="-1"
+    >
+      <h6
+        class="py-1 dropdown-header"
+        tabindex="-1"
+      >
+        Signed in as 
+        <strong>
+          @alice
+        </strong>
+      </h6>
+      <div
+        class="dropdown-divider"
+        tabindex="-1"
+      />
+      <a
+        class="dropdown-item"
+        href="/"
+      >
+        Settings
+      </a>
+      <a
+        class="dropdown-item"
+        href="/users/alice/settings/repositories"
+      >
+        Your repositories
+      </a>
+      <a
+        class="dropdown-item"
+        href="/users/alice/searches"
+      >
+        Saved searches
+      </a>
+      <div
+        class="dropdown-divider"
+        tabindex="-1"
+      />
+      <div
+        class="px-2 py-1"
+      >
+        <div
+          class="d-flex align-items-center"
+        >
+          <div
+            class="mr-2"
+          >
+            Theme
+          </div>
+          <select
+            class="custom-select custom-select-sm test-theme-toggle"
+          >
+            <option
+              value="light"
             >
-              <DropdownToggle
-                aria-haspopup={true}
-                className="bg-transparent d-flex align-items-center test-user-nav-item-toggle"
-                color="secondary"
-                nav={true}
-              >
-                <Reference>
-                  <InnerReference
-                    setReferenceNode={[Function]}
-                  >
-                    <a
-                      aria-expanded={false}
-                      aria-haspopup={true}
-                      className="bg-transparent d-flex align-items-center test-user-nav-item-toggle nav-link"
-                      href="#"
-                      onClick={[Function]}
-                    >
-                      <div
-                        className="position-relative"
-                      >
-                        <div
-                          className="align-items-center d-flex"
-                        >
-                          <UserAvatar
-                            className="icon-inline avatar"
-                            targetID="target-user-avatar"
-                            user={
-                              Object {
-                                "avatarURL": null,
-                                "displayName": "alice doe",
-                                "organizations": Object {
-                                  "nodes": Array [
-                                    Object {
-                                      "displayName": "Acme Corp",
-                                      "id": "0",
-                                      "name": "acme",
-                                      "settingsURL": "/organizations/acme/settings",
-                                      "url": "/organizations/acme",
-                                    },
-                                    Object {
-                                      "displayName": "Beta Inc",
-                                      "id": "1",
-                                      "name": "beta",
-                                      "settingsURL": "/organizations/beta/settings",
-                                      "url": "/organizations/beta",
-                                    },
-                                  ],
-                                },
-                                "session": Object {
-                                  "canSignOut": true,
-                                },
-                                "settingsURL": "#",
-                                "siteAdmin": true,
-                                "username": "alice",
-                              }
-                            }
-                          >
-                            <div
-                              className="userAvatar icon-inline avatar"
-                              id="target-user-avatar"
-                            >
-                              ad
-                            </div>
-                          </UserAvatar>
-                          <Memo(ChevronDownIcon)
-                            className="icon-inline"
-                          />
-                        </div>
-                      </div>
-                    </a>
-                  </InnerReference>
-                </Reference>
-              </DropdownToggle>
-              <DropdownMenu
-                className="dropdownMenu"
-                flip={true}
-                right={true}
-                tag="div"
-              >
-                <div
-                  aria-hidden={true}
-                  className="dropdownMenu dropdown-menu dropdown-menu-right"
-                  role="menu"
-                  tabIndex="-1"
-                >
-                  <DropdownItem
-                    className="py-1"
-                    header={true}
-                    tag="button"
-                    toggle={true}
-                  >
-                    <h6
-                      className="py-1 dropdown-header"
-                      onClick={[Function]}
-                      tabIndex="-1"
-                    >
-                      Signed in as 
-                      <strong>
-                        @
-                        alice
-                      </strong>
-                    </h6>
-                  </DropdownItem>
-                  <DropdownItem
-                    divider={true}
-                    tag="button"
-                    toggle={true}
-                  >
-                    <div
-                      className="dropdown-divider"
-                      onClick={[Function]}
-                      tabIndex="-1"
-                    />
-                  </DropdownItem>
-                  <Link
-                    className="dropdown-item"
-                    to="#"
-                  >
-                    <LinkAnchor
-                      className="dropdown-item"
-                      href="/"
-                      navigate={[Function]}
-                    >
-                      <a
-                        className="dropdown-item"
-                        href="/"
-                        onClick={[Function]}
-                      >
-                        Settings
-                      </a>
-                    </LinkAnchor>
-                  </Link>
-                  <Link
-                    className="dropdown-item"
-                    to="/users/alice/settings/repositories"
-                  >
-                    <LinkAnchor
-                      className="dropdown-item"
-                      href="/users/alice/settings/repositories"
-                      navigate={[Function]}
-                    >
-                      <a
-                        className="dropdown-item"
-                        href="/users/alice/settings/repositories"
-                        onClick={[Function]}
-                      >
-                        Your repositories
-                      </a>
-                    </LinkAnchor>
-                  </Link>
-                  <Link
-                    className="dropdown-item"
-                    to="/users/alice/searches"
-                  >
-                    <LinkAnchor
-                      className="dropdown-item"
-                      href="/users/alice/searches"
-                      navigate={[Function]}
-                    >
-                      <a
-                        className="dropdown-item"
-                        href="/users/alice/searches"
-                        onClick={[Function]}
-                      >
-                        Saved searches
-                      </a>
-                    </LinkAnchor>
-                  </Link>
-                  <DropdownItem
-                    divider={true}
-                    tag="button"
-                    toggle={true}
-                  >
-                    <div
-                      className="dropdown-divider"
-                      onClick={[Function]}
-                      tabIndex="-1"
-                    />
-                  </DropdownItem>
-                  <div
-                    className="px-2 py-1"
-                  >
-                    <div
-                      className="d-flex align-items-center"
-                    >
-                      <div
-                        className="mr-2"
-                      >
-                        Theme
-                      </div>
-                      <select
-                        className="custom-select custom-select-sm test-theme-toggle"
-                        onChange={[Function]}
-                        value="light"
-                      >
-                        <option
-                          value="light"
-                        >
-                          Light
-                        </option>
-                        <option
-                          value="dark"
-                        >
-                          Dark
-                        </option>
-                        <option
-                          value="system"
-                        >
-                          System
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                  <DropdownItem
-                    divider={true}
-                    tag="button"
-                    toggle={true}
-                  >
-                    <div
-                      className="dropdown-divider"
-                      onClick={[Function]}
-                      tabIndex="-1"
-                    />
-                  </DropdownItem>
-                  <DropdownItem
-                    header={true}
-                    tag="button"
-                    toggle={true}
-                  >
-                    <h6
-                      className="dropdown-header"
-                      onClick={[Function]}
-                      tabIndex="-1"
-                    >
-                      Your organizations
-                    </h6>
-                  </DropdownItem>
-                  <Link
-                    className="dropdown-item"
-                    key="0"
-                    to="/organizations/acme/settings"
-                  >
-                    <LinkAnchor
-                      className="dropdown-item"
-                      href="/organizations/acme/settings"
-                      navigate={[Function]}
-                    >
-                      <a
-                        className="dropdown-item"
-                        href="/organizations/acme/settings"
-                        onClick={[Function]}
-                      >
-                        Acme Corp
-                      </a>
-                    </LinkAnchor>
-                  </Link>
-                  <Link
-                    className="dropdown-item"
-                    key="1"
-                    to="/organizations/beta/settings"
-                  >
-                    <LinkAnchor
-                      className="dropdown-item"
-                      href="/organizations/beta/settings"
-                      navigate={[Function]}
-                    >
-                      <a
-                        className="dropdown-item"
-                        href="/organizations/beta/settings"
-                        onClick={[Function]}
-                      >
-                        Beta Inc
-                      </a>
-                    </LinkAnchor>
-                  </Link>
-                  <DropdownItem
-                    divider={true}
-                    tag="button"
-                    toggle={true}
-                  >
-                    <div
-                      className="dropdown-divider"
-                      onClick={[Function]}
-                      tabIndex="-1"
-                    />
-                  </DropdownItem>
-                  <Link
-                    className="dropdown-item"
-                    to="/site-admin"
-                  >
-                    <LinkAnchor
-                      className="dropdown-item"
-                      href="/site-admin"
-                      navigate={[Function]}
-                    >
-                      <a
-                        className="dropdown-item"
-                        href="/site-admin"
-                        onClick={[Function]}
-                      >
-                        Site admin
-                      </a>
-                    </LinkAnchor>
-                  </Link>
-                  <Link
-                    className="dropdown-item"
-                    rel="noopener"
-                    target="_blank"
-                    to="/help"
-                  >
-                    <LinkAnchor
-                      className="dropdown-item"
-                      href="/help"
-                      navigate={[Function]}
-                      rel="noopener"
-                      target="_blank"
-                    >
-                      <a
-                        className="dropdown-item"
-                        href="/help"
-                        onClick={[Function]}
-                        rel="noopener"
-                        target="_blank"
-                      >
-                        Help 
-                        <Memo(OpenInNewIcon)
-                          className="icon-inline"
-                        />
-                      </a>
-                    </LinkAnchor>
-                  </Link>
-                  <button
-                    className="dropdown-item"
-                    onClick={[Function]}
-                    type="button"
-                  >
-                    Keyboard shortcuts
-                  </button>
-                  <a
-                    className="dropdown-item"
-                    href="/-/sign-out"
-                  >
-                    Sign out
-                  </a>
-                  <DropdownItem
-                    divider={true}
-                    tag="button"
-                    toggle={true}
-                  >
-                    <div
-                      className="dropdown-divider"
-                      onClick={[Function]}
-                      tabIndex="-1"
-                    />
-                  </DropdownItem>
-                  <a
-                    className="dropdown-item"
-                    href="https://about.sourcegraph.com"
-                    rel="noopener"
-                    target="_blank"
-                  >
-                    About Sourcegraph 
-                    <Memo(OpenInNewIcon)
-                      className="icon-inline"
-                    />
-                  </a>
-                  <a
-                    className="dropdown-item"
-                    href="https://docs.sourcegraph.com/integration/browser_extension"
-                    rel="noopener"
-                    target="_blank"
-                  >
-                    Browser extension 
-                    <Memo(OpenInNewIcon)
-                      className="icon-inline"
-                    />
-                  </a>
-                </div>
-              </DropdownMenu>
-            </div>
-          </Manager>
-        </Dropdown>
-      </ButtonDropdown>
-    </UserNavItem>
-  </Router>
-</MemoryRouter>
+              Light
+            </option>
+            <option
+              value="dark"
+            >
+              Dark
+            </option>
+            <option
+              value="system"
+            >
+              System
+            </option>
+          </select>
+        </div>
+      </div>
+      <div
+        class="dropdown-divider"
+        tabindex="-1"
+      />
+      <h6
+        class="dropdown-header"
+        tabindex="-1"
+      >
+        Your organizations
+      </h6>
+      <a
+        class="dropdown-item"
+        href="/organizations/acme/settings"
+      >
+        Acme Corp
+      </a>
+      <a
+        class="dropdown-item"
+        href="/organizations/beta/settings"
+      >
+        Beta Inc
+      </a>
+      <div
+        class="dropdown-divider"
+        tabindex="-1"
+      />
+      <a
+        class="dropdown-item"
+        href="/site-admin"
+      >
+        Site admin
+      </a>
+      <a
+        class="dropdown-item"
+        href="/help"
+        rel="noopener"
+        target="_blank"
+      >
+        Help 
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
+          />
+        </svg>
+      </a>
+      <button
+        class="dropdown-item"
+        type="button"
+      >
+        Keyboard shortcuts
+      </button>
+      <a
+        class="dropdown-item"
+        href="/-/sign-out"
+      >
+        Sign out
+      </a>
+      <div
+        class="dropdown-divider"
+        tabindex="-1"
+      />
+      <a
+        class="dropdown-item"
+        href="https://about.sourcegraph.com"
+        rel="noopener"
+        target="_blank"
+      >
+        About Sourcegraph 
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
+          />
+        </svg>
+      </a>
+      <a
+        class="dropdown-item"
+        href="https://docs.sourcegraph.com/integration/browser_extension"
+        rel="noopener"
+        target="_blank"
+      >
+        Browser extension 
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
+          />
+        </svg>
+      </a>
+    </div>
+  </div>
+</DocumentFragment>
 `;
