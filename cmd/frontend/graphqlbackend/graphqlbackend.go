@@ -235,7 +235,6 @@ var allowedPrometheusFieldNames = map[[2]string]struct{}{
 	{"Query", "repositories"}:                   {},
 	{"Query", "repository"}:                     {},
 	{"Query", "repositoryRedirect"}:             {},
-	{"Query", "pureRepository"}:                 {},
 	{"Query", "search"}:                         {},
 	{"Query", "settingsSubject"}:                {},
 	{"Query", "site"}:                           {},
@@ -551,9 +550,10 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 		args.Name = args.URI
 	}
 	resolver, err := r.RepositoryRedirect(ctx, &struct {
-		Name     *string
-		CloneURL *string
-	}{args.Name, args.CloneURL})
+		Name       *string
+		CloneURL   *string
+		HashedName *string
+	}{args.Name, args.CloneURL, nil})
 	if err != nil {
 		return nil, err
 	}
@@ -596,22 +596,10 @@ func (r *repositoryRedirect) ToRedirect() (*RedirectResolver, bool) {
 	return r.redirect, r.redirect != nil
 }
 
-func (r *schemaResolver) PureRepository(ctx context.Context, args *struct {
-	HashedName *string
-}) (*RepositoryResolver, error) {
-	if args.HashedName == nil {
-		return nil, errors.New("RepoHashedName is required")
-	}
-	repo, err := backend.NewRepos(r.db.Repos()).GetByHashedName(ctx, api.RepoHashedName(*args.HashedName))
-	if err != nil {
-		return nil, err
-	}
-	return NewRepositoryResolver(r.db, repo), nil
-}
-
 func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
-	Name     *string
-	CloneURL *string
+	Name       *string
+	CloneURL   *string
+	HashedName *string
 }) (*repositoryRedirect, error) {
 	var name api.RepoName
 	if args.Name != nil {
@@ -628,6 +616,13 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 			// Clone URL could not be mapped to a code host
 			return nil, nil
 		}
+	} else if args.HashedName != nil {
+		// Query by repository hashed name
+		repo, err := backend.NewRepos(r.db.Repos()).GetByHashedName(ctx, api.RepoHashedName(*args.HashedName))
+		if err != nil {
+			return nil, err
+		}
+		return &repositoryRedirect{repo: NewRepositoryResolver(r.db, repo)}, nil
 	} else {
 		return nil, errors.New("neither name nor cloneURL given")
 	}
