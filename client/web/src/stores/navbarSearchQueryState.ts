@@ -76,16 +76,6 @@ export interface NavbarQueryState {
 
     // ACTIONS
     /**
-     * Update or initialize query state related data from URL search parameters
-     */
-    setQueryStateFromURL: (urlParameters: string) => void
-
-    /**
-     * Update or initialize query state related data from settings
-     */
-    setQueryStateFromSettings: (settings: SettingsCascadeOrError<Settings>) => void
-
-    /**
      * setQueryState updates `queryState`
      */
     setQueryState: (queryState: QueryStateUpdate) => void
@@ -104,24 +94,6 @@ export interface NavbarQueryState {
 export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     queryState: { query: '' },
     searchCaseSensitivity: false,
-
-    setQueryStateFromURL: (urlParameters: string) => {
-        // This will be updated with the default in settings when the web app mounts.
-        const parsedSearchURL = parseSearchURL(urlParameters)
-        if (parsedSearchURL.query) {
-            // Only update flags if the URL contains a search query.
-            set({
-                searchCaseSensitivity: parsedSearchURL.caseSensitive,
-            })
-        }
-    },
-
-    setQueryStateFromSettings: (settings: SettingsCascadeOrError<Settings>) => {
-        const caseSensitive = defaultCaseSensitiveFromSettings(settings)
-        if (caseSensitive) {
-            set({ searchCaseSensitivity: caseSensitive })
-        }
-    },
 
     setQueryState: queryStateUpdate => {
         if (typeof queryStateUpdate === 'function') {
@@ -145,4 +117,28 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     setSearchCaseSensitivity: (caseSensitive: boolean) => {
         set({ searchCaseSensitivity: caseSensitive })
     },
-}));
+}))
+
+/**
+ * Update or initialize query state related data from URL search parameters
+ */
+export function setQueryStateFromURL(urlParameters: string) {
+    // This will be updated with the default in settings when the web app mounts.
+    const parsedSearchURL = parseSearchURL(urlParameters)
+    if (parsedSearchURL.query) {
+        // Only update flags if the URL contains a search query.
+        useNavbarQueryState.setState({
+            searchCaseSensitivity: parsedSearchURL.caseSensitive,
+        })
+    }
+}
+
+/**
+ * Update or initialize query state related data from settings
+ */
+export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Settings>) {
+    const caseSensitive = defaultCaseSensitiveFromSettings(settings)
+    if (caseSensitive) {
+        useNavbarQueryState.setState({ searchCaseSensitivity: caseSensitive })
+    }
+}
