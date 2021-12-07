@@ -36,7 +36,9 @@ RUN apk add --no-cache \
     'git>=2.30' \
     git-p4 \
     --repository=http://dl-cdn.alpinelinux.org/alpine/v3.14/main  \
-    && apk add --no-cache \
+
+# hadolint ignore=DL3018
+RUN apk add --no-cache \
     openssh-client \
     python2 \
     python3
