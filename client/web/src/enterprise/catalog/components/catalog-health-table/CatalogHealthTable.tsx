@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
@@ -58,18 +58,28 @@ export const CatalogHealthTable: React.FunctionComponent<Props> = ({ filters, qu
         },
     })
 
+    const [useColor, setUseColor] = useState(true)
+
     return (
         <>
-            <ConnectionContainer className={className}>
+            <ConnectionContainer className={classNames('position-relative', className)}>
+                <button
+                    type="button"
+                    style={{ position: 'absolute', top: '-6px', left: '115px', width: '60px' }}
+                    className="btn btn-sm btn-link p-0 text-muted"
+                    onClick={() => setUseColor(previous => !previous)}
+                >
+                    {useColor ? 'Red/green' : 'Text'}
+                </button>
                 {error && <ConnectionError errors={[error.message]} />}
                 {connection && connection.nodes.length > 0 && (
                     <div className="table-responsive">
                         <ConnectionList className={classNames('table border-bottom', styles.table)} as="table">
-                            <CatalogHealthTableContent nodes={connection.nodes} />
+                            <CatalogHealthTableContent nodes={connection.nodes} useColor={useColor} />
                         </ConnectionList>
                     </div>
                 )}
-                {loading && <ConnectionLoading className="my-2" />}
+                {loading && <ConnectionLoading className="py-2" />}
                 {connection && (
                     <SummaryContainer centered={true}>
                         <ConnectionSummary
@@ -93,7 +103,8 @@ type StatusContextNameAndTitle = Pick<CatalogEntityStatusFields['status']['conte
 
 const CatalogHealthTableContent: React.FunctionComponent<{
     nodes: CatalogEntityHealthFields[]
-}> = ({ nodes }) => {
+    useColor: boolean
+}> = ({ nodes, useColor }) => {
     const statusContextNames = useMemo<StatusContextNameAndTitle[]>(() => {
         const nameTitle = new Map<string, string>()
         for (const node of nodes) {
@@ -141,7 +152,12 @@ const CatalogHealthTableContent: React.FunctionComponent<{
 
             <tbody>
                 {nodes.map(node => (
-                    <CatalogHealthTableRow key={node.id} node={node} statusContextNames={statusContextNames} />
+                    <CatalogHealthTableRow
+                        key={node.id}
+                        node={node}
+                        statusContextNames={statusContextNames}
+                        useColor={useColor}
+                    />
                 ))}
             </tbody>
         </>
@@ -151,7 +167,8 @@ const CatalogHealthTableContent: React.FunctionComponent<{
 const CatalogHealthTableRow: React.FunctionComponent<{
     node: CatalogEntityHealthFields
     statusContextNames: StatusContextNameAndTitle[]
-}> = ({ node, statusContextNames }) => {
+    useColor: boolean
+}> = ({ node, statusContextNames, useColor }) => {
     const score =
         node.status.contexts.length > 0
             ? node.status.contexts.filter(
@@ -196,7 +213,14 @@ const CatalogHealthTableRow: React.FunctionComponent<{
                                   }`
                                 : `No ${statusContextName} status for ${node.name}`
                         }
-                    />
+                    >
+                        {status ? (
+                            <small className={useColor ? 'sr-only' : '`'}>
+                                {status.state[0]}
+                                {status.state.slice(1).toLowerCase()}
+                            </small>
+                        ) : null}
+                    </CatalogEntityStatusStateCell>
                 )
             })}
         </tr>
