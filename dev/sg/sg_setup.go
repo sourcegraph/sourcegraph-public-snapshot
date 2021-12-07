@@ -40,6 +40,26 @@ var (
 	}
 )
 
+type userContextKey struct{}
+type userContext struct {
+	shellPath       string
+	shellConfigPath string
+}
+
+func buildUserContext(userContext userContext, ctx context.Context) context.Context {
+	return context.WithValue(ctx, userContextKey{}, userContext)
+}
+
+func getUserShellPath(ctx context.Context) string {
+	v := ctx.Value(userContextKey{}).(userContext)
+	return v.shellPath
+}
+
+func getUserShellConfigPath(ctx context.Context) string {
+	v := ctx.Value(userContextKey{}).(userContext)
+	return v.shellConfigPath
+}
+
 func setupExec(ctx context.Context, args []string) error {
 	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 		out.WriteLine(output.Linef("", output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
@@ -51,15 +71,20 @@ func setupExec(ctx context.Context, args []string) error {
 		currentOS = overridesOS
 	}
 
-	// Fetch the current user shell and shell RC file
-	userShell, userShellRC = guessUserShell()
+	// extract user environment general informations
+	shellPath, shellConfigPath, err := guessUserShell()
+	if err != nil {
+		return err
+	}
+	userContext := userContext{shellPath: shellPath, shellConfigPath: shellConfigPath}
+	ctx = buildUserContext(userContext, ctx)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for range c {
 			writeOrangeLine("\n💡 You may need to restart your shell for the changes to work in this terminal.")
-			writeOrangeLine("   Close this terminal and open a new one or type the following command and press ENTER: " + filepath.Base(userShell))
+			writeOrangeLine("   Close this terminal and open a new one or type the following command and press ENTER: " + filepath.Base(getUserShellPath(ctx)))
 			os.Exit(0)
 		}
 	}()
@@ -75,7 +100,7 @@ func setupExec(ctx context.Context, args []string) error {
 
 	// Check whether we're in the sourcegraph/sourcegraph repository so we can
 	// skip categories/dependencies that depend on the repository.
-	_, err := root.RepositoryRoot()
+	_, err = root.RepositoryRoot()
 	inRepo := err == nil
 
 	failed := []int{}
@@ -106,9 +131,7 @@ func setupExec(ctx context.Context, args []string) error {
 			}
 
 			pending := out.Pending(output.Linef("", output.StylePending, "%d. %s - Determining status...", idx, category.name))
-			for _, dep := range category.dependencies {
-				dep.Update(ctx)
-			}
+			category.Update(ctx)
 			pending.Destroy()
 
 			if combined := category.CombinedState(); combined {
@@ -188,17 +211,17 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 	{
 		name: "Install base utilities (git, docker, ...)",
 		dependencies: []*dependency{
-			{name: "git", check: checkInPath("git"), instructionsCommands: stringer(`brew install git`)},
-			{name: "gnu-sed", check: checkInPath("gsed"), instructionsCommands: stringer("brew install gnu-sed")},
-			{name: "comby", check: checkInPath("comby"), instructionsCommands: stringer("brew install comby")},
-			{name: "pcre", check: checkInPath("pcregrep"), instructionsCommands: stringer(`brew install pcre`)},
-			{name: "sqlite", check: checkInPath("sqlite3"), instructionsCommands: stringer(`brew install sqlite`)},
-			{name: "jq", check: checkInPath("jq"), instructionsCommands: stringer(`brew install jq`)},
-			{name: "bash", check: checkCommandOutputContains("bash --version", "version 5", false), instructionsCommands: stringer(`brew install bash`)},
+			{name: "git", check: checkInPath("git"), instructionsCommands: `brew install git`},
+			{name: "gnu-sed", check: checkInPath("gsed"), instructionsCommands: "brew install gnu-sed"},
+			{name: "comby", check: checkInPath("comby"), instructionsCommands: "brew install comby"},
+			{name: "pcre", check: checkInPath("pcregrep"), instructionsCommands: `brew install pcre`},
+			{name: "sqlite", check: checkInPath("sqlite3"), instructionsCommands: `brew install sqlite`},
+			{name: "jq", check: checkInPath("jq"), instructionsCommands: `brew install jq`},
+			{name: "bash", check: checkCommandOutputContains("bash --version", "version 5"), instructionsCommands: `brew install bash`},
 			{
 				name:                 "docker",
 				check:                wrapCheckErr(checkInPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
-				instructionsCommands: stringer(`brew install --cask docker`),
+				instructionsCommands: `brew install --cask docker`,
 			},
 		},
 		autoFixing: true,
@@ -208,7 +231,7 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 		dependencies: []*dependency{
 			{
 				name:  "SSH authentication with GitHub.com",
-				check: checkCommandOutputContains("ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -T git@github.com", "successfully authenticated", true),
+				check: checkCommandOutputContains("ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -T git@github.com", "successfully authenticated"),
 				instructionsComment: `` +
 					`Make sure that you can clone git repositories from GitHub via SSH.
 See here on how to set that up:
@@ -219,14 +242,14 @@ https://docs.github.com/en/authentication/connecting-to-github-with-ssh
 			{
 				name:                 "github.com/sourcegraph/sourcegraph",
 				check:                checkInMainRepoOrRepoInDirectory,
-				instructionsCommands: stringer(`git clone git@github.com:sourcegraph/sourcegraph.git`),
+				instructionsCommands: `git clone git@github.com:sourcegraph/sourcegraph.git`,
 				instructionsComment: `` +
 					`The 'sourcegraph' repository contains the Sourcegraph codebase and everything to run Sourcegraph locally.`,
 			},
 			{
 				name:                 "github.com/sourcegraph/dev-private",
 				check:                checkDevPrivateInParentOrInCurrentDirectory,
-				instructionsCommands: stringer(`git clone git@github.com:sourcegraph/dev-private.git`),
+				instructionsCommands: `git clone git@github.com:sourcegraph/dev-private.git`,
 				instructionsComment: `` +
 					`In order to run the local development environment as a Sourcegraph employee,
 you'll need to clone another repository: github.com/sourcegraph/dev-private.
@@ -251,18 +274,20 @@ NOTE: You can ignore this if you're not a Sourcegraph employee.
 		name:               "Programming languages & tooling",
 		requiresRepository: true,
 		autoFixing:         true,
-		dependencies: []*dependency{
+		autoFixingDependencies: []*dependency{
 			{
 				name:  "asdf",
-				check: checkCommandOutputContains("asdf", "version", false),
-				// Uses `&&` to avoid appending the shell config on failed installations attempts.
-				instructionsCommands: lazyString(func() string {
-					return `brew install asdf && echo ". /opt/homebrew/opt/asdf/libexec/asdf.sh" >> ` + userShellRC
+				check: checkCommandOutputContains("asdf", "version"),
+				instructionsCommandsBuilder: stringCommandBuilder(func(ctx context.Context) string {
+					// Uses `&&` to avoid appending the shell config on failed installations attempts.
+					return `brew install asdf && echo ". $HOMEBREW_PREFIX/opt/asdf/libexec/asdf.sh" >> ` + getUserShellConfigPath(ctx)
 				}),
 			},
+		},
+		dependencies: []*dependency{
 			{
 				name:  "go",
-				check: checkCommandOutputContains("asdf current golang", ".tool-versions", false),
+				check: combineChecks(checkInPath("go"), checkCommandOutputContains("go version", "go version")),
 				instructionsComment: `` +
 					`Souregraph requires Go to be installed.
 
@@ -274,14 +299,14 @@ programming languages and tools. Find out how to install asdf here:
 	https://asdf-vm.com/guide/getting-started.html
 
 Once you have asdf, execute the commands below.`,
-				instructionsCommands: stringer(`
+				instructionsCommands: `
 asdf plugin-add golang https://github.com/kennyp/asdf-golang.git
 asdf install golang
-`),
+`,
 			},
 			{
 				name:  "yarn",
-				check: checkCommandOutputContains("asdf current yarn", ".tool-versions", false),
+				check: combineChecks(checkInPath("yarn"), checkCommandOutputContains("yarn version", "yarn version")),
 				instructionsComment: `` +
 					`Souregraph requires Yarn to be installed.
 
@@ -293,15 +318,15 @@ programming languages and tools. Find out how to install asdf here:
 	https://asdf-vm.com/guide/getting-started.html
 
 Once you have asdf, execute the commands below.`,
-				instructionsCommands: stringer(`
+				instructionsCommands: `
 brew install gpg
 asdf plugin-add yarn
 asdf install yarn 
-`),
+`,
 			},
 			{
 				name:  "node",
-				check: checkCommandOutputContains("asdf current nodejs", ".nvmrc", false),
+				check: combineChecks(checkInPath("node"), checkCommandOutputContains(`node -e "console.log(\"foobar\")"`, "foobar")),
 				instructionsComment: `` +
 					`Souregraph requires Node.JS to be installed.
 
@@ -313,11 +338,11 @@ programming languages and tools. Find out how to install asdf here:
 	https://asdf-vm.com/guide/getting-started.html
 
 Once you have asdf, execute the commands below.`,
-				instructionsCommands: stringer(`
+				instructionsCommands: `
 asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git 
-touch ~/.asdfrc && cat ~/.asdfrc | grep "legacy_version_file = yes" || echo 'legacy_version_file = yes' >> ~/.asdfrc
+grep -s "legacy_version_file = yes" ~/.asdfrc >/dev/null || echo 'legacy_version_file = yes' >> ~/.asdfrc
 asdf install nodejs
-`),
+`,
 			},
 		},
 	},
@@ -342,13 +367,13 @@ that create users and databsaes: 'createdb', 'createuser', ...
 
 If you're not sure: use the recommended commands to install PostgreSQL, start it
 and create the 'sourcegraph' database.`,
-				instructionsCommands: stringer(`brew reinstall postgresql && brew services start postgresql 
+				instructionsCommands: `brew reinstall postgresql && brew services start postgresql 
 sleep 10
 createdb
 createuser --superuser sourcegraph || true
 psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
 createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
-`),
+`,
 			},
 			{
 				name:  "psql",
@@ -373,7 +398,7 @@ If you used another method, make sure psql is available.`,
 				instructionsComment: `` +
 					`Sourcegraph requires the Redis database to be running.
 					We recommend installing it with Homebrew and starting it as a system service.`,
-				instructionsCommands: stringer("brew reinstall redis && brew services start redis"),
+				instructionsCommands: "brew reinstall redis && brew services start redis",
 			},
 		},
 	},
@@ -387,7 +412,7 @@ If you used another method, make sure psql is available.`,
 				instructionsComment: `` +
 					`Sourcegraph should be reachable under https://sourcegraph.test:3443.
 					To do that, we need to add sourcegraph.test to the /etc/hosts file.`,
-				instructionsCommands: stringer(`./dev/add_https_domain_to_hosts.sh`),
+				instructionsCommands: `./dev/add_https_domain_to_hosts.sh`,
 			},
 			{
 				name:  "Caddy root certificate is trusted by system",
@@ -397,7 +422,7 @@ If you used another method, make sure psql is available.`,
 trust the certificate created by Caddy, the proxy we use locally.
 
 YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
-				instructionsCommands:   stringer(`./dev/caddy.sh trust`),
+				instructionsCommands:   `./dev/caddy.sh trust`,
 				requiresSgSetupRestart: true,
 			},
 		},
@@ -716,6 +741,16 @@ func printCategoryHeaderAndDependencies(categoryIdx int, category *dependencyCat
 }
 
 func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory) error {
+	// for go through sub dependencies that may be required to fix the dependencies themselves.
+	for _, dep := range category.autoFixingDependencies {
+		if dep.IsMet() {
+			continue
+		}
+		if err := fixDependencyAutomatically(ctx, dep); err != nil {
+			return err
+		}
+	}
+	// now go through the real dependencies
 	for _, dep := range category.dependencies {
 		if dep.IsMet() {
 			continue
@@ -732,7 +767,7 @@ func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory)
 func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
 	writeFingerPointingLine("Trying my hardest to fix %q automatically...", dep.name)
 
-	cmd := sourceExec(ctx, dep.instructionsCommands.String())
+	cmd := sourceExec(ctx, dep.InstructionsCommands(ctx))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -800,7 +835,7 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 
 		// If we don't have anything do run, we simply print instructions to
 		// the user
-		if dep.instructionsCommands.String() == "" {
+		if dep.InstructionsCommands(ctx) == "" {
 			writeFingerPointingLine("Hit return once you're done")
 			waitForReturn()
 		} else {
@@ -813,7 +848,7 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 			}
 			out.Write("")
 
-			out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.instructionsCommands.String())))
+			out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.InstructionsCommands(ctx))))
 
 			choice, err := getChoice(map[int]string{
 				1: "I'll fix this manually (either by running the command or doing something else)",
@@ -858,12 +893,9 @@ func removeEntry(s []int, val int) (result []int) {
 	return result
 }
 
-func checkCommandOutputContains(cmd, contains string, ignoreExitCode bool) func(context.Context) error {
+func checkCommandOutputContains(cmd, contains string) func(context.Context) error {
 	return func(ctx context.Context) error {
-		out, err := combinedSourceExec(cmd)
-		if !ignoreExitCode && err != nil {
-			return errors.Newf("command %q returned an error: %s", cmd, err)
-		}
+		out, _ := combinedSourceExec(ctx, cmd)
 		if !strings.Contains(string(out), contains) {
 			return errors.Newf("command output of %q doesn't contain %q", cmd, contains)
 		}
@@ -895,46 +927,46 @@ func checkFileContains(fileName, content string) func(context.Context) error {
 	}
 }
 
-func guessUserShell() (shell string, shellrc string) {
+func guessUserShell() (string, string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", "", err
+	}
 	// Look up which shell the user is using, because that's most likely the
 	// one that has all the environment correctly setup.
 	shell, ok := os.LookupEnv("SHELL")
+	var shellrc string
 	if !ok {
 		// If we can't find the shell in the environment, we fall back to `bash`
 		shell = "bash"
 	}
 	switch {
 	case strings.Contains(shell, "bash"):
-		shellrc = "~/.bashrc"
+		shellrc = ".bashrc"
 	case strings.Contains(shell, "zsh"):
-		shellrc = "~/.zshrc"
-	case strings.Contains(shell, "fish"):
-		shellrc = "~/.config/fish/config.fish"
-	default:
-		// hope for the best
-		shellrc = "~/.profile"
+		shellrc = ".zshrc"
 	}
-	return
+	return shell, filepath.Join(home, shellrc), nil
 }
 
 // sourceExec returns a command wrapped in a new shell process, enabling
 // changes added by various checks to be run. This negates the new to ask the
 // user to restart sg for many checks.
 func sourceExec(ctx context.Context, cmd string) *exec.Cmd {
-	command := fmt.Sprintf("source %s ; %s", userShellRC, cmd)
-	return exec.CommandContext(ctx, userShell, "-c", command)
+	command := fmt.Sprintf("source %s || true; %s", getUserShellConfigPath(ctx), cmd)
+	return exec.CommandContext(ctx, getUserShellPath(ctx), "-c", command)
 }
 
 // combinedSourceExec runs a command in a fresh shell environment,
 // and returns stderr and stdout combined, along with an error.
-func combinedSourceExec(cmd string) ([]byte, error) {
-	return sourceExec(context.Background(), cmd).CombinedOutput()
+func combinedSourceExec(ctx context.Context, cmd string) ([]byte, error) {
+	return sourceExec(ctx, cmd).CombinedOutput()
 }
 
 func checkInPath(cmd string) func(context.Context) error {
 	return func(ctx context.Context) error {
 		hashCmd := fmt.Sprintf("hash %s 2>/dev/null", cmd)
-		_, err := combinedSourceExec(hashCmd)
+		_, err := combinedSourceExec(ctx, hashCmd)
 		if err != nil {
 			return errors.Newf("executable %q not found in $PATH", cmd)
 		}
@@ -1042,22 +1074,21 @@ type dependency struct {
 
 	err error
 
-	instructionsComment    string
-	instructionsCommands   fmt.Stringer
-	requiresSgSetupRestart bool
-}
-
-type stringer string
-
-func (i stringer) String() string { return string(i) }
-
-type lazyString func() string
-
-func (l lazyString) String() string {
-	return l()
+	instructionsComment         string
+	instructionsCommands        string
+	instructionsCommandsBuilder commandBuilder
+	autoFixingCommands          string
+	requiresSgSetupRestart      bool
 }
 
 func (d *dependency) IsMet() bool { return d.err == nil }
+
+func (d *dependency) InstructionsCommands(ctx context.Context) string {
+	if d.instructionsCommandsBuilder != nil {
+		return d.instructionsCommandsBuilder.Build(ctx)
+	}
+	return d.instructionsCommands
+}
 
 func (d *dependency) Update(ctx context.Context) {
 	d.err = nil
@@ -1068,8 +1099,9 @@ type dependencyCategory struct {
 	name         string
 	dependencies []*dependency
 
-	autoFixing         bool
-	requiresRepository bool
+	autoFixing             bool
+	autoFixingDependencies []*dependency
+	requiresRepository     bool
 }
 
 func (cat *dependencyCategory) CombinedState() bool {
@@ -1088,6 +1120,15 @@ func (cat *dependencyCategory) CombinedStateNonEmployees() bool {
 		}
 	}
 	return true
+}
+
+func (cat *dependencyCategory) Update(ctx context.Context) {
+	for _, dep := range cat.autoFixingDependencies {
+		dep.Update(ctx)
+	}
+	for _, dep := range cat.dependencies {
+		dep.Update(ctx)
+	}
 }
 
 func getNumberOutOf(numbers []int) (int, error) {
@@ -1141,6 +1182,18 @@ func getChoice(choices map[int]string) (int, error) {
 			return s, nil
 		}
 		writeFailureLine("Invalid choice")
+	}
+}
+
+func combineChecks(checks ...dependencyCheck) dependencyCheck {
+	return func(ctx context.Context) (err error) {
+		for _, chk := range checks {
+			err = chk(ctx)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 }
 
@@ -1235,4 +1288,14 @@ func pemDecodeSingleCert(pemDER []byte) (*x509.Certificate, error) {
 		return nil, fmt.Errorf("expected PEM block type to be CERTIFICATE, but got '%s'", pemBlock.Type)
 	}
 	return x509.ParseCertificate(pemBlock.Bytes)
+}
+
+type commandBuilder interface {
+	Build(context.Context) string
+}
+
+type stringCommandBuilder func(context.Context) string
+
+func (l stringCommandBuilder) Build(ctx context.Context) string {
+	return l(ctx)
 }
