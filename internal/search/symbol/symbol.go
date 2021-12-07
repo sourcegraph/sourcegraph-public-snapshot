@@ -16,11 +16,15 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -438,4 +442,40 @@ func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, stream streaming.Sende
 
 func (*RepoSubsetSymbolSearch) Name() string {
 	return "RepoSubsetSymbol"
+}
+
+type RepoUniverseSymbolSearch struct {
+	GlobalZoektQuery *zoektutil.GlobalZoektQuery
+	ZoektArgs        *search.ZoektParameters
+	PatternInfo      *search.TextPatternInfo
+	Limit            int
+
+	RepoOptions search.RepoOptions
+	Db          database.DB
+}
+
+func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, stream streaming.Sender, _ searchrepos.Pager) error {
+	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, s.Limit)
+	defer cleanup()
+
+	userID := int32(0)
+
+	if envvar.SourcegraphDotComMode() {
+		if a := actor.FromContext(ctx); a != nil {
+			userID = a.UID
+		}
+	}
+
+	userPrivateRepos := repos.PrivateReposForUser(ctx, s.Db, userID, s.RepoOptions)
+	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
+	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
+	request := &zoektutil.IndexedUniverseSearchRequest{Args: s.ZoektArgs}
+	// TODO(rvantonder): The `true` argument corresponds to notSearcherOnly,
+	// implied by global search. Separate the concerns in the symbol search
+	// function so that we don't need to pass this value.
+	return symbolSearchInRepos(ctx, request, s.PatternInfo, true, s.Limit, cleanup, stream)
+}
+
+func (*RepoUniverseSymbolSearch) Name() string {
+	return "RepoUniverseSymbol"
 }
