@@ -11,17 +11,25 @@ set -ex
 dev/ci/test/setup-deps.sh
 dev/ci/test/setup-display.sh
 
+# ==========================
+
+docker_logs() {
+  echo "--- dump server logs"
+  docker logs --timestamps "$CONTAINER" >"$root_dir/$CONTAINER.log" 2>&1
+}
+
 cleanup() {
+  docker_logs
   cd "$root_dir"
   dev/ci/test/cleanup-display.sh
+  if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
+    docker rm -f "$(docker ps -aq)"
+  fi
 }
-trap cleanup EXIT
-
-# ==========================
 
 # Run and initialize an old Sourcegraph release
 echo "--- start sourcegraph $MINIMUM_UPGRADEABLE_VERSION"
-IMAGE=sourcegraph/server:$MINIMUM_UPGRADEABLE_VERSION ./dev/run-server-image.sh -d --name sourcegraph-old
+IMAGE=sourcegraph/server:$MINIMUM_UPGRADEABLE_VERSION CLEAN="true" ./dev/run-server-image.sh -d --name sourcegraph-old
 sleep 15
 pushd internal/cmd/init-sg
 go build
@@ -67,12 +75,8 @@ fi
 # Upgrade to current candidate image. Capture logs for the attempted upgrade.
 echo "--- start candidate"
 CONTAINER=sourcegraph-new
-docker_logs() {
-  echo "--- dump server logs"
-  docker logs --timestamps "$CONTAINER" >"$root_dir/$CONTAINER.log" 2>&1
-}
 IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION CLEAN="false" ./dev/run-server-image.sh -d --name $CONTAINER
-trap docker_logs exit
+trap cleanup EXIT
 sleep 15
 
 # Run tests

@@ -11,19 +11,17 @@ set -ex
 dev/ci/test/setup-deps.sh
 dev/ci/test/setup-display.sh
 
-cleanup() {
-  cd "$root_dir"
-  dev/ci/test/cleanup-display.sh
-}
-trap cleanup EXIT
-
 # ==========================
-
-CONTAINER=sourcegraph-server
 
 docker_logs() {
   echo "--- dump server logs"
   docker logs --timestamps "$CONTAINER" >"$root_dir/$CONTAINER.log" 2>&1
+}
+
+cleanup() {
+  docker_logs
+  cd "$root_dir"
+  docker rm -f "$CONTAINER"
 }
 
 if [[ $VAGRANT_RUN_ENV = "CI" ]]; then
@@ -33,8 +31,9 @@ else
   IMAGE=sourcegraph/server:insiders
 fi
 
-./dev/run-server-image.sh -d --name $CONTAINER
-trap docker_logs exit
+CONTAINER=sourcegraph-server
+CLEAN="true" ./dev/run-server-image.sh -d --name $CONTAINER
+trap cleanup EXIT
 sleep 15
 
 echo "--- init sourcegraph"

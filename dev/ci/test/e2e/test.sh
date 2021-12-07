@@ -14,6 +14,9 @@ dev/ci/test/setup-display.sh
 cleanup() {
   cd "$root_dir"
   dev/ci/test/cleanup-display.sh
+  if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
+    docker rm -f "$(docker ps -aq)"
+  fi
 }
 trap cleanup EXIT
 

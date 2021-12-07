@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 
-PID=$(pgrep ffmpeg)
-kill "$PID"
+procs=(ffmpeg Xvfb)
+
+for p in "${procs[@]}"; do pgrep "$p" | xargs kill; done
