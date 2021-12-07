@@ -299,7 +299,96 @@ func TestGetAllOnDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Equal(t, got, autogold.ExportedOnly())
+
+		want := []types.InsightViewSeries{
+			{
+				ViewID:              2,
+				DashboardViewID:     1,
+				UniqueID:            "unique-2",
+				SeriesID:            "series-id-2",
+				Title:               "test title 2",
+				Description:         "test description 2",
+				Query:               "query-2",
+				CreatedAt:           now,
+				OldestHistoricalAt:  now,
+				LastRecordedAt:      now,
+				NextRecordingAfter:  now,
+				LastSnapshotAt:      now,
+				NextSnapshotAfter:   now,
+				Label:               "label2-2",
+				LineColor:           "color2",
+				SampleIntervalUnit:  "MONTH",
+				SampleIntervalValue: 1,
+				PresentationType:    types.PresentationType("LINE"),
+				GenerationMethod:    types.GenerationMethod("search"),
+			},
+			{
+				ViewID:              1,
+				DashboardViewID:     2,
+				UniqueID:            "unique-1",
+				SeriesID:            "series-id-1",
+				Title:               "test title",
+				Description:         "test description",
+				Query:               "query-1",
+				CreatedAt:           now,
+				OldestHistoricalAt:  now,
+				LastRecordedAt:      now,
+				NextRecordingAfter:  now,
+				LastSnapshotAt:      now,
+				NextSnapshotAfter:   now,
+				Label:               "label1-1",
+				LineColor:           "color1",
+				SampleIntervalUnit:  "MONTH",
+				SampleIntervalValue: 1,
+				PresentationType:    types.PresentationType("LINE"),
+				GenerationMethod:    types.GenerationMethod("search"),
+			},
+			{
+				ViewID:              4,
+				DashboardViewID:     3,
+				UniqueID:            "unique-4",
+				SeriesID:            "series-id-2",
+				Title:               "test title 4",
+				Description:         "test description 4",
+				Query:               "query-2",
+				CreatedAt:           now,
+				OldestHistoricalAt:  now,
+				LastRecordedAt:      now,
+				NextRecordingAfter:  now,
+				LastSnapshotAt:      now,
+				NextSnapshotAfter:   now,
+				Label:               "label4-2",
+				LineColor:           "color4",
+				SampleIntervalUnit:  "MONTH",
+				SampleIntervalValue: 1,
+				PresentationType:    types.PresentationType("LINE"),
+				GenerationMethod:    types.GenerationMethod("search"),
+			},
+			{
+				ViewID:              3,
+				DashboardViewID:     4,
+				UniqueID:            "unique-3",
+				SeriesID:            "series-id-1",
+				Title:               "test title 3",
+				Description:         "test description 3",
+				Query:               "query-1",
+				CreatedAt:           now,
+				OldestHistoricalAt:  now,
+				LastRecordedAt:      now,
+				NextRecordingAfter:  now,
+				LastSnapshotAt:      now,
+				NextSnapshotAfter:   now,
+				Label:               "label3-1",
+				LineColor:           "color3",
+				SampleIntervalUnit:  "MONTH",
+				SampleIntervalValue: 1,
+				PresentationType:    types.PresentationType("LINE"),
+				GenerationMethod:    types.GenerationMethod("search"),
+			},
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
 	})
 	t.Run("test get first 2 on dashboard", func(t *testing.T) {
 		store := NewInsightStore(timescale)
@@ -307,7 +396,54 @@ func TestGetAllOnDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Equal(t, got, autogold.ExportedOnly())
+
+		want := []types.InsightViewSeries{
+			{
+				ViewID:              2,
+				DashboardViewID:     1,
+				UniqueID:            "unique-2",
+				SeriesID:            "series-id-2",
+				Title:               "test title 2",
+				Description:         "test description 2",
+				Query:               "query-2",
+				CreatedAt:           now,
+				OldestHistoricalAt:  now,
+				LastRecordedAt:      now,
+				NextRecordingAfter:  now,
+				LastSnapshotAt:      now,
+				NextSnapshotAfter:   now,
+				Label:               "label2-2",
+				LineColor:           "color2",
+				SampleIntervalUnit:  "MONTH",
+				SampleIntervalValue: 1,
+				PresentationType:    types.PresentationType("LINE"),
+				GenerationMethod:    types.GenerationMethod("search"),
+			},
+			{
+				ViewID:              1,
+				DashboardViewID:     2,
+				UniqueID:            "unique-1",
+				SeriesID:            "series-id-1",
+				Title:               "test title",
+				Description:         "test description",
+				Query:               "query-1",
+				CreatedAt:           now,
+				OldestHistoricalAt:  now,
+				LastRecordedAt:      now,
+				NextRecordingAfter:  now,
+				LastSnapshotAt:      now,
+				NextSnapshotAfter:   now,
+				Label:               "label1-1",
+				LineColor:           "color1",
+				SampleIntervalUnit:  "MONTH",
+				SampleIntervalValue: 1,
+				PresentationType:    types.PresentationType("LINE"),
+				GenerationMethod:    types.GenerationMethod("search"),
+			},
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
 	})
 	t.Run("test get after 2 on dashboard", func(t *testing.T) {
 		store := NewInsightStore(timescale)
@@ -315,7 +451,54 @@ func TestGetAllOnDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Equal(t, got, autogold.ExportedOnly())
+
+		want := []types.InsightViewSeries{
+			{
+				ViewID:              4,
+				DashboardViewID:     3,
+				UniqueID:            "unique-4",
+				SeriesID:            "series-id-2",
+				Title:               "test title 4",
+				Description:         "test description 4",
+				Query:               "query-2",
+				CreatedAt:           now,
+				OldestHistoricalAt:  now,
+				LastRecordedAt:      now,
+				NextRecordingAfter:  now,
+				LastSnapshotAt:      now,
+				NextSnapshotAfter:   now,
+				Label:               "label4-2",
+				LineColor:           "color4",
+				SampleIntervalUnit:  "MONTH",
+				SampleIntervalValue: 1,
+				PresentationType:    types.PresentationType("LINE"),
+				GenerationMethod:    types.GenerationMethod("search"),
+			},
+			{
+				ViewID:              3,
+				DashboardViewID:     4,
+				UniqueID:            "unique-3",
+				SeriesID:            "series-id-1",
+				Title:               "test title 3",
+				Description:         "test description 3",
+				Query:               "query-1",
+				CreatedAt:           now,
+				OldestHistoricalAt:  now,
+				LastRecordedAt:      now,
+				NextRecordingAfter:  now,
+				LastSnapshotAt:      now,
+				NextSnapshotAfter:   now,
+				Label:               "label3-1",
+				LineColor:           "color3",
+				SampleIntervalUnit:  "MONTH",
+				SampleIntervalValue: 1,
+				PresentationType:    types.PresentationType("LINE"),
+				GenerationMethod:    types.GenerationMethod("search"),
+			},
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("unexpected insight view series want/got: %s", diff)
+		}
 	})
 }
 
