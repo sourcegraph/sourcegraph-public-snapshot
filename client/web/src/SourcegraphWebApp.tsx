@@ -94,7 +94,7 @@ import { UserSessionStores } from './UserSessionStores'
 import { globbingEnabledFromSettings } from './util/globbing'
 import { observeLocation } from './util/location'
 import {
-    SITE_SUBJECT_NO_ADMIN,
+    siteSubjectNoAdmin,
     viewerSubjectFromSettings,
     defaultPatternTypeFromSettings,
     experimentalFeaturesFromSettings,
@@ -249,7 +249,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
         this.state = {
             settingsCascade: EMPTY_SETTINGS_CASCADE,
-            viewerSubject: SITE_SUBJECT_NO_ADMIN,
+            viewerSubject: siteSubjectNoAdmin(),
             parsedSearchQuery: parsedSearchURL.query || '',
             searchPatternType: urlPatternType,
             showOnboardingTour: false,

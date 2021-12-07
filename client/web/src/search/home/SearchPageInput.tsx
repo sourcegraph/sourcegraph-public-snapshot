@@ -1,6 +1,7 @@
 import * as H from 'history'
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Form } from 'reactstrap'
+import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -28,7 +29,6 @@ import { useSearchOnboardingTour } from '../input/SearchOnboardingTour'
 import { QuickLinks } from '../QuickLinks'
 
 import styles from './SearchPageInput.module.scss'
-import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 
 interface Props
     extends SettingsCascadeProps<Settings>,

@@ -1,4 +1,3 @@
-import './__mocks__/window.context.mock'
 import { render } from '@testing-library/react'
 import { createBrowserHistory } from 'history'
 import React from 'react'
