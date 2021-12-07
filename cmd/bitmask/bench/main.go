@@ -143,21 +143,16 @@ func (c *Corpus) LoadFileSystem() (*bitmask.ZipFileSystem, error) {
 }
 
 func (c *Corpus) LoadRepoIndex() (*bitmask.RepoIndex, error) {
-	//os.Remove(c.indexCachePath())
 	fs, err := c.LoadFileSystem()
 	if err != nil {
 		return nil, err
 	}
-	cached, err := c.loadCachedRepoIndex()
-	if err == nil && cached != nil {
-		return cached, nil
-	}
+	//cached, err := c.loadCachedRepoIndex()
+	//if err == nil && cached != nil {
+	//	return cached, nil
+	//}
 
-	err = bitmask.NewOnDiskRepoIndex(fs, c.indexCachePath())
-	if err != nil {
-		return nil, err
-	}
-	return c.loadCachedRepoIndex()
+	return bitmask.NewInMemoryRepoIndex(fs)
 }
 
 func (c *Corpus) loadCachedRepoIndex() (*bitmask.RepoIndex, error) {

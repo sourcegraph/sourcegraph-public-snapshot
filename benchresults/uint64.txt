@@ -304,3 +304,10 @@ BenchmarkLoadLinux-12          	       1	1987761330 ns/op	 244013760 archive-dis
 BenchmarkLoadChromium-12       	       1	52405754978 ns/op	1617900554 archive-disk-size	 520659992 bloom-storage-size	         0.3016 compression-ratio	 582024820 index-disk-size	1726054745 indexed-blobs-size	61670814272 B/op	117735197 allocs/op
 PASS
 ok  	github.com/sourcegraph/sourcegraph/cmd/bitmask/bench	70.180s
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/bitmask/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkLoadLinux-12    	       1	12120062198 ns/op	 244013760 archive-disk-size	 211820616 bloom-storage-size	         0.2400 compression-ratio	 222472926 index-disk-size	 882761967 indexed-blobs-size	17246065152 B/op	10406088 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/bitmask/bench	13.094s
