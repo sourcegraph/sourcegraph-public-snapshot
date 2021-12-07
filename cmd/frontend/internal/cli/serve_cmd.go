@@ -41,6 +41,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -95,7 +96,7 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
 func InitDB() (*sql.DB, error) {
-	sqlDB, err := connections.NewFrontendDB("", "frontend", true)
+	sqlDB, err := connections.NewFrontendDB("", "frontend", true, &observation.TestContext)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // InitCodeIntelDatabase initializes and returns a connection to the codeintel db.
@@ -25,7 +26,7 @@ var initCodeIntelDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{},
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-	db, err := connections.NewCodeIntelDB(dsn, "worker", false)
+	db, err := connections.NewCodeIntelDB(dsn, "worker", false, &observation.TestContext)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to codeintel database: %s", err)
 	}

@@ -39,10 +39,16 @@ func NewDefaultRunner(dsns map[string]string, appName string, observationContext
 		}
 	}
 
+	wrap := func(f func(dsn, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error)) func(dsn, appName string, migrate bool) (*sql.DB, error) {
+		return func(dsn, appName string, migrate bool) (*sql.DB, error) {
+			return f(dsn, appName, migrate, &observation.TestContext)
+		}
+	}
+
 	storeFactoryMap := map[string]runner.StoreFactory{
-		"frontend":     makeFactory("frontend", schemas.Frontend, NewFrontendDB),
-		"codeintel":    makeFactory("codeintel", schemas.CodeIntel, NewCodeIntelDB),
-		"codeinsights": makeFactory("codeinsights", schemas.CodeInsights, NewCodeInsightsDB),
+		"frontend":     makeFactory("frontend", schemas.Frontend, wrap(NewFrontendDB)),
+		"codeintel":    makeFactory("codeintel", schemas.CodeIntel, wrap(NewCodeIntelDB)),
+		"codeinsights": makeFactory("codeinsights", schemas.CodeInsights, wrap(NewCodeInsightsDB)),
 	}
 
 	return runner.NewRunner(storeFactoryMap)
