@@ -130,7 +130,7 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 }
 
 func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpec *batcheslib.BatchSpec) ([]*RepoRevision, error) {
-	agg := onlib.NewAggregator()
+	agg := onlib.NewRepoRevisionAggregator()
 
 	var errs error
 	// TODO: this could be trivially parallelised in the future.
@@ -141,7 +141,7 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 			continue
 		}
 
-		result := agg.NewRuleResult(ruleType)
+		result := agg.NewRuleRevisions(ruleType)
 		for _, rev := range revs {
 			// Skip repos where no branch exists.
 			if !rev.HasBranch() {

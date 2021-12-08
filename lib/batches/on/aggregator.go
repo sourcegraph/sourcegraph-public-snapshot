@@ -1,9 +1,9 @@
 package on
 
-// Aggregator implements the precedence rules used when resolving the on: rules
-// in a single batch spec. Specifically, later rules generally override earlier
-// rules, but repository: rules always override repositoriesMatchingQuery:
-// rules.
+// RepoRevisionAggregator implements the precedence rules used when resolving
+// the on: rules in a single batch spec. Specifically, later rules generally
+// override earlier rules, but repository: rules always override
+// repositoriesMatchingQuery: rules.
 //
 // This is essentially a generic type, with two parameters (albeit these are
 // mostly exposed in OnResult:
@@ -13,16 +13,16 @@ package on
 // Revision: An object that identifies the specific revision. There are no
 //           requirements for this type, as it will be returned as-is in
 //           Revisions().
-type Aggregator struct {
-	results []*RuleResult
+type RepoRevisionAggregator struct {
+	results []*RuleRevisions
 }
 
 type RepoID interface{}
 type Revision interface{}
 
-func NewAggregator() *Aggregator {
-	return &Aggregator{
-		results: []*RuleResult{},
+func NewRepoRevisionAggregator() *RepoRevisionAggregator {
+	return &RepoRevisionAggregator{
+		results: []*RuleRevisions{},
 	}
 }
 
@@ -38,11 +38,11 @@ const (
 	RepositoryRuleTypeExplicit
 )
 
-// NewRuleResult instantiates a new RuleResult, which is used to track the
+// NewRuleRevisions instantiates a new RuleRevisions, which is used to track the
 // revisions returned by a specific on: rule. The rule type must be provided as
 // the ruleType argument.
-func (agg *Aggregator) NewRuleResult(ruleType RepositoryRuleType) *RuleResult {
-	result := &RuleResult{
+func (agg *RepoRevisionAggregator) NewRuleRevisions(ruleType RepositoryRuleType) *RuleRevisions {
+	result := &RuleRevisions{
 		ruleType: ruleType,
 		repos:    map[RepoID][]Revision{},
 	}
@@ -53,7 +53,7 @@ func (agg *Aggregator) NewRuleResult(ruleType RepositoryRuleType) *RuleResult {
 
 // Revisions returns all the revisions matched by the rules added to the
 // aggregator, applying the on: precedence rules as it iterates.
-func (agg *Aggregator) Revisions() []Revision {
+func (agg *RepoRevisionAggregator) Revisions() []Revision {
 	type repo struct {
 		ruleType  RepositoryRuleType
 		revisions []Revision
@@ -87,13 +87,13 @@ func (agg *Aggregator) Revisions() []Revision {
 	return revisions
 }
 
-// RuleResult is used to capture the revisions added by a single on: rule.
-type RuleResult struct {
+// RuleRevisions is used to capture the revisions added by a single on: rule.
+type RuleRevisions struct {
 	ruleType RepositoryRuleType
 	repos    map[RepoID][]Revision
 }
 
 // AddRepoRevision adds a single repo revision to the results of this rule.
-func (result *RuleResult) AddRepoRevision(repo RepoID, revision Revision) {
+func (result *RuleRevisions) AddRepoRevision(repo RepoID, revision Revision) {
 	result.repos[repo] = append(result.repos[repo], revision)
 }
