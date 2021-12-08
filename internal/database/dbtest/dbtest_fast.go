@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"net/url"
-	"os"
 	"sync"
 	"testing"
 
@@ -38,11 +37,10 @@ func NewFastDBWithDSN(t testing.TB, dsn string) *sql.DB {
 	}
 	t.Helper()
 
-	u, err := url.Parse(dsn)
+	u, err := getDSN(dsn)
 	if err != nil {
 		t.Fatalf("failed to parse dsn: %s", err)
 	}
-	updateDSNFromEnv(u)
 
 	pool, closeDB, err := newPoolFromURL(u)
 	if err != nil {
@@ -98,11 +96,10 @@ var (
 // us from opening a ton of parallel database connections per process.
 func getDefaultPool() (*testDatabasePool, *url.URL, error) {
 	defaultOnce.Do(func() {
-		defaultURL, defaultErr = url.Parse(getDSN())
+		defaultURL, defaultErr = getDSN("")
 		if defaultErr != nil {
 			return
 		}
-		updateDSNFromEnv(defaultURL)
 
 		defaultPool, _, defaultErr = newPoolFromURL(defaultURL)
 		if defaultErr != nil {
@@ -112,14 +109,6 @@ func getDefaultPool() (*testDatabasePool, *url.URL, error) {
 		defaultErr = defaultPool.CleanUpOldDBs(context.Background(), schemas.Frontend, schemas.CodeIntel)
 	})
 	return defaultPool, defaultURL, defaultErr
-}
-
-func getDSN() string {
-	if dsn, ok := os.LookupEnv("PGDATASOURCE"); ok {
-		return dsn
-	}
-
-	return `postgres://sourcegraph:sourcegraph@127.0.0.1:5432/sourcegraph?sslmode=disable&timezone=UTC`
 }
 
 func newFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.DB {

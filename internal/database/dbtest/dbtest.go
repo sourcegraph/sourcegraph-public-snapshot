@@ -85,22 +85,9 @@ func newFromDSN(t testing.TB, dsn, templateNamespace string) *sql.DB {
 		t.Skip("skipping DB test since -short specified")
 	}
 
-	var err error
-	var config *url.URL
-	if dsn == "" {
-		dsn = os.Getenv("PGDATASOURCE")
-	}
-	if dsn == "" {
-		config, err = url.Parse("postgres://sourcegraph:sourcegraph@127.0.0.1:5432/sourcegraph?sslmode=disable&timezone=UTC")
-		if err != nil {
-			t.Fatalf("failed to parse dsn %q: %s", dsn, err)
-		}
-		updateDSNFromEnv(config)
-	} else {
-		config, err = url.Parse(dsn)
-		if err != nil {
-			t.Fatalf("failed to parse dsn %q: %s", dsn, err)
-		}
+	config, err := getDSN(dsn)
+	if err != nil {
+		t.Fatalf("failed to parse dsn %q: %s", dsn, err)
 	}
 
 	initTemplateDB(t, config)
@@ -227,33 +214,3 @@ func dbExec(t testing.TB, db *sql.DB, q string, args ...interface{}) {
 const killClientConnsQuery = `
 SELECT pg_terminate_backend(pg_stat_activity.pid)
 FROM pg_stat_activity WHERE datname = $1`
-
-// updateDSNFromEnv updates dsn based on PGXXX environment variables set on
-// the frontend.
-func updateDSNFromEnv(dsn *url.URL) {
-	if host := os.Getenv("PGHOST"); host != "" {
-		dsn.Host = host
-	}
-
-	if port := os.Getenv("PGPORT"); port != "" {
-		dsn.Host += ":" + port
-	}
-
-	if user := os.Getenv("PGUSER"); user != "" {
-		if password := os.Getenv("PGPASSWORD"); password != "" {
-			dsn.User = url.UserPassword(user, password)
-		} else {
-			dsn.User = url.User(user)
-		}
-	}
-
-	if db := os.Getenv("PGDATABASE"); db != "" {
-		dsn.Path = db
-	}
-
-	if sslmode := os.Getenv("PGSSLMODE"); sslmode != "" {
-		qry := dsn.Query()
-		qry.Set("sslmode", sslmode)
-		dsn.RawQuery = qry.Encode()
-	}
-}
