@@ -39,7 +39,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     const [tabIndex, setTabIndex] = useLocalStorage(TABS_KEY, 0)
     const [toggleSidebar, setToggleSidebar] = useLocalStorage(
         SIDEBAR_KEY,
-        settingsSchemaJSON.properties.sidebarToggle.default
+        settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
     )
 
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])

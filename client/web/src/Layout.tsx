@@ -31,7 +31,7 @@ import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHea
 import { FeatureFlagProps } from './featureFlags/featureFlags'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
-import { CodeInsightsProps } from './insights/types'
+import { CodeInsightsContextProps, CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
 import styles from './Layout.module.scss'
@@ -92,6 +92,7 @@ export interface LayoutProps
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
+        CodeInsightsContextProps,
         FeatureFlagProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -126,7 +127,6 @@ export interface LayoutProps
 
     globbing: boolean
     showMultilineSearchConsole: boolean
-    showSearchNotebook: boolean
     isSourcegraphDotCom: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never

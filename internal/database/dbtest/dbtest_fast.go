@@ -11,8 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/migrations"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
 // NewFastDB returns a clean database that will be deleted
@@ -110,7 +109,7 @@ func getDefaultPool() (*testDatabasePool, *url.URL, error) {
 			return
 		}
 
-		defaultErr = defaultPool.CleanUpOldDBs(context.Background(), migrations.Frontend, migrations.CodeIntel)
+		defaultErr = defaultPool.CleanUpOldDBs(context.Background(), schemas.Frontend, schemas.CodeIntel)
 	})
 	return defaultPool, defaultURL, defaultErr
 }
@@ -127,7 +126,7 @@ func newFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.DB {
 	ctx := context.Background()
 
 	// Get or create the template database
-	tdb, err := pool.GetTemplate(ctx, u, migrations.Frontend, migrations.CodeIntel)
+	tdb, err := pool.GetTemplate(ctx, u, schemas.Frontend, schemas.CodeIntel)
 	if err != nil {
 		t.Fatalf("failed to get or create template db: %s", err)
 	}
@@ -162,7 +161,7 @@ func newFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.DB {
 
 func newTxFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.Tx {
 	ctx := context.Background()
-	tdb, err := pool.GetTemplate(ctx, u, migrations.Frontend, migrations.CodeIntel)
+	tdb, err := pool.GetTemplate(ctx, u, schemas.Frontend, schemas.CodeIntel)
 	if err != nil {
 		t.Fatalf("failed to get or create template db: %s", err)
 	}
@@ -202,7 +201,7 @@ func urlWithDB(u *url.URL, dbName string) *url.URL {
 }
 
 func newPoolFromURL(u *url.URL) (_ *testDatabasePool, _ func(err error) error, err error) {
-	db, closeDB, err := dbconn.ConnectRawForTestDatabase(u.String())
+	db, closeDB, err := newTestDB(u.String())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -213,7 +212,7 @@ func newPoolFromURL(u *url.URL) (_ *testDatabasePool, _ func(err error) error, e
 	_, _ = db.Exec("CREATE DATABASE dbtest_pool")
 
 	poolDBURL := urlWithDB(u, "dbtest_pool")
-	poolDB, closePoolDB, err := dbconn.ConnectRawForTestDatabase(poolDBURL.String())
+	poolDB, closePoolDB, err := newTestDB(poolDBURL.String())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -230,7 +229,7 @@ func newPoolFromURL(u *url.URL) (_ *testDatabasePool, _ func(err error) error, e
 			return nil, nil, err
 		}
 
-		poolDB, closePoolDB, err = dbconn.ConnectRawForTestDatabase(poolDBURL.String())
+		poolDB, closePoolDB, err = newTestDB(poolDBURL.String())
 		if err != nil {
 			return nil, nil, err
 		}

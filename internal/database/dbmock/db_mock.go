@@ -42,6 +42,9 @@ type MockDB struct {
 	// FeatureFlagsFunc is an instance of a mock function object controlling
 	// the behavior of the method FeatureFlags.
 	FeatureFlagsFunc *DBFeatureFlagsFunc
+	// GitserverReposFunc is an instance of a mock function object
+	// controlling the behavior of the method GitserverRepos.
+	GitserverReposFunc *DBGitserverReposFunc
 	// GlobalStateFunc is an instance of a mock function object controlling
 	// the behavior of the method GlobalState.
 	GlobalStateFunc *DBGlobalStateFunc
@@ -153,6 +156,11 @@ func NewMockDB() *MockDB {
 		},
 		FeatureFlagsFunc: &DBFeatureFlagsFunc{
 			defaultHook: func() database.FeatureFlagStore {
+				return nil
+			},
+		},
+		GitserverReposFunc: &DBGitserverReposFunc{
+			defaultHook: func() database.GitserverRepoStore {
 				return nil
 			},
 		},
@@ -313,6 +321,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.FeatureFlags")
 			},
 		},
+		GitserverReposFunc: &DBGitserverReposFunc{
+			defaultHook: func() database.GitserverRepoStore {
+				panic("unexpected invocation of MockDB.GitserverRepos")
+			},
+		},
 		GlobalStateFunc: &DBGlobalStateFunc{
 			defaultHook: func() database.GlobalStateStore {
 				panic("unexpected invocation of MockDB.GlobalState")
@@ -451,6 +464,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		FeatureFlagsFunc: &DBFeatureFlagsFunc{
 			defaultHook: i.FeatureFlags,
+		},
+		GitserverReposFunc: &DBGitserverReposFunc{
+			defaultHook: i.GitserverRepos,
 		},
 		GlobalStateFunc: &DBGlobalStateFunc{
 			defaultHook: i.GlobalState,
@@ -1429,6 +1445,106 @@ func (c DBFeatureFlagsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBFeatureFlagsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBGitserverReposFunc describes the behavior when the GitserverRepos
+// method of the parent MockDB instance is invoked.
+type DBGitserverReposFunc struct {
+	defaultHook func() database.GitserverRepoStore
+	hooks       []func() database.GitserverRepoStore
+	history     []DBGitserverReposFuncCall
+	mutex       sync.Mutex
+}
+
+// GitserverRepos delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) GitserverRepos() database.GitserverRepoStore {
+	r0 := m.GitserverReposFunc.nextHook()()
+	m.GitserverReposFunc.appendCall(DBGitserverReposFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GitserverRepos
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBGitserverReposFunc) SetDefaultHook(hook func() database.GitserverRepoStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GitserverRepos method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBGitserverReposFunc) PushHook(hook func() database.GitserverRepoStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBGitserverReposFunc) SetDefaultReturn(r0 database.GitserverRepoStore) {
+	f.SetDefaultHook(func() database.GitserverRepoStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBGitserverReposFunc) PushReturn(r0 database.GitserverRepoStore) {
+	f.PushHook(func() database.GitserverRepoStore {
+		return r0
+	})
+}
+
+func (f *DBGitserverReposFunc) nextHook() func() database.GitserverRepoStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBGitserverReposFunc) appendCall(r0 DBGitserverReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBGitserverReposFuncCall objects describing
+// the invocations of this function.
+func (f *DBGitserverReposFunc) History() []DBGitserverReposFuncCall {
+	f.mutex.Lock()
+	history := make([]DBGitserverReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBGitserverReposFuncCall is an object that describes an invocation of
+// method GitserverRepos on an instance of MockDB.
+type DBGitserverReposFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.GitserverRepoStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBGitserverReposFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBGitserverReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
