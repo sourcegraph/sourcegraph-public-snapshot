@@ -175,7 +175,10 @@ func (r *batchSpecResolver) ApplyURL(ctx context.Context) (*string, error) {
 		// 🚨 SECURITY: If the user didn't create the batch spec or is not a
 		// site-admin, we shouldn't show this information.
 		ok, err := r.computeCanAdminister(ctx)
-		if err != nil || !ok {
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
 			return nil, nil
 		}
 
@@ -378,7 +381,10 @@ func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.Date
 	// 🚨 SECURITY: If the user didn't create the batch spec or is not a
 	// site-admin, we shouldn't show this information.
 	ok, err := r.computeCanAdminister(ctx)
-	if err != nil || !ok {
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
 		return nil, nil
 	}
 
@@ -410,7 +416,10 @@ func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.Dat
 	// 🚨 SECURITY: If the user didn't create the batch spec or is not a
 	// site-admin, we shouldn't show this information.
 	ok, err := r.computeCanAdminister(ctx)
-	if err != nil || !ok {
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
 		return nil, nil
 	}
 
@@ -438,7 +447,10 @@ func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error)
 	// 🚨 SECURITY: If the user didn't create the batch spec or is not a
 	// site-admin, we shouldn't show this information.
 	ok, err := r.computeCanAdminister(ctx)
-	if err != nil || !ok {
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
 		return nil, nil
 	}
 
@@ -512,7 +524,10 @@ func (r *batchSpecResolver) WorkspaceResolution(ctx context.Context) (graphqlbac
 	// 🚨 SECURITY: If the user didn't create the batch spec or is not a
 	// site-admin, we shouldn't show this information.
 	ok, err := r.computeCanAdminister(ctx)
-	if err != nil || !ok {
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
 		return nil, nil
 	}
 
