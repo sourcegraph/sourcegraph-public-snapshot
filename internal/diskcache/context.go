@@ -10,9 +10,9 @@ type isolatedTimeoutContext struct {
 	deadlineCtx context.Context
 }
 
-// WithIsolatedTimeout creates a context with a timeout isolated from any timeouts in any of the ancestor contexts.
+// withIsolatedTimeout creates a context with a timeout isolated from any timeouts in any of the ancestor contexts.
 // Context values are pulled from the parent context only.
-func WithIsolatedTimeout(parent context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
+func withIsolatedTimeout(parent context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
 	deadlineCtx, cancelFunc := context.WithTimeout(context.Background(), timeout)
 	return &isolatedTimeoutContext{
 		parent:      parent,
