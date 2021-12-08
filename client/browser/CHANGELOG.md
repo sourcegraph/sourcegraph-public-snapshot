@@ -12,6 +12,7 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 <!-- START CHANGELOG -->
 
 ## Unreleased
+- Private cloud repositories should use hashed identifiers instead of repository names [pull/28621](https://github.com/sourcegraph/sourcegraph/pull/28621), [#pull/28387](https://github.com/sourcegraph/sourcegraph/pull/28387), [#issues/27922](https://github.com/sourcegraph/sourcegraph/issues/27922)
 
 - Browser Extension Telemetry documentation [#pull/28689](https://github.com/sourcegraph/sourcegraph/pull/28689), [#issues/27383](https://github.com/sourcegraph/sourcegraph/issues/27383)
 
