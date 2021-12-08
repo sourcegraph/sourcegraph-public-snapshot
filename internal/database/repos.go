@@ -18,6 +18,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pagure"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -41,8 +42,9 @@ import (
 )
 
 type RepoNotFoundErr struct {
-	ID   api.RepoID
-	Name api.RepoName
+	ID         api.RepoID
+	Name       api.RepoName
+	HashedName api.RepoHashedName
 }
 
 func (e *RepoNotFoundErr) Error() string {
@@ -72,6 +74,7 @@ type RepoStore interface {
 	Get(context.Context, api.RepoID) (*types.Repo, error)
 	GetByIDs(context.Context, ...api.RepoID) ([]*types.Repo, error)
 	GetByName(context.Context, api.RepoName) (*types.Repo, error)
+	GetByHashedName(context.Context, api.RepoHashedName) (*types.Repo, error)
 	GetFirstRepoNamesByCloneURL(context.Context, string) (api.RepoName, error)
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
@@ -228,6 +231,36 @@ func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 
 	if len(repos) == 0 {
 		return nil, &RepoNotFoundErr{Name: nameOrURI}
+	}
+
+	return repos[0], repos[0].IsBlocked()
+}
+
+// GetByHashedName returns the repository with the given hashedName from the database, or an error.
+// RepoHashedName is the repository hashed name.
+// When a repo isn't found or has been blocked, an error is returned.
+func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.RepoHashedName) (_ *types.Repo, err error) {
+	if Mocks.Repos.GetByHashedName != nil {
+		return Mocks.Repos.GetByHashedName(ctx, repoHashedName)
+	}
+
+	tr, ctx := trace.New(ctx, "repos.GetByHashedName", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	repos, err := s.listRepos(ctx, tr, ReposListOptions{
+		HashedName:     string(repoHashedName),
+		LimitOffset:    &LimitOffset{Limit: 1},
+		IncludeBlocked: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(repos) == 0 {
+		return nil, &RepoNotFoundErr{HashedName: repoHashedName}
 	}
 
 	return repos[0], repos[0].IsBlocked()
@@ -525,6 +558,9 @@ type ReposListOptions struct {
 	// version contexts may have their own table
 	// and this may be replaced by the version context name.
 	Names []string
+
+	// HashedName is a repository hashed name used to limit the results to that repository.
+	HashedName string
 
 	// URIs selects any repos in the given set of URIs (i.e. uri column)
 	URIs []string
@@ -937,6 +973,11 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		// need to fold the casing of either the input value nor the value in the index.
 
 		where = append(where, sqlf.Sprintf(`lower(name::text) COLLATE "C" = ANY (%s::text[])`, pq.Array(lowerNames)))
+	}
+
+	if opt.HashedName != "" {
+		// This will use the repo_hashed_name_idx
+		where = append(where, sqlf.Sprintf(`sha256(lower(name)::bytea) = decode(%s, 'hex')`, opt.HashedName))
 	}
 
 	if len(opt.URIs) > 0 {

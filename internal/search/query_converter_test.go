@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 
 	zoekt "github.com/google/zoekt/query"
@@ -166,6 +167,15 @@ func TestQueryToZoektQuery(t *testing.T) {
 				FilePatternsReposMustExclude: []string{`\.java$`, `\.xml$`},
 			},
 			Query: `foo (type:repo file:\.go$) (type:repo file:\.yaml$) -(type:repo file:\.java$) -(type:repo file:\.xml$)`,
+		},
+		{
+			Name: "language gets passed as both file include and lang: predicate",
+			Type: TextRequest,
+			Pattern: &TextPatternInfo{
+				IncludePatterns: []string{`\.go$`},
+				Languages:       []string{"go"},
+			},
+			Query: `file:"\\.go(?m:$)" lang:Go`,
 		},
 	}
 	for _, tt := range cases {
@@ -439,4 +449,6 @@ func TestToTextPatternInfo(t *testing.T) {
 	autogold.Want("104", `{"Pattern":"","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":["deploy"],"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`repo:sourcegraph-typescript$ type:file file:deploy`))
 
 	autogold.Want("105", `{"Pattern":"(foo\\d).*?(bar\\*)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`foo\d "bar*" patterntype:regexp`))
+
+	autogold.Want("106", `{"Pattern":"","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":["\\.go$"],"ExcludePattern":"(\\.java$)|(\\.jav$)","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":["go"]}`).Equal(t, test(`lang:go -lang:java`))
 }

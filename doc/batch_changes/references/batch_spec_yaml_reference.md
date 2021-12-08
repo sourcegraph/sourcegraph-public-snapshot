@@ -85,9 +85,13 @@ on:
 
 ## [`on.repository`](#on-repository)
 
-A specific repository (and branch) that is added to the list of repositories that the batch change will be run on.
+A specific repository (and, optionally, one or more branches) to be added to the list of repositories that the batch change will be run on.
 
-A `branch` attribute specifies the branch on the repository to propose changes to. If unset, the repository's default branch is used. If set, it overwrites earlier values to be used for the repository's branch.
+> NOTE: Before Sourcegraph 3.35, only the last named branch would be used if multiple branches were specified, and only a single `branch` could be provided. In Sourcegraph 3.35 and later versions, all branches are used.
+
+To match a branch other than the default, `branch` or `branches` can be used to specify one or multiple branches, respectively. Only one of `branch` or `branches` can be set.
+
+> WARNING: If multiple branches are matched for the same repository, then [`changesetTemplate.branch`](#changesettemplate-branch) will need to have a different value for each branch.
 
 ### Examples
 
@@ -112,15 +116,15 @@ on:
     branch: 3.23
 ```
 
-In this example, `3.19-beta` branch is used, since it was named last:
+In this example, both the `3.19-beta` and `3.23` branches are used:
 
 ```yaml
 on:
   - repositoriesMatchingQuery: repo:sourcegraph\/(sourcegraph|src-cli)$
   - repository: github.com/sourcegraph/sourcegraph
-    branch: 3.23
-  - repository: github.com/sourcegraph/sourcegraph
-    branch: 3.19-beta
+    branches:
+      - 3.19-beta
+      - 3.23
 ```
 
 
@@ -503,6 +507,19 @@ The body (description) of the changeset on the code host. If the code supports M
 ## [`changesetTemplate.branch`](#changesettemplate-branch)
 
 The name of the Git branch to create or update on each repository with the changes.
+
+If multiple branches within the same repository are matched in [`on.repository`](#on-repository), then this value must be dynamic, since it is impossible to create multiple branches with the same name in the same repository. This is often most easily accomplished with the `repository.branch` template variable. For example, this will create `new-feature-3.34` and `new-feature-3.35` branches:
+
+```yaml
+on:
+  - repository: github.com/sourcegraph/sourcegraph
+    branches:
+      - 3.34
+      - 3.35
+
+changesetTemplate:
+  branch: new-feature-${{ repository.branch }}
+```
 
 <aside class="note">
 <span class="badge badge-feature">Templating</span> <code>changesetTemplate.branch</code> can include <a href="batch_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.

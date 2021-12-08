@@ -51,6 +51,20 @@ type CodeMonitorStore interface {
 	GetEmailAction(ctx context.Context, emailID int64) (*EmailAction, error)
 	ListEmailActions(context.Context, ListActionsOpts) ([]*EmailAction, error)
 
+	UpdateWebhookAction(_ context.Context, id int64, enabled bool, url string) (*WebhookAction, error)
+	CreateWebhookAction(ctx context.Context, monitorID int64, enabled bool, url string) (*WebhookAction, error)
+	DeleteWebhookActions(ctx context.Context, monitorID int64, ids ...int64) error
+	CountWebhookActions(ctx context.Context, monitorID int64) (int, error)
+	GetWebhookAction(ctx context.Context, id int64) (*WebhookAction, error)
+	ListWebhookActions(context.Context, ListActionsOpts) ([]*WebhookAction, error)
+
+	UpdateSlackWebhookAction(_ context.Context, id int64, enabled bool, url string) (*SlackWebhookAction, error)
+	CreateSlackWebhookAction(ctx context.Context, monitorID int64, enabled bool, url string) (*SlackWebhookAction, error)
+	DeleteSlackWebhookActions(ctx context.Context, monitorID int64, ids ...int64) error
+	CountSlackWebhookActions(ctx context.Context, monitorID int64) (int, error)
+	GetSlackWebhookAction(ctx context.Context, id int64) (*SlackWebhookAction, error)
+	ListSlackWebhookActions(context.Context, ListActionsOpts) ([]*SlackWebhookAction, error)
+
 	CreateRecipient(ctx context.Context, emailID int64, userID, orgID *int32) (*Recipient, error)
 	DeleteRecipients(ctx context.Context, emailID int64) error
 	ListRecipients(context.Context, ListRecipientsOpts) ([]*Recipient, error)

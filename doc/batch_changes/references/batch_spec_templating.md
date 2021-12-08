@@ -84,6 +84,7 @@ They are evaluated before the execution of each entry in `steps`, except for the
 | `batch_change.name` | `string` | The `name` of the batch change, as set in the batch spec. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.26 or later</small></i>. |
 | `batch_change.description` | `string` | The `description` of the batch change, as set in the batch spec. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.26 or later</small></i>. 
 | `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `repositoriesMatchingQuery`s have been found. |
+| `repository.branch` | `string` | The target branch of the repository in which the step is being executed. </br><i><small>Requires Sourcegraph 3.35 or later.</small></i> |
 | `repository.name` | `string` | Full name of the repository in which the step is being executed. |
 | `previous_step.modified_files` | `list of strings` | List of files that have been modified by the previous step in `steps`. Empty list if no files have been modified. |
 | `previous_step.added_files` | `list of strings` | List of files that have been added by the previous step in `steps`. Empty list if no files have been added. |
@@ -113,6 +114,7 @@ They are evaluated after the execution of all entries in `steps`.
 | `batch_change.name` | `string` | The `name` of the batch change, as set in the batch spec. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.26 or later</small></i>. |
 | `batch_change.description` | `string` | The `description` of the batch change, as set in the batch spec. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.26 or later</small></i>.  |
 | `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `repositoriesMatchingQuery`s have been found. |
+| `repository.branch` | `string` | The target branch of the repository in which the step is being executed. </br><i><small>Requires Sourcegraph 3.35 or later.</small></i> |
 | `repository.name` | `string` | Full name of the repository in which the step is being executed. |
 | `steps.modified_files` | `list of strings` | List of files that have been modified by the `steps`. Empty list if no files have been modified. |
 | `steps.added_files` | `list of strings` | List of files that have been added by the `steps`. Empty list if no files have been added. |

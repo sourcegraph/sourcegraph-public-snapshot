@@ -5,6 +5,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // NewFrontendDB creates a new connection to the frontend database. After successful connection,
@@ -16,7 +18,7 @@ import (
 // the database schema is up to date.
 //
 // This connection is not expected to be closed but last the life of the calling application.
-func NewFrontendDB(dsn, appName string, migrate bool) (*sql.DB, error) {
+func NewFrontendDB(dsn, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
 	migrations := []*schemas.Schema{schemas.Frontend}
 	if !migrate {
 		migrations = nil
@@ -35,7 +37,7 @@ func NewFrontendDB(dsn, appName string, migrate bool) (*sql.DB, error) {
 // the database schema is up to date.
 //
 // This connection is not expected to be closed but last the life of the calling application.
-func NewCodeIntelDB(dsn, appName string, migrate bool) (*sql.DB, error) {
+func NewCodeIntelDB(dsn, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
 	migrations := []*schemas.Schema{schemas.CodeIntel}
 	if !migrate {
 		migrations = nil
@@ -54,7 +56,7 @@ func NewCodeIntelDB(dsn, appName string, migrate bool) (*sql.DB, error) {
 // the database schema is up to date.
 //
 // This connection is not expected to be closed but last the life of the calling application.
-func NewCodeInsightsDB(dsn, appName string, migrate bool) (*sql.DB, error) {
+func NewCodeInsightsDB(dsn, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
 	migrations := []*schemas.Schema{schemas.CodeInsights}
 	if !migrate {
 		migrations = nil
@@ -62,4 +64,10 @@ func NewCodeInsightsDB(dsn, appName string, migrate bool) (*sql.DB, error) {
 
 	db, _, err := dbconn.ConnectInternal(dsn, appName, "codeinsight", migrations)
 	return db, err
+}
+
+func newStoreFactory(observationContext *observation.Context) func(db *sql.DB, migrationsTable string) Store {
+	return func(db *sql.DB, migrationsTable string) Store {
+		return store.NewWithDB(db, migrationsTable, store.NewOperations(observationContext))
+	}
 }
