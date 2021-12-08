@@ -10,3 +10,9 @@ steps:
     command:
       - dev/bkstats/run.sh
     agents: { queue: standard }
+
+  - label: ":buildkite: 🤠 Run automated buildsheriff"
+    if: build.message == "auto-buildsheriff"
+    command:
+      - dev/buildsheriff/run.sh
+    agents: { queue: standard }
