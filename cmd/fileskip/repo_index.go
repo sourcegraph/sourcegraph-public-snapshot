@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
-	"github.com/cespare/xxhash/v2"
+	"github.com/bits-and-blooms/bitset"
 	"github.com/cockroachdb/errors"
 	"github.com/schollz/progressbar/v3"
 	"io"
@@ -88,144 +88,6 @@ func (b *BlobIndex) ReadFrom(stream io.Reader) (int64, error) {
 	return readByteCount, nil
 }
 
-type Ngrams struct {
-	Int64Bytes []byte
-	SeenHashes map[uint64]struct{}
-	Unigram    Ngram
-	Bigram1    Ngram
-	Bigram2    Ngram
-	Trigram1   Ngram
-	Trigram2   Ngram
-	Trigram3   Ngram
-	//Quadgram1  Ngram
-	//Quadgram2  Ngram
-	//Quadgram3  Ngram
-	//Quadgram4  Ngram
-	//Pentagram1 Ngram
-	//Pentagram2 Ngram
-	//Pentagram3 Ngram
-	//Pentagram4 Ngram
-	//Pentagram5 Ngram
-}
-
-func NewNgrams() Ngrams {
-	return Ngrams{
-		Int64Bytes: make([]byte, unsafe.Sizeof(uint64(0))),
-		SeenHashes: map[uint64]struct{}{},
-		Unigram:    Ngram{Arity: 1, Hash: xxhash.New()},
-		Bigram1:    Ngram{Arity: 2, Hash: xxhash.New()},
-		Bigram2:    Ngram{Arity: 2, Hash: xxhash.New()},
-		Trigram1:   Ngram{Arity: 3, Hash: xxhash.New()},
-		Trigram2:   Ngram{Arity: 3, Hash: xxhash.New()},
-		Trigram3:   Ngram{Arity: 3, Hash: xxhash.New()},
-		//Quadgram1:  Ngram{Arity: 4, Hash: xxhash.New()},
-		//Quadgram2:  Ngram{Arity: 4, Hash: xxhash.New()},
-		//Quadgram3:  Ngram{Arity: 4, Hash: xxhash.New()},
-		//Quadgram4:  Ngram{Arity: 4, Hash: xxhash.New()},
-		//Pentagram1: Ngram{Arity: 5, Hash: xxhash.New()},
-		//Pentagram2: Ngram{Arity: 5, Hash: xxhash.New()},
-		//Pentagram3: Ngram{Arity: 5, Hash: xxhash.New()},
-		//Pentagram4: Ngram{Arity: 5, Hash: xxhash.New()},
-		//Pentagram5: Ngram{Arity: 5, Hash: xxhash.New()},
-	}
-
-}
-func (g *Ngrams) Update(b int32) {
-	g.Unigram.Update(g, b)
-
-	g.Bigram1.Update(g, b)
-	g.Bigram2.Update(g, b)
-
-	g.Trigram1.Update(g, b)
-	g.Trigram2.Update(g, b)
-	g.Trigram3.Update(g, b)
-
-	//g.Quadgram1.Update(b)
-	//g.Quadgram2.Update(b)
-	//g.Quadgram3.Update(b)
-	//g.Quadgram4.Update(b)
-	//
-	//g.Pentagram1.Update(b)
-	//g.Pentagram2.Update(b)
-	//g.Pentagram3.Update(b)
-	//g.Pentagram4.Update(b)
-	//g.Pentagram5.Update(b)
-}
-
-func (g *Ngrams) OnIndex(index int, b int32, onBytes OnBytes) {
-	g.Update(b)
-
-	g.Unigram.EmitHashAndClear(g, onBytes)
-
-	switch index % 2 {
-	case 0:
-		g.Bigram1.EmitHashAndClear(g, onBytes)
-	case 1:
-		g.Bigram2.EmitHashAndClear(g, onBytes)
-	}
-
-	switch index % 3 {
-	case 0:
-		g.Trigram1.EmitHashAndClear(g, onBytes)
-	case 1:
-		g.Trigram2.EmitHashAndClear(g, onBytes)
-	case 2:
-		g.Trigram3.EmitHashAndClear(g, onBytes)
-	}
-	//switch index % 4 {
-	//case 0:
-	//	g.Quadgram1.EmitHashAndClear(g, onBytes)
-	//case 1:
-	//	g.Quadgram2.EmitHashAndClear(g, onBytes)
-	//case 2:
-	//	g.Quadgram3.EmitHashAndClear(g, onBytes)
-	//case 3:
-	//	g.Quadgram4.EmitHashAndClear(g, onBytes)
-	//}
-	//switch index % 5 {
-	//case 0:
-	//	g.Pentagram1.EmitHashAndClear(g, onBytes)
-	//case 1:
-	//	g.Pentagram2.EmitHashAndClear(g, onBytes)
-	//case 2:
-	//	g.Pentagram3.EmitHashAndClear(g, onBytes)
-	//case 3:
-	//	g.Pentagram4.EmitHashAndClear(g, onBytes)
-	//case 4:
-	//	g.Pentagram5.EmitHashAndClear(g, onBytes)
-	//}
-}
-
-type Ngram struct {
-	Hash  *xxhash.Digest
-	Arity int
-}
-
-func (g *Ngram) EmitHashAndClear(gs *Ngrams, onBytes OnBytes) {
-	//if g.Arity < MinArity || g.Arity > MaxArity {
-	//	return
-	//}
-	hash := g.Hash.Sum64()
-	if _, ok := gs.SeenHashes[hash]; !ok {
-		gs.SeenHashes[hash] = struct{}{}
-		binary.LittleEndian.PutUint64(gs.Int64Bytes, hash)
-		onBytes(gs.Int64Bytes, g.Arity)
-	}
-	g.Hash.Reset()
-}
-
-func (g *Ngram) Update(gs *Ngrams, b int32) {
-	//if g.Arity < MinArity || g.Arity > MaxArity {
-	//	return
-	//}
-	binary.BigEndian.PutUint64(gs.Int64Bytes, uint64(b))
-
-	// always returns len(hashedBytes), nil
-	_, _ = g.Hash.Write(gs.Int64Bytes)
-}
-
-type OnBytes func(b []byte, arity int)
-
 var bigramArity = uint64(2) << 62
 var trigramArity = uint64(3) << 62
 
@@ -238,31 +100,50 @@ func ngramArity(n uint64) int8 {
 	}
 	return 1
 }
-func onGrams(text string) map[uint64]struct{} {
+
+const smallTrigram = 1 << 21
+
+func onGrams(text string, useBitset bool) (map[uint64]struct{}, *bitset.BitSet) {
 	seen := map[uint64]struct{}{}
 	ch1 := uint64(0)
 	ch2 := uint64(0)
 	i := 0
+	var seenAscii *bitset.BitSet
+	if useBitset {
+		seenAscii = bitset.New(smallTrigram)
+	}
 	for _, ch0 := range text {
 		unigram := uint64(ch0)
-		seen[unigram] = struct{}{}
+		if useBitset && unigram < smallTrigram {
+			seenAscii.Set(uint(unigram))
+		} else {
+			seen[unigram] = struct{}{}
+		}
 		if i > 1 {
-			bigram := unigram | (ch1 << 20) | (uint64(2) << 62)
-			seen[bigram] = struct{}{}
+			bigram := unigram | (ch1 << 7)
+			if useBitset && bigram < smallTrigram {
+				seenAscii.Set(uint(bigram))
+			} else {
+				seen[bigram] = struct{}{}
+			}
 		}
 		if i > 2 {
-			trigram := unigram | (ch1 << 20) | (ch2 << 41) | (uint64(3) << 62)
-			seen[trigram] = struct{}{}
+			trigram := unigram | (ch1 << 7) | (ch2 << 14)
+			if useBitset && trigram < smallTrigram {
+				seenAscii.Set(uint(trigram))
+			} else {
+				seen[trigram] = struct{}{}
+			}
 		}
 		ch2 = ch1
 		ch1 = unigram
 		i++
 	}
-	return seen
+	return seen, seenAscii
 }
 
 func CollectQueryNgrams(query string) [][]byte {
-	ngrams := onGrams(query)
+	ngrams, _ := onGrams(query, false)
 	result := make([][]byte, len(ngrams))
 	arities := make([]int8, len(ngrams))
 	i := 0
@@ -430,12 +311,20 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 		wg.Add(1)
 		go func(path string) {
 			defer wg.Done()
-			ngrams := onGrams(text)
-			bloomSize := uint(len(ngrams))
+			ngrams, ngramsAscii := onGrams(text, true)
+			asciiCount := ngramsAscii.Count()
+			bloomSize := uint(len(ngrams)) + uint(asciiCount)
 			filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
 			data := make([]byte, unsafe.Sizeof(uint64(1)))
 			for hash := range ngrams {
 				binary.LittleEndian.PutUint64(data, hash)
+				filter.Add(data)
+			}
+			indices := make([]uint, asciiCount)
+			ngramsAscii.NextSetMany(0, indices)
+			data = make([]byte, unsafe.Sizeof(uint(1)))
+			for _, hash := range indices {
+				binary.LittleEndian.PutUint32(data, uint32(hash))
 				filter.Add(data)
 			}
 			res <- BlobIndex{Path: path, Filter: filter}
