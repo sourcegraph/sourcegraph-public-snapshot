@@ -344,7 +344,7 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 
 func (r *RepoIndex) Grep(query string) {
 	start := time.Now()
-	matchingPaths := r.PathsMatchingQuery(query)
+	matchingPaths := r.FilenamesMatchingQuery(query)
 	falsePositive := 0
 	truePositive := 0
 	totalMatchCount := uint64(0)
@@ -441,7 +441,7 @@ func (r *RepoIndex) PathsMatchingQuerySync(query string) []string {
 	return result
 }
 
-func (r *RepoIndex) PathsMatchingQuery(query string) chan string {
+func (r *RepoIndex) FilenamesMatchingQuery(query string) chan string {
 	grams := CollectQueryNgrams(query)
 	res := make(chan string, len(r.Blobs))
 	batchSize := 10_000

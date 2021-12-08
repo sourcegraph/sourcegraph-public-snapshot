@@ -261,7 +261,7 @@ func (c *Corpus) run() error {
 		bench := hrtime.NewBenchmark(50)
 		matchingPaths := map[string]struct{}{}
 		for bench.Next() {
-			for path := range index.PathsMatchingQuery(query) {
+			for path := range index.FilenamesMatchingQuery(query) {
 				matchingPaths[path] = struct{}{}
 			}
 		}

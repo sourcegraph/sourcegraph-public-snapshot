@@ -44,11 +44,15 @@ func benchmarkQuery(b *testing.B, c Corpus, query string) {
 	b.ReportMetric(float64(falsePositives), "false-positives")
 	b.ReportMetric(float64(falsePositives)/math.Max(1, float64(len(matchingResults))), "false-positive/true-positive")
 }
+
 func benchmarkFileskipQuery(index *fileskip.RepoIndex, matchingResults map[string]struct{}, query string) {
-	for m := range index.PathsMatchingQuery(query) {
-		matchingResults[m] = struct{}{}
+	for filename := range index.FilenamesMatchingQuery(query) {
+		if expensiveHasMatch(index.FS, filename, query) {
+			matchingResults[filename] = struct{}{}
+		}
 	}
 }
+
 func benchmarkBaselineQuery(index *fileskip.RepoIndex, matchingResults map[string]struct{}, query string) {
 	batchSize := 100
 	var wg sync.WaitGroup
@@ -62,18 +66,22 @@ func benchmarkBaselineQuery(index *fileskip.RepoIndex, matchingResults map[strin
 		go func() {
 			defer wg.Done()
 			for _, b := range index.Blobs[start:end] {
-				textBytes, err := index.FS.ReadRelativeFilename(b.Path)
-				if err != nil {
-					panic(err)
-				}
-				text := string(textBytes)
-				if strings.Index(text, query) >= 0 {
+				if expensiveHasMatch(index.FS, b.Path, query) {
 					matchingResults[b.Path] = struct{}{}
 				}
 			}
 		}()
 	}
 	wg.Wait()
+}
+
+func expensiveHasMatch(fs fileskip.FileSystem, filename, query string) bool {
+	textBytes, err := fs.ReadRelativeFilename(filename)
+	if err != nil {
+		panic(err)
+	}
+	text := string(textBytes)
+	return strings.Index(text, query) >= 0
 }
 
 func benchmarkShortQuery(b *testing.B, c Corpus)  { benchmarkQuery(b, c, c.Queries[0]) }

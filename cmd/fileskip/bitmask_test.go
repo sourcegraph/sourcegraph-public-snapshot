@@ -43,7 +43,7 @@ func BenchmarkQuery(b *testing.B) {
 	b.ResetTimer()
 	matchingPaths := make(map[string]struct{})
 	for j := 0; j < b.N; j++ {
-		paths := repo.PathsMatchingQuery(query)
+		paths := repo.FilenamesMatchingQuery(query)
 		for path := range paths {
 			matchingPaths[path] = struct{}{}
 		}
