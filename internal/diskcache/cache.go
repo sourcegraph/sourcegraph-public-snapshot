@@ -126,7 +126,7 @@ func (s *Store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 	go func(ctx context.Context) {
 		if s.BackgroundTimeout != 0 {
 			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(context.Background(), s.BackgroundTimeout)
+			ctx, cancel = WithIsolatedTimeout(ctx, s.BackgroundTimeout)
 			defer cancel()
 		}
 		f, err := doFetch(ctx, path, fetcher)
