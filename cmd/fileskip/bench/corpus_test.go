@@ -64,6 +64,10 @@ func BenchmarkQueryChromiumShort(b *testing.B)  { benchmarkShortQuery(b, chromiu
 func BenchmarkQueryChromiumMedium(b *testing.B) { benchmarkMediumQuery(b, chromium) }
 func BenchmarkQueryChromiumLong(b *testing.B)   { benchmarkLongQuery(b, chromium) }
 
+func BenchmarkQueryMegarepoShort(b *testing.B)  { benchmarkShortQuery(b, megarepo) }
+func BenchmarkQueryMegarepoMedium(b *testing.B) { benchmarkMediumQuery(b, megarepo) }
+func BenchmarkQueryMegarepoLong(b *testing.B)   { benchmarkLongQuery(b, megarepo) }
+
 func loadCorpus(b *testing.B, corpus Corpus) {
 	fileskip.IsProgressBarEnabled = false
 	var index *fileskip.RepoIndex
@@ -111,3 +115,4 @@ func BenchmarkLoadSourcegraph(b *testing.B) { loadCorpus(b, sourcegraph) }
 func BenchmarkLoadKubernetes(b *testing.B)  { loadCorpus(b, kubernetes) }
 func BenchmarkLoadLinux(b *testing.B)       { loadCorpus(b, linux) }
 func BenchmarkLoadChromium(b *testing.B)    { loadCorpus(b, chromium) }
+func BenchmarkLoadMegarepo(b *testing.B)    { loadCorpus(b, megarepo) }
