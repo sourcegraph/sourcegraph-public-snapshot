@@ -85,8 +85,9 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
     })
 
     const areAllFieldsForPreviewValid =
-        // repositories.meta.validState === 'VALID' &&
-        stepValue.meta.validState === 'VALID' && query.meta.validState === 'VALID'
+        repositories.meta.validState === 'VALID' &&
+        stepValue.meta.validState === 'VALID' &&
+        query.meta.validState === 'VALID'
 
     return (
         <div className={classNames(styles.content, className)}>

@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react'
 import { ChartContent, LineChartContent } from 'sourcegraph'
 
 import { asError } from '@sourcegraph/shared/src/util/errors'
+import { useDebounce } from '@sourcegraph/wildcard/src'
 
 import { LivePreviewContainer } from '../../../../../components/live-preview-container/LivePreviewContainer'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
@@ -63,17 +64,19 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGro
         step: { [step]: stepValue },
     })
 
+    const debouncedSettings = useDebounce(settings, 500)
+
     useEffect(() => {
         let hasRequestCanceled = false
 
         setDataOrError(undefined)
 
-        if (settings.disabled) {
+        if (debouncedSettings.disabled) {
             setDataOrError(undefined)
             return
         }
 
-        const { query, repositories, step } = settings
+        const { query, repositories, step } = debouncedSettings
 
         getCaptureInsightContent({ query, repositories, step })
             .then(data => !hasRequestCanceled && setDataOrError(data))
@@ -82,7 +85,7 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGro
         return () => {
             hasRequestCanceled = false
         }
-    }, [settings, getCaptureInsightContent, lastPreviewVersion])
+    }, [debouncedSettings, getCaptureInsightContent, lastPreviewVersion])
 
     return (
         <LivePreviewContainer
