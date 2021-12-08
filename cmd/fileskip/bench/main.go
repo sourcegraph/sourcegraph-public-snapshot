@@ -55,10 +55,17 @@ var (
 		Name: "megarepo", URL: "https://github.com/sgtest/megarepo/zipball/11c726fd66bb6252cb8e9c0af8933f5ba0fb1e8d",
 		Queries: []string{
 			"áð",
-			"FolderStru",
 			"44a1",
+			"*hl",
+			"*hl_",
+			"if (bflo",
+			"OutputPre",
 			"FolderStru",
-			"http://github.com/PolymerElements/iron-a11y-announcer.git",
+			"FolderStru",
+			"TEST_F(WindowDatasetOpTes",
+			"IteratorOutputPrefixTestCases",
+			"EffectiveOperandPrecisionIsBF16",
+			"github.com/Azure/go-autorest/autorest",
 		},
 	}
 	all = []Corpus{flask, sourcegraph, kubernetes, linux, chromium, megarepo}
