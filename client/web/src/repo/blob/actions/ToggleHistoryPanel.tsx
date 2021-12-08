@@ -71,7 +71,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
         // Toggle when the user presses 'alt+h' or 'opt+h'.
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(filter(event => event.altKey && event.key === 'h'))
+                .pipe(filter(event => event.altKey && event.code === 'KeyH'))
                 .subscribe(event => {
                     event.preventDefault()
                     this.toggles.next()
