@@ -21,10 +21,10 @@ import { BlockInput } from './notebook'
 import { serializeBlocks } from './notebook/serialize'
 import styles from './SearchStack.module.scss'
 
-export const SearchStack: React.FunctionComponent = () => {
+export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = ({ initialOpen = false }) => {
     const history = useHistory()
 
-    const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(initialOpen)
     const entries = useSearchStackState(state => state.entries)
     const canRestore = useSearchStackState(state => state.canRestoreSession)
     const enableSearchStack = useExperimentalFeatures(features => features.enableSearchStack)
