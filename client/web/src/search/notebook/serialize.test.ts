@@ -1,4 +1,5 @@
 import { encodeURIPathComponent } from '@sourcegraph/shared/src/util/url'
+
 import { parseLineRange, serializeBlockInput, serializeBlocks, serializeLineRange } from './serialize'
 
 const SOURCEGRAPH_URL = 'https://sourcegraph.com'

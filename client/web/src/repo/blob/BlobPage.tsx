@@ -74,6 +74,10 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     let renderMode = getModeFromURL(props.location)
     const { repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode, repoUrl } = props
     const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
+    const lineOrRange = useMemo(() => parseQueryAndHash(props.location.search, props.location.hash), [
+        props.location.search,
+        props.location.hash,
+    ])
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
@@ -87,8 +91,13 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 path: filePath,
                 repo: repoName,
                 revision,
+                // Need to subtract 1 because IHighlightLineRange is 0-based but
+                // line information in the URL is 1-based.
+                lineRange: lineOrRange.line
+                    ? { startLine: lineOrRange.line - 1, endLine: (lineOrRange.endLine ?? lineOrRange.line + 1) - 1 }
+                    : null,
             }),
-            [filePath, repoName, revision]
+            [filePath, repoName, revision, lineOrRange.line, lineOrRange.endLine]
         )
     )
 
@@ -196,10 +205,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     // - If file does not contain richHTML or the url includes a line number: We render in code view.
     if (!renderMode) {
         renderMode =
-            blobInfoOrError &&
-            !isErrorLike(blobInfoOrError) &&
-            blobInfoOrError.richHTML &&
-            !parseQueryAndHash(props.location.search, props.location.hash).line
+            blobInfoOrError && !isErrorLike(blobInfoOrError) && blobInfoOrError.richHTML && !lineOrRange.line
                 ? 'rendered'
                 : 'code'
     }

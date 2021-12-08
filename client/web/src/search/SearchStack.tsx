@@ -45,7 +45,7 @@ export const SearchStack: React.FunctionComponent = () => {
                                         repositoryName: entry.repo,
                                         revision: entry.revision,
                                         filePath: entry.path,
-                                        lineRange: null,
+                                        lineRange: entry.lineRange,
                                     },
                                 }
                         }

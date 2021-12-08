@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import create from 'zustand'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { IHighlightLineRange } from '@sourcegraph/shared/src/graphql/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/validate'
@@ -21,6 +22,7 @@ export interface FileEntry {
     path: string
     repo: string
     revision: string
+    lineRange: IHighlightLineRange | null
 }
 
 export type SearchStackEntry = SearchEntry | FileEntry
@@ -92,22 +94,20 @@ export function useSearchStack(newEntry: SearchStackEntry | null): void {
 
 function addSearchStackEntry(entry: SearchStackEntry, update?: (entry: SearchStackEntry) => boolean): void {
     useSearchStackState.setState(state => {
-        // If the list contains more than one entry we disable restoring from
-        // the previous session
-        const canRestoreSession = state.entries.length === 0
-
         if (update) {
             const existingEntry = state.entries.find(update)
             if (existingEntry) {
                 const entriesCopy = [...state.entries]
                 const index = entriesCopy.indexOf(existingEntry)
                 entriesCopy[index] = { ...existingEntry, ...entry }
-                return { entries: entriesCopy, canRestoreSession }
+                // If the list contains more than one entry we disable restoring from
+                // the previous session
+                return { entries: entriesCopy, canRestoreSession: entriesCopy.length <= 1 }
             }
         }
         const newState = {
             entries: [...state.entries, entry],
-            canRestoreSession,
+            canRestoreSession: state.entries.length === 0,
         }
         // We store search stack data in both local and session storage: This
         // feature should really be considered to be session related but at the
