@@ -10,7 +10,7 @@ echo "Running benchmark" >> "$query_output_path"
 go run github.com/sourcegraph/sourcegraph/cmd/fileskip/bench download all
 for i in {1..2}; do
   echo "Starting iteration $i"
-  go test -bench ^BenchmarkLoad -benchmem github.com/sourcegraph/sourcegraph/cmd/fileskip/bench | tee -a "$load_output_path"
+  # go test -bench ^BenchmarkLoad -benchmem github.com/sourcegraph/sourcegraph/cmd/fileskip/bench | tee -a "$load_output_path"
   go test -bench ^BenchmarkQuery -benchmem github.com/sourcegraph/sourcegraph/cmd/fileskip/bench | tee -a "$query_output_path"
 done
 benchstat "$load_output_path"

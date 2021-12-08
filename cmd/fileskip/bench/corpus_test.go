@@ -5,6 +5,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/fileskip"
 	"math"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -16,11 +17,32 @@ func benchmarkQuery(b *testing.B, c Corpus, query string) {
 	}
 	b.ResetTimer()
 	matchingResults := map[string]struct{}{}
+	batchSize := 100
+	var wg sync.WaitGroup
 	for i := 0; i < b.N; i++ {
-		for m := range index.PathsMatchingQuery(query) {
-			matchingResults[m] = struct{}{}
+		for j := 0; j < len(index.Blobs); j += batchSize {
+			start := j
+			end := j + batchSize
+			if end > len(index.Blobs) {
+				end = len(index.Blobs)
+			}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for _, b := range index.Blobs[start:end] {
+					textBytes, err := index.FS.ReadRelativeFilename(b.Path)
+					if err != nil {
+						panic(err)
+					}
+					text := string(textBytes)
+					if strings.Index(text, query) >= 0 {
+						matchingResults[b.Path] = struct{}{}
+					}
+				}
+			}()
 		}
 	}
+	wg.Wait()
 	b.StopTimer()
 	falsePositives := 0
 	for m := range matchingResults {

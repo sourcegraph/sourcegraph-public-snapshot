@@ -10,3 +10,4 @@ BenchmarkLoadChromium-12       	       1	25153973809 ns/op	 519300136 bloom-stor
 BenchmarkLoadMegarepo-12       	       1	47178155659 ns/op	1184104888 bloom-storage-size	         0.2868 compression-ratio	    668919 indexed-blob-count	4129192734 indexed-blobs-size	252376561856 B/op	26659621 allocs/op
 PASS
 ok  	github.com/sourcegraph/sourcegraph/cmd/fileskip/bench	100.488s
+Running benchmark
