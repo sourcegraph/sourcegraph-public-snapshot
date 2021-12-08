@@ -59,7 +59,7 @@ export class ToggleLineWrap extends React.PureComponent<
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
                 // Opt/alt+z shortcut
-                .pipe(filter(event => event.altKey && event.key === 'z'))
+                .pipe(filter(event => event.altKey && event.code === 'KeyZ'))
                 .subscribe(event => {
                     event.preventDefault()
                     this.updates.next(!this.state.value)
