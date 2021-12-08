@@ -15,49 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestGetWithNonemptyLastError(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	db := dbtest.NewDB(t)
-	ctx := context.Background()
-
-	repos := createTestRepos(ctx, db, t)
-
-	gitserverRepo := &types.GitserverRepo{
-		RepoID:      repos[0].ID,
-		ShardID:     "gitserver1",
-		CloneStatus: types.CloneStatusNotCloned,
-		LastError:   "an error occurred",
-	}
-
-	// Create one GitServerRepo with a last_error
-	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
-		t.Fatal(err)
-	}
-
-	foundRepos := make([]types.RepoGitserverStatus, 0, len(repos))
-
-	// Iterate and collect repos
-	err := GitserverRepos(db).IterateWithNonemptyLastError(ctx, func(repo types.RepoGitserverStatus) error {
-		foundRepos = append(foundRepos, repo)
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	// Check that only the repo with a non-empty last_error was returned
-	expectedNumReposWithNonemptyLastError := 1
-	if len(foundRepos) != expectedNumReposWithNonemptyLastError {
-		t.Fatalf("expected %d repos with non empty last error, got %d", expectedNumReposWithNonemptyLastError,
-			len(foundRepos))
-	}
-	if foundRepos[0].Name != repos[0].Name {
-		t.Fatalf("expected %s to be repo with non empty last error, got %s", repos[0].Name, foundRepos[0].Name)
-	}
-}
-
 func TestIterateRepoGitserverStatus(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -120,6 +77,49 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 	wantNoShardCount := 1
 	if noShardCount != wantNoShardCount {
 		t.Fatalf("Want %d, got %d", wantNoShardCount, noShardCount)
+	}
+}
+
+func TestGetWithNonemptyLastError(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtest.NewDB(t)
+	ctx := context.Background()
+
+	repos := createTestRepos(ctx, db, t)
+
+	gitserverRepo := &types.GitserverRepo{
+		RepoID:      repos[0].ID,
+		ShardID:     "gitserver1",
+		CloneStatus: types.CloneStatusNotCloned,
+		LastError:   "an error occurred",
+	}
+
+	// Create one GitServerRepo with a last_error
+	if err := GitserverRepos(db).Upsert(ctx, gitserverRepo); err != nil {
+		t.Fatal(err)
+	}
+
+	foundRepos := make([]types.RepoGitserverStatus, 0, len(repos))
+
+	// Iterate and collect repos
+	err := GitserverRepos(db).IterateWithNonemptyLastError(ctx, func(repo types.RepoGitserverStatus) error {
+		foundRepos = append(foundRepos, repo)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Check that only the repo with a non-empty last_error was returned
+	expectedNumReposWithNonemptyLastError := 1
+	if len(foundRepos) != expectedNumReposWithNonemptyLastError {
+		t.Fatalf("expected %d repos with non empty last error, got %d", expectedNumReposWithNonemptyLastError,
+			len(foundRepos))
+	}
+	if foundRepos[0].Name != repos[0].Name {
+		t.Fatalf("expected %s to be repo with non empty last error, got %s", repos[0].Name, foundRepos[0].Name)
 	}
 }
 

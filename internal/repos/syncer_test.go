@@ -1997,7 +1997,8 @@ func testSyncReposWithLastErrors(s *repos.Store) func(*testing.T) {
 		// Run the syncer, which should find the repo with non-empty last_error and delete it
 		syncer.SyncReposWithLastErrors(ctx, ratelimit.DefaultRegistry, 1)
 
-		// TODO: figure out how to do this without a sleep (i.e. subscribing to a channel or something)
+		// TODO: Update once code is merged to enable synchronous functionality for syncer.SyncRepo so we no longer
+		// need this sleep statement.
 		time.Sleep(2 * time.Second)
 
 		// Try to fetch the repo to verify that it was deleted by the syncer
