@@ -138,8 +138,9 @@
     "build": "webpack --config-name extension:node --config-name webviews",
     "build:web": "webpack --config-name extension:webworker --config-name webviews",
     "dev": "NODE_ENV=development webpack --config-name extension:node --config-name webviews",
-    "dev:web": "NODE_ENV=development webpack --config-name extension:webworker --config-name webviews",
-    "watch": "webpack --watch",
+    "dev:web": "webpack --mode=development --config-name extension:webworker --config-name webviews",
+    "watch": "NODE_ENV=development webpack --watch --config-name extension:node --config-name webviews",
+    "watch:web": "NODE_ENV=development webpack --watch --config-name extension:webworker --config-name webviews",
     "test": "echo \"No tests exist yet\" && exit 1"
   },
   "devDependencies": {

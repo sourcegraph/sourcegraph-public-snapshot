@@ -6,13 +6,11 @@ const path = require('path')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
 /** @type {import('webpack').Configuration}*/
-function getExtensionConfig(targetParameter) {
-  // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
-  const entryFile = targetParameter === 'node' ? './src/extension.ts' : './src/extension-web.ts'
+function getExtensionConfig(targetType) {
   return {
-    name: `extension:${targetParameter}`,
-    target: targetParameter, // vscode extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
-    entry: entryFile,
+    name: `extension:${targetType}`,
+    target: targetType, // vscode extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
+    entry: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
     output: {
       // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
       path: path.resolve(__dirname, 'dist'),
@@ -30,9 +28,16 @@ function getExtensionConfig(targetParameter) {
     resolve: {
       // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
-      alias: {
-        path: require.resolve('path-browserify'),
-      },
+      alias:
+        targetType === 'webworker'
+          ? {
+              path: require.resolve('path-browserify'),
+              './commands/node/inBrowserActions': path.resolve(__dirname, 'src', 'commands', 'web', 'inBrowserAction'),
+              './helpers': path.resolve(__dirname, 'src', 'commands', 'web', 'helpers'),
+            }
+          : {
+              path: require.resolve('path-browserify'),
+            },
       fallback: {
         process: require.resolve('process/browser'),
         path: require.resolve('path-browserify'),
@@ -95,8 +100,10 @@ const webviewConfig = {
     extensionHost: [path.resolve(extensionHostWebviewPath, 'index.tsx')],
     style: path.join(webviewSourcePath, 'index.scss'),
   },
+  devtool: 'source-map',
   output: {
-    path: path.join(vscodeWorkspacePath, 'dist/webview'),
+    path: path.resolve(__dirname, 'dist/webview'),
+    // path: path.join(vscodeWorkspacePath, 'dist/webview'),
     filename: '[name].js',
   },
   plugins: [new MiniCssExtractPlugin()],
@@ -108,8 +115,6 @@ const webviewConfig = {
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     fallback: {
       path: require.resolve('path-browserify'),
-      stream: require.resolve('stream-browserify'),
-      process: require.resolve('process/browser'),
     },
   },
   module: {

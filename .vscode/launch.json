@@ -25,7 +25,8 @@
       "request": "launch",
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
-        "--extensionDevelopmentKind=web"
+        "--extensionDevelopmentKind=web",
+        "--disable-web-security"
       ],
       "outFiles": ["${workspaceRoot}/client/vscode/dist/extension.js"],
       "preLaunchTask": "build-vscode-dev-web",

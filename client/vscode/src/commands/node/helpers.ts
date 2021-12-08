@@ -3,7 +3,7 @@ import * as path from 'path'
 import execa from 'execa'
 import { TextEditor } from 'vscode'
 
-import { log } from '../log'
+import { log } from '../../log'
 
 interface RepositoryInfo extends Branch {
     /** Git repository remote URL */
