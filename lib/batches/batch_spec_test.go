@@ -256,25 +256,25 @@ func TestOnQueryOrRepository_Branches(t *testing.T) {
 				want:  nil,
 			},
 			"single branch": {
-				input: &OnQueryOrRepository{RawBranch: "foo"},
+				input: &OnQueryOrRepository{Branch: "foo"},
 				want:  []string{"foo"},
 			},
 			"single branch, non-nil but empty branches": {
 				input: &OnQueryOrRepository{
-					RawBranch:   "foo",
-					RawBranches: []string{},
+					Branch:   "foo",
+					Branches: []string{},
 				},
 				want: []string{"foo"},
 			},
 			"multiple branches": {
 				input: &OnQueryOrRepository{
-					RawBranches: []string{"foo", "bar"},
+					Branches: []string{"foo", "bar"},
 				},
 				want: []string{"foo", "bar"},
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
-				have, err := tc.input.Branches()
+				have, err := tc.input.GetBranches()
 				assert.Nil(t, err)
 				assert.Equal(t, tc.want, have)
 			})
@@ -283,9 +283,9 @@ func TestOnQueryOrRepository_Branches(t *testing.T) {
 
 	t.Run("error", func(t *testing.T) {
 		_, err := (&OnQueryOrRepository{
-			RawBranch:   "foo",
-			RawBranches: []string{"bar"},
-		}).Branches()
+			Branch:   "foo",
+			Branches: []string{"bar"},
+		}).GetBranches()
 		assert.Equal(t, ErrConflictingBranches, err)
 	})
 }

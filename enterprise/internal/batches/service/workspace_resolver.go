@@ -236,7 +236,7 @@ func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batc
 		return revs, true, err
 	}
 
-	branches, err := on.Branches()
+	branches, err := on.GetBranches()
 	if err != nil {
 		return nil, false, err
 	}

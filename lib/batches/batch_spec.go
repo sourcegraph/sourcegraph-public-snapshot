@@ -72,20 +72,20 @@ type WorkspaceConfiguration struct {
 type OnQueryOrRepository struct {
 	RepositoriesMatchingQuery string   `json:"repositoriesMatchingQuery,omitempty" yaml:"repositoriesMatchingQuery"`
 	Repository                string   `json:"repository,omitempty" yaml:"repository"`
-	RawBranch                 string   `json:"branch,omitempty" yaml:"branch"`
-	RawBranches               []string `json:"branches,omitempty" yaml:"branches"`
+	Branch                    string   `json:"branch,omitempty" yaml:"branch"`
+	Branches                  []string `json:"branches,omitempty" yaml:"branches"`
 }
 
 var ErrConflictingBranches = NewValidationError(errors.New("both branch and branches specified"))
 
-func (oqor *OnQueryOrRepository) Branches() ([]string, error) {
-	if oqor.RawBranch != "" {
-		if len(oqor.RawBranches) > 0 {
+func (oqor *OnQueryOrRepository) GetBranches() ([]string, error) {
+	if oqor.Branch != "" {
+		if len(oqor.Branches) > 0 {
 			return nil, ErrConflictingBranches
 		}
-		return []string{oqor.RawBranch}, nil
+		return []string{oqor.Branch}, nil
 	}
-	return oqor.RawBranches, nil
+	return oqor.Branches, nil
 }
 
 type Step struct {
