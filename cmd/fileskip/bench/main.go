@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 var (
@@ -218,16 +219,29 @@ func (c *Corpus) run() error {
 	for _, query := range c.Queries {
 		isMatch[query] = map[string]struct{}{}
 	}
-	for _, p := range index.Blobs {
-		bar.Add(1)
-		bytes, _ := index.FS.ReadRelativeFilename(p.Path)
-		text := string(bytes)
-		for _, query := range c.Queries {
-			if strings.Index(text, query) >= 0 {
-				isMatch[query][p.Path] = struct{}{}
-			}
+	var wg sync.WaitGroup
+	batchSize := 100
+	for i := 0; i < len(index.Blobs); i += batchSize {
+		j := i + batchSize
+		if len(index.Blobs) < j {
+			j = len(index.Blobs)
 		}
+		wg.Add(1)
+		go func(start, end int) {
+			defer wg.Done()
+			for _, p := range index.Blobs[start:end] {
+				bar.Add(1)
+				bytes, _ := index.FS.ReadRelativeFilename(p.Path)
+				text := string(bytes)
+				for _, query := range c.Queries {
+					if strings.Index(text, query) >= 0 {
+						isMatch[query][p.Path] = struct{}{}
+					}
+				}
+			}
+		}(i, j)
 	}
+	wg.Wait()
 	for _, query := range c.Queries {
 		header := "=========" + strings.Repeat("=", len(query))
 		fmt.Println(header)
