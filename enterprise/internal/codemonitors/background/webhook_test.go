@@ -12,9 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
-func TestSlackWebhook(t *testing.T) {
-	t.Parallel()
-
+func TestWebhook(t *testing.T) {
 	t.Run("no error", func(t *testing.T) {
 		action := actionArgs{
 			MonitorDescription: "My test monitor", MonitorURL: "https://google.com",
@@ -32,7 +30,7 @@ func TestSlackWebhook(t *testing.T) {
 		defer s.Close()
 
 		client := s.Client()
-		err := postSlackWebhook(context.Background(), client, s.URL, slackPayload(action))
+		err := postWebhook(context.Background(), client, s.URL, action)
 		require.NoError(t, err)
 	})
 
@@ -53,7 +51,7 @@ func TestSlackWebhook(t *testing.T) {
 		defer s.Close()
 
 		client := s.Client()
-		err := postSlackWebhook(context.Background(), client, s.URL, slackPayload(action))
+		err := postWebhook(context.Background(), client, s.URL, action)
 		require.Error(t, err)
 	})
 }

@@ -265,7 +265,42 @@ func (r *actionRunner) handleEmail(ctx context.Context, j *cm.ActionJob) error {
 }
 
 func (r *actionRunner) handleWebhook(ctx context.Context, j *cm.ActionJob) error {
-	panic("unimplemented")
+	s, err := r.CodeMonitorStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = s.Done(err) }()
+
+	m, err := s.GetActionJobMetadata(ctx, j.ID)
+	if err != nil {
+		return errors.Wrap(err, "GetActionJobMetadata")
+	}
+
+	w, err := s.GetSlackWebhookAction(ctx, *j.SlackWebhook)
+	if err != nil {
+		return errors.Wrap(err, "GetSlackWebhookAction")
+	}
+
+	utmSource := "code-monitor-slack-webhook"
+	searchURL, err := getSearchURL(ctx, m.Query, utmSource)
+	if err != nil {
+		return errors.Wrap(err, "GetSearchURL")
+	}
+
+	codeMonitorURL, err := getCodeMonitorURL(ctx, w.Monitor, utmSource)
+	if err != nil {
+		return errors.Wrap(err, "GetCodeMonitorURL")
+	}
+
+	args := actionArgs{
+		MonitorDescription: m.Description,
+		MonitorURL:         codeMonitorURL,
+		Query:              m.Query,
+		QueryURL:           searchURL,
+		NumResults:         zeroOrVal(m.NumResults),
+	}
+
+	return sendWebhookNotification(ctx, w.URL, args)
 }
 
 func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *cm.ActionJob) error {
