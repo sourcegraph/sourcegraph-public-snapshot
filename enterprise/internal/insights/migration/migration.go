@@ -399,8 +399,3 @@ func updateTimeSeriesReferences(handle dbutil.DB, ctx context.Context, oldId, ne
 	}
 	return nil
 }
-
-func updateSeriesId(insightStore *store.InsightStore, ctx context.Context, oldId, newId string) error {
-	q := sqlf.Sprintf("update insight_series set series_id = %s where series_id = %s", newId, oldId)
-	return insightStore.Exec(ctx, q)
-}
