@@ -484,7 +484,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, true, want)
 
 	// PERMISSIONS: Now we view the same batch spec but as another non-admin user.
-	// First, eeset state so that all fields should return something when viewed with
+	// First, reset state so that all fields should return something when viewed with
 	// correct permissions.
 	jobs[0].FinishedAt = minAgo(9)
 	setJobCompleted(t, ctx, bstore, jobs[0])
