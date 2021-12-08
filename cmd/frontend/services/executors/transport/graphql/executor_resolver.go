@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -38,8 +38,6 @@ func (e *ExecutorResolver) IgniteVersion() string   { return e.executor.IgniteVe
 func (e *ExecutorResolver) SrcCliVersion() string   { return e.executor.SrcCliVersion }
 func (e *ExecutorResolver) FirstSeenAt() DateTime   { return DateTime{e.executor.FirstSeenAt} }
 func (e *ExecutorResolver) LastSeenAt() DateTime    { return DateTime{e.executor.LastSeenAt} }
-
-// TODO: abstract this out into a common package
 
 // DateTime implements the DateTime GraphQL scalar type.
 type DateTime struct{ time.Time }

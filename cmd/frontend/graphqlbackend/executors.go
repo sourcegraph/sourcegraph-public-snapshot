@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-
 func (r *schemaResolver) Executors(ctx context.Context, args *struct {
 	Query  *string
 	Active *bool
