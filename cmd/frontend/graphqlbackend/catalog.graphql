@@ -15,6 +15,7 @@ type Catalog {
 
 enum CatalogEntityType {
     COMPONENT
+    PACKAGE
 }
 
 enum CatalogEntityLifecycle {
@@ -37,7 +38,6 @@ interface CatalogEntity {
     name: String!
     description: String
     owner: EntityOwner
-    lifecycle: CatalogEntityLifecycle!
     url: String!
     status: CatalogEntityStatus!
     codeOwners: [CatalogEntityCodeOwnerEdge!]
@@ -133,7 +133,6 @@ type CatalogComponent implements Node & CatalogEntity {
     name: String!
     description: String
     owner: EntityOwner
-    lifecycle: CatalogEntityLifecycle!
     url: String!
     status: CatalogEntityStatus!
     codeOwners: [CatalogEntityCodeOwnerEdge!]
@@ -141,6 +140,7 @@ type CatalogComponent implements Node & CatalogEntity {
     whoKnows(query: String): [WhoKnowsEdge!]!
 
     kind: CatalogComponentKind!
+    lifecycle: CatalogEntityLifecycle!
 
     sourceLocations: [TreeEntry!]!
     readme: File2
@@ -188,6 +188,19 @@ type CatalogComponentUsedByComponentEdge {
 type CatalogComponentAPI {
     symbols(first: Int): SymbolConnection!
     schema: File2
+}
+
+type Package implements Node & CatalogEntity {
+    id: ID!
+    type: CatalogEntityType!
+    name: String!
+    description: String
+    owner: EntityOwner
+    url: String!
+    status: CatalogEntityStatus!
+    codeOwners: [CatalogEntityCodeOwnerEdge!]
+    relatedEntities(query: String, first: Int, after: String): CatalogEntityRelatedEntityConnection!
+    whoKnows(query: String): [WhoKnowsEdge!]!
 }
 
 extend interface TreeEntry {

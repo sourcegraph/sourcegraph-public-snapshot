@@ -62,7 +62,6 @@ type CatalogEntity interface {
 	Name() string
 	Description() *string
 	Owner(context.Context) (*EntityOwnerResolver, error)
-	Lifecycle() CatalogEntityLifecycle
 	URL() string
 	Status(context.Context) (CatalogEntityStatusResolver, error)
 	CodeOwners(context.Context) (*[]CatalogEntityCodeOwnerEdgeResolver, error)
@@ -159,7 +158,9 @@ type CatalogEntityConnectionResolver interface {
 
 type CatalogComponentResolver interface {
 	CatalogEntity
+
 	Kind() CatalogComponentKind
+	Lifecycle() CatalogEntityLifecycle
 
 	Readme(context.Context) (FileResolver, error)
 	SourceLocations(context.Context) ([]*GitTreeEntryResolver, error)

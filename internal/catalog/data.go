@@ -26,6 +26,10 @@ type UsagePattern struct {
 	Query string
 }
 
+type Package struct {
+	Name string
+}
+
 type Group struct {
 	Name        string
 	Title       string
