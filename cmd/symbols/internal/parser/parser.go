@@ -47,7 +47,7 @@ func NewParser(
 }
 
 func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []string) (_ <-chan result.Symbol, err error) {
-	ctx, traceLog, endObservation := p.operations.parse.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, endObservation := p.operations.parse.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(args.Repo)),
 		log.String("commitID", string(args.CommitID)),
 		log.Int("paths", len(paths)),
@@ -86,6 +86,7 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 		go func() {
 			defer func() {
 				endObservation(1, observation.Args{LogFields: []log.Field{
+					log.Int("numRequests", int(totalRequests)),
 					log.Int("numSymbols", int(totalSymbols)),
 				}})
 			}()
@@ -101,26 +102,16 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 		go func() {
 			defer wg.Done()
 
-			for parseRequest := range parseRequests {
-				_ = p.handleParseRequest(ctx, symbols, parseRequest, &totalSymbols)
+			for parseRequestOrError := range parseRequestOrErrors {
+				if parseRequestOrError.Err != nil {
+					panic(parseRequestOrError.Err.Error())
+				} else {
+					atomic.AddUint32(&totalRequests, 1)
+					_ = p.handleParseRequest(ctx, symbols, parseRequestOrError.ParseRequest, &totalSymbols)
+				}
 			}
 		}()
 	}
-
-	for v := range parseRequestOrErrors {
-		if v.Err != nil {
-			return nil, v.Err
-		}
-
-		totalRequests++
-
-		select {
-		case parseRequests <- v.ParseRequest:
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
-	}
-	traceLog(log.Int("numRequests", int(totalRequests)))
 
 	return symbols, nil
 }
