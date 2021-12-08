@@ -4,7 +4,7 @@ BEGIN;
 DELETE FROM batch_spec_execution_cache_entries;
 
 ALTER TABLE batch_spec_execution_cache_entries
-  ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
+  ADD COLUMN IF NOT EXISTS user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE batch_spec_execution_cache_entries
   DROP CONSTRAINT IF EXISTS batch_spec_execution_cache_entries_key_unique;
