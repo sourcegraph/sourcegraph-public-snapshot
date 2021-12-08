@@ -50,6 +50,10 @@ var PerforceSchemaJSON string
 //go:embed phabricator.schema.json
 var PhabricatorSchemaJSON string
 
+// PagureSchemaJSON is the content of the file "pagure.schema.json".
+//go:embed pagure.schema.json
+var PagureSchemaJSON string
+
 // SettingsSchemaJSON is the content of the file "settings.schema.json".
 //go:embed settings.schema.json
 var SettingsSchemaJSON string

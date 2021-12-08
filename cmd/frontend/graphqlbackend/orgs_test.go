@@ -1,13 +1,11 @@
 package graphqlbackend
 
 import (
-	"context"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -55,24 +53,27 @@ func TestOrgs(t *testing.T) {
 }
 
 func TestListOrgsForCloud(t *testing.T) {
-	db := database.NewDB(nil)
-	resetMocks()
+	orig := envvar.SourcegraphDotComMode()
 	envvar.MockSourcegraphDotComMode(true)
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
+	defer envvar.MockSourcegraphDotComMode(orig)
 
-	t.Cleanup(func() {
-		resetMocks()
-		envvar.MockSourcegraphDotComMode(false)
-	})
+	users := dbmock.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	orgs := dbmock.NewMockOrgStore()
+	orgs.CountFunc.SetDefaultReturn(42, nil)
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.OrgsFunc.SetDefaultReturn(orgs)
+
 	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					organizations {
-						nodes { name }
+						nodes { name },
 						totalCount
 					}
 				}
@@ -83,11 +84,24 @@ func TestListOrgsForCloud(t *testing.T) {
 					Message: "listing organizations is not allowed",
 					Path:    []interface{}{string("organizations"), string("nodes")},
 				},
-				{
-					Message: "counting organizations is not allowed",
-					Path:    []interface{}{string("organizations"), string("totalCount")},
-				},
 			},
+		},
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
+				{
+					organizations {
+						totalCount
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"organizations": {
+						"totalCount": 42
+					}
+				}
+			`,
 		},
 	})
 }

@@ -19,14 +19,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func editorRev(ctx context.Context, repoName api.RepoName, rev string, beExplicit bool) (string, error) {
+func editorRev(ctx context.Context, db database.DB, repoName api.RepoName, rev string, beExplicit bool) (string, error) {
 	if beExplicit {
 		return "@" + rev, nil
 	}
 	if rev == "HEAD" {
 		return "", nil // Detached head state
 	}
-	repo, err := backend.Repos.GetByName(ctx, repoName)
+	repos := backend.NewRepos(db.Repos())
+	repo, err := repos.GetByName(ctx, repoName)
 	if err != nil {
 		// We weren't able to fetch the repo. This means it either doesn't
 		// exist (unlikely) or that the user is not logged in (most likely). In
@@ -38,11 +39,11 @@ func editorRev(ctx context.Context, repoName api.RepoName, rev string, beExplici
 	// If we are on the default branch we want to return a clean URL without a
 	// branch. If we fail its best to return the full URL and allow the
 	// front-end to inform them of anything that is wrong.
-	defaultBranchCommitID, err := backend.Repos.ResolveRev(ctx, repo, "")
+	defaultBranchCommitID, err := repos.ResolveRev(ctx, repo, "")
 	if err != nil {
 		return "@" + rev, nil
 	}
-	branchCommitID, err := backend.Repos.ResolveRev(ctx, repo, rev)
+	branchCommitID, err := repos.ResolveRev(ctx, repo, rev)
 	if err != nil {
 		return "@" + rev, nil
 	}
@@ -188,7 +189,7 @@ func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 	if inputRev == "" {
 		inputRev, beExplicit = of.branch, false
 	}
-	rev, err := editorRev(ctx, repoName, inputRev, beExplicit)
+	rev, err := editorRev(ctx, r.db, repoName, inputRev, beExplicit)
 	if err != nil {
 		return "", err
 	}

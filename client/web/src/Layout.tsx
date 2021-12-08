@@ -19,6 +19,7 @@ import { BatchChangesProps } from './batches'
 import { CodeMonitoringProps } from './code-monitoring'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
+import { AppRouterContainer } from './components/AppRouterContainer'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
@@ -33,6 +34,7 @@ import { GlobalDebug } from './global/GlobalDebug'
 import { CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
+import styles from './Layout.module.scss'
 import { SurveyToast } from './marketing/SurveyToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
@@ -59,10 +61,9 @@ import {
     SearchContextProps,
     getGlobalSearchContextFilter,
 } from './search'
-import { useTemporarySetting } from './settings/temporary/useTemporarySetting'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { useTheme } from './theme'
+import { useThemeProps } from './theme'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
@@ -125,7 +126,6 @@ export interface LayoutProps
 
     globbing: boolean
     showMultilineSearchConsole: boolean
-    showSearchNotebook: boolean
     isSourcegraphDotCom: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never
@@ -193,13 +193,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         searchContextSpec,
     ])
 
-    const [hasUsedNonGlobalContext, setHasUsedNonGlobalContext] = useTemporarySetting('search.usedNonGlobalContext')
-    useEffect(() => {
-        if (selectedSearchContextSpec && selectedSearchContextSpec !== 'global' && !hasUsedNonGlobalContext) {
-            setHasUsedNonGlobalContext(true)
-        }
-    }, [selectedSearchContextSpec, setHasUsedNonGlobalContext, hasUsedNonGlobalContext])
-
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
 
@@ -220,7 +213,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const authRequired = useObservable(authRequiredObservable)
 
-    const themeProps = useTheme()
+    const themeProps = useThemeProps()
 
     const breadcrumbProps = useBreadcrumbs()
 
@@ -246,7 +239,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     }
 
     return (
-        <div className="layout">
+        <div className={styles.layout}>
             <KeyboardShortcutsHelp
                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
                 keyboardShortcuts={props.keyboardShortcuts}
@@ -296,9 +289,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         component={undefined}
                                         render={routeComponentProps => (
-                                            <div className="layout__app-router-container">
+                                            <AppRouterContainer>
                                                 {render({ ...context, ...routeComponentProps })}
-                                            </div>
+                                            </AppRouterContainer>
                                         )}
                                     />
                                 )

@@ -11,7 +11,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { TemporarySettings } from '../../../settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
-import { useGlobalStore } from '../../../stores/global'
+import { useNavbarQueryState } from '../../../stores'
 import { NavbarQueryState, QueryUpdate } from '../../../stores/navbarSearchQueryState'
 import { SubmitSearchParameters } from '../../helpers'
 
@@ -59,7 +59,7 @@ const selectFromQueryState = ({
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
     const history = useHistory()
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
-    const { query, setQueryState, submitSearch } = useGlobalStore(selectFromQueryState, shallow)
+    const { query, setQueryState, submitSearch } = useNavbarQueryState(selectFromQueryState, shallow)
 
     // Unlike onFilterClicked, this function will always append or update a filter
     const submitQueryWithProps = useCallback(

@@ -56,7 +56,7 @@ var SourcegraphDockerImages = append(DeploySourcegraphDockerImages,
 // Used to cross check images in the deploy-sourcegraph repo. If you are adding or removing an image to https://github.com/sourcegraph/deploy-sourcegraph
 // it must also be added to this list.
 var DeploySourcegraphDockerImages = []string{
-	"alpine-3.12",
+	"alpine-3.14",
 	"cadvisor",
 	"codeinsights-db",
 	"codeintel-db",
@@ -72,7 +72,6 @@ var DeploySourcegraphDockerImages = []string{
 	"postgres_exporter",
 	"precise-code-intel-worker",
 	"prometheus",
-	"query-runner",
 	"redis-cache",
 	"redis-store",
 	"redis_exporter",
@@ -82,6 +81,7 @@ var DeploySourcegraphDockerImages = []string{
 	"symbols",
 	"syntax-highlighter",
 	"worker",
+	"migrator",
 }
 
 // CandidateImageTag provides the tag for a candidate image built for this Buildkite run.

@@ -8,9 +8,11 @@ import { WebGraphQlOperations } from '../graphql-operations'
 import { BlockType } from '../search/notebook'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
 import { highlightFileResult, mixedSearchStreamEvents } from './streaming-search-mocks'
+import { percySnapshotWithVariants } from './utils'
 
 const viewerSettings: Partial<WebGraphQlOperations> = {
     ViewerSettings: () => ({
@@ -56,6 +58,7 @@ const viewerSettings: Partial<WebGraphQlOperations> = {
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
     ...highlightFileResult,
+    RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
 }
 
 describe('Search Notebook', () => {
@@ -95,13 +98,15 @@ describe('Search Notebook', () => {
     const runBlockMenuAction = (id: string, actionLabel: string) =>
         driver.page.click(`${blockSelector(id)} [data-testid="${actionLabel}"]`)
 
-    const addNewBlock = (type: BlockType) => driver.page.click(`[data-testid="add-${type}-button"]`)
+    const addNewBlock = (type: BlockType) =>
+        driver.page.click(`[data-testid="always-visible-add-block-buttons"] [data-testid="add-${type}-button"]`)
 
     it('Should render a notebook with two default blocks', async () => {
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search/notebook')
         await driver.page.waitForSelector('[data-block-id]', { visible: true })
         const blockIds = await getBlockIds()
         expect(blockIds).toHaveLength(2)
+        await percySnapshotWithVariants(driver.page, 'Search notebook')
     })
 
     it('Should move, duplicate, and delete blocks', async () => {
@@ -141,7 +146,7 @@ describe('Search Notebook', () => {
         const newMarkdownBlockSelector = blockSelector(blockIds[2])
         const newQueryBlockSelector = blockSelector(blockIds[3])
 
-        // Edit and run new markdown cell
+        // Edit and run new markdown block
         await driver.page.click(newMarkdownBlockSelector)
         await driver.page.click('[data-testid="Edit"]')
         await driver.replaceText({
@@ -160,7 +165,7 @@ describe('Search Notebook', () => {
         )
         expect(renderedMarkdownText?.trim()).toEqual('Replaced text')
 
-        // Edit and run new query cell
+        // Edit and run new query block
         await driver.page.click(`${newQueryBlockSelector} .monaco-editor`)
         await driver.replaceText({
             selector: `${newQueryBlockSelector} .monaco-editor`,
@@ -177,5 +182,58 @@ describe('Search Notebook', () => {
             queryResultContainerSelector
         )
         expect(isResultContainerVisible).toBeTruthy()
+        await percySnapshotWithVariants(driver.page, 'Search notebook with markdown and query blocks')
+    })
+
+    it('Should add file block and edit it', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search/notebook')
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+
+        await addNewBlock('file')
+
+        const blockIds = await getBlockIds()
+        expect(blockIds).toHaveLength(3)
+
+        const fileBlockSelector = blockSelector(blockIds[2])
+
+        // Edit new file block
+        await driver.page.click(fileBlockSelector)
+
+        await driver.replaceText({
+            selector: `${fileBlockSelector} [data-testid="file-block-repository-name-input"]`,
+            newText: 'github.com/sourcegraph/sourcegraph',
+            selectMethod: 'keyboard',
+            enterTextMethod: 'paste',
+        })
+        // Wait for input to validate
+        await driver.page.waitForSelector(
+            `${fileBlockSelector} [data-testid="file-block-repository-name-input"].is-valid`
+        )
+
+        await driver.replaceText({
+            selector: `${fileBlockSelector} [data-testid="file-block-file-path-input"]`,
+            newText: 'client/web/file.tsx',
+            selectMethod: 'keyboard',
+            enterTextMethod: 'paste',
+        })
+        // Wait for input to validate
+        await driver.page.waitForSelector(`${fileBlockSelector} [data-testid="file-block-file-path-input"].is-valid`)
+
+        // Wait for highlighted code to load
+        await driver.page.waitForSelector(`${fileBlockSelector} td.line`, { visible: true })
+
+        // Refocus the entire block (prevents jumping content for below actions)
+        await driver.page.click(fileBlockSelector)
+
+        // Save the inputs
+        await driver.page.click('[data-testid="Save"]')
+
+        const fileBlockHeaderSelector = `${fileBlockSelector} [data-testid="file-block-header"]`
+        await driver.page.waitForSelector(fileBlockHeaderSelector, { visible: true })
+        const fileBlockHeaderText = await driver.page.evaluate(
+            fileBlockHeaderSelector => document.querySelector<HTMLDivElement>(fileBlockHeaderSelector)?.textContent,
+            fileBlockHeaderSelector
+        )
+        expect(fileBlockHeaderText).toEqual('github.com/sourcegraph/sourcegraph/client/web/file.tsx')
     })
 })

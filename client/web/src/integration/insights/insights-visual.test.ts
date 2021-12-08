@@ -48,7 +48,10 @@ describe('[VISUAL] Code insights page', () => {
             testContext,
             userSettings: {
                 'insights.allrepos': {
-                    'searchInsights.insight.backend_ID_001': {},
+                    'searchInsights.insight.backend_ID_001': {
+                        title: 'Testing Insight',
+                        series: [],
+                    },
                 },
             },
             overrides: {
@@ -133,7 +136,10 @@ describe('[VISUAL] Code insights page', () => {
                     },
                 },
                 'insights.allrepos': {
-                    'searchInsights.insight.backend_ID_001': {},
+                    'searchInsights.insight.backend_ID_001': {
+                        title: 'Testing Insight',
+                        series: [],
+                    },
                 },
             },
             overrides: {
@@ -174,7 +180,10 @@ describe('[VISUAL] Code insights page', () => {
                     otherThreshold: 0.03,
                 },
                 'insights.allrepos': {
-                    'searchInsights.insight.backend_ID_001': {},
+                    'searchInsights.insight.backend_ID_001': {
+                        title: 'Testing Insight',
+                        series: [],
+                    },
                 },
             },
             overrides: {

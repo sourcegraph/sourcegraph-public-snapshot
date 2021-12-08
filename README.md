@@ -37,7 +37,7 @@ The fastest way to run Sourcegraph self-hosted is with the Docker container. See
 
 ### Sourcegraph OSS
 
-1. Go through [Quickstart](doc/dev/getting-started/quickstart.md) to install `sg` and dependencies
+1. Go through [Quickstart](https://docs.sourcegraph.com/dev/setup/quickstart.md) to install `sg` and dependencies
 1. Start the development environment in OSS mode:
    ```sh
    sg start oss
@@ -45,11 +45,11 @@ The fastest way to run Sourcegraph self-hosted is with the Docker container. See
 
 Sourcegraph should now be running at https://sourcegraph.test:3443.
 
-For detailed instructions and troubleshooting, see the [local development documentation](./doc/dev/index.md).
+For detailed instructions and troubleshooting, see the [local development documentation](https://docs.sourcegraph.com/dev).
 
 ## Development
 
-Refer to the [Developing Sourcegraph guide](doc/dev/index.md) to get started.
+Refer to the [Developing Sourcegraph guide](https://docs.sourcegraph.com/dev) to get started.
 
 ### Documentation
 
@@ -58,7 +58,7 @@ The `doc` directory has additional documentation for developing and understandin
 - [Project FAQ](./doc/admin/faq.md)
 - [Architecture](./doc/dev/background-information/architecture/index.md): high-level architecture
 - [Database setup](./doc/dev/background-information/postgresql.md): database best practices
-- [Go style guide](./doc/dev/background-information/languages/go)
+- [Go style guide](./doc/dev/background-information/languages/go.md)
 - [Documentation style guide](https://handbook.sourcegraph.com/engineering/product_documentation)
 - [GraphQL API](./doc/api/graphql/index.md): useful tips when modifying the GraphQL API
 - [Contributing](./CONTRIBUTING.md)

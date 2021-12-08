@@ -113,6 +113,69 @@ func NewMockOrgInvitationStore() *MockOrgInvitationStore {
 	}
 }
 
+// NewStrictMockOrgInvitationStore creates a new mock of the
+// OrgInvitationStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockOrgInvitationStore() *MockOrgInvitationStore {
+	return &MockOrgInvitationStore{
+		CountFunc: &OrgInvitationStoreCountFunc{
+			defaultHook: func(context.Context, database.OrgInvitationsListOptions) (int, error) {
+				panic("unexpected invocation of MockOrgInvitationStore.Count")
+			},
+		},
+		CreateFunc: &OrgInvitationStoreCreateFunc{
+			defaultHook: func(context.Context, int32, int32, int32) (*database.OrgInvitation, error) {
+				panic("unexpected invocation of MockOrgInvitationStore.Create")
+			},
+		},
+		GetByIDFunc: &OrgInvitationStoreGetByIDFunc{
+			defaultHook: func(context.Context, int64) (*database.OrgInvitation, error) {
+				panic("unexpected invocation of MockOrgInvitationStore.GetByID")
+			},
+		},
+		GetPendingFunc: &OrgInvitationStoreGetPendingFunc{
+			defaultHook: func(context.Context, int32, int32) (*database.OrgInvitation, error) {
+				panic("unexpected invocation of MockOrgInvitationStore.GetPending")
+			},
+		},
+		HandleFunc: &OrgInvitationStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockOrgInvitationStore.Handle")
+			},
+		},
+		ListFunc: &OrgInvitationStoreListFunc{
+			defaultHook: func(context.Context, database.OrgInvitationsListOptions) ([]*database.OrgInvitation, error) {
+				panic("unexpected invocation of MockOrgInvitationStore.List")
+			},
+		},
+		RespondFunc: &OrgInvitationStoreRespondFunc{
+			defaultHook: func(context.Context, int64, int32, bool) (int32, error) {
+				panic("unexpected invocation of MockOrgInvitationStore.Respond")
+			},
+		},
+		RevokeFunc: &OrgInvitationStoreRevokeFunc{
+			defaultHook: func(context.Context, int64) error {
+				panic("unexpected invocation of MockOrgInvitationStore.Revoke")
+			},
+		},
+		TransactFunc: &OrgInvitationStoreTransactFunc{
+			defaultHook: func(context.Context) (database.OrgInvitationStore, error) {
+				panic("unexpected invocation of MockOrgInvitationStore.Transact")
+			},
+		},
+		UpdateEmailSentTimestampFunc: &OrgInvitationStoreUpdateEmailSentTimestampFunc{
+			defaultHook: func(context.Context, int64) error {
+				panic("unexpected invocation of MockOrgInvitationStore.UpdateEmailSentTimestamp")
+			},
+		},
+		WithFunc: &OrgInvitationStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.OrgInvitationStore {
+				panic("unexpected invocation of MockOrgInvitationStore.With")
+			},
+		},
+	}
+}
+
 // NewMockOrgInvitationStoreFrom creates a new mock of the
 // MockOrgInvitationStore interface. All methods delegate to the given
 // implementation, unless overwritten.

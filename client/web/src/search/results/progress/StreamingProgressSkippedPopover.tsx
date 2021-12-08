@@ -83,7 +83,7 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
             {skipped.message && (
                 <Collapse isOpen={isOpen}>
                     <Markdown
-                        className={classNames(styles.message, 'text-left py-1')}
+                        className={classNames(styles.message, styles.markdown, 'text-left py-1')}
                         dangerousInnerHTML={renderMarkdown(skipped.message)}
                     />
                 </Collapse>
@@ -131,7 +131,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                 />
             ))}
             {sortedSkippedItems.some(skipped => skipped.suggested) && (
-                <Form className="pb-3 px-3" onSubmit={submitHandler}>
+                <Form className="pb-3 px-3" onSubmit={submitHandler} data-testid="popover-form">
                     <div className="mb-2 mt-3">Search again:</div>
                     <FormGroup check={true}>
                         {sortedSkippedItems.map(
@@ -146,6 +146,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                                             type="checkbox"
                                             value={skipped.suggested.queryExpression}
                                             onChange={checkboxHandler}
+                                            data-testid="streaming-progress-skipped-suggest-check"
                                         />{' '}
                                         {skipped.suggested.title} (
                                         <SyntaxHighlightedSearchQuery query={skipped.suggested.queryExpression} />)
@@ -159,6 +160,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                         className="mt-2"
                         color="primary"
                         disabled={selectedSuggestedSearches.size === 0}
+                        data-testid="skipped-popover-form-submit-btn"
                     >
                         <SearchIcon className="icon-inline mr-1" />
                         Search again

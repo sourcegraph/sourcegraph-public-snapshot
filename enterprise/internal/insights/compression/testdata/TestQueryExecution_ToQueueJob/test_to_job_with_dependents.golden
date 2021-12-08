@@ -6,6 +6,6 @@
 	Cost:            500,
 	Priority:        1000,
 	PersistMode:     "record",
-	DependentFrames: []time.Time{time.Time{ext: 63713520000}},
+	DependentFrames: []time.Time{{ext: 63713520000}},
 	State:           "queued",
 }

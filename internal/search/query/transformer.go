@@ -747,10 +747,6 @@ func AddRegexpField(q Q, field, pattern string) string {
 	return StringHuman(q)
 }
 
-func identity(nodes []Node) ([]Node, error) {
-	return nodes, nil
-}
-
 // Converts a parse tree to a basic query by attempting to obtain a valid partition.
 func ToBasicQuery(nodes []Node) (Basic, error) {
 	parameters, pattern, err := PartitionSearchPattern(nodes)

@@ -39,7 +39,11 @@ Then, [add or edit a GitHub connection](../external_service/github.md) and inclu
 }
 ```
 
-A [token that has the prerequisite scopes](../external_service/github.md#github-api-token-and-access) is required in order to list collaborators for each repository to perform a [complete sync](#complete-sync-vs-incremental-sync).
+A [token that has the prerequisite scopes](../external_service/github.md#github-api-token-and-access) and both read and write access to all relevant repositories is required in order to list collaborators for each repository to perform a [complete sync](#complete-sync-vs-incremental-sync).
+
+> NOTE: Both read and write access to the associated repos for permissions syncing are strongly suggested due to GitHub's token scope requirements. Without write permissions, sync will rely only on [user-centric sync](#background-permissions-syncing) and continue working as expected, though Sourcegraph may have out-of-date permissions more frequently.
+
+<span class="virtual-br"></span>
 
 > WARNING: It can take some time to complete [backgroung mirroring of repository permissions](#background-permissions-syncing) from a code host. [Learn more](#permissions-sync-duration).
 
@@ -96,7 +100,8 @@ In the corresponding [authorization provider](../auth/index.md#github) in [site 
 }
 ```
 
-A [token that has the prerequisite scopes](../external_service/github.md#github-api-token-and-access) read repository, organization, and team permissions and memberships in order to cache them across syncs.
+A [token that has the prerequisite scopes](../external_service/github.md#github-api-token-and-access) and both read and write access to all relevant repositories and organizations is required to fetch repository and team permissions and team memberships is required and cache them across syncs.
+Read-only access will *not* work with cached permissions sync, but will work with [regular GitHub permissions sync](#github) (with [some drawbacks](#github)).
 
 When enabling this feature, we currently recommend a default `groupsCacheTTL` of `72` (hours, or 3 days). A lower value can be set if your teams and organizations change frequently, though the chosen value must be at least several hours for the cache to be leveraged in the event of being rate-limited (which takes [an hour to recover from](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting)).
 
@@ -265,8 +270,8 @@ Sourcegraph syncs permissions in the background by default to better handle repo
 
 Sourcegraph's background permissions syncing is a 2-way sync that combines data from both types of sync for each configured code host to populate the database tables Sourcegraph uses as its source-of-truth for what repositories a user has access to:
 
-- A *user-centric* permissions sync that updates the complete list of repositories a user has access to, from the user's view. This typically uses authentication associated with the user where available.
-- A *repository-centric* permissions sync that updates the complete list of all users that have access to a repository, from the repository's view. This may require elevated permissions to request from a code host.
+- **User-centric permissions syncs** update the complete list of repositories a user has access to, from the user's view. This typically uses authentication associated with the user where available.
+- **Repository-centric permissions syncs** update the complete list of all users that have access to a repository, from the repository's view. This may require elevated permissions to request from a code host.
 
 Both types of sync happen [repeatedly and continuously based on a variety of events and criteria](#permissions-sync-scheduling).
 
@@ -370,7 +375,9 @@ Each provider can implement optimizations to improve [sync performance](#permiss
 
 Some permissions providers in Sourcegraph can leverage code host webhooks to help [trigger a permissions sync](#permissions-sync-scheduling) on relevant events, which helps ensure permissions data in Sourcegraph is up to date.
 
-To see if your provider supports permissions caching, please refer to the relevant provider documentation on this page. For example, [the GitHub provider supports webhook events](#trigger-permissions-sync-from-github-webhooks).
+> NOTE: Webhook payloads is not used to populate permissions rules. All the prerequisite access for performing permissions sync for the relevant provider is still required.
+
+To see if your provider supports triggering syncs with webhooks, please refer to the relevant provider documentation on this page. For example, [the GitHub provider supports webhook events](#trigger-permissions-sync-from-github-webhooks).
 
 #### Permissions caching
 

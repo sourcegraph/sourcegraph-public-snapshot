@@ -20,30 +20,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestCreateCodeMonitor(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	r := newTestResolver(t, db)
 
 	userID := insertTestUser(t, db, "cm-user1", true)
 
 	want := &cm.Monitor{
-		ID:              1,
-		CreatedBy:       userID,
-		CreatedAt:       r.Now(),
-		ChangedBy:       userID,
-		ChangedAt:       r.Now(),
-		Description:     "test monitor",
-		Enabled:         true,
-		NamespaceUserID: &userID,
-		NamespaceOrgID:  nil,
+		ID:          1,
+		CreatedBy:   userID,
+		CreatedAt:   r.Now(),
+		ChangedBy:   userID,
+		ChangedAt:   r.Now(),
+		Description: "test monitor",
+		Enabled:     true,
+		UserID:      userID,
 	}
 
 	// Create a monitor.
@@ -74,19 +69,15 @@ func TestCreateCodeMonitor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = r.store.MonitorByIDInt64(ctx, got.(*monitor).Monitor.ID)
+	_, err = r.store.GetMonitor(ctx, got.(*monitor).Monitor.ID)
 	if err == nil {
 		t.Fatalf("monitor should have been deleted")
 	}
 }
 
 func TestListCodeMonitors(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	r := newTestResolver(t, db)
 
 	userID := insertTestUser(t, db, "cm-user1", true)
@@ -171,28 +162,18 @@ func requireHasNextPage(t *testing.T, r graphqlbackend.MonitorConnectionResolver
 }
 
 func TestIsAllowedToEdit(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 
 	// Setup users and org
-	member := insertTestUser(t, db, "cm-user1", false)
-	notMember := insertTestUser(t, db, "cm-user2", false)
+	owner := insertTestUser(t, db, "cm-user1", false)
+	notOwner := insertTestUser(t, db, "cm-user2", false)
 	siteAdmin := insertTestUser(t, db, "cm-user3", true)
-
-	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
-	org, err := database.Orgs(db).Create(admContext, "cm-test-org", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	addUserToOrg(t, db, member, org.ID)
 
 	r := newTestResolver(t, db)
 
 	// Create a monitor and set org as owner.
-	ownerOpt := WithOwner(relay.MarshalID("Org", org.ID))
+	ownerOpt := WithOwner(relay.MarshalID("User", owner))
+	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
 	m, err := r.insertTestMonitorWithOpts(admContext, t, ownerOpt)
 	if err != nil {
 		t.Fatal(err)
@@ -203,11 +184,11 @@ func TestIsAllowedToEdit(t *testing.T) {
 		allowed bool
 	}{
 		{
-			user:    member,
+			user:    owner,
 			allowed: true,
 		},
 		{
-			user:    notMember,
+			user:    notOwner,
 			allowed: false,
 		},
 		{
@@ -225,8 +206,8 @@ func TestIsAllowedToEdit(t *testing.T) {
 	}
 
 	t.Run("cannot change namespace to one not editable by caller", func(t *testing.T) {
-		ctx := actor.WithActor(context.Background(), actor.FromUser(member))
-		notMemberNamespace := relay.MarshalID("User", notMember)
+		ctx := actor.WithActor(context.Background(), actor.FromUser(owner))
+		notMemberNamespace := relay.MarshalID("User", notOwner)
 		args := &graphqlbackend.UpdateCodeMonitorArgs{
 			Monitor: &graphqlbackend.EditMonitorArgs{
 				Id: m.ID(),
@@ -243,11 +224,7 @@ func TestIsAllowedToEdit(t *testing.T) {
 }
 
 func TestIsAllowedToCreate(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 
 	// Setup users and org
 	member := insertTestUser(t, db, "cm-user1", false)
@@ -271,14 +248,13 @@ func TestIsAllowedToCreate(t *testing.T) {
 		{
 			user:    member,
 			owner:   relay.MarshalID("Org", org.ID),
-			allowed: true,
+			allowed: false,
 		},
 		{
 			user:    member,
 			owner:   relay.MarshalID("User", notMember),
 			allowed: false,
 		},
-
 		{
 			user:    notMember,
 			owner:   relay.MarshalID("Org", org.ID),
@@ -287,7 +263,7 @@ func TestIsAllowedToCreate(t *testing.T) {
 		{
 			user:    siteAdmin,
 			owner:   relay.MarshalID("Org", org.ID),
-			allowed: true,
+			allowed: false, // Error creating org owner
 		},
 		{
 			user:    siteAdmin,
@@ -320,12 +296,8 @@ func (u *testUser) id() graphql.ID {
 }
 
 func TestQueryMonitor(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.
@@ -364,12 +336,12 @@ func TestQueryMonitor(t *testing.T) {
 	// in the database. After we create the monitor they fill the job tables and
 	// update the job status.
 	postHookOpt := WithPostHooks([]hook{
-		func() error { return r.store.EnqueueTriggerQueries(ctx) },
-		func() error { return r.store.EnqueueActionEmailsForQueryIDInt64(ctx, 1, 1) },
+		func() error { _, err := r.store.EnqueueQueryTriggerJobs(ctx); return err },
+		func() error { _, err := r.store.EnqueueActionJobsForMonitor(ctx, 1, 1); return err },
 		func() error {
 			return (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 1)
 		},
-		func() error { return r.store.EnqueueActionEmailsForQueryIDInt64(ctx, 1, 1) },
+		func() error { _, err := r.store.EnqueueActionJobsForMonitor(ctx, 1, 1); return err },
 		// Set the job status of trigger job with id = 1 to "completed". Since we already
 		// created another monitor, there is still a second trigger job (id = 2) which
 		// remains in status queued.
@@ -389,17 +361,17 @@ func TestQueryMonitor(t *testing.T) {
 		// 1   1     completed
 		// 2   2     queued
 		// 3   1	 queued
-		func() error { return r.store.EnqueueTriggerQueries(ctx) },
+		func() error { _, err := r.store.EnqueueQueryTriggerJobs(ctx); return err },
 		// To have a consistent state we have to log the number of search results for
 		// each completed trigger job.
-		func() error { return r.store.LogSearch(ctx, "", 1, 1) },
+		func() error { return r.store.UpdateTriggerJobWithResults(ctx, 1, "", 1) },
 	})
 	_, err = r.insertTestMonitorWithOpts(ctx, t, actionOpt, postHookOpt)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	schema, err := graphqlbackend.NewSchema(database.NewDB(db), nil, nil, nil, nil, r, nil, nil, nil)
+	schema, err := graphqlbackend.NewSchema(database.NewDB(db), nil, nil, nil, nil, r, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -592,12 +564,8 @@ query($userName: String!, $actionCursor: String!){
 `
 
 func TestEditCodeMonitor(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.
@@ -635,7 +603,7 @@ func TestEditCodeMonitor(t *testing.T) {
 
 	// Update the code monitor.
 	// We update all fields, delete one action, and add a new action.
-	schema, err := graphqlbackend.NewSchema(database.NewDB(db), nil, nil, nil, nil, r, nil, nil, nil)
+	schema, err := graphqlbackend.NewSchema(database.NewDB(db), nil, nil, nil, nil, r, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -28,6 +28,9 @@ type InsightViewSeries struct {
 	DefaultFilterExcludeRepoRegex *string
 	OtherThreshold                *float64
 	PresentationType              PresentationType
+	GeneratedFromCaptureGroups    bool
+	JustInTime                    bool
+	GenerationMethod              GenerationMethod
 }
 
 type Insight struct {
@@ -66,20 +69,23 @@ type InsightView struct {
 // InsightSeries is a single data series for a Code Insight. This contains some metadata about the data series, as well
 // as its unique series ID.
 type InsightSeries struct {
-	ID                  int
-	SeriesID            string
-	Query               string
-	CreatedAt           time.Time
-	OldestHistoricalAt  time.Time
-	LastRecordedAt      time.Time
-	NextRecordingAfter  time.Time
-	LastSnapshotAt      time.Time
-	NextSnapshotAfter   time.Time
-	BackfillQueuedAt    time.Time
-	Enabled             bool
-	Repositories        []string
-	SampleIntervalUnit  string
-	SampleIntervalValue int
+	ID                         int
+	SeriesID                   string
+	Query                      string
+	CreatedAt                  time.Time
+	OldestHistoricalAt         time.Time
+	LastRecordedAt             time.Time
+	NextRecordingAfter         time.Time
+	LastSnapshotAt             time.Time
+	NextSnapshotAfter          time.Time
+	BackfillQueuedAt           time.Time
+	Enabled                    bool
+	Repositories               []string
+	SampleIntervalUnit         string
+	SampleIntervalValue        int
+	GeneratedFromCaptureGroups bool
+	JustInTime                 bool
+	GenerationMethod           GenerationMethod
 }
 
 type IntervalUnit string
@@ -90,6 +96,15 @@ const (
 	Week  IntervalUnit = "WEEK"
 	Year  IntervalUnit = "YEAR"
 	Hour  IntervalUnit = "HOUR"
+)
+
+// GenerationMethod represents the method of execution for which to populate time series data for an insight series. This is effectively an enum of values.
+type GenerationMethod string
+
+const (
+	Search        GenerationMethod = "search"
+	SearchCompute GenerationMethod = "search-compute"
+	LanguageStats GenerationMethod = "language-stats"
 )
 
 type DirtyQuery struct {

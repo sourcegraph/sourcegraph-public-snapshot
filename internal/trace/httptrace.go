@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 
 	"github.com/cockroachdb/errors"
@@ -102,10 +103,6 @@ const (
 	// SourceBrowser indicates the request likely came from a web browser.
 	SourceBrowser SourceType = "browser"
 
-	// SourceQueryRunner indicates the request likely came from the
-	// query-runner service (saved searches).
-	SourceQueryRunner SourceType = "query-runner"
-
 	// SourceOther indicates the request likely came from a non-browser HTTP client.
 	SourceOther SourceType = "other"
 )
@@ -136,11 +133,11 @@ var (
 	minCode     = env.MustGetInt("SRC_HTTP_LOG_MIN_CODE", 500, "min http code before http responses are logged")
 )
 
-// HTTPTraceMiddleware captures and exports metrics to Prometheus, etc.
+// HTTPMiddleware captures and exports metrics to Prometheus, etc.
 //
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.
-func HTTPTraceMiddleware(next http.Handler) http.Handler {
+func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
 	return sentry.Recoverer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -159,7 +156,7 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 		defer span.Finish()
 
 		traceID := IDFromSpan(span)
-		traceURL := URL(traceID)
+		traceURL := URL(traceID, siteConfig.SiteConfig().ExternalURL)
 
 		rw.Header().Set("X-Trace", traceURL)
 		ctx = opentracing.ContextWithSpan(ctx, span)

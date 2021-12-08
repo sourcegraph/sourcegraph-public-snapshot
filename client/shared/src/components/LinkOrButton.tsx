@@ -11,7 +11,7 @@ import { Link } from './Link'
 const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>
     event.key === Key.Enter && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey
 
-interface Props extends Pick<AnchorHTMLAttributes<never>, 'target' | 'rel'> {
+export interface ButtonLinkProps extends Pick<AnchorHTMLAttributes<never>, 'target' | 'rel'> {
     /** The link destination URL. */
     to?: H.LocationDescriptor
 
@@ -56,7 +56,7 @@ interface Props extends Pick<AnchorHTMLAttributes<never>, 'target' | 'rel'> {
  *
  * It is keyboard accessible: unlike `<Link>` or `<a>`, pressing the enter key triggers it.
  */
-export const ButtonLink: React.FunctionComponent<Props> = ({
+export const ButtonLink: React.FunctionComponent<ButtonLinkProps> = ({
     className = 'nav-link',
     to,
     target,

@@ -5,15 +5,14 @@ import { Redirect } from 'react-router-dom'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, PageHeader } from '@sourcegraph/wildcard'
+import { Button, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
-import { Badge } from '../../../../../components/Badge'
 import { Page } from '../../../../../components/Page'
 import { FeedbackPromptContent } from '../../../../../nav/Feedback/FeedbackPrompt'
 import { CodeInsightsIcon } from '../../../components'
 import { flipRightPosition } from '../../../components/context-menu/utils'
 import { Popover } from '../../../components/popover/Popover'
-import { InsightsDashboardType } from '../../../core/types'
+import { ALL_INSIGHTS_DASHBOARD_ID } from '../../../core/types/dashboard/virtual-dashboard'
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
 import styles from './DashboardPage.module.scss'
@@ -46,7 +45,7 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
     if (!dashboardID) {
         // In case if url doesn't have a dashboard id we should fallback on
         // built-in "All insights" dashboard
-        return <Redirect to={`${url}/${InsightsDashboardType.All}`} />
+        return <Redirect to={`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`} />
     }
 
     return (
@@ -85,7 +84,7 @@ const PageAnnotation: React.FunctionComponent = () => {
     return (
         <div className="d-flex align-items-center">
             <a href="https://docs.sourcegraph.com/code_insights#code-insights-beta" target="_blank" rel="noopener">
-                <Badge status="beta" className="text-uppercase" />
+                <ProductStatusBadge status="beta" className="text-uppercase" />
             </a>
 
             <Button ref={buttonReference} variant="link" size="sm">

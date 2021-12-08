@@ -12,12 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 )
 
 func TestOrgs_ValidNames(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
@@ -40,9 +38,6 @@ func TestOrgs_ValidNames(t *testing.T) {
 }
 
 func TestOrgs_Count(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
@@ -70,9 +65,6 @@ func TestOrgs_Count(t *testing.T) {
 }
 
 func TestOrgs_Delete(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
@@ -138,9 +130,6 @@ func TestOrgs_GetByID(t *testing.T) {
 		return member
 	}
 
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
@@ -193,9 +182,6 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 		return member
 	}
 
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
@@ -218,7 +204,7 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 	if err := ExternalServices(db).Create(ctx, confGet, service); err != nil {
 		t.Fatal(err)
 	}
-	repo := types.MakeGithubRepo(service)
+	repo := typestest.MakeGithubRepo(service)
 	if err := Repos(db).Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}

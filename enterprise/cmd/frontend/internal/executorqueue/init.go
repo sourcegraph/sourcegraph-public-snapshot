@@ -2,15 +2,13 @@ package executorqueue
 
 import (
 	"context"
-	"os"
+	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches"
 	codeintelqueue "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/codeintel"
@@ -18,14 +16,16 @@ import (
 )
 
 // Init initializes the executor endpoints required for use with the executor service.
-func Init(ctx context.Context, db dbutil.DB, conf conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context, services *codeintel.Services) error {
-	accessToken := func() string {
-		if accessToken := conf.SiteConfig().ExecutorsAccessToken; accessToken != "" {
-			return accessToken
-		}
-		// Fallback to old environment variable, for a smooth rollout.
-		return os.Getenv("EXECUTOR_FRONTEND_PASSWORD")
-	}
+func Init(
+	ctx context.Context,
+	db database.DB,
+	conf conftypes.UnifiedWatchable,
+	outOfBandMigrationRunner *oobmigration.Runner,
+	enterpriseServices *enterprise.Services,
+	observationContext *observation.Context,
+	codeintelUploadHandler http.Handler,
+) error {
+	accessToken := func() string { return conf.SiteConfig().ExecutorsAccessToken }
 
 	// Register queues. If this set changes, be sure to also update the list of valid
 	// queue names in ./metrics/queue_allocation.go, and register a metrics exporter
@@ -35,12 +35,7 @@ func Init(ctx context.Context, db dbutil.DB, conf conftypes.UnifiedWatchable, ou
 		batches.QueueOptions(db, accessToken, observationContext),
 	}
 
-	handler, err := codeintel.NewCodeIntelUploadHandler(ctx, conf, db, true, services)
-	if err != nil {
-		return err
-	}
-
-	queueHandler, err := newExecutorQueueHandler(database.NewDB(db).Executors(), queueOptions, accessToken, handler)
+	queueHandler, err := newExecutorQueueHandler(db.Executors(), queueOptions, accessToken, codeintelUploadHandler)
 	if err != nil {
 		return err
 	}

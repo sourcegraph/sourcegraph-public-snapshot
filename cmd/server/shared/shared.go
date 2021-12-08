@@ -15,8 +15,8 @@ import (
 
 	"github.com/joho/godotenv"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/goreman"
-	"github.com/sourcegraph/sourcegraph/lib/postgresdsn"
 )
 
 // FrontendInternalHost is the value of SRC_FRONTEND_INTERNAL.
@@ -137,7 +137,6 @@ func Main() {
 		nginx,
 		`frontend: env CONFIGURATION_MODE=server frontend`,
 		gitserverLine,
-		`query-runner: query-runner`,
 		`symbols: symbols`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,

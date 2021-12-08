@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -15,75 +14,92 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 type CommitSearch struct {
 	Query         gitprotocol.Node
+	RepoOpts      search.RepoOptions
 	Diff          bool
 	HasTimeFilter bool
 	Limit         int
+
+	Db database.DB
 }
 
 func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
-	totalSearched := 0
-	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
-		resultType := "commit"
-		if j.Diff {
-			resultType = "diff"
+	if err := j.ExpandUsernames(ctx, j.Db); err != nil {
+		return err
+	}
+
+	opts := j.RepoOpts
+	if opts.Limit == 0 {
+		opts.Limit = reposLimit(j.HasTimeFilter)
+	}
+
+	resultType := "commit"
+	if j.Diff {
+		resultType = "diff"
+	}
+
+	var repoRevs []*search.RepositoryRevisions
+	err := repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
+		if repoRevs = page.RepoRevs; page.Next != nil {
+			return newReposLimitError(opts.Limit, j.HasTimeFilter, resultType)
 		}
-		totalSearched += len(page.RepoRevs)
-		if err := CheckSearchLimits(j.HasTimeFilter, totalSearched, resultType); err != nil {
-			return err
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	g, ctx := errgroup.WithContext(ctx)
+	for _, repoRev := range repoRevs {
+		repoRev := repoRev // we close over repoRev in onMatches
+
+		// Skip the repo if no revisions were resolved for it
+		if len(repoRev.Revs) == 0 {
+			continue
 		}
 
-		g, ctx := errgroup.WithContext(ctx)
-		for _, repoRev := range page.RepoRevs {
-			repoRev := repoRev // we close over repoRev in onMatches
+		args := &protocol.SearchRequest{
+			Repo:        repoRev.Repo.Name,
+			Revisions:   searchRevsToGitserverRevs(repoRev.Revs),
+			Query:       j.Query,
+			IncludeDiff: j.Diff,
+			Limit:       j.Limit,
+		}
 
-			// Skip the repo if no revisions were resolved for it
-			if len(repoRev.Revs) == 0 {
-				continue
+		onMatches := func(in []protocol.CommitMatch) {
+			res := make([]result.Match, 0, len(in))
+			for _, protocolMatch := range in {
+				res = append(res, protocolMatchToCommitMatch(repoRev.Repo, j.Diff, protocolMatch))
 			}
-
-			args := &protocol.SearchRequest{
-				Repo:        repoRev.Repo.Name,
-				Revisions:   searchRevsToGitserverRevs(repoRev.Revs),
-				Query:       j.Query,
-				IncludeDiff: j.Diff,
-				Limit:       j.Limit,
-			}
-
-			onMatches := func(in []protocol.CommitMatch) {
-				res := make([]result.Match, 0, len(in))
-				for _, protocolMatch := range in {
-					res = append(res, protocolMatchToCommitMatch(repoRev.Repo, j.Diff, protocolMatch))
-				}
-				stream.Send(streaming.SearchEvent{
-					Results: res,
-				})
-			}
-
-			g.Go(func() error {
-				limitHit, err := gitserver.DefaultClient.Search(ctx, args, onMatches)
-				stream.Send(streaming.SearchEvent{
-					Stats: streaming.Stats{
-						IsLimitHit: limitHit,
-					},
-				})
-				return err
+			stream.Send(streaming.SearchEvent{
+				Results: res,
 			})
 		}
 
-		return g.Wait()
-	})
+		g.Go(func() error {
+			limitHit, err := gitserver.DefaultClient.Search(ctx, args, onMatches)
+			stream.Send(streaming.SearchEvent{
+				Stats: streaming.Stats{
+					IsLimitHit: limitHit,
+				},
+			})
+			return err
+		})
+	}
+
+	return g.Wait()
 }
 
 func (j CommitSearch) Name() string {
@@ -180,16 +196,7 @@ func HasTimeFilter(q query.Q) bool {
 	return hasTimeFilter
 }
 
-func NewSearchJob(q query.Q, diff bool, limit int) (*CommitSearch, error) {
-	return &CommitSearch{
-		Query:         queryToGitQuery(q, diff),
-		Diff:          diff,
-		Limit:         limit,
-		HasTimeFilter: HasTimeFilter(q),
-	}, nil
-}
-
-func queryToGitQuery(q query.Q, diff bool) gitprotocol.Node {
+func QueryToGitQuery(q query.Q, diff bool) gitprotocol.Node {
 	return gitprotocol.Reduce(gitprotocol.NewAnd(queryNodesToPredicates(q, q.IsCaseSensitive(), diff)...))
 }
 
@@ -314,19 +321,19 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 	}
 
 	return &result.CommitMatch{
-		Commit: gitapi.Commit{
+		Commit: gitdomain.Commit{
 			ID: in.Oid,
-			Author: gitapi.Signature{
+			Author: gitdomain.Signature{
 				Name:  in.Author.Name,
 				Email: in.Author.Email,
 				Date:  in.Author.Date,
 			},
-			Committer: &gitapi.Signature{
+			Committer: &gitdomain.Signature{
 				Name:  in.Committer.Name,
 				Email: in.Committer.Email,
 				Date:  in.Committer.Date,
 			},
-			Message: gitapi.Message(in.Message.Content),
+			Message: gitdomain.Message(in.Message.Content),
 			Parents: in.Parents,
 		},
 		Repo:           repo,
@@ -385,17 +392,19 @@ func searchRangeToHighlights(s string, r result.Range) []result.HighlightedRange
 	return res
 }
 
-// CheckSearchLimits will return an error if commit/diff limits are exceeded for the
-// given query and number of repos that will be searched.
-func CheckSearchLimits(hasTimeFilter bool, repoCount int, resultType string) error {
+func newReposLimitError(limit int, hasTimeFilter bool, resultType string) error {
+	if hasTimeFilter {
+		return &TimeLimitError{ResultType: resultType, Max: limit}
+	}
+	return &RepoLimitError{ResultType: resultType, Max: limit}
+}
+
+func reposLimit(hasTimeFilter bool) int {
 	limits := search.SearchLimits(conf.Get())
-	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && repoCount > max {
-		return &RepoLimitError{ResultType: resultType, Max: max}
+	if hasTimeFilter {
+		return limits.CommitDiffWithTimeFilterMaxRepos
 	}
-	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && repoCount > max {
-		return &TimeLimitError{ResultType: resultType, Max: max}
-	}
-	return nil
+	return limits.CommitDiffMaxRepos
 }
 
 type DiffCommitError struct {

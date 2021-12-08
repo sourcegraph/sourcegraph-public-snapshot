@@ -240,3 +240,7 @@ func (o *Output) MoveUpLines(lines int) {
 func (o *Output) writeStyle(style Style) {
 	fmt.Fprintf(o.w, "%s", o.caps.formatArgs([]interface{}{style})...)
 }
+
+func (o *Output) ClearScreen() {
+	fmt.Fprintf(o.w, "\033c")
+}

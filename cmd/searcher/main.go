@@ -12,17 +12,21 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -46,6 +50,10 @@ func main() {
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
+
+	if err := profiler.Init(); err != nil {
+		log.Fatalf("failed to start Google Cloud profiler: %s", err)
+	}
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -72,7 +80,10 @@ func main() {
 	}
 	service.Store.Start()
 
-	handler := ot.Middleware(trace.HTTPTraceMiddleware(service))
+	// Set up handler middleware
+	handler := actor.HTTPMiddleware(service)
+	handler = trace.HTTPMiddleware(handler, conf.DefaultClient())
+	handler = ot.HTTPMiddleware(handler)
 
 	host := ""
 	if env.InsecureDev {
@@ -93,22 +104,33 @@ func main() {
 			handler.ServeHTTP(w, r)
 		}),
 	}
-	go shutdownOnSIGINT(server)
 
-	log15.Info("searcher: listening", "addr", server.Addr)
-	if err := server.ListenAndServe(); err != http.ErrServerClosed {
-		log.Fatal(err)
-	}
-}
+	go func() {
+		log15.Info("searcher: listening", "addr", server.Addr)
+		if err := server.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
 
-func shutdownOnSIGINT(s *http.Server) {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
+	// Listen for shutdown signals. When we receive one attempt to clean up,
+	// but do an insta-shutdown if we receive more than one signal.
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
+
+	// Once we receive one of the signals from above, continues with the shutdown
+	// process.
 	<-c
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	go func() {
+		// If a second signal is received, exit immediately.
+		<-c
+		os.Exit(0)
+	}()
+
+	// Wait for at most for the configured shutdown timeout.
+	ctx, cancel := context.WithTimeout(context.Background(), goroutine.GracefulShutdownTimeout)
 	defer cancel()
-	err := s.Shutdown(ctx)
-	if err != nil {
-		log.Fatal("graceful server shutdown failed, will exit:", err)
+	// Stop accepting requests.
+	if err := server.Shutdown(ctx); err != nil {
+		log15.Error("shutting down http server", "error", err)
 	}
 }

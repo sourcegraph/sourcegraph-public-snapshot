@@ -119,7 +119,8 @@ exports[`GlobalNavbar default 1`] = `
               >
                 Contexts 
                 <span
-                  class="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
+                  class="badge badge badge-info productStatusBadge ml-1"
+                  status="new"
                 >
                   new
                 </span>
@@ -171,7 +172,8 @@ exports[`GlobalNavbar default 1`] = `
               >
                 Contexts 
                 <span
-                  class="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
+                  class="badge badge badge-info productStatusBadge ml-1"
+                  status="new"
                 >
                   new
                 </span>
@@ -393,7 +395,8 @@ exports[`GlobalNavbar low-profile 1`] = `
               >
                 Contexts 
                 <span
-                  class="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
+                  class="badge badge badge-info productStatusBadge ml-1"
+                  status="new"
                 >
                   new
                 </span>
@@ -445,7 +448,8 @@ exports[`GlobalNavbar low-profile 1`] = `
               >
                 Contexts 
                 <span
-                  class="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
+                  class="badge badge badge-info productStatusBadge ml-1"
+                  status="new"
                 >
                   new
                 </span>

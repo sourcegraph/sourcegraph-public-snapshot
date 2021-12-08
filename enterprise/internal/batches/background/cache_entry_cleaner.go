@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -10,11 +9,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-var maxCacheEntriesSize, _ = strconv.Atoi(env.Get(
+var maxCacheEntriesSize = env.MustGetInt(
 	"SRC_BATCH_CHANGES_MAX_CACHE_SIZE_MB",
-	"5000",
+	5000,
 	"Maximum size of the batch_spec_execution_cache_entries.value column. Value is megabytes.",
-))
+)
 
 const cacheCleanInterval = 1 * time.Hour
 

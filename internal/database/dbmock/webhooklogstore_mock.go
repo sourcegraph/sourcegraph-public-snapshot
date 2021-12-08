@@ -75,6 +75,43 @@ func NewMockWebhookLogStore() *MockWebhookLogStore {
 	}
 }
 
+// NewStrictMockWebhookLogStore creates a new mock of the WebhookLogStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockWebhookLogStore() *MockWebhookLogStore {
+	return &MockWebhookLogStore{
+		CountFunc: &WebhookLogStoreCountFunc{
+			defaultHook: func(context.Context, database.WebhookLogListOpts) (int64, error) {
+				panic("unexpected invocation of MockWebhookLogStore.Count")
+			},
+		},
+		CreateFunc: &WebhookLogStoreCreateFunc{
+			defaultHook: func(context.Context, *types.WebhookLog) error {
+				panic("unexpected invocation of MockWebhookLogStore.Create")
+			},
+		},
+		DeleteStaleFunc: &WebhookLogStoreDeleteStaleFunc{
+			defaultHook: func(context.Context, time.Duration) error {
+				panic("unexpected invocation of MockWebhookLogStore.DeleteStale")
+			},
+		},
+		GetByIDFunc: &WebhookLogStoreGetByIDFunc{
+			defaultHook: func(context.Context, int64) (*types.WebhookLog, error) {
+				panic("unexpected invocation of MockWebhookLogStore.GetByID")
+			},
+		},
+		HandleFunc: &WebhookLogStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockWebhookLogStore.Handle")
+			},
+		},
+		ListFunc: &WebhookLogStoreListFunc{
+			defaultHook: func(context.Context, database.WebhookLogListOpts) ([]*types.WebhookLog, int64, error) {
+				panic("unexpected invocation of MockWebhookLogStore.List")
+			},
+		},
+	}
+}
+
 // NewMockWebhookLogStoreFrom creates a new mock of the MockWebhookLogStore
 // interface. All methods delegate to the given implementation, unless
 // overwritten.

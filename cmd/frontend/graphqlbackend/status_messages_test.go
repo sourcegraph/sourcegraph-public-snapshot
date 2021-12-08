@@ -5,14 +5,12 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestStatusMessages(t *testing.T) {
-	db := database.NewDB(nil)
-
 	graphqlQuery := `
 		query StatusMessages {
 			statusMessages {
@@ -41,9 +39,13 @@ func TestStatusMessages(t *testing.T) {
 		}
 	`
 
-	resetMocks()
+	db := dbmock.NewMockDB()
 	t.Run("unauthenticated", func(t *testing.T) {
-		result, err := (&schemaResolver{db: database.NewDB(db)}).StatusMessages(context.Background())
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+
+		result, err := newSchemaResolver(db).StatusMessages(context.Background())
 		if want := backend.ErrNotAuthenticated; err != want {
 			t.Errorf("got err %v, want %v", err, want)
 		}
@@ -53,10 +55,9 @@ func TestStatusMessages(t *testing.T) {
 	})
 
 	t.Run("no messages", func(t *testing.T) {
-		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-			return &types.User{ID: 1, SiteAdmin: true}, nil
-		}
-		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
 
 		repos.MockStatusMessages = func(_ context.Context, _ *types.User) ([]repos.StatusMessage, error) {
 			return []repos.StatusMessage{}, nil
@@ -77,15 +78,14 @@ func TestStatusMessages(t *testing.T) {
 	})
 
 	t.Run("messages", func(t *testing.T) {
-		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-			return &types.User{ID: 1, SiteAdmin: true}, nil
-		}
-		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-		database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
-			return &types.ExternalService{ID: 1, DisplayName: "GitHub.com testing"}, nil
-		}
-		defer func() { database.Mocks.ExternalServices.GetByID = nil }()
+		externalServices := dbmock.NewMockExternalServiceStore()
+		externalServices.GetByIDFunc.SetDefaultReturn(&types.ExternalService{ID: 1, DisplayName: "GitHub.com testing"}, nil)
+
+		db.UsersFunc.SetDefaultReturn(users)
+		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 		repos.MockStatusMessages = func(_ context.Context, _ *types.User) ([]repos.StatusMessage, error) {
 			res := []repos.StatusMessage{

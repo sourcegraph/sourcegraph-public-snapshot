@@ -1,4 +1,5 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
+import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
@@ -13,8 +14,10 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
+import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { Tree } from '../tree/Tree'
 
+import styles from './RepoRevisionSidebar.module.scss'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
 interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps, TelemetryProps {
@@ -34,7 +37,10 @@ const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
  */
 export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     const [tabIndex, setTabIndex] = useLocalStorage(TABS_KEY, 0)
-    const [toggleSidebar, setToggleSidebar] = useLocalStorage(SIDEBAR_KEY, true)
+    const [toggleSidebar, setToggleSidebar] = useLocalStorage(
+        SIDEBAR_KEY,
+        settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
+    )
 
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
     const handleSidebarToggle = useCallback(() => {
@@ -44,12 +50,18 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
         })
         setToggleSidebar(!toggleSidebar)
     }, [setToggleSidebar, toggleSidebar, props.telemetryService])
+    const handleSymbolClick = useCallback(() => props.telemetryService.log('SymbolTreeViewClicked'), [
+        props.telemetryService,
+    ])
 
     if (!toggleSidebar) {
         return (
             <button
                 type="button"
-                className="position-absolute btn btn-icon border-top border-bottom border-right mt-4 repo-revision-sidebar__toggle"
+                className={classNames(
+                    'position-absolute btn btn-icon border-top border-bottom border-right mt-4',
+                    styles.toggle
+                )}
                 onClick={handleSidebarToggle}
                 data-tooltip="Show sidebar"
             >
@@ -86,10 +98,10 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                 data-tooltip="Collapse panel"
                                 data-placement="right"
                             >
-                                <ChevronDoubleLeftIcon className="icon-inline repo-revision-sidebar__close-icon" />
+                                <ChevronDoubleLeftIcon className={classNames('icon-inline', styles.closeIcon)} />
                             </Button>
                         </div>
-                        <div aria-hidden={true} className="d-flex repo-revision-sidebar__tabpanels explorer">
+                        <div aria-hidden={true} className={classNames('d-flex explorer', styles.tabpanels)}>
                             <TabPanels className="w-100 overflow-auto">
                                 <TabPanel tabIndex={-1}>
                                     {tabIndex === 0 && (
@@ -106,6 +118,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                             sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
                                             extensionsController={props.extensionsController}
                                             isLightTheme={props.isLightTheme}
+                                            telemetryService={props.telemetryService}
                                         />
                                     )}
                                 </TabPanel>
@@ -116,6 +129,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                             repoID={props.repoID}
                                             revision={props.revision}
                                             activePath={props.filePath}
+                                            onHandleSymbolClick={handleSymbolClick}
                                         />
                                     )}
                                 </TabPanel>

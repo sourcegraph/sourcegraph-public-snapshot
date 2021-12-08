@@ -43,12 +43,18 @@ const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
         url: '/users/mrnugget',
         namespaceName: 'mrnugget',
     },
+    description: {
+        name: 'super-thing',
+    },
     workspaceResolution: {
-        __typename: 'BatchSpecWorkspaceResolution',
         workspaces: {
-            totalCount: 0,
-            pageInfo: { endCursor: null, hasNextPage: false },
-            nodes: [],
+            stats: {
+                completed: 1,
+                errored: 1,
+                ignored: 1,
+                processing: 1,
+                queued: 1,
+            },
         },
     },
     __typename: 'BatchSpec',
@@ -73,12 +79,18 @@ const batchSpecExecutionFailed = (): BatchSpecExecutionFields => ({
         url: '/users/mrnugget',
         namespaceName: 'mrnugget',
     },
+    description: {
+        name: 'super-thing',
+    },
     workspaceResolution: {
-        __typename: 'BatchSpecWorkspaceResolution',
         workspaces: {
-            totalCount: 0,
-            pageInfo: { endCursor: null, hasNextPage: false },
-            nodes: [],
+            stats: {
+                completed: 1,
+                errored: 1,
+                ignored: 1,
+                processing: 1,
+                queued: 1,
+            },
         },
     },
 })
@@ -90,6 +102,9 @@ add('Completed', () => (
                 {...props}
                 batchSpecID="123123"
                 fetchBatchSpecExecution={() => of(batchSpecExecutionCompleted())}
+                queryBatchSpecWorkspaces={() =>
+                    of({ totalCount: 0, nodes: [], pageInfo: { endCursor: null, hasNextPage: false } })
+                }
                 expandStage="srcPreview"
             />
         )}
@@ -103,6 +118,9 @@ add('Failed', () => (
                 {...props}
                 batchSpecID="123123"
                 fetchBatchSpecExecution={() => of(batchSpecExecutionFailed())}
+                queryBatchSpecWorkspaces={() =>
+                    of({ totalCount: 0, nodes: [], pageInfo: { endCursor: null, hasNextPage: false } })
+                }
                 expandStage="srcPreview"
             />
         )}

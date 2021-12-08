@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { forwardRef, ReactElement, Ref } from 'react'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -15,27 +15,40 @@ export interface SmartInsightProps<D extends keyof ViewContexts>
 
     where: D
     context: ViewContexts[D]
+    resizing?: boolean
 }
 
 /**
  * Render smart insight with (gql or extension api) fetcher and independent mutation
  * actions.
  */
-export function SmartInsight<D extends keyof ViewContexts>(props: SmartInsightProps<D>): React.ReactElement {
-    const { insight, telemetryService, where, context, ...otherProps } = props
+export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps<keyof ViewContexts>>((props, reference) => {
+    const { insight, resizing = false, telemetryService, where, context, ...otherProps } = props
 
     if (isSearchBasedInsight(insight) && isSearchBackendBasedInsight(insight)) {
-        return <BackendInsight insight={insight} telemetryService={telemetryService} {...otherProps} />
+        return (
+            <BackendInsight
+                insight={insight}
+                resizing={resizing}
+                telemetryService={telemetryService}
+                {...otherProps}
+                innerRef={reference}
+            />
+        )
     }
 
     // Search based extension and lang stats insight are handled by built-in fetchers
     return (
         <BuiltInInsight
             insight={insight}
+            resizing={resizing}
             telemetryService={telemetryService}
             where={where}
             context={context}
+            innerRef={reference}
             {...otherProps}
         />
     )
-}
+    // Cast here is needed since forwardRef doesn't support generics properly
+    // cause of static nature
+}) as <D extends keyof ViewContexts>(p: SmartInsightProps<D> & { ref?: Ref<HTMLElement> }) => ReactElement

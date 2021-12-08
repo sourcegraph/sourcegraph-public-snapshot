@@ -136,6 +136,18 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		reposMap[repo.ID] = repo
 	}
 
+	// If we used MinLastChanged, we should only return information for the
+	// repositories that we found from List.
+	if !minLastChanged.IsZero() {
+		filtered := indexedIDs[:0]
+		for _, id := range indexedIDs {
+			if _, ok := reposMap[id]; ok {
+				filtered = append(filtered, id)
+			}
+		}
+		indexedIDs = filtered
+	}
+
 	getRepoIndexOptions := func(repoID int32) (*searchbackend.RepoIndexOptions, error) {
 		if loadReposErr != nil {
 			return nil, loadReposErr
@@ -149,7 +161,9 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		getVersion := func(branch string) (string, error) {
 			metricGetVersion.Inc()
 			// Do not to trigger a repo-updater lookup since this is a batch job.
-			commitID, err := git.ResolveRevision(ctx, repo.Name, branch, git.ResolveRevisionOptions{})
+			commitID, err := git.ResolveRevision(ctx, repo.Name, branch, git.ResolveRevisionOptions{
+				NoEnsureRevision: true,
+			})
 			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
 				// GetIndexOptions wants an empty rev for a missing rev or empty
 				// repo.
@@ -186,7 +200,12 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		repoIDs[i] = int32(indexedIDs[i])
 	}
 
-	b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, getSearchContextRevisions, repoIDs...)
+	b := searchbackend.GetIndexOptions(
+		&siteConfig,
+		getRepoIndexOptions,
+		getSearchContextRevisions,
+		repoIDs...,
+	)
 	_, _ = w.Write(b)
 	return nil
 }
@@ -230,20 +249,16 @@ func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) 
 	// 1. Changing the schema from object of arrays to array of objects.
 	// 2. Stream out each object marshalled rather than marshall the full list in memory.
 
-	names := make([]string, 0, len(indexable))
 	ids := make([]api.RepoID, 0, len(indexable))
 
 	for _, r := range indexable {
-		names = append(names, string(r.Name))
 		ids = append(ids, r.ID)
 	}
 
 	data := struct {
-		RepoNames []string
-		RepoIDs   []api.RepoID
+		RepoIDs []api.RepoID
 	}{
-		RepoNames: names,
-		RepoIDs:   ids,
+		RepoIDs: ids,
 	}
 
 	return json.NewEncoder(w).Encode(&data)

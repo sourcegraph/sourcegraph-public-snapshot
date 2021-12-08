@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
@@ -24,6 +25,7 @@ import { RouteDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 
 import { EditUserProfilePageGQLFragment } from './profile/UserSettingsProfilePage'
+import styles from './UserSettingsArea.module.scss'
 import { UserSettingsSidebar, UserSettingsSidebarItems } from './UserSettingsSidebar'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
@@ -146,7 +148,11 @@ export const AuthenticatedUserSettingsArea: React.FunctionComponent<UserSettings
                 </SiteAdminAlert>
             )}
             <div className="d-flex">
-                <UserSettingsSidebar items={sideBarItems} {...context} className="flex-0 mr-3 user-settings-sidebar" />
+                <UserSettingsSidebar
+                    items={sideBarItems}
+                    {...context}
+                    className={classNames('flex-0 mr-3', styles.userSettingsSidebar)}
+                />
                 <div className="flex-1">
                     <ErrorBoundary location={props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>

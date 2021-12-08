@@ -11,7 +11,6 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/er
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
-import { Badge } from '@sourcegraph/web/src/components/Badge'
 import { queryExternalServices } from '@sourcegraph/web/src/components/externalServices/backend'
 import {
     FilteredConnectionFilter,
@@ -20,7 +19,7 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SelfHostedCtaLink } from '@sourcegraph/web/src/components/SelfHostedCtaLink'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import {
@@ -40,7 +39,9 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { Owner } from '../cloud-ga'
 
+import { UserSettingReposContainer } from './components'
 import { defaultFilters, RepositoriesList } from './RepositoriesList'
+import styles from './SettingsRepositoriesPage.module.scss'
 
 interface Props
     extends TelemetryProps,
@@ -295,9 +296,9 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <div className="user-settings-repos">
+        <UserSettingReposContainer>
             <SelfHostedCtaLink
-                className="user-settings-repos__self-hosted-cta"
+                className={styles.selfHostedCta}
                 telemetryService={telemetryService}
                 page="settings/repositories"
             />
@@ -317,7 +318,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                         text: (
                             <div className="d-flex">
                                 {isUserOwner ? 'Your repositories' : 'Repositories'}{' '}
-                                <Badge status="beta" className="ml-2" useLink={true} />
+                                <ProductStatusBadge status="beta" className="ml-2" linkToDocs={true} />
                             </div>
                         ),
                     },
@@ -383,6 +384,6 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             ) : (
                 NoAddedReposBanner
             )}
-        </div>
+        </UserSettingReposContainer>
     )
 }

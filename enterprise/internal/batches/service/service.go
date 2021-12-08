@@ -89,7 +89,7 @@ var (
 // TODO: We should create one per observationContext.
 func newOperations(observationContext *observation.Context) *operations {
 	operationsOnce.Do(func() {
-		m := metrics.NewOperationMetrics(
+		m := metrics.NewREDMetrics(
 			observationContext.Registerer,
 			"batches_service",
 			metrics.WithLabels("op"),
@@ -214,12 +214,12 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 		return nil, err
 	}
 
-	for _, changesetSpec := range cs {
-		changesetSpec.BatchSpecID = spec.ID
-
-		if err := tx.UpdateChangesetSpec(ctx, changesetSpec); err != nil {
-			return nil, err
-		}
+	csIDs := make([]int64, 0, len(cs))
+	for _, c := range cs {
+		csIDs = append(csIDs, c.ID)
+	}
+	if err := tx.UpdateChangesetSpecBatchSpecID(ctx, csIDs, spec.ID); err != nil {
+		return nil, err
 	}
 
 	return spec, nil
@@ -1161,7 +1161,7 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []i
 	}
 
 	var errs *multierror.Error
-	var jobIDs = make([]int64, len(jobs))
+	jobIDs := make([]int64, len(jobs))
 
 	for i, j := range jobs {
 		if !j.State.Retryable() {
@@ -1174,14 +1174,16 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []i
 		return err
 	}
 
-	// Delete the old jobs
+	// Delete the old execution jobs.
 	if err := tx.DeleteBatchSpecWorkspaceExecutionJobs(ctx, jobIDs); err != nil {
 		return errors.Wrap(err, "deleting batch spec workspace execution jobs")
 	}
 
-	// Delete the changeset specs they have created
-	if err := tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{IDs: changesetSpecIDs}); err != nil {
-		return errors.Wrap(err, "deleting batch spec workspace execution jobs")
+	// Delete the changeset specs they have created.
+	if len(changesetSpecIDs) > 0 {
+		if err := tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{IDs: changesetSpecIDs}); err != nil {
+			return errors.Wrap(err, "deleting batch spec workspace changeset specs")
+		}
 	}
 
 	// Create new jobs

@@ -1,0 +1,56 @@
+import { Meta } from '@storybook/react'
+import React from 'react'
+
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+
+import { BADGE_VARIANTS } from './constants'
+
+import { Badge } from '.'
+
+const config: Meta = {
+    title: 'wildcard/Badge',
+
+    decorators: [
+        story => (
+            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+        ),
+    ],
+
+    parameters: {
+        component: Badge,
+        design: {
+            type: 'figma',
+            name: 'Figma',
+            url: 'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Wildcard-Design-System?node-id=908%3A6394',
+        },
+    },
+}
+
+export default config
+
+export const Badges = () => (
+    <>
+        <h1>Badges</h1>
+        <h2>Variants</h2>
+        <p>Our badges can be styled with different variants.</p>
+        {BADGE_VARIANTS.map(variant => (
+            <Badge key={variant} variant={variant} className="mr-2">
+                {variant}
+            </Badge>
+        ))}
+        <h2 className="mt-4">Size</h2>
+        <p>We can also make our badges smaller.</p>
+        <Badge size="sm">I am a small badge</Badge>
+        <h2 className="mt-4">Pills</h2>
+        <p>Commonly used to display counts, we can style badges as pills.</p>
+        <Badge pill={true} variant="secondary">
+            321+
+        </Badge>
+        <h2 className="mt-4">Links</h2>
+        <p>For more advanced functionality, badges can also function as links.</p>
+        <Badge href="https://example.com" variant="link">
+            I am a link
+        </Badge>
+    </>
+)

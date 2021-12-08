@@ -3,6 +3,7 @@ package dbstore
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"sort"
 	"testing"
 
@@ -10,15 +11,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestRepoIDsByGlobPattern(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+func TestRepoIDsByGlobPatterns(t *testing.T) {
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -30,25 +28,43 @@ func TestRepoIDsByGlobPattern(t *testing.T) {
 	insertRepo(t, db, 55, "7th Sky Corps")
 
 	testCases := []struct {
-		pattern               string
+		patterns              []string
 		expectedRepositoryIDs []int
 	}{
-		{pattern: "Darth*", expectedRepositoryIDs: []int{50, 51, 52}},  // Prefix
-		{pattern: "Darth V*", expectedRepositoryIDs: []int{50, 51}},    // Prefix
-		{pattern: "* Skywalker", expectedRepositoryIDs: []int{53, 54}}, // Suffix
-		{pattern: "*er", expectedRepositoryIDs: []int{50, 53, 54}},     // Suffix
-		{pattern: "*Sky*", expectedRepositoryIDs: []int{53, 54, 55}},   // Infix
-		{pattern: "Rey Skywalker", expectedRepositoryIDs: nil},         // No match, never happened
+		{patterns: []string{""}, expectedRepositoryIDs: nil},                                             // No patterns
+		{patterns: []string{"*"}, expectedRepositoryIDs: []int{50, 51, 52, 53, 54, 55}},                  // Wildcard
+		{patterns: []string{"Darth*"}, expectedRepositoryIDs: []int{50, 51, 52}},                         // Prefix
+		{patterns: []string{"Darth V*"}, expectedRepositoryIDs: []int{50, 51}},                           // Prefix
+		{patterns: []string{"* Skywalker"}, expectedRepositoryIDs: []int{53, 54}},                        // Suffix
+		{patterns: []string{"*er"}, expectedRepositoryIDs: []int{50, 53, 54}},                            // Suffix
+		{patterns: []string{"*Sky*"}, expectedRepositoryIDs: []int{53, 54, 55}},                          // Infix
+		{patterns: []string{"Darth *", "* Skywalker"}, expectedRepositoryIDs: []int{50, 51, 52, 53, 54}}, // Multiple patterns
+		{patterns: []string{"Rey Skywalker"}, expectedRepositoryIDs: nil},                                // No match, never happened
 	}
 
 	for _, testCase := range testCases {
-		repositoryIDs, err := store.RepoIDsByGlobPattern(ctx, testCase.pattern)
-		if err != nil {
-			t.Fatalf("unexpected error fetching repository ids by glob pattern: %s", err)
-		}
+		for lo := 0; lo < len(testCase.expectedRepositoryIDs); lo++ {
+			hi := lo + 3
+			if hi > len(testCase.expectedRepositoryIDs) {
+				hi = len(testCase.expectedRepositoryIDs)
+			}
 
-		if diff := cmp.Diff(testCase.expectedRepositoryIDs, repositoryIDs); diff != "" {
-			t.Errorf("unexpected repository ids (-want +got):\n%s", diff)
+			name := fmt.Sprintf(
+				"patterns=%v offset=%d",
+				testCase.patterns,
+				lo,
+			)
+
+			t.Run(name, func(t *testing.T) {
+				repositoryIDs, _, err := store.RepoIDsByGlobPatterns(ctx, testCase.patterns, 3, lo)
+				if err != nil {
+					t.Fatalf("unexpected error fetching repository ids by glob pattern: %s", err)
+				}
+
+				if diff := cmp.Diff(testCase.expectedRepositoryIDs[lo:hi], repositoryIDs); diff != "" {
+					t.Errorf("unexpected repository ids (-want +got):\n%s", diff)
+				}
+			})
 		}
 	}
 
@@ -60,7 +76,7 @@ func TestRepoIDsByGlobPattern(t *testing.T) {
 		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
 		defer globals.SetPermissionsUserMapping(before)
 
-		repoIDs, err := store.RepoIDsByGlobPattern(ctx, "*")
+		repoIDs, _, err := store.RepoIDsByGlobPatterns(ctx, []string{"*"}, 10, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -71,10 +87,7 @@ func TestRepoIDsByGlobPattern(t *testing.T) {
 }
 
 func TestUpdateReposMatchingPatterns(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 	ctx := context.Background()
 
@@ -110,7 +123,7 @@ func TestUpdateReposMatchingPatterns(t *testing.T) {
 		{105, []string{}},
 	}
 	for _, update := range updates {
-		if err := store.UpdateReposMatchingPatterns(ctx, update.pattern, update.policyID); err != nil {
+		if err := store.UpdateReposMatchingPatterns(ctx, update.pattern, update.policyID, nil); err != nil {
 			t.Fatalf("unexpected error updating repositories matching patterns: %s", err)
 		}
 	}
@@ -133,6 +146,45 @@ func TestUpdateReposMatchingPatterns(t *testing.T) {
 		102: {51, 52},             // multiple exact identifiers
 		103: {54},                 // updated patterns (disjoint)
 		104: {51, 52, 53},         // updated patterns (intersecting)
+	}
+	if diff := cmp.Diff(expectedPolicies, policies); diff != "" {
+		t.Errorf("unexpected repository identifiers for policies (-want +got):\n%s", diff)
+	}
+}
+
+func TestUpdateReposMatchingPatternsOverLimit(t *testing.T) {
+	db := dbtest.NewDB(t)
+	store := testStore(db)
+	ctx := context.Background()
+
+	limit := 50
+	ids := make([]int, 0, limit*3)
+	for i := 0; i < cap(ids); i++ {
+		ids = append(ids, 50+i)
+	}
+
+	for _, id := range ids {
+		insertRepo(t, db, id, fmt.Sprintf("r%03d", id))
+	}
+
+	if err := store.UpdateReposMatchingPatterns(ctx, []string{"r*"}, 100, &limit); err != nil {
+		t.Fatalf("unexpected error updating repositories matching patterns: %s", err)
+	}
+
+	policies, err := scanPolicyRepositories(db.QueryContext(context.Background(), `
+		SELECT policy_id, repo_id
+		FROM lsif_configuration_policies_repository_pattern_lookup
+	`))
+	if err != nil {
+		t.Fatalf("unexpected error while scanning policies: %s", err)
+	}
+
+	for _, repositoryIDs := range policies {
+		sort.Ints(repositoryIDs)
+	}
+
+	expectedPolicies := map[int][]int{
+		100: ids[:limit],
 	}
 	if diff := cmp.Diff(expectedPolicies, policies); diff != "" {
 		t.Errorf("unexpected repository identifiers for policies (-want +got):\n%s", diff)

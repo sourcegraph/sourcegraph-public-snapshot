@@ -5,12 +5,13 @@ import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
 import webpack, { optimize } from 'webpack'
 
+import { getCSSLoaders } from '@sourcegraph/build-config'
+
 import { subtypeOf } from '../../../shared/src/util/types'
 
 export const rootPath = path.resolve(__dirname, '../../../../')
 export const browserWorkspacePath = path.resolve(rootPath, 'client/browser')
 const browserSourcePath = path.resolve(browserWorkspacePath, 'src')
-
 const contentEntry = path.resolve(browserSourcePath, 'config/content.entry.js')
 const backgroundEntry = path.resolve(browserSourcePath, 'config/background.entry.js')
 const optionsEntry = path.resolve(browserSourcePath, 'config/options.entry.js')
@@ -26,22 +27,6 @@ const babelLoader = {
 }
 
 const extensionHostWorker = /main\.worker\.ts$/
-
-const getCSSLoaders = (...loaders: webpack.RuleSetUseItem[]): webpack.RuleSetUse => [
-    MiniCssExtractPlugin.loader,
-    ...loaders,
-    {
-        loader: 'postcss-loader',
-    },
-    {
-        loader: 'sass-loader',
-        options: {
-            sassOptions: {
-                includePaths: [path.resolve(rootPath, 'node_modules'), path.resolve(rootPath, 'client')],
-            },
-        },
-    },
-]
 
 export const config = subtypeOf<webpack.Configuration>()({
     target: 'browserslist',
@@ -121,12 +106,12 @@ export const config = subtypeOf<webpack.Configuration>()({
                 // SCSS rule for our own styles and Bootstrap
                 test: /\.(css|sass|scss)$/,
                 exclude: /\.module\.(sass|scss)$/,
-                use: getCSSLoaders({ loader: 'css-loader', options: { url: false } }),
+                use: getCSSLoaders(MiniCssExtractPlugin.loader, { loader: 'css-loader', options: { url: false } }),
             },
             {
                 test: /\.(css|sass|scss)$/,
                 include: /\.module\.(sass|scss)$/,
-                use: getCSSLoaders({
+                use: getCSSLoaders(MiniCssExtractPlugin.loader, {
                     loader: 'css-loader',
                     options: {
                         sourceMap: false,

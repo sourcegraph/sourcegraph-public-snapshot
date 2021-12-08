@@ -1,4 +1,4 @@
-import { DiffPart, DOMFunctions } from '@sourcegraph/codeintellify'
+import { DiffPart, DOMFunctions } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 
 import { DiffHunkLineType } from '../../graphql-operations'
 

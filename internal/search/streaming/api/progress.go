@@ -4,10 +4,19 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
+// RepoNamer takes a list of repository IDs and returns the corresponding
+// names. It is best-effort, if any name fails a fallback name should be
+// returned. names[i] is the name for repository ids[i].
+type RepoNamer func(ids []api.RepoID) (names []api.RepoName)
+
 // BuildProgressEvent builds a progress event from a final results resolver.
-func BuildProgressEvent(stats ProgressStats) Progress {
+func BuildProgressEvent(stats ProgressStats, namer RepoNamer) Progress {
+	stats.namer = namer
+
 	skipped := []Skipped{}
 
 	for _, handler := range skippedHandlers {
@@ -25,10 +34,6 @@ func BuildProgressEvent(stats ProgressStats) Progress {
 	}
 }
 
-type Namer interface {
-	Name() string
-}
-
 type ProgressStats struct {
 	MatchCount          int
 	ElapsedMilliseconds int
@@ -36,9 +41,9 @@ type ProgressStats struct {
 	ExcludedArchived    int
 	ExcludedForks       int
 
-	Timedout []Namer
-	Missing  []Namer
-	Cloning  []Namer
+	Timedout []api.RepoID
+	Missing  []api.RepoID
+	Cloning  []api.RepoID
 
 	LimitHit bool
 
@@ -48,9 +53,14 @@ type ProgressStats struct {
 	Trace string // only filled if requested
 
 	DisplayLimit int
+
+	// we smuggle in the namer via this field. Note: we don't calculate the
+	// name of every repository in Timedout, Missing, etc since we only need a
+	// subset of the names. As such we lazily calculate the names via namer.
+	namer RepoNamer
 }
 
-func skippedReposHandler(repos []Namer, titleVerb, messageReason string, base Skipped) (Skipped, bool) {
+func skippedReposHandler(repos []api.RepoID, namer RepoNamer, titleVerb, messageReason string, base Skipped) (Skipped, bool) {
 	if len(repos) == 0 {
 		return Skipped{}, false
 	}
@@ -59,7 +69,7 @@ func skippedReposHandler(repos []Namer, titleVerb, messageReason string, base Sk
 	base.Title = fmt.Sprintf("%s %s", amount, titleVerb)
 
 	if len(repos) == 1 {
-		base.Message = fmt.Sprintf("`%s` %s. Try searching again or reducing the scope of your query with `repo:`,  `context:` or other filters.", repos[0].Name(), messageReason)
+		base.Message = fmt.Sprintf("`%s` %s. Try searching again or reducing the scope of your query with `repo:`,  `context:` or other filters.", namer(repos)[0], messageReason)
 	} else {
 		sampleSize := 10
 		if sampleSize > len(repos) {
@@ -68,8 +78,9 @@ func skippedReposHandler(repos []Namer, titleVerb, messageReason string, base Sk
 
 		var b strings.Builder
 		_, _ = fmt.Fprintf(&b, "%s repositories %s. Try searching again or reducing the scope of your query with `repo:`, `context:` or other filters.", amount, messageReason)
-		for _, repo := range repos[:sampleSize] {
-			_, _ = fmt.Fprintf(&b, "\n* `%s`", repo.Name())
+		names := namer(repos[:sampleSize])
+		for _, name := range names {
+			_, _ = fmt.Fprintf(&b, "\n* `%s`", name)
 		}
 		if sampleSize < len(repos) {
 			b.WriteString("\n* ...")
@@ -83,14 +94,14 @@ func skippedReposHandler(repos []Namer, titleVerb, messageReason string, base Sk
 func repositoryCloningHandler(resultsResolver ProgressStats) (Skipped, bool) {
 	repos := resultsResolver.Cloning
 	messageReason := fmt.Sprintf("could not be searched since %s still cloning", plural("it is", "they are", len(repos)))
-	return skippedReposHandler(repos, "cloning", messageReason, Skipped{
+	return skippedReposHandler(repos, resultsResolver.namer, "cloning", messageReason, Skipped{
 		Reason:   RepositoryCloning,
 		Severity: SeverityInfo,
 	})
 }
 
 func repositoryMissingHandler(resultsResolver ProgressStats) (Skipped, bool) {
-	return skippedReposHandler(resultsResolver.Missing, "missing", "could not be searched", Skipped{
+	return skippedReposHandler(resultsResolver.Missing, resultsResolver.namer, "missing", "could not be searched", Skipped{
 		Reason:   RepositoryMissing,
 		Severity: SeverityInfo,
 	})
@@ -99,7 +110,7 @@ func repositoryMissingHandler(resultsResolver ProgressStats) (Skipped, bool) {
 func shardTimeoutHandler(resultsResolver ProgressStats) (Skipped, bool) {
 	// This is not the same, but once we expose this more granular details
 	// from our backend it will be shard specific.
-	return skippedReposHandler(resultsResolver.Timedout, "timed out", "could not be searched in time", Skipped{
+	return skippedReposHandler(resultsResolver.Timedout, resultsResolver.namer, "timed out", "could not be searched in time", Skipped{
 		Reason:   ShardTimeout,
 		Severity: SeverityWarn,
 	})

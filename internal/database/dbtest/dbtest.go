@@ -15,6 +15,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
 // NewTx opens a transaction off of the given database, returning that
@@ -57,6 +58,9 @@ var rngLock sync.Mutex
 // NewDB uses NewFromDSN to create a testing database, using the default
 // DSN.
 func NewDB(t testing.TB) *sql.DB {
+	if os.Getenv("USE_FAST_DBTEST") != "" {
+		return NewFastDB(t)
+	}
 	return NewFromDSN(t, "")
 }
 
@@ -127,34 +131,25 @@ var templateOnce sync.Once
 // rather than running the full migration every time.
 func initTemplateDB(t testing.TB, config *url.URL) {
 	templateOnce.Do(func() {
-		templateName := templateDBName()
 		db := dbConn(t, config)
+		defer db.Close()
+
+		templateName := templateDBName()
+
 		// We must first drop the template database because
 		// migrations would not run on it if they had already ran,
 		// even if the content of the migrations had changed during development.
 		name := pq.QuoteIdentifier(templateName)
 		dbExec(t, db, `DROP DATABASE IF EXISTS `+name)
 		dbExec(t, db, `CREATE DATABASE `+name+` TEMPLATE template0`)
-		defer db.Close()
 
 		cfgCopy := *config
 		cfgCopy.Path = "/" + templateName
-		templateDB := dbConn(t, &cfgCopy)
-		defer templateDB.Close()
-
-		for _, database := range []*dbconn.Database{
-			dbconn.Frontend,
-			dbconn.CodeIntel,
-		} {
-			m, err := dbconn.NewMigrate(templateDB, database)
-			if err != nil {
-				t.Fatalf("failed to construct migrations: %s", err)
-			}
-			defer m.Close()
-			if err = dbconn.DoMigrate(m); err != nil {
-				t.Fatalf("failed to apply migrations: %s", err)
-			}
-		}
+		_, close := dbConnInternal(t, &cfgCopy, []*schemas.Schema{
+			schemas.Frontend,
+			schemas.CodeIntel,
+		})
+		close(nil)
 	})
 }
 
@@ -175,12 +170,28 @@ func wdHash() string {
 }
 
 func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
+	db, _ := dbConnInternal(t, cfg, nil)
+	return db
+}
+
+func dbConnInternal(t testing.TB, cfg *url.URL, schemas []*schemas.Schema) (*sql.DB, func(err error) error) {
 	t.Helper()
-	db, err := dbconn.NewRaw(cfg.String())
+	db, close, err := newTestDB(cfg.String(), schemas...)
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}
-	return db
+	return db, close
+}
+
+// newTestDB connects to the given data source and returns the handle. After successful connection, the
+// schema version of the database will be compared against an expected version and the supplied migrations
+// may be run (taking an advisory lock to ensure exclusive access).
+//
+// This function returns a basestore-style callback that closes the database. This should be called instead
+// of calling Close directly on the database handle as it also handles closing migration objects associated
+// with the handle.
+func newTestDB(dsn string, schemas ...*schemas.Schema) (*sql.DB, func(err error) error, error) {
+	return dbconn.ConnectInternal(dsn, "", "", schemas)
 }
 
 func dbExec(t testing.TB, db *sql.DB, q string, args ...interface{}) {

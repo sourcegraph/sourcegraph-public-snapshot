@@ -1,0 +1,138 @@
+.git-commit-node {
+    padding: 0.75rem 0.5rem 0.5rem;
+
+    &--compact {
+        padding-top: 0.5rem;
+    }
+
+    &--compact .byline {
+        width: 25%;
+        flex: none;
+        padding-right: 1.5rem;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+    }
+
+    &--compact .message {
+        flex: 1;
+        min-width: 0;
+        padding-right: 1rem;
+    }
+
+    &--compact .message-subject {
+        font-weight: normal;
+    }
+
+    &--compact .oid {
+        flex: 0 0 auto;
+    }
+}
+
+.signature {
+    flex: 1 1;
+    min-width: 24rem;
+    margin-right: 1.5rem;
+
+    &--user-avatar {
+        width: 2.75rem !important;
+        height: 2.75rem !important;
+        font-size: 1.5rem;
+    }
+}
+
+.message {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+
+    &-subject {
+        font-weight: 600;
+        flex: 0 1 auto;
+        padding-right: 0.5rem;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        color: var(--body-color);
+    }
+
+    &-small {
+        font-size: 0.875rem;
+    }
+
+    &-toggle {
+        flex: none;
+        font-size: 0.5625rem;
+        padding: 0 0.175rem;
+        margin-right: 0.5rem;
+    }
+
+    &-timestamp {
+        flex: none;
+        white-space: nowrap;
+        margin-bottom: -0.125rem;
+    }
+
+    &-body {
+        margin-top: 0.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.75rem;
+        overflow: visible;
+        max-width: 100%;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+    }
+}
+
+.actions {
+    flex: none;
+    display: flex;
+    align-items: center;
+    margin-bottom: 0;
+}
+
+.oid {
+    /* Fix vertical alignment of code text relative to the icon in the adjacent button. */
+    display: block;
+    /* stylelint-disable-next-line declaration-property-unit-whitelist */
+    margin-top: 2px;
+}
+
+.sha-and-parents {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: unset;
+
+    &-sha {
+        display: flex;
+        align-items: center;
+        font-size: 0.875rem;
+        margin: 0;
+        margin-left: 0.25rem;
+        padding: 0;
+    }
+
+    &-copy {
+        font-size: 0.6875rem;
+        padding: 0.25rem;
+
+        &:not(:hover) {
+            opacity: 0.8;
+        }
+    }
+
+    &-label {
+        opacity: 0.7;
+        margin-left: 0.25rem;
+    }
+
+    &-parent {
+        margin-left: 0.25rem;
+        font-weight: normal;
+        font-size: 1rem;
+        color: var(--link-color);
+    }
+}

@@ -81,17 +81,11 @@
       "type": "string",
       "default": "{depot}"
     },
-    "useFusionClient": {
-      "description": "EXPERIMENTAL: Use the p4-fusion client to clone and fetch repos",
-      "type": "boolean",
-      "default": false,
-      "deprecationMessage": "Deprecated in favour of the fusionClient property"
-    },
     "fusionClient": {
       "type": "object",
       "description": "Configuration for the experimental p4-fusion client",
       "additionalProperties": false,
-      "required": ["lookAhead"],
+      "required": ["enabled", "lookAhead"],
       "properties": {
         "enabled": {
           "description": "Enable the p4-fusion client for cloning and fetching repos",

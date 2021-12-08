@@ -14,7 +14,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 func TestCalculateVisibleUploads(t *testing.T) {
@@ -32,7 +32,7 @@ func TestCalculateVisibleUploads(t *testing.T) {
 	//
 	// NOTE: The input to ParseCommitGraph must match the order and format
 	// of `git log --topo-sort`.
-	testGraph := gitserver.ParseCommitGraph([]string{
+	testGraph := gitdomain.ParseCommitGraph([]string{
 		"n l",
 		"m k",
 		"k h",
@@ -100,7 +100,7 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 	//
 	// NOTE: The input to ParseCommitGraph must match the order and format
 	// of `git log --topo-sort`.
-	testGraph := gitserver.ParseCommitGraph([]string{
+	testGraph := gitdomain.ParseCommitGraph([]string{
 		"q o",
 		"p n",
 		"o l m",
@@ -183,13 +183,13 @@ func BenchmarkCalculateVisibleUploads(b *testing.B) {
 	fmt.Printf("\nNum Uploads: %d\nNum Links:   %d\n\n", numUploads, len(links))
 }
 
-func readBenchmarkCommitGraph() (*gitserver.CommitGraph, error) {
+func readBenchmarkCommitGraph() (*gitdomain.CommitGraph, error) {
 	contents, err := readBenchmarkFile("./testdata/commits.txt.gz")
 	if err != nil {
 		return nil, err
 	}
 
-	return gitserver.ParseCommitGraph(strings.Split(string(contents), "\n")), nil
+	return gitdomain.ParseCommitGraph(strings.Split(string(contents), "\n")), nil
 }
 
 func readBenchmarkCommitGraphView() (*CommitGraphView, error) {
@@ -249,7 +249,7 @@ func readBenchmarkFile(path string) ([]byte, error) {
 
 // makeTestGraph calls Gather on a new graph then sorts the uploads deterministically
 // for easier comparison. Order of the upload list is not relevant to production flows.
-func makeTestGraph(commitGraph *gitserver.CommitGraph, commitGraphView *CommitGraphView) (uploads map[string][]UploadMeta, links map[string]LinkRelationship) {
+func makeTestGraph(commitGraph *gitdomain.CommitGraph, commitGraphView *CommitGraphView) (uploads map[string][]UploadMeta, links map[string]LinkRelationship) {
 	uploads, links = NewGraph(commitGraph, commitGraphView).Gather()
 	for _, us := range uploads {
 		sort.Slice(us, func(i, j int) bool {

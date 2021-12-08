@@ -17,6 +17,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchFileExternalLinks } from '../backend'
+import { RepoHeaderActionAnchor } from '../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../RepoHeader'
 
 import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
@@ -54,7 +55,16 @@ const HAS_PERMANENTLY_DISMISSED_POPUP_KEY = 'has-dismissed-browser-ext-popup'
  * A repository header action that goes to the corresponding URL on an external code host.
  */
 export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderContext> = props => {
-    const [showPopover, setShowPopover] = useState(false)
+    const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+
+    const showPopover = useCallback(() => {
+        eventLogger.log('BrowserExtensionPopupOpened')
+        setIsPopoverOpen(true)
+    }, [])
+
+    const closePopover = useCallback(() => {
+        setIsPopoverOpen(false)
+    }, [])
 
     const { onPopoverDismissed, repo, revision, filePath } = props
 
@@ -64,7 +74,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
     )
 
     // Popover won't work with dropdown
-    const hijackLink = !hasPermanentlyDismissedPopup && props.canShowPopover && !(props.actionType === 'dropdown')
+    const hijackLink = !hasPermanentlyDismissedPopup && props.canShowPopover && props.actionType !== 'dropdown'
 
     /**
      * The external links for the current file/dir, or undefined while loading, null while not
@@ -85,58 +95,58 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
     )
 
     /** This is a hard rejection. Never ask the user again. */
-    const onRejection = useCallback(() => {
+    const onReject = useCallback(() => {
         setHasPermanentlyDismissedPopup(true)
-        setShowPopover(false)
+        closePopover()
         onPopoverDismissed()
 
         eventLogger.log('BrowserExtensionPopupRejected')
-    }, [onPopoverDismissed, setHasPermanentlyDismissedPopup])
+    }, [closePopover, onPopoverDismissed, setHasPermanentlyDismissedPopup])
 
     /** This is a soft rejection. Called when user clicks 'Remind me later', ESC, or outside of the modal body */
     const onClose = useCallback(() => {
         onPopoverDismissed()
-        setShowPopover(false)
+        closePopover()
 
         eventLogger.log('BrowserExtensionPopupClosed')
-    }, [onPopoverDismissed])
+    }, [closePopover, onPopoverDismissed])
 
     /** The user is likely to install the browser extension at this point, so don't show it again. */
-    const onClickInstall = useCallback(() => {
+    const onInstall = useCallback(() => {
         setHasPermanentlyDismissedPopup(true)
-        setShowPopover(false)
+        closePopover()
         onPopoverDismissed()
 
         eventLogger.log('BrowserExtensionPopupClickedInstall')
-    }, [onPopoverDismissed, setHasPermanentlyDismissedPopup])
+    }, [closePopover, onPopoverDismissed, setHasPermanentlyDismissedPopup])
 
-    const toggle = useCallback(() => {
-        if (showPopover) {
-            setShowPopover(false)
+    const onToggle = useCallback(() => {
+        if (isPopoverOpen) {
+            closePopover()
             return
         }
 
         if (hijackLink) {
-            setShowPopover(true)
+            showPopover()
         }
-    }, [hijackLink, showPopover])
+    }, [closePopover, hijackLink, isPopoverOpen, showPopover])
 
     const onClick = useCallback(
         (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
             eventLogger.log('GoToCodeHostClicked')
 
-            if (showPopover) {
+            if (isPopoverOpen) {
                 event.preventDefault()
-                setShowPopover(false)
+                closePopover()
                 return
             }
 
             if (hijackLink) {
                 event.preventDefault()
-                setShowPopover(true)
+                showPopover()
             }
         },
-        [hijackLink, showPopover]
+        [hijackLink, isPopoverOpen, showPopover, closePopover]
     )
 
     // If the default branch is undefined, set to HEAD
@@ -204,12 +214,12 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
     // Don't show browser extension popover on small screens
     if (props.actionType === 'dropdown') {
         return (
-            // eslint-disable-next-line jsx-a11y/anchor-is-valid
-            <a
-                className="btn repo-header__file-action test-go-to-code-host"
+            <RepoHeaderActionAnchor
+                className="btn test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
                 href={hijackLink ? '' : url}
                 target="_blank"
+                file={true}
                 rel="noopener noreferrer"
                 id={TARGET_ID}
                 onClick={onClick}
@@ -217,15 +227,14 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
             >
                 <Icon className="icon-inline" />
                 <span>{descriptiveText}</span>
-            </a>
+            </RepoHeaderActionAnchor>
         )
     }
 
     return (
         <>
-            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-            <a
-                className="btn btn-icon repo-header__action test-go-to-code-host"
+            <RepoHeaderActionAnchor
+                className="btn btn-icon test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
                 href={hijackLink ? '' : url}
                 target="_blank"
@@ -237,16 +246,16 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
                 aria-label={descriptiveText}
             >
                 <Icon className="icon-inline" />
-            </a>
+            </RepoHeaderActionAnchor>
 
             <InstallBrowserExtensionPopover
                 url={url}
-                toggle={toggle}
-                isOpen={showPopover}
+                onToggle={onToggle}
+                isOpen={isPopoverOpen}
                 serviceKind={externalURL.serviceKind}
                 onClose={onClose}
-                onRejection={onRejection}
-                onClickInstall={onClickInstall}
+                onReject={onReject}
+                onInstall={onInstall}
                 targetID={TARGET_ID}
             />
         </>

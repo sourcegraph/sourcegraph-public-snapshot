@@ -7,9 +7,9 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // numAncestors is the number of ancestors to query from gitserver when trying to find the closest
@@ -125,7 +125,7 @@ func (r *resolver) inferClosestUploads(ctx context.Context, repositoryID int, co
 	// and try to link it with what we have in the database. Then mark the repository's commit
 	// graph as dirty so it's updated for subsequent requests.
 
-	graph, err := r.gitserverClient.CommitGraph(ctx, repositoryID, gitserver.CommitGraphOptions{
+	graph, err := r.gitserverClient.CommitGraph(ctx, repositoryID, git.CommitGraphOptions{
 		Commit: commit,
 		Limit:  numAncestors,
 	})

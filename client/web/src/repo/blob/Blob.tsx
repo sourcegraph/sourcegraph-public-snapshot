@@ -31,8 +31,6 @@ import {
 } from 'rxjs/operators'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
-import { createHoverifier, findPositionsFromEvents, HoveredToken } from '@sourcegraph/codeintellify'
-import { getCodeElementsInRange, locateTarget } from '@sourcegraph/codeintellify/lib/token_position'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -41,6 +39,8 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
+import { createHoverifier, findPositionsFromEvents } from '@sourcegraph/shared/src/codeintellify'
+import { getCodeElementsInRange, HoveredToken, locateTarget } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
@@ -339,12 +339,15 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         )
     )
 
+    // Trigger line highlighting after React has finished putting new lines into the DOM via
+    // `dangerouslySetInnerHTML`.
+    useEffect(() => codeViewElements.next(codeViewReference.current))
+
     // Line highlighting when position in hash changes
     useObservable(
         useMemo(
             () =>
-                locationPositions.pipe(
-                    withLatestFrom(codeViewElements.pipe(filter(isDefined))),
+                combineLatest([locationPositions, codeViewElements.pipe(filter(isDefined))]).pipe(
                     tap(([position, codeView]) => {
                         const codeCells = getCodeElementsInRange({
                             codeView,

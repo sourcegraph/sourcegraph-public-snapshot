@@ -240,7 +240,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const getServiceWarningFragment = (service: serviceProblem): JSX.Element => (
         <div className="alert alert-warning my-3" key={service.id}>
-            <h4 className="align-middle mb-1">Can't connect with {service.displayName}</h4>
+            <h4 className="align-middle mb-1">Can’t connect with {service.displayName}</h4>
             <p className="align-middle mb-0">
                 <span className="align-middle">Please try</span>{' '}
                 {owner.type === 'org' ? (

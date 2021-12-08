@@ -148,7 +148,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 		// TODO: consider adding a cache method that doesn't actually bother opening the file,
 		// since we're just going to close it again immediately.
 		bgctx := opentracing.ContextWithSpan(context.Background(), opentracing.SpanFromContext(ctx))
-		f, err := s.cache.Open(bgctx, key, func(ctx context.Context) (io.ReadCloser, error) {
+		f, err := s.cache.Open(bgctx, []string{key}, func(ctx context.Context) (io.ReadCloser, error) {
 			return s.fetch(ctx, repo, commit, largeFilePatterns)
 		})
 		var path string
@@ -187,9 +187,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 	}
 	fetchQueueSize.Dec()
 
-	// We expect git archive, even for large repos, to finish relatively
-	// quickly.
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	ctx, cancel := context.WithCancel(ctx)
 
 	fetching.Inc()
 	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch")

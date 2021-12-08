@@ -2,9 +2,11 @@ import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 
+import { ProductStatusBadge } from '@sourcegraph/wildcard'
+import type { ProductStatusType } from '@sourcegraph/wildcard/src/components/Badge'
+
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
-import { Badge, BadgeStatus } from '../../components/Badge'
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
 import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
@@ -13,6 +15,7 @@ import { useTemporarySetting } from '../../settings/temporary/useTemporarySettin
 import { NavItemDescriptor } from '../../util/contributions'
 
 import { UserSettingsAreaRouteContext } from './UserSettingsArea'
+import styles from './UserSettingsSidebar.module.scss'
 
 export interface UserSettingsSidebarItemConditionContext extends BatchChangesProps {
     user: UserSettingsAreaUserFields
@@ -21,7 +24,7 @@ export interface UserSettingsSidebarItemConditionContext extends BatchChangesPro
 }
 
 type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditionContext> & {
-    status?: BadgeStatus
+    status?: ProductStatusType
 }
 
 export type UserSettingsSidebarItems = readonly UserSettingsSidebarItem[]
@@ -49,6 +52,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
     const context: UserSettingsSidebarItemConditionContext = {
         batchChangesEnabled: props.batchChangesEnabled,
         batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,
+        batchChangesWebhookLogsEnabled: props.batchChangesWebhookLogsEnabled,
         user: props.user,
         authenticatedUser: props.authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
@@ -66,7 +70,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                     ({ label, to, exact, status, condition = () => true }) =>
                         condition(context) && (
                             <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
-                                {label} {status && <Badge className="ml-1" status={status} />}
+                                {label} {status && <ProductStatusBadge className="ml-1" status={status} />}
                             </SidebarNavItem>
                         )
                 )}
@@ -90,7 +94,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                                 About organizations
                             </SidebarNavItem>
                         ) : (
-                            <div className="user-settings-sidebar__new-org-btn-wrapper">
+                            <div className={styles.newOrgBtnWrapper}>
                                 <Link to="/organizations/new" className="btn btn-outline-secondary btn-sm">
                                     <AddIcon className="icon-inline" /> New organization
                                 </Link>

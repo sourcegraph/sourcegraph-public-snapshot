@@ -44,7 +44,7 @@ export interface useFieldAPI<FieldValue> {
         name: string
         value: FieldValue
         onChange: (event: ChangeEvent<HTMLInputElement> | FieldValue) => void
-        onBlur: FocusEventHandler<HTMLInputElement>
+        onBlur: FocusEventHandler<HTMLInputElement> | (() => void)
     } & InputProps<FieldValue>
 
     /**

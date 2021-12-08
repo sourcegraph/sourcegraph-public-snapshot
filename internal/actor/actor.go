@@ -16,6 +16,10 @@ import (
 
 // Actor represents an agent that accesses resources. It can represent an anonymous user, an
 // authenticated user, or an internal Sourcegraph service.
+//
+// Actor can be propagated across services by using actor.HTTPTransport (used by
+// httpcli.InternalClientFactory) and actor.HTTPMiddleware. Before assuming this, ensure
+// that actor propagation is enabled on both ends of the request.
 type Actor struct {
 	// UID is the unique ID of the authenticated user, or 0 for anonymous actors.
 	UID int32 `json:",omitempty"`
@@ -82,9 +86,9 @@ func (a *Actor) User(ctx context.Context, fetcher userFetcher) (*types.User, err
 	return a.user, a.userErr
 }
 
-type key int
+type contextKey int
 
-const actorKey key = iota
+const actorKey contextKey = iota
 
 // FromContext returns a new Actor instance from a given context.
 func FromContext(ctx context.Context) *Actor {

@@ -160,6 +160,84 @@ export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
     ],
 }
 
+export const COLLAPSABLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
+    ...SEARCH_RESULT,
+    progress: {
+        durationMs: 78,
+        matchCount: 136,
+        skipped: [],
+    },
+    results: [
+        RESULT,
+        MULTIPLE_MATCH_RESULT,
+        {
+            type: 'content',
+            path: 'example_test.go',
+            commit: 'abcd1234',
+            repository: 'github.com/golang/oauth2',
+            lineMatches: [
+                {
+                    line: 'package oauth2_test',
+                    lineNumber: 4,
+                    offsetAndLengths: [[15, 4]],
+                },
+                {
+                    line: 'package oauth2_test',
+                    lineNumber: 4,
+                    offsetAndLengths: [[15, 4]],
+                },
+                {
+                    line: 'package oauth2_test',
+                    lineNumber: 4,
+                    offsetAndLengths: [[15, 4]],
+                },
+                {
+                    line: 'package oauth2_test',
+                    lineNumber: 4,
+                    offsetAndLengths: [[15, 4]],
+                },
+                {
+                    line: 'package oauth2_test',
+                    lineNumber: 4,
+                    offsetAndLengths: [[15, 4]],
+                },
+                {
+                    line: 'package oauth2_test',
+                    lineNumber: 4,
+                    offsetAndLengths: [[15, 4]],
+                },
+                {
+                    line: 'package oauth2_test',
+                    lineNumber: 4,
+                    offsetAndLengths: [[15, 4]],
+                },
+                {
+                    line: 'package oauth2_test',
+                    lineNumber: 4,
+                    offsetAndLengths: [[15, 4]],
+                },
+                {
+                    line: 'package oauth2_test',
+                    lineNumber: 4,
+                    offsetAndLengths: [[15, 4]],
+                },
+                {
+                    line: 'package oauth2_test',
+                    lineNumber: 4,
+                    offsetAndLengths: [[15, 4]],
+                },
+                {
+                    line: 'package oauth2_test',
+                    lineNumber: 4,
+                    offsetAndLengths: [[15, 4]],
+                },
+            ],
+            repoStars: 42,
+            repoLastFetched: '2017-01-01T00:00:00Z',
+        },
+    ],
+}
+
 export const HIGHLIGHTED_FILE_LINES = [
     [
         '<tr><td class="line" data-line="1"></td><td class="code"><span style="color:#268bd2;">language</span><span style="color:#657b83;">: </span><span style="color:#2aa198;">go↵</span></td></tr>',

@@ -1,40 +1,57 @@
 import { Remote } from 'comlink'
 import { Observable } from 'rxjs'
-import { startWith } from 'rxjs/operators'
+import { catchError, map, startWith } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { IHighlightLineRange } from '@sourcegraph/shared/src/graphql/schema'
 import {
     aggregateStreamingSearch,
     AggregateStreamingSearchResults,
     emptyAggregateResults,
 } from '@sourcegraph/shared/src/search/stream'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 import { LATEST_VERSION } from '../results/StreamingSearchResults'
 
-export type BlockType = 'md' | 'query'
+export type BlockType = 'md' | 'query' | 'file'
 
-interface BaseBlock<O> {
+interface BaseBlock<I, O> {
     id: string
     type: BlockType
-    input: string
+    input: I
     output: O | null
 }
 
-export interface QueryBlock extends BaseBlock<Observable<AggregateStreamingSearchResults>> {
+export interface QueryBlock extends BaseBlock<string, Observable<AggregateStreamingSearchResults>> {
     type: 'query'
 }
 
-export interface MarkdownBlock extends BaseBlock<string> {
+export interface MarkdownBlock extends BaseBlock<string, string> {
     type: 'md'
 }
 
-export type Block = QueryBlock | MarkdownBlock
+export interface FileBlockInput {
+    repositoryName: string
+    revision: string
+    filePath: string
+    lineRange: IHighlightLineRange | null
+}
 
-export type BlockInitializer = Pick<Block, 'type' | 'input'>
+export interface FileBlock extends BaseBlock<FileBlockInput, Observable<string[] | Error>> {
+    type: 'file'
+}
+
+export type Block = QueryBlock | MarkdownBlock | FileBlock
+
+export type BlockInput =
+    | Pick<FileBlock, 'type' | 'input'>
+    | Pick<MarkdownBlock, 'type' | 'input'>
+    | Pick<QueryBlock, 'type' | 'input'>
 
 export type BlockDirection = 'up' | 'down'
 
@@ -44,7 +61,7 @@ export interface BlockProps {
     isOtherBlockSelected: boolean
     onRunBlock(id: string): void
     onDeleteBlock(id: string): void
-    onBlockInputChange(id: string, value: string): void
+    onBlockInputChange(id: string, blockInput: BlockInput): void
     onSelectBlock(id: string | null): void
     onMoveBlockSelection(id: string, direction: BlockDirection): void
     onMoveBlock(id: string, direction: BlockDirection): void
@@ -53,13 +70,14 @@ export interface BlockProps {
 
 export interface BlockDependencies {
     extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
 export class Notebook {
     private blocks: Map<string, Block>
     private blockOrder: string[]
 
-    constructor(initializerBlocks: BlockInitializer[], private dependencies: BlockDependencies) {
+    constructor(initializerBlocks: BlockInput[], private dependencies: BlockDependencies) {
         const blocks = initializerBlocks.map(block => ({ ...block, id: uuid.v4(), output: null }))
 
         this.blocks = new Map(blocks.map(block => [block.id, block]))
@@ -87,12 +105,16 @@ export class Notebook {
         })
     }
 
-    public setBlockInputById(id: string, value: string): void {
+    public setBlockInputById(id: string, { type, input }: BlockInput): void {
         const block = this.blocks.get(id)
         if (!block) {
             return
         }
-        this.blocks.set(block.id, { ...block, input: value })
+        if (block.type !== type) {
+            throw new Error(`Input block type ${type} does not match existing block type ${block.type}.`)
+        }
+        // We checked that the existing block and the input block have the same type, so the cast below is safe.
+        this.blocks.set(block.id, { ...block, input } as Block)
     }
 
     public runBlockById(id: string): void {
@@ -122,6 +144,25 @@ export class Notebook {
                     ).pipe(startWith(emptyAggregateResults)),
                 })
                 break
+            case 'file':
+                this.blocks.set(block.id, {
+                    ...block,
+                    output: this.dependencies
+                        .fetchHighlightedFileLineRanges({
+                            repoName: block.input.repositoryName,
+                            commitID: block.input.revision || 'HEAD',
+                            filePath: block.input.filePath,
+                            ranges: block.input.lineRange
+                                ? [block.input.lineRange]
+                                : [{ startLine: 0, endLine: 2147483647 }], // entire file,
+                            disableTimeout: false,
+                        })
+                        .pipe(
+                            map(ranges => ranges[0]),
+                            catchError(() => [asError('File not found')])
+                        ),
+                })
+                break
         }
     }
 
@@ -134,9 +175,9 @@ export class Notebook {
         this.blockOrder.splice(index, 1)
     }
 
-    public insertBlockAtIndex(index: number, type: BlockType, input: string): Block {
+    public insertBlockAtIndex(index: number, blockToInsert: BlockInput): Block {
         const id = uuid.v4()
-        const block = { id, type, input, output: null }
+        const block = { ...blockToInsert, id, output: null }
         // Insert block at the provided index
         this.blockOrder.splice(index, 0, id)
         this.blocks.set(id, block)
@@ -164,7 +205,7 @@ export class Notebook {
             return null
         }
         const index = this.blockOrder.indexOf(id)
-        return this.insertBlockAtIndex(index + 1, block.type, block.input)
+        return this.insertBlockAtIndex(index + 1, block)
     }
 
     public getFirstBlockId(): string | null {

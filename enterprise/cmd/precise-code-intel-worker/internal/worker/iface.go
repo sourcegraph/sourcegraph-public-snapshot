@@ -23,10 +23,10 @@ type DBStore interface {
 
 	UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) error
 	UpdatePackageReferences(ctx context.Context, dumpID int, packageReferences []precise.PackageReference) error
-	UpdateReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType dbstore.DependencyReferenceCountUpdateType) error
+	UpdateReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType dbstore.DependencyReferenceCountUpdateType) (updatedUploads int, err error)
 	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
 	DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) error
-	InsertDependencySyncingJob(ctx context.Context, uploadID int) (int, error)
+	InsertDependencySyncingJob(ctx context.Context, uploadID int) (jobID int, err error)
 	UpdateCommitedAt(ctx context.Context, dumpID int, committedAt time.Time) error
 }
 
@@ -52,14 +52,14 @@ type LSIFStore interface {
 	Done(err error) error
 
 	WriteMeta(ctx context.Context, bundleID int, meta precise.MetaData) error
-	WriteDocuments(ctx context.Context, bundleID int, documents chan precise.KeyedDocumentData) error
-	WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan precise.IndexedResultChunkData) error
-	WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) error
-	WriteReferences(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) error
-	WriteImplementations(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) error
-	WriteDocumentationPages(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, documentation chan *precise.DocumentationPageData, repositoryNameID int, languageNameID int) error
-	WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentation chan *precise.DocumentationPathInfoData) error
-	WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan precise.DocumentationMapping) error
+	WriteDocuments(ctx context.Context, bundleID int, documents chan precise.KeyedDocumentData) (count uint32, err error)
+	WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan precise.IndexedResultChunkData) (count uint32, err error)
+	WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error)
+	WriteReferences(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error)
+	WriteImplementations(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error)
+	WriteDocumentationPages(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, documentation chan *precise.DocumentationPageData, repositoryNameID int, languageNameID int) (count uint32, err error)
+	WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentation chan *precise.DocumentationPathInfoData) (count uint32, err error)
+	WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan precise.DocumentationMapping) (count uint32, err error)
 	WriteDocumentationSearchPrework(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool) (int, int, error)
 }
 

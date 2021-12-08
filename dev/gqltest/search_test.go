@@ -232,6 +232,23 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
+	t.Run("non fatal missing repo revs", func(t *testing.T) {
+		results, err := client.SearchFiles("repo:sgtest rev:print-options NewHunksReader")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(results.Results) == 0 {
+			t.Fatal("want results, got none")
+		}
+
+		for _, r := range results.Results {
+			if want, have := "print-options", r.RevSpec.Expr; have != want {
+				t.Fatalf("want rev to be %q, got %q", want, have)
+			}
+		}
+	})
+
 	t.Run("context: search", func(t *testing.T) {
 		repo1, err := client.Repository("github.com/sgtest/java-langserver")
 		require.NoError(t, err)
@@ -579,6 +596,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:  `regexp, filename, nonzero result`,
 				query: `file:doc.go patterntype:regexp`,
+			},
+			// Ensure repo resolution is correct in global. https://github.com/sourcegraph/sourcegraph/issues/27044
+			{
+				name:       `-repo excludes private repos`,
+				query:      `-repo:private // this is a change`,
+				zeroResult: true,
 			},
 		}
 		for _, test := range tests {

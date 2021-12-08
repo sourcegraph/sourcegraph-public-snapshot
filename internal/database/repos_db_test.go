@@ -11,6 +11,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/rand"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -21,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 )
 
 /*
@@ -382,41 +385,38 @@ func TestRepos_ListMinimalRepos_userID(t *testing.T) {
 		Password:              "p",
 		EmailVerificationCode: "c",
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: user.ID,
 	})
 
 	now := time.Now()
+	confGet := func() *conf.Unified { return &conf.Unified{} }
+	externalServices := ExternalServices(db)
+	repos := Repos(db)
 
-	// Create an external service
-	service := types.ExternalService{
+	// Create a user-owned external service and its repository
+	userExternalService := types.ExternalService{
 		Kind:            extsvc.KindGitHub,
-		DisplayName:     "Github - Test",
+		DisplayName:     "Github - User-owned",
 		Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 		CreatedAt:       now,
 		UpdatedAt:       now,
 		NamespaceUserID: user.ID,
 	}
-	confGet := func() *conf.Unified {
-		return &conf.Unified{}
-	}
-	err = ExternalServices(db).Create(ctx, confGet, &service)
-	if err != nil {
-		t.Fatal(err)
-	}
+	err = externalServices.Create(ctx, confGet, &userExternalService)
+	require.NoError(t, err)
 
-	repo := &types.Repo{
+	userRepo := &types.Repo{
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "r",
+			ID:          "github.com/sourcegraph/user",
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com",
 		},
-		Name:        "github.com/sourcegraph/sourcegraph",
+		Name:        "github.com/sourcegraph/user",
 		Private:     true,
-		URI:         "uri",
+		URI:         "github.com/sourcegraph/user",
 		Description: "description",
 		Fork:        true,
 		Archived:    true,
@@ -424,29 +424,58 @@ func TestRepos_ListMinimalRepos_userID(t *testing.T) {
 		UpdatedAt:   now,
 		Metadata:    new(github.Repository),
 		Sources: map[string]*types.SourceInfo{
-			service.URN(): {
-				ID:       service.URN(),
-				CloneURL: "git@github.com:foo/bar.git",
+			userExternalService.URN(): {
+				ID:       userExternalService.URN(),
+				CloneURL: "git@github.com:sourcegraph/user.git",
 			},
 		},
 	}
-	err = Repos(db).Create(ctx, repo)
-	if err != nil {
-		t.Fatal(err)
+	err = repos.Create(ctx, userRepo)
+	require.NoError(t, err)
+
+	// Create a site-owned external service and its repository
+	siteExternalService := types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "Github - Site-owned",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
+	err = externalServices.Create(ctx, confGet, &siteExternalService)
+	require.NoError(t, err)
+
+	siteRepo := &types.Repo{
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "github.com/sourcegraph/site",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com",
+		},
+		Name:        "github.com/sourcegraph/site",
+		Private:     true,
+		URI:         "github.com/sourcegraph/site",
+		Description: "description",
+		Fork:        true,
+		Archived:    true,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		Metadata:    new(github.Repository),
+		Sources: map[string]*types.SourceInfo{
+			siteExternalService.URN(): {
+				ID:       siteExternalService.URN(),
+				CloneURL: "git@github.com:sourcegraph/site.git",
+			},
+		},
+	}
+	err = repos.Create(ctx, siteRepo)
+	require.NoError(t, err)
+
+	have, err := repos.ListMinimalRepos(ctx, ReposListOptions{UserID: user.ID})
+	require.NoError(t, err)
 
 	want := []types.MinimalRepo{
-		{ID: repo.ID, Name: repo.Name},
+		{ID: userRepo.ID, Name: userRepo.Name},
 	}
-
-	have, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{UserID: user.ID})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(have, want); diff != "" {
-		t.Fatalf(diff)
-	}
+	assert.Equal(t, want, have)
 }
 
 func TestRepos_ListMinimalRepos_orgID(t *testing.T) {
@@ -461,38 +490,34 @@ func TestRepos_ListMinimalRepos_orgID(t *testing.T) {
 	// Create an org
 	displayName := "Acme Corp"
 	org, err := Orgs(db).Create(ctx, "acme", &displayName)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	now := time.Now()
+	confGet := func() *conf.Unified { return &conf.Unified{} }
+	externalServices := ExternalServices(db)
+	repos := Repos(db)
 
-	// Create an external service
-	service := types.ExternalService{
+	// Create an org-owned external service and its repository
+	orgExternalService := types.ExternalService{
 		Kind:           extsvc.KindGitHub,
-		DisplayName:    "Github - Test",
+		DisplayName:    "Github - Org-owned",
 		Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 		CreatedAt:      now,
 		UpdatedAt:      now,
 		NamespaceOrgID: org.ID,
 	}
-	confGet := func() *conf.Unified {
-		return &conf.Unified{}
-	}
-	err = ExternalServices(db).Create(ctx, confGet, &service)
-	if err != nil {
-		t.Fatal(err)
-	}
+	err = externalServices.Create(ctx, confGet, &orgExternalService)
+	require.NoError(t, err)
 
 	repo := &types.Repo{
 		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "r",
+			ID:          "github.com/sourcegraph/org",
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com",
 		},
-		Name:        "github.com/sourcegraph/sourcegraph",
+		Name:        "github.com/sourcegraph/org",
 		Private:     true,
-		URI:         "uri",
+		URI:         "github.com/sourcegraph/org",
 		Description: "description",
 		Fork:        true,
 		Archived:    true,
@@ -500,29 +525,58 @@ func TestRepos_ListMinimalRepos_orgID(t *testing.T) {
 		UpdatedAt:   now,
 		Metadata:    new(github.Repository),
 		Sources: map[string]*types.SourceInfo{
-			service.URN(): {
-				ID:       service.URN(),
+			orgExternalService.URN(): {
+				ID:       orgExternalService.URN(),
 				CloneURL: "git@github.com:foo/bar.git",
 			},
 		},
 	}
-	err = Repos(db).Create(ctx, repo)
-	if err != nil {
-		t.Fatal(err)
+	err = repos.Create(ctx, repo)
+	require.NoError(t, err)
+
+	// Create a site-owned external service and its repository
+	siteExternalService := types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "Github - Site-owned",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
+	err = externalServices.Create(ctx, confGet, &siteExternalService)
+	require.NoError(t, err)
+
+	siteRepo := &types.Repo{
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "github.com/sourcegraph/site",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com",
+		},
+		Name:        "github.com/sourcegraph/site",
+		Private:     true,
+		URI:         "github.com/sourcegraph/site",
+		Description: "description",
+		Fork:        true,
+		Archived:    true,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		Metadata:    new(github.Repository),
+		Sources: map[string]*types.SourceInfo{
+			siteExternalService.URN(): {
+				ID:       siteExternalService.URN(),
+				CloneURL: "git@github.com:sourcegraph/site.git",
+			},
+		},
+	}
+	err = repos.Create(ctx, siteRepo)
+	require.NoError(t, err)
+
+	have, err := repos.ListMinimalRepos(ctx, ReposListOptions{OrgID: org.ID})
+	require.NoError(t, err)
 
 	want := []types.MinimalRepo{
 		{ID: repo.ID, Name: repo.Name},
 	}
-
-	have, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{OrgID: org.ID})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(have, want); diff != "" {
-		t.Fatalf(diff)
-	}
+	assert.Equal(t, want, have)
 }
 
 func TestRepos_List_fork(t *testing.T) {
@@ -757,10 +811,10 @@ func TestRepos_List_ids(t *testing.T) {
 	db := dbtest.NewDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := types.Repos(mustCreate(ctx, t, db, types.MakeGithubRepo()))
-	mine = append(mine, mustCreate(ctx, t, db, types.MakeGitlabRepo())...)
+	mine := types.Repos(mustCreate(ctx, t, db, typestest.MakeGithubRepo()))
+	mine = append(mine, mustCreate(ctx, t, db, typestest.MakeGitlabRepo())...)
 
-	yours := types.Repos(mustCreate(ctx, t, db, types.MakeGitoliteRepo()))
+	yours := types.Repos(mustCreate(ctx, t, db, typestest.MakeGitoliteRepo()))
 	all := append(mine, yours...)
 
 	tests := []struct {
@@ -1109,11 +1163,11 @@ func TestRepos_List_useOr(t *testing.T) {
 	db := dbtest.NewDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
-	archived := types.Repos{types.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
+	archived := types.Repos{typestest.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
 	archived = mustCreate(ctx, t, db, archived[0])
-	forks := types.Repos{types.MakeGitoliteRepo()}.With(func(r *types.Repo) { r.Fork = true })
+	forks := types.Repos{typestest.MakeGitoliteRepo()}.With(func(r *types.Repo) { r.Fork = true })
 	forks = mustCreate(ctx, t, db, forks[0])
-	cloned := types.Repos{types.MakeGithubRepo()}
+	cloned := types.Repos{typestest.MakeGithubRepo()}
 	cloned = mustCreateGitserverRepo(ctx, t, db, cloned[0], types.GitserverRepo{CloneStatus: types.CloneStatusCloned})
 
 	archivedAndForks := append(archived, forks...)
@@ -1154,7 +1208,7 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 		return &conf.Unified{}
 	}
 
-	services := types.MakeExternalServices()
+	services := typestest.MakeExternalServices()
 	service1 := services[0]
 	service2 := services[1]
 	if err := ExternalServices(db).Create(ctx, confGet, service1); err != nil {
@@ -1164,12 +1218,12 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mine := types.Repos{types.MakeGithubRepo(service1)}
+	mine := types.Repos{typestest.MakeGithubRepo(service1)}
 	if err := Repos(db).Create(ctx, mine...); err != nil {
 		t.Fatal(err)
 	}
 
-	yours := types.Repos{types.MakeGitlabRepo(service2)}
+	yours := types.Repos{typestest.MakeGitlabRepo(service2)}
 	if err := Repos(db).Create(ctx, yours...); err != nil {
 		t.Fatal(err)
 	}
@@ -1323,10 +1377,10 @@ func TestRepos_ListMinimalRepos_ids(t *testing.T) {
 	db := dbtest.NewDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := types.Repos(mustCreate(ctx, t, db, types.MakeGithubRepo()))
-	mine = append(mine, mustCreate(ctx, t, db, types.MakeGitlabRepo())...)
+	mine := types.Repos(mustCreate(ctx, t, db, typestest.MakeGithubRepo()))
+	mine = append(mine, mustCreate(ctx, t, db, typestest.MakeGitlabRepo())...)
 
-	yours := types.Repos(mustCreate(ctx, t, db, types.MakeGitoliteRepo()))
+	yours := types.Repos(mustCreate(ctx, t, db, typestest.MakeGitoliteRepo()))
 	all := append(mine, yours...)
 
 	tests := []struct {
@@ -1646,11 +1700,11 @@ func TestRepos_ListMinimalRepos_useOr(t *testing.T) {
 	db := dbtest.NewDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
-	archived := types.Repos{types.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
+	archived := types.Repos{typestest.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
 	archived = mustCreate(ctx, t, db, archived[0])
-	forks := types.Repos{types.MakeGitoliteRepo()}.With(func(r *types.Repo) { r.Fork = true })
+	forks := types.Repos{typestest.MakeGitoliteRepo()}.With(func(r *types.Repo) { r.Fork = true })
 	forks = mustCreate(ctx, t, db, forks[0])
-	cloned := types.Repos{types.MakeGithubRepo()}
+	cloned := types.Repos{typestest.MakeGithubRepo()}
 	cloned = mustCreateGitserverRepo(ctx, t, db, cloned[0], types.GitserverRepo{CloneStatus: types.CloneStatusCloned})
 
 	archivedAndForks := append(archived, forks...)
@@ -1691,7 +1745,7 @@ func TestRepos_ListMinimalRepos_externalServiceID(t *testing.T) {
 		return &conf.Unified{}
 	}
 
-	services := types.MakeExternalServices()
+	services := typestest.MakeExternalServices()
 	service1 := services[0]
 	service2 := services[1]
 	if err := ExternalServices(db).Create(ctx, confGet, service1); err != nil {
@@ -1701,12 +1755,12 @@ func TestRepos_ListMinimalRepos_externalServiceID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mine := types.Repos{types.MakeGithubRepo(service1)}
+	mine := types.Repos{typestest.MakeGithubRepo(service1)}
 	if err := Repos(db).Create(ctx, mine...); err != nil {
 		t.Fatal(err)
 	}
 
-	yours := types.Repos{types.MakeGitlabRepo(service2)}
+	yours := types.Repos{typestest.MakeGitlabRepo(service2)}
 	if err := Repos(db).Create(ctx, yours...); err != nil {
 		t.Fatal(err)
 	}
@@ -2134,13 +2188,13 @@ func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 		return &conf.Unified{}
 	}
 
-	services := types.MakeExternalServices()
+	services := typestest.MakeExternalServices()
 	service1 := services[0]
 	if err := ExternalServices(db).Create(ctx, confGet, service1); err != nil {
 		t.Fatal(err)
 	}
 
-	repo1 := types.MakeGithubRepo(service1)
+	repo1 := typestest.MakeGithubRepo(service1)
 	if err := Repos(db).Create(ctx, repo1); err != nil {
 		t.Fatal(err)
 	}

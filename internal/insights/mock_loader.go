@@ -36,6 +36,23 @@ func NewMockLoader() *MockLoader {
 	}
 }
 
+// NewStrictMockLoader creates a new mock of the Loader interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockLoader() *MockLoader {
+	return &MockLoader{
+		LoadAllFunc: &LoaderLoadAllFunc{
+			defaultHook: func(context.Context) ([]SearchInsight, error) {
+				panic("unexpected invocation of MockLoader.LoadAll")
+			},
+		},
+		LoadDashboardsFunc: &LoaderLoadDashboardsFunc{
+			defaultHook: func(context.Context) ([]SettingDashboard, error) {
+				panic("unexpected invocation of MockLoader.LoadDashboards")
+			},
+		},
+	}
+}
+
 // NewMockLoaderFrom creates a new mock of the MockLoader interface. All
 // methods delegate to the given implementation, unless overwritten.
 func NewMockLoaderFrom(i Loader) *MockLoader {

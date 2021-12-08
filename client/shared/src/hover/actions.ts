@@ -16,8 +16,8 @@ import {
     mapTo,
 } from 'rxjs/operators'
 
-import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
 import { Location } from '@sourcegraph/extension-api-types'
+import { LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/shared/src/codeintellify'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -27,6 +27,7 @@ import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { ContributableMenu, TextDocumentPositionParameters } from '../api/protocol'
 import { syncRemoteSubscription } from '../api/util'
 import { resolveRawRepoName } from '../backend/repo'
+import { HoveredToken } from '../codeintellify/tokenPosition'
 import { getContributedActionItems } from '../contributions/contributions'
 import { Controller, ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContext, PlatformContextProps, URLToFileContext } from '../platform/context'

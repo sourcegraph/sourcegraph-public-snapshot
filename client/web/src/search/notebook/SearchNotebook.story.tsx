@@ -1,26 +1,39 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { NEVER } from 'rxjs'
+import { NEVER, of } from 'rxjs'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { extensionsController, HIGHLIGHTED_FILE_LINES_LONG } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
+import { RepositoryFields } from '../../graphql-operations'
 
 import { SearchNotebook } from './SearchNotebook'
 
-import { BlockInitializer } from '.'
+import { BlockInput } from '.'
 
 const { add } = storiesOf('web/search/notebook/SearchNotebook', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
 ))
 
-const blocks: BlockInitializer[] = [
+const blocks: BlockInput[] = [
     { type: 'md', input: '# Markdown' },
     { type: 'query', input: 'Query' },
     { type: 'md', input: '# Markdown 1' },
+    {
+        type: 'file',
+        input: {
+            repositoryName: 'github.com/sourcegraph/sourcegraph',
+            filePath: 'client/web/file.tsx',
+            revision: 'main',
+            lineRange: null,
+        },
+    },
 ]
+
+const resolveRevision = () => of({ commitID: 'commit1', defaultBranch: 'main', rootTreeURL: '' })
+const fetchRepository = () => of({ id: 'repo' } as RepositoryFields)
 
 add('default', () => (
     <WebStory>
@@ -34,11 +47,13 @@ add('default', () => (
                 globbing={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 streamSearch={() => NEVER}
-                fetchHighlightedFileLineRanges={() => NEVER}
+                fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 onSerializeBlocks={() => {}}
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 extensionsController={extensionsController}
+                fetchRepository={fetchRepository}
+                resolveRevision={resolveRevision}
             />
         )}
     </WebStory>
@@ -57,11 +72,13 @@ add('default read-only', () => (
                 globbing={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 streamSearch={() => NEVER}
-                fetchHighlightedFileLineRanges={() => NEVER}
+                fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 onSerializeBlocks={() => {}}
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 extensionsController={extensionsController}
+                fetchRepository={fetchRepository}
+                resolveRevision={resolveRevision}
             />
         )}
     </WebStory>

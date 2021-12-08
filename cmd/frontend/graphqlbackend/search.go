@@ -7,9 +7,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
-	otlog "github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -85,12 +83,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 	}
 
 	var plan query.Plan
-	globbing := getBoolPtr(settings.SearchGlobbing, false)
-	tr.LogFields(otlog.Bool("globbing", globbing))
-	plan, err = query.Pipeline(
-		query.Init(args.Query, searchType),
-		query.With(globbing, query.Globbing),
-	)
+	plan, err = query.Pipeline(query.Init(args.Query, searchType))
 	if err != nil {
 		return alertForQuery(args.Query, err).wrapSearchImplementer(db), nil
 	}
@@ -122,8 +115,6 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		searcherURLs: search.SearcherURLs(),
 		reposMu:      &sync.Mutex{},
 		resolved:     &searchrepos.Resolved{},
-
-		subRepoPerms: subRepoPermsClient(db),
 	}, nil
 }
 
@@ -208,11 +199,6 @@ type searchResolver struct {
 
 	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map
-
-	// Responsible for filtering out sub-repository content.
-	//
-	// TODO(#27372): Applying sub-repo permissions here is not the intended final design.
-	subRepoPerms authz.SubRepoPermissionChecker
 }
 
 func (r *searchResolver) Inputs() run.SearchInputs {

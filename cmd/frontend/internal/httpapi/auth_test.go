@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/cockroachdb/errors"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -76,7 +75,7 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 		req.Header.Set("Authorization", "token badbad")
 
 		accessTokens := dbmock.NewMockAccessTokenStore()
-		accessTokens.LookupFunc.SetDefaultReturn(0, errors.New("x"))
+		accessTokens.LookupFunc.SetDefaultReturn(0, database.InvalidTokenError{})
 		db := dbmock.NewMockDB()
 		db.AccessTokensFunc.SetDefaultReturn(accessTokens)
 
