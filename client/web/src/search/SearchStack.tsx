@@ -15,10 +15,10 @@ import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/ut
 import { SyntaxHighlightedSearchQuery } from '../components/SyntaxHighlightedSearchQuery'
 import { PageRoutes } from '../routes.constants'
 import { useExperimentalFeatures } from '../stores'
-import { SearchEntry, FileEntry, useSearchStackState, restorePreviousSession } from '../stores/searchStack'
+import { useSearchStackState, restorePreviousSession, SearchEntry, SearchStackEntry } from '../stores/searchStack'
 
 import { BlockInput } from './notebook'
-import { serializeBlocks } from './notebook/helpers'
+import { serializeBlocks } from './notebook/serialize'
 import styles from './SearchStack.module.scss'
 
 export const SearchStack: React.FunctionComponent = () => {
@@ -30,39 +30,28 @@ export const SearchStack: React.FunctionComponent = () => {
     const enableSearchStack = useExperimentalFeatures(features => features.enableSearchStack)
 
     const createNotebook = useCallback(() => {
-        // Show searches first
-        const sortedEntries = [...entries].sort((entryA, entryB) => {
-            if (entryA.type === entryB.type) {
-                return 0
-            }
-            if (entryA.type === 'search') {
-                return -1
-            }
-            return 1
-        })
         const location = {
             pathname: PageRoutes.SearchNotebook,
             hash: serializeBlocks(
-                sortedEntries
-                    .map(
-                        (entry): BlockInput => {
-                            switch (entry.type) {
-                                case 'search':
-                                    return { type: 'query', input: toSearchQuery(entry) }
-                                case 'file':
-                                    return {
-                                        type: 'file',
-                                        input: {
-                                            repositoryName: entry.repo,
-                                            revision: entry.revision,
-                                            filePath: entry.path,
-                                            lineRange: null,
-                                        },
-                                    }
-                            }
+                entries.map(
+                    (entry): BlockInput => {
+                        switch (entry.type) {
+                            case 'search':
+                                return { type: 'query', input: toSearchQuery(entry) }
+                            case 'file':
+                                return {
+                                    type: 'file',
+                                    input: {
+                                        repositoryName: entry.repo,
+                                        revision: entry.revision,
+                                        filePath: entry.path,
+                                        lineRange: null,
+                                    },
+                                }
                         }
-                    )
-                    .filter(Boolean)
+                    }
+                ),
+                window.location.origin
             ),
         }
         history.push(location)
@@ -70,20 +59,6 @@ export const SearchStack: React.FunctionComponent = () => {
 
     if (!enableSearchStack || (entries.length === 0 && !canRestore)) {
         return null
-    }
-
-    const searches: SearchEntry[] = []
-    const files: FileEntry[] = []
-
-    for (const entry of entries) {
-        switch (entry.type) {
-            case 'search':
-                searches.push(entry)
-                break
-            case 'file':
-                files.push(entry)
-                break
-        }
     }
 
     return (
@@ -96,7 +71,7 @@ export const SearchStack: React.FunctionComponent = () => {
                     onClick={() => setOpen(open => !open)}
                 >
                     <SearchStackIcon className="icon-inline" />
-                    <h4 className={classNames(styles.openVisible, 'pl-1')}>Search Stack</h4>
+                    <h4 className={classNames(styles.openVisible, 'pl-1')}>Search session</h4>
                 </button>
                 <button
                     type="button"
@@ -109,88 +84,82 @@ export const SearchStack: React.FunctionComponent = () => {
             </div>
             {open && (
                 <>
-                    {searches.length > 0 && (
-                        <details open={true}>
-                            <summary>Recent searches</summary>
-                            <ul>
-                                {searches.map((entry, index) => (
-                                    <li key={index}>
-                                        <Link
-                                            to={{
-                                                pathname: '/search',
-                                                search: buildSearchURLQuery(
-                                                    entry.query,
-                                                    entry.patternType,
-                                                    entry.caseSensitive,
-                                                    entry.searchContext
-                                                ),
-                                            }}
-                                        >
-                                            <SearchIcon className="icon-inline text-muted" />{' '}
-                                            <SyntaxHighlightedSearchQuery query={entry.query} />
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                        </details>
-                    )}
-                    {files.length > 0 && (
-                        <details open={true}>
-                            <summary>Recent files</summary>
-                            <ul>
-                                {files.map((entry, index) => (
-                                    <li key={index}>
-                                        <div title={entry.path}>
-                                            <Link
-                                                to={{
-                                                    pathname: toPrettyBlobURL({
-                                                        repoName: entry.repo,
-                                                        revision: entry.revision,
-                                                        filePath: entry.path,
-                                                    }),
-                                                }}
-                                            >
-                                                <FileDocumentIcon className="icon-inline text-muted" />
-                                                &nbsp;{shortenFilePath(entry.path)}
-                                            </Link>
-                                        </div>
-                                        <small className="text-muted">
-                                            <RepoIcon repoName={entry.repo} className="icon-inline text-muted" />
-                                            {entry.repo}
-                                        </small>
-                                    </li>
-                                ))}
-                            </ul>
-                        </details>
-                    )}
+                    <ul>
+                        {entries.map((entry, index) => (
+                            <li key={index}>{renderSearchEntry(entry)}</li>
+                        ))}
+                    </ul>
                     {(canRestore || entries.length > 0) && (
-                        <>
-                            <div className="p-2">
-                                {canRestore && (
-                                    <button
-                                        type="button"
-                                        className="w-100 btn btn-sm btn-outline-secondary mb-1"
-                                        onClick={restorePreviousSession}
-                                    >
-                                        Restore previous session
-                                    </button>
-                                )}
-                                {entries.length > 0 && (
-                                    <button
-                                        type="button"
-                                        className="w-100 btn btn-sm btn-outline-secondary"
-                                        onClick={createNotebook}
-                                    >
-                                        Create Notebook
-                                    </button>
-                                )}
-                            </div>
-                        </>
+                        <div className="p-2">
+                            {canRestore && (
+                                <button
+                                    type="button"
+                                    className="w-100 btn btn-sm btn-outline-secondary mb-1"
+                                    onClick={restorePreviousSession}
+                                >
+                                    Restore previous session
+                                </button>
+                            )}
+                            {entries.length > 0 && (
+                                <button
+                                    type="button"
+                                    className="w-100 btn btn-sm btn-outline-secondary"
+                                    onClick={createNotebook}
+                                >
+                                    Create Notebook
+                                </button>
+                            )}
+                        </div>
                     )}
                 </>
             )}
         </div>
     )
+}
+
+function renderSearchEntry(entry: SearchStackEntry): React.ReactChild {
+    switch (entry.type) {
+        case 'search':
+            return (
+                <Link
+                    to={{
+                        pathname: '/search',
+                        search: buildSearchURLQuery(
+                            entry.query,
+                            entry.patternType,
+                            entry.caseSensitive,
+                            entry.searchContext
+                        ),
+                    }}
+                    className={styles.entry}
+                >
+                    <SearchIcon className="icon-inline text-muted mr-1" />
+                    <SyntaxHighlightedSearchQuery query={entry.query} />
+                </Link>
+            )
+        case 'file':
+            return (
+                <Link
+                    to={{
+                        pathname: toPrettyBlobURL({
+                            repoName: entry.repo,
+                            revision: entry.revision,
+                            filePath: entry.path,
+                        }),
+                    }}
+                    className={styles.entry}
+                >
+                    <div>
+                        <FileDocumentIcon className="icon-inline text-muted mr-1" />
+                        <span title={entry.path}>{shortenFilePath(entry.path)}</span>
+                    </div>
+                    <small className="text-muted">
+                        <RepoIcon repoName={entry.repo} className="icon-inline text-muted mr-1" />
+                        {entry.repo}
+                    </small>
+                </Link>
+            )
+    }
 }
 
 function toSearchQuery(entry: SearchEntry): string {

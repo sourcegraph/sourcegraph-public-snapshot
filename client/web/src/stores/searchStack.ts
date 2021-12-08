@@ -23,13 +23,13 @@ export interface FileEntry {
     revision: string
 }
 
-type Entry = SearchEntry | FileEntry
+export type SearchStackEntry = SearchEntry | FileEntry
 
 const SEARCH_STACK_SESSION_KEY = 'search:search-stack:session'
 
 export interface SearchStackStore {
-    entries: Entry[]
-    previousEntries: Entry[]
+    entries: SearchStackEntry[]
+    previousEntries: SearchStackEntry[]
     canRestoreSession: boolean
 }
 
@@ -56,7 +56,7 @@ export const useSearchStackState = create<SearchStackStore>(() => {
  * unnecessary triggers. This hook will *update* an existing entry if
  * necessary.
  */
-export function useSearchStack(newEntry: Entry | null): void {
+export function useSearchStack(newEntry: SearchStackEntry | null): void {
     const enableSearchStack = useExperimentalFeatures(features => features.enableSearchStack)
     useEffect(() => {
         if (enableSearchStack && newEntry) {
@@ -90,7 +90,7 @@ export function useSearchStack(newEntry: Entry | null): void {
     }, [newEntry, enableSearchStack])
 }
 
-function addSearchStackEntry(entry: Entry, update?: (entry: Entry) => boolean): void {
+function addSearchStackEntry(entry: SearchStackEntry, update?: (entry: SearchStackEntry) => boolean): void {
     useSearchStackState.setState(state => {
         // If the list contains more than one entry we disable restoring from
         // the previous session
@@ -130,6 +130,6 @@ export function restorePreviousSession(): void {
     }
 }
 
-function restoreSession(storage: Storage): Entry[] {
+function restoreSession(storage: Storage): SearchStackEntry[] {
     return JSON.parse(storage.getItem(SEARCH_STACK_SESSION_KEY) ?? '[]')
 }

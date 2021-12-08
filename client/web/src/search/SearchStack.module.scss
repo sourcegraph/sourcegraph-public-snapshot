@@ -11,26 +11,33 @@
 
     box-shadow: var(--dropdown-shadow);
     border: 1px solid var(--border-color-2);
+    overflow: hidden;
 
     h4 {
         margin: 0;
         font-weight: 600;
     }
 
-    summary {
-        white-space: nowrap;
-        margin-bottom: 0.5rem;
-    }
-
-    details {
-        margin: 0.25rem 0.5rem;
-    }
-
     ul {
         padding: 0;
-        margin: 0;
-        margin-left: 0.75rem;
+        margin: 0.25rem 0rem 0.25rem 0.5rem;
         list-style: none;
+        overflow-y: auto;
+        flex: 1;
+
+        .entry {
+            display: block;
+            padding: 0.25rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            overflow-wrap: anywhere;
+            margin-right: 0.5rem;
+
+            &:hover {
+                background-color: var(--color-bg-2);
+                text-decoration: none;
+            }
+        }
     }
 
     .close-button {
@@ -48,7 +55,10 @@
     }
 
     &.open {
-        max-width: 15rem;
+        max-width: 18rem;
+        max-height: 95vh;
+        display: flex;
+        flex-direction: column;
 
         .open-visible {
             display: initial;
