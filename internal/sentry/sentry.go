@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -82,6 +83,11 @@ func Init(c conftypes.WatchableSiteConfig) {
 }
 
 func captureError(err error, level sentry.Level, tags map[string]string) {
+	if errcode.IsMuted(err) {
+		// If the error is muted, skip capturing it.
+		return
+	}
+
 	event, extraDetails := errors.BuildSentryReport(err)
 
 	// Sentry uses the Type of the first exception as the issue title. By default,

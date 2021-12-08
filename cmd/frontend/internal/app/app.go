@@ -50,7 +50,9 @@ func NewHandler(db database.DB) http.Handler {
 	})))
 
 	if envvar.SourcegraphDotComMode() {
-		r.Get(router.GoSymbolURL).Handler(trace.Route(errorutil.Handler(serveGoSymbolURL(db))))
+		// This route has its error muted because the /go/* urls are deprecated and a common source
+		// of noise in Sentry due to having those pages still indexed in Google.
+		r.Get(router.GoSymbolURL).Handler(trace.Route(errorutil.HandlerWithErrorsMuted(serveGoSymbolURL(db))))
 	}
 
 	r.Get(router.UI).Handler(ui.Router())

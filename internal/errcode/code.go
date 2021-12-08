@@ -153,7 +153,7 @@ func IsTimeout(err error) bool {
 	return errors.As(err, &e) && e.Timeout()
 }
 
-// IsNonRetryable will check if err or one of its causes is a error that cannot be retried.
+// IsNonRetryable will check if err or one of its causes is an error that cannot be retried.
 func IsNonRetryable(err error) bool {
 	var e interface{ NonRetryable() bool }
 	return errors.As(err, &e) && e.NonRetryable()
@@ -167,3 +167,19 @@ func MakeNonRetryable(err error) error {
 type nonRetryableError struct{ error }
 
 func (nonRetryableError) NonRetryable() bool { return true }
+
+// IsMuted will check if err or one of its causes is an error that is muted.
+func IsMuted(err error) bool {
+	var e interface{ Muted() bool }
+	return errors.As(err, &e) && e.Muted()
+}
+
+// MakeMuted makes any error ignored by error reporting systems,
+// but is still logged.
+func MakeMuted(err error) error {
+	return mutedError{err}
+}
+
+type mutedError struct{ error }
+
+func (mutedError) Muted() bool { return true }
