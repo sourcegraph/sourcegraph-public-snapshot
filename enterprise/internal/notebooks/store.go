@@ -180,7 +180,7 @@ var blockJsonbQueryPaths = []string{
 	"block#>>'{fileInput, revision}'",
 }
 
-func getNotebooksQueryConditions(opts ListNotebooksOptions) []*sqlf.Query {
+func getNotebooksQueryCondition(opts ListNotebooksOptions) *sqlf.Query {
 	conds := []*sqlf.Query{}
 	if opts.CreatorUserID != 0 {
 		conds = append(conds, sqlf.Sprintf("notebooks.creator_user_id = %d", opts.CreatorUserID))
@@ -201,7 +201,7 @@ func getNotebooksQueryConditions(opts ListNotebooksOptions) []*sqlf.Query {
 		// If no conditions are present, append a catch-all condition to avoid a SQL syntax error
 		conds = append(conds, sqlf.Sprintf("1 = 1"))
 	}
-	return conds
+	return sqlf.Join(conds, "\n AND")
 }
 
 func (s *notebooksStore) ListNotebooks(ctx context.Context, pageOpts ListNotebooksPageOptions, opts ListNotebooksOptions) ([]*Notebook, error) {
@@ -210,7 +210,7 @@ func (s *notebooksStore) ListNotebooks(ctx context.Context, pageOpts ListNoteboo
 			listNotebooksFmtStr,
 			sqlf.Join(notebookColumns, ","),
 			notebooksPermissionsCondition(ctx),
-			sqlf.Join(getNotebooksQueryConditions(opts), "\n AND"),
+			getNotebooksQueryCondition(opts),
 			getNotebooksOrderByClause(opts.OrderBy, opts.OrderByDescending),
 			pageOpts.First,
 			pageOpts.After,
@@ -229,7 +229,7 @@ func (s *notebooksStore) CountNotebooks(ctx context.Context, opts ListNotebooksO
 		sqlf.Sprintf(
 			countNotebooksFmtStr,
 			notebooksPermissionsCondition(ctx),
-			sqlf.Join(getNotebooksQueryConditions(opts), "\n AND"),
+			getNotebooksQueryCondition(opts),
 		),
 	).Scan(&count)
 	if err != nil {
