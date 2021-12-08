@@ -49,10 +49,10 @@ const (
 var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "true", "Use git-gc during janitorial cleanup phases"))
 
 var (
-	reposRemoved = promauto.NewCounter(prometheus.CounterOpts{
+	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_removed",
 		Help: "number of repos removed during cleanup",
-	})
+	}, []string{"reason"})
 	reposRecloned = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_recloned",
 		Help: "number of repos removed and re-cloned due to age",
@@ -99,19 +99,26 @@ func (s *Server) cleanupRepos() {
 		return false, nil
 	}
 
-	maybeRemoveCorrupt := func(dir GitDir) (done bool, err error) {
+	maybeRemoveCorrupt := func(dir GitDir) (done bool, _ error) {
+		var reason string
+
 		// We treat repositories missing HEAD to be corrupt. Both our cloning
 		// and fetching ensure there is a HEAD file.
-		_, err = os.Stat(dir.Path("HEAD"))
-		if !os.IsNotExist(err) {
+		if _, err := os.Stat(dir.Path("HEAD")); os.IsNotExist(err) {
+			reason = "missing-head"
+		} else if err != nil {
 			return false, err
 		}
 
-		log15.Info("removing corrupt repo", "repo", dir)
+		if reason == "" {
+			return false, nil
+		}
+
+		log15.Info("removing corrupt repo", "repo", dir, "reason", reason)
 		if err := s.removeRepoDirectory(dir); err != nil {
 			return true, err
 		}
-		reposRemoved.Inc()
+		reposRemoved.WithLabelValues(reason).Inc()
 		return true, nil
 	}
 
