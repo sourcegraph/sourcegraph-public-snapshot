@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/test"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 )
@@ -28,7 +28,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 
 	timescaleDSN := postgresdsn.New("codeinsights", username, os.Getenv)
-	initConn, closeInitConn, err := newTestDB(timescaleDSN)
+	initConn, err := connections.NewTestDB(timescaleDSN)
 	if err != nil {
 		t.Log("")
 		t.Log("README: To run these tests you need to have the codeinsights TimescaleDB running:")
@@ -63,17 +63,17 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 	u.Path = dbname
 	timescaleDSN = u.String()
-	db, closeDBConn, err := newTestDB(timescaleDSN, schemas.CodeInsights)
+	db, err = connections.NewTestDB(timescaleDSN, schemas.CodeInsights)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Perform DB migrations.
 	cleanup = func() {
-		if err := closeDBConn(nil); err != nil {
+		if err := db.Close(); err != nil {
 			t.Log(err)
 		}
-		defer closeInitConn(nil)
+		defer initConn.Close()
 		// It would be nice to cleanup by dropping the test DB we just created. But we can't:
 		//
 		// 	dropping test database ERROR: database "insights_test_testresolver_insights" is being accessed by other users (SQLSTATE 55006)
@@ -88,15 +88,4 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 		//}
 	}
 	return db, cleanup
-}
-
-// newTestDB connects to the given data source and returns the handle. After successful connection, the
-// schema version of the database will be compared against an expected version and the supplied migrations
-// may be run (taking an advisory lock to ensure exclusive access).
-//
-// This function returns a basestore-style callback that closes the database. This should be called instead
-// of calling Close directly on the database handle as it also handles closing migration objects associated
-// with the handle.
-func newTestDB(dsn string, schemas ...*schemas.Schema) (*sql.DB, func(err error) error, error) {
-	return dbconn.ConnectInternal(dsn, "", "", schemas)
 }

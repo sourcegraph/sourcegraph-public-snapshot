@@ -141,7 +141,7 @@ type ListActionsOpts struct {
 	// MonitorID, if set, will constrain the listed actions to only
 	// those that are defined as part of the given monitor.
 	// References cm_monitors(id)
-	MonitorID *int
+	MonitorID *int64
 
 	// First, if set, limits the number of actions returned
 	// to the first n.

@@ -142,16 +142,16 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		}
 	}()
 
+	triggerJob, ok := record.(*cm.TriggerJob)
+	if !ok {
+		return errors.Errorf("unexpected record type %T", record)
+	}
+
 	s, err := r.CodeMonitorStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = s.Done(err) }()
-
-	triggerJob, ok := record.(*cm.TriggerJob)
-	if !ok {
-		return errors.Errorf("unexpected record type %T", record)
-	}
 
 	q, err := s.GetQueryTriggerForJob(ctx, triggerJob.ID)
 	if err != nil {
@@ -166,8 +166,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	newQuery := newQueryWithAfterFilter(q)
 
 	// Search.
-	var results *gqlSearchResponse
-	results, err = search(ctx, newQuery, m.UserID)
+	results, err := search(ctx, newQuery, m.UserID)
 	if err != nil {
 		return err
 	}
@@ -178,7 +177,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	if numResults > 0 {
 		_, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
 		if err != nil {
-			return errors.Errorf("store.EnqueueActionJobsForQuery: %w", err)
+			return errors.Wrap(err, "store.EnqueueActionJobsForQuery")
 		}
 	}
 	// Log next_run and latest_result to table cm_queries.
@@ -190,7 +189,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	// Log the actual query we ran and whether we got any new results.
 	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, newQuery, numResults)
 	if err != nil {
-		return errors.Errorf("LogSearch: %w", err)
+		return errors.Wrap(err, "UpdateTriggerJobWithResults")
 	}
 	return nil
 }
@@ -207,56 +206,71 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 		}
 	}()
 
+	j, ok := record.(*cm.ActionJob)
+	if !ok {
+		return errors.Errorf("expected record of type *cm.ActionJob, got %T", record)
+	}
+
+	switch {
+	case j.Email != nil:
+		return r.handleEmail(ctx, j)
+	case j.Webhook != nil:
+		return r.handleWebhook(ctx, j)
+	case j.SlackWebhook != nil:
+		return r.handleSlackWebhook(ctx, j)
+	default:
+		return errors.New("job must be one of type email, webhook, or slack webhook")
+	}
+}
+
+func (r *actionRunner) handleEmail(ctx context.Context, j *cm.ActionJob) error {
 	s, err := r.CodeMonitorStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = s.Done(err) }()
 
-	j, ok := record.(*cm.ActionJob)
-	if !ok {
-		return errors.Errorf("type assertion failed")
-	}
-
 	m, err := s.GetActionJobMetadata(ctx, j.ID)
 	if err != nil {
-		return errors.Errorf("store.GetActionJobMetadata: %w", err)
+		return errors.Wrap(err, "GetActionJobMetadata")
 	}
 
-	switch {
-	case j.Email != nil:
-		e, err := s.GetEmailAction(ctx, *j.Email)
-		if err != nil {
-			return errors.Errorf("store.ActionEmailByIDInt64: %w", err)
-		}
-
-		recs, err := s.ListRecipients(ctx, cm.ListRecipientsOpts{EmailID: j.Email})
-		if err != nil {
-			return errors.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
-		}
-
-		data, err := email.NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
-		if err != nil {
-			return errors.Errorf("email.NewTemplateDataForNewSearchResults: %w", err)
-		}
-		for _, rec := range recs {
-			if rec.NamespaceOrgID != nil {
-				// TODO (stefan): Send emails to org members.
-				continue
-			}
-			if rec.NamespaceUserID == nil {
-				return errors.Errorf("nil recipient")
-			}
-			err = email.SendEmailForNewSearchResult(ctx, *rec.NamespaceUserID, data)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	default:
-		// TODO(camdencheek): handle j.SlackWebhook != nil and j.Webhook != nil
-		return errors.New("cannot yet handle non-email jobs")
+	e, err := s.GetEmailAction(ctx, *j.Email)
+	if err != nil {
+		return errors.Wrap(err, "GetEmailAction")
 	}
+
+	recs, err := s.ListRecipients(ctx, cm.ListRecipientsOpts{EmailID: j.Email})
+	if err != nil {
+		return errors.Wrap(err, "ListRecipients")
+	}
+
+	data, err := email.NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
+	if err != nil {
+		return errors.Wrap(err, "NewTemplateDataForNewSearchResults")
+	}
+	for _, rec := range recs {
+		if rec.NamespaceOrgID != nil {
+			// TODO (stefan): Send emails to org members.
+			continue
+		}
+		if rec.NamespaceUserID == nil {
+			return errors.New("nil recipient")
+		}
+		err = email.SendEmailForNewSearchResult(ctx, *rec.NamespaceUserID, data)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *actionRunner) handleWebhook(ctx context.Context, j *cm.ActionJob) error {
+	panic("unimplemented")
+}
+
+func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *cm.ActionJob) error {
+	panic("unimplemented")
 }
 
 // newQueryWithAfterFilter constructs a new query which finds search results

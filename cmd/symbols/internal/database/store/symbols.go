@@ -5,7 +5,9 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
+	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -59,49 +61,68 @@ func (s *store) DeletePaths(ctx context.Context, paths []string) error {
 	return s.Exec(ctx, sqlf.Sprintf(`DELETE FROM symbols WHERE path IN (%s)`, sqlf.Join(pathQueries, ",")))
 }
 
-func (s *store) WriteSymbols(ctx context.Context, symbols <-chan result.Symbol) (err error) {
+func (s *store) WriteSymbols(ctx context.Context, symbolOrErrors <-chan parser.SymbolOrError) (err error) {
 	rows := make(chan []interface{})
+	group, ctx := errgroup.WithContext(ctx)
 
-	go func() {
+	group.Go(func() error {
 		defer close(rows)
 
-		for symbol := range symbols {
-			rows <- []interface{}{
-				symbol.Name,
-				strings.ToLower(symbol.Name),
-				symbol.Path,
-				strings.ToLower(symbol.Path),
-				symbol.Line,
-				symbol.Kind,
-				symbol.Language,
-				symbol.Parent,
-				symbol.ParentKind,
-				symbol.Signature,
-				symbol.Pattern,
-				symbol.FileLimited,
+		for symbolOrError := range symbolOrErrors {
+			if symbolOrError.Err != nil {
+				return symbolOrError.Err
+			}
+
+			select {
+			case rows <- symbolToRow(symbolOrError.Symbol):
+			case <-ctx.Done():
+				return ctx.Err()
 			}
 		}
-	}()
 
-	return batch.InsertValues(
-		ctx,
-		s.Handle().DB(),
-		"symbols",
-		batch.MaxNumSQLiteParameters,
-		[]string{
-			"name",
-			"namelowercase",
-			"path",
-			"pathlowercase",
-			"line",
-			"kind",
-			"language",
-			"parent",
-			"parentkind",
-			"signature",
-			"pattern",
-			"filelimited",
-		},
-		rows,
-	)
+		return nil
+	})
+
+	group.Go(func() error {
+		return batch.InsertValues(
+			ctx,
+			s.Handle().DB(),
+			"symbols",
+			batch.MaxNumSQLiteParameters,
+			[]string{
+				"name",
+				"namelowercase",
+				"path",
+				"pathlowercase",
+				"line",
+				"kind",
+				"language",
+				"parent",
+				"parentkind",
+				"signature",
+				"pattern",
+				"filelimited",
+			},
+			rows,
+		)
+	})
+
+	return group.Wait()
+}
+
+func symbolToRow(symbol result.Symbol) []interface{} {
+	return []interface{}{
+		symbol.Name,
+		strings.ToLower(symbol.Name),
+		symbol.Path,
+		strings.ToLower(symbol.Path),
+		symbol.Line,
+		symbol.Kind,
+		symbol.Language,
+		symbol.Parent,
+		symbol.ParentKind,
+		symbol.Signature,
+		symbol.Pattern,
+		symbol.FileLimited,
+	}
 }

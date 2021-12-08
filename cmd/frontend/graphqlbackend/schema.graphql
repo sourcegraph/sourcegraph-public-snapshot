@@ -1098,7 +1098,7 @@ type Query {
         uri: String
     ): Repository
     """
-    Looks up a repository by either name or cloneURL. When the repository does not exist on the server
+    Looks up a repository by either name or cloneURL or hashedName. When the repository does not exist on the server
     and "disablePublicRepoRedirects" is "false" in the site configuration, it returns a Redirect to
     an external Sourcegraph URL that may have this repository instead. Otherwise, this query returns
     null.
@@ -1114,6 +1114,12 @@ type Query {
         Will not actually check the code host to see if the repository actually exists.
         """
         cloneURL: String
+        """
+        Query the repository by hashed name.
+        Hashed name is a SHA256 checksum of the absolute repo name in lower case,
+        for example "github.com/sourcegraph/sourcegraph" -> "a6c905ceb7dec9a565945ceded8c7fa4154250df8b928fb40673b535d9a24c2f"
+        """
+        hashedName: String
     ): RepositoryRedirect
     """
     Lists external services under given namespace.

@@ -15,6 +15,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/test"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
@@ -191,12 +192,15 @@ func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, schemas 
 		return nil, errors.Wrap(err, "create template database")
 	}
 
-	_, closeTemplateDB, err := newTestDB(urlWithDB(u, tdb.Name).String(), schemas...)
+	db, err := connections.NewTestDB(urlWithDB(u, tdb.Name).String(), schemas...)
 	if err != nil {
 		return nil, errors.Wrap(err, "migrate template DB")
 	}
+	if err := db.Close(); err != nil {
+		return nil, errors.Wrap(err, "close template DB")
+	}
 
-	return tdb, closeTemplateDB(nil)
+	return tdb, nil
 }
 
 const lockTemplateDBQuery = `

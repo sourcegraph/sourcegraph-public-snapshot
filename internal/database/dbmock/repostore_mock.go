@@ -33,6 +33,9 @@ type MockRepoStore struct {
 	// GetFunc is an instance of a mock function object controlling the
 	// behavior of the method Get.
 	GetFunc *RepoStoreGetFunc
+	// GetByHashedNameFunc is an instance of a mock function object
+	// controlling the behavior of the method GetByHashedName.
+	GetByHashedNameFunc *RepoStoreGetByHashedNameFunc
 	// GetByIDsFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByIDs.
 	GetByIDsFunc *RepoStoreGetByIDsFunc
@@ -104,6 +107,11 @@ func NewMockRepoStore() *MockRepoStore {
 		},
 		GetFunc: &RepoStoreGetFunc{
 			defaultHook: func(context.Context, api.RepoID) (*types.Repo, error) {
+				return nil, nil
+			},
+		},
+		GetByHashedNameFunc: &RepoStoreGetByHashedNameFunc{
+			defaultHook: func(context.Context, api.RepoHashedName) (*types.Repo, error) {
 				return nil, nil
 			},
 		},
@@ -209,6 +217,11 @@ func NewStrictMockRepoStore() *MockRepoStore {
 				panic("unexpected invocation of MockRepoStore.Get")
 			},
 		},
+		GetByHashedNameFunc: &RepoStoreGetByHashedNameFunc{
+			defaultHook: func(context.Context, api.RepoHashedName) (*types.Repo, error) {
+				panic("unexpected invocation of MockRepoStore.GetByHashedName")
+			},
+		},
 		GetByIDsFunc: &RepoStoreGetByIDsFunc{
 			defaultHook: func(context.Context, ...api.RepoID) ([]*types.Repo, error) {
 				panic("unexpected invocation of MockRepoStore.GetByIDs")
@@ -300,6 +313,9 @@ func NewMockRepoStoreFrom(i database.RepoStore) *MockRepoStore {
 		},
 		GetFunc: &RepoStoreGetFunc{
 			defaultHook: i.Get,
+		},
+		GetByHashedNameFunc: &RepoStoreGetByHashedNameFunc{
+			defaultHook: i.GetByHashedName,
 		},
 		GetByIDsFunc: &RepoStoreGetByIDsFunc{
 			defaultHook: i.GetByIDs,
@@ -885,6 +901,115 @@ func (c RepoStoreGetFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RepoStoreGetFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// RepoStoreGetByHashedNameFunc describes the behavior when the
+// GetByHashedName method of the parent MockRepoStore instance is invoked.
+type RepoStoreGetByHashedNameFunc struct {
+	defaultHook func(context.Context, api.RepoHashedName) (*types.Repo, error)
+	hooks       []func(context.Context, api.RepoHashedName) (*types.Repo, error)
+	history     []RepoStoreGetByHashedNameFuncCall
+	mutex       sync.Mutex
+}
+
+// GetByHashedName delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockRepoStore) GetByHashedName(v0 context.Context, v1 api.RepoHashedName) (*types.Repo, error) {
+	r0, r1 := m.GetByHashedNameFunc.nextHook()(v0, v1)
+	m.GetByHashedNameFunc.appendCall(RepoStoreGetByHashedNameFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetByHashedName
+// method of the parent MockRepoStore instance is invoked and the hook queue
+// is empty.
+func (f *RepoStoreGetByHashedNameFunc) SetDefaultHook(hook func(context.Context, api.RepoHashedName) (*types.Repo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetByHashedName method of the parent MockRepoStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *RepoStoreGetByHashedNameFunc) PushHook(hook func(context.Context, api.RepoHashedName) (*types.Repo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *RepoStoreGetByHashedNameFunc) SetDefaultReturn(r0 *types.Repo, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoHashedName) (*types.Repo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *RepoStoreGetByHashedNameFunc) PushReturn(r0 *types.Repo, r1 error) {
+	f.PushHook(func(context.Context, api.RepoHashedName) (*types.Repo, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoStoreGetByHashedNameFunc) nextHook() func(context.Context, api.RepoHashedName) (*types.Repo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoStoreGetByHashedNameFunc) appendCall(r0 RepoStoreGetByHashedNameFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoStoreGetByHashedNameFuncCall objects
+// describing the invocations of this function.
+func (f *RepoStoreGetByHashedNameFunc) History() []RepoStoreGetByHashedNameFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoStoreGetByHashedNameFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoStoreGetByHashedNameFuncCall is an object that describes an
+// invocation of method GetByHashedName on an instance of MockRepoStore.
+type RepoStoreGetByHashedNameFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoHashedName
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.Repo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoStoreGetByHashedNameFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoStoreGetByHashedNameFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

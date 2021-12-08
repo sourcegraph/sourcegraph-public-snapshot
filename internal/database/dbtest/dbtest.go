@@ -9,12 +9,13 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/test"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
@@ -55,8 +56,7 @@ var rng = rand.New(rand.NewSource(func() int64 {
 }()))
 var rngLock sync.Mutex
 
-// NewDB uses NewFromDSN to create a testing database, using the default
-// DSN.
+// NewDB uses NewFromDSN to create a testing database, using the default DSN.
 func NewDB(t testing.TB) *sql.DB {
 	if os.Getenv("USE_FAST_DBTEST") != "" {
 		return NewFastDB(t)
@@ -64,29 +64,30 @@ func NewDB(t testing.TB) *sql.DB {
 	return NewFromDSN(t, "")
 }
 
+// NewRawDB uses NewRawFromDSN to create a testing database, using the default DSN.
+func NewRawDB(t testing.TB) *sql.DB {
+	return NewRawFromDSN(t, "")
+}
+
 // NewFromDSN returns a connection to a clean, new temporary testing database
 // with the same schema as Sourcegraph's production Postgres database.
 func NewFromDSN(t testing.TB, dsn string) *sql.DB {
+	return newFromDSN(t, dsn, "migrated")
+}
+
+// NewRawFromDSN returns a connection to a clean, new temporary testing database.
+func NewRawFromDSN(t testing.TB, dsn string) *sql.DB {
+	return newFromDSN(t, dsn, "raw")
+}
+
+func newFromDSN(t testing.TB, dsn, templateNamespace string) *sql.DB {
 	if testing.Short() {
 		t.Skip("skipping DB test since -short specified")
 	}
 
-	var err error
-	var config *url.URL
-	if dsn == "" {
-		dsn = os.Getenv("PGDATASOURCE")
-	}
-	if dsn == "" {
-		config, err = url.Parse("postgres://sourcegraph:sourcegraph@127.0.0.1:5432/sourcegraph?sslmode=disable&timezone=UTC")
-		if err != nil {
-			t.Fatalf("failed to parse dsn %q: %s", dsn, err)
-		}
-		updateDSNFromEnv(config)
-	} else {
-		config, err = url.Parse(dsn)
-		if err != nil {
-			t.Fatalf("failed to parse dsn %q: %s", dsn, err)
-		}
+	config, err := getDSN(dsn)
+	if err != nil {
+		t.Fatalf("failed to parse dsn %q: %s", dsn, err)
 	}
 
 	initTemplateDB(t, config)
@@ -96,7 +97,7 @@ func NewFromDSN(t testing.TB, dsn string) *sql.DB {
 	rngLock.Unlock()
 
 	db := dbConn(t, config)
-	dbExec(t, db, `CREATE DATABASE `+pq.QuoteIdentifier(dbname)+` TEMPLATE `+pq.QuoteIdentifier(templateDBName()))
+	dbExec(t, db, `CREATE DATABASE `+pq.QuoteIdentifier(dbname)+` TEMPLATE `+pq.QuoteIdentifier(templateDBName(templateNamespace)))
 
 	config.Path = "/" + dbname
 	testDB := dbConn(t, config)
@@ -134,29 +135,36 @@ func initTemplateDB(t testing.TB, config *url.URL) {
 		db := dbConn(t, config)
 		defer db.Close()
 
-		templateName := templateDBName()
+		init := func(templateNamespace string, schemas []*schemas.Schema) {
+			templateName := templateDBName(templateNamespace)
+			name := pq.QuoteIdentifier(templateName)
 
-		// We must first drop the template database because
-		// migrations would not run on it if they had already ran,
-		// even if the content of the migrations had changed during development.
-		name := pq.QuoteIdentifier(templateName)
-		dbExec(t, db, `DROP DATABASE IF EXISTS `+name)
-		dbExec(t, db, `CREATE DATABASE `+name+` TEMPLATE template0`)
+			// We must first drop the template database because
+			// migrations would not run on it if they had already ran,
+			// even if the content of the migrations had changed during development.
 
-		cfgCopy := *config
-		cfgCopy.Path = "/" + templateName
-		_, close := dbConnInternal(t, &cfgCopy, []*schemas.Schema{
-			schemas.Frontend,
-			schemas.CodeIntel,
-		})
-		close(nil)
+			dbExec(t, db, `DROP DATABASE IF EXISTS `+name)
+			dbExec(t, db, `CREATE DATABASE `+name+` TEMPLATE template0`)
+
+			cfgCopy := *config
+			cfgCopy.Path = "/" + templateName
+			dbConn(t, &cfgCopy, schemas...).Close()
+		}
+
+		init("raw", nil)
+		init("migrated", []*schemas.Schema{schemas.Frontend, schemas.CodeIntel})
 	})
 }
 
-// templateDBName returns the name of the template database
-// for the currently running package.
-func templateDBName() string {
-	return "sourcegraph-test-template-" + wdHash()
+// templateDBName returns the name of the template database for the currently running package and namespace.
+func templateDBName(templateNamespace string) string {
+	parts := []string{
+		"sourcegraph-test-template",
+		wdHash(),
+		templateNamespace,
+	}
+
+	return strings.Join(parts, "-")
 }
 
 // wdHash returns a hash of the current working directory.
@@ -166,32 +174,16 @@ func wdHash() string {
 	h := fnv.New64()
 	wd, _ := os.Getwd()
 	h.Write([]byte(wd))
-	return strconv.Itoa(int(h.Sum64()))
+	return strconv.FormatUint(h.Sum64(), 10)
 }
 
-func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
-	db, _ := dbConnInternal(t, cfg, nil)
-	return db
-}
-
-func dbConnInternal(t testing.TB, cfg *url.URL, schemas []*schemas.Schema) (*sql.DB, func(err error) error) {
+func dbConn(t testing.TB, cfg *url.URL, schemas ...*schemas.Schema) *sql.DB {
 	t.Helper()
-	db, close, err := newTestDB(cfg.String(), schemas...)
+	db, err := connections.NewTestDB(cfg.String(), schemas...)
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}
-	return db, close
-}
-
-// newTestDB connects to the given data source and returns the handle. After successful connection, the
-// schema version of the database will be compared against an expected version and the supplied migrations
-// may be run (taking an advisory lock to ensure exclusive access).
-//
-// This function returns a basestore-style callback that closes the database. This should be called instead
-// of calling Close directly on the database handle as it also handles closing migration objects associated
-// with the handle.
-func newTestDB(dsn string, schemas ...*schemas.Schema) (*sql.DB, func(err error) error, error) {
-	return dbconn.ConnectInternal(dsn, "", "", schemas)
+	return db
 }
 
 func dbExec(t testing.TB, db *sql.DB, q string, args ...interface{}) {
@@ -204,34 +196,5 @@ func dbExec(t testing.TB, db *sql.DB, q string, args ...interface{}) {
 
 const killClientConnsQuery = `
 SELECT pg_terminate_backend(pg_stat_activity.pid)
-FROM pg_stat_activity WHERE datname = $1`
-
-// updateDSNFromEnv updates dsn based on PGXXX environment variables set on
-// the frontend.
-func updateDSNFromEnv(dsn *url.URL) {
-	if host := os.Getenv("PGHOST"); host != "" {
-		dsn.Host = host
-	}
-
-	if port := os.Getenv("PGPORT"); port != "" {
-		dsn.Host += ":" + port
-	}
-
-	if user := os.Getenv("PGUSER"); user != "" {
-		if password := os.Getenv("PGPASSWORD"); password != "" {
-			dsn.User = url.UserPassword(user, password)
-		} else {
-			dsn.User = url.User(user)
-		}
-	}
-
-	if db := os.Getenv("PGDATABASE"); db != "" {
-		dsn.Path = db
-	}
-
-	if sslmode := os.Getenv("PGSSLMODE"); sslmode != "" {
-		qry := dsn.Query()
-		qry.Set("sslmode", sslmode)
-		dsn.RawQuery = qry.Encode()
-	}
-}
+FROM pg_stat_activity WHERE datname = $1
+`
