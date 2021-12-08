@@ -54,10 +54,35 @@ const BatchSpecJSON = `{
                 "examples": ["github.com/foo/bar"]
               },
               "branch": {
-                "type": "string",
-                "description": "The branch on the repository to propose changes to. If unset, the repository's default branch is used."
+                "description": "The repository branch to propose changes to. If unset, the repository's default branch is used. If this field is defined, branches cannot be.",
+                "type": "string"
+              },
+              "branches": {
+                "description": "The repository branches to propose changes to. If unset, the repository's default branch is used. If this field is defined, branch cannot be.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               }
-            }
+            },
+            "$comment": "This is a convoluted way of saying either ` + "`" + `branch` + "`" + ` or ` + "`" + `branches` + "`" + ` can be provided, but not both at once, and neither are required.",
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "required": ["branch"]
+                  },
+                  {
+                    "required": ["branches"]
+                  }
+                ]
+              },
+              {
+                "not": {
+                  "required": ["branch", "branches"]
+                }
+              }
+            ]
           }
         ]
       }
@@ -153,7 +178,7 @@ const BatchSpecJSON = `{
                     },
                     {
                       "type": "object",
-                      "description": "An environment variable to set in the step environment: the value will be passed through from the environment src is running within.",
+                      "description": "An environment variable to set in the step environment: the key is used as the environment variable name and the value as the value.",
                       "additionalProperties": {
                         "type": "string"
                       },
@@ -173,7 +198,17 @@ const BatchSpecJSON = `{
             }
           },
           "if": {
-            "oneOf": [{ "type": "boolean" }, { "type": "string" }, { "type": "null" }],
+            "oneOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "description": "A condition to check before executing steps. Supports templating. The value 'true' is interpreted as true.",
             "examples": [
               "true",

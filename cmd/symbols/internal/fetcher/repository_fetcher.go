@@ -47,12 +47,6 @@ func NewRepositoryFetcher(gitserverClient gitserver.GitserverClient, maximumConc
 func (f *repositoryFetcher) FetchRepositoryArchive(ctx context.Context, args types.SearchArgs, paths []string) <-chan parseRequestOrError {
 	requestCh := make(chan parseRequestOrError)
 
-	// Just skip this repo as it's clogging the pipes in Cloud
-	if string(args.Repo) == "github.com/sgtest/megarepo" {
-		close(requestCh)
-		return requestCh
-	}
-
 	go func() {
 		defer close(requestCh)
 

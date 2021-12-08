@@ -1,6 +1,7 @@
 import { Shortcut } from '@slimsag/react-shortcuts'
 import * as H from 'history'
 import React, { useCallback, useState, useEffect } from 'react'
+import shallow from 'zustand/shallow'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -9,16 +10,11 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FuzzyFinder } from '@sourcegraph/web/src/components/fuzzyFinder/FuzzyFinder'
 
-import {
-    PatternTypeProps,
-    CaseSensitivityProps,
-    OnboardingTourProps,
-    SearchContextInputProps,
-    parseSearchURLQuery,
-} from '..'
+import { PatternTypeProps, OnboardingTourProps, SearchContextInputProps, parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '../../keyboardShortcuts/keyboardShortcuts'
 import { useNavbarQueryState } from '../../stores'
+import { NavbarQueryState } from '../../stores/navbarSearchQueryState'
 import { getExperimentalFeatures } from '../../util/get-experimental-features'
 import { SubmitSearchParameters } from '../helpers'
 
@@ -27,7 +23,6 @@ import { SearchBox } from './SearchBox'
 interface Props
     extends ActivationProps,
         PatternTypeProps,
-        CaseSensitivityProps,
         SettingsCascadeProps,
         ThemeProps,
         SearchContextInputProps,
@@ -42,6 +37,17 @@ interface Props
     isRepositoryRelatedPage?: boolean
 }
 
+const selectQueryState = ({
+    queryState,
+    setQueryState,
+    submitSearch,
+    searchCaseSensitivity,
+    setSearchCaseSensitivity,
+}: NavbarQueryState): Pick<
+    NavbarQueryState,
+    'queryState' | 'setQueryState' | 'submitSearch' | 'searchCaseSensitivity' | 'setSearchCaseSensitivity'
+> => ({ queryState, setQueryState, submitSearch, searchCaseSensitivity, setSearchCaseSensitivity })
+
 /**
  * The search item in the navbar
  */
@@ -51,28 +57,26 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
     // or remove the search help button
     const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
     const [isFuzzyFinderVisible, setIsFuzzyFinderVisible] = useState(false)
-    const { queryState, setQueryState, submitSearch } = useNavbarQueryState()
+    const {
+        queryState,
+        setQueryState,
+        submitSearch,
+        searchCaseSensitivity,
+        setSearchCaseSensitivity,
+    } = useNavbarQueryState(selectQueryState, shallow)
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
             submitSearch({
                 history: props.history,
                 patternType: props.patternType,
-                caseSensitive: props.caseSensitive,
                 source: 'nav',
                 activation: props.activation,
                 selectedSearchContextSpec: props.selectedSearchContextSpec,
                 ...parameters,
             })
         },
-        [
-            submitSearch,
-            props.history,
-            props.patternType,
-            props.caseSensitive,
-            props.activation,
-            props.selectedSearchContextSpec,
-        ]
+        [submitSearch, props.history, props.patternType, props.activation, props.selectedSearchContextSpec]
     )
 
     const onSubmit = useCallback(
@@ -100,6 +104,8 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         >
             <SearchBox
                 {...props}
+                caseSensitive={searchCaseSensitivity}
+                setCaseSensitivity={setSearchCaseSensitivity}
                 queryState={queryState}
                 onChange={setQueryState}
                 onSubmit={onSubmit}
