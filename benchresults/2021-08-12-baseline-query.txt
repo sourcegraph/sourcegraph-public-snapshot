@@ -16,3 +16,6 @@ BenchmarkQueryLinuxMedium-12          	     106	  11170988 ns/op	         0.0466
 BenchmarkQueryLinuxLong-12            	     100	  11385196 ns/op	         0.9818 false-positive/true-positive	       108.0 false-positives	     74210 index-size	       110.0 true-positives	 1199642 B/op	     145 allocs/op
 BenchmarkQueryChromiumShort-12        	     100	  15911806 ns/op	         0.9994 false-positive/true-positive	      3501 false-positives	    329524 index-size	      3503 true-positives	 5282084 B/op	      46 allocs/op
 BenchmarkQueryChromiumMedium-12       	      45	  35096800 ns/op	         0.9146 false-positive/true-positive	       150.0 false-positives	    329524 index-size	       164.0 true-positives	 5282448 B/op	     106 allocs/op
+BenchmarkQueryChromiumLong-12         	     100	  21089620 ns/op	         0 false-positive/true-positive	         0 false-positives	    329524 index-size	         1.000 true-positives	 5290391 B/op	     195 allocs/op
+BenchmarkQueryMegarepoShort-12        	      46	  32893553 ns/op	         0.9035 false-positive/true-positive	       234.0 false-positives	    668919 index-size	       259.0 true-positives	10713233 B/op	      82 allocs/op
+BenchmarkQueryMegarepoMedium-12       	
