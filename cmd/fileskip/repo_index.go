@@ -288,47 +288,54 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 	if IsProgressBarEnabled {
 		bar = progressbar.Default(int64(len(filenames)))
 	}
+	batchSize := 100
 	var wg sync.WaitGroup
-	for _, filename := range filenames {
-		if IsProgressBarEnabled {
-			bar.Add(1)
+	for i := 0; i < len(filenames); i += batchSize {
+		j := i + batchSize
+		if len(filenames) < j {
+			j = len(filenames)
 		}
-		textBytes, err := fs.ReadRelativeFilename(filename)
-		if err != nil {
-			fmt.Printf("err %v\n", err)
-			continue
-		}
-		if len(textBytes) == 0 {
-			continue
-		}
-		if len(textBytes) > maxFileSize {
-			continue
-		}
-		if enry.IsBinary(textBytes) {
-			continue
-		}
-		text := string(textBytes)
 		wg.Add(1)
-		go func(path string) {
+		go func(start, end int) {
 			defer wg.Done()
-			ngrams, ngramsAscii := onGrams(text, true)
-			asciiCount := ngramsAscii.Count()
-			bloomSize := uint(len(ngrams)) + uint(asciiCount)
-			filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
-			data := make([]byte, unsafe.Sizeof(uint64(1)))
-			for hash := range ngrams {
-				binary.LittleEndian.PutUint64(data, hash)
-				filter.Add(data)
+			for _, filename := range filenames[start:end] {
+				if IsProgressBarEnabled {
+					bar.Add(1)
+				}
+				textBytes, err := fs.ReadRelativeFilename(filename)
+				if err != nil {
+					fmt.Printf("err %v\n", err)
+					continue
+				}
+				if len(textBytes) == 0 {
+					continue
+				}
+				if len(textBytes) > maxFileSize {
+					continue
+				}
+				if enry.IsBinary(textBytes) {
+					continue
+				}
+				text := string(textBytes)
+				ngrams, ngramsAscii := onGrams(text, true)
+				asciiCount := ngramsAscii.Count()
+				bloomSize := uint(len(ngrams)) + uint(asciiCount)
+				filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
+				data := make([]byte, unsafe.Sizeof(uint64(1)))
+				for hash := range ngrams {
+					binary.LittleEndian.PutUint64(data, hash)
+					filter.Add(data)
+				}
+				indices := make([]uint, asciiCount)
+				ngramsAscii.NextSetMany(0, indices)
+				data = make([]byte, unsafe.Sizeof(uint(1)))
+				for _, hash := range indices {
+					binary.LittleEndian.PutUint32(data, uint32(hash))
+					filter.Add(data)
+				}
+				res <- BlobIndex{Path: filename, Filter: filter}
 			}
-			indices := make([]uint, asciiCount)
-			ngramsAscii.NextSetMany(0, indices)
-			data = make([]byte, unsafe.Sizeof(uint(1)))
-			for _, hash := range indices {
-				binary.LittleEndian.PutUint32(data, uint32(hash))
-				filter.Add(data)
-			}
-			res <- BlobIndex{Path: path, Filter: filter}
-		}(filename)
+		}(i, j)
 	}
 	wg.Wait()
 	close(res)

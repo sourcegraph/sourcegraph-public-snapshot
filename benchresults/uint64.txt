@@ -311,3 +311,5 @@ cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
 BenchmarkLoadLinux-12    	       1	12120062198 ns/op	 244013760 archive-disk-size	 211820616 bloom-storage-size	         0.2400 compression-ratio	 222472926 index-disk-size	 882761967 indexed-blobs-size	17246065152 B/op	10406088 allocs/op
 PASS
 ok  	github.com/sourcegraph/sourcegraph/cmd/bitmask/bench	13.094s
+signal: interrupt
+FAIL	github.com/sourcegraph/sourcegraph/cmd/fileskip/bench	0.205s
