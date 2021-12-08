@@ -84,7 +84,7 @@ export function useAsyncValidation<FieldValue>(
     const asyncValidationPipeline = useCallback(
         (validationEvents: Observable<AsyncValidationEvent<FieldValue>>) =>
             validationEvents.pipe(
-                // debounceTime(ASYNC_VALIDATION_DEBOUNCE_TIME),
+                debounceTime(ASYNC_VALIDATION_DEBOUNCE_TIME),
                 tap(event => {
                     if (!event.canceled) {
                         const inputElement = inputReference.current
@@ -99,7 +99,6 @@ export function useAsyncValidation<FieldValue>(
                         })
                     }
                 }),
-                debounceTime(ASYNC_VALIDATION_DEBOUNCE_TIME),
                 switchMap(({ value, validity, canceled }) =>
                     !canceled ? from(asyncValidator!(value, validity)) : EMPTY
                 ),

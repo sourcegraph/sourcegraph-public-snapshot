@@ -45,7 +45,7 @@ export function fetchRepositories(repositories: string[]): Observable<BulkSearch
             Object.keys(search).reduce<BulkSearchRepositories[]>((result, key) => {
                 const index = +key.slice('repoSearch'.length)
 
-                result[index] = search[key]
+                result[index] = search[key] ?? {}
 
                 return result
             }, [])
