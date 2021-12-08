@@ -664,72 +664,78 @@ func TestPermissionLevels(t *testing.T) {
 	t.Run("batch change mutations", func(t *testing.T) {
 		mutations := []struct {
 			name         string
-			mutationFunc func(batchChangeID, changesetID, batchSpecID string) string
+			mutationFunc func(userID, batchChangeID, changesetID, batchSpecID string) string
 		}{
 			{
 				name: "createBatchChange",
-				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
 					return fmt.Sprintf(`mutation { createBatchChange(batchSpec: %q) { id } }`, batchSpecID)
 				},
 			},
 			{
 				name: "closeBatchChange",
-				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
 					return fmt.Sprintf(`mutation { closeBatchChange(batchChange: %q, closeChangesets: false) { id } }`, batchChangeID)
 				},
 			},
 			{
 				name: "deleteBatchChange",
-				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
 					return fmt.Sprintf(`mutation { deleteBatchChange(batchChange: %q) { alwaysNil } } `, batchChangeID)
 				},
 			},
 			{
 				name: "syncChangeset",
-				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
 					return fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, changesetID)
 				},
 			},
 			{
 				name: "reenqueueChangeset",
-				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
 					return fmt.Sprintf(`mutation { reenqueueChangeset(changeset: %q) { id } }`, changesetID)
 				},
 			},
 			{
 				name: "applyBatchChange",
-				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
 					return fmt.Sprintf(`mutation { applyBatchChange(batchSpec: %q) { id } }`, batchSpecID)
 				},
 			},
 			{
 				name: "moveBatchChange",
-				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
 					return fmt.Sprintf(`mutation { moveBatchChange(batchChange: %q, newName: "foobar") { id } }`, batchChangeID)
 				},
 			},
 			{
 				name: "createChangesetComments",
-				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
 					return fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [%q], body: "test") { id } }`, batchChangeID, changesetID)
 				},
 			},
 			{
 				name: "reenqueueChangesets",
-				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
 					return fmt.Sprintf(`mutation { reenqueueChangesets(batchChange: %q, changesets: [%q]) { id } }`, batchChangeID, changesetID)
 				},
 			},
 			{
 				name: "mergeChangesets",
-				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
 					return fmt.Sprintf(`mutation { mergeChangesets(batchChange: %q, changesets: [%q]) { id } }`, batchChangeID, changesetID)
 				},
 			},
 			{
 				name: "closeChangesets",
-				mutationFunc: func(batchChangeID, changesetID, batchSpecID string) string {
+				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
 					return fmt.Sprintf(`mutation { closeChangesets(batchChange: %q, changesets: [%q]) { id } }`, batchChangeID, changesetID)
+				},
+			},
+			{
+				name: "createEmptyBatchChange",
+				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
+					return fmt.Sprintf(`mutation { createEmptyBatchChange(namespace: %q, name: "testing") { id } }`, userID)
 				},
 			},
 		}
@@ -787,6 +793,7 @@ func TestPermissionLevels(t *testing.T) {
 							}
 
 							mutation := m.mutationFunc(
+								string(graphqlbackend.MarshalUserID(tc.batchChangeAuthor)),
 								string(marshalBatchChangeID(batchChagneID)),
 								string(marshalChangesetID(changeset.ID)),
 								string(marshalBatchSpecRandID(batchSpecRandID)),
