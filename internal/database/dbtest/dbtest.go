@@ -175,7 +175,7 @@ func wdHash() string {
 	h := fnv.New64()
 	wd, _ := os.Getwd()
 	h.Write([]byte(wd))
-	return strconv.Itoa(int(h.Sum64()))
+	return strconv.FormatUint(h.Sum64(), 10)
 }
 
 func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
@@ -213,4 +213,5 @@ func dbExec(t testing.TB, db *sql.DB, q string, args ...interface{}) {
 
 const killClientConnsQuery = `
 SELECT pg_terminate_backend(pg_stat_activity.pid)
-FROM pg_stat_activity WHERE datname = $1`
+FROM pg_stat_activity WHERE datname = $1
+`

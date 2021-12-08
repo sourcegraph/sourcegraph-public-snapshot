@@ -39,7 +39,7 @@ func NewFastDBWithDSN(t testing.TB, dsn string) *sql.DB {
 
 	u, err := getDSN(dsn)
 	if err != nil {
-		t.Fatalf("failed to parse dsn: %s", err)
+		t.Fatalf("failed to parse dsn %q: %s", dsn, err)
 	}
 
 	pool, closeDB, err := newPoolFromURL(u)
