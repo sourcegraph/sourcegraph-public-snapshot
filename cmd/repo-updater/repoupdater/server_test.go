@@ -579,9 +579,25 @@ func TestServer_RepoLookup(t *testing.T) {
 			stored: []*types.Repo{githubRepository.With(func(r *types.Repo) {
 				r.UpdatedAt = r.UpdatedAt.Add(-time.Hour)
 			})},
+			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				ID: 7,
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+					ServiceType: extsvc.TypeGitHub,
+					ServiceID:   "https://github.com/",
+				},
+				Name:        "github.com/foo/bar",
+				Description: "The description",
+				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
+				Links: &protocol.RepoLinks{
+					Root:   "github.com/foo/bar",
+					Tree:   "github.com/foo/bar/tree/{rev}/{path}",
+					Blob:   "github.com/foo/bar/blob/{rev}/{path}",
+					Commit: "github.com/foo/bar/commit/{commit}",
+				},
+			}},
 			assertDelay: time.Second,
-			result:      &protocol.RepoLookupResult{ErrorNotFound: true},
-			err:         fmt.Sprintf("repository not found (name=%s notfound=%v)", githubRepository.Name, true),
+			assert:      typestest.Assert.ReposEqual(),
 		},
 	}
 
