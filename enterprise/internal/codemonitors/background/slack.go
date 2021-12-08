@@ -53,8 +53,8 @@ func postSlackWebhook(ctx context.Context, doer httpcli.Doer, url string, msg *s
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
 		return StatusCodeError{
 			Code:   resp.StatusCode,
 			Status: resp.Status,
