@@ -62,13 +62,13 @@ Here is an annotated example of a behavior test:
     })
 ```
 
-Notice how this test doesn't assuming anything about `UserProfilePage` aside from that it should have a heading, input field and some rendered output that can be updated by the user. We could completely refactor this component and, as long as the raw functionality remained the same, the test will still pass.
+Notice how this test doesn't assume anything about `UserProfilePage`. It just checks that it will render a valid heading, input field and some rendered output that can be updated by the user. We could completely refactor this component and, as long as the raw functionality remained the same, the test will still pass.
 
 For more documentation and examples of how to write these tests, please see the [testing-library docs](https://testing-library.com/docs/react-testing-library/intro/).
 
 #### Debugging behavior tests
 
-When running into problems with these tests, we have some useful utilities to help you debug them (aside from what you might typically use):
+When running into problems with these tests, we have some useful utilities to help you debug them:
 
 **debug**
 
@@ -83,9 +83,9 @@ This utility method can print the rendered DOM to the console.
     })
 ```
 
-**testing playground**
+**logTestingPlaygroundURL**
 
-This utility method can visually render the DOM on a webpage.
+This utility method will let you print a URL that will visually render the DOM onto a webpage.
 
 ```tsx
     it('this test is causing me problems', () => {

@@ -39,9 +39,9 @@ Snapshot diffs should be reviewed in pull request reviews the same way any other
 
 **Please note:** Snapshot testing should only be used for the simplest of components and should be avoided for most tests. There are some major caveats to this type of testing:
 
-- Snapshots ultimately test the implementation details of a component. This is problematic as it is at odds with goal (4). We cannot reliably refactor our component internals and rely on these tests to catch regressions easily.
+- Snapshots ultimately test the implementation details of a component. This is problematic as it is at odds with goal (4). We cannot refactor our component internals and rely on these tests to catch regressions effectively.
 - Snapshots can often be very large and easily missed in code review. As they change so often, it can be quite common for developers to fall into the trap of ignoring the diffs and assuming that the snapshot is correct.
-- Snapshots fall into a grey area between our typical behavior tests and our visual regression tests. It should usually be beneficial to chose the relevant one of those options that suits your use case instead of adding another snapshot.
+- Snapshots fall into a grey area between our typical behavior tests and our visual regression tests. It should usually be beneficial to chose the relevant alternative of those options that suits your use case instead of adding another snapshot.
 
 [Learn how to write and debug these tests](../how-to/testing#react-component-snapshot-tests)
 
