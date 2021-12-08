@@ -31,6 +31,7 @@ type ListNotebooksPageOptions struct {
 
 type ListNotebooksOptions struct {
 	Query             string
+	CreatorUserID     int32
 	OrderBy           NotebooksOrderByOption
 	OrderByDescending bool
 }
@@ -58,9 +59,8 @@ type NotebooksStore interface {
 	CreateNotebook(context.Context, *Notebook) (*Notebook, error)
 	UpdateNotebook(context.Context, *Notebook) (*Notebook, error)
 	DeleteNotebook(context.Context, int64) error
-	// TODO
-	// ListNotebooks(context.Context, ListNotebooksPageOptions, ListNotebooksOptions) ([]*Notebook, error)
-	// CountNotebooks(context.Context, ListNotebooksOptions) (int, error)
+	ListNotebooks(context.Context, ListNotebooksPageOptions, ListNotebooksOptions) ([]*Notebook, error)
+	// CountNotebooks(context.Context, ListNotebooksOptions) (int64, error)
 }
 
 type notebooksStore struct {
@@ -94,7 +94,7 @@ var notebookColumns = []*sqlf.Query{
 	sqlf.Sprintf("notebooks.updated_at"),
 }
 
-func notebooksPermissionsCondition(ctx context.Context, db dbutil.DB) *sqlf.Query {
+func notebooksPermissionsCondition(ctx context.Context) *sqlf.Query {
 	a := actor.FromContext(ctx)
 	authenticatedUserID := int32(0)
 	bypassPermissionsCheck := a.Internal
@@ -131,9 +131,9 @@ func getNotebooksOrderByClause(orderBy NotebooksOrderByOption, descending bool) 
 	panic("invalid NotebooksOrderByOption option")
 }
 
-func scanNotebook(row *sql.Row) (*Notebook, error) {
+func scanNotebook(scanner dbutil.Scanner) (*Notebook, error) {
 	n := &Notebook{}
-	err := row.Scan(
+	err := scanner.Scan(
 		&n.ID,
 		&n.Title,
 		&n.Blocks,
@@ -142,29 +142,79 @@ func scanNotebook(row *sql.Row) (*Notebook, error) {
 		&n.CreatedAt,
 		&n.UpdatedAt,
 	)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrNotebookNotFound
-	} else if err != nil {
+	if err != nil {
 		return nil, err
 	}
-	return n, nil
+	return n, err
+}
+
+func scanNotebooks(rows *sql.Rows) ([]*Notebook, error) {
+	var notebooks []*Notebook
+	for rows.Next() {
+		n, err := scanNotebook(rows)
+		if err != nil {
+			return nil, err
+		}
+		notebooks = append(notebooks, n)
+	}
+	return notebooks, nil
+}
+
+func getNotebooksQueryConditions(opts ListNotebooksOptions) []*sqlf.Query {
+	conds := []*sqlf.Query{}
+	if opts.Query != "" {
+		// title column has type citext which automatically performs case-insensitive comparison
+		conds = append(conds, sqlf.Sprintf("notebooks.title LIKE %s", "%"+opts.Query+"%"))
+	}
+	if opts.CreatorUserID != 0 {
+		conds = append(conds, sqlf.Sprintf("notebooks.creator_user_id = %d", opts.CreatorUserID))
+	}
+	if len(conds) == 0 {
+		// If no conditions are present, append a catch-all condition to avoid a SQL syntax error
+		conds = append(conds, sqlf.Sprintf("1 = 1"))
+	}
+	return conds
+}
+
+func (s *notebooksStore) ListNotebooks(ctx context.Context, pageOpts ListNotebooksPageOptions, opts ListNotebooksOptions) ([]*Notebook, error) {
+	rows, err := s.Query(ctx,
+		sqlf.Sprintf(
+			listNotebooksFmtStr,
+			sqlf.Join(notebookColumns, ","),
+			notebooksPermissionsCondition(ctx),
+			sqlf.Join(getNotebooksQueryConditions(opts), "\n AND"),
+			getNotebooksOrderByClause(opts.OrderBy, opts.OrderByDescending),
+			pageOpts.First,
+			pageOpts.After,
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanNotebooks(rows)
 }
 
 func (s *notebooksStore) GetNotebook(ctx context.Context, id int64) (*Notebook, error) {
-	permissionsCond := notebooksPermissionsCondition(ctx, s.Handle().DB())
 	row := s.QueryRow(
 		ctx,
 		sqlf.Sprintf(
 			listNotebooksFmtStr,
 			sqlf.Join(notebookColumns, ","),
-			permissionsCond,
+			notebooksPermissionsCondition(ctx),
 			sqlf.Sprintf("notebooks.id = %d", id),
 			getNotebooksOrderByClause(NotebooksOrderByID, false),
 			1, // limit
 			0, // offset
 		),
 	)
-	return scanNotebook(row)
+	notebook, err := scanNotebook(row)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotebookNotFound
+	} else if err != nil {
+		return nil, err
+	}
+	return notebook, nil
 }
 
 const insertNotebookFmtStr = `
