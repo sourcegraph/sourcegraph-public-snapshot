@@ -4,6 +4,7 @@ set -eux
 benchmark_name="$1"
 load_output_path="benchresults/$(date +%Y-%d-%m)-$benchmark_name-load.txt"
 query_output_path="benchresults/$(date +%Y-%d-%m)-$benchmark_name-query.txt"
+mkdir "benchresults"
 go run github.com/sourcegraph/sourcegraph/cmd/fileskip/bench download all
 for i in {1..5}; do
   go test -bench ^BenchmarkLoad -benchmem github.com/sourcegraph/sourcegraph/cmd/fileskip/bench | tee "$load_output_path"
