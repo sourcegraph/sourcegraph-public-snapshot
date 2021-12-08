@@ -8,17 +8,13 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../../../../components/alerts'
-import { LineChartLayoutOrientation, LineChartSettingsContext } from '../../../../views';
-import {
-    ChartViewContent,
-    ChartViewContentLayout
-} from '../../../../views/components/view/content/chart-view-content/ChartViewContent'
+import { LineChartLayoutOrientation, LineChartSettingsContext, ChartViewContent, ChartViewContentLayout } from '../../../../views'
 
 import styles from './LivePreviewContainer.module.scss'
 
 const LINE_CHART_SETTINGS = {
     zeroYAxisMin: false,
-    layout: LineChartLayoutOrientation.Vertical
+    layout: LineChartLayoutOrientation.Vertical,
 }
 
 export interface LivePreviewContainerProps {
@@ -70,7 +66,6 @@ export function LivePreviewContainer(props: PropsWithChildren<LivePreviewContain
 
             {!loading && !isErrorLike(dataOrError) && (
                 <div className={classNames(styles.livePreviewChartContainer, chartContentClassName, 'card')}>
-
                     <LineChartSettingsContext.Provider value={LINE_CHART_SETTINGS}>
                         <ChartViewContent
                             className={classNames(styles.livePreviewChart, 'card-body', {
