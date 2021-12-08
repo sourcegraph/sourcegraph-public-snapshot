@@ -75,7 +75,7 @@ func NewFromDSN(t testing.TB, dsn string) *sql.DB {
 	return newFromDSN(t, dsn, "migrated")
 }
 
-// NewFromDSN returns a connection to a clean, new temporary testing database.
+// NewRawFromDSN returns a connection to a clean, new temporary testing database.
 func NewRawFromDSN(t testing.TB, dsn string) *sql.DB {
 	return newFromDSN(t, dsn, "raw")
 }
