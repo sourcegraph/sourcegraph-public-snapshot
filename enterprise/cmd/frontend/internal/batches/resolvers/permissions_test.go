@@ -198,6 +198,9 @@ func TestPermissionLevels(t *testing.T) {
 		userBatchSpec, userBatchSpecID := createBatchSpec(t, cstore, userID)
 		userBatchChange := createBatchChange(t, cstore, "user", userID, userBatchSpecID)
 
+		adminBatchSpecCreatedFromRawRandID, _ := createBatchSpecFromRaw(t, cstore, adminID)
+		userBatchSpecCreatedFromRawRandID, _ := createBatchSpecFromRaw(t, cstore, userID)
+
 		t.Run("BatchChangeByID", func(t *testing.T) {
 			tests := []struct {
 				name                    string
@@ -262,11 +265,42 @@ func TestPermissionLevels(t *testing.T) {
 				currentUser             int32
 				batchSpec               string
 				wantViewerCanAdminister bool
+				wantNotFound            bool
 			}{
 				{
 					name:                    "site-admin viewing own batch spec",
 					currentUser:             adminID,
 					batchSpec:               adminBatchSpec,
+					wantViewerCanAdminister: true,
+				},
+				{
+					name:                    "site-admin viewing own created-from-raw batch spec",
+					currentUser:             adminID,
+					batchSpec:               adminBatchSpecCreatedFromRawRandID,
+					wantViewerCanAdminister: true,
+				},
+				{
+					name:                    "site-admin viewing other's batch spec",
+					currentUser:             adminID,
+					batchSpec:               userBatchSpec,
+					wantViewerCanAdminister: true,
+				},
+				{
+					name:                    "site-admin viewing other's created-from-raw batch spec",
+					currentUser:             adminID,
+					batchSpec:               userBatchSpecCreatedFromRawRandID,
+					wantViewerCanAdminister: true,
+				},
+				{
+					name:                    "non-site-admin viewing own batch spec",
+					currentUser:             userID,
+					batchSpec:               userBatchSpec,
+					wantViewerCanAdminister: true,
+				},
+				{
+					name:                    "non-site-admin viewing own created-from-raw batch spec",
+					currentUser:             userID,
+					batchSpec:               userBatchSpecCreatedFromRawRandID,
 					wantViewerCanAdminister: true,
 				},
 				{
@@ -276,16 +310,11 @@ func TestPermissionLevels(t *testing.T) {
 					wantViewerCanAdminister: false,
 				},
 				{
-					name:                    "site-admin viewing other's batch spec",
-					currentUser:             adminID,
-					batchSpec:               userBatchSpec,
-					wantViewerCanAdminister: true,
-				},
-				{
-					name:                    "non-site-admin viewing own batch spec",
+					name:                    "non-site-admin viewing other's created-from-raw batch spec",
 					currentUser:             userID,
-					batchSpec:               userBatchSpec,
-					wantViewerCanAdminister: true,
+					batchSpec:               adminBatchSpecCreatedFromRawRandID,
+					wantViewerCanAdminister: false,
+					wantNotFound:            true,
 				},
 			}
 
@@ -304,11 +333,17 @@ func TestPermissionLevels(t *testing.T) {
 					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
 					apitest.MustExec(actorCtx, t, s, input, &res, queryBatchSpec)
 
-					if have, want := res.Node.ID, graphqlID; have != want {
-						t.Fatalf("queried batch spec has wrong id %q, want %q", have, want)
-					}
-					if have, want := res.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
-						t.Fatalf("queried batch spec's ViewerCanAdminister is wrong %t, want %t", have, want)
+					if tc.wantNotFound {
+						if res.Node.ID != "" {
+							t.Fatalf("expected no response, but got node %s", res.Node.ID)
+						}
+					} else {
+						if have, want := res.Node.ID, graphqlID; have != want {
+							t.Fatalf("queried batch spec has wrong id %q, want %q", have, want)
+						}
+						if have, want := res.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
+							t.Fatalf("queried batch spec's ViewerCanAdminister is wrong %t, want %t", have, want)
+						}
 					}
 				})
 			}

@@ -225,6 +225,10 @@ func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 	}
 
 	opts := store.GetBatchSpecOpts{RandID: batchSpecRandID}
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		opts.ExcludeCreatedFromRawNotOwnedByUser = actor.FromContext(ctx).UID
+	}
+
 	batchSpec, err := r.store.GetBatchSpec(ctx, opts)
 	if err != nil {
 		if err == store.ErrNoResults {
