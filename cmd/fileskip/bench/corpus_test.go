@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/sourcegraph/sourcegraph/cmd/fileskip"
 	"math"
 	"os"
@@ -11,46 +12,43 @@ import (
 
 var isQueryBaseline = "true" == os.Getenv("FILESKIP_BASELINE")
 
-func benchmarkQuery(b *testing.B, c Corpus, query string) {
+func benchmarkQuery(b *testing.B, c Corpus) {
 	fileskip.IsProgressBarEnabled = false
 	index, err := c.LoadRepoIndex()
 	if err != nil {
 		panic(err)
 	}
-	matchingResults := map[string]struct{}{}
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		if isQueryBaseline {
-			benchmarkBaselineQuery(index, matchingResults, query)
-		} else {
-			benchmarkFileskipQuery(index, matchingResults, query)
-		}
+	for _, query := range c.Queries {
+		b.Run(fmt.Sprintf("%v-%v", c.Name, query), func(b *testing.B) {
+			matchingResults := map[string]struct{}{}
+			falsePositives := 0
+			for i := 0; i < b.N; i++ {
+				if isQueryBaseline {
+					benchmarkBaselineQuery(index, matchingResults, query)
+				} else {
+					falsePositives = benchmarkFileskipQuery(index, matchingResults, query)
+				}
+			}
+			b.StopTimer()
+			b.ReportMetric(float64(len(index.Blobs)), "index-size")
+			b.ReportMetric(float64(len(matchingResults)), "result-count")
+			b.ReportMetric(float64(falsePositives), "false-positives")
+			b.ReportMetric(float64(falsePositives)/math.Max(1, float64(len(matchingResults))), "false-positive/true-positive")
+		})
 	}
-	b.StopTimer()
-	falsePositives := 0
-	for m := range matchingResults {
-		data, err := index.FS.ReadRelativeFilename(m)
-		if err != nil {
-			panic(err)
-		}
-		text := string(data)
-		isFalsePositive := strings.Index(text, query) < 0
-		if isFalsePositive {
-			falsePositives++
-		}
-	}
-	b.ReportMetric(float64(len(index.Blobs)), "index-size")
-	b.ReportMetric(float64(len(matchingResults)), "true-positives")
-	b.ReportMetric(float64(falsePositives), "false-positives")
-	b.ReportMetric(float64(falsePositives)/math.Max(1, float64(len(matchingResults))), "false-positive/true-positive")
 }
 
-func benchmarkFileskipQuery(index *fileskip.RepoIndex, matchingResults map[string]struct{}, query string) {
+func benchmarkFileskipQuery(index *fileskip.RepoIndex, matchingResults map[string]struct{}, query string) int {
+	falsePositives := 0
 	for filename := range index.FilenamesMatchingQuery(query) {
 		if expensiveHasMatch(index.FS, filename, query) {
 			matchingResults[filename] = struct{}{}
+		} else {
+			falsePositives++
 		}
 	}
+	return falsePositives
 }
 
 func benchmarkBaselineQuery(index *fileskip.RepoIndex, matchingResults map[string]struct{}, query string) {
@@ -84,33 +82,35 @@ func expensiveHasMatch(fs fileskip.FileSystem, filename, query string) bool {
 	return strings.Index(text, query) >= 0
 }
 
-func benchmarkShortQuery(b *testing.B, c Corpus)  { benchmarkQuery(b, c, c.Queries[0]) }
-func benchmarkMediumQuery(b *testing.B, c Corpus) { benchmarkQuery(b, c, c.Queries[len(c.Queries)/2]) }
-func benchmarkLongQuery(b *testing.B, c Corpus)   { benchmarkQuery(b, c, c.Queries[len(c.Queries)-1]) }
+func BenchmarkQuery(b *testing.B) {
+	for _, corpus := range all {
+		benchmarkQuery(b, corpus)
+	}
+}
 
-func BenchmarkQueryFlaskShort(b *testing.B)  { benchmarkShortQuery(b, flask) }
-func BenchmarkQueryFlaskMedium(b *testing.B) { benchmarkMediumQuery(b, flask) }
-func BenchmarkQueryFlaskLong(b *testing.B)   { benchmarkLongQuery(b, flask) }
-
-func BenchmarkQuerySourcegraphShort(b *testing.B)  { benchmarkShortQuery(b, sourcegraph) }
-func BenchmarkQuerySourcegraphMedium(b *testing.B) { benchmarkMediumQuery(b, sourcegraph) }
-func BenchmarkQuerySourcegraphLong(b *testing.B)   { benchmarkLongQuery(b, sourcegraph) }
-
-func BenchmarkQueryKubernetesShort(b *testing.B)  { benchmarkShortQuery(b, kubernetes) }
-func BenchmarkQueryKubernetesMedium(b *testing.B) { benchmarkMediumQuery(b, kubernetes) }
-func BenchmarkQueryKubernetesLong(b *testing.B)   { benchmarkLongQuery(b, kubernetes) }
-
-func BenchmarkQueryLinuxShort(b *testing.B)  { benchmarkShortQuery(b, linux) }
-func BenchmarkQueryLinuxMedium(b *testing.B) { benchmarkMediumQuery(b, linux) }
-func BenchmarkQueryLinuxLong(b *testing.B)   { benchmarkLongQuery(b, linux) }
-
-func BenchmarkQueryChromiumShort(b *testing.B)  { benchmarkShortQuery(b, chromium) }
-func BenchmarkQueryChromiumMedium(b *testing.B) { benchmarkMediumQuery(b, chromium) }
-func BenchmarkQueryChromiumLong(b *testing.B)   { benchmarkLongQuery(b, chromium) }
-
-func BenchmarkQueryMegarepoShort(b *testing.B)  { benchmarkShortQuery(b, megarepo) }
-func BenchmarkQueryMegarepoMedium(b *testing.B) { benchmarkMediumQuery(b, megarepo) }
-func BenchmarkQueryMegarepoLong(b *testing.B)   { benchmarkLongQuery(b, megarepo) }
+////func BenchmarkQueryFlaskShort(b *testing.B)  { benchmarkShortQuery(b, flask) }
+////func BenchmarkQueryFlaskMedium(b *testing.B) { benchmarkMediumQuery(b, flask) }
+////func BenchmarkQueryFlaskLong(b *testing.B)   { benchmarkLongQuery(b, flask) }
+//
+//func BenchmarkQuerySourcegraphShort(b *testing.B)  { benchmarkShortQuery(b, sourcegraph) }
+//func BenchmarkQuerySourcegraphMedium(b *testing.B) { benchmarkMediumQuery(b, sourcegraph) }
+//func BenchmarkQuerySourcegraphLong(b *testing.B)   { benchmarkLongQuery(b, sourcegraph) }
+//
+//func BenchmarkQueryKubernetesShort(b *testing.B)  { benchmarkShortQuery(b, kubernetes) }
+//func BenchmarkQueryKubernetesMedium(b *testing.B) { benchmarkMediumQuery(b, kubernetes) }
+//func BenchmarkQueryKubernetesLong(b *testing.B)   { benchmarkLongQuery(b, kubernetes) }
+//
+//func BenchmarkQueryLinuxShort(b *testing.B)  { benchmarkShortQuery(b, linux) }
+//func BenchmarkQueryLinuxMedium(b *testing.B) { benchmarkMediumQuery(b, linux) }
+//func BenchmarkQueryLinuxLong(b *testing.B)   { benchmarkLongQuery(b, linux) }
+//
+//func BenchmarkQueryChromiumShort(b *testing.B)  { benchmarkShortQuery(b, chromium) }
+//func BenchmarkQueryChromiumMedium(b *testing.B) { benchmarkMediumQuery(b, chromium) }
+//func BenchmarkQueryChromiumLong(b *testing.B)   { benchmarkLongQuery(b, chromium) }
+//
+//func BenchmarkQueryMegarepoShort(b *testing.B)  { benchmarkShortQuery(b, megarepo) }
+//func BenchmarkQueryMegarepoMedium(b *testing.B) { benchmarkMediumQuery(b, megarepo) }
+//func BenchmarkQueryMegarepoLong(b *testing.B)   { benchmarkLongQuery(b, megarepo) }
 
 func loadCorpus(b *testing.B, corpus Corpus) {
 	fileskip.IsProgressBarEnabled = false
