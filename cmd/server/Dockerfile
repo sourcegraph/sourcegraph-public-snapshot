@@ -37,7 +37,7 @@ RUN apk add --no-cache --verbose \
     # We require git>=2.30 because we use git maintenance.
     'git>=2.30' \
     git-p4 \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.13/main
 
 # hadolint ignore=DL3018
 RUN apk add --no-cache --verbose \
