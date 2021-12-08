@@ -1,5 +1,5 @@
 import { from, Observable } from 'rxjs'
-import { delay, filter, map, retryWhen } from 'rxjs/operators'
+import { delay, filter, map, retryWhen, switchMap } from 'rxjs/operators'
 
 import {
     CloneInProgressError,
@@ -11,6 +11,7 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { sha256 } from '@sourcegraph/shared/src/util/hashCode'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import {
     FileSpec,
@@ -47,6 +48,55 @@ export const resolveRepo = memoizeObservable(
                 }
                 return repository.name
             })
+        ),
+    ({ rawRepoName }) => rawRepoName
+)
+
+/**
+ * @returns Observable that emits if the repo exists on the instance.
+ * Emits the repo name on the Sourcegraph instance as affected by `repositoryPathPattern`.
+ * Errors with a `RepoNotFoundError` if the repo is not found.
+ */
+export const secureCheckRepoCloned = memoizeObservable(
+    ({
+        rawRepoName,
+        requestGraphQL,
+    }: { rawRepoName: string } & Pick<PlatformContext, 'requestGraphQL'>): Observable<boolean> =>
+        from(sha256(rawRepoName?.toLowerCase())).pipe(
+            switchMap(hashedRepoName =>
+                requestGraphQL<GQL.IQuery>({
+                    request: gql`
+                        query SecureCheckRepoCloned($hashedRepoName: String!) {
+                            repositoryRedirect(hashedName: $hashedRepoName) {
+                                __typename
+                                ... on Repository {
+                                    mirrorInfo {
+                                        cloned
+                                        cloneInProgress
+                                    }
+                                }
+                            }
+                        }
+                    `,
+                    variables: { hashedRepoName },
+                    mightContainPrivateInfo: true,
+                }).pipe(
+                    map(dataOrThrowErrors),
+                    map(({ repositoryRedirect }) => {
+                        if (
+                            !repositoryRedirect ||
+                            repositoryRedirect.__typename !== 'Repository' ||
+                            !repositoryRedirect.mirrorInfo?.cloned
+                        ) {
+                            throw new RepoNotFoundError(hashedRepoName)
+                        }
+                        if (repositoryRedirect.mirrorInfo?.cloneInProgress) {
+                            throw new CloneInProgressError(hashedRepoName)
+                        }
+                        return true
+                    })
+                )
+            )
         ),
     ({ rawRepoName }) => rawRepoName
 )

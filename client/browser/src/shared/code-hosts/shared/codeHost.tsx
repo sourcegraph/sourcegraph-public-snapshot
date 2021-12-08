@@ -88,9 +88,14 @@ import { toTextDocumentPositionParameters } from '../../backend/extension-api-co
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
-import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
+import { resolveRevision, retryWhenCloneInProgressError, secureCheckRepoCloned } from '../../repo/backend'
 import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
-import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, observeSourcegraphURL } from '../../util/context'
+import {
+    DEFAULT_SOURCEGRAPH_URL,
+    getPlatformName,
+    isDefaultSourcegraphUrl,
+    observeSourcegraphURL,
+} from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
@@ -630,7 +635,7 @@ export interface HandleCodeHostOptions extends CodeIntelligenceProps {
     background: Pick<BackgroundPageApi, 'notifyPrivateCloudError' | 'openOptionsPage'>
 }
 
-export function handleCodeHost({
+export async function handleCodeHost({
     mutations,
     codeHost,
     extensionsController,
@@ -641,7 +646,7 @@ export function handleCodeHost({
     minimalUI,
     hideActions,
     background,
-}: HandleCodeHostOptions): Subscription {
+}: HandleCodeHostOptions): Promise<Subscription> {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
     const { requestGraphQL, sourcegraphURL } = platformContext
@@ -684,9 +689,61 @@ export function handleCodeHost({
     const checkPrivateCloudError = async (error: any): Promise<boolean> =>
         !!(
             isRepoNotFoundErrorLike(error) &&
-            sourcegraphURL === DEFAULT_SOURCEGRAPH_URL &&
+            isDefaultSourcegraphUrl(sourcegraphURL) &&
             (await codeHost.getContext?.())?.privateRepository
         )
+
+    if (codeHost.searchEnhancement) {
+        const { searchViewResolver, resultViewResolver, onChange } = codeHost.searchEnhancement
+        const searchURL = new URL('/search', sourcegraphURL)
+        searchURL.searchParams.append('utm_source', getPlatformName())
+        searchURL.searchParams.append('utm_campaign', 'global-search')
+
+        const searchView = mutations.pipe(
+            trackViews([searchViewResolver]),
+            switchMap(({ element }) =>
+                fromEvent(element, 'input').pipe(
+                    map(event => (event.target as HTMLInputElement).value),
+                    startWith((element as HTMLInputElement).value)
+                )
+            ),
+            map(value => ({
+                value,
+                searchURL: searchURL.href,
+            })),
+            observeOn(asyncScheduler)
+        )
+        const resultView = mutations.pipe(trackViews([resultViewResolver]), observeOn(asyncScheduler))
+
+        const searchEnhancementSubscription = combineLatest([searchView, resultView])
+            .pipe(map(([search, { element: resultElement }]) => ({ ...search, resultElement })))
+            .subscribe(onChange)
+        subscriptions.add(searchEnhancementSubscription)
+    }
+
+    // Securely check if private repository is cloned in cloud URL
+    if (isDefaultSourcegraphUrl(sourcegraphURL) && codeHost.getContext) {
+        try {
+            await codeHost.getContext().then(({ privateRepository, rawRepoName }) => {
+                if (!privateRepository) {
+                    // we can auto-clone public repos
+                    return true
+                }
+                return secureCheckRepoCloned({
+                    rawRepoName,
+                    requestGraphQL,
+                }).toPromise()
+            })
+        } catch (error) {
+            console.warn('Repository is not cloned.', error)
+            if (isExtension && !(error instanceof RepoURLParseError)) {
+                background.notifyPrivateCloudError(true).catch(error => {
+                    console.error('Error notifying background page of private cloud.', error)
+                })
+            }
+            return subscriptions
+        }
+    }
 
     if (codeHost.nativeTooltipResolvers) {
         const { subscription, nativeTooltipsAlert } = handleNativeTooltips(
@@ -829,34 +886,6 @@ export function handleCodeHost({
                 )
             })
         )
-    }
-
-    if (codeHost.searchEnhancement) {
-        const { searchViewResolver, resultViewResolver, onChange } = codeHost.searchEnhancement
-        const searchURL = new URL('/search', sourcegraphURL)
-        searchURL.searchParams.append('utm_source', getPlatformName())
-        searchURL.searchParams.append('utm_campaign', 'global-search')
-
-        const searchView = mutations.pipe(
-            trackViews([searchViewResolver]),
-            switchMap(({ element }) =>
-                fromEvent(element, 'input').pipe(
-                    map(event => (event.target as HTMLInputElement).value),
-                    startWith((element as HTMLInputElement).value)
-                )
-            ),
-            map(value => ({
-                value,
-                searchURL: searchURL.href,
-            })),
-            observeOn(asyncScheduler)
-        )
-        const resultView = mutations.pipe(trackViews([resultViewResolver]), observeOn(asyncScheduler))
-
-        const searchEnhancementSubscription = combineLatest([searchView, resultView])
-            .pipe(map(([search, { element: resultElement }]) => ({ ...search, resultElement })))
-            .subscribe(onChange)
-        subscriptions.add(searchEnhancementSubscription)
     }
 
     /** A stream of added or removed code views with the resolved file info */
@@ -1306,7 +1335,7 @@ export const determineCodeHost = (sourcegraphURL?: string): CodeHost | undefined
     // Prevent repo lookups for code hosts that we know cannot have repositories
     // cloned on sourcegraph.com. Repo lookups trigger cloning, which will
     // inevitably fail in this case.
-    if (sourcegraphURL === DEFAULT_SOURCEGRAPH_URL) {
+    if (isDefaultSourcegraphUrl(sourcegraphURL)) {
         const { hostname } = new URL(location.href)
         const validCodeHost = CLOUD_CODE_HOST_HOSTS.some(cloudHost => cloudHost === hostname)
         if (!validCodeHost) {
@@ -1336,6 +1365,7 @@ export function injectCodeIntelligenceToCodeHost(
         isExtension
     )
     const { requestGraphQL } = platformContext
+
     subscriptions.add(extensionsController)
 
     const overrideSendTelemetry = observeSourcegraphURL(isExtension).pipe(
@@ -1368,7 +1398,8 @@ export function injectCodeIntelligenceToCodeHost(
     // Flag to hide the actions in the code view toolbar (hide ActionNavItems) leaving only the "Open on Sourcegraph" button in the toolbar.
     const hideActions = codeHost.type === 'gerrit'
     subscriptions.add(
-        extensionDisabled.subscribe(disableExtension => {
+        // eslint-disable-next-line rxjs/no-async-subscribe, @typescript-eslint/no-misused-promises
+        extensionDisabled.subscribe(async disableExtension => {
             if (disableExtension) {
                 // We don't need to unsubscribe if the extension starts with disabled state.
                 if (codeHostSubscription) {
@@ -1376,7 +1407,7 @@ export function injectCodeIntelligenceToCodeHost(
                 }
                 console.log('Browser extension is disabled')
             } else {
-                codeHostSubscription = handleCodeHost({
+                codeHostSubscription = await handleCodeHost({
                     mutations,
                     codeHost,
                     extensionsController,
