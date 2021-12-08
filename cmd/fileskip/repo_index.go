@@ -298,6 +298,8 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 		wg.Add(1)
 		go func(start, end int) {
 			defer wg.Done()
+			data64 := make([]byte, unsafe.Sizeof(uint64(1)))
+			data32 := data64[:unsafe.Sizeof(int32(1))]
 			for _, filename := range filenames[start:end] {
 				if IsProgressBarEnabled {
 					bar.Add(1)
@@ -321,17 +323,15 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 				asciiCount := ngramsAscii.Count()
 				bloomSize := uint(len(ngrams)) + uint(asciiCount)
 				filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
-				data := make([]byte, unsafe.Sizeof(uint64(1)))
 				for hash := range ngrams {
-					binary.LittleEndian.PutUint64(data, hash)
-					filter.Add(data)
+					binary.LittleEndian.PutUint64(data64, hash)
+					filter.Add(data64)
 				}
 				indices := make([]uint, asciiCount)
 				ngramsAscii.NextSetMany(0, indices)
-				data = make([]byte, unsafe.Sizeof(uint(1)))
 				for _, hash := range indices {
-					binary.LittleEndian.PutUint32(data, uint32(hash))
-					filter.Add(data)
+					binary.LittleEndian.PutUint32(data32, uint32(hash))
+					filter.Add(data64)
 				}
 				res <- BlobIndex{Path: filename, Filter: filter}
 			}
