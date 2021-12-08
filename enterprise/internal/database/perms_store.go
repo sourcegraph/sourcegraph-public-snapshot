@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
@@ -1720,15 +1719,11 @@ func (s *PermsStore) AddRepoPermissions(ctx context.Context, p *authz.RepoPermis
 
 	// Compute differences between the old and new sets.
 	toAdd := roaring.AndNot(p.UserIDs, oldIDs)
-	existing := roaring.AndNot(oldIDs, p.UserIDs)
-	allUserIDsForRepo := append(existing.ToArray(), toAdd.ToArray()...)
 
 	if toAdd.IsEmpty() {
 		// TODO: remove this and handle the empty case in the query itself?
 		return nil
 	}
-	fmt.Printf("For repo %v, To add %v, Existing: %v, UserIDs in request %v, ALL: %v\n",
-		p.RepoID, toAdd, existing, p.UserIDs, allUserIDsForRepo)
 
 	updatedAt := txs.clock()
 	if !toAdd.IsEmpty() {

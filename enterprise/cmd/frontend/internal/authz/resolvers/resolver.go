@@ -67,59 +67,15 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		return nil, err
 	}
 
-	repoID, err := r.validateRepoID(ctx, args)
-
-	bindIDs, bindIDSet := cleanBindIDs(args)
-
-	p := &authz.RepoPermissions{
-		RepoID:  int32(repoID),
-		Perm:    authz.Read, // Note: We currently only support read for repository permissions.
-		UserIDs: roaring.NewBitmap(),
+	p, accounts, err := r.createRepoPermissions(ctx, args)
+	if err != nil {
+		return nil, err
 	}
-	cfg := globals.PermissionsUserMapping()
-	switch cfg.BindID {
-	case "email":
-		emails, err := database.UserEmailsWith(r.store).GetVerifiedEmails(ctx, bindIDs...)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := range emails {
-			p.UserIDs.Add(uint32(emails[i].UserID))
-			delete(bindIDSet, emails[i].Email)
-		}
-
-	case "username":
-		users, err := database.Users(r.store.Handle().DB()).GetByUsernames(ctx, bindIDs...)
-		if err != nil {
-			return nil, err
-		}
-
-		for i := range users {
-			p.UserIDs.Add(uint32(users[i].ID))
-			delete(bindIDSet, users[i].Username)
-		}
-
-	default:
-		return nil, errors.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
-	}
-
-	pendingBindIDs := make([]string, 0, len(bindIDSet))
-	for id := range bindIDSet {
-		pendingBindIDs = append(pendingBindIDs, id)
-	}
-
 	txs, err := r.store.Transact(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "start transaction")
 	}
 	defer func() { err = txs.Done(err) }()
-
-	accounts := &extsvc.Accounts{
-		ServiceType: authz.SourcegraphServiceType,
-		ServiceID:   authz.SourcegraphServiceID,
-		AccountIDs:  pendingBindIDs,
-	}
 
 	if err = txs.SetRepoPermissions(ctx, p); err != nil {
 		return nil, errors.Wrap(err, "set repository permissions")
@@ -136,11 +92,37 @@ func (r *Resolver) AddRepositoryPermissionsForUsers(ctx context.Context, args *g
 		return nil, err
 	}
 
-	repoID, err := r.validateRepoID(ctx, args)
+	p, accounts, err := r.createRepoPermissions(ctx, args)
 	if err != nil {
 		return nil, err
 	}
 
+	txs, err := r.store.Transact(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "start transaction")
+	}
+	defer func() { err = txs.Done(err) }()
+
+	if err = txs.AddRepoPermissions(ctx, p); err != nil {
+		return nil, errors.Wrap(err, "set repository permissions")
+	} else if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil { // TODO: need to AddRepoPendingPermissions here
+		return nil, errors.Wrap(err, "set repository pending permissions")
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) createRepoPermissions(ctx context.Context,
+	args *graphqlbackend.RepoPermsArgs) (*authz.RepoPermissions, *extsvc.Accounts, error) {
+
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repository)
+	if err != nil {
+		return nil, nil, err
+	}
+	// Make sure the repo ID is valid.
+	if _, err = database.Repos(r.store.Handle().DB()).Get(ctx, repoID); err != nil {
+		return nil, nil, err
+	}
 	bindIDs, bindIDSet := cleanBindIDs(args)
 
 	p := &authz.RepoPermissions{
@@ -153,7 +135,7 @@ func (r *Resolver) AddRepositoryPermissionsForUsers(ctx context.Context, args *g
 	case "email":
 		emails, err := database.UserEmailsWith(r.store).GetVerifiedEmails(ctx, bindIDs...)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		for i := range emails {
@@ -164,7 +146,7 @@ func (r *Resolver) AddRepositoryPermissionsForUsers(ctx context.Context, args *g
 	case "username":
 		users, err := database.Users(r.store.Handle().DB()).GetByUsernames(ctx, bindIDs...)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		for i := range users {
@@ -173,7 +155,7 @@ func (r *Resolver) AddRepositoryPermissionsForUsers(ctx context.Context, args *g
 		}
 
 	default:
-		return nil, errors.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
+		return nil, nil, errors.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
 	}
 
 	pendingBindIDs := make([]string, 0, len(bindIDSet))
@@ -181,25 +163,12 @@ func (r *Resolver) AddRepositoryPermissionsForUsers(ctx context.Context, args *g
 		pendingBindIDs = append(pendingBindIDs, id)
 	}
 
-	txs, err := r.store.Transact(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "start transaction")
-	}
-	defer func() { err = txs.Done(err) }()
-
 	accounts := &extsvc.Accounts{
 		ServiceType: authz.SourcegraphServiceType,
 		ServiceID:   authz.SourcegraphServiceID,
 		AccountIDs:  pendingBindIDs,
 	}
-
-	if err = txs.AddRepoPermissions(ctx, p); err != nil {
-		return nil, errors.Wrap(err, "set repository permissions")
-	} else if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil { // TODO: need to AddRepoPendingPermissions here?
-		return nil, errors.Wrap(err, "set repository pending permissions")
-	}
-
-	return &graphqlbackend.EmptyResponse{}, nil
+	return p, accounts, nil
 }
 
 func cleanBindIDs(args *graphqlbackend.RepoPermsArgs) ([]string, map[string]struct{}) {
@@ -218,18 +187,6 @@ func cleanBindIDs(args *graphqlbackend.RepoPermsArgs) ([]string, map[string]stru
 		bindIDSet[bindIDs[i]] = struct{}{}
 	}
 	return bindIDs, bindIDSet
-}
-
-func (r *Resolver) validateRepoID(ctx context.Context, args *graphqlbackend.RepoPermsArgs) (api.RepoID, error) {
-	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repository)
-	if err != nil {
-		return 0, err
-	}
-	// Make sure the repo ID is valid.
-	if _, err = database.Repos(r.store.Handle().DB()).Get(ctx, repoID); err != nil {
-		return 0, err
-	}
-	return repoID, nil
 }
 
 func (r *Resolver) performChecks(ctx context.Context) error {
