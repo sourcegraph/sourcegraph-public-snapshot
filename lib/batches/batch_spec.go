@@ -76,12 +76,12 @@ type OnQueryOrRepository struct {
 	RawBranches               []string `json:"branches,omitempty" yaml:"branches"`
 }
 
-var errConflictingBranches = errors.New("both branch and branches specified")
+var ErrConflictingBranches = NewValidationError(errors.New("both branch and branches specified"))
 
 func (oqor *OnQueryOrRepository) Branches() ([]string, error) {
 	if oqor.RawBranch != "" {
 		if len(oqor.RawBranches) > 0 {
-			return nil, errConflictingBranches
+			return nil, ErrConflictingBranches
 		}
 		return []string{oqor.RawBranch}, nil
 	}

@@ -286,6 +286,6 @@ func TestOnQueryOrRepository_Branches(t *testing.T) {
 			RawBranch:   "foo",
 			RawBranches: []string{"bar"},
 		}).Branches()
-		assert.Equal(t, errConflictingBranches, err)
+		assert.Equal(t, ErrConflictingBranches, err)
 	})
 }
