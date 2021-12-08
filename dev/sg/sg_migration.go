@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"flag"
 	"fmt"
 
@@ -11,9 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/squash"
-	"github.com/sourcegraph/sourcegraph/internal/database/connections"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -78,7 +80,11 @@ var (
 )
 
 func runMigration(ctx context.Context, options runner.Options) error {
-	return connections.NewDefaultRunner(postgresdsn.RawDSNsBySchema(), "sg", &observation.TestContext).Run(ctx, options)
+	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
+		return store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext))
+	}
+
+	return connections.RunnerFromDSNs(postgresdsn.RawDSNsBySchema(), "sg", storeFactory).Run(ctx, options)
 }
 
 func migrationAddExec(ctx context.Context, args []string) error {
