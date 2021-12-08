@@ -99,9 +99,3 @@ func schemaNames(schemas []*schemas.Schema) []string {
 
 	return names
 }
-
-func newStoreFactory(observationContext *observation.Context) func(db *sql.DB, migrationsTable string) Store {
-	return func(db *sql.DB, migrationsTable string) Store {
-		return store.NewWithDB(db, migrationsTable, store.NewOperations(observationContext))
-	}
-}
