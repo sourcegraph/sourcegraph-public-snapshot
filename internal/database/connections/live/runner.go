@@ -30,17 +30,7 @@ func RunnerFromDSNs(dsns map[string]string, appName string, newStore StoreFactor
 				return nil, err
 			}
 
-			store := newStore(db, schema.MigrationsTableName)
-
-			if err := store.EnsureSchemaTable(ctx); err != nil {
-				if closeErr := db.Close(); closeErr != nil {
-					err = multierror.Append(err, closeErr)
-				}
-
-				return nil, err
-			}
-
-			return store, nil
+			return initStore(ctx, newStore, db, schema)
 		}
 	}
 
