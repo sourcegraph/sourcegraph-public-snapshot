@@ -25,7 +25,7 @@ export enum ChartViewContentLayout {
      * With this layout chart render content and if expand parent
      * block if it's too small to fit all content.
      */
-    ByContentSize
+    ByContentSize,
 }
 
 export interface ChartViewContentProps {
@@ -42,12 +42,7 @@ export interface ChartViewContentProps {
  * Display chart content with different type of charts (line, bar, pie)
  */
 export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props => {
-    const { content,
-        className = '',
-        viewID,
-        telemetryService,
-        layout = ChartViewContentLayout.ByParentSize
-    } = props
+    const { content, className = '', viewID, telemetryService, layout = ChartViewContentLayout.ByParentSize } = props
 
     const handleDatumLinkClick = useCallback((): void => {
         telemetryService.log(
@@ -81,10 +76,7 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
 
     return (
         <div className={classNames(styles.chartViewContent, className)}>
-            <ParentSize
-                data-chart-size-root=''
-                className={classNames({ [styles.chart]: isResponsive })}>
-
+            <ParentSize data-chart-size-root="" className={classNames({ [styles.chart]: isResponsive })}>
                 {({ width, height }) => {
                     if (content.chart === 'line') {
                         return (

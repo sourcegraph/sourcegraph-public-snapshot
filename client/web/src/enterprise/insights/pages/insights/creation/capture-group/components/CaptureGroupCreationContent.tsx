@@ -86,8 +86,7 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
 
     const areAllFieldsForPreviewValid =
         // repositories.meta.validState === 'VALID' &&
-        stepValue.meta.validState === 'VALID' &&
-        query.meta.validState === 'VALID'
+        stepValue.meta.validState === 'VALID' && query.meta.validState === 'VALID'
 
     return (
         <div className={classNames(styles.content, className)}>
@@ -111,7 +110,8 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
                 query={query.meta.value}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}
-                className={styles.contentLivePreview} />
+                className={styles.contentLivePreview}
+            />
         </div>
     )
 }

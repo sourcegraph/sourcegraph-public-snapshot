@@ -1,13 +1,13 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { ChartContent, LineChartContent } from 'sourcegraph'
 
-import { asError } from '@sourcegraph/shared/out/src/util/errors';
+import { asError } from '@sourcegraph/shared/out/src/util/errors'
 
 import { LivePreviewContainer } from '../../../../../components/live-preview-container/LivePreviewContainer'
-import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context';
-import { useDistinctValue } from '../../../../../hooks/use-distinct-value';
-import { InsightStep } from '../../search-insight/types';
-import { getSanitizedRepositories } from '../../search-insight/utils/insight-sanitizer';
+import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
+import { useDistinctValue } from '../../../../../hooks/use-distinct-value'
+import { InsightStep } from '../../search-insight/types'
+import { getSanitizedRepositories } from '../../search-insight/utils/insight-sanitizer'
 
 export const DEFAULT_MOCK_CHART_CONTENT: LineChartContent<any, string> = {
     chart: 'line' as const,
@@ -79,7 +79,9 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGro
             .then(data => !hasRequestCanceled && setDataOrError(data))
             .catch(error => !hasRequestCanceled && setDataOrError(asError(error)))
 
-        return () => { hasRequestCanceled = false }
+        return () => {
+            hasRequestCanceled = false
+        }
     }, [settings, getCaptureInsightContent, lastPreviewVersion])
 
     return (

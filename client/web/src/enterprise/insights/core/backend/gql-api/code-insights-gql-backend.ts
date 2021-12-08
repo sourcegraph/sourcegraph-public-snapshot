@@ -31,7 +31,8 @@ import { SearchBackendBasedInsight } from '../../types/insight/search-insight'
 import { SupportedInsightSubject } from '../../types/subjects'
 import { CodeInsightsBackend } from '../code-insights-backend'
 import {
-    BackendInsightData, CaptureInsightSettings,
+    BackendInsightData,
+    CaptureInsightSettings,
     DashboardCreateInput,
     DashboardCreateResult,
     DashboardDeleteInput,
@@ -53,7 +54,7 @@ import { InsightInProcessError } from '../utils/errors'
 import { parseDashboardScope } from '../utils/parse-dashboard-scope'
 
 import { createInsight } from './gql-handlers/create-insight'
-import { getCaptureGroupInsightsPreview } from './gql-handlers/get-capture-group-insight-preivew';
+import { getCaptureGroupInsightsPreview } from './gql-handlers/get-capture-group-insight-preivew'
 import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
 import { GET_INSIGHTS_GQL, INSIGHT_VIEW_FRAGMENT } from './gql/GetInsights'
 import { GET_INSIGHTS_DASHBOARDS_GQL } from './gql/GetInsightsDashboards'

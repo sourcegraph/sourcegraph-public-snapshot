@@ -10,7 +10,6 @@ import { LineChartLayoutOrientation, LineChartSettingsContext } from './line-cha
 import styles from './LineChart.module.scss'
 
 export interface LineChartProps<Datum extends object> extends LineChartContentProps<Datum> {
-
     /**
      * Whenever it is necessary to set size limits of line chart container block.
      * By default LineChart doesn't require
@@ -46,9 +45,8 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
                     In case if we have a legend to render we have to have responsive container for chart
                     just to calculate right sizes for chart content = rootContainerSizes - legendSizes
                 */}
-                <ParentSize className={styles.contentParentSize} data-line-chart-size-root='' >
-                    {({ width, height }) =>
-                        <LineChartContent {...otherProps} width={width} height={height} />}
+                <ParentSize className={styles.contentParentSize} data-line-chart-size-root="">
+                    {({ width, height }) => <LineChartContent {...otherProps} width={width} height={height} />}
                 </ParentSize>
 
                 <ScrollBox

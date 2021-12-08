@@ -8,7 +8,8 @@ import { SearchBackendBasedInsight } from '../types/insight/search-insight'
 import { SupportedInsightSubject } from '../types/subjects'
 
 import {
-    BackendInsightData, CaptureInsightSettings,
+    BackendInsightData,
+    CaptureInsightSettings,
     DashboardCreateInput,
     DashboardCreateResult,
     DashboardDeleteInput,
