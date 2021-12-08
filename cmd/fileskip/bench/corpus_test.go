@@ -106,7 +106,7 @@ func loadCorpus(b *testing.B, corpus Corpus) {
 	}
 	b.ReportMetric(float64(len(index.Blobs)), "indexed-blob-count")
 	b.ReportMetric(float64(indexedBlobsSize), "indexed-blobs-size")
-	b.ReportMetric(float64(bloomFilterBinaryStorageSize), "bloom-storage-size")
+	b.ReportMetric(float64(bloomFilterBinaryStorageSize), "bloom-memory-size")
 	b.ReportMetric(float64(bloomFilterBinaryStorageSize)/float64(indexedBlobsSize), "compression-ratio")
 }
 
