@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { ChartContent, LineChartContent } from 'sourcegraph'
 
-import { asError } from '@sourcegraph/shared/out/src/util/errors'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { LivePreviewContainer } from '../../../../../components/live-preview-container/LivePreviewContainer'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
