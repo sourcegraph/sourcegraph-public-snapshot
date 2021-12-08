@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 
@@ -55,8 +56,7 @@ var rng = rand.New(rand.NewSource(func() int64 {
 }()))
 var rngLock sync.Mutex
 
-// NewDB uses NewFromDSN to create a testing database, using the default
-// DSN.
+// NewDB uses NewFromDSN to create a testing database, using the default DSN.
 func NewDB(t testing.TB) *sql.DB {
 	if os.Getenv("USE_FAST_DBTEST") != "" {
 		return NewFastDB(t)
@@ -64,9 +64,23 @@ func NewDB(t testing.TB) *sql.DB {
 	return NewFromDSN(t, "")
 }
 
+// NewRawDB uses NewRawFromDSN to create a testing database, using the default DSN.
+func NewRawDB(t testing.TB) *sql.DB {
+	return NewRawFromDSN(t, "")
+}
+
 // NewFromDSN returns a connection to a clean, new temporary testing database
 // with the same schema as Sourcegraph's production Postgres database.
 func NewFromDSN(t testing.TB, dsn string) *sql.DB {
+	return newFromDSN(t, dsn, "migrated")
+}
+
+// NewRawFromDSN returns a connection to a clean, new temporary testing database.
+func NewRawFromDSN(t testing.TB, dsn string) *sql.DB {
+	return newFromDSN(t, dsn, "raw")
+}
+
+func newFromDSN(t testing.TB, dsn, templateNamespace string) *sql.DB {
 	if testing.Short() {
 		t.Skip("skipping DB test since -short specified")
 	}
@@ -96,7 +110,7 @@ func NewFromDSN(t testing.TB, dsn string) *sql.DB {
 	rngLock.Unlock()
 
 	db := dbConn(t, config)
-	dbExec(t, db, `CREATE DATABASE `+pq.QuoteIdentifier(dbname)+` TEMPLATE `+pq.QuoteIdentifier(templateDBName()))
+	dbExec(t, db, `CREATE DATABASE `+pq.QuoteIdentifier(dbname)+` TEMPLATE `+pq.QuoteIdentifier(templateDBName(templateNamespace)))
 
 	config.Path = "/" + dbname
 	testDB := dbConn(t, config)
@@ -134,29 +148,37 @@ func initTemplateDB(t testing.TB, config *url.URL) {
 		db := dbConn(t, config)
 		defer db.Close()
 
-		templateName := templateDBName()
+		init := func(templateNamespace string, schemas []*schemas.Schema) {
+			templateName := templateDBName(templateNamespace)
+			name := pq.QuoteIdentifier(templateName)
 
-		// We must first drop the template database because
-		// migrations would not run on it if they had already ran,
-		// even if the content of the migrations had changed during development.
-		name := pq.QuoteIdentifier(templateName)
-		dbExec(t, db, `DROP DATABASE IF EXISTS `+name)
-		dbExec(t, db, `CREATE DATABASE `+name+` TEMPLATE template0`)
+			// We must first drop the template database because
+			// migrations would not run on it if they had already ran,
+			// even if the content of the migrations had changed during development.
 
-		cfgCopy := *config
-		cfgCopy.Path = "/" + templateName
-		_, close := dbConnInternal(t, &cfgCopy, []*schemas.Schema{
-			schemas.Frontend,
-			schemas.CodeIntel,
-		})
-		close(nil)
+			dbExec(t, db, `DROP DATABASE IF EXISTS `+name)
+			dbExec(t, db, `CREATE DATABASE `+name+` TEMPLATE template0`)
+
+			cfgCopy := *config
+			cfgCopy.Path = "/" + templateName
+			_, close := dbConnInternal(t, &cfgCopy, schemas)
+			close(nil)
+		}
+
+		init("raw", nil)
+		init("migrated", []*schemas.Schema{schemas.Frontend, schemas.CodeIntel})
 	})
 }
 
-// templateDBName returns the name of the template database
-// for the currently running package.
-func templateDBName() string {
-	return "sourcegraph-test-template-" + wdHash()
+// templateDBName returns the name of the template database for the currently running package and namespace.
+func templateDBName(templateNamespace string) string {
+	parts := []string{
+		"sourcegraph-test-template",
+		wdHash(),
+		templateNamespace,
+	}
+
+	return strings.Join(parts, "-")
 }
 
 // wdHash returns a hash of the current working directory.
