@@ -8,7 +8,12 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../../../../components/alerts'
-import { LineChartLayoutOrientation, LineChartSettingsContext, ChartViewContent, ChartViewContentLayout } from '../../../../views'
+import {
+    LineChartLayoutOrientation,
+    LineChartSettingsContext,
+    ChartViewContent,
+    ChartViewContentLayout,
+} from '../../../../views'
 
 import styles from './LivePreviewContainer.module.scss'
 
