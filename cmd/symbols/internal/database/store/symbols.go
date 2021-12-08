@@ -4,7 +4,9 @@ import (
 	"context"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -62,40 +64,48 @@ func (s *store) DeletePaths(ctx context.Context, paths []string) error {
 
 func (s *store) WriteSymbols(ctx context.Context, symbolOrErrors <-chan parser.SymbolOrError) (err error) {
 	rows := make(chan []interface{})
+	group, ctx := errgroup.WithContext(ctx)
 
-	go func() {
+	group.Go(func() error {
 		defer close(rows)
 
 		for symbolOrError := range symbolOrErrors {
 			if symbolOrError.Err != nil {
-				panic(symbolOrError.Err.Error())
+				return symbolOrError.Err
 			}
 
+			log15.Info("YEY!")
 			rows <- symbolToRow(symbolOrError.Symbol)
 		}
-	}()
 
-	return batch.InsertValues(
-		ctx,
-		s.Handle().DB(),
-		"symbols",
-		batch.MaxNumSQLiteParameters,
-		[]string{
-			"name",
-			"namelowercase",
-			"path",
-			"pathlowercase",
-			"line",
-			"kind",
-			"language",
-			"parent",
-			"parentkind",
-			"signature",
-			"pattern",
-			"filelimited",
-		},
-		rows,
-	)
+		return nil
+	})
+
+	group.Go(func() error {
+		return batch.InsertValues(
+			ctx,
+			s.Handle().DB(),
+			"symbols",
+			batch.MaxNumSQLiteParameters,
+			[]string{
+				"name",
+				"namelowercase",
+				"path",
+				"pathlowercase",
+				"line",
+				"kind",
+				"language",
+				"parent",
+				"parentkind",
+				"signature",
+				"pattern",
+				"filelimited",
+			},
+			rows,
+		)
+	})
+
+	return group.Wait()
 }
 
 func symbolToRow(symbol result.Symbol) []interface{} {
