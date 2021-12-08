@@ -43,7 +43,7 @@ Snapshot diffs should be reviewed in pull request reviews the same way any other
 - Snapshots can often be very large and easily missed in code review. As they change so often, it can be quite common for developers to fall into the trap of ignoring the diffs and assuming that the snapshot is correct.
 - Snapshots fall into a grey area between our typical behavior tests and our visual regression tests. It should usually be beneficial to chose the relevant alternative of those options that suits your use case instead of adding another snapshot.
 
-[Learn how to write and debug these tests](../how-to/testing#react-component-snapshot-tests)
+[Learn how to write and debug these tests](../how-to/testing.md#react-component-snapshot-tests)
 
 ### Behavior
 
@@ -61,12 +61,12 @@ We use two different libraries for writing our behavior tests:
 #### Testing-library
 These tests run in a simulated, pure-JavaScript implementation of a browser called [JSDOM](https://github.com/jsdom/jsdom). They are fast and accurate, but cannot fully replicate a browser. Most of our behavior tests should be written in this way.
 
-[Learn how to write and debug these tests](../how-to/testing#behavior-tests)
+[Learn how to write and debug these tests](../how-to/testing.md#behavior-tests)
 
 #### Puppeteer
 These tests run in an actual browser, meaning they can fully replicate almost everything a user might be able to do. However, they are quite slow and can be very brittle. We should only write these tests for functionality that cannot be tested through testing-library.
 
-[Learn how to write and debug these tests](../how-to/testing#browser-based-tests)
+[Learn how to write and debug these tests](../how-to/testing.md#browser-based-tests)
 
 
 ## Writing testable code
