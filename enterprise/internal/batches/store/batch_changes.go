@@ -234,8 +234,11 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 		// all, if I'm not an admin, filter out unapplied batch changes except those that
 		// I authored the batch spec of from this list.
 	} else if !isSiteAdmin {
-		joins = append(joins, sqlf.Sprintf("LEFT JOIN batch_specs ON batch_specs.id = batch_changes.batch_spec_id"))
-		preds = append(preds, sqlf.Sprintf("(batch_specs.user_id = %s OR batch_changes.last_applied_at IS NOT NULL)", actor.UID))
+		cond := sqlf.Sprintf(`(batch_changes.last_applied_at IS NOT NULL
+		OR
+		EXISTS (SELECT 1 FROM batch_specs WHERE batch_specs.id = batch_changes.batch_spec_id AND batch_specs.user_id = %s))
+		`, actor.UID)
+		preds = append(preds, cond)
 	}
 
 	if opts.NamespaceOrgID != 0 {
@@ -532,8 +535,11 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 		// all, if I'm not an admin, filter out unapplied batch changes except those that
 		// I authored the batch spec of from this list.
 	} else if !isSiteAdmin {
-		joins = append(joins, sqlf.Sprintf("LEFT JOIN batch_specs ON batch_specs.id = batch_changes.batch_spec_id"))
-		preds = append(preds, sqlf.Sprintf("(batch_specs.user_id = %s OR batch_changes.last_applied_at IS NOT NULL)", actor.UID))
+		cond := sqlf.Sprintf(`(batch_changes.last_applied_at IS NOT NULL
+		OR
+		EXISTS (SELECT 1 FROM batch_specs WHERE batch_specs.id = batch_changes.batch_spec_id AND batch_specs.user_id = %s))
+		`, actor.UID)
+		preds = append(preds, cond)
 	}
 
 	if opts.NamespaceOrgID != 0 {
