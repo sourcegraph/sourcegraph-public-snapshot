@@ -1,4 +1,5 @@
 # Searching across your organization’s code on Sourcegraph Cloud
+Note: Team access for Sourcegraph Cloud is in Private Beta. If you are interested in getting early-access, [join our waitlist](https://share.hsforms.com/14OQ3RoPpQTOXvZlUpgx6-A1n7ku)!
 
 After adding your organization’s repositories to sync with Sourcegraph Cloud, all members of your organization can immediately start searching across your organization’s code.
 
