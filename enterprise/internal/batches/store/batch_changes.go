@@ -9,7 +9,9 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-diff/diff"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -171,12 +173,19 @@ func (s *Store) CountBatchChanges(ctx context.Context, opts CountBatchChangesOpt
 	ctx, endObservation := s.operations.countBatchChanges.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	actor := actor.FromContext(ctx)
+
+	isSiteAdmin := false
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, s.DatabaseDB()); err == nil {
+		isSiteAdmin = true
+	}
+
 	repoAuthzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return 0, errors.Wrap(err, "CountBatchChanges generating authz query conds")
 	}
 
-	return s.queryCount(ctx, countBatchChangesQuery(&opts, repoAuthzConds))
+	return s.queryCount(ctx, countBatchChangesQuery(&opts, repoAuthzConds, actor, isSiteAdmin))
 }
 
 var countBatchChangesQueryFmtstr = `
@@ -187,7 +196,7 @@ FROM batch_changes
 WHERE %s
 `
 
-func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Query) *sqlf.Query {
+func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Query, actor *actor.Actor, isSiteAdmin bool) *sqlf.Query {
 	joins := []*sqlf.Query{
 		sqlf.Sprintf("LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id"),
 		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON batch_changes.namespace_org_id = namespace_org.id"),
@@ -215,6 +224,21 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 
 	if opts.NamespaceUserID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_user_id = %s", opts.NamespaceUserID))
+
+		// If it's not my namespace and I'm not an admin, filter out unapplied batch changes
+		// from this list.
+		if actor.UID != opts.NamespaceUserID && !isSiteAdmin {
+			preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NOT NULL"))
+		}
+	} else {
+		// For batch changes filtered by org namespace, or not filtered by namespace at
+		// all, if I'm not an admin, filter out unapplied batch changes except those that
+		// I authored the batch spec of from this list.
+		if !isSiteAdmin {
+			joins = append(joins, sqlf.Sprintf("LEFT JOIN batch_specs ON batch_specs.id = batch_changes.batch_spec_id"))
+			joins = append(joins, sqlf.Sprintf("LEFT JOIN users batch_spec_authors ON batch_specs.user_id = batch_spec_authors.id"))
+			preds = append(preds, sqlf.Sprintf("(batch_spec_authors.id = %s OR batch_changes.last_applied_at IS NOT NULL)", actor.UID))
+		}
 	}
 
 	if opts.NamespaceOrgID != 0 {
@@ -431,11 +455,18 @@ func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts)
 	ctx, endObservation := s.operations.listBatchChanges.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
+	actor := actor.FromContext(ctx)
+
+	isSiteAdmin := false
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, s.DatabaseDB()); err == nil {
+		isSiteAdmin = true
+	}
+
 	repoAuthzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "ListBatchChanges generating authz query conds")
 	}
-	q := listBatchChangesQuery(&opts, repoAuthzConds)
+	q := listBatchChangesQuery(&opts, repoAuthzConds, actor, isSiteAdmin)
 
 	cs = make([]*btypes.BatchChange, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
@@ -463,7 +494,7 @@ WHERE %s
 ORDER BY id DESC
 `
 
-func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Query) *sqlf.Query {
+func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Query, actor *actor.Actor, isSiteAdmin bool) *sqlf.Query {
 	joins := []*sqlf.Query{
 		sqlf.Sprintf("LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id"),
 		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON batch_changes.namespace_org_id = namespace_org.id"),
@@ -495,6 +526,20 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 
 	if opts.NamespaceUserID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_user_id = %s", opts.NamespaceUserID))
+		// If it's not my namespace and I'm not an admin, filter out unapplied batch changes
+		// from this list.
+		if actor.UID != opts.NamespaceUserID && !isSiteAdmin {
+			preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NOT NULL"))
+		}
+	} else {
+		// For batch changes filtered by org namespace, or not filtered by namespace at
+		// all, if I'm not an admin, filter out unapplied batch changes except those that
+		// I authored the batch spec of from this list.
+		if !isSiteAdmin {
+			joins = append(joins, sqlf.Sprintf("LEFT JOIN batch_specs ON batch_specs.id = batch_changes.batch_spec_id"))
+			joins = append(joins, sqlf.Sprintf("LEFT JOIN users batch_spec_authors ON batch_specs.user_id = batch_spec_authors.id"))
+			preds = append(preds, sqlf.Sprintf("(batch_spec_authors.id = %s OR batch_changes.last_applied_at IS NOT NULL)", actor.UID))
+		}
 	}
 
 	if opts.NamespaceOrgID != 0 {

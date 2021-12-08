@@ -179,7 +179,7 @@ func TestBatchChangesListing(t *testing.T) {
 	ctx := context.Background()
 	db := dbtest.NewDB(t)
 
-	userID := ct.CreateTestUser(t, db, true).ID
+	userID := ct.CreateTestUser(t, db, false).ID
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 	orgID := ct.InsertTestOrg(t, db, "org")
@@ -206,21 +206,21 @@ func TestBatchChangesListing(t *testing.T) {
 		t.Helper()
 
 		c.Name = "n"
-		c.InitialApplierID = userID
 		if err := store.CreateBatchChange(ctx, c); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	t.Run("listing a users batch changes", func(t *testing.T) {
+	t.Run("listing a user's batch changes", func(t *testing.T) {
 		spec := &btypes.BatchSpec{}
 		createBatchSpec(t, spec)
 
 		batchChange := &btypes.BatchChange{
-			NamespaceUserID: userID,
-			BatchSpecID:     spec.ID,
-			LastApplierID:   userID,
-			LastAppliedAt:   time.Now(),
+			NamespaceUserID:  userID,
+			BatchSpecID:      spec.ID,
+			InitialApplierID: userID,
+			LastApplierID:    userID,
+			LastAppliedAt:    time.Now(),
 		}
 		createBatchChange(t, batchChange)
 
@@ -230,7 +230,7 @@ func TestBatchChangesListing(t *testing.T) {
 		var response struct{ Node apitest.User }
 		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesBatchChanges)
 
-		want := apitest.User{
+		wantOne := apitest.User{
 			ID: userAPIID,
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 1,
@@ -240,7 +240,55 @@ func TestBatchChangesListing(t *testing.T) {
 			},
 		}
 
-		if diff := cmp.Diff(want, response.Node); diff != "" {
+		if diff := cmp.Diff(wantOne, response.Node); diff != "" {
+			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		}
+
+		spec2 := &btypes.BatchSpec{}
+		createBatchSpec(t, spec2)
+
+		// This batch change has never been applied -- it is a draft.
+		batchChange2 := &btypes.BatchChange{
+			NamespaceUserID: userID,
+			BatchSpecID:     spec2.ID,
+		}
+		createBatchChange(t, batchChange2)
+
+		// DRAFTS CASE 1: USERS CAN VIEW THEIR OWN DRAFTS.
+		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesBatchChanges)
+
+		wantBoth := apitest.User{
+			ID: userAPIID,
+			BatchChanges: apitest.BatchChangeConnection{
+				TotalCount: 2,
+				Nodes: []apitest.BatchChange{
+					{ID: string(marshalBatchChangeID(batchChange2.ID))},
+					{ID: string(marshalBatchChangeID(batchChange.ID))},
+				},
+			},
+		}
+
+		if diff := cmp.Diff(wantBoth, response.Node); diff != "" {
+			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		}
+
+		// DRAFTS CASE 2: ADMIN USERS CAN VIEW OTHER USERS' DRAFTS
+		adminUserID := ct.CreateTestUser(t, db, true).ID
+		adminActorCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
+
+		apitest.MustExec(adminActorCtx, t, s, input, &response, listNamespacesBatchChanges)
+
+		if diff := cmp.Diff(wantBoth, response.Node); diff != "" {
+			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		}
+
+		// DRAFTS CASE 3: NON-ADMIN USERS CANNOT VIEW OTHER USERS' DRAFTS.
+		otherUserID := ct.CreateTestUser(t, db, false).ID
+		otherActorCtx := actor.WithActor(ctx, actor.FromUser(otherUserID))
+
+		apitest.MustExec(otherActorCtx, t, s, input, &response, listNamespacesBatchChanges)
+
+		if diff := cmp.Diff(wantOne, response.Node); diff != "" {
 			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
 		}
 	})
@@ -250,10 +298,11 @@ func TestBatchChangesListing(t *testing.T) {
 		createBatchSpec(t, spec)
 
 		batchChange := &btypes.BatchChange{
-			NamespaceOrgID: orgID,
-			BatchSpecID:    spec.ID,
-			LastApplierID:  userID,
-			LastAppliedAt:  time.Now(),
+			NamespaceOrgID:   orgID,
+			BatchSpecID:      spec.ID,
+			InitialApplierID: userID,
+			LastApplierID:    userID,
+			LastAppliedAt:    time.Now(),
 		}
 		createBatchChange(t, batchChange)
 
@@ -263,7 +312,7 @@ func TestBatchChangesListing(t *testing.T) {
 		var response struct{ Node apitest.Org }
 		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesBatchChanges)
 
-		want := apitest.Org{
+		wantOne := apitest.Org{
 			ID: orgAPIID,
 			BatchChanges: apitest.BatchChangeConnection{
 				TotalCount: 1,
@@ -273,7 +322,55 @@ func TestBatchChangesListing(t *testing.T) {
 			},
 		}
 
-		if diff := cmp.Diff(want, response.Node); diff != "" {
+		if diff := cmp.Diff(wantOne, response.Node); diff != "" {
+			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		}
+
+		spec2 := &btypes.BatchSpec{UserID: userID}
+		createBatchSpec(t, spec2)
+
+		// This batch change has never been applied -- it is a draft.
+		batchChange2 := &btypes.BatchChange{
+			NamespaceOrgID: orgID,
+			BatchSpecID:    spec2.ID,
+		}
+		createBatchChange(t, batchChange2)
+
+		// DRAFTS CASE 1: USERS CAN VIEW THEIR OWN DRAFTS.
+		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesBatchChanges)
+
+		wantBoth := apitest.Org{
+			ID: orgAPIID,
+			BatchChanges: apitest.BatchChangeConnection{
+				TotalCount: 2,
+				Nodes: []apitest.BatchChange{
+					{ID: string(marshalBatchChangeID(batchChange2.ID))},
+					{ID: string(marshalBatchChangeID(batchChange.ID))},
+				},
+			},
+		}
+
+		if diff := cmp.Diff(wantBoth, response.Node); diff != "" {
+			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		}
+
+		// DRAFTS CASE 2: ADMIN USERS CAN VIEW OTHER USERS' DRAFTS
+		adminUserID := ct.CreateTestUser(t, db, true).ID
+		adminActorCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
+
+		apitest.MustExec(adminActorCtx, t, s, input, &response, listNamespacesBatchChanges)
+
+		if diff := cmp.Diff(wantBoth, response.Node); diff != "" {
+			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		}
+
+		// DRAFTS CASE 3: NON-ADMIN USERS CANNOT VIEW OTHER USERS' DRAFTS.
+		otherUserID := ct.CreateTestUser(t, db, false).ID
+		otherActorCtx := actor.WithActor(ctx, actor.FromUser(otherUserID))
+
+		apitest.MustExec(otherActorCtx, t, s, input, &response, listNamespacesBatchChanges)
+
+		if diff := cmp.Diff(wantOne, response.Node); diff != "" {
 			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
 		}
 	})
