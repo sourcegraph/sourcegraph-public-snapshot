@@ -63,6 +63,7 @@ func ExecutorsWith(other basestore.ShareableStore) ExecutorStore {
 func (s *executorStore) With(other basestore.ShareableStore) ExecutorStore {
 	return &executorStore{Store: s.Store.With(other)}
 }
+
 func (s *executorStore) Transact(ctx context.Context) (ExecutorStore, error) {
 	txBase, err := s.Store.Transact(ctx)
 	return &executorStore{Store: txBase}, err
