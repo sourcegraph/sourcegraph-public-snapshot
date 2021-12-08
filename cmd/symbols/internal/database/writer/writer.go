@@ -144,11 +144,20 @@ func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.
 	})
 }
 
-func (w *databaseWriter) parseAndWriteInTransaction(ctx context.Context, args types.SearchArgs, paths []string, dbFile string, callback func(tx store.Store, symbols <-chan result.Symbol) error) error {
+func (w *databaseWriter) parseAndWriteInTransaction(ctx context.Context, args types.SearchArgs, paths []string, dbFile string, callback func(tx store.Store, symbols <-chan result.Symbol) error) (err error) {
 	symbols, err := w.parser.Parse(ctx, args, paths)
 	if err != nil {
 		return errors.Wrap(err, "parser.Parse")
 	}
+	defer func() {
+		if err != nil {
+			go func() {
+				// Drain channel on early exit
+				for range symbols {
+				}
+			}()
+		}
+	}()
 
 	return store.WithSQLiteStoreTransaction(ctx, dbFile, func(tx store.Store) error {
 		return callback(tx, symbols)
