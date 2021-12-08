@@ -141,7 +141,7 @@ export function activate(context: vscode.ExtensionContext): void {
             sourcegraphSettings.refreshSettings()
 
             const { sourcegraphVSCodeSearchWebviewAPI, webviewPanel } = await initializeSearchPanelWebview({
-                extensionPath: context.extensionPath,
+                extensionUri: context.extensionUri,
                 sourcegraphVSCodeExtensionAPI,
                 initializedPanelIDs,
             })
@@ -168,11 +168,10 @@ export function activate(context: vscode.ExtensionContext): void {
             {
                 resolveWebviewView: (webviewView, _context, _token) => {
                     const { sourcegraphVSCodeSearchSidebarAPI } = initializeSearchSidebarWebview({
-                        extensionPath: context.extensionPath,
+                        extensionUri: context.extensionUri,
                         sourcegraphVSCodeExtensionAPI,
                         webviewView,
                     })
-
                     webviewView.onDidDispose(() => {
                         sourcegraphVSCodeSearchSidebarAPI[releaseProxy]()
                     })
@@ -188,7 +187,7 @@ export function activate(context: vscode.ExtensionContext): void {
             {
                 resolveWebviewView: (webviewView, _context, _token) => {
                     const { sourcegraphVSCodeExtensionHostAPI } = initializeExtensionHostWebview({
-                        extensionPath: context.extensionPath,
+                        extensionUri: context.extensionUri,
                         sourcegraphVSCodeExtensionAPI,
                         webviewView,
                     })
