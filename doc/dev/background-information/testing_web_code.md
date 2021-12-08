@@ -25,42 +25,40 @@ These categories may be more or less important depending on the piece of UI.
 A visual regression is a bug where the component behaves correctly, but no longer looks as intended.
 We use Percy screenshot tests and Chromatic Storybook tests to catch these.
 Percy can take screenshots in end-to-end tests and client integration tests. Chromatic can take screenshots in Storybook tests.
-Storybook tests can be seen as a form of unit test for a components UI.
+Storybook tests can be seen as a form of unit test for a component's UI.
 Any story that is added to our codebase is automatically screenshotted on every CI build (but only in its initial state).
 
 ### Render output
 
 Depending on the component, it can be important to test the _render output_ of the component.
 This encompasses the DOM structure and that the correct props are passed to other components.
-This can be useful for tests where we *only* care about the DOM output.
+This can be useful for tests where we **only** care about the DOM output.
 For example, a component that renders a `<span>` or an `<a>` element depending on the props passed to it.
 
 Snapshot diffs should be reviewed in pull request reviews the same way any other code or test diff should is reviewed and can be useful to highlight changes in render output to reviewers.
 
 **Please note:** Snapshot testing should only be used for the simplest of components and should be avoided for most tests. There are some major caveats to this type of testing:
 
-- Snapshots ultimately test the implementation details of a component. This is problematic as it is at adds with goal (4). We cannot reliably refactor our component internals and rely on these tests to catch regressions easily.
+- Snapshots ultimately test the implementation details of a component. This is problematic as it is at odds with goal (4). We cannot reliably refactor our component internals and rely on these tests to catch regressions easily.
 - Snapshots can often be very large and easily missed in code review. As they change so often, it can be quite common for developers to fall into the trap of ignoring the diffs and assuming that the snapshot is correct.
-- Snapshots fall into a gray area between our typical behavior tests and our visual regression tests. It should usually be beneficial to chose the relevant one of those options that suits your use case instead of adding another snapshot.
-
-The preferred alternative to snapshot testing to specially test our components as a user would actually interact them. That means taking no assumptions on the implementation details and even locating elements by visual content rather than classNames or test-ids. This is the approach we should typically use in our codebase, more on this below.
+- Snapshots fall into a grey area between our typical behavior tests and our visual regression tests. It should usually be beneficial to chose the relevant one of those options that suits your use case instead of adding another snapshot.
 
 [Learn how to write and debug these tests](../how-to/testing#react-component-snapshot-tests)
 
-### Behavior tests
+### Behavior
 
-The most effective way we can test our React components is through our behavior tests, they should all follow the same core guiding principle:
+The most effective way we can test our React components is through our behavior tests. These tests should all follow the same core guiding principle:
 > The more our tests resemble the way our software is used, the more confidence they will give us.
 
-This means that our behavior tests should simulate a typical user journey **as close as possible**.
+This means that our behavior tests should be designed to simulate a typical user journey **as closely as possible**.
 
 Our tests should deal with the DOM directly, rather than component abstractions. For example, for an `<Input />` component, we should simulate actual keyboard events rather than calling an `onInput` prop with mock data.
 
-Our tests should render as much of a single user journey as possible. It might be simpler to test a specific `<PageHeader />` component on its own, but it's much closer to a typical user journey to test the entire `<Page />` component at once. The one exeception here should be fore components that are **intended** to be reusable, it is preferable to test these in isolation as they could be used in many different user journeys.
+Our tests should render as much of a single user journey as possible. Although it might be simpler to test a specific `<PageHeader />` component on its own, it is much closer to a typical user journey to test the entire `<Page />` component at once. The one exception here should be for components that are **intended** to be reusable, it is preferable to test these in isolation as they could be used in many different user journeys.
 
-We use two different libraries for writing these tests:
+We use two different libraries for writing our behavior tests:
 
-### Testing-library
+#### Testing-library
 These tests run in a simulated, pure-JavaScript implementation of a browser called [JSDOM](https://github.com/jsdom/jsdom). They are fast and accurate, but cannot fully replicate a browser. Most of our behavior tests should be written in this way.
 
 [Learn how to write and debug these tests](../how-to/testing#behavior-tests)

@@ -43,7 +43,7 @@ A typical snapshot test might look like this:
 
 ### Behavior tests
 
-This means that our behavior tests should simulate a typical user journey **as close as possible**. We use [testing-library](https://testing-library.com/) to render and interact with our components.
+Our behavior tests should simulate a typical user journey **as closely as possible**. We use [testing-library](https://testing-library.com/) to render and interact with our components.
 
 Here is an annotated example of a behavior test:
 
@@ -62,7 +62,7 @@ Here is an annotated example of a behavior test:
     })
 ```
 
-Notice how this test doesn't assuming anything about `UserProfilePage` aside from that is should have a heading, input field and some rendered output that can be updated by the user. We could completely refactor this component and, as long as the raw functionality remained the same, the test will still pass.
+Notice how this test doesn't assuming anything about `UserProfilePage` aside from that it should have a heading, input field and some rendered output that can be updated by the user. We could completely refactor this component and, as long as the raw functionality remained the same, the test will still pass.
 
 For more documentation and examples of how to write these tests, please see the [testing-library docs](https://testing-library.com/docs/react-testing-library/intro/).
 
@@ -71,7 +71,8 @@ For more documentation and examples of how to write these tests, please see the 
 When running into problems with these tests, we have some useful utilities to help you debug them (aside from what you might typically use):
 
 **debug**
-Testing-library exposes a utility method called `debug` that can print the rendered DOM to the console. Like so:
+
+This utility method can print the rendered DOM to the console.
 
 ```tsx
     it('this test is causing me problems', () => {
@@ -83,7 +84,8 @@ Testing-library exposes a utility method called `debug` that can print the rende
 ```
 
 **testing playground**
-Testing-library can also visually render the DOM to a webpage. Like so:
+
+This utility method can visually render the DOM on a webpage.
 
 ```tsx
     it('this test is causing me problems', () => {
@@ -94,7 +96,7 @@ Testing-library can also visually render the DOM to a webpage. Like so:
     })
 ```
 
-This provides some additional functionality that can make it easier to identify the correct query to use to access a particular DOM element. 
+This page also provides some additional functionality that can make it easier to identify the correct query to use to access a particular DOM element. 
 
 ## Browser-based tests
 
