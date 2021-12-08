@@ -135,19 +135,13 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 	var errs error
 	// TODO: this could be trivially parallelised in the future.
 	for _, on := range batchSpec.On {
-		revs, overridable, err := wr.resolveRepositoriesOn(ctx, &on)
+		revs, ruleType, err := wr.resolveRepositoriesOn(ctx, &on)
 		if err != nil {
 			errs = multierror.Append(errs, errors.Wrapf(err, "resolving %q", on.String()))
 			continue
 		}
 
-		var result *onlib.RuleResult
-		if overridable {
-			result = agg.NewRuleResult(onlib.RepositoryRuleTypeQuery)
-		} else {
-			result = agg.NewRuleResult(onlib.RepositoryRuleTypeExplicit)
-		}
-
+		result := agg.NewRuleResult(ruleType)
 		for _, rev := range revs {
 			// Skip repos where no branch exists.
 			if !rev.HasBranch() {
@@ -220,11 +214,7 @@ func findIgnoredRepositories(ctx context.Context, repos []*RepoRevision) (map[*t
 var ErrMalformedOnQueryOrRepository = batcheslib.NewValidationError(errors.New("malformed 'on' field; missing either a repository name or a query"))
 
 // resolveRepositoriesOn resolves a single on: entry in a batch spec.
-//
-// The `overridable` return value indicates whether the result should be
-// overridden if a later on: rule matches the same repository. If false, then
-// future results should be merged with the results from this invocation.
-func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batcheslib.OnQueryOrRepository) (_ []*RepoRevision, overridable bool, err error) {
+func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batcheslib.OnQueryOrRepository) (_ []*RepoRevision, _ onlib.RepositoryRuleType, err error) {
 	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositoriesOn", "")
 	defer func() {
 		tr.SetError(err)
@@ -233,12 +223,12 @@ func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batc
 
 	if on.RepositoriesMatchingQuery != "" {
 		revs, err := wr.resolveRepositoriesMatchingQuery(ctx, on.RepositoriesMatchingQuery)
-		return revs, true, err
+		return revs, onlib.RepositoryRuleTypeQuery, err
 	}
 
 	branches, err := on.GetBranches()
 	if err != nil {
-		return nil, false, err
+		return nil, onlib.RepositoryRuleTypeExplicit, err
 	}
 
 	if on.Repository != "" && len(branches) > 0 {
@@ -246,25 +236,25 @@ func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batc
 		for i, branch := range branches {
 			repo, err := wr.resolveRepositoryNameAndBranch(ctx, on.Repository, branch)
 			if err != nil {
-				return nil, false, err
+				return nil, onlib.RepositoryRuleTypeExplicit, err
 			}
 
 			revs[i] = repo
 		}
-		return revs, false, nil
+		return revs, onlib.RepositoryRuleTypeExplicit, nil
 	}
 
 	if on.Repository != "" {
 		repo, err := wr.resolveRepositoryName(ctx, on.Repository)
 		if err != nil {
-			return nil, false, err
+			return nil, onlib.RepositoryRuleTypeExplicit, err
 		}
-		return []*RepoRevision{repo}, false, nil
+		return []*RepoRevision{repo}, onlib.RepositoryRuleTypeExplicit, nil
 	}
 
 	// This shouldn't happen on any batch spec that has passed validation, but,
 	// alas, software.
-	return nil, false, ErrMalformedOnQueryOrRepository
+	return nil, onlib.RepositoryRuleTypeExplicit, ErrMalformedOnQueryOrRepository
 }
 
 func (wr *workspaceResolver) resolveRepositoryName(ctx context.Context, name string) (_ *RepoRevision, err error) {
