@@ -142,14 +142,6 @@ func regroupIntervalCounts(fromGroups []types.InsightTimeIntervalPing) []types.I
 	return newGroups
 }
 
-const generationMethodCaseStr = `
-CASE
-   WHEN (sample_interval_unit = 'MONTH' AND sample_interval_value = 0) THEN 'language-stats'
-   WHEN (CARDINALITY(repositories) = 0 OR repositories IS NULL) THEN 'search-global'
-   ELSE 'search'
-END AS generation_method
-`
-
 const pingSeriesType = `
 CONCAT(
    CASE WHEN ((generation_method = 'search' or generation_method = 'search-compute') and generated_from_capture_groups) THEN 'capture-groups' ELSE generation_method END,
