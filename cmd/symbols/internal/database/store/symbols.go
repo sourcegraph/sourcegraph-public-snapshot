@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"golang.org/x/sync/errgroup"
 
@@ -74,7 +73,6 @@ func (s *store) WriteSymbols(ctx context.Context, symbolOrErrors <-chan parser.S
 				return symbolOrError.Err
 			}
 
-			log15.Info("YEY!")
 			rows <- symbolToRow(symbolOrError.Symbol)
 		}
 
