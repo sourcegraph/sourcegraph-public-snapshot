@@ -47,12 +47,12 @@ func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription,
 		priority                  string
 		numberOfResultsWithDetail string
 	)
-	searchURL, err = GetSearchURL(ctx, queryString, utmSourceEmail)
+	searchURL, err = getSearchURL(ctx, queryString, utmSourceEmail)
 	if err != nil {
 		return nil, err
 	}
 
-	codeMonitorURL, err = GetCodeMonitorURL(ctx, email.Monitor, utmSourceEmail)
+	codeMonitorURL, err = getCodeMonitorURL(ctx, email.Monitor, utmSourceEmail)
 	if err != nil {
 		return nil, err
 	}
@@ -105,11 +105,11 @@ func sendEmail(ctx context.Context, userID int32, template txtypes.Templates, da
 	return nil
 }
 
-func GetSearchURL(ctx context.Context, query, utmSource string) (string, error) {
+func getSearchURL(ctx context.Context, query, utmSource string) (string, error) {
 	return sourcegraphURL(ctx, "search", query, utmSource)
 }
 
-func GetCodeMonitorURL(ctx context.Context, monitorID int64, utmSource string) (string, error) {
+func getCodeMonitorURL(ctx context.Context, monitorID int64, utmSource string) (string, error) {
 	return sourcegraphURL(ctx, fmt.Sprintf("code-monitoring/%s", relay.MarshalID(MonitorKind, monitorID)), "", utmSource)
 }
 

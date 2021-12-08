@@ -286,12 +286,12 @@ func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *cm.ActionJob) 
 	}
 
 	utmSource := "code-monitor-slack-webhook"
-	searchURL, err := GetSearchURL(ctx, m.Query, utmSource)
+	searchURL, err := getSearchURL(ctx, m.Query, utmSource)
 	if err != nil {
 		return errors.Wrap(err, "GetSearchURL")
 	}
 
-	codeMonitorURL, err := GetCodeMonitorURL(ctx, w.Monitor, utmSource)
+	codeMonitorURL, err := getCodeMonitorURL(ctx, w.Monitor, utmSource)
 	if err != nil {
 		return errors.Wrap(err, "GetCodeMonitorURL")
 	}
