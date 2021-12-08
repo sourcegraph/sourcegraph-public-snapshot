@@ -20,6 +20,8 @@ To upgrade, please perform the changes in the following diff:
 
 __Please upgrade directly to 3.34.2.__
 
+A bug in our 3.34 and 3.34.1 release causes some repositories from older Sourcegraph versions to not appear in search results due to a database change.
+
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.33).*
 
 ## 3.32 -> 3.33
