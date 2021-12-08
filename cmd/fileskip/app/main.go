@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"github.com/bits-and-blooms/bloom/v3"
 	"github.com/cockroachdb/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/bitmask"
+	"github.com/sourcegraph/sourcegraph/cmd/fileskip"
 	"os"
 )
 
-var cacheFile = os.Getenv("HOME") + "/dev/sourcegraph/bitmask-cache"
+var cacheFile = os.Getenv("HOME") + "/dev/sourcegraph/fileskip-cache"
 
 func main2() {
 	b := bloom.NewWithEstimates(100_000, 0.01)
@@ -30,12 +30,12 @@ func main() {
 		switch os.Args[1] {
 		case "index":
 			dir := os.Args[2]
-			err := bitmask.WriteCache(dir, cacheFile)
+			err := fileskip.WriteCache(dir, cacheFile)
 			if err != nil {
 				panic(err)
 			}
 		case "grep":
-			r, err := bitmask.ReadCache(cacheFile)
+			r, err := fileskip.ReadCache(cacheFile)
 			if err != nil {
 				panic(errors.Wrapf(err, "Failed to decode cache at %v", cacheFile))
 			}

@@ -1,4 +1,4 @@
-package bitmask
+package fileskip
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ The World is the best.
 )
 
 var dir = os.Getenv("HOME") + "/dev/sourcegraph/sourcegraph"
-var cacheFile = os.Getenv("HOME") + "/dev/sourcegraph/bitmask-cache"
+var cacheFile = os.Getenv("HOME") + "/dev/sourcegraph/fileskip-cache"
 var benchmarkCacheDir = os.Getenv("HOME") + "/dev/sourcegraph/benchmark-cache"
 
 func BenchmarkIndex(b *testing.B) {

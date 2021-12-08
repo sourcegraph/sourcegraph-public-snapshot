@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/cmd/bitmask"
+	"github.com/sourcegraph/sourcegraph/cmd/fileskip"
 	"math"
 	"strings"
 	"testing"
 )
 
 func benchmarkQuery(b *testing.B, c Corpus, query string) {
-	bitmask.IsProgressBarEnabled = false
+	fileskip.IsProgressBarEnabled = false
 	index, err := c.LoadRepoIndex()
 	if err != nil {
 		panic(err)
@@ -65,8 +65,8 @@ func BenchmarkQueryChromiumMedium(b *testing.B) { benchmarkMediumQuery(b, chromi
 func BenchmarkQueryChromiumLong(b *testing.B)   { benchmarkLongQuery(b, chromium) }
 
 func loadCorpus(b *testing.B, corpus Corpus) {
-	bitmask.IsProgressBarEnabled = false
-	var index *bitmask.RepoIndex
+	fileskip.IsProgressBarEnabled = false
+	var index *fileskip.RepoIndex
 	var err error
 	for i := 0; i < b.N; i++ {
 		index, err = corpus.LoadRepoIndex()

@@ -6,7 +6,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/loov/hrtime"
 	"github.com/schollz/progressbar/v3"
-	"github.com/sourcegraph/sourcegraph/cmd/bitmask"
+	"github.com/sourcegraph/sourcegraph/cmd/fileskip"
 	"io"
 	"math"
 	"net/http"
@@ -134,15 +134,15 @@ func DownloadUrlAndCache(corpus *Corpus) (string, error) {
 	return path, nil
 }
 
-func (c *Corpus) LoadFileSystem() (*bitmask.ZipFileSystem, error) {
+func (c *Corpus) LoadFileSystem() (*fileskip.ZipFileSystem, error) {
 	path, err := DownloadUrlAndCache(c)
 	if err != nil {
 		return nil, err
 	}
-	return bitmask.NewZipFileSystem(path)
+	return fileskip.NewZipFileSystem(path)
 }
 
-func (c *Corpus) LoadRepoIndex() (*bitmask.RepoIndex, error) {
+func (c *Corpus) LoadRepoIndex() (*fileskip.RepoIndex, error) {
 	fs, err := c.LoadFileSystem()
 	if err != nil {
 		return nil, err
@@ -152,10 +152,10 @@ func (c *Corpus) LoadRepoIndex() (*bitmask.RepoIndex, error) {
 	//	return cached, nil
 	//}
 
-	return bitmask.NewInMemoryRepoIndex(fs)
+	return fileskip.NewInMemoryRepoIndex(fs)
 }
 
-func (c *Corpus) loadCachedRepoIndex() (*bitmask.RepoIndex, error) {
+func (c *Corpus) loadCachedRepoIndex() (*fileskip.RepoIndex, error) {
 	stat, err := os.Stat(c.indexCachePath())
 	if err != nil {
 		return nil, err
@@ -167,8 +167,8 @@ func (c *Corpus) loadCachedRepoIndex() (*bitmask.RepoIndex, error) {
 	if err != nil {
 		return nil, err
 	}
-	var blobs []bitmask.BlobIndex
-	index := &bitmask.BlobIndex{}
+	var blobs []fileskip.BlobIndex
+	index := &fileskip.BlobIndex{}
 	from, err := index.ReadFrom(file)
 	for from > 0 && err == nil {
 		blobs = append(blobs, *index)
@@ -177,7 +177,7 @@ func (c *Corpus) loadCachedRepoIndex() (*bitmask.RepoIndex, error) {
 	//if err != nil {
 	//	return nil, errors
 	//}
-	result := &bitmask.RepoIndex{Blobs: blobs}
+	result := &fileskip.RepoIndex{Blobs: blobs}
 	fs, err := c.LoadFileSystem()
 	if err != nil {
 		return nil, err
@@ -200,7 +200,7 @@ func (c *Corpus) indexCachePath() string {
 			"%v-%x.repo-index-v%v",
 			c.Name,
 			md5.Sum([]byte(c.URL)),
-			bitmask.Version,
+			fileskip.Version,
 		),
 	)
 }

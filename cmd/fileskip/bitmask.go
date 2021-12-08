@@ -1,4 +1,4 @@
-package bitmask
+package fileskip
 
 import (
 	"fmt"
