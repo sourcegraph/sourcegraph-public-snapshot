@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
@@ -160,14 +161,33 @@ func scanNotebooks(rows *sql.Rows) ([]*Notebook, error) {
 	return notebooks, nil
 }
 
+const blocksQueryFmtStr = `EXISTS (SELECT 1 FROM jsonb_array_elements(notebooks.blocks) AS block WHERE %s)`
+
+// Extracts a string with a given path from the block object
+var blockJsonbQueryPaths = []string{
+	"block#>>'{markdownInput, text}'",
+	"block#>>'{queryInput, text}'",
+	"block#>>'{fileInput, repositoryName}'",
+	"block#>>'{fileInput, filePath}'",
+	"block#>>'{fileInput, revision}'",
+}
+
 func getNotebooksQueryConditions(opts ListNotebooksOptions) []*sqlf.Query {
 	conds := []*sqlf.Query{}
-	if opts.Query != "" {
-		// title column has type citext which automatically performs case-insensitive comparison
-		conds = append(conds, sqlf.Sprintf("notebooks.title LIKE %s", "%"+opts.Query+"%"))
-	}
 	if opts.CreatorUserID != 0 {
 		conds = append(conds, sqlf.Sprintf("notebooks.creator_user_id = %d", opts.CreatorUserID))
+	}
+	if opts.Query != "" {
+		likeQuery := "%" + strings.ToLower(opts.Query) + "%"
+		// title column has type citext which automatically performs case-insensitive comparison
+		queryConds := []*sqlf.Query{sqlf.Sprintf("notebooks.title LIKE %s", likeQuery)}
+		// Build the subquery to filter notebooks by block contents
+		blocksQueryConds := make([]*sqlf.Query, 0, len(blockJsonbQueryPaths))
+		for _, path := range blockJsonbQueryPaths {
+			blocksQueryConds = append(blocksQueryConds, sqlf.Sprintf("LOWER("+path+") LIKE %s", likeQuery))
+		}
+		queryConds = append(queryConds, sqlf.Sprintf(blocksQueryFmtStr, sqlf.Join(blocksQueryConds, " OR ")))
+		conds = append(conds, sqlf.Join(queryConds, " OR "))
 	}
 	if len(conds) == 0 {
 		// If no conditions are present, append a catch-all condition to avoid a SQL syntax error

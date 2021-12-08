@@ -144,11 +144,20 @@ func TestListingNotebooks(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
+	blocks := NotebookBlocks{
+		{ID: "1", Type: NotebookQueryBlockType, QueryInput: &NotebookQueryBlockInput{"repo:a b"}},
+		{ID: "2", Type: NotebookMarkdownBlockType, MarkdownInput: &NotebookMarkdownBlockInput{"# Title"}},
+		{ID: "3", Type: NotebookQueryBlockType, QueryInput: &NotebookQueryBlockInput{"repo:sourcegraph file:client/web/file.tsx"}},
+		{ID: "4", Type: NotebookFileBlockType, FileInput: &NotebookFileBlockInput{
+			RepositoryName: "github.com/sourcegraph/sourcegraph", FilePath: "client/web/file.tsx"},
+		},
+	}
+
 	createdNotebooks, err := createNotebooks(internalCtx, n, []*Notebook{
-		{Title: "Notebook User1 Public", Blocks: NotebookBlocks{}, Public: true, CreatorUserID: user1.ID},
-		{Title: "Notebook User1 Private", Blocks: NotebookBlocks{}, Public: false, CreatorUserID: user1.ID},
-		{Title: "Notebook User2 Public", Blocks: NotebookBlocks{}, Public: true, CreatorUserID: user2.ID},
-		{Title: "Notebook User2 Private", Blocks: NotebookBlocks{}, Public: false, CreatorUserID: user2.ID},
+		{Title: "Notebook User1 Public", Blocks: NotebookBlocks{blocks[0]}, Public: true, CreatorUserID: user1.ID},
+		{Title: "Notebook User1 Private", Blocks: NotebookBlocks{blocks[1]}, Public: false, CreatorUserID: user1.ID},
+		{Title: "Notebook User2 Public", Blocks: NotebookBlocks{blocks[2]}, Public: true, CreatorUserID: user2.ID},
+		{Title: "Notebook User2 Private", Blocks: NotebookBlocks{blocks[3]}, Public: false, CreatorUserID: user2.ID},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -197,6 +206,13 @@ func TestListingNotebooks(t *testing.T) {
 			pageOpts:        ListNotebooksPageOptions{After: 0, First: 4},
 			opts:            ListNotebooksOptions{Query: "public"},
 			wantNotebookIDs: []int64{createdNotebooks[0].ID, createdNotebooks[2].ID},
+		},
+		{
+			name:            "query notebooks by block contents",
+			userID:          user2.ID,
+			pageOpts:        ListNotebooksPageOptions{After: 0, First: 4},
+			opts:            ListNotebooksOptions{Query: "client/web/file.tsx"},
+			wantNotebookIDs: getNotebookIDs(createdNotebooks[2:]),
 		},
 		{
 			name:            "order by updated at ascending",
