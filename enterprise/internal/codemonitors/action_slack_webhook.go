@@ -42,7 +42,7 @@ func (s *codeMonitorStore) UpdateSlackWebhookAction(ctx context.Context, id int6
 		a.UID,
 		s.Now(),
 		id,
-		sqlf.Join(slackWebhookActionColumns, ", "),
+		sqlf.Join(slackWebhookActionColumns, ","),
 	)
 
 	row := s.QueryRow(ctx, q)
@@ -68,7 +68,7 @@ func (s *codeMonitorStore) CreateSlackWebhookAction(ctx context.Context, monitor
 		now,
 		a.UID,
 		now,
-		sqlf.Join(slackWebhookActionColumns, ", "),
+		sqlf.Join(slackWebhookActionColumns, ","),
 	)
 
 	row := s.QueryRow(ctx, q)
@@ -92,7 +92,7 @@ func (s *codeMonitorStore) DeleteSlackWebhookActions(ctx context.Context, monito
 	}
 	q := sqlf.Sprintf(
 		deleteSlackWebhookActionQuery,
-		sqlf.Join(deleteIDs, ", "),
+		sqlf.Join(deleteIDs, ","),
 		monitorID,
 	)
 
