@@ -1116,6 +1116,8 @@ type Query {
         cloneURL: String
         """
         Query the repository by hashed name.
+        Hashed name is a SHA256 checksum of the absolute repo name in lower case,
+        for example "github.com/sourcegraph/sourcegraph" -> "a6c905ceb7dec9a565945ceded8c7fa4154250df8b928fb40673b535d9a24c2f"
         """
         hashedName: String
     ): RepositoryRedirect
