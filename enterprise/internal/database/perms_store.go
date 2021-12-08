@@ -1271,13 +1271,14 @@ WITH cte AS (
 	SELECT repo_id, user_ids_ints
 	FROM repo_permissions
 	WHERE
-		idx(user_ids_ints, %s) != 0
+		user_ids_ints @> INTSET(%s)
 	LIMIT %s
 	FOR UPDATE
 )
 UPDATE repo_permissions
 SET user_ids_ints = array_remove(cte.user_ids_ints, %s)
 FROM cte
+WHERE repo_permissions.repo_id = cte.repo_id
 `
 
 	return sqlf.Sprintf(

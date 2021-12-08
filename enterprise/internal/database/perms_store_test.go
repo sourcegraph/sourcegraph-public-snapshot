@@ -2140,6 +2140,17 @@ func testPermsStore_DeleteAllRepoPermissionsForUser(db *sql.DB) func(*testing.T)
 			}
 		}
 
+		// add a few repo permissions for only user=2
+		for i := int32(11); i <= 20; i++ {
+			if err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
+				RepoID:  i,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(2),
+			}); err != nil {
+				t.Fatal(err)
+			}
+		}
+
 		// set pagination to 4 for this test
 		oldPageSize := deleteAllRepoPermissionsForUserPageSize
 		deleteAllRepoPermissionsForUserPageSize = 4
@@ -2165,7 +2176,7 @@ func testPermsStore_DeleteAllRepoPermissionsForUser(db *sql.DB) func(*testing.T)
 		}
 
 		// Check user=1 should not have permissions for any repo
-		for i := int32(1); i <= 10; i++ {
+		for i := int32(1); i <= 20; i++ {
 			expectRepoPerm(i, 2)
 		}
 
