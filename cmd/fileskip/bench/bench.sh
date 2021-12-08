@@ -8,7 +8,7 @@ mkdir -p "benchresults"
 echo "Running benchmark" >> "$load_output_path"
 echo "Running benchmark" >> "$query_output_path"
 go run github.com/sourcegraph/sourcegraph/cmd/fileskip/bench download all
-for i in {1..5}; do
+for i in {1..2}; do
   echo "Starting iteration $i"
   go test -bench ^BenchmarkLoad -benchmem github.com/sourcegraph/sourcegraph/cmd/fileskip/bench | tee "$load_output_path"
   go test -bench ^BenchmarkQuery -benchmem github.com/sourcegraph/sourcegraph/cmd/fileskip/bench | tee "$query_output_path"
