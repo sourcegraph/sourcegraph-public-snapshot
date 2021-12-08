@@ -102,6 +102,9 @@ type MockUserStore struct {
 	// SetTagFunc is an instance of a mock function object controlling the
 	// behavior of the method SetTag.
 	SetTagFunc *UserStoreSetTagFunc
+	// SetTosAcceptedFunc is an instance of a mock function object
+	// controlling the behavior of the method SetTosAccepted.
+	SetTosAcceptedFunc *UserStoreSetTosAcceptedFunc
 	// TagsFunc is an instance of a mock function object controlling the
 	// behavior of the method Tags.
 	TagsFunc *UserStoreTagsFunc
@@ -259,6 +262,11 @@ func NewMockUserStore() *MockUserStore {
 		},
 		SetTagFunc: &UserStoreSetTagFunc{
 			defaultHook: func(context.Context, int32, string, bool) error {
+				return nil
+			},
+		},
+		SetTosAcceptedFunc: &UserStoreSetTosAcceptedFunc{
+			defaultHook: func(context.Context, int32) error {
 				return nil
 			},
 		},
@@ -434,6 +442,11 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.SetTag")
 			},
 		},
+		SetTosAcceptedFunc: &UserStoreSetTosAcceptedFunc{
+			defaultHook: func(context.Context, int32) error {
+				panic("unexpected invocation of MockUserStore.SetTosAccepted")
+			},
+		},
 		TagsFunc: &UserStoreTagsFunc{
 			defaultHook: func(context.Context, int32) (map[string]bool, error) {
 				panic("unexpected invocation of MockUserStore.Tags")
@@ -551,6 +564,9 @@ func NewMockUserStoreFrom(i database.UserStore) *MockUserStore {
 		},
 		SetTagFunc: &UserStoreSetTagFunc{
 			defaultHook: i.SetTag,
+		},
+		SetTosAcceptedFunc: &UserStoreSetTosAcceptedFunc{
+			defaultHook: i.SetTosAccepted,
 		},
 		TagsFunc: &UserStoreTagsFunc{
 			defaultHook: i.Tags,
@@ -3516,6 +3532,112 @@ func (c UserStoreSetTagFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserStoreSetTagFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UserStoreSetTosAcceptedFunc describes the behavior when the
+// SetTosAccepted method of the parent MockUserStore instance is invoked.
+type UserStoreSetTosAcceptedFunc struct {
+	defaultHook func(context.Context, int32) error
+	hooks       []func(context.Context, int32) error
+	history     []UserStoreSetTosAcceptedFuncCall
+	mutex       sync.Mutex
+}
+
+// SetTosAccepted delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUserStore) SetTosAccepted(v0 context.Context, v1 int32) error {
+	r0 := m.SetTosAcceptedFunc.nextHook()(v0, v1)
+	m.SetTosAcceptedFunc.appendCall(UserStoreSetTosAcceptedFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetTosAccepted
+// method of the parent MockUserStore instance is invoked and the hook queue
+// is empty.
+func (f *UserStoreSetTosAcceptedFunc) SetDefaultHook(hook func(context.Context, int32) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetTosAccepted method of the parent MockUserStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *UserStoreSetTosAcceptedFunc) PushHook(hook func(context.Context, int32) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *UserStoreSetTosAcceptedFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *UserStoreSetTosAcceptedFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32) error {
+		return r0
+	})
+}
+
+func (f *UserStoreSetTosAcceptedFunc) nextHook() func(context.Context, int32) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreSetTosAcceptedFunc) appendCall(r0 UserStoreSetTosAcceptedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreSetTosAcceptedFuncCall objects
+// describing the invocations of this function.
+func (f *UserStoreSetTosAcceptedFunc) History() []UserStoreSetTosAcceptedFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreSetTosAcceptedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreSetTosAcceptedFuncCall is an object that describes an invocation
+// of method SetTosAccepted on an instance of MockUserStore.
+type UserStoreSetTosAcceptedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreSetTosAcceptedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreSetTosAcceptedFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
