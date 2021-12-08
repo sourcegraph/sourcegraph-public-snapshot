@@ -1,8 +1,7 @@
 .view-content {
     display: flex;
     flex-direction: column;
-    flex: 1 1 auto;
-
+    flex-grow: 1;
     position: relative;
 
     /* Allow view contents to scroll vertically */
