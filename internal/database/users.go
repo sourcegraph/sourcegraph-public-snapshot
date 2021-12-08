@@ -77,7 +77,6 @@ type UserStore interface {
 	RandomizePasswordAndClearPasswordResetRateLimit(context.Context, int32) error
 	RenewPasswordResetCode(context.Context, int32) (string, error)
 	SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error
-	SetTosAccepted(ctx context.Context, id int32) error
 	SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error)
 	SetTag(ctx context.Context, userID int32, tag string, present bool) error
 	Tags(context.Context, int32) (map[string]bool, error)
@@ -449,6 +448,7 @@ type UserUpdate struct {
 	// - If pointer to "" (empty string), the value in the DB is set to null.
 	// - If pointer to a non-empty string, the value in the DB is set to the string.
 	DisplayName, AvatarURL *string
+	TosAccepted            *bool
 }
 
 // Update updates a user's profile information.
@@ -489,6 +489,9 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 	}
 	if update.AvatarURL != nil {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("avatar_url=%s", strOrNil(*update.AvatarURL)))
+	}
+	if update.TosAccepted != nil {
+		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("tos_accepted=%s", *update.TosAccepted))
 	}
 	query := sqlf.Sprintf("UPDATE users SET %s WHERE id=%d", sqlf.Join(fieldUpdates, ", "), id)
 	res, err := tx.ExecResult(ctx, query)
@@ -668,16 +671,6 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 	}
 
 	err := u.Store.Exec(ctx, sqlf.Sprintf("UPDATE users SET site_admin=%s WHERE id=%s", isSiteAdmin, id))
-	return err
-}
-
-// SetTosAccepted sets the user with the given ID to have accepted the terms of service.
-func (u *userStore) SetTosAccepted(ctx context.Context, id int32) error {
-	if Mocks.Users.SetIsSiteAdmin != nil {
-		return Mocks.Users.SetTosAccepted(id)
-	}
-
-	err := u.Store.Exec(ctx, sqlf.Sprintf("UPDATE users SET tos_accepted=TRUE WHERE id=%s", id))
 	return err
 }
 

@@ -394,7 +394,12 @@ func (r *schemaResolver) SetTosAccepted(ctx context.Context) (*EmptyResponse, er
 		return nil, errors.New("no authenticated user")
 	}
 
-	if err := database.Users(r.db).SetTosAccepted(ctx, user.ID); err != nil {
+	tosAccepted := true
+	update := database.UserUpdate{
+		TosAccepted: &tosAccepted,
+	}
+
+	if err := database.Users(r.db).Update(ctx, user.ID, update); err != nil {
 		return nil, err
 	}
 
