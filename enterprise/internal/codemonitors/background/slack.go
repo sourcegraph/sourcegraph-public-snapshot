@@ -15,7 +15,7 @@ import (
 )
 
 func sendSlackNotification(ctx context.Context, url string, args actionArgs) error {
-	return postWebhook(ctx, httpcli.ExternalDoer, url, slackPayload(args))
+	return postSlackWebhook(ctx, httpcli.ExternalDoer, url, slackPayload(args))
 }
 
 func slackPayload(args actionArgs) *slack.WebhookMessage {
@@ -35,7 +35,7 @@ func slackPayload(args actionArgs) *slack.WebhookMessage {
 }
 
 // adapted from slack.PostWebhookCustomHTTPContext
-func postWebhook(ctx context.Context, doer httpcli.Doer, url string, msg *slack.WebhookMessage) error {
+func postSlackWebhook(ctx context.Context, doer httpcli.Doer, url string, msg *slack.WebhookMessage) error {
 	raw, err := json.Marshal(msg)
 	if err != nil {
 		return errors.Wrap(err, "marshal failed")
@@ -53,8 +53,8 @@ func postWebhook(ctx context.Context, doer httpcli.Doer, url string, msg *slack.
 	}
 	defer resp.Body.Close()
 
+	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
 		return StatusCodeError{
 			Code:   resp.StatusCode,
 			Status: resp.Status,

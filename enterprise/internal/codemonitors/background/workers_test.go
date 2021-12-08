@@ -92,15 +92,3 @@ func TestActionRunner(t *testing.T) {
 		})
 	}
 }
-
-func TestSlackWebhook(t *testing.T) {
-	action := actionArgs{
-		MonitorDescription: "My test monitor",
-		MonitorURL:         "https://google.com",
-		Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
-		QueryURL:           "https://youtube.com",
-		NumResults:         31313,
-	}
-	url := "https://hooks.slack.com/services/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"
-	sendSlackNotification(context.Background(), url, action)
-}
