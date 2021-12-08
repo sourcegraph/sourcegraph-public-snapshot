@@ -13,7 +13,7 @@ import (
 
 // NewTestDB creates a new connection to the a database and applies the given migrations.
 func NewTestDB(dsn string, schemas ...*schemas.Schema) (_ *sql.DB, err error) {
-	db, _, err := dbconn.ConnectInternal(dsn, "", "", nil)
+	db, err := dbconn.ConnectInternal(dsn, "", "")
 	if err != nil {
 		return nil, err
 	}
