@@ -5,8 +5,10 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
+	"github.com/FastFilter/xorfilter"
 	"github.com/bits-and-blooms/bitset"
 	"github.com/cockroachdb/errors"
+	"github.com/go-enry/go-enry/v2"
 	"github.com/schollz/progressbar/v3"
 	"io"
 	"math"
@@ -17,10 +19,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"unsafe"
-
-	"github.com/bits-and-blooms/bloom/v3"
-	"github.com/go-enry/go-enry/v2"
 )
 
 var (
@@ -42,7 +40,7 @@ type RepoIndex struct {
 	FS    FileSystem
 }
 type BlobIndex struct {
-	Filter *bloom.BloomFilter
+	Filter *xorfilter.BinaryFuse8
 	Path   string
 }
 
@@ -142,15 +140,15 @@ func onGrams(text string, useBitset bool) (map[uint64]struct{}, *bitset.BitSet) 
 	return seen, seenAscii
 }
 
-func CollectQueryNgrams(query string) [][]byte {
+func CollectQueryNgrams(query string) []uint64 {
 	ngrams, _ := onGrams(query, false)
-	result := make([][]byte, len(ngrams))
+	result := make([]uint64, len(ngrams))
 	arities := make([]int8, len(ngrams))
 	i := 0
 	for hash := range ngrams {
-		data := make([]byte, unsafe.Sizeof(hash))
-		binary.LittleEndian.PutUint64(data, hash)
-		result[i] = data
+		//data := make([]byte, unsafe.Sizeof(hash))
+		//binary.LittleEndian.PutUint64(data, hash)
+		result[i] = hash
 		arities[i] = ngramArity(hash)
 		i++
 	}
@@ -298,8 +296,8 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 		wg.Add(1)
 		go func(start, end int) {
 			defer wg.Done()
-			data64 := make([]byte, unsafe.Sizeof(uint64(1)))
-			data32 := data64[:unsafe.Sizeof(int32(1))]
+			//data64 := make([]byte, unsafe.Sizeof(uint64(1)))
+			//data32 := data64[:unsafe.Sizeof(int32(1))]
 			for _, filename := range filenames[start:end] {
 				if IsProgressBarEnabled {
 					bar.Add(1)
@@ -321,19 +319,29 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 				text := string(textBytes)
 				ngrams, ngramsAscii := onGrams(text, true)
 				asciiCount := ngramsAscii.Count()
-				bloomSize := uint(len(ngrams)) + uint(asciiCount)
-				filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
+				bloomSize := uint(len(ngrams)) + asciiCount
+				keys := make([]uint64, bloomSize)
+				i := 0
+				//filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
 				for hash := range ngrams {
-					binary.LittleEndian.PutUint64(data64, hash)
-					filter.Add(data64)
+					keys[i] = hash
+					i++
+					//binary.LittleEndian.PutUint64(data64, hash)
+					//filter.Add(data64)
 				}
-				indices := make([]uint, asciiCount)
+				indices := make([]uint, bloomSize)
 				ngramsAscii.NextSetMany(0, indices)
 				for _, hash := range indices {
-					binary.LittleEndian.PutUint32(data32, uint32(hash))
-					filter.Add(data64)
+					keys[i] = uint64(hash)
+					//binary.LittleEndian.PutUint32(data32, uint32(hash))
+					//filter.Add(data64)
 				}
-				res <- BlobIndex{Path: filename, Filter: filter}
+				filter, err := xorfilter.PopulateBinaryFuse8(keys)
+				if err == nil {
+					res <- BlobIndex{Path: filename, Filter: filter}
+				} else {
+					fmt.Printf("ERROR %v\n", err)
+				}
 			}
 		}(i, j)
 	}
@@ -410,7 +418,7 @@ func color(colorString string) func(...interface{}) string {
 }
 
 func (r *RepoIndex) pathsMatchingQuerySync(
-	grams [][]byte,
+	grams []uint64,
 	batch []BlobIndex,
 	onMatch func(matchingPath string),
 ) {
@@ -421,7 +429,7 @@ func (r *RepoIndex) pathsMatchingQuerySync(
 		isMatch := len(grams) > 0
 		for _, gram := range grams {
 			//fmt.Printf("test %v %v\n", index.Filter.Test(gram))
-			if !index.Filter.Test(gram) {
+			if !index.Filter.Contains(gram) {
 				isMatch = false
 				break
 			}

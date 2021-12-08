@@ -16,3 +16,58 @@ BenchmarkQueryLinuxMedium-12          	     106	  11170988 ns/op	         0.0466
 BenchmarkQueryLinuxLong-12            	     100	  11385196 ns/op	         0.9818 false-positive/true-positive	       108.0 false-positives	     74210 index-size	       110.0 true-positives	 1199642 B/op	     145 allocs/op
 BenchmarkQueryChromiumShort-12        	     100	  15911806 ns/op	         0.9994 false-positive/true-positive	      3501 false-positives	    329524 index-size	      3503 true-positives	 5282084 B/op	      46 allocs/op
 BenchmarkQueryChromiumMedium-12       	      45	  35096800 ns/op	         0.9146 false-positive/true-positive	       150.0 false-positives	    329524 index-size	       164.0 true-positives	 5282448 B/op	     106 allocs/op
+BenchmarkQueryChromiumLong-12         	     100	  21089620 ns/op	         0 false-positive/true-positive	         0 false-positives	    329524 index-size	         1.000 true-positives	 5290391 B/op	     195 allocs/op
+BenchmarkQueryMegarepoShort-12        	      46	  32893553 ns/op	         0.9035 false-positive/true-positive	       234.0 false-positives	    668919 index-size	       259.0 true-positives	10713233 B/op	      82 allocs/op
+BenchmarkQueryMegarepoMedium-12       	      21	  48840402 ns/op	         0.9273 false-positive/true-positive	      2003 false-positives	    668919 index-size	      2160 true-positives	10721055 B/op	      88 allocs/op
+BenchmarkQueryMegarepoLong-12         	      26	  50906310 ns/op	         1.000 false-positive/true-positive	         1.000 false-positives	    668919 index-size	         1.000 true-positives	10724128 B/op	     226 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/fileskip/bench	626.805s
+Running benchmark
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/fileskip/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkQueryFlaskShort-12           	   63714	     19258 ns/op	         0.2143 false-positive/true-positive	         3.000 false-positives	       222.0 index-size	        14.00 true-positives	    4528 B/op	      13 allocs/op
+BenchmarkQueryFlaskMedium-12          	    8700	    117434 ns/op	         0.9450 false-positive/true-positive	       103.0 false-positives	       222.0 index-size	       109.0 true-positives	    4865 B/op	      21 allocs/op
+BenchmarkQueryFlaskLong-12            	    8682	    123250 ns/op	         0.5000 false-positive/true-positive	         2.000 false-positives	       222.0 index-size	         4.000 true-positives	    9723 B/op	      80 allocs/op
+BenchmarkQuerySourcegraphShort-12     	    1489	    738431 ns/op	         0.9067 false-positive/true-positive	        68.00 false-positives	      7164 index-size	        75.00 true-positives	  115123 B/op	      13 allocs/op
+BenchmarkQuerySourcegraphMedium-12    	     184	   6550816 ns/op	         0.7944 false-positive/true-positive	      3037 false-positives	      7164 index-size	      3823 true-positives	  117326 B/op	      21 allocs/op
+BenchmarkQuerySourcegraphLong-12      	     272	   4542491 ns/op	         0.6364 false-positive/true-positive	        14.00 false-positives	      7164 index-size	        22.00 true-positives	  121517 B/op	     109 allocs/op
+BenchmarkQueryKubernetesShort-12      	     280	   4280247 ns/op	         0.9779 false-positive/true-positive	       133.0 false-positives	     22422 index-size	       136.0 true-positives	  361269 B/op	      20 allocs/op
+BenchmarkQueryKubernetesMedium-12     	     168	   7132355 ns/op	         0.7236 false-positive/true-positive	       411.0 false-positives	     22422 index-size	       568.0 true-positives	  362609 B/op	      37 allocs/op
+BenchmarkQueryKubernetesLong-12       	     195	   6179257 ns/op	         0.01124 false-positive/true-positive	         1.000 false-positives	     22422 index-size	        89.00 true-positives	  367297 B/op	     103 allocs/op
+BenchmarkQueryLinuxShort-12           	     316	   3788866 ns/op	         0.9438 false-positive/true-positive	       773.0 false-positives	     74210 index-size	       819.0 true-positives	 1188973 B/op	      20 allocs/op
+BenchmarkQueryLinuxMedium-12          	     100	  13041513 ns/op	         0.04667 false-positive/true-positive	         7.000 false-positives	     74210 index-size	       150.0 true-positives	 1194343 B/op	      92 allocs/op
+BenchmarkQueryLinuxLong-12            	     100	  11945833 ns/op	         0.9800 false-positive/true-positive	        98.00 false-positives	     74210 index-size	       100.0 true-positives	 1199609 B/op	     146 allocs/op
+BenchmarkQueryChromiumShort-12        	      96	  15146011 ns/op	         0.9994 false-positive/true-positive	      3504 false-positives	    329524 index-size	      3506 true-positives	 5282184 B/op	      46 allocs/op
+BenchmarkQueryChromiumMedium-12       	      82	  29984786 ns/op	         0.9146 false-positive/true-positive	       150.0 false-positives	    329524 index-size	       164.0 true-positives	 5282334 B/op	     105 allocs/op
+BenchmarkQueryChromiumLong-12         	      84	  19836529 ns/op	         0 false-positive/true-positive	         0 false-positives	    329524 index-size	         1.000 true-positives	 5290341 B/op	     194 allocs/op
+BenchmarkQueryMegarepoShort-12        	      46	  28362800 ns/op	         0.9035 false-positive/true-positive	       234.0 false-positives	    668919 index-size	       259.0 true-positives	10713226 B/op	      82 allocs/op
+BenchmarkQueryMegarepoMedium-12       	      21	  52712423 ns/op	         0.9273 false-positive/true-positive	      2003 false-positives	    668919 index-size	      2160 true-positives	10721017 B/op	      88 allocs/op
+BenchmarkQueryMegarepoLong-12         	      48	  50446231 ns/op	         1.000 false-positive/true-positive	         3.000 false-positives	    668919 index-size	         3.000 true-positives	10724090 B/op	     226 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/fileskip/bench	654.920s
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/fileskip/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkQueryFlaskShort-12           	   50200	     22069 ns/op	         0.2143 false-positive/true-positive	         3.000 false-positives	       222.0 index-size	        14.00 true-positives	    4528 B/op	      13 allocs/op
+BenchmarkQueryFlaskMedium-12          	   10000	    101503 ns/op	         0.9450 false-positive/true-positive	       103.0 false-positives	       222.0 index-size	       109.0 true-positives	    4865 B/op	      21 allocs/op
+BenchmarkQueryFlaskLong-12            	    9432	    125836 ns/op	         0.5000 false-positive/true-positive	         2.000 false-positives	       222.0 index-size	         4.000 true-positives	    9724 B/op	      80 allocs/op
+BenchmarkQuerySourcegraphShort-12     	    1896	    680577 ns/op	         0.9067 false-positive/true-positive	        68.00 false-positives	      7164 index-size	        75.00 true-positives	  115122 B/op	      13 allocs/op
+BenchmarkQuerySourcegraphMedium-12    	     183	   6544448 ns/op	         0.7944 false-positive/true-positive	      3037 false-positives	      7164 index-size	      3823 true-positives	  117320 B/op	      21 allocs/op
+BenchmarkQuerySourcegraphLong-12      	     264	   4684721 ns/op	         0.6364 false-positive/true-positive	        14.00 false-positives	      7164 index-size	        22.00 true-positives	  121516 B/op	     109 allocs/op
+BenchmarkQueryKubernetesShort-12      	     279	   4088512 ns/op	         0.9779 false-positive/true-positive	       133.0 false-positives	     22422 index-size	       136.0 true-positives	  361270 B/op	      20 allocs/op
+BenchmarkQueryKubernetesMedium-12     	     168	   6746484 ns/op	         0.7236 false-positive/true-positive	       411.0 false-positives	     22422 index-size	       568.0 true-positives	  362604 B/op	      37 allocs/op
+BenchmarkQueryKubernetesLong-12       	     216	   5866171 ns/op	         0.01124 false-positive/true-positive	         1.000 false-positives	     22422 index-size	        89.00 true-positives	  367265 B/op	     102 allocs/op
+BenchmarkQueryLinuxShort-12           	     315	   4226166 ns/op	         0.9438 false-positive/true-positive	       773.0 false-positives	     74210 index-size	       819.0 true-positives	 1188974 B/op	      20 allocs/op
+BenchmarkQueryLinuxMedium-12          	      93	  11789210 ns/op	         0.04667 false-positive/true-positive	         7.000 false-positives	     74210 index-size	       150.0 true-positives	 1194358 B/op	      92 allocs/op
+BenchmarkQueryLinuxLong-12            	     100	  11383724 ns/op	         0.9821 false-positive/true-positive	       110.0 false-positives	     74210 index-size	       112.0 true-positives	 1199633 B/op	     145 allocs/op
+BenchmarkQueryChromiumShort-12        	      93	  14359775 ns/op	         0.9994 false-positive/true-positive	      3501 false-positives	    329524 index-size	      3503 true-positives	 5282328 B/op	      46 allocs/op
+BenchmarkQueryChromiumMedium-12       	      34	  31640705 ns/op	         0.9146 false-positive/true-positive	       150.0 false-positives	    329524 index-size	       164.0 true-positives	 5282526 B/op	     106 allocs/op
+BenchmarkQueryChromiumLong-12         	      82	  17506650 ns/op	         0 false-positive/true-positive	         0 false-positives	    329524 index-size	         1.000 true-positives	 5290330 B/op	     194 allocs/op
+BenchmarkQueryMegarepoShort-12        	      49	  30067835 ns/op	         0.9035 false-positive/true-positive	       234.0 false-positives	    668919 index-size	       259.0 true-positives	10713198 B/op	      82 allocs/op
+BenchmarkQueryMegarepoMedium-12       	      27	  54969743 ns/op	         0.9273 false-positive/true-positive	      2003 false-positives	    668919 index-size	      2160 true-positives	10719321 B/op	      88 allocs/op
+BenchmarkQueryMegarepoLong-12         	      37	  50816411 ns/op	         1.000 false-positive/true-positive	         1.000 false-positives	    668919 index-size	         1.000 true-positives	10724083 B/op	     225 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/fileskip/bench	592.025s

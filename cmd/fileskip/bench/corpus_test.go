@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/sourcegraph/sourcegraph/cmd/fileskip"
 	"math"
 	"strings"
@@ -69,7 +68,7 @@ func BenchmarkQueryMegarepoMedium(b *testing.B) { benchmarkMediumQuery(b, megare
 func BenchmarkQueryMegarepoLong(b *testing.B)   { benchmarkLongQuery(b, megarepo) }
 
 func loadCorpus(b *testing.B, corpus Corpus) {
-	fileskip.IsProgressBarEnabled = false
+	//fileskip.IsProgressBarEnabled = false
 	var index *fileskip.RepoIndex
 	var err error
 	for i := 0; i < b.N; i++ {
@@ -79,11 +78,6 @@ func loadCorpus(b *testing.B, corpus Corpus) {
 		}
 	}
 	b.StopTimer()
-	for _, b := range index.Blobs {
-		if b.Filter.K() > 7 {
-			fmt.Println(b.Filter.K())
-		}
-	}
 	//stat, err := os.Stat(corpus.indexCachePath())
 	//if err != nil {
 	//	panic(err)
@@ -95,19 +89,19 @@ func loadCorpus(b *testing.B, corpus Corpus) {
 	//}
 	//b.ReportMetric(float64(stat.Size()), "archive-disk-size")
 	indexedBlobsSize := int64(0)
-	bloomFilterBinaryStorageSize := 0
+	//bloomFilterBinaryStorageSize := 0
 	for _, blob := range index.Blobs {
 		statSize, err := index.FS.StatSize(blob.Path)
 		if err != nil {
 			panic(err)
 		}
 		indexedBlobsSize = indexedBlobsSize + statSize
-		bloomFilterBinaryStorageSize = bloomFilterBinaryStorageSize + blob.Filter.BitSet().BinaryStorageSize()
+		//bloomFilterBinaryStorageSize = bloomFilterBinaryStorageSize + blob.Filter..BitSet().BinaryStorageSize()
 	}
 	b.ReportMetric(float64(len(index.Blobs)), "indexed-blob-count")
 	b.ReportMetric(float64(indexedBlobsSize), "indexed-blobs-size")
-	b.ReportMetric(float64(bloomFilterBinaryStorageSize), "bloom-storage-size")
-	b.ReportMetric(float64(bloomFilterBinaryStorageSize)/float64(indexedBlobsSize), "compression-ratio")
+	//b.ReportMetric(float64(bloomFilterBinaryStorageSize), "bloom-storage-size")
+	//b.ReportMetric(float64(bloomFilterBinaryStorageSize)/float64(indexedBlobsSize), "compression-ratio")
 }
 
 func BenchmarkLoadFlask(b *testing.B)       { loadCorpus(b, flask) }
