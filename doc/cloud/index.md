@@ -5,3 +5,4 @@
 - [Indexing open source code in Sourcegraph Cloud](indexing_open_source_code.md)
 - [Notifications on Sourcegraph Cloud](notifications_on_cloud.md)
 - [Access tokens on Sourcegraph Cloud](access_tokens_on_cloud.md)
+- [Working with Organizations on Sourcegraph Cloud][./organizations/how_to_orgs_on_cloud.md]
