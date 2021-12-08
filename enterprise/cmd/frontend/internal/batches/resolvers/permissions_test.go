@@ -172,6 +172,24 @@ func TestPermissionLevels(t *testing.T) {
 		}
 	}
 
+	cleanUpBatchSpecs := func(t *testing.T, s *store.Store) {
+		t.Helper()
+
+		batchChanges, next, err := s.ListBatchSpecs(ctx, store.ListBatchSpecsOpts{LimitOpts: store.LimitOpts{Limit: 1000}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if next != 0 {
+			t.Fatalf("more batch specs in store")
+		}
+
+		for _, c := range batchChanges {
+			if err := s.DeleteBatchSpec(ctx, c.ID); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
 	t.Run("queries", func(t *testing.T) {
 		cleanUpBatchChanges(t, cstore)
 
@@ -517,6 +535,75 @@ func TestPermissionLevels(t *testing.T) {
 			}
 		})
 
+		t.Run("BatchSpecs", func(t *testing.T) {
+			cleanUpBatchChanges(t, cstore)
+			cleanUpBatchSpecs(t, cstore)
+
+			adminBatchSpecCreatedFromRawRandID, adminBatchSpecCreatedFromRawID := createBatchSpecFromRaw(t, cstore, adminID)
+			adminBatchSpecCreatedRandID, adminBatchSpecCreatedID := createBatchSpec(t, cstore, adminID)
+
+			userBatchSpecCreatedFromRawRandID, userBatchSpecCreatedFromRawID := createBatchSpecFromRaw(t, cstore, userID)
+			userBatchSpecCreatedRandID, userBatchSpecCreatedID := createBatchSpec(t, cstore, userID)
+
+			type ids struct {
+				randID string
+				id     int64
+			}
+
+			tests := []struct {
+				name           string
+				currentUser    int32
+				wantBatchSpecs []ids
+			}{
+				{
+					name:        "admin listing",
+					currentUser: adminID,
+					wantBatchSpecs: []ids{
+						{adminBatchSpecCreatedRandID, adminBatchSpecCreatedID},
+						{userBatchSpecCreatedRandID, userBatchSpecCreatedID},
+						{adminBatchSpecCreatedFromRawRandID, adminBatchSpecCreatedFromRawID},
+						{userBatchSpecCreatedFromRawRandID, userBatchSpecCreatedFromRawID},
+					},
+				},
+				{
+					name:        "user listing",
+					currentUser: userID,
+					wantBatchSpecs: []ids{
+						{adminBatchSpecCreatedRandID, adminBatchSpecCreatedID},
+						{userBatchSpecCreatedRandID, userBatchSpecCreatedID},
+						{userBatchSpecCreatedFromRawRandID, userBatchSpecCreatedFromRawID},
+					},
+				},
+			}
+			for _, tc := range tests {
+				t.Run(tc.name, func(t *testing.T) {
+					actorCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
+					expectedIDs := make(map[string]bool, len(tc.wantBatchSpecs))
+					for _, ids := range tc.wantBatchSpecs {
+						graphqlID := string(marshalBatchSpecRandID(ids.randID))
+						expectedIDs[graphqlID] = true
+					}
+
+					query := `query { batchSpecs() { totalCount, nodes { id } } }`
+
+					var res struct{ BatchSpecs apitest.BatchSpecConnection }
+					apitest.MustExec(actorCtx, t, s, nil, &res, query)
+
+					if have, want := res.BatchSpecs.TotalCount, len(tc.wantBatchSpecs); have != want {
+						t.Fatalf("wrong count of batch changes returned, want=%d have=%d", want, have)
+					}
+					if have, want := res.BatchSpecs.TotalCount, len(res.BatchSpecs.Nodes); have != want {
+						t.Fatalf("totalCount and nodes length don't match, want=%d have=%d", want, have)
+					}
+					for _, node := range res.BatchSpecs.Nodes {
+						if _, ok := expectedIDs[node.ID]; !ok {
+							t.Fatalf("received wrong batch change with id %q", node.ID)
+						}
+					}
+				})
+			}
+		})
+
 		t.Run("BatchSpecWorkspaceByID", func(t *testing.T) {
 			tests := []struct {
 				name        string
@@ -546,7 +633,6 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
-					fmt.Println("------------------" + tc.name)
 					_, batchSpecID := createBatchSpecFromRaw(t, cstore, tc.user)
 					workspaceID := createBatchSpecWorkspace(t, cstore, batchSpecID)
 

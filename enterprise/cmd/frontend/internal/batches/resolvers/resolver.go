@@ -373,9 +373,9 @@ func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID)
 
 	// 🚨 SECURITY: Check that the requesting user is either an admin or created the spec.
 	//
-	// TODO: Once we introduce finer permissoins, this needs to be changed to
-	// check for namespace access and then check repository permissions and
-	// return hidden/visible workspaces accordingly.
+	// TODO: Once we introduce finer-grained permissions, this needs to be
+	// changed to check for namespace access and then check repository
+	// permissions and return hidden/visible workspaces accordingly.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), spec.UserID); err != nil {
 		return nil, err
 	}
@@ -1435,8 +1435,13 @@ func (r *Resolver) PublishChangesets(ctx context.Context, args *graphqlbackend.P
 }
 
 func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatchSpecArgs) (_ graphqlbackend.BatchSpecConnectionResolver, err error) {
-	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+	tr, ctx := trace.New(ctx, "Resolver.BatchSpecs", fmt.Sprintf("First: %d, After: %v", args.First, args.After))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1444,15 +1449,19 @@ func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatc
 		return nil, err
 	}
 
-	// TODO: We need to check whether user is site-admin. If not, we need to
-	// add an opt that filters out BatchSpecs where created_from_raw = true &&
-	// user_id != actor.UID
-
 	opts := store.ListBatchSpecsOpts{
 		LimitOpts: store.LimitOpts{
 			Limit: int(args.First),
 		},
 	}
+
+	// 🚨 SECURITY: If the user is not an admin, we don't want to include
+	// BatchSpecs that were created with CreateBatchSpecFromRaw and not owned
+	// by the user
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		opts.ExcludeCreatedFromRawNotOwnedByUser = actor.FromContext(ctx).UID
+	}
+
 	if args.After != nil {
 		id, err := strconv.Atoi(*args.After)
 		if err != nil {
