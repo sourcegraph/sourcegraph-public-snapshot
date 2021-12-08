@@ -6,6 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -59,27 +60,18 @@ func (s *store) DeletePaths(ctx context.Context, paths []string) error {
 	return s.Exec(ctx, sqlf.Sprintf(`DELETE FROM symbols WHERE path IN (%s)`, sqlf.Join(pathQueries, ",")))
 }
 
-func (s *store) WriteSymbols(ctx context.Context, symbols <-chan result.Symbol) (err error) {
+func (s *store) WriteSymbols(ctx context.Context, symbolOrErrors <-chan parser.SymbolOrError) (err error) {
 	rows := make(chan []interface{})
 
 	go func() {
 		defer close(rows)
 
-		for symbol := range symbols {
-			rows <- []interface{}{
-				symbol.Name,
-				strings.ToLower(symbol.Name),
-				symbol.Path,
-				strings.ToLower(symbol.Path),
-				symbol.Line,
-				symbol.Kind,
-				symbol.Language,
-				symbol.Parent,
-				symbol.ParentKind,
-				symbol.Signature,
-				symbol.Pattern,
-				symbol.FileLimited,
+		for symbolOrError := range symbolOrErrors {
+			if symbolOrError.Err != nil {
+				panic(symbolOrError.Err.Error())
 			}
+
+			rows <- symbolToRow(symbolOrError.Symbol)
 		}
 	}()
 
@@ -104,4 +96,21 @@ func (s *store) WriteSymbols(ctx context.Context, symbols <-chan result.Symbol) 
 		},
 		rows,
 	)
+}
+
+func symbolToRow(symbol result.Symbol) []interface{} {
+	return []interface{}{
+		symbol.Name,
+		strings.ToLower(symbol.Name),
+		symbol.Path,
+		strings.ToLower(symbol.Path),
+		symbol.Line,
+		symbol.Kind,
+		symbol.Language,
+		symbol.Parent,
+		symbol.ParentKind,
+		symbol.Signature,
+		symbol.Pattern,
+		symbol.FileLimited,
+	}
 }

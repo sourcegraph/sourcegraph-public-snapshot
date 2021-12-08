@@ -19,7 +19,12 @@ import (
 )
 
 type Parser interface {
-	Parse(ctx context.Context, args types.SearchArgs, paths []string) (<-chan result.Symbol, error)
+	Parse(ctx context.Context, args types.SearchArgs, paths []string) (<-chan SymbolOrError, error)
+}
+
+type SymbolOrError struct {
+	Symbol result.Symbol
+	Err    error
 }
 
 type parser struct {
@@ -46,7 +51,7 @@ func NewParser(
 	}
 }
 
-func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []string) (_ <-chan result.Symbol, err error) {
+func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []string) (_ <-chan SymbolOrError, err error) {
 	ctx, endObservation := p.operations.parse.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(args.Repo)),
 		log.String("commitID", string(args.CommitID)),
@@ -76,7 +81,7 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 	var (
 		wg                          sync.WaitGroup                                         // concurrency control
 		parseRequests               = make(chan fetcher.ParseRequest, p.requestBufferSize) // buffered requests
-		symbols                     = make(chan result.Symbol)                             // parsed responses
+		symbolOrErrors              = make(chan SymbolOrError)                             // parsed responses
 		totalRequests, totalSymbols uint32                                                 // stats
 	)
 
@@ -92,7 +97,7 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 			}()
 
 			wg.Wait()
-			close(symbols)
+			close(symbolOrErrors)
 		}()
 	}()
 
@@ -104,19 +109,20 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 
 			for parseRequestOrError := range parseRequestOrErrors {
 				if parseRequestOrError.Err != nil {
-					panic(parseRequestOrError.Err.Error())
-				} else {
-					atomic.AddUint32(&totalRequests, 1)
-					_ = p.handleParseRequest(ctx, symbols, parseRequestOrError.ParseRequest, &totalSymbols)
+					symbolOrErrors <- SymbolOrError{Err: parseRequestOrError.Err}
+					break
 				}
+
+				atomic.AddUint32(&totalRequests, 1)
+				_ = p.handleParseRequest(ctx, symbolOrErrors, parseRequestOrError.ParseRequest, &totalSymbols)
 			}
 		}()
 	}
 
-	return symbols, nil
+	return symbolOrErrors, nil
 }
 
-func (p *parser) handleParseRequest(ctx context.Context, symbols chan<- result.Symbol, parseRequest fetcher.ParseRequest, totalSymbols *uint32) (err error) {
+func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- SymbolOrError, parseRequest fetcher.ParseRequest, totalSymbols *uint32) (err error) {
 	ctx, traceLog, endObservation := p.operations.handleParseRequest.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("fileSize", len(parseRequest.Data)),
 	}})
@@ -174,7 +180,7 @@ func (p *parser) handleParseRequest(ctx context.Context, symbols chan<- result.S
 		}
 
 		select {
-		case symbols <- symbol:
+		case symbolOrErrors <- SymbolOrError{Symbol: symbol}:
 			atomic.AddUint32(totalSymbols, 1)
 
 		case <-ctx.Done():
