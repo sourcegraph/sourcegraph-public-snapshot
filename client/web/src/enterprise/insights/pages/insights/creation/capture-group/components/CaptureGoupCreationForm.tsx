@@ -12,6 +12,7 @@ import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { Form, FORM_ERROR } from '../../../../../components/form/hooks/useForm'
 import { MonacoField } from '../../../../../components/form/monaco-field/MonacoField'
 import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
+import { LinkWithQuery } from '../../../../../components/link-with-query'
 import { CaptureGroupFormFields } from '../types'
 
 import { CaptureGroupSeriesInfoBadge } from './info-badge/CaptureGroupSeriesInfoBadge'
@@ -79,14 +80,15 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     <InformationOutlineIcon className="text-muted pr-2 h-auto flex-shrink-0" />
 
                     <small className="text-muted">
-                        It’s not possible yet to run insights across all your repositories. This feature is actively in
-                        development. Read about the{' '}
+                        This type of insight can only run across specified repositories. To run your insight across all
+                        repositories, use <LinkWithQuery to="/insights/create/search">"Track" insight</LinkWithQuery>{' '}
+                        and define data series manually. Learn about the{' '}
                         <a
                             href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            beta limitations here.
+                            beta limitations.
                         </a>
                     </small>
                 </div>
@@ -118,11 +120,19 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
 
                     <small className="mt-3">
                         Explore{' '}
-                        <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener noreferrer">
+                        <a
+                            href="https://docs.sourcegraph.com/code_insights/references/common_use_cases#automatic-version-and-pattern-tracking"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
                             example queries
                         </a>{' '}
                         and learn more about{' '}
-                        <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener noreferrer">
+                        <a
+                            href="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
                             automatically generated data series
                         </a>
                     </small>
