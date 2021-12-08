@@ -12,10 +12,10 @@ import (
 )
 
 // NewTestDB creates a new connection to the a database and applies the given migration.
-func NewTestDB(dsn string, schemas ...*schemas.Schema) (_ *sql.DB, err error) {
-	db, _, err := dbconn.ConnectInternal(dsn, "", "", nil)
+func NewTestDB(dsn string, schemas ...*schemas.Schema) (_ *sql.DB, _ func(err error) error, err error) {
+	db, close, err := dbconn.ConnectInternal(dsn, "", "", nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer func() {
 		if err != nil {
@@ -30,10 +30,10 @@ func NewTestDB(dsn string, schemas ...*schemas.Schema) (_ *sql.DB, err error) {
 		SchemaNames: schemaNames(schemas),
 	}
 	if err := runner.NewRunner(newStoreFactoryMap(db, schemas)).Run(context.Background(), options); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return db, nil
+	return db, close, nil
 }
 
 func newStoreFactoryMap(db *sql.DB, schemas []*schemas.Schema) map[string]runner.StoreFactory {

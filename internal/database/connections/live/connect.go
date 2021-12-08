@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -63,4 +64,10 @@ func NewCodeInsightsDB(dsn, appName string, migrate bool, observationContext *ob
 
 	db, _, err := dbconn.ConnectInternal(dsn, appName, "codeinsight", migrations)
 	return db, err
+}
+
+func newStoreFactory(observationContext *observation.Context) func(db *sql.DB, migrationsTable string) Store {
+	return func(db *sql.DB, migrationsTable string) Store {
+		return store.NewWithDB(db, migrationsTable, store.NewOperations(observationContext))
+	}
 }
