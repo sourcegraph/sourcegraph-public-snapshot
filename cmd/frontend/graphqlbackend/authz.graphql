@@ -16,6 +16,20 @@ extend type Mutation {
         userPermissions: [UserPermission!]!
     ): EmptyResponse!
     """
+    Add permissions to a repository.
+    """
+    addRepositoryPermissionsForUsers(
+        """
+        The repository whose permissions to add.
+        """
+        repository: ID!
+        """
+        A list of user identifiers and their repository permissions, which will be added to the existing
+        list of users who may view the repository
+        """
+        userPermissions: [UserPermission!]!
+    ): EmptyResponse!
+    """
     Schedule a permissions sync for given repository. This queries the repository's code host for
     all users' permissions associated with the repository, so that the current permissions apply
     to all users' operations on that repository on Sourcegraph.

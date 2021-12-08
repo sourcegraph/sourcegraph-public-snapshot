@@ -59,32 +59,13 @@ func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 
 func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{}, nil
-		}
-		defer func() {
-			database.Mocks.Users.GetByCurrentAuthUser = nil
-		}()
-
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{store: &edb.PermsStore{Store: basestore.NewWithDB(nil, sql.TxOptions{})}}).SetRepositoryPermissionsForUsers(ctx, &graphqlbackend.RepoPermsArgs{})
-		if want := backend.ErrMustBeSiteAdmin; err != want {
-			t.Errorf("err: want %q but got %v", want, err)
-		}
-		if result != nil {
-			t.Errorf("result: want nil but got %v", result)
-		}
+		runTestNonAdmin(t, func(ctx context.Context) (*graphqlbackend.EmptyResponse, error) {
+			return (&Resolver{store: &edb.PermsStore{Store: basestore.NewWithDB(nil, sql.TxOptions{})}}).
+				SetRepositoryPermissionsForUsers(ctx, &graphqlbackend.RepoPermsArgs{})
+		})
 	})
 
-	tests := []struct {
-		name               string
-		config             *schema.PermissionsUserMapping
-		mockVerifiedEmails []*database.UserEmail
-		mockUsers          []*types.User
-		gqlTests           []*gqltesting.Test
-		expUserIDs         []uint32
-		expAccounts        *extsvc.Accounts
-	}{
+	tests := []testCase{
 		{
 			name: "set permissions via email",
 			config: &schema.PermissionsUserMapping{
@@ -172,45 +153,189 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			globals.SetPermissionsUserMapping(test.config)
-
-			database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-				return &types.User{SiteAdmin: true}, nil
-			}
-			database.Mocks.Users.GetByUsernames = func(context.Context, ...string) ([]*types.User, error) {
-				return test.mockUsers, nil
-			}
-			database.Mocks.UserEmails.GetVerifiedEmails = func(context.Context, ...string) ([]*database.UserEmail, error) {
-				return test.mockVerifiedEmails, nil
-			}
-			database.Mocks.Repos.Get = func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-				return &types.Repo{ID: id}, nil
-			}
-			edb.Mocks.Perms.Transact = func(_ context.Context) (*edb.PermsStore, error) {
-				return &edb.PermsStore{}, nil
-			}
-			edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
-				ids := p.UserIDs.ToArray()
-				if diff := cmp.Diff(test.expUserIDs, ids); diff != "" {
-					return errors.Errorf("p.UserIDs: %v", diff)
-				}
-				return nil
-			}
-			edb.Mocks.Perms.SetRepoPendingPermissions = func(_ context.Context, accounts *extsvc.Accounts, _ *authz.RepoPermissions) error {
-				if diff := cmp.Diff(test.expAccounts, accounts); diff != "" {
-					return errors.Errorf("accounts: %v", diff)
-				}
-				return nil
-			}
-			defer func() {
-				database.Mocks.UserEmails = database.MockUserEmails{}
-				database.Mocks.Users = database.MockUsers{}
-				database.Mocks.Repos = database.MockRepos{}
-				edb.Mocks.Perms = edb.MockPerms{}
-			}()
-
+			fn := setupTest(test)
+			defer fn()
 			gqltesting.RunTests(t, test.gqlTests)
 		})
+	}
+}
+
+func TestResolver_AddRepositoryPermissionsForUsers(t *testing.T) {
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		runTestNonAdmin(t, func(ctx context.Context) (*graphqlbackend.EmptyResponse, error) {
+			return (&Resolver{store: &edb.PermsStore{Store: basestore.NewWithDB(nil, sql.TxOptions{})}}).
+				AddRepositoryPermissionsForUsers(ctx, &graphqlbackend.RepoPermsArgs{})
+		})
+	})
+
+	tests := []testCase{
+		{
+			name: "add permissions via email",
+			config: &schema.PermissionsUserMapping{
+				BindID: "email",
+			},
+			mockVerifiedEmails: []*database.UserEmail{
+				{
+					UserID: 1,
+					Email:  "alice@example.com",
+				},
+			},
+			gqlTests: []*gqltesting.Test{
+				{
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
+					Query: `
+				mutation {
+					addRepositoryPermissionsForUsers(
+						repository: "UmVwb3NpdG9yeTox",
+						userPermissions: [
+							{ bindID: "alice@example.com"},
+							{ bindID: "bob"}
+						]) {
+						alwaysNil
+					}
+				}
+			`,
+					ExpectedResult: `
+				{
+					"addRepositoryPermissionsForUsers": {
+						"alwaysNil": null
+    				}
+				}
+			`,
+				},
+			},
+			expUserIDs: []uint32{1},
+			expAccounts: &extsvc.Accounts{
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
+				AccountIDs:  []string{"bob"},
+			},
+		},
+		{
+			name: "set permissions via username",
+			config: &schema.PermissionsUserMapping{
+				BindID: "username",
+			},
+			mockUsers: []*types.User{
+				{
+					ID:       1,
+					Username: "alice",
+				},
+			},
+			gqlTests: []*gqltesting.Test{
+				{
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
+					Query: `
+				mutation {
+					addRepositoryPermissionsForUsers(
+						repository: "UmVwb3NpdG9yeTox",
+						userPermissions: [
+							{ bindID: "alice"},
+							{ bindID: "bob"}
+						]) {
+						alwaysNil
+					}
+				}
+			`,
+					ExpectedResult: `
+				{
+					"addRepositoryPermissionsForUsers": {
+						"alwaysNil": null
+					}
+				}
+			`,
+				},
+			},
+			expUserIDs: []uint32{1},
+			expAccounts: &extsvc.Accounts{
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
+				AccountIDs:  []string{"bob"},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fn := setupTest(test)
+			defer fn()
+			gqltesting.RunTests(t, test.gqlTests)
+		})
+	}
+}
+
+type testCase struct {
+	name               string
+	config             *schema.PermissionsUserMapping
+	mockVerifiedEmails []*database.UserEmail
+	mockUsers          []*types.User
+	gqlTests           []*gqltesting.Test
+	expUserIDs         []uint32
+	expAccounts        *extsvc.Accounts
+}
+
+func setupTest(test testCase) func() {
+	globals.SetPermissionsUserMapping(test.config)
+
+	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{SiteAdmin: true}, nil
+	}
+	database.Mocks.Users.GetByUsernames = func(context.Context, ...string) ([]*types.User, error) {
+		return test.mockUsers, nil
+	}
+	database.Mocks.UserEmails.GetVerifiedEmails = func(context.Context, ...string) ([]*database.UserEmail, error) {
+		return test.mockVerifiedEmails, nil
+	}
+	database.Mocks.Repos.Get = func(_ context.Context, id api.RepoID) (*types.Repo, error) {
+		return &types.Repo{ID: id}, nil
+	}
+	edb.Mocks.Perms.Transact = func(_ context.Context) (*edb.PermsStore, error) {
+		return &edb.PermsStore{}, nil
+	}
+	edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
+		ids := p.UserIDs.ToArray()
+		if diff := cmp.Diff(test.expUserIDs, ids); diff != "" {
+			return errors.Errorf("p.UserIDs: %v", diff)
+		}
+		return nil
+	}
+	edb.Mocks.Perms.AddRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
+		ids := p.UserIDs.ToArray()
+		if diff := cmp.Diff(test.expUserIDs, ids); diff != "" {
+			return errors.Errorf("p.UserIDs: %v", diff)
+		}
+		return nil
+	}
+	edb.Mocks.Perms.SetRepoPendingPermissions = func(_ context.Context, accounts *extsvc.Accounts, _ *authz.RepoPermissions) error {
+		if diff := cmp.Diff(test.expAccounts, accounts); diff != "" {
+			return errors.Errorf("accounts: %v", diff)
+		}
+		return nil
+	}
+	return func() {
+		database.Mocks.UserEmails = database.MockUserEmails{}
+		database.Mocks.Users = database.MockUsers{}
+		database.Mocks.Repos = database.MockRepos{}
+		edb.Mocks.Perms = edb.MockPerms{}
+	}
+}
+
+// verify that the given function will return an error when not acting as admin
+func runTestNonAdmin(t *testing.T, fnToTest func(ctx context.Context) (*graphqlbackend.EmptyResponse, error)) {
+	t.Helper()
+	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{}, nil
+	}
+	defer func() {
+		database.Mocks.Users.GetByCurrentAuthUser = nil
+	}()
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	result, err := fnToTest(ctx)
+	if want := backend.ErrMustBeSiteAdmin; err != want {
+		t.Errorf("err: want %q but got %v", want, err)
+	}
+	if result != nil {
+		t.Errorf("result: want nil but got %v", result)
 	}
 }
 
