@@ -117,11 +117,7 @@ func TestListCodeMonitors(t *testing.T) {
 	requireHasNextPage(t, r2, true)
 
 	// The returned cursor should be usable to return the remaining monitors
-	pi, err := r2.PageInfo(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	pi := r2.PageInfo()
 	args = &graphqlbackend.ListMonitorsArgs{
 		First: 10,
 		After: pi.EndCursor(),
@@ -138,11 +134,7 @@ func TestListCodeMonitors(t *testing.T) {
 func requireNodeCount(t *testing.T, r graphqlbackend.MonitorConnectionResolver, c int) {
 	t.Helper()
 
-	nodes, err := r.Nodes(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	nodes := r.Nodes()
 	if len(nodes) != c {
 		t.Fatalf("got %d nodes but expected %d", len(nodes), c)
 	}
@@ -151,11 +143,7 @@ func requireNodeCount(t *testing.T, r graphqlbackend.MonitorConnectionResolver, 
 func requireHasNextPage(t *testing.T, r graphqlbackend.MonitorConnectionResolver, hasNextPage bool) {
 	t.Helper()
 
-	pageInfo, err := r.PageInfo(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	pageInfo := r.PageInfo()
 	if pageInfo.HasNextPage() != hasNextPage {
 		t.Fatalf("unexpected value for HasNextPage")
 	}
