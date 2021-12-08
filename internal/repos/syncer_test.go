@@ -1739,12 +1739,33 @@ func testDeleteExternalService(store *repos.Store) func(*testing.T) {
 	}
 }
 
-func testAbortSyncWhenThereIsLastError(store *repos.Store) func(*testing.T) {
+func testAbortSyncWhenThereIsRepoLimitError(store *repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
 		now := time.Now()
+
+		// create fake org
+		orgName := "sample-org101"
+		org, err := database.OrgsWith(store).Create(ctx, orgName, &orgName)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// create fake user
+		user, err := database.UsersWith(store).Create(ctx, database.NewUser{
+			Email:                 "Email",
+			Username:              "Username",
+			DisplayName:           "DisplayName",
+			Password:              "Password",
+			EmailIsVerified:       true,
+			FailIfNotInitialUser:  false,
+			EnforcePasswordLength: false,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		// create fake source
 		svc := &types.ExternalService{
@@ -1753,8 +1774,13 @@ func testAbortSyncWhenThereIsLastError(store *repos.Store) func(*testing.T) {
 			Config:          `{"url": "https://github.com"}`,
 			CreatedAt:       now,
 			UpdatedAt:       now,
-			NamespaceUserID: 1337,
-			NamespaceOrgID:  1337101,
+			NamespaceUserID: user.ID,
+			NamespaceOrgID:  org.ID,
+		}
+
+		// setup services
+		if err := store.ExternalServiceStore.Upsert(ctx, svc); err != nil {
+			t.Fatal(err)
 		}
 
 		githubRepo := &types.Repo{
@@ -1767,43 +1793,30 @@ func testAbortSyncWhenThereIsLastError(store *repos.Store) func(*testing.T) {
 			},
 		}
 
-		// configure DB mocks
-		extSvcStore := dbmock.NewMockExternalServiceStore()
-		extSvcStore.GetByIDFunc.SetDefaultReturn(svc, nil)
-		extSvcStore.UpsertFunc.SetDefaultReturn(nil)
-
-		errs := new(multierror.Error)
-		givenErr := errors.New("reached maximum allowed user added repos: site:1500/9999, user:2019/2000 (username: a)")
-		multierror.Append(errs, givenErr)
-		multierror.Append(errs, givenErr)
-
-		extSvcStore.GetLastSyncErrorFunc.SetDefaultReturn(errs.Error(), nil)
-
-		mockStore := &repos.Store{
-			Store:                basestore.NewWithDB(&dbtesting.MockDB{}, sql.TxOptions{ReadOnly: true}),
-			ExternalServiceStore: extSvcStore,
-		}
-
-		// configure configuration mock
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				ExternalServiceUserMode: "all",
-				UserReposMaxPerUser:     2000,
+		githubRepo2 := &types.Repo{
+			Name:     "github.com/org/foo2",
+			Metadata: &github.Repository{},
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "foo-external-123456",
+				ServiceID:   "https://github.com/",
+				ServiceType: extsvc.TypeGitHub,
 			},
-		})
-		defer conf.Mock(nil)
+		}
 
 		// Sync first service
 		syncer := &repos.Syncer{
 			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
-				s := repos.NewFakeSource(svc, nil, githubRepo)
+				s := repos.NewFakeSource(svc, nil, githubRepo, githubRepo2)
 				return s, nil
 			},
-			Store: mockStore,
-			Now:   time.Now,
+			Store:               store,
+			Now:                 time.Now,
+			UserReposMaxPerSite: 1,
+			UserReposMaxPerUser: 1,
 		}
+
 		if err := syncer.SyncExternalService(ctx, svc.ID, 10*time.Second); err != nil {
-			if err.Error() != "skip sync because user reached maximum allowed user added repos" {
+			if !strings.Contains(err.Error(), "reached maximum allowed user added repos") {
 				t.Fatal(err)
 			}
 		}
