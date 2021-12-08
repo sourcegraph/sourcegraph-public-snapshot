@@ -92,7 +92,7 @@ jobs:
         run: yarn run --ignore-engines build-ts
       - name: Run lsif-eslint
         working-directory: ${{ matrix.root }}
-        run: yarn eslint -f lsif
+        run: yarn eslint -f lsif NODE_OPTIONS=--max_old_space_size=8192
 
       # Upload lsif-eslint data to Cloud, Dogfood, and Demo instances
       - name: Upload lsif-eslint dump to Cloud
