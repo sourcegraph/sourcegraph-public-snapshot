@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"os"
 
@@ -9,8 +10,9 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/connections"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -57,11 +59,16 @@ func createRunFunc() (cliutil.RunFunc, error) {
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
+	operations := store.NewOperations(observationContext)
 
 	dsns, err := postgresdsn.DSNsBySchema()
 	if err != nil {
 		return nil, err
 	}
 
-	return connections.NewDefaultRunner(dsns, appName, observationContext).Run, nil
+	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
+		return store.NewWithDB(db, migrationsTable, operations)
+	}
+
+	return connections.RunnerFromDSNs(dsns, appName, storeFactory).Run, nil
 }
