@@ -42,7 +42,7 @@ func (s *codeMonitorStore) UpdateWebhookAction(ctx context.Context, id int64, en
 		a.UID,
 		s.Now(),
 		id,
-		sqlf.Join(webhookActionColumns, ", "),
+		sqlf.Join(webhookActionColumns, ","),
 	)
 
 	row := s.QueryRow(ctx, q)
@@ -68,7 +68,7 @@ func (s *codeMonitorStore) CreateWebhookAction(ctx context.Context, monitorID in
 		now,
 		a.UID,
 		now,
-		sqlf.Join(webhookActionColumns, ", "),
+		sqlf.Join(webhookActionColumns, ","),
 	)
 
 	row := s.QueryRow(ctx, q)
@@ -92,7 +92,7 @@ func (s *codeMonitorStore) DeleteWebhookActions(ctx context.Context, monitorID i
 	}
 	q := sqlf.Sprintf(
 		deleteWebhookActionQuery,
-		sqlf.Join(deleteIDs, ", "),
+		sqlf.Join(deleteIDs, ","),
 		monitorID,
 	)
 
