@@ -49,17 +49,17 @@ func (r *resolver) Executors(ctx context.Context, query *string, active *bool, f
 		return nil, err
 	}
 
-	executors, totalCount, err := r.svc.List(ctx, p.query, p.active, p.offset, p.limit)
+	execs, totalCount, err := r.svc.List(ctx, p.query, p.active, p.offset, p.limit)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]*ExecutorResolver, 0, len(executors))
-	for _, executor := range executors {
+	resolvers := make([]*ExecutorResolver, 0, len(execs))
+	for _, executor := range execs {
 		resolvers = append(resolvers, NewExecutorResolver(executor))
 	}
 
-	nextOffset := graphqlutil.NextOffset(p.offset, len(executors), totalCount)
+	nextOffset := graphqlutil.NextOffset(p.offset, len(execs), totalCount)
 	executorConnection := NewExecutorPaginatedConnection(resolvers, totalCount, nextOffset)
 
 	return executorConnection, nil

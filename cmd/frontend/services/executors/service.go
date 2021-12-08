@@ -16,8 +16,7 @@ type Executor interface {
 }
 
 func New(db dbutil.DB) Executor {
-	store := postgres.New(db)
-	return &executorService{store: store}
+	return &executorService{store: postgres.New(db)}
 }
 
 type executorService struct {
