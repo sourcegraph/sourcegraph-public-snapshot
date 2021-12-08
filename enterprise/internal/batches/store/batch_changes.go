@@ -230,15 +230,13 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 		if actor.UID != opts.NamespaceUserID && !isSiteAdmin {
 			preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NOT NULL"))
 		}
-	} else {
 		// For batch changes filtered by org namespace, or not filtered by namespace at
 		// all, if I'm not an admin, filter out unapplied batch changes except those that
 		// I authored the batch spec of from this list.
-		if !isSiteAdmin {
-			joins = append(joins, sqlf.Sprintf("LEFT JOIN batch_specs ON batch_specs.id = batch_changes.batch_spec_id"))
-			joins = append(joins, sqlf.Sprintf("LEFT JOIN users batch_spec_authors ON batch_specs.user_id = batch_spec_authors.id"))
-			preds = append(preds, sqlf.Sprintf("(batch_spec_authors.id = %s OR batch_changes.last_applied_at IS NOT NULL)", actor.UID))
-		}
+	} else if !isSiteAdmin {
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN batch_specs ON batch_specs.id = batch_changes.batch_spec_id"))
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN users batch_spec_authors ON batch_specs.user_id = batch_spec_authors.id"))
+		preds = append(preds, sqlf.Sprintf("(batch_spec_authors.id = %s OR batch_changes.last_applied_at IS NOT NULL)", actor.UID))
 	}
 
 	if opts.NamespaceOrgID != 0 {
@@ -531,15 +529,13 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 		if actor.UID != opts.NamespaceUserID && !isSiteAdmin {
 			preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NOT NULL"))
 		}
-	} else {
 		// For batch changes filtered by org namespace, or not filtered by namespace at
 		// all, if I'm not an admin, filter out unapplied batch changes except those that
 		// I authored the batch spec of from this list.
-		if !isSiteAdmin {
-			joins = append(joins, sqlf.Sprintf("LEFT JOIN batch_specs ON batch_specs.id = batch_changes.batch_spec_id"))
-			joins = append(joins, sqlf.Sprintf("LEFT JOIN users batch_spec_authors ON batch_specs.user_id = batch_spec_authors.id"))
-			preds = append(preds, sqlf.Sprintf("(batch_spec_authors.id = %s OR batch_changes.last_applied_at IS NOT NULL)", actor.UID))
-		}
+	} else if !isSiteAdmin {
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN batch_specs ON batch_specs.id = batch_changes.batch_spec_id"))
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN users batch_spec_authors ON batch_specs.user_id = batch_spec_authors.id"))
+		preds = append(preds, sqlf.Sprintf("(batch_spec_authors.id = %s OR batch_changes.last_applied_at IS NOT NULL)", actor.UID))
 	}
 
 	if opts.NamespaceOrgID != 0 {
