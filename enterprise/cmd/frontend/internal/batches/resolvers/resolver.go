@@ -373,8 +373,9 @@ func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID)
 
 	// 🚨 SECURITY: Check that the requesting user is either an admin or created the spec.
 	//
-	// TODO: This needs to be changed to check for namespace access and then
-	// check repository permissions and return hidden/visible workspaces accordingly.
+	// TODO: Once we introduce finer permissoins, this needs to be changed to
+	// check for namespace access and then check repository permissions and
+	// return hidden/visible workspaces accordingly.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), spec.UserID); err != nil {
 		return nil, err
 	}
@@ -1438,11 +1439,15 @@ func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatc
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
-	// TODO: This needs to filter out BatchSpecs that were created from raw
 
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
+
+	// TODO: We need to check whether user is site-admin. If not, we need to
+	// add an opt that filters out BatchSpecs where created_from_raw = true &&
+	// user_id != actor.UID
+
 	opts := store.ListBatchSpecsOpts{
 		LimitOpts: store.LimitOpts{
 			Limit: int(args.First),

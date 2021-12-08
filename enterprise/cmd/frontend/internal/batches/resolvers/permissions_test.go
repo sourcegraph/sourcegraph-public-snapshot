@@ -121,9 +121,12 @@ func TestPermissionLevels(t *testing.T) {
 	createBatchSpecFromRaw := func(t *testing.T, s *store.Store, userID int32) (randID string, id int64) {
 		t.Helper()
 
+		// userCtx causes CreateBatchSpecFromRaw to set batchSpec.UserID to userID
+		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
 		// We're using the service method here since it also creates a resolution job
 		svc := service.New(s)
-		spec, err := svc.CreateBatchSpecFromRaw(actor.WithInternalActor(ctx), service.CreateBatchSpecFromRawOpts{
+		spec, err := svc.CreateBatchSpecFromRaw(userCtx, service.CreateBatchSpecFromRawOpts{
 			RawSpec:         ct.TestRawBatchSpecYAML,
 			NamespaceUserID: userID,
 		})
@@ -543,6 +546,7 @@ func TestPermissionLevels(t *testing.T) {
 
 			for _, tc := range tests {
 				t.Run(tc.name, func(t *testing.T) {
+					fmt.Println("------------------" + tc.name)
 					_, batchSpecID := createBatchSpecFromRaw(t, cstore, tc.user)
 					workspaceID := createBatchSpecWorkspace(t, cstore, batchSpecID)
 
