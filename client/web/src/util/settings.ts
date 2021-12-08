@@ -9,9 +9,11 @@ import { SettingsExperimentalFeatures } from '../schema/settings.schema'
 import { parseSearchURLPatternType } from '../search'
 
 /** A fallback settings subject that can be constructed synchronously at initialization time. */
-export const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> = {
-    id: window.context.siteGQLID,
-    viewerCanAdminister: false,
+export function siteSubjectNoAdmin(): Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> {
+    return {
+        id: window.context.siteGQLID,
+        viewerCanAdminister: false,
+    }
 }
 
 export function viewerSubjectFromSettings(
@@ -24,7 +26,7 @@ export function viewerSubjectFromSettings(
     if (cascade && !isErrorLike(cascade) && cascade.subjects && cascade.subjects.length > 0) {
         return cascade.subjects[0].subject
     }
-    return SITE_SUBJECT_NO_ADMIN
+    return siteSubjectNoAdmin()
 }
 
 export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeOrError): SearchPatternType | undefined {
