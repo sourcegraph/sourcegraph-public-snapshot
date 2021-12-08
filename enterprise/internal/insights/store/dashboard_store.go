@@ -256,10 +256,12 @@ func (s *DBDashboardStore) AddViewsToDashboard(ctx context.Context, dashboardId 
 		return nil
 	}
 
+	// Create rows for an inline table which is used to preserve the ordering of the viewIds.
 	orderings := make([]*sqlf.Query, 0, 1)
 	for i, viewId := range viewIds {
 		orderings = append(orderings, sqlf.Sprintf("(%s, %s)", viewId, fmt.Sprintf("%d", i)))
 	}
+
 	q := sqlf.Sprintf(insertDashboardInsightViewConnectionsByViewIds, dashboardId, sqlf.Join(orderings, ","), pq.Array(viewIds))
 	err := s.Exec(ctx, q)
 	if err != nil {
