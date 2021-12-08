@@ -7,7 +7,7 @@ import (
 )
 
 func entityByID(db database.DB, id graphql.ID) *catalogComponentResolver {
-	components := dummyData(db)
+	components := dummyComponents(db)
 	for _, c := range components {
 		if c.ID() == id {
 			return c

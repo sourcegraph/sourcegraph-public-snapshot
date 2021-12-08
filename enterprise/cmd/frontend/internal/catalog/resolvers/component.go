@@ -16,6 +16,8 @@ type catalogComponentResolver struct {
 	db        database.DB
 }
 
+func (catalogComponentResolver) TagCatalogComponentEntity() {}
+
 func (r *catalogComponentResolver) ID() graphql.ID {
 	return relay.MarshalID("CatalogComponent", r.component.Name) // TODO(sqs)
 }

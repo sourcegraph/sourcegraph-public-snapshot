@@ -23,7 +23,7 @@ export const CatalogArea: React.FunctionComponent<Props> = ({ telemetryService, 
 
     return (
         <Switch>
-            <Route path={`${match.url}/entities/:name`}>
+            <Route path={`${match.url}/entities/components/:name`}>
                 {(matchProps: RouteComponentProps<{ name: string }>) => (
                     <EntityDetailPage
                         key={1}

@@ -21,6 +21,14 @@ func GetPackages(ctx context.Context) ([]Package, error) {
 	return pkgs, nil
 }
 
+func AllPackages() []Package {
+	pkgs, err := GetPackages(nil)
+	if err != nil {
+		panic(err)
+	}
+	return pkgs
+}
+
 func getAllPackages(ctx context.Context) ([]*packages.Package, error) {
 	const cacheFile = "/tmp/sqs-wip-cache/allPackages.json"
 	f, err := os.Open(cacheFile)

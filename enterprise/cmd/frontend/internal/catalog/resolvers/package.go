@@ -15,6 +15,8 @@ type packageResolver struct {
 	db  database.DB
 }
 
+func (r *packageResolver) TagPackageEntity() {}
+
 func (r *packageResolver) ID() graphql.ID {
 	return relay.MarshalID("Package", r.pkg.Name) // TODO(sqs)
 }

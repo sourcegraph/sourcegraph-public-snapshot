@@ -6,7 +6,7 @@ import (
 )
 
 // TODO(sqs): dummy data
-func dummyData(db database.DB) []*catalogComponentResolver {
+func dummyComponents(db database.DB) []*catalogComponentResolver {
 	components, _, _ := catalog.Data()
 	resolvers := make([]*catalogComponentResolver, len(components))
 	for i, c := range components {

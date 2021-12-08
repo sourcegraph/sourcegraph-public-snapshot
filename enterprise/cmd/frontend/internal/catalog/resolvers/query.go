@@ -1,7 +1,6 @@
 package resolvers
 
 import (
-	"log"
 	"strings"
 	"sync"
 
@@ -20,6 +19,7 @@ func parseQuery(db database.DB, q string) *queryMatcher {
 			relatedToEntityPrefix = "relatedToEntity:"
 			excludeEntityPrefix   = "-entity:"
 			groupPrefix           = "group:"
+			isPrefix              = "is:"
 		)
 		switch {
 		case strings.HasPrefix(part, relatedToEntityPrefix):
@@ -37,6 +37,9 @@ func parseQuery(db database.DB, q string) *queryMatcher {
 				match.groups = append(match.groups, dg)
 			}
 
+		case strings.HasPrefix(part, isPrefix):
+			match.isType = gql.CatalogEntityType(strings.ToUpper(strings.TrimPrefix(part, isPrefix)))
+
 		default:
 			match.literal += part
 		}
@@ -50,6 +53,7 @@ type queryMatcher struct {
 	relatedToEntity *catalogComponentResolver
 	excludeEntity   graphql.ID
 	groups          []gql.GroupResolver
+	isType          gql.CatalogEntityType
 
 	once                     sync.Once
 	relatedEntityNamesCached []string
@@ -99,20 +103,20 @@ func (q *queryMatcher) matchNode(c *catalogComponentResolver) bool {
 	}
 
 	return isLiteralMatch &&
+		(q.isType == "" || q.isType == "COMPONENT") &&
 		(q.relatedToEntity == nil || isRelatedToEntity(c)) &&
 		(c.ID() != q.excludeEntity) &&
 		(len(q.groups) == 0 || isInAnyGroup(c, q.groups))
 }
 
 func (q *queryMatcher) matchEdge(e *catalogEntityRelationEdgeResolver) bool {
-	var id graphql.ID
-	if q.relatedToEntity != nil {
-		id = q.relatedToEntity.ID()
-	}
-	log.Printf("q.relatedToEntity = %v e.outNode.ID()=%v e.inNode.ID()=%v", id, e.outNode.ID(), e.inNode.ID())
 	if q.relatedToEntity != nil && e.outNode.ID() != q.relatedToEntity.ID() && e.inNode.ID() != q.relatedToEntity.ID() {
 		return false
 	}
 
 	return true
+}
+
+func (q *queryMatcher) matchPackage(p catalog.Package) bool {
+	return q.isType == "PACKAGE" && strings.Contains(p.Name, q.literal)
 }

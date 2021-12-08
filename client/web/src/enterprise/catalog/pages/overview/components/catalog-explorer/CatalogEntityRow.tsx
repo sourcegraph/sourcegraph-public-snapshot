@@ -41,7 +41,7 @@ export const CatalogEntityRow: React.FunctionComponent<Props> = ({
             <CatalogEntityStateIndicator entity={node} className="ml-1" />
         </h3>
         <EntityOwner owner={node.owner} className="text-nowrap" blankIfNone={true} />
-        <span className="text-nowrap">{node.lifecycle.toLowerCase()}</span>
+        <span className="text-nowrap">{node.lifecycle?.toLowerCase()}</span>
         {node.__typename === 'CatalogComponent' && node.commits ? (
             <Timestamp className="text-nowrap" date={node.commits.nodes[0].author.date} noAbout={true} strict={true} />
         ) : (

@@ -84,6 +84,11 @@ func (r *CatalogEntityResolver) ToCatalogComponent() (CatalogComponentResolver, 
 	return e, ok
 }
 
+func (r *CatalogEntityResolver) ToPackage() (PackageResolver, bool) {
+	e, ok := r.CatalogEntity.(PackageResolver)
+	return e, ok
+}
+
 type EntityOwnerResolver struct {
 	Person *PersonResolver
 	Group  GroupResolver
@@ -158,6 +163,7 @@ type CatalogEntityConnectionResolver interface {
 
 type CatalogComponentResolver interface {
 	CatalogEntity
+	TagCatalogComponentEntity()
 
 	Kind() CatalogComponentKind
 	Lifecycle() CatalogEntityLifecycle
@@ -220,6 +226,11 @@ type CatalogComponentAPIResolver interface {
 type CatalogComponentAPISymbolsArgs struct {
 	graphqlutil.ConnectionArgs
 	Query *string
+}
+
+type PackageResolver interface {
+	CatalogEntity
+	TagPackageEntity()
 }
 
 func (r *GitTreeEntryResolver) CatalogEntities(ctx context.Context) ([]*CatalogEntityResolver, error) {

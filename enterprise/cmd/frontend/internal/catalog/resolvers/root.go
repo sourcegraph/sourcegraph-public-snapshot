@@ -21,7 +21,7 @@ func (r *rootResolver) Catalog(context.Context) (gql.CatalogResolver, error) {
 }
 
 func (r *rootResolver) CatalogEntity(ctx context.Context, args *gql.CatalogEntityArgs) (*gql.CatalogEntityResolver, error) {
-	components := dummyData(r.db)
+	components := dummyComponents(r.db)
 	for _, c := range components {
 		if c.Name() == args.Name {
 			return &gql.CatalogEntityResolver{c}, nil
@@ -34,6 +34,9 @@ func (r *rootResolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 	return map[string]gql.NodeByIDFunc{
 		"CatalogComponent": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
 			return entityByID(r.db, id), nil
+		},
+		"Package": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
+			return packageByID(r.db, id), nil
 		},
 		"Group": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
 			return groupByID(r.db, id), nil

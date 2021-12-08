@@ -230,7 +230,6 @@ export const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
         type
         name
         description
-        lifecycle
         url
         ...CatalogEntityOwnerFields
         ...CatalogEntityStatusFields
@@ -238,6 +237,7 @@ export const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
         ...CatalogEntityWhoKnowsFields
         ... on CatalogComponent {
             kind
+            lifecycle
             ...CatalogComponentDocumentationFields
             ...CatalogComponentSourcesFields
             ...CatalogComponentChangesFields

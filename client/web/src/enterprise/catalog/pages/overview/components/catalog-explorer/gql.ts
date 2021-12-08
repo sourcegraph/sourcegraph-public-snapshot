@@ -32,10 +32,10 @@ export const CATALOG_ENTITY_FOR_EXPLORER_FRAGMENT = gql`
         type
         name
         description
-        lifecycle
         url
         ... on CatalogComponent {
             kind
+            lifecycle
         }
         ...CatalogEntityStateFields
         ...CatalogEntityOwnerFields

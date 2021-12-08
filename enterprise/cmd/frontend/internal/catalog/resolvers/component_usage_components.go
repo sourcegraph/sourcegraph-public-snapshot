@@ -17,7 +17,7 @@ func (r *catalogComponentUsageResolver) Components(ctx context.Context) ([]gql.C
 		return nil, err
 	}
 
-	components := dummyData(r.db)
+	components := dummyComponents(r.db)
 	componentForPath := func(repo api.RepoName, path string) *catalogComponentResolver {
 		// TODO(sqs): ignores commit SHA - is that ok?
 		for _, c := range components {

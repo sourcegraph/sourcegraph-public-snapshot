@@ -270,3 +270,8 @@ func (r *NodeResolver) ToCatalogEntityStatusContext() (CatalogEntityStatusContex
 	n, ok := r.Node.(CatalogEntityStatusContextResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToPackage() (PackageResolver, bool) {
+	n, ok := r.Node.(PackageResolver)
+	return n, ok
+}

@@ -106,7 +106,7 @@ func (r *groupResolver) Members() []*gql.PersonResolver {
 func (r *groupResolver) OwnedEntities() []*gql.CatalogEntityResolver {
 	var entities []*gql.CatalogEntityResolver
 
-	for _, c := range dummyData(r.db) {
+	for _, c := range dummyComponents(r.db) {
 		if c.component.OwnedBy == r.group.Name {
 			entities = append(entities, &gql.CatalogEntityResolver{c})
 		}
