@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/lib/pq"
 
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/test"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
@@ -191,7 +192,7 @@ func urlWithDB(u *url.URL, dbName string) *url.URL {
 }
 
 func newPoolFromURL(u *url.URL) (_ *testDatabasePool, err error) {
-	db, err := newTestDB(u.String())
+	db, err := connections.NewTestDB(u.String())
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +207,7 @@ func newPoolFromURL(u *url.URL) (_ *testDatabasePool, err error) {
 	_, _ = db.Exec("CREATE DATABASE dbtest_pool")
 
 	poolDBURL := urlWithDB(u, "dbtest_pool")
-	poolDB, err := newTestDB(poolDBURL.String())
+	poolDB, err := connections.NewTestDB(poolDBURL.String())
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +224,7 @@ func newPoolFromURL(u *url.URL) (_ *testDatabasePool, err error) {
 			return nil, err
 		}
 
-		poolDB, err = newTestDB(poolDBURL.String())
+		poolDB, err = connections.NewTestDB(poolDBURL.String())
 		if err != nil {
 			return nil, err
 		}

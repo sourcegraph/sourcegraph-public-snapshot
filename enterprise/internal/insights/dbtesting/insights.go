@@ -28,7 +28,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 
 	timescaleDSN := postgresdsn.New("codeinsights", username, os.Getenv)
-	initConn, err := newTestDB(timescaleDSN)
+	initConn, err := connections.NewTestDB(timescaleDSN)
 	if err != nil {
 		t.Log("")
 		t.Log("README: To run these tests you need to have the codeinsights TimescaleDB running:")
@@ -63,7 +63,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 	u.Path = dbname
 	timescaleDSN = u.String()
-	db, err = newTestDB(timescaleDSN, schemas.CodeInsights)
+	db, err = connections.NewTestDB(timescaleDSN, schemas.CodeInsights)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,11 +88,4 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 		//}
 	}
 	return db, cleanup
-}
-
-// newTestDB connects to the given data source and returns the handle. After successful connection, the
-// schema version of the database will be compared against an expected version and the supplied migrations
-// may be run (taking an advisory lock to ensure exclusive access).
-func newTestDB(dsn string, schemas ...*schemas.Schema) (*sql.DB, error) {
-	return connections.NewTestDB(dsn, schemas...)
 }

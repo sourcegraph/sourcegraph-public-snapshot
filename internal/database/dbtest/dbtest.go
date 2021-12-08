@@ -148,7 +148,7 @@ func initTemplateDB(t testing.TB, config *url.URL) {
 
 			cfgCopy := *config
 			cfgCopy.Path = "/" + templateName
-			dbConnInternal(t, &cfgCopy, schemas).Close()
+			dbConn(t, &cfgCopy, schemas...).Close()
 		}
 
 		init("raw", nil)
@@ -177,25 +177,13 @@ func wdHash() string {
 	return strconv.FormatUint(h.Sum64(), 10)
 }
 
-func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
-	db := dbConnInternal(t, cfg, nil)
-	return db
-}
-
-func dbConnInternal(t testing.TB, cfg *url.URL, schemas []*schemas.Schema) *sql.DB {
+func dbConn(t testing.TB, cfg *url.URL, schemas ...*schemas.Schema) *sql.DB {
 	t.Helper()
-	db, err := newTestDB(cfg.String(), schemas...)
+	db, err := connections.NewTestDB(cfg.String(), schemas...)
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}
 	return db
-}
-
-// newTestDB connects to the given data source and returns the handle. After successful connection, the
-// schema version of the database will be compared against an expected version and the supplied migrations
-// may be run (taking an advisory lock to ensure exclusive access).
-func newTestDB(dsn string, schemas ...*schemas.Schema) (*sql.DB, error) {
-	return connections.NewTestDB(dsn, schemas...)
 }
 
 func dbExec(t testing.TB, db *sql.DB, q string, args ...interface{}) {
