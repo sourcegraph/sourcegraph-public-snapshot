@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/test"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 )
@@ -98,5 +98,5 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 // of calling Close directly on the database handle as it also handles closing migration objects associated
 // with the handle.
 func newTestDB(dsn string, schemas ...*schemas.Schema) (*sql.DB, func(err error) error, error) {
-	return dbconn.ConnectInternal(dsn, "", "", schemas)
+	return connections.NewTestDB(dsn, schemas...)
 }
