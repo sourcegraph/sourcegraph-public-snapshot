@@ -65,7 +65,7 @@ export const CatalogHealthTable: React.FunctionComponent<Props> = ({ filters, qu
             <ConnectionContainer className={classNames('position-relative', className)}>
                 <button
                     type="button"
-                    style={{ position: 'absolute', top: '-6px', left: '115px', width: '60px' }}
+                    style={{ position: 'absolute', top: '-6px', left: '113px', width: '60px' }}
                     className="btn btn-sm btn-link p-0 text-muted"
                     onClick={() => setUseColor(previous => !previous)}
                 >
@@ -215,7 +215,7 @@ const CatalogHealthTableRow: React.FunctionComponent<{
                         }
                     >
                         {status ? (
-                            <small className={useColor ? 'sr-only' : '`'}>
+                            <small className={useColor ? 'sr-only' : 'font-weight-normal'}>
                                 {status.state[0]}
                                 {status.state.slice(1).toLowerCase()}
                             </small>

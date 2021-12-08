@@ -1,11 +1,7 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import ClockFastIcon from 'mdi-react/ClockFastIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import OrderBoolAscendingVariantIcon from 'mdi-react/OrderBoolAscendingVariantIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import ShieldHalfFullIcon from 'mdi-react/ShieldHalfFullIcon'
-import StarShootingIcon from 'mdi-react/StarShootingIcon'
 import ViewDashboardOutlineIcon from 'mdi-react/ViewDashboardOutlineIcon'
 import React, { useEffect, useMemo } from 'react'
 import { of } from 'rxjs'
@@ -251,38 +247,13 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     )}
                     {codeInsights && (
                         <NavItem icon={ViewDashboardOutlineIcon}>
-                            <NavLink to="/insights/dashboards/all">Dashboards</NavLink>
+                            <NavLink to="/insights/dashboards/all">Insights</NavLink>
                         </NavItem>
                     )}
                     {/* This is the only circumstance where we show something
                          batch-changes-related even if the instance does not have batch
                          changes enabled, for marketing purposes on sourcegraph.com */}
                     {(props.batchChangesEnabled || isSourcegraphDotCom) && <BatchChangesNavItem />}
-                    {false && (
-                        <>
-                            <div className="NavBar-module__divider align-self-center mx-0" />
-                            {/* TODO(sqs): illegal reference of class name outside this module */}
-                            <NavItem icon={ShieldHalfFullIcon}>
-                                <NavLink to="/extensions">Security</NavLink>
-                            </NavItem>
-                            <NavItem icon={StarShootingIcon}>
-                                <NavLink to="/extensions">Quality</NavLink>
-                            </NavItem>
-                            <NavItem icon={ClockFastIcon}>
-                                <NavLink to="/extensions">Velocity</NavLink>
-                            </NavItem>
-                            <NavDropdown
-                                toggleItem={{ path: '/search', icon: OrderBoolAscendingVariantIcon, content: 'Policy' }}
-                                mobileHomeItem={{ content: 'Policy home' }}
-                                items={[
-                                    {
-                                        path: '/contexts',
-                                        content: <>Scorecards</>,
-                                    },
-                                ].filter(isDefined)}
-                            />
-                        </>
-                    )}
                     <NavItem icon={PuzzleOutlineIcon}>
                         <NavLink to="/extensions">Extensions</NavLink>
                     </NavItem>
