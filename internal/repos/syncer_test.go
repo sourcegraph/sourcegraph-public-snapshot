@@ -695,7 +695,7 @@ func testSyncRepo(s *repos.Store) func(*testing.T) {
 					),
 				}
 
-				have, err := syncer.SyncRepo(ctx, tc.repo)
+				have, err := syncer.SyncRepo(ctx, tc.repo, true)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -1316,7 +1316,7 @@ func testSyncRepoMaintainsOtherSources(store *repos.Store) func(*testing.T) {
 				CloneURL: "cloneURL",
 			},
 		}
-		_, err := syncer.SyncRepo(ctx, githubRepo.Name)
+		_, err := syncer.SyncRepo(ctx, githubRepo.Name, true)
 		if err != nil {
 			t.Fatal(err)
 		}
