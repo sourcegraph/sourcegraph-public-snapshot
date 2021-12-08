@@ -1,0 +1,66 @@
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/fileskip/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkLoadFlask-12          	      26	  44727698 ns/op	    415416 bloom-storage-size	         0.3445 compression-ratio	       222.0 indexed-blob-count	   1205681 indexed-blobs-size	79351591 B/op	    8933 allocs/op
+BenchmarkLoadSourcegraph-12    	       2	 653464958 ns/op	  13010168 bloom-storage-size	         0.2424 compression-ratio	      7164 indexed-blob-count	  53668806 indexed-blobs-size	3020167464 B/op	  278972 allocs/op
+BenchmarkLoadKubernetes-12     	       1	1514421865 ns/op	  46445528 bloom-storage-size	         0.2839 compression-ratio	     22422 indexed-blob-count	 163572693 indexed-blobs-size	8553230576 B/op	  905619 allocs/op
+BenchmarkLoadLinux-12          	       1	6907551189 ns/op	 211774000 bloom-storage-size	         0.2399 compression-ratio	     74210 indexed-blob-count	 882761967 indexed-blobs-size	30679214848 B/op	 3021051 allocs/op
+BenchmarkLoadChromium-12       	       1	22789180425 ns/op	 519300136 bloom-storage-size	         0.3009 compression-ratio	    329524 indexed-blob-count	1726054745 indexed-blobs-size	125118595504 B/op	13487256 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/fileskip/bench	40.130s
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/fileskip/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkLoadFlask-12          	      25	  45619641 ns/op	    415416 bloom-storage-size	         0.3445 compression-ratio	       222.0 indexed-blob-count	   1205681 indexed-blobs-size	79351537 B/op	    8933 allocs/op
+BenchmarkLoadSourcegraph-12    	       2	 666166186 ns/op	  13010168 bloom-storage-size	         0.2424 compression-ratio	      7164 indexed-blob-count	  53668806 indexed-blobs-size	3020171976 B/op	  279013 allocs/op
+BenchmarkLoadKubernetes-12     	       1	1527966002 ns/op	  46445528 bloom-storage-size	         0.2839 compression-ratio	     22422 indexed-blob-count	 163572693 indexed-blobs-size	8553225960 B/op	  905565 allocs/op
+BenchmarkLoadLinux-12          	       1	6454420687 ns/op	 211774000 bloom-storage-size	         0.2399 compression-ratio	     74210 indexed-blob-count	 882761967 indexed-blobs-size	30679179120 B/op	 3020845 allocs/op
+BenchmarkLoadChromium-12       	       1	22410102081 ns/op	 519300136 bloom-storage-size	         0.3009 compression-ratio	    329524 indexed-blob-count	1726054745 indexed-blobs-size	125118451048 B/op	13486068 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/fileskip/bench	39.316s
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/fileskip/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkLoadFlask-12          	      24	  52964057 ns/op	    415416 bloom-storage-size	         0.3445 compression-ratio	       222.0 indexed-blob-count	   1205681 indexed-blobs-size	79351641 B/op	    8934 allocs/op
+BenchmarkLoadSourcegraph-12    	       2	 690645152 ns/op	  13010168 bloom-storage-size	         0.2424 compression-ratio	      7164 indexed-blob-count	  53668806 indexed-blobs-size	3020169456 B/op	  278963 allocs/op
+BenchmarkLoadKubernetes-12     	       1	1599616640 ns/op	  46445528 bloom-storage-size	         0.2839 compression-ratio	     22422 indexed-blob-count	 163572693 indexed-blobs-size	8553229664 B/op	  905624 allocs/op
+BenchmarkLoadLinux-12          	       1	7497448277 ns/op	 211774000 bloom-storage-size	         0.2399 compression-ratio	     74210 indexed-blob-count	 882761967 indexed-blobs-size	30679215032 B/op	 3020996 allocs/op
+BenchmarkLoadChromium-12       	       1	22761930882 ns/op	 519300136 bloom-storage-size	         0.3009 compression-ratio	    329524 indexed-blob-count	1726054745 indexed-blobs-size	125118603904 B/op	13486863 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/fileskip/bench	40.110s
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/fileskip/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkLoadFlask-12          	      25	  44308809 ns/op	    415416 bloom-storage-size	         0.3445 compression-ratio	       222.0 indexed-blob-count	   1205681 indexed-blobs-size	79351826 B/op	    8934 allocs/op
+BenchmarkLoadSourcegraph-12    	       2	 665591491 ns/op	  13010168 bloom-storage-size	         0.2424 compression-ratio	      7164 indexed-blob-count	  53668806 indexed-blobs-size	3020167508 B/op	  278971 allocs/op
+BenchmarkLoadKubernetes-12     	       1	1729100176 ns/op	  46445528 bloom-storage-size	         0.2839 compression-ratio	     22422 indexed-blob-count	 163572693 indexed-blobs-size	8553228472 B/op	  905699 allocs/op
+BenchmarkLoadLinux-12          	       1	7269995585 ns/op	 211774000 bloom-storage-size	         0.2399 compression-ratio	     74210 indexed-blob-count	 882761967 indexed-blobs-size	30679202736 B/op	 3020961 allocs/op
+BenchmarkLoadChromium-12       	       1	23665938414 ns/op	 519300136 bloom-storage-size	         0.3009 compression-ratio	    329524 indexed-blob-count	1726054745 indexed-blobs-size	125118798640 B/op	13489127 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/fileskip/bench	40.515s
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/fileskip/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkLoadFlask-12          	      26	  44633555 ns/op	    415416 bloom-storage-size	         0.3445 compression-ratio	       222.0 indexed-blob-count	   1205681 indexed-blobs-size	79351607 B/op	    8933 allocs/op
+BenchmarkLoadSourcegraph-12    	       2	 779541632 ns/op	  13010168 bloom-storage-size	         0.2424 compression-ratio	      7164 indexed-blob-count	  53668806 indexed-blobs-size	3020167208 B/op	  279005 allocs/op
+BenchmarkLoadKubernetes-12     	       1	1652422855 ns/op	  46445528 bloom-storage-size	         0.2839 compression-ratio	     22422 indexed-blob-count	 163572693 indexed-blobs-size	8553211456 B/op	  905569 allocs/op
+BenchmarkLoadLinux-12          	       1	7581525073 ns/op	 211774000 bloom-storage-size	         0.2399 compression-ratio	     74210 indexed-blob-count	 882761967 indexed-blobs-size	30679182608 B/op	 3020757 allocs/op
+BenchmarkLoadChromium-12       	       1	25614359203 ns/op	 519300136 bloom-storage-size	         0.3009 compression-ratio	    329524 indexed-blob-count	1726054745 indexed-blobs-size	125118696504 B/op	13488236 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/fileskip/bench	44.054s
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/fileskip/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkLoadFlask-12          	      25	  44224467 ns/op	    415416 bloom-storage-size	         0.3445 compression-ratio	       222.0 indexed-blob-count	   1205681 indexed-blobs-size	79351751 B/op	    8933 allocs/op
+BenchmarkLoadSourcegraph-12    	       2	 671776619 ns/op	  13010168 bloom-storage-size	         0.2424 compression-ratio	      7164 indexed-blob-count	  53668806 indexed-blobs-size	3020173152 B/op	  279002 allocs/op
+BenchmarkLoadKubernetes-12     	       1	1598727305 ns/op	  46445528 bloom-storage-size	         0.2839 compression-ratio	     22422 indexed-blob-count	 163572693 indexed-blobs-size	8553240352 B/op	  905738 allocs/op
+BenchmarkLoadLinux-12          	       1	7050685790 ns/op	 211774000 bloom-storage-size	         0.2399 compression-ratio	     74210 indexed-blob-count	 882761967 indexed-blobs-size	30679227192 B/op	 3021295 allocs/op
+BenchmarkLoadChromium-12       	       1	23440921008 ns/op	 519300136 bloom-storage-size	         0.3009 compression-ratio	    329524 indexed-blob-count	1726054745 indexed-blobs-size	125118475448 B/op	13486317 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/fileskip/bench	40.116s
