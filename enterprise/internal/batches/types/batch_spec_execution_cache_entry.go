@@ -10,6 +10,8 @@ const CurrentCacheVersion = 2
 type BatchSpecExecutionCacheEntry struct {
 	ID int64
 
+	UserID int32
+
 	Key   string
 	Value string
 
