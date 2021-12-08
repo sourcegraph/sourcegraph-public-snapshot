@@ -73,7 +73,11 @@ func (s *store) WriteSymbols(ctx context.Context, symbolOrErrors <-chan parser.S
 				return symbolOrError.Err
 			}
 
-			rows <- symbolToRow(symbolOrError.Symbol)
+			select {
+			case rows <- symbolToRow(symbolOrError.Symbol):
+			case <-ctx.Done():
+				return ctx.Err()
+			}
 		}
 
 		return nil
