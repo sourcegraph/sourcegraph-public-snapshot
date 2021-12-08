@@ -129,5 +129,23 @@
       "path": "client/vscode/",
       "script": "dev:web",
     },
+    {
+      "label": "watch-vscode-dev",
+      "type": "npm",
+      "path": "client/vscode/",
+      "script": "watch",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": ["$ts-checker-webpack-watch", "$ts-checker-eslint-webpack-watch"]
+    },
+    {
+      "label": "watch-vscode-dev-web",
+      "type": "npm",
+      "path": "client/vscode/",
+      "script": "watch:web",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": ["$ts-checker-webpack-watch", "$ts-checker-eslint-webpack-watch"]
+    }
   ],
 }

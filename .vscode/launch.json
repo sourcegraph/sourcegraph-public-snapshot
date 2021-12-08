@@ -32,6 +32,40 @@
       "preLaunchTask": "build-vscode-dev-web",
     },
     {
+      "name": "Launch & Watch VS Code Extension",
+      "type": "extensionHost",
+      "runtimeExecutable": "${execPath}",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
+        "--disable-extension=kandalatj.sourcegraph-preview"
+      ],
+      "smartStep": true,
+			"sourceMaps": true,
+      "outFiles": ["${workspaceRoot}/client/vscode/dist/extension.js"],
+      "preLaunchTask": "watch-vscode-dev",
+    },
+    {
+      "name": "Launch & Watch VS Code Web Extension",
+      "type": "pwa-extensionHost",
+      "debugWebWorkerHost": true,
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
+        "--extensionDevelopmentKind=web",
+        "--disable-web-security",
+        "--disable-extension=kandalatj.sourcegraph-preview"
+      ],
+      "skipFiles": [
+				"<node_internals>/**/*.js",
+				"**/node_modules/**/*.js"
+			],
+      "smartStep": true,
+			"sourceMaps": true,
+      "outFiles": ["${workspaceRoot}/client/vscode/dist/extension.js"],
+      "preLaunchTask": "watch-vscode-dev-web",
+    },
+    {
       "name": "Launch VS Code Tests",
       "type": "extensionHost",
       "request": "launch",
