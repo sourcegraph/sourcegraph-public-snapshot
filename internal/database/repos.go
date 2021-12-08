@@ -251,7 +251,7 @@ func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.Repo
 	}()
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
-		HashedName:     &repoHashedName,
+		HashedName:     string(repoHashedName),
 		LimitOffset:    &LimitOffset{Limit: 1},
 		IncludeBlocked: true,
 	})
@@ -560,7 +560,7 @@ type ReposListOptions struct {
 	Names []string
 
 	// HashedName is a repository hashed name used to limit the results to that repository.
-	HashedName *api.RepoHashedName
+	HashedName string
 
 	// URIs selects any repos in the given set of URIs (i.e. uri column)
 	URIs []string
@@ -975,7 +975,7 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf(`lower(name::text) COLLATE "C" = ANY (%s::text[])`, pq.Array(lowerNames)))
 	}
 
-	if opt.HashedName != nil {
+	if opt.HashedName != "" {
 		// This will use the repo_hashed_name_idx
 		where = append(where, sqlf.Sprintf(`sha256(lower(name)::bytea) = decode(%s, 'hex')`, opt.HashedName))
 	}
