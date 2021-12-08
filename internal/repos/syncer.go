@@ -24,8 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-const userAddedRepoLimitError = "reached maximum allowed user added repos"
-
 // A Syncer periodically synchronizes available repositories from all its given Sources
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
@@ -401,7 +399,7 @@ func (s *Syncer) SyncExternalService(
 	}
 
 	if err := checkLastSyncError(ctx, externalServiceID, s); err != nil {
-		return updateExternalServiceOnError(ctx, externalServiceID, minSyncInterval, s, svc, err)
+		return s.updateExternalServiceOnError(ctx, externalServiceID, minSyncInterval, svc, err)
 	}
 
 	// Unless our site config explicitly allows private code or the user has the
@@ -521,6 +519,8 @@ func (s *Syncer) SyncExternalService(
 	return errs.ErrorOrNil()
 }
 
+const userAddedRepoLimitError = "reached maximum allowed user added repos"
+
 // checkLastSyncError fetches last sync error and checks if it is actual
 // If this error is related to maximum allowed user added repos, then sync process should be terminated immediately
 // and in this case non-nil error is returned.
@@ -541,24 +541,26 @@ func checkLastSyncError(ctx context.Context, externalServiceID int64, s *Syncer)
 	}
 
 	errorLineStartIdx := strings.Index(syncError, userAddedRepoLimitError)
-
-	if errorLineStartIdx > -1 {
-		syncErrorWithoutPrefix := syncError[errorLineStartIdx:]
-		syncErrorLine := syncErrorWithoutPrefix[:strings.Index(syncErrorWithoutPrefix, "\n")]
-
-		numberRegex := regexp.MustCompile(`/[0-9]+`)
-		limits := numberRegex.FindAllString(syncErrorLine, 2)
-
-		siteLimit, userLimit, parseErr := parseLimits(limits)
-		if parseErr != nil {
-			return parseErr
-		}
-
-		confUserLimit, confSiteLimit := conf.UserReposMaxPerUser(), conf.UserReposMaxPerSite()
-		if confUserLimit <= userLimit || confSiteLimit <= siteLimit {
-			return errors.New(strings.TrimLeft(syncErrorLine, "* "))
-		}
+	if errorLineStartIdx == -1 {
+		return nil
 	}
+
+	syncErrorWithoutPrefix := syncError[errorLineStartIdx:]
+	syncErrorLine := syncErrorWithoutPrefix[:strings.Index(syncErrorWithoutPrefix, "\n")]
+
+	numberRegex := regexp.MustCompile(`/[0-9]+`)
+	limits := numberRegex.FindAllString(syncErrorLine, 2)
+
+	siteLimit, userLimit, parseErr := parseLimits(limits)
+	if parseErr != nil {
+		return parseErr
+	}
+
+	confUserLimit, confSiteLimit := conf.UserReposMaxPerUser(), conf.UserReposMaxPerSite()
+	if confUserLimit <= userLimit || confSiteLimit <= siteLimit {
+		return errors.New(strings.TrimLeft(syncErrorLine, "* "))
+	}
+
 	return nil
 }
 
@@ -578,11 +580,10 @@ func parseLimits(limits []string) (int, int, error) {
 // updateExternalServiceOnError updates external service when the sync is terminated early and no modifications to repos
 // happened. This includes increasing of backoff and updating of NextSyncAt, LastSyncAt properties. If an error occurred
 // during upsert, then existingErr is converted to multierror and upsert error is appended to preserve both of them.
-func updateExternalServiceOnError(
+func (s *Syncer) updateExternalServiceOnError(
 	ctx context.Context,
 	externalServiceID int64,
 	minSyncInterval time.Duration,
-	s *Syncer,
 	svc *types.ExternalService,
 	existingErr error,
 ) error {
@@ -593,8 +594,8 @@ func updateExternalServiceOnError(
 	svc.NextSyncAt = now.Add(interval)
 	svc.LastSyncAt = now
 
-	upsertErr := s.Store.ExternalServiceStore.Upsert(ctx, svc)
-	if upsertErr != nil {
+	err := s.Store.ExternalServiceStore.Upsert(ctx, svc)
+	if err != nil {
 		errs := new(multierror.Error)
 		errs = multierror.Append(errs, existingErr)
 		errs = multierror.Append(errs, errors.Wrap(existingErr, "upserting external service"))
