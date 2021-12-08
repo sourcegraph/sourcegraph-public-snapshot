@@ -16,7 +16,7 @@ To upgrade, please perform the changes in the following diff:
 ## 3.33 -> 3.34.2
 
 To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/f1e4c1dc4bc44865254536f9fc71edcb60987025](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/f1e4c1dc4bc44865254536f9fc71edcb60987025)
+[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/d615dd5f63ec0984d60076aecf0bc598d9ffc1a8](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/d615dd5f63ec0984d60076aecf0bc598d9ffc1a8)
 
 __Please upgrade directly to 3.34.2.__
 
