@@ -1,0 +1,193 @@
+Running benchmark
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/fileskip/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkQuery/flask-Z-12         	     177	   7034079 ns/op	         0 false-positive/true-positive	         0 false-positives	       222.0 index-size	        11.00 result-count
+BenchmarkQuery/flask-62-12        	     152	   8304459 ns/op	         0 false-positive/true-positive	         0 false-positives	       222.0 index-size	         5.000 result-count
+BenchmarkQuery/flask-204-12       	     158	   6496008 ns/op	         0 false-positive/true-positive	         0 false-positives	       222.0 index-size	         4.000 result-count
+BenchmarkQuery/flask-text-12      	fatal error: concurrent map writes
+
+goroutine 2519 [running]:
+runtime.throw({0x15e7fcb, 0xc001606f28})
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/runtime/panic.go:1198 +0x71 fp=0xc001606ed0 sp=0xc001606ea0 pc=0x1036951
+runtime.mapassign_faststr(0x1853390, 0xc00000fb30, {0xc00002db90, 0x21})
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/runtime/map_faststr.go:211 +0x39c fp=0xc001606f38 sp=0xc001606ed0 pc=0x101459c
+github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.benchmarkBaselineQuery.func1()
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:68 +0x16b fp=0xc001606fe0 sp=0xc001606f38 pc=0x14430ab
+runtime.goexit()
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/runtime/asm_amd64.s:1581 +0x1 fp=0xc001606fe8 sp=0xc001606fe0 pc=0x10696c1
+created by github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.benchmarkBaselineQuery
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:64 +0x4c
+
+goroutine 1 [chan receive]:
+testing.(*B).run1(0xc00015a240)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:234 +0xbb
+testing.(*B).Run(0xc00015a900, {0x159799e, 0x61b123fa}, 0x164b4e0)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:670 +0x438
+testing.runBenchmarks.func1(0xc00015a900)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:544 +0x6e
+testing.(*B).runN(0xc00015a900, 0x1)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:192 +0x126
+testing.runBenchmarks({0x163c385, 0x35}, 0x0, {0x1fc7980, 0x7, 0x15a22d2})
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:553 +0x3e6
+testing.(*M).Run(0xc00041d600)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/testing.go:1510 +0x6d6
+main.main()
+	_testmain.go:55 +0x14b
+
+goroutine 40 [chan receive]:
+testing.(*B).doBench(0xc00015b680)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:284 +0x8e
+testing.(*benchContext).processBench(0xc00000fbf0, 0x203000)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:583 +0x3aa
+testing.(*B).run(0xc00015b680)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:275 +0x67
+testing.(*B).Run(0xc00015a240, {0xc0023fa0d0, 0xc000217e48}, 0xc0004ea120)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:671 +0x446
+github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.benchmarkQuery(0xc0a49986bf, {{0x150da6b, 0x5}, {0x163e7ef, 0x3c}, {0x1fc75a0, 0x8, 0x8}})
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:23 +0x20a
+github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.BenchmarkQuery(0xc00015a240)
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:87 +0xd2
+testing.(*B).runN(0xc00015a240, 0x1)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:192 +0x126
+testing.(*B).run1.func1()
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:232 +0x59
+created by testing.(*B).run1
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:225 +0xa5
+
+goroutine 2486 [semacquire]:
+sync.runtime_Semacquire(0x0)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/runtime/sema.go:56 +0x25
+sync.(*WaitGroup).Wait(0xc00053de01)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/sync/waitgroup.go:130 +0x71
+github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.benchmarkBaselineQuery(0xc0003fcf00, 0xc000375e00, {0x15063bb, 0x4})
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:73 +0x14f
+github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.benchmarkQuery.func1(0xc00015b680)
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:28 +0x90
+testing.(*B).runN(0xc00015b680, 0x64)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:192 +0x126
+testing.(*B).launch(0xc00015b680)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:328 +0x1c5
+created by testing.(*B).doBench
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:283 +0x7b
+
+goroutine 2518 [runnable]:
+archive/zip.newFlateReader({0x184bce0, 0xc002072000})
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/archive/zip/register.go:75 +0xb5
+archive/zip.(*File).Open(0xc001015d40)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/archive/zip/reader.go:188 +0xeb
+archive/zip.(*Reader).Open(0x5ae, {0xc001016840, 0x294})
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/archive/zip/reader.go:798 +0x125
+github.com/sourcegraph/sourcegraph/cmd/fileskip.(*ZipFileSystem).ReadRelativeFilename(0x480000c0006e8600, {0xc001016840, 0x4809e10a7cef8851})
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/file_system.go:138 +0x26
+github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.expensiveHasMatch({0x1853390, 0xc00000fb30}, {0xc001016840, 0x2f}, {0x15063bb, 0x4})
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:77 +0x42
+github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.benchmarkBaselineQuery.func1()
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:67 +0x14c
+created by github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.benchmarkBaselineQuery
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:64 +0x4c
+exit status 2
+FAIL	github.com/sourcegraph/sourcegraph/cmd/fileskip/bench	6.197s
+FAIL
+Running benchmark
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/fileskip/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkQuery/flask-Z-12         	fatal error: concurrent map writes
+
+goroutine 644 [running]:
+runtime.throw({0x15e818b, 0xc001587f08})
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/runtime/panic.go:1198 +0x71 fp=0xc001587eb0 sp=0xc001587e80 pc=0x1036951
+runtime.mapassign_faststr(0x1853550, 0xc000405a40, {0xc000538d40, 0x1c})
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/runtime/map_faststr.go:211 +0x39c fp=0xc001587f18 sp=0xc001587eb0 pc=0x101459c
+github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.benchmarkBaselineQuery.func1(0x0, 0x0)
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:67 +0x165 fp=0xc001587fc0 sp=0xc001587f18 pc=0x1443145
+github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.benchmarkBaselineQuery·dwrap·5()
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:70 +0x31 fp=0xc001587fe0 sp=0xc001587fc0 pc=0x1442fb1
+runtime.goexit()
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/runtime/asm_amd64.s:1581 +0x1 fp=0xc001587fe8 sp=0xc001587fe0 pc=0x10696c1
+created by github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.benchmarkBaselineQuery
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:63 +0x4c
+
+goroutine 1 [chan receive]:
+testing.(*B).run1(0xc0000c6240)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:234 +0xbb
+testing.(*B).Run(0xc0000c6900, {0x1597b5e, 0x61b12462}, 0x164b6a0)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:670 +0x438
+testing.runBenchmarks.func1(0xc0000c6900)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:544 +0x6e
+testing.(*B).runN(0xc0000c6900, 0x1)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:192 +0x126
+testing.runBenchmarks({0x163c545, 0x35}, 0x0, {0x1fc7980, 0x7, 0x15a2492})
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:553 +0x3e6
+testing.(*M).Run(0xc000401600)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/testing.go:1510 +0x6d6
+main.main()
+	_testmain.go:55 +0x14b
+
+goroutine 50 [chan receive]:
+testing.(*B).doBench(0xc0000c7440)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:284 +0x8e
+testing.(*benchContext).processBench(0xc000405b00, 0x230)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:583 +0x3aa
+testing.(*B).run(0xc0000c7440)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:275 +0x67
+testing.(*B).Run(0xc0000c6240, {0xc0002f4008, 0xc000067e48}, 0xc0005a2228)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:671 +0x446
+github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.benchmarkQuery(0xc0bde1670f, {{0x150dc2b, 0x5}, {0x163e9af, 0x3c}, {0x1fc75a0, 0x8, 0x8}})
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:23 +0x20a
+github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.BenchmarkQuery(0xc0000c6240)
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:86 +0xd2
+testing.(*B).runN(0xc0000c6240, 0x1)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:192 +0x126
+testing.(*B).run1.func1()
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:232 +0x59
+created by testing.(*B).run1
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:225 +0xa5
+
+goroutine 27 [semacquire]:
+sync.runtime_Semacquire(0x0)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/runtime/sema.go:56 +0x25
+sync.(*WaitGroup).Wait(0x30)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/sync/waitgroup.go:130 +0x71
+github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.benchmarkBaselineQuery(0xc00023e200, 0xc000710180, {0x14f77be, 0x1})
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:72 +0x190
+github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.benchmarkQuery.func1(0xc0000c7440)
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:28 +0x90
+testing.(*B).runN(0xc0000c7440, 0xa3)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:192 +0x126
+testing.(*B).launch(0xc0000c7440)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:328 +0x1c5
+created by testing.(*B).doBench
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/testing/benchmark.go:283 +0x7b
+
+goroutine 643 [runnable]:
+compress/flate.(*decompressor).huffSym(0xc00214c600, 0xc00214c628)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/compress/flate/inflate.go:707 +0x216
+compress/flate.(*decompressor).readHuffman(0xc00214c600)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/compress/flate/inflate.go:409 +0x225
+compress/flate.(*decompressor).nextBlock(0xc00214c600)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/compress/flate/inflate.go:322 +0xfd
+compress/flate.(*decompressor).Read(0xc00214c600, {0xc001830200, 0x200, 0xc000600000})
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/compress/flate/inflate.go:347 +0x7b
+archive/zip.(*pooledFlateReader).Read(0x0, {0xc001830200, 0xc000066e00, 0x104dab2})
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/archive/zip/register.go:89 +0xcb
+archive/zip.(*checksumReader).Read(0xc0020a6040, {0xc001830200, 0xc000066e80, 0x200})
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/archive/zip/reader.go:261 +0x4d
+io.ReadAll({0x99861c8, 0xc0020a6040})
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/io/io.go:633 +0xfe
+io/ioutil.ReadAll(...)
+	/Users/olafurpg/.asdf/installs/golang/1.17.3/go/src/io/ioutil/ioutil.go:27
+github.com/sourcegraph/sourcegraph/cmd/fileskip.(*ZipFileSystem).ReadRelativeFilename(0xba0000c002170000, {0xc000538aa0, 0xba233fd750fa88e7})
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/file_system.go:149 +0x8a
+github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.expensiveHasMatch({0x1853550, 0xc000405a40}, {0xc000538aa0, 0x17}, {0x14f77be, 0x1})
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:76 +0x42
+github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.benchmarkBaselineQuery.func1(0x10f0826, 0xc0000c7440)
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:66 +0x145
+created by github.com/sourcegraph/sourcegraph/cmd/fileskip/bench.benchmarkBaselineQuery
+	/Users/olafurpg/dev/sourcegraph/sourcegraph/cmd/fileskip/bench/corpus_test.go:63 +0x4c
+exit status 2
+FAIL	github.com/sourcegraph/sourcegraph/cmd/fileskip/bench	1.638s
+FAIL

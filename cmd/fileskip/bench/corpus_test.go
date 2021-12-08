@@ -55,20 +55,19 @@ func benchmarkBaselineQuery(index *fileskip.RepoIndex, matchingResults map[strin
 	batchSize := 100
 	var wg sync.WaitGroup
 	for j := 0; j < len(index.Blobs); j += batchSize {
-		start := j
-		end := j + batchSize
-		if end > len(index.Blobs) {
-			end = len(index.Blobs)
+		k := j + batchSize
+		if k > len(index.Blobs) {
+			k = len(index.Blobs)
 		}
 		wg.Add(1)
-		go func() {
+		go func(start, end int) {
 			defer wg.Done()
 			for _, b := range index.Blobs[start:end] {
 				if expensiveHasMatch(index.FS, b.Path, query) {
 					matchingResults[b.Path] = struct{}{}
 				}
 			}
-		}()
+		}(j, k)
 	}
 	wg.Wait()
 }
@@ -113,6 +112,9 @@ func BenchmarkQuery(b *testing.B) {
 //func BenchmarkQueryMegarepoLong(b *testing.B)   { benchmarkLongQuery(b, megarepo) }
 
 func loadCorpus(b *testing.B, corpus Corpus) {
+	if isQueryBaseline {
+		return
+	}
 	fileskip.IsProgressBarEnabled = false
 	var index *fileskip.RepoIndex
 	var err error
