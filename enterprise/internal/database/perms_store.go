@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
@@ -1676,4 +1677,150 @@ func (s *PermsStore) observe(ctx context.Context, family, title string) (context
 
 		tr.Finish()
 	}
+}
+
+// AddRepoPermissions either adds p if not found or updates p to add the new user ids while maintaining
+// the currently stored permissions.
+// This method updates both `user_permissions` and `repo_permissions` tables.
+func (s *PermsStore) AddRepoPermissions(ctx context.Context, p *authz.RepoPermissions) (err error) {
+	if Mocks.Perms.AddRepoPermissions != nil {
+		return Mocks.Perms.AddRepoPermissions(ctx, p)
+	}
+
+	ctx, save := s.observe(ctx, "AddRepoPermissions", "")
+	defer func() { save(&err, p.TracingFields()...) }()
+
+	var txs *PermsStore
+	if s.InTransaction() {
+		txs = s
+	} else {
+		txs, err = s.Transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer func() { err = txs.Done(err) }()
+	}
+
+	// Retrieve currently stored user IDs of this repository.
+	var oldIDs *roaring.Bitmap
+	vals, err := txs.load(ctx, loadRepoPermissionsQuery(p, "FOR UPDATE"))
+	if err != nil {
+		if err == authz.ErrPermsNotFound {
+			oldIDs = roaring.NewBitmap()
+		} else {
+			return errors.Wrap(err, "load repo permissions")
+		}
+	} else {
+		oldIDs = vals.ids
+	}
+
+	if p.UserIDs == nil {
+		p.UserIDs = roaring.NewBitmap()
+	}
+
+	// Compute differences between the old and new sets.
+	toAdd := roaring.AndNot(p.UserIDs, oldIDs)
+	existing := roaring.AndNot(oldIDs, p.UserIDs)
+	allUserIDsForRepo := append(existing.ToArray(), toAdd.ToArray()...)
+
+	if toAdd.IsEmpty() {
+		// TODO: remove this and handle the empty case in the query itself?
+		return nil
+	}
+	fmt.Printf("For repo %v, To add %v, Existing: %v, UserIDs in request %v, ALL: %v\n",
+		p.RepoID, toAdd, existing, p.UserIDs, allUserIDsForRepo)
+
+	updatedAt := txs.clock()
+	if !toAdd.IsEmpty() {
+		if q, err := addUserPermissionsBatchQuery(toAdd.ToArray(), uint32(p.RepoID), p.Perm, authz.PermRepos, updatedAt); err != nil {
+			return err
+		} else if err = txs.execute(ctx, q); err != nil {
+			return errors.Wrap(err, "execute upsert user permissions batch query")
+		}
+	}
+
+	p.UpdatedAt = updatedAt
+	p.SyncedAt = updatedAt
+	if q, err := addRepoPermissionsQuery(p, toAdd.ToArray()); err != nil {
+		return err
+	} else if err = txs.execute(ctx, q); err != nil {
+		return errors.Wrap(err, "execute upsert repo permissions query")
+	}
+
+	return nil
+}
+
+func addUserPermissionsBatchQuery(userIDs []uint32, repoID uint32,
+	perm authz.Perms, permType authz.PermType, updatedAt time.Time) (*sqlf.Query, error) {
+	const format = `
+INSERT INTO user_permissions
+	(user_id, permission, object_type, object_ids_ints, updated_at)
+VALUES
+	%s
+ON CONFLICT ON CONSTRAINT
+	user_permissions_perm_object_unique
+DO UPDATE SET
+	object_ids_ints = CASE
+		WHEN %s = ANY(excluded.object_ids_ints) THEN
+			user_permissions.object_ids_ints | excluded.object_ids_ints
+		ELSE
+			user_permissions.object_ids_ints - %s::INT[]
+		END,
+	updated_at = excluded.updated_at
+`
+	items := make([]*sqlf.Query, 0, len(userIDs))
+	for _, userID := range userIDs {
+		items = append(items, sqlf.Sprintf("(%s, %s, %s, %s, %s)",
+			userID,
+			perm.String(),
+			permType,
+			pq.Array([]uint32{repoID}),
+			updatedAt.UTC(),
+		))
+	}
+	return sqlf.Sprintf(
+		format,
+		sqlf.Join(items, ","), repoID, repoID), nil
+}
+
+// addRepoPermissionsQuery adds or updates single row of repository permissions.  // TODO: update comment
+func addRepoPermissionsQuery(p *authz.RepoPermissions, userIDsToAdd []uint32) (*sqlf.Query, error) {
+	const format = `
+-- source: enterprise/internal/database/perms_store.go:addRepoPermissionsQuery
+INSERT INTO repo_permissions
+	(repo_id, permission, user_ids_ints, updated_at, synced_at)
+VALUES
+	(%s, %s, %s, %s, %s)
+ON CONFLICT ON CONSTRAINT
+	repo_permissions_perm_unique
+DO UPDATE SET
+	user_ids_ints = CASE
+		WHEN excluded.user_ids_ints @> %s THEN
+			repo_permissions.user_ids_ints | excluded.user_ids_ints
+		ELSE
+			repo_permissions.user_ids_ints - %s::INT[]
+		END,
+  updated_at = excluded.updated_at,
+  synced_at = excluded.synced_at
+`
+
+	//user_ids_ints = array_cat(repo_permissions.user_ids_ints, %s),
+	p.UserIDs.RunOptimize()
+	if p.UpdatedAt.IsZero() {
+		return nil, ErrPermsUpdatedAtNotSet
+	} else if p.SyncedAt.IsZero() {
+		return nil, ErrPermsSyncedAtNotSet
+	}
+
+	q := sqlf.Sprintf(
+		format,
+		p.RepoID,
+		p.Perm.String(),
+		pq.Array(p.UserIDs.ToArray()),
+		p.UpdatedAt.UTC(),
+		p.SyncedAt.UTC(),
+		pq.Array(userIDsToAdd),
+		pq.Array(userIDsToAdd),
+	)
+	return q, nil
 }

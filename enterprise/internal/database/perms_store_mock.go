@@ -20,4 +20,5 @@ type MockPerms struct {
 	ListExternalAccounts                   func(ctx context.Context, userID int32) ([]*extsvc.Account, error)
 	GetUserIDsByExternalAccounts           func(ctx context.Context, accounts *extsvc.Accounts) (map[string]int32, error)
 	UserIsMemberOfOrgHasCodeHostConnection func(ctx context.Context, userID int32) (bool, error)
+	AddRepoPermissions                     func(ctx context.Context, p *authz.RepoPermissions) error
 }

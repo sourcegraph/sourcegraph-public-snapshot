@@ -718,6 +718,183 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
+func testPermsStore_AddRepoPermissions(db *sql.DB) func(*testing.T) {
+	tests := []struct {
+		name            string
+		updates         []*authz.RepoPermissions
+		expectUserPerms map[int32][]uint32 // user_id -> object_ids
+		expectRepoPerms map[int32][]uint32 // repo_id -> user_ids
+	}{
+		// TODO: fix this test case
+		//{
+		//	name: "empty",
+		//	updates: []*authz.RepoPermissions{
+		//		{
+		//			RepoID: 1,
+		//			Perm:   authz.Read,
+		//		},
+		//	},
+		//	expectRepoPerms: map[int32][]uint32{
+		//		1: {},
+		//	},
+		//},
+		{
+			name: "add with unique repoIDs",
+			updates: []*authz.RepoPermissions{
+				{
+					RepoID:  1,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(1),
+				}, {
+					RepoID:  2,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(1, 2),
+				}, {
+					RepoID:  3,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(3, 4),
+				},
+			},
+			expectUserPerms: map[int32][]uint32{
+				1: {1, 2},
+				2: {2},
+				3: {3},
+				4: {3},
+			},
+			expectRepoPerms: map[int32][]uint32{
+				1: {1},
+				2: {1, 2},
+				3: {3, 4},
+			},
+		},
+		{
+			name: "add and update existing",
+			updates: []*authz.RepoPermissions{
+				{
+					RepoID:  1,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(1),
+				}, {
+					RepoID:  1,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(2, 3),
+				}, {
+					RepoID:  2,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(1, 2),
+				}, {
+					RepoID:  2,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(3, 4),
+				},
+			},
+			expectUserPerms: map[int32][]uint32{
+				1: {1, 2},
+				2: {1, 2},
+				3: {1, 2},
+				4: {2},
+			},
+			expectRepoPerms: map[int32][]uint32{
+				1: {1, 2, 3},
+				2: {1, 2, 3, 4},
+			},
+		},
+		{
+			name: "add and don't clear",
+			updates: []*authz.RepoPermissions{
+				{
+					RepoID:  1,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(1, 2, 3),
+				}, {
+					RepoID:  1,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(),
+				},
+			},
+			expectUserPerms: map[int32][]uint32{
+				1: {1},
+				2: {1},
+				3: {1},
+			},
+			expectRepoPerms: map[int32][]uint32{
+				1: {1, 2, 3},
+			},
+		},
+	}
+
+	return func(t *testing.T) {
+		t.Run("repo-centric update should set synced_at", func(t *testing.T) {
+			s := Perms(db, clock)
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
+			})
+
+			rp := &authz.RepoPermissions{
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(2),
+			}
+			if err := s.AddRepoPermissions(context.Background(), rp); err != nil {
+				t.Fatal(err)
+			}
+
+			rp = &authz.RepoPermissions{
+				RepoID: 1,
+				Perm:   authz.Read,
+			}
+			if err := s.LoadRepoPermissions(context.Background(), rp); err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "rp.UserIDs", []int{2}, bitmapToArray(rp.UserIDs))
+
+			if rp.SyncedAt.IsZero() {
+				t.Fatal("SyncedAt was not updated but supposed to")
+			}
+		})
+
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				s := Perms(db, clock)
+				t.Cleanup(func() {
+					cleanupPermsTables(t, s)
+				})
+
+				for _, p := range test.updates {
+					const numOps = 30
+					g, ctx := errgroup.WithContext(context.Background())
+					for i := 0; i < numOps; i++ {
+						g.Go(func() error {
+							tmp := &authz.RepoPermissions{
+								RepoID:    p.RepoID,
+								Perm:      p.Perm,
+								UpdatedAt: p.UpdatedAt,
+							}
+							if p.UserIDs != nil {
+								tmp.UserIDs = p.UserIDs.Clone()
+							}
+							return s.AddRepoPermissions(ctx, tmp)
+						})
+					}
+					if err := g.Wait(); err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				err := checkRegularPermsTable(s, `SELECT user_id, object_ids_ints FROM user_permissions`, test.expectUserPerms)
+				if err != nil {
+					t.Fatal("user_permissions:", err)
+				}
+
+				err = checkRegularPermsTable(s, `SELECT repo_id, user_ids_ints FROM repo_permissions`, test.expectRepoPerms)
+				if err != nil {
+					t.Fatal("repo_permissions:", err)
+				}
+			})
+		}
+	}
+}
+
 func testPermsStore_TouchRepoPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		now := timeutil.Now().Unix()
