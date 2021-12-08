@@ -19,8 +19,15 @@ import { EntityCodeTab } from './EntityCodeTab'
 import { EntityOverviewTab } from './EntityOverviewTab'
 import { EntityUsageTab } from './EntityUsageTab'
 import { EntityWhoKnowsTab } from './EntityWhoKnowsTab'
+import { EntityRelationsTab } from './EntityRelationsTab'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
-interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
+interface Props
+    extends TelemetryProps,
+        ExtensionsControllerProps,
+        ThemeProps,
+        SettingsCascadeProps,
+        PlatformContextProps {
     entity: CatalogEntityDetailFields
 }
 
@@ -43,6 +50,14 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                           content: <EntityCodeTab {...props} entity={entity} className={TAB_CONTENT_CLASS_NAME} />,
                       }
                     : null,
+                entity.__typename === 'CatalogComponent'
+                    ? {
+                          path: 'relations',
+                          text: 'Relations',
+                          content: <EntityRelationsTab {...props} entity={entity} className={TAB_CONTENT_CLASS_NAME} />,
+                      }
+                    : null,
+
                 entity.__typename === 'CatalogComponent'
                     ? {
                           path: 'changes',

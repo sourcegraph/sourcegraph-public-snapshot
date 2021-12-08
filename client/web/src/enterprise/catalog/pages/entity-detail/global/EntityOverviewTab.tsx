@@ -12,6 +12,7 @@ import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
 import { Timestamp } from '../../../../../components/time/Timestamp'
 import { CatalogEntityDetailFields } from '../../../../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../../../../person/PersonLink'
@@ -108,13 +109,15 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
             </div>
             <OverviewStatusContexts entity={entity} itemClassName="mb-3" />
             <EntityCatalogExplorer entity={entity.id} className="mb-3" />
-            <EntityInsights
-                entity={entity.id}
-                className="mb-3"
-                telemetryService={telemetryService}
-                settingsCascade={settingsCascade}
-                platformContext={platformContext}
-            />
+            {false && (
+                <EntityInsights
+                    entity={entity.id}
+                    className="mb-3"
+                    telemetryService={telemetryService}
+                    settingsCascade={settingsCascade}
+                    platformContext={platformContext}
+                />
+            )}
             {entity.readme && (
                 <div className="card mb-3">
                     <header className="card-header">
