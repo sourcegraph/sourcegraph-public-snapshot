@@ -14,4 +14,4 @@ BenchmarkQueryKubernetesMedium-12     	       9	 121520618 ns/op	         0 fals
 BenchmarkQueryKubernetesLong-12       	      69	  19932054 ns/op	         0 false-positive/true-positive	         0 false-positives	     22422 index-size	        88.00 true-positives	13174607 B/op	    3236 allocs/op
 BenchmarkQueryLinuxShort-12           	      12	  91558087 ns/op	         0 false-positive/true-positive	         0 false-positives	     74210 index-size	        46.00 true-positives	106350654 B/op	   21583 allocs/op
 BenchmarkQueryLinuxMedium-12          	      37	  32044770 ns/op	         0 false-positive/true-positive	         0 false-positives	     74210 index-size	       143.0 true-positives	23236438 B/op	    4631 allocs/op
-BenchmarkQueryLinuxLong-12            	
+BenchmarkQueryLinuxLong-12            	      20	  66022594 ns/op	         0 false-positive/true-positive	         0 false-positives	     74210 index-size	         2.000 true-positives	49835256 B/op	    2457 allocs/op
