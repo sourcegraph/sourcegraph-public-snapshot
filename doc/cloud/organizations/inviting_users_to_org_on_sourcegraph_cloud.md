@@ -21,4 +21,4 @@ If your [organization’s repositories synced to Sourcegraph Cloud](./adding_you
 
 This is because Sourcegraph respects repository permissions on the code host, and [user-centric permissions](../../admin/repo/permissions.md) to determine which repositories a user has access to, from that user’s point of view. To determine which user has access to which repository on the code host, Sourcegraph relies on personal code host connections to uniquely associate a user on Sourcegraph with their account on the code host.
 
-If you continue to have issues, please reach out to our team at [support@sourcegraph.com](mailto:support@sourcegraph.com).
+If you continue to have issues, please reach out to our team at [support@sourcegraph.com](mailto:support@sourcegraph.com) or post in the [Sourcegraph Community Slack](http://srcgr.ph/join-community-space).
