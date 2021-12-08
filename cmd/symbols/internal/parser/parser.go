@@ -114,7 +114,9 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 				}
 
 				atomic.AddUint32(&totalRequests, 1)
-				_ = p.handleParseRequest(ctx, symbolOrErrors, parseRequestOrError.ParseRequest, &totalSymbols)
+				if err := p.handleParseRequest(ctx, symbolOrErrors, parseRequestOrError.ParseRequest, &totalSymbols); err != nil {
+					log15.Error("error handling parse request", "error", err, "path", parseRequestOrError.ParseRequest.Path)
+				}
 			}
 		}()
 	}
