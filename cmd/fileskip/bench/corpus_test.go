@@ -1,13 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"github.com/sourcegraph/sourcegraph/cmd/fileskip"
 	"math"
+	"os"
 	"strings"
 	"sync"
 	"testing"
 )
+
+var isQueryBaseline = "true" == os.Getenv("FILESKIP_BASELINE")
 
 func benchmarkQuery(b *testing.B, c Corpus, query string) {
 	fileskip.IsProgressBarEnabled = false
@@ -15,34 +17,15 @@ func benchmarkQuery(b *testing.B, c Corpus, query string) {
 	if err != nil {
 		panic(err)
 	}
-	b.ResetTimer()
 	matchingResults := map[string]struct{}{}
-	batchSize := 100
-	var wg sync.WaitGroup
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for j := 0; j < len(index.Blobs); j += batchSize {
-			start := j
-			end := j + batchSize
-			if end > len(index.Blobs) {
-				end = len(index.Blobs)
-			}
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				for _, b := range index.Blobs[start:end] {
-					textBytes, err := index.FS.ReadRelativeFilename(b.Path)
-					if err != nil {
-						panic(err)
-					}
-					text := string(textBytes)
-					if strings.Index(text, query) >= 0 {
-						matchingResults[b.Path] = struct{}{}
-					}
-				}
-			}()
+		if isQueryBaseline {
+			benchmarkBaselineQuery(index, matchingResults, query)
+		} else {
+			benchmarkFileskipQuery(index, matchingResults, query)
 		}
 	}
-	wg.Wait()
 	b.StopTimer()
 	falsePositives := 0
 	for m := range matchingResults {
@@ -60,6 +43,37 @@ func benchmarkQuery(b *testing.B, c Corpus, query string) {
 	b.ReportMetric(float64(len(matchingResults)), "true-positives")
 	b.ReportMetric(float64(falsePositives), "false-positives")
 	b.ReportMetric(float64(falsePositives)/math.Max(1, float64(len(matchingResults))), "false-positive/true-positive")
+}
+func benchmarkFileskipQuery(index *fileskip.RepoIndex, matchingResults map[string]struct{}, query string) {
+	for m := range index.PathsMatchingQuery(query) {
+		matchingResults[m] = struct{}{}
+	}
+}
+func benchmarkBaselineQuery(index *fileskip.RepoIndex, matchingResults map[string]struct{}, query string) {
+	batchSize := 100
+	var wg sync.WaitGroup
+	for j := 0; j < len(index.Blobs); j += batchSize {
+		start := j
+		end := j + batchSize
+		if end > len(index.Blobs) {
+			end = len(index.Blobs)
+		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for _, b := range index.Blobs[start:end] {
+				textBytes, err := index.FS.ReadRelativeFilename(b.Path)
+				if err != nil {
+					panic(err)
+				}
+				text := string(textBytes)
+				if strings.Index(text, query) >= 0 {
+					matchingResults[b.Path] = struct{}{}
+				}
+			}
+		}()
+	}
+	wg.Wait()
 }
 
 func benchmarkShortQuery(b *testing.B, c Corpus)  { benchmarkQuery(b, c, c.Queries[0]) }
@@ -101,11 +115,6 @@ func loadCorpus(b *testing.B, corpus Corpus) {
 		}
 	}
 	b.StopTimer()
-	for _, b := range index.Blobs {
-		if b.Filter.K() > 7 {
-			fmt.Println(b.Filter.K())
-		}
-	}
 	//stat, err := os.Stat(corpus.indexCachePath())
 	//if err != nil {
 	//	panic(err)

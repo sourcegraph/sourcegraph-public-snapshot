@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"github.com/cockroachdb/errors"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -100,27 +99,23 @@ func (g *GitFileSystem) ListRelativeFilenames() ([]string, error) {
 type ZipFileSystem struct {
 	Path   string
 	Reader *zip.Reader
-	Closer io.Closer
 }
 
 func NewZipFileSystem(path string) (*ZipFileSystem, error) {
-	file, err := os.OpenFile(path, os.O_RDONLY, 0644)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	stat, err := os.Stat(path)
+	reader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
+		panic(err)
 		return nil, err
 	}
-	reader, err := zip.NewReader(file, stat.Size())
-	if err != nil {
-		return nil, err
-	}
-	return &ZipFileSystem{Reader: reader, Closer: file}, nil
+	return &ZipFileSystem{Reader: reader}, nil
 }
 
 func (g *ZipFileSystem) Close() error {
-	return g.Closer.Close()
+	return nil
 }
 
 func (g *ZipFileSystem) RootDir() string {
@@ -174,7 +169,6 @@ func (g *ZipFileSystem) GobDecode(b []byte) error {
 	if err != nil {
 		return err
 	}
-	g.Closer = fs.Closer
 	g.Reader = fs.Reader
 	return nil
 }
