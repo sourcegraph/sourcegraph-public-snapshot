@@ -53,6 +53,7 @@ func benchmarkFileskipQuery(index *fileskip.RepoIndex, matchingResults map[strin
 
 func benchmarkBaselineQuery(index *fileskip.RepoIndex, matchingResults map[string]struct{}, query string) {
 	batchSize := 100
+	matches := make(chan string, len(index.Blobs))
 	var wg sync.WaitGroup
 	for j := 0; j < len(index.Blobs); j += batchSize {
 		k := j + batchSize
@@ -64,12 +65,16 @@ func benchmarkBaselineQuery(index *fileskip.RepoIndex, matchingResults map[strin
 			defer wg.Done()
 			for _, b := range index.Blobs[start:end] {
 				if expensiveHasMatch(index.FS, b.Path, query) {
-					matchingResults[b.Path] = struct{}{}
+					matches <- b.Path
 				}
 			}
 		}(j, k)
 	}
 	wg.Wait()
+	close(matches)
+	for path := range matches {
+		matchingResults[path] = struct{}{}
+	}
 }
 
 func expensiveHasMatch(fs fileskip.FileSystem, filename, query string) bool {

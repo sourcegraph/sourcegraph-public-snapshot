@@ -4,7 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"github.com/cockroachdb/errors"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"path"
@@ -146,7 +146,10 @@ func (g *ZipFileSystem) ReadRelativeFilename(name string) ([]byte, error) {
 	if stat.IsDir() {
 		return []byte{}, nil
 	}
-	return ioutil.ReadAll(open)
+
+	data := make([]byte, stat.Size())
+	_, err = io.ReadFull(open, data)
+	return data, err
 }
 
 func (g *ZipFileSystem) ListRelativeFilenames() ([]string, error) {
