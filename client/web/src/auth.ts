@@ -14,7 +14,7 @@ import { CurrentAuthStateResult } from './graphql-operations'
  */
 export const authenticatedUser = new ReplaySubject<AuthenticatedUser | null>(1)
 
-export type AuthenticatedUser = NonNullable<CurrentAuthStateResult['currentUser']>
+export type AuthenticatedUser = NonNullable<CurrentAuthStateResult['currentUser']> // trigger TS
 
 /**
  * Fetches the current user, orgs, and config state from the remote. Emits no items, completes when done.
