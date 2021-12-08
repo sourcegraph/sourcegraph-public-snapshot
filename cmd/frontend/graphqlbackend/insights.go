@@ -201,6 +201,7 @@ type SearchInsightDataSeriesDefinitionResolver interface {
 	RepositoryScope(ctx context.Context) (InsightRepositoryScopeResolver, error)
 	TimeScope(ctx context.Context) (InsightTimeScope, error)
 	GeneratedFromCaptureGroups() (bool, error)
+	IsCalculated() (bool, error)
 }
 
 type InsightPresentation interface {

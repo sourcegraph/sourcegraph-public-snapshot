@@ -53,6 +53,73 @@ func TestCreateAndGetNotebook(t *testing.T) {
 	}
 }
 
+func TestUpdateNotebook(t *testing.T) {
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	ctx := actor.WithInternalActor(context.Background())
+	u := database.Users(db)
+	n := Notebooks(db)
+
+	user, err := u.Create(ctx, database.NewUser{Username: "u", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	blocks := NotebookBlocks{{ID: "1", Type: NotebookQueryBlockType, QueryInput: &NotebookQueryBlockInput{"repo:a b"}}}
+	notebook := &Notebook{Title: "Notebook Title", Blocks: blocks, Public: true, CreatorUserID: user.ID}
+	createdNotebook, err := n.CreateNotebook(ctx, notebook)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wantUpdatedNotebook := createdNotebook
+	wantUpdatedNotebook.Title = "Notebook Title 1"
+	wantUpdatedNotebook.Public = false
+	wantUpdatedNotebook.Blocks = NotebookBlocks{{ID: "2", Type: NotebookMarkdownBlockType, MarkdownInput: &NotebookMarkdownBlockInput{"# Title"}}}
+
+	gotUpdatedNotebook, err := n.UpdateNotebook(ctx, wantUpdatedNotebook)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Ignore updatedAt change
+	wantUpdatedNotebook.UpdatedAt = gotUpdatedNotebook.UpdatedAt
+
+	if !reflect.DeepEqual(wantUpdatedNotebook, gotUpdatedNotebook) {
+		t.Fatalf("wanted %+v updated notebook, got %+v", wantUpdatedNotebook, gotUpdatedNotebook)
+	}
+}
+
+func TestDeleteNotebook(t *testing.T) {
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	ctx := actor.WithInternalActor(context.Background())
+	u := database.Users(db)
+	n := Notebooks(db)
+
+	user, err := u.Create(ctx, database.NewUser{Username: "u", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	blocks := NotebookBlocks{{ID: "1", Type: NotebookQueryBlockType, QueryInput: &NotebookQueryBlockInput{"repo:a b"}}}
+	notebook := &Notebook{Title: "Notebook Title", Blocks: blocks, Public: true, CreatorUserID: user.ID}
+	createdNotebook, err := n.CreateNotebook(ctx, notebook)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = n.DeleteNotebook(ctx, createdNotebook.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = n.GetNotebook(ctx, createdNotebook.ID)
+	if !errors.Is(err, ErrNotebookNotFound) {
+		t.Fatalf("want ErrNotebookNotFound error, got %+v", err)
+	}
+}
+
 func TestCreatingNotebookWithInvalidBlock(t *testing.T) {
 	t.Parallel()
 	db := dbtest.NewDB(t)

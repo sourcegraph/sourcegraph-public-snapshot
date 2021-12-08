@@ -12,6 +12,53 @@ interface CodeMonitoringGettingStartedProps extends ThemeProps {
     isSignedIn: boolean
 }
 
+interface ExampleCodeMonitor {
+    title: string
+    description: string
+    monitorName: string
+    monitorQuery: string
+}
+
+const exampleCodeMonitors: ExampleCodeMonitor[] = [
+    {
+        title: 'Uses of a deprecated method',
+        description:
+            'Get notified when a deprecated method is added or removed. This example uses leftPad in JavaScript files.',
+        monitorName: 'Uses of leftPad in JavaScript',
+        monitorQuery: 'lang:JavaScript require(("|\')left-pad("|\')) patternType:regexp type:diff ',
+    },
+    {
+        title: 'New library usage',
+        description:
+            'After you add a new library, you can watch your codebase for its usage and get notified when it’s imported or certain functions from it are used. This example uses faker in TypeScript.',
+        monitorName: 'New uses of faker in TypeScript',
+        monitorQuery:
+            'lang:TypeScript import faker from "faker" OR import faker from \'faker\' type:diff select:commit.diff.added ',
+    },
+    {
+        title: 'Bad coding patterns',
+        description:
+            'Get notified when someone uses a pattern that your team is trying to avoid. This example uses React class components in JavaScript.',
+        monitorName: 'New React class components in JavaScript',
+        monitorQuery:
+            'lang:JavaScript class \\w extends React.Component type:diff patternType:regexp select:commit.diff.added ',
+    },
+    {
+        title: 'IP address range',
+        description:
+            'Detect the usage of banned or invalid IP addresses in your code. This example uses local IP address in the 192.168.1.x range.',
+        monitorName: 'New uses of local IP addresses',
+        monitorQuery: '^192\\.168\\.1\\.([1-9]|[1-9]d|100)$ type:diff select:commit.diff.added patternType:regexp ',
+    },
+]
+
+const createCodeMonitorUrl = (example: ExampleCodeMonitor): string => {
+    const searchParameters = new URLSearchParams()
+    searchParameters.set('trigger-query', example.monitorQuery)
+    searchParameters.set('description', example.monitorName)
+    return `/code-monitoring/new?${searchParameters.toString()}`
+}
+
 export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitoringGettingStartedProps> = ({
     isLightTheme,
     isSignedIn,
@@ -52,57 +99,24 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                     )}
                 </div>
             </div>
-            <div className={classNames('container', styles.startingPointsContainer)}>
-                <h3 className="mb-3">Starting points for your first monitor</h3>
-                <div className="row no-gutters code-monitoring-page__start-points-panel-container mb-3">
-                    <div className={classNames('col-6', styles.startingPoint)}>
-                        <div className="card h-100">
-                            <div className="card-body p-3 d-flex flex-column flex-md-row">
-                                <img
-                                    className="mr-3 mt-3 mb-3 pt-1 pb-1"
-                                    src={`${assetsRoot}/img/codemonitoring-search-${
-                                        isLightTheme ? 'light' : 'dark'
-                                    }.svg`}
-                                    alt=""
-                                />
-                                <div className="flex">
-                                    <h3 className="mb-3">
-                                        <a href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points#get-notified-when-a-file-changes">
-                                            Get notified when a file changes
-                                        </a>
-                                    </h3>
-                                    <p className="text-muted">Use a search query to watch for changes to a file.</p>
+            <div>
+                <h3 className="mb-3">Example code monitors</h3>
+
+                <div className={classNames('mb-3', styles.startingPointsContainer)}>
+                    {exampleCodeMonitors.map(monitor => (
+                        <div className={styles.startingPoint} key={monitor.title}>
+                            <div className="card h-100">
+                                <div className="card-body p-3 d-flex flex-column">
+                                    <h3>{monitor.title}</h3>
+                                    <p className="text-muted flex-grow-1">{monitor.description}</p>
+                                    <Link to={createCodeMonitorUrl(monitor)}>Create copy of monitor</Link>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div className={classNames('col-6', styles.startingPoint)}>
-                        <div className="card h-100">
-                            <div className="card-body p-3 d-flex flex-column flex-md-row">
-                                <img
-                                    src={`${assetsRoot}/img/codemonitoring-notify-${
-                                        isLightTheme ? 'light' : 'dark'
-                                    }.svg`}
-                                    alt=""
-                                    className="mr-3"
-                                />
-                                <div>
-                                    <h3 className="mb-3">
-                                        <a href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points#watch-for-consumers-of-deprecated-endpoints">
-                                            Watch for new uses of deprecated methods
-                                        </a>
-                                    </h3>
-                                    <p className="text-muted">
-                                        Keep an eye on commits with new consumers of deprecated methods to keep your
-                                        codebase up-to-date.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    ))}
                 </div>
             </div>
-            <div className="container mt-5 px-0">
+            <div className="mt-5 px-0">
                 <div className="row">
                     <div className="col-4">
                         <div>
