@@ -65,35 +65,46 @@ var (
 )
 
 func main() {
-	if len(os.Args) < 2 {
+	if len(os.Args) < 3 {
 		panic("missing argument for corpus name")
 	}
-	var corpus Corpus
+	var corpora []Corpus
+	if os.Args[2] == "all" {
+		corpora = all
+	}
 	for _, c := range all {
 		if c.Name == os.Args[2] {
-			corpus = c
+			corpora = []Corpus{c}
 			break
 		}
 	}
-	if corpus.Name == "" {
-		panic("no corpus matching name " + os.Args[1])
+	if len(corpora) == 0 {
+		panic("no corpus matching name " + os.Args[2])
 	}
 	switch os.Args[1] {
+	case "download":
+		for _, corpus := range corpora {
+			corpus.DownloadUrlAndCache()
+		}
 	case "bench":
-		err := corpus.run()
-		if err != nil {
+		for _, corpus := range corpora {
+			err := corpus.run()
+			if err != nil {
+			}
 			panic(err)
 		}
 	case "grep":
-		if len(os.Args) < 3 {
-			panic("missing grep argument")
+		for _, corpus := range corpora {
+			if len(os.Args) < 3 {
+				panic("missing grep argument")
+			}
+			query := os.Args[3]
+			index, err := corpus.LoadRepoIndex()
+			if err != nil {
+				panic(err)
+			}
+			index.Grep(query)
 		}
-		query := os.Args[3]
-		index, err := corpus.LoadRepoIndex()
-		if err != nil {
-			panic(err)
-		}
-		index.Grep(query)
 	}
 }
 
@@ -107,14 +118,14 @@ type Corpus struct {
 	Queries []string
 }
 
-func DownloadUrlAndCache(corpus *Corpus) (string, error) {
-	path := corpus.zipCachePath()
+func (c *Corpus) DownloadUrlAndCache() (string, error) {
+	path := c.zipCachePath()
 	stat, err := os.Stat(path)
 	if err == nil && !stat.IsDir() && stat.Size() > 0 {
 		return path, nil
 	}
-	fmt.Printf("Downloading... %v\n", corpus.URL)
-	resp, err := http.Get(corpus.URL)
+	fmt.Printf("Downloading... %v\n", c.URL)
+	resp, err := http.Get(c.URL)
 	if err != nil {
 		return "", err
 	}
@@ -136,7 +147,7 @@ func DownloadUrlAndCache(corpus *Corpus) (string, error) {
 }
 
 func (c *Corpus) LoadFileSystem() (*fileskip.ZipFileSystem, error) {
-	path, err := DownloadUrlAndCache(c)
+	path, err := c.DownloadUrlAndCache()
 	if err != nil {
 		return nil, err
 	}

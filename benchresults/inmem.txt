@@ -1,1 +1,0 @@
-BenchmarkLoadChromium-12    	       1	37848884898 ns/op	1617900554 archive-disk-size	 520659992 bloom-storage-size	         0.3016 compression-ratio	 582024820 index-disk-size	1726054745 indexed-blobs-size	53564257080 B/op	36204716 allocs/op
