@@ -74,7 +74,6 @@ var (
 			upCommand,
 			downCommand,
 			migrationSquashCommand,
-			migrationFixupCommand,
 		},
 	}
 )
