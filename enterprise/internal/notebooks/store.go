@@ -61,7 +61,7 @@ type NotebooksStore interface {
 	UpdateNotebook(context.Context, *Notebook) (*Notebook, error)
 	DeleteNotebook(context.Context, int64) error
 	ListNotebooks(context.Context, ListNotebooksPageOptions, ListNotebooksOptions) ([]*Notebook, error)
-	// CountNotebooks(context.Context, ListNotebooksOptions) (int64, error)
+	CountNotebooks(context.Context, ListNotebooksOptions) (int64, error)
 }
 
 type notebooksStore struct {
@@ -114,6 +114,14 @@ WHERE
 ORDER BY %s
 LIMIT %d
 OFFSET %d
+`
+
+const countNotebooksFmtStr = `
+SELECT COUNT(*)
+FROM notebooks
+WHERE
+	(%s) -- permission conditions
+	AND (%s) -- query conditions
 `
 
 func getNotebooksOrderByClause(orderBy NotebooksOrderByOption, descending bool) *sqlf.Query {
@@ -213,6 +221,21 @@ func (s *notebooksStore) ListNotebooks(ctx context.Context, pageOpts ListNoteboo
 	}
 	defer rows.Close()
 	return scanNotebooks(rows)
+}
+
+func (s *notebooksStore) CountNotebooks(ctx context.Context, opts ListNotebooksOptions) (int64, error) {
+	var count int64
+	err := s.QueryRow(ctx,
+		sqlf.Sprintf(
+			countNotebooksFmtStr,
+			notebooksPermissionsCondition(ctx),
+			sqlf.Join(getNotebooksQueryConditions(opts), "\n AND"),
+		),
+	).Scan(&count)
+	if err != nil {
+		return -1, err
+	}
+	return count, nil
 }
 
 func (s *notebooksStore) GetNotebook(ctx context.Context, id int64) (*Notebook, error) {

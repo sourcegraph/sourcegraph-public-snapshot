@@ -128,7 +128,7 @@ func getNotebookIDs(notebooks []*Notebook) []int64 {
 	return ids
 }
 
-func TestListingNotebooks(t *testing.T) {
+func TestListingAndCountingNotebooks(t *testing.T) {
 	t.Parallel()
 	db := dbtest.NewDB(t)
 	internalCtx := actor.WithInternalActor(context.Background())
@@ -178,6 +178,7 @@ func TestListingNotebooks(t *testing.T) {
 		pageOpts        ListNotebooksPageOptions
 		opts            ListNotebooksOptions
 		wantNotebookIDs []int64
+		wantCount       int64
 	}{
 		{
 			name:            "get all user1 accessible notebooks",
@@ -185,6 +186,7 @@ func TestListingNotebooks(t *testing.T) {
 			pageOpts:        ListNotebooksPageOptions{First: 4},
 			opts:            ListNotebooksOptions{},
 			wantNotebookIDs: getNotebookIDs(createdNotebooks[:3]),
+			wantCount:       3,
 		},
 		{
 			name:            "get notebooks page",
@@ -192,6 +194,15 @@ func TestListingNotebooks(t *testing.T) {
 			pageOpts:        ListNotebooksPageOptions{After: 1, First: 2},
 			opts:            ListNotebooksOptions{},
 			wantNotebookIDs: getNotebookIDs(createdNotebooks[1:3]),
+			wantCount:       3,
+		},
+		{
+			name:            "get notebooks page with options",
+			userID:          user1.ID,
+			pageOpts:        ListNotebooksPageOptions{After: 1, First: 1},
+			opts:            ListNotebooksOptions{CreatorUserID: user1.ID},
+			wantNotebookIDs: getNotebookIDs(createdNotebooks[1:2]),
+			wantCount:       2,
 		},
 		{
 			name:            "get user2 notebooks as user1",
@@ -199,6 +210,7 @@ func TestListingNotebooks(t *testing.T) {
 			pageOpts:        ListNotebooksPageOptions{After: 0, First: 4},
 			opts:            ListNotebooksOptions{CreatorUserID: user2.ID},
 			wantNotebookIDs: getNotebookIDs(createdNotebooks[2:3]),
+			wantCount:       1,
 		},
 		{
 			name:            "query notebooks by title",
@@ -206,6 +218,15 @@ func TestListingNotebooks(t *testing.T) {
 			pageOpts:        ListNotebooksPageOptions{After: 0, First: 4},
 			opts:            ListNotebooksOptions{Query: "public"},
 			wantNotebookIDs: []int64{createdNotebooks[0].ID, createdNotebooks[2].ID},
+			wantCount:       2,
+		},
+		{
+			name:            "query notebooks by title and creator user id",
+			userID:          user1.ID,
+			pageOpts:        ListNotebooksPageOptions{After: 0, First: 4},
+			opts:            ListNotebooksOptions{Query: "public", CreatorUserID: user1.ID},
+			wantNotebookIDs: []int64{createdNotebooks[0].ID},
+			wantCount:       1,
 		},
 		{
 			name:            "query notebooks by block contents",
@@ -213,6 +234,7 @@ func TestListingNotebooks(t *testing.T) {
 			pageOpts:        ListNotebooksPageOptions{After: 0, First: 4},
 			opts:            ListNotebooksOptions{Query: "client/web/file.tsx"},
 			wantNotebookIDs: getNotebookIDs(createdNotebooks[2:]),
+			wantCount:       2,
 		},
 		{
 			name:            "order by updated at ascending",
@@ -220,6 +242,7 @@ func TestListingNotebooks(t *testing.T) {
 			pageOpts:        ListNotebooksPageOptions{First: 4},
 			opts:            ListNotebooksOptions{OrderBy: NotebooksOrderByUpdatedAt, OrderByDescending: false},
 			wantNotebookIDs: []int64{createdNotebooks[1].ID, createdNotebooks[0].ID, createdNotebooks[2].ID},
+			wantCount:       3,
 		},
 		{
 			name:            "order by updated at descending",
@@ -227,6 +250,7 @@ func TestListingNotebooks(t *testing.T) {
 			pageOpts:        ListNotebooksPageOptions{First: 4},
 			opts:            ListNotebooksOptions{OrderBy: NotebooksOrderByUpdatedAt, OrderByDescending: true},
 			wantNotebookIDs: []int64{createdNotebooks[2].ID, createdNotebooks[0].ID, createdNotebooks[1].ID},
+			wantCount:       3,
 		},
 	}
 
@@ -240,6 +264,13 @@ func TestListingNotebooks(t *testing.T) {
 			gotNotebookIDs := getNotebookIDs(gotNotebooks)
 			if !reflect.DeepEqual(tt.wantNotebookIDs, gotNotebookIDs) {
 				t.Fatalf("wanted %+v ids, got %+v", tt.wantNotebookIDs, gotNotebookIDs)
+			}
+			gotNotebooksCount, err := n.CountNotebooks(ctx, tt.opts)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tt.wantCount != gotNotebooksCount {
+				t.Fatalf("wanted %d notebooks, got %d", tt.wantCount, gotNotebooksCount)
 			}
 		})
 	}
