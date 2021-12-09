@@ -162,8 +162,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      */
     searchPatternType: SearchPatternType
 
-    showEnterpriseHomePanels: boolean
-
     selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
     hasUserAddedRepositories: boolean
@@ -258,7 +256,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             hasUserAddedRepositories: false,
             hasUserSyncedPublicRepositories: false,
             hasUserAddedExternalServices: false,
-            showEnterpriseHomePanels: false,
             globbing: false,
             showMultilineSearchConsole: false,
             enableCodeMonitoring: false,
@@ -475,7 +472,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     deleteSearchContext={deleteSearchContext}
                                                     isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                                                     defaultSearchContextSpec={this.state.defaultSearchContextSpec}
-                                                    showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
                                                     globbing={this.state.globbing}
                                                     showMultilineSearchConsole={this.state.showMultilineSearchConsole}
                                                     enableCodeMonitoring={this.state.enableCodeMonitoring}

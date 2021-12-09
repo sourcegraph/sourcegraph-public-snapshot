@@ -6,6 +6,7 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { SettingsExperimentalFeatures } from '../schema/settings.schema'
 
 const defaultSettings: SettingsExperimentalFeatures = {
+    showEnterpriseHomePanels: true,
     showOnboardingTour: true,
     showSearchContext: true,
     showSearchContextManagement: true,

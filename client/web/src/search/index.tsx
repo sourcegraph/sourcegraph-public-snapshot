@@ -191,7 +191,6 @@ export type SearchContextInputProps = Pick<
 >
 
 export interface HomePanelsProps {
-    showEnterpriseHomePanels: boolean
     fetchSavedSearches: () => Observable<ISavedSearch[]>
     fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
     fetchRecentFileViews: (userId: string, first: number) => Observable<EventLogResult | null>

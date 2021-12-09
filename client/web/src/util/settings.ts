@@ -62,7 +62,6 @@ export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascad
 export function experimentalFeaturesFromSettings(
     settingsCascade: SettingsCascadeOrError
 ): {
-    showEnterpriseHomePanels: boolean
     showMultilineSearchConsole: boolean
     enableCodeMonitoring: boolean
     enableAPIDocs: boolean
@@ -72,7 +71,6 @@ export function experimentalFeaturesFromSettings(
         {}
 
     const {
-        showEnterpriseHomePanels = true, // Default to true if not set
         showMultilineSearchConsole = false,
         codeMonitoring = true, // Default to true if not set
         // eslint-disable-next-line unicorn/prevent-abbreviations
@@ -80,7 +78,6 @@ export function experimentalFeaturesFromSettings(
     } = experimentalFeatures
 
     return {
-        showEnterpriseHomePanels,
         showMultilineSearchConsole,
         enableCodeMonitoring: codeMonitoring,
         enableAPIDocs: apiDocs,

@@ -14,6 +14,7 @@ import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHel
 
 import { WebStory } from '../../components/WebStory'
 import { SearchPatternType } from '../../graphql-operations'
+import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
 import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches, authUser } from '../panels/utils'
 
@@ -43,7 +44,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => {},
     defaultSearchContextSpec: '',
-    showEnterpriseHomePanels: false,
     isLightTheme: props.isLightTheme,
     fetchSavedSearches: _fetchSavedSearches,
     fetchRecentSearches: _fetchRecentSearches,
@@ -67,15 +67,16 @@ const { add } = storiesOf('web/search/home/SearchPage', module)
         chromatic: { viewports: [544, 577, 769, 993, 1200] },
     })
     .addDecorator(Story => {
-        useExperimentalFeatures.setState({ showSearchContext: false })
+        useExperimentalFeatures.setState({ showSearchContext: false, showEnterpriseHomePanels: false })
         return <Story />
     })
 
 add('Cloud with panels', () => (
     <WebStory>
-        {webProps => (
-            <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} showEnterpriseHomePanels={true} />
-        )}
+        {webProps => {
+            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            return <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
+        }}
     </WebStory>
 ))
 
@@ -100,6 +101,13 @@ add('Cloud with notebook onboarding', () => (
 
 add('Server without panels', () => <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} />}</WebStory>)
 
-add('Server with panels', () => (
-    <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} showEnterpriseHomePanels={true} />}</WebStory>
-))
+add('Server with panels', () => {
+    return (
+        <WebStory>
+            {webProps => {
+                useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+                return <SearchPage {...defaultProps(webProps)} />
+            }}
+        </WebStory>
+    )
+})
