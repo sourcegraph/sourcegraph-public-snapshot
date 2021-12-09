@@ -175,7 +175,7 @@ type BackfillPlan struct {
 
 func (b BackfillPlan) String() string {
 	var strs []string
-	for i, _ := range b.Executions {
+	for i := range b.Executions {
 		current := *b.Executions[i]
 		strs = append(strs, fmt.Sprintf("%v", current))
 	}
