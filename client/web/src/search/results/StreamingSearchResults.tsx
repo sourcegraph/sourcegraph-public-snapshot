@@ -25,7 +25,7 @@ import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { useNavbarQueryState } from '../../stores'
+import { useNavbarQueryState, useSearchStack } from '../../stores'
 import { SearchBetaIcon } from '../CtaIcons'
 import { getSubmittedSearchesCount, submitSearch } from '../helpers'
 
@@ -163,6 +163,22 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             console.error(results.error)
         }
     }, [results, telemetryService])
+
+    useSearchStack(
+        useMemo(
+            () =>
+                results?.state === 'complete'
+                    ? {
+                          type: 'search',
+                          query,
+                          caseSensitive,
+                          patternType,
+                          searchContext: props.selectedSearchContextSpec,
+                      }
+                    : null,
+            [results, query, patternType, caseSensitive, props.selectedSearchContextSpec]
+        )
+    )
 
     const [allExpanded, setAllExpanded] = useState(false)
     const onExpandAllResultsToggle = useCallback(() => {
