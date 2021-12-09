@@ -8,6 +8,8 @@ set -eu
 pushd dev/buildsheriff
 
 echo "--- Running buildsheriff"
-go run main.go # TODO
+go run main.go \
+  -buildkite.token="$BUILDKITE_TOKEN" \
+  -github.token="$GITHUB_TOKEN"
 
 popd

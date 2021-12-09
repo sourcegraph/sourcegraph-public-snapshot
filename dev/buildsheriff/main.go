@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/google/go-github/v31/github"
@@ -20,13 +21,16 @@ func main() {
 		pipeline       string
 		branch         string
 		threshold      int
+		timeoutMins    int
 	)
 
 	flag.StringVar(&buildkiteToken, "buildkite.token", "", "mandatory buildkite token")
 	flag.StringVar(&githubToken, "github.token", "", "mandatory github token")
 	flag.StringVar(&pipeline, "pipeline", "sourcegraph", "name of the pipeline to inspect")
 	flag.StringVar(&branch, "branch", "main", "name of the branch to inspect")
-	flag.IntVar(&threshold, "threshold", 3, "failures required to trigger an incident")
+	flag.IntVar(&threshold, "failures.threshold", 3, "failures required to trigger an incident")
+	flag.IntVar(&timeoutMins, "failures.timeout", 40, "duration of a run required to be considered a failure (minutes)")
+	timeout := time.Duration(timeoutMins) * time.Minute
 
 	config, err := buildkite.NewTokenConfig(buildkiteToken, false)
 	if err != nil {
@@ -51,26 +55,24 @@ func main() {
 	// Scan for first build with a meaningful state
 	var firstFailedBuild int
 	for i, b := range builds {
-		if b.State != nil {
-			if *b.State == "passed" {
-				fmt.Printf("most recent finished build %d passed\n", *b.Number)
-				if err := unlockBranch(ctx, ghc, branch); err != nil {
-					log.Fatal(err)
-				}
-				return
+		if b.State != nil && *b.State == "passed" {
+			fmt.Printf("most recent finished build %d passed\n", *b.Number)
+			if err := unlockBranch(ctx, ghc, branch); err != nil {
+				log.Fatal(err)
 			}
-			if *b.State == "failed" {
-				fmt.Printf("most recent finished build %d failed\n", *b.Number)
-				firstFailedBuild = i
-				break
-			}
-
-			// Otherwise, keep looking for builds
+			return
 		}
+		if isBuildFailed(b, timeout) {
+			fmt.Printf("most recent finished build %d failed\n", *b.Number)
+			firstFailedBuild = i
+			break
+		}
+
+		// Otherwise, keep looking for builds
 	}
 
 	// if failed, check if failures are consecutive
-	failureAuthorsEmails, exceeded := checkConsecutiveFailures(builds[firstFailedBuild:], threshold)
+	failureAuthorsEmails, exceeded := checkConsecutiveFailures(builds[firstFailedBuild:], threshold, timeout)
 	if !exceeded {
 		if err := unlockBranch(ctx, ghc, branch); err != nil {
 			log.Fatal(err)
@@ -84,20 +86,27 @@ func main() {
 	}
 }
 
-func checkConsecutiveFailures(builds []buildkite.Build, threshold int) (authorsEmails []string, thresholdExceeded bool) {
+func isBuildFailed(build buildkite.Build, timeout time.Duration) bool {
+	// Has state and is failed
+	if build.State != nil && *build.State == "failed" {
+		return true
+	}
+	// Created, but not done
+	if build.CreatedAt != nil && build.FinishedAt == nil {
+		return time.Now().After(build.CreatedAt.Add(timeout))
+	}
+	return false
+}
+
+func checkConsecutiveFailures(builds []buildkite.Build, threshold int, timeout time.Duration) (authorsEmails []string, thresholdExceeded bool) {
 	var consecutiveFailures int
 	for _, b := range builds {
-		if b.State == nil || *b.State == "" {
-			continue
-		}
-
-		// if a build in the sequence passed, no big deal
-		if *b.State == "passed" {
+		if b.State == nil && *b.State == "passed" {
 			fmt.Printf("build %d passed\n", *b.Number)
 			return authorsEmails, false
 		}
 
-		if *b.State == "failed" {
+		if isBuildFailed(b, timeout) {
 			consecutiveFailures += 1
 			authorsEmails = append(authorsEmails, b.Author.Email)
 			fmt.Printf("build %d is %dth consecutive failure\n", *b.Number, consecutiveFailures)
