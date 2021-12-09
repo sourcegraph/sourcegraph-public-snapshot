@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -335,8 +335,8 @@ func sendTestEmail(ctx context.Context, recipient graphql.ID, description string
 	if orgID != 0 {
 		return nil
 	}
-	data := email.NewTestTemplateDataForNewSearchResults(ctx, description)
-	return email.SendEmailForNewSearchResult(ctx, userID, data)
+	data := background.NewTestTemplateDataForNewSearchResults(ctx, description)
+	return background.SendEmailForNewSearchResult(ctx, userID, data)
 }
 
 func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) (actionIDs []graphql.ID, err error) {
