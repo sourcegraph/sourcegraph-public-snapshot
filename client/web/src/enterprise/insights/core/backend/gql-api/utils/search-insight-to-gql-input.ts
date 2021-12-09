@@ -7,7 +7,7 @@ import {
 import { InsightDashboard, isVirtualDashboard, SearchBasedInsight } from '../../../types'
 import { isSearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../types/insight/search-insight'
 
-import { getStepInterval } from './insight-transformers'
+import { getSearchInsightStepInterval } from './insight-transformers'
 
 export function prepareSearchInsightCreateInput(
     insight: SearchBasedInsight,
@@ -15,7 +15,7 @@ export function prepareSearchInsightCreateInput(
 ): LineChartSearchInsightInput {
     const repositories = !isSearchBackendBasedInsight(insight) ? insight.repositories : []
 
-    const [unit, value] = getStepInterval(insight)
+    const [unit, value] = getSearchInsightStepInterval(insight)
     const input: LineChartSearchInsightInput = {
         dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
             query: series.query,
@@ -40,7 +40,7 @@ export function prepareSearchInsightUpdateInput(
 ): UpdateLineChartSearchInsightInput {
     const repositories = !isSearchBackendBasedInsight(insight) ? insight.repositories : []
 
-    const [unit, value] = getStepInterval(insight)
+    const [unit, value] = getSearchInsightStepInterval(insight)
     const input: UpdateLineChartSearchInsightInput = {
         dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
             seriesId: series.id,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -173,7 +174,7 @@ func (r *Runner) runSchemaUp(ctx context.Context, options Options, context schem
 		log15.Info("Running up migration", "schema", context.schema.Name, "migrationID", definition.ID)
 
 		if err := context.store.Up(ctx, definition); err != nil {
-			return err
+			return errors.Wrapf(err, "failed upgrade migration %d", definition.ID)
 		}
 	}
 
@@ -192,7 +193,7 @@ func (r *Runner) runSchemaDown(ctx context.Context, options Options, context sch
 		log15.Info("Running down migration", "schema", context.schema.Name, "migrationID", definition.ID)
 
 		if err := context.store.Down(ctx, definition); err != nil {
-			return err
+			return errors.Wrapf(err, "failed downgrade migration %d", definition.ID)
 		}
 	}
 

@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"regexp"
 	"sync"
 	"time"
 
@@ -94,7 +95,7 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 		if current.GeneratedFromCaptureGroups {
 			// this works fine for now because these are all just-in-time series. As soon as we start including global / recorded
 			// series, we need to have some logic to either fetch from the database or calculate the time series.
-			expanded, err := expandCaptureGroupSeries(ctx, current, i.baseInsightResolver)
+			expanded, err := expandCaptureGroupSeries(ctx, current, i.baseInsightResolver, *filters)
 			if err != nil {
 				return nil, errors.Wrapf(err, "expandCaptureGroupSeries for seriesID: %s", current.SeriesID)
 			}
@@ -112,13 +113,57 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 	return resolvers, nil
 }
 
-func expandCaptureGroupSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver) ([]graphqlbackend.InsightSeriesResolver, error) {
+func filterRepositories(filters types.InsightViewFilters, repositories []string) ([]string, error) {
+	matches := make(map[string]interface{})
+	// exclude
+	if filters.ExcludeRepoRegex != nil && *filters.ExcludeRepoRegex != "" {
+		excludeRegexp, err := regexp.Compile(*filters.ExcludeRepoRegex)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to compile ExcludeRepoRegex")
+		}
+		for _, repository := range repositories {
+			if !excludeRegexp.MatchString(repository) {
+				matches[repository] = struct{}{}
+			}
+		}
+	} else {
+		for _, repository := range repositories {
+			matches[repository] = struct{}{}
+		}
+	}
+	// include
+	if filters.IncludeRepoRegex != nil && *filters.IncludeRepoRegex != "" {
+		includeRegexp, err := regexp.Compile(*filters.IncludeRepoRegex)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to compile IncludeRepoRegex")
+		}
+		for match := range matches {
+			if !includeRegexp.MatchString(match) {
+				delete(matches, match)
+			}
+		}
+	}
+
+	results := make([]string, 0, len(matches))
+	for match := range matches {
+		results = append(results, match)
+	}
+	return results, nil
+}
+
+func expandCaptureGroupSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
 	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
 	interval := query.TimeInterval{
 		Unit:  definition.SampleIntervalUnit,
 		Value: definition.SampleIntervalValue,
 	}
-	generatedSeries, err := executor.Execute(ctx, definition.Query, definition.Repositories, interval)
+
+	matchedRepos, err := filterRepositories(filters, definition.Repositories)
+	if err != nil {
+		return nil, err
+	}
+	log15.Debug("capture group series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
+	generatedSeries, err := executor.Execute(ctx, definition.Query, matchedRepos, interval)
 	if err != nil {
 		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
 	}

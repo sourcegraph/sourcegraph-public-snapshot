@@ -2003,6 +2003,11 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 	span.SetTag("repo", repo)
 	defer span.Finish()
 
+	if msg, ok := isPaused(filepath.Join(s.ReposDir, string(protocol.NormalizeRepo(repo)))); ok {
+		log15.Warn("doRepoUpdate paused", "repo", repo, "reason", msg)
+		return nil
+	}
+
 	s.repoUpdateLocksMu.Lock()
 	l, ok := s.repoUpdateLocks[repo]
 	if !ok {

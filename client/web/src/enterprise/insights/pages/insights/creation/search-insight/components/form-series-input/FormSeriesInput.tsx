@@ -7,11 +7,10 @@ import { Button } from '@sourcegraph/wildcard/src'
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../../components/form/hooks/useForm'
+import { MonacoField } from '../../../../../../components/form/monaco-field/MonacoField'
 import { createRequiredValidator } from '../../../../../../components/form/validators'
 import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
-
-import { DataSeriesQueryField } from './DataSeriesQueryField'
 
 const requiredNameField = createRequiredValidator('Name is a required field for data series.')
 const validQuery = createRequiredValidator('Query is a required field for data series.')
@@ -138,7 +137,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
             <FormInput
                 title="Search query"
                 required={true}
-                as={DataSeriesQueryField}
+                as={MonacoField}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                 description={
                     <span>

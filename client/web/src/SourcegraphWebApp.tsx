@@ -77,6 +77,7 @@ import {
     fetchSearchContextBySpec,
 } from './search/backend'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
+import { SearchStack } from './search/SearchStack'
 import { TemporarySettingsProvider } from './settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from './settings/temporary/TemporarySettingsStorage'
 import { listUserRepositories } from './site-admin/backend'
@@ -501,6 +502,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                             </CodeHostScopeProvider>
                                         )}
                                     />
+                                    <SearchStack />
                                 </Router>
                                 <Tooltip key={1} />
                                 <Notifications

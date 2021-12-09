@@ -30,17 +30,7 @@ func RunnerFromDSNs(dsns map[string]string, appName string, newStore StoreFactor
 				return nil, err
 			}
 
-			store := newStore(db, schema.MigrationsTableName)
-
-			if err := store.EnsureSchemaTable(ctx); err != nil {
-				if closeErr := db.Close(); closeErr != nil {
-					err = multierror.Append(err, closeErr)
-				}
-
-				return nil, err
-			}
-
-			return store, nil
+			return initStore(ctx, newStore, db, schema)
 		}
 	}
 
@@ -51,4 +41,31 @@ func RunnerFromDSNs(dsns map[string]string, appName string, newStore StoreFactor
 	}
 
 	return runner.NewRunner(storeFactoryMap)
+}
+
+func runnerFromDB(newStore StoreFactory, db *sql.DB, schemas ...*schemas.Schema) *runner.Runner {
+	storeFactoryMap := make(map[string]runner.StoreFactory, len(schemas))
+	for _, schema := range schemas {
+		schema := schema
+
+		storeFactoryMap[schema.Name] = func(ctx context.Context) (runner.Store, error) {
+			return initStore(ctx, newStore, db, schema)
+		}
+	}
+
+	return runner.NewRunner(storeFactoryMap)
+}
+
+func initStore(ctx context.Context, newStore StoreFactory, db *sql.DB, schema *schemas.Schema) (Store, error) {
+	store := newStore(db, schema.MigrationsTableName)
+
+	if err := store.EnsureSchemaTable(ctx); err != nil {
+		if closeErr := db.Close(); closeErr != nil {
+			err = multierror.Append(err, closeErr)
+		}
+
+		return nil, err
+	}
+
+	return store, nil
 }

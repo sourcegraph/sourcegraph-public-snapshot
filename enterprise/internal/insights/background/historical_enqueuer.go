@@ -2,6 +2,7 @@ package background
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -144,6 +145,8 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 		frameFilter: compression.NewHistoricalFilter(true, maxTime, insightsStore.Handle().DB()),
 
 		allReposIterator: iterator.ForEach,
+
+		statistics: make(statistics),
 	}
 
 	// We use a periodic goroutine here just for metrics tracking. We specify 5s here so it runs as
@@ -169,6 +172,24 @@ func getRateLimit(defaultValue rate.Limit) func() rate.Limit {
 
 		return result
 	}
+}
+
+type statistics map[string]*repoBackfillStatistics
+
+type repoBackfillStatistics struct {
+	Skipped      int
+	Compressed   int
+	Uncompressed int
+	Preempted    int
+	Errored      int
+}
+
+func (s repoBackfillStatistics) String() string {
+	marshal, err := json.Marshal(s)
+	if err != nil {
+		return ""
+	}
+	return string(marshal)
 }
 
 // RepoStore is a subset of the API exposed by the database.Repos() store (only the subset used by
@@ -230,6 +251,8 @@ type historicalEnqueuer struct {
 	// The iterator to use for walking over all repositories on Sourcegraph.
 	allReposIterator func(ctx context.Context, each func(repoName string) error) error
 	limiter          *rate.Limiter
+
+	statistics statistics
 }
 
 func (h *historicalEnqueuer) Handler(ctx context.Context) error {
@@ -238,6 +261,10 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	foundInsights, err := h.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{BackfillIncomplete: true, GlobalOnly: true})
 	if err != nil {
 		return errors.Wrap(err, "Discover")
+	}
+
+	for _, series := range foundInsights {
+		h.statistics[series.SeriesID] = &repoBackfillStatistics{}
 	}
 
 	// Deduplicate series that may be unique (e.g. different name/description) but do not have
@@ -265,6 +292,10 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 		// of each insight series to reflect they have seen a full iteration. This does not mean they were necessarily successful,
 		// only that they had a chance to queue up queries for each repo.
 		h.markInsightsComplete(ctx, foundInsights)
+	}
+
+	for seriesId, backfillStatistics := range h.statistics {
+		log15.Info("backfill statistics", "seriesId", seriesId, "stats", *backfillStatistics)
 	}
 
 	return multi
@@ -332,8 +363,13 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 
 			log15.Debug("insights: starting frames", "repo_id", repo.ID, "series_id", series.SeriesID, "frames", frames)
 			plan := h.frameFilter.FilterFrames(ctx, frames, repo.ID)
-			log15.Debug("insights: sampling historical data frames", "repo_id", repo.ID, "series_id", series.SeriesID, "frames", frames)
 
+			if len(frames) != len(plan.Executions) {
+				h.statistics[seriesID].Compressed += 1
+				log15.Debug("compressed frames", "repo_id", repo.ID, "series_id", series.SeriesID, "plan", plan.Executions)
+			} else {
+				h.statistics[seriesID].Uncompressed += 1
+			}
 			for i := len(plan.Executions) - 1; i >= 0; i-- {
 				queryExecution := plan.Executions[i]
 
@@ -354,7 +390,9 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 				if err != nil {
 					softErr = multierror.Append(softErr, err)
 					// In this case we will assume the point does not exist and query for it anyway.
+					h.statistics[seriesID].Errored += 1
 				} else if numDataPoints > 0 {
+					h.statistics[seriesID].Skipped += 1
 					continue
 				}
 
@@ -368,6 +406,7 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 				})
 				if err != nil {
 					softErr = multierror.Append(softErr, err)
+					h.statistics[seriesID].Errored += 1
 					continue
 				}
 				if hardErr != nil {
@@ -454,6 +493,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 			hardErr = errors.Wrap(err, "RecordSeriesPoints Zero Value")
 			return // DB error
 		}
+		h.statistics[bctx.seriesID].Preempted += 1
 		return // success - nothing else to do
 	}
 
@@ -496,10 +536,12 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 		}
 		if nearestCommit == nil {
 			log15.Error("null commit", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime)
+			h.statistics[bctx.seriesID].Errored += 1
 			return // repository has no commits / is empty. Maybe not yet pushed to code host.
 		}
 		if nearestCommit.Committer == nil {
 			log15.Error("null committer", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime)
+			h.statistics[bctx.seriesID].Errored += 1
 			return
 		}
 		log15.Debug("nearest_commit", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime, "revhash", nearestCommit.ID.Short(), "time", nearestCommit.Committer.Date)

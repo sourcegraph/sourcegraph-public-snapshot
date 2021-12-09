@@ -474,6 +474,7 @@ func (r *batchSpecResolver) WorkspaceResolution(ctx context.Context) (graphqlbac
 	if !r.batchSpec.CreatedFromRaw {
 		return nil, nil
 	}
+
 	resolution, err := r.computeResolutionJob(ctx)
 	if err != nil {
 		return nil, err

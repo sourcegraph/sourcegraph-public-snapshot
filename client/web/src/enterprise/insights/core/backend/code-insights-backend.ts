@@ -9,6 +9,7 @@ import { SupportedInsightSubject } from '../types/subjects'
 
 import {
     BackendInsightData,
+    CaptureInsightSettings,
     DashboardCreateInput,
     DashboardCreateResult,
     DashboardDeleteInput,
@@ -118,6 +119,8 @@ export interface CodeInsightsBackend {
     getLangStatsInsightContent: <D extends keyof ViewContexts>(
         input: GetLangStatsInsightContentInput<D>
     ) => Promise<PieChartContent<any>>
+
+    getCaptureInsightContent: (input: CaptureInsightSettings) => Promise<LineChartContent<any, string>>
 
     /**
      * Returns a list of suggestions for the repositories field in the insight creation UI.

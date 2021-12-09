@@ -10,12 +10,11 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
-
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/segmentio/ksuid"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -343,31 +342,42 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 		}
 
 		var series types.InsightSeries
-		// first check if this data series already exists (somebody already created an insight of this query), in which case we just need to attach the view to this data series
-		// existing, err := tx.GetDataSeries(ctx, store.GetDataSeriesArgs{SeriesID: temp.SeriesID})
-		matched, exists, err := tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
-			Query:             temp.Query,
-			StepIntervalUnit:  temp.SampleIntervalUnit,
-			StepIntervalValue: temp.SampleIntervalValue,
-		})
-		if err != nil {
-			return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
-		} else if exists && batch == backend {
-			oldId := discovery.Encode(timeSeries)
-			series = matched
-			silentErr := updateSeriesId(tx, ctx, oldId, temp.SeriesID)
-			if silentErr != nil {
-				// it failed - not a big deal. This will get solved if / when this series is ever updated, it will just require a recalculation.
-				log15.Error("error updating series_id", "series_id", temp.SeriesID, "err", silentErr)
+
+		// Backend series require special consideration to re-use series
+		if batch == backend {
+			matched, exists, err := tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
+				Query:             temp.Query,
+				StepIntervalUnit:  temp.SampleIntervalUnit,
+				StepIntervalValue: temp.SampleIntervalValue,
+			})
+			if err != nil {
+				return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
+			} else if exists {
+				// If the series already exists, we can re-use that series
+				series = matched
 			} else {
-				silentErr = updateTimeSeriesReferences(tx.Handle().DB(), ctx, oldId, temp.SeriesID)
+				// If the series does not exist, we need to create a new one
+				series, err = tx.CreateSeries(ctx, temp)
+				if err != nil {
+					return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
+				}
+
+				// Also match/replace old series_points ids with the new series id
+				oldId := discovery.Encode(timeSeries)
+				silentErr := updateTimeSeriesReferences(tx.Handle().DB(), ctx, oldId, temp.SeriesID)
 				if silentErr != nil {
-					// we will skip this, we can always recalculate the time series. It's okay if we had a partial failure with the
-					// definition updated at the time seres not, worst case scenario we just recalculate.
-					log15.Error("error migrating time series", "series_id", temp.SeriesID, "err", silentErr)
+					// If the find-replace fails, it's not a big deal. It will just need to be calcuated again.
+					log15.Error("error updating series_id", "series_id", temp.SeriesID, "err", silentErr)
+				} else {
+					// If the find-replace succeeded, we can stamp the backfill_queued_at on the new series.
+					series, err = tx.StampBackfill(ctx, series)
+					if err != nil {
+						return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
+					}
 				}
 			}
 		} else {
+			// If it's not a backend series, we just want to create it.
 			series, err = tx.CreateSeries(ctx, temp)
 			if err != nil {
 				return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)

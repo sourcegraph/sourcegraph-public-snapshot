@@ -10822,7 +10822,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100010` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_symbols_api_total{job=~"^symbols.*"}[5m]))`
+Query: `sum by (op,parseAmount)(increase(src_codeintel_symbols_api_total{job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -10841,7 +10841,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100011` o
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_symbols_api_duration_seconds_bucket{job=~"^symbols.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op,parseAmount)(rate(src_codeintel_symbols_api_duration_seconds_bucket{job=~"^symbols.*"}[5m])))`
 
 </details>
 
@@ -10860,7 +10860,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100012` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_symbols_api_errors_total{job=~"^symbols.*"}[5m]))`
+Query: `sum by (op,parseAmount)(increase(src_codeintel_symbols_api_errors_total{job=~"^symbols.*"}[5m]))`
 
 </details>
 
@@ -10879,7 +10879,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100013` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_symbols_api_errors_total{job=~"^symbols.*"}[5m])) / (sum by (op)(increase(src_codeintel_symbols_api_total{job=~"^symbols.*"}[5m])) + sum by (op)(increase(src_codeintel_symbols_api_errors_total{job=~"^symbols.*"}[5m]))) * 100`
+Query: `sum by (op,parseAmount)(increase(src_codeintel_symbols_api_errors_total{job=~"^symbols.*"}[5m])) / (sum by (op,parseAmount)(increase(src_codeintel_symbols_api_total{job=~"^symbols.*"}[5m])) + sum by (op,parseAmount)(increase(src_codeintel_symbols_api_errors_total{job=~"^symbols.*"}[5m]))) * 100`
 
 </details>
 
