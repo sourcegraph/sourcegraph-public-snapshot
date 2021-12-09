@@ -35,6 +35,7 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
     const sourcegraphURL = endpointSetting()
     const accessToken = accessTokenSetting()
     const corsUrl = endpointCorsSetting()
+    // Add Access Token to request header
     if (accessToken) {
         headers.push(['Authorization', `token ${accessToken}`])
     }
@@ -61,9 +62,15 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
         if (isHTTPAuthError(error)) {
             await handleAccessTokenError(accessToken ?? '')
         }
-        await vscode.window.showErrorMessage(
-            `Failed to connect to endpoint ${sourcegraphURL}. Please make sure you have CORS configured in your setting if you are on VS Code Web.`
-        )
+        if (!corsUrl) {
+            await vscode.window.showErrorMessage(
+                `Failed to connect to endpoint ${sourcegraphURL}. Please make sure you have CORS configured in your setting if you are on VS Code Web.`
+            )
+        } else {
+            await vscode.window.showErrorMessage(
+                `Failed to connect using ${corsUrl}. Try removing or using a different corsUrl in your setting.`
+            )
+        }
         throw asError(error)
     }
 }

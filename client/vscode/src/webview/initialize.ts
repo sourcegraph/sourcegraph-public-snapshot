@@ -65,7 +65,7 @@ export async function initializeSearchPanelWebview({
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src vscode-resource: https:; script-src 'nonce-${nonce}'; style-src ${
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: vscode-resource: vscode-webview: https:; script-src 'nonce-${nonce}'; style-src data: ${
         panel.webview.cspSource
     } vscode-resource: 'unsafe-inline' http: https: data:; connect-src 'self' http: https:;">
         <title>Sourcegraph Search</title>
@@ -125,7 +125,7 @@ export function initializeSearchSidebarWebview({
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src vscode-resource: https:; script-src 'nonce-${nonce}'; style-src ${
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:  vscode-resource: https:; script-src 'nonce-${nonce}'; style-src data: ${
         webviewView.webview.cspSource
     } vscode-resource: http: https: data:; connect-src 'self' http: https:;">
         <title>Sourcegraph Search Sidebar</title>
@@ -180,7 +180,7 @@ export function initializeExtensionHostWebview({
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src vscode-resource: https:; script-src 'nonce-${nonce}'; style-src vscode-resource: ${
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src vscode-resource:; font-src https:; img-src vscode-resource: data: https:; script-src blob: 'nonce-${nonce}'; style-src data: vscode-resource: ${
         webviewView.webview.cspSource
     } http: https: data:; connect-src 'self' http: https:;">
         <title>Sourcegraph Extension Host</title>

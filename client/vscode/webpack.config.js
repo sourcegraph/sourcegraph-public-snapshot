@@ -103,7 +103,6 @@ const webviewConfig = {
   devtool: 'source-map',
   output: {
     path: path.resolve(__dirname, 'dist/webview'),
-    // path: path.join(vscodeWorkspacePath, 'dist/webview'),
     filename: '[name].js',
   },
   plugins: [new MiniCssExtractPlugin()],
@@ -115,6 +114,8 @@ const webviewConfig = {
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     fallback: {
       path: require.resolve('path-browserify'),
+      stream: require.resolve('stream-browserify'),
+      process: require.resolve('process/browser'),
     },
   },
   module: {

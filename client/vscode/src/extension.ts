@@ -80,14 +80,9 @@ export function activate(context: vscode.ExtensionContext): void {
         () => {}
     )
 
-    // Open remote Sourcegraph file in VS Code
+    // Open remote Sourcegraph file from remote file tree
     context.subscriptions.push(
-        vscode.commands.registerCommand('extension.openFile', async () => {
-            const editor = vscode.window.activeTextEditor
-            if (!editor) {
-                throw new Error('No active editor')
-            }
-            const uri = editor.document.uri
+        vscode.commands.registerCommand('extension.openFile', async uri => {
             if (typeof uri === 'string') {
                 await openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri))
             } else {
@@ -131,6 +126,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
         getInstanceHostname: () => instanceHostname,
         panelInitialized: panelId => initializedPanelIDs.next(panelId),
+        // Call from webview's search results
         openFile: (uri: string) => openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri)),
 
         openSearchPanel: () => vscode.commands.executeCommand('sourcegraph.search'),

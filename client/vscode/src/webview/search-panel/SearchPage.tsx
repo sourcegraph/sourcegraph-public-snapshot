@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { Form } from 'reactstrap'
 import { Observable, Subscription } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
@@ -53,9 +54,13 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
 
     const [loading, setLoading] = useState(false)
 
-    const onSubmit = useCallback(() => {
-        searchActions.submitQuery()
-    }, [searchActions])
+    const onSubmit = useCallback(
+        (event?: React.FormEvent): void => {
+            event?.preventDefault()
+            searchActions.submitQuery()
+        },
+        [searchActions]
+    )
 
     useEffect(() => {
         const subscriptions = new Subscription()
@@ -120,7 +125,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
 
     return (
         <div>
-            <div className="d-flex my-2">
+            <Form className="d-flex my-2" onSubmit={onSubmit}>
                 {/* TODO temporary settings provider w/ mock in memory storage */}
                 <SearchBox
                     isSourcegraphDotCom={true}
@@ -160,7 +165,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                     // to be able to pass it to Monaco!
                     className={classNames(styles.withEditorFont, 'flex-grow-1 flex-shrink-past-contents')}
                 />
-            </div>
+            </Form>
             {loading ? (
                 <p>Loading...</p>
             ) : (
