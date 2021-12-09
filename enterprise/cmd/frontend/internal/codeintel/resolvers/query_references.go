@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -480,7 +481,7 @@ func testFilter(filter []byte, orderedMonikers []precise.QualifiedMonikerData) (
 // uploadsByIDs returns a slice of uploads with the given identifiers. This method will not return a
 // new upload record for a commit which is unknown to gitserver. The given upload map is used as a
 // caching mechanism - uploads present in the map are not fetched again from the database.
-func (r *queryResolver) uploadsByIDs(ctx context.Context, ids []int) ([]store.Dump, error) {
+func (r *queryResolver) uploadsByIDs(ctx context.Context, ids []int) ([]dbstore.Dump, error) {
 	missingIDs := make([]int, 0, len(ids))
 	existingUploads := make([]store.Dump, 0, len(ids))
 

@@ -407,6 +407,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		assertOperations(t, previews, newFx.specToBeDraft, publishDraftOps)
 		assertOperations(t, previews, newFx.specToBeUnpublished, noOps)
 		assertOperations(t, previews, newFx.specToBeOmitted, noOps)
+
 	})
 
 	t.Run("conflicting publication state", func(t *testing.T) {
