@@ -117,7 +117,8 @@ type RetryBatchSpecWorkspaceExecutionArgs struct {
 }
 
 type RetryBatchSpecExecutionArgs struct {
-	BatchSpec graphql.ID
+	BatchSpec        graphql.ID
+	IncludeCompleted bool
 }
 
 type EnqueueBatchSpecWorkspaceExecutionArgs struct {
