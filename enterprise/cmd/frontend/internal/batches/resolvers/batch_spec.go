@@ -61,10 +61,6 @@ type batchSpecResolver struct {
 	stateOnce sync.Once
 	state     btypes.BatchSpecState
 	stateErr  error
-
-	canAdministerOnce sync.Once
-	canAdminister     bool
-	canAdministerErr  error
 }
 
 func (r *batchSpecResolver) ID() graphql.ID {
@@ -171,20 +167,8 @@ func (r *batchSpecResolver) Namespace(ctx context.Context) (*graphqlbackend.Name
 }
 
 func (r *batchSpecResolver) ApplyURL(ctx context.Context) (*string, error) {
-	if r.batchSpec.CreatedFromRaw {
-		// 🚨 SECURITY: If the user didn't create the batch spec or is not a
-		// site-admin, we shouldn't show this information.
-		ok, err := r.computeCanAdminister(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if !ok {
-			return nil, nil
-		}
-
-		if !r.finishedExecutionWithoutValidationErrors(ctx) {
-			return nil, nil
-		}
+	if r.batchSpec.CreatedFromRaw && !r.finishedExecutionWithoutValidationErrors(ctx) {
+		return nil, nil
 	}
 
 	n, err := r.computeNamespace(ctx)
@@ -204,7 +188,7 @@ func (r *batchSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 }
 
 func (r *batchSpecResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return r.computeCanAdminister(ctx)
+	return checkSiteAdminOrSameUser(ctx, r.store.DB(), r.batchSpec.UserID)
 }
 
 type batchChangeDescriptionResolver struct {
@@ -378,16 +362,6 @@ func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.Date
 		return nil, nil
 	}
 
-	// 🚨 SECURITY: If the user didn't create the batch spec or is not a
-	// site-admin, we shouldn't show this information.
-	ok, err := r.computeCanAdminister(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, nil
-	}
-
 	state, err := r.computeState(ctx)
 	if err != nil {
 		return nil, err
@@ -413,16 +387,6 @@ func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.Dat
 		return nil, nil
 	}
 
-	// 🚨 SECURITY: If the user didn't create the batch spec or is not a
-	// site-admin, we shouldn't show this information.
-	ok, err := r.computeCanAdminister(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, nil
-	}
-
 	state, err := r.computeState(ctx)
 	if err != nil {
 		return nil, err
@@ -444,16 +408,6 @@ func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.Dat
 }
 
 func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error) {
-	// 🚨 SECURITY: If the user didn't create the batch spec or is not a
-	// site-admin, we shouldn't show this information.
-	ok, err := r.computeCanAdminister(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, nil
-	}
-
 	resolution, err := r.computeResolutionJob(ctx)
 	if err != nil {
 		return nil, err
@@ -518,16 +472,6 @@ func (r *batchSpecResolver) ImportingChangesets(ctx context.Context, args *graph
 
 func (r *batchSpecResolver) WorkspaceResolution(ctx context.Context) (graphqlbackend.BatchSpecWorkspaceResolutionResolver, error) {
 	if !r.batchSpec.CreatedFromRaw {
-		return nil, nil
-	}
-
-	// 🚨 SECURITY: If the user didn't create the batch spec or is not a
-	// site-admin, we shouldn't show this information.
-	ok, err := r.computeCanAdminister(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
 		return nil, nil
 	}
 
@@ -638,11 +582,4 @@ func (r *batchSpecResolver) computeState(ctx context.Context) (btypes.BatchSpecS
 		}()
 	})
 	return r.state, r.stateErr
-}
-
-func (r *batchSpecResolver) computeCanAdminister(ctx context.Context) (bool, error) {
-	r.canAdministerOnce.Do(func() {
-		r.canAdminister, r.canAdministerErr = checkSiteAdminOrSameUser(ctx, r.store.DB(), r.batchSpec.UserID)
-	})
-	return r.canAdminister, r.canAdministerErr
 }

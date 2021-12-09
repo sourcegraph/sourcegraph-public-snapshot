@@ -334,7 +334,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		},
 	}
 
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, true, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// Complete the workspace resolution
 	var workspaces []*btypes.BatchSpecWorkspace
@@ -348,7 +348,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 
 	setResolutionJobState(t, ctx, bstore, resolutionJob, btypes.BatchSpecResolutionJobStateCompleted)
 	want.WorkspaceResolution.State = btypes.BatchSpecResolutionJobStateCompleted.ToGraphQL()
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, true, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// Now enqueue jobs
 	var jobs []*btypes.BatchSpecWorkspaceExecutionJob
@@ -361,26 +361,26 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	}
 
 	want.State = "QUEUED"
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, true, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 1/3 jobs processing
 	jobs[1].StartedAt = minAgo(99)
 	setJobProcessing(t, ctx, bstore, jobs[1])
 	want.State = "PROCESSING"
 	want.StartedAt = graphqlbackend.DateTime{Time: jobs[1].StartedAt}
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, true, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 3/3 processing
 	setJobProcessing(t, ctx, bstore, jobs[0])
 	setJobProcessing(t, ctx, bstore, jobs[2])
 	// Expect same state
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, true, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 1/3 jobs complete, 2/3 processing
 	jobs[2].FinishedAt = minAgo(30)
 	setJobCompleted(t, ctx, bstore, jobs[2])
 	// Expect same state
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, true, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 3/3 jobs complete
 	jobs[0].FinishedAt = minAgo(9)
@@ -390,7 +390,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.State = "COMPLETED"
 	want.ApplyURL = &applyUrl
 	want.FinishedAt = graphqlbackend.DateTime{Time: jobs[0].FinishedAt}
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, true, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 1/3 jobs is failed, 2/3 completed
 	message1 := "failure message"
@@ -400,7 +400,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.FailureMessage = fmt.Sprintf("Failures:\n\n* %s\n", message1)
 	// We still want users to be able to apply batch specs that executed with errors
 	want.ApplyURL = &applyUrl
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, true, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 1/3 jobs is failed, 2/3 still processing
 	setJobProcessing(t, ctx, bstore, jobs[0])
@@ -408,7 +408,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.State = "PROCESSING"
 	want.FinishedAt = graphqlbackend.DateTime{}
 	want.ApplyURL = nil
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, true, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 3/3 jobs canceling and processing
 	setJobCanceling(t, ctx, bstore, jobs[0])
@@ -417,7 +417,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 
 	want.State = "CANCELING"
 	want.FailureMessage = ""
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, true, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 3/3 canceling and failed
 	jobs[0].FinishedAt = minAgo(9)
@@ -435,7 +435,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 * canceled
 * canceled
 `
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, true, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 1/3 jobs is failed, 2/3 completed, but produced invalid changeset specs
 	jobs[0].FinishedAt = minAgo(9)
@@ -481,42 +481,22 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	}
 	want.AllCodeHosts = codeHosts
 	want.OnlyWithoutCredential = codeHosts
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, true, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// PERMISSIONS: Now we view the same batch spec but as another non-admin user.
-	// First, reset state so that all fields should return something when viewed with
-	// correct permissions.
-	jobs[0].FinishedAt = minAgo(9)
-	setJobCompleted(t, ctx, bstore, jobs[0])
-	jobs[1].FailureMessage = &message1
-	setJobFailed(t, ctx, bstore, jobs[1])
-	jobs[2].FinishedAt = minAgo(30)
-	setJobCompleted(t, ctx, bstore, jobs[2])
-
-	// Here's the fields we expect:
-	want.State = "FAILED"
-	want.FailureMessage = ""
-	want.ApplyURL = nil
-	want.WorkspaceResolution = apitest.BatchSpecWorkspaceResolution{}
-	want.FinishedAt = graphqlbackend.DateTime{}
-	want.StartedAt = graphqlbackend.DateTime{}
-	want.ViewerCanAdminister = false
-	// Because we can't query other user's details, we don't expect to get
-	// user-info/namespaces back:
-	want.Creator = nil
-	want.Namespace = apitest.UserOrg{}
-
+	// We want to response to be a 404, so an empty BatchSpec
+	want = apitest.BatchSpec{}
 	// Now we can query
 	otherUser := ct.CreateTestUser(t, db, false)
 	otherUserCtx := actor.WithActor(ctx, actor.FromUser(otherUser.ID))
 
-	queryAndAssertBatchSpec(t, otherUserCtx, s, apiID, false, want)
+	queryAndAssertBatchSpec(t, otherUserCtx, s, apiID, want)
 }
 
-func queryAndAssertBatchSpec(t *testing.T, ctx context.Context, s *graphql.Schema, id string, includeNamespace bool, want apitest.BatchSpec) {
+func queryAndAssertBatchSpec(t *testing.T, ctx context.Context, s *graphql.Schema, id string, want apitest.BatchSpec) {
 	t.Helper()
 
-	input := map[string]interface{}{"batchSpec": id, "includeNamespace": includeNamespace}
+	input := map[string]interface{}{"batchSpec": id}
 
 	var response struct{ Node apitest.BatchSpec }
 
@@ -612,7 +592,7 @@ const queryBatchSpecNode = `
 fragment u on User { id, databaseID, siteAdmin }
 fragment o on Org  { id, name }
 
-query($batchSpec: ID!, $includeNamespace: Boolean = true) {
+query($batchSpec: ID!) {
   node(id: $batchSpec) {
     __typename
 
@@ -621,8 +601,8 @@ query($batchSpec: ID!, $includeNamespace: Boolean = true) {
       originalInput
       parsedInput
 
-      creator  @include(if: $includeNamespace) { ...u }
-      namespace @include(if: $includeNamespace) {
+      creator { ...u }
+      namespace {
         ... on User { ...u }
         ... on Org  { ...o }
       }
