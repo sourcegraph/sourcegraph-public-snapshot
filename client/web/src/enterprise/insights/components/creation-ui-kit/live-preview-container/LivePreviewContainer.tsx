@@ -3,11 +3,11 @@ import RefreshIcon from 'mdi-react/RefreshIcon'
 import React, { PropsWithChildren, ReactElement, ReactNode } from 'react'
 import { ChartContent } from 'sourcegraph'
 
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/out/src/telemetry/telemetryService'
+import { isErrorLike } from '@sourcegraph/shared/out/src/util/errors'
 
-import { LineChartLayoutOrientation, LineChartSettingsContext, ChartViewContentLayout } from '../../../../views'
-import * as View from '../../../../views'
+import { LineChartLayoutOrientation, LineChartSettingsContext, ChartViewContentLayout } from '../../../../../views'
+import * as View from '../../../../../views'
 
 import styles from './LivePreviewContainer.module.scss'
 
