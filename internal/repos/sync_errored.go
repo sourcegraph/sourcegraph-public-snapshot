@@ -4,10 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"golang.org/x/time/rate"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/inconshreveable/log15"
 
@@ -16,10 +17,10 @@ import (
 
 const syncInterval = 2 * time.Minute // TODO: decide on appropriate interval. Currently set low for ease of testing
 
-func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, rateLimiterRegistry *ratelimit.Registry) {
+func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, rateLimiter *rate.Limiter) {
 	for {
 		log15.Info("running worker for SyncReposWithLastErrors", "time", time.Now())
-		err := s.SyncReposWithLastErrors(ctx, rateLimiterRegistry, 1)
+		err := s.SyncReposWithLastErrors(ctx, rateLimiter)
 		if err != nil {
 			log15.Error("Error syncing repos w/ errors", "err", err)
 		}
@@ -33,31 +34,16 @@ func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, rateLimit
 // table, indicating there was an issue updating the repo, and syncs each of these repos. Repos which are no longer
 // visible (i.e. deleted or made private) will be deleted from the DB. Note that this is only being run in Sourcegraph
 // Dot com mode.
-func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiterRegistry *ratelimit.Registry, n int) error {
+func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *rate.Limiter) error {
 	return s.Store.GitserverReposStore.IterateWithNonemptyLastError(ctx, func(repo types.RepoGitserverStatus) error {
-		codehost := extsvc.CodeHostOf(repo.Name, extsvc.PublicCodeHosts...)
-
-		err := waitForRateLimit(ctx, rateLimiterRegistry, codehost.ServiceID, n)
+		err := rateLimiter.Wait(ctx)
 		if err != nil {
 			return errors.Errorf("error waiting for rate limiter: %s", err)
 		}
 		_, err = s.SyncRepo(ctx, repo.Name, false)
-		if err != nil {
+		if err != nil && !database.IsRepoNotFoundErr(err) {
 			return err
 		}
 		return nil
 	})
-}
-
-// TODO: this is copied from enterprise/cmd/repo-updater/internal/authz/perms_syncer.go, maybe this is worth putting
-// in a central location?
-func waitForRateLimit(ctx context.Context, registry *ratelimit.Registry, serviceID string, n int) error {
-	if registry == nil {
-		return nil
-	}
-	rl := registry.Get(serviceID)
-	if err := rl.WaitN(ctx, n); err != nil {
-		return err
-	}
-	return nil
 }

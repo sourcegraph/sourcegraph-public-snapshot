@@ -62,6 +62,11 @@ func (e *RepoNotFoundErr) NotFound() bool {
 	return true
 }
 
+func IsRepoNotFoundErr(err error) bool {
+	_, ok := err.(*RepoNotFoundErr)
+	return ok
+}
+
 type RepoStore interface {
 	basestore.ShareableStore
 	Transact(context.Context) (RepoStore, error)

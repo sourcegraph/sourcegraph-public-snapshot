@@ -13,6 +13,8 @@ import (
 	"os"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"github.com/golang/gddo/httputil"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
@@ -209,7 +211,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	go syncScheduler(ctx, scheduler, store)
 
 	if envvar.SourcegraphDotComMode() {
-		go syncer.RunSyncReposWithLastErrorsWorker(ctx, ratelimit.DefaultRegistry)
+		rateLimiter := rate.NewLimiter(200, 1)
+		go syncer.RunSyncReposWithLastErrorsWorker(ctx, rateLimiter)
 	}
 
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)

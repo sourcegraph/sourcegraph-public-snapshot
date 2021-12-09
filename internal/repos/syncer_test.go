@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -26,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -1991,18 +1991,21 @@ func testSyncReposWithLastErrors(s *repos.Store) func(*testing.T) {
 		ctx := context.Background()
 
 		repoName := api.RepoName("github.com/foo/bar")
-		syncer, repo := setupSyncErroredTest(ctx, s, t, repoName, extsvc.KindGitHub,
-			&database.RepoNotFoundErr{Name: repoName})
+		syncer, dbRepos := setupSyncErroredTest(ctx, s, t, extsvc.KindGitHub,
+			&database.RepoNotFoundErr{Name: repoName}, repoName)
+		if len(dbRepos) != 1 {
+			t.Fatalf("should've inserted exactly 1 repo in the db for testing, got %d instead", len(dbRepos))
+		}
 
 		// Run the syncer, which should find the repo with non-empty last_error and delete it
-		err := syncer.SyncReposWithLastErrors(ctx, ratelimit.DefaultRegistry, 1)
-		if err == nil {
-			t.Fatalf("expected a repo not found error after syncing")
+		err := syncer.SyncReposWithLastErrors(ctx, rate.NewLimiter(200, 1))
+		if err != nil {
+			t.Fatalf("unexpected error running SyncReposWithLastErrors: %s", err)
 		}
 
 		diff := <-syncer.Synced
 
-		deleted := types.Repos{&types.Repo{ID: repo.ID}}
+		deleted := types.Repos{&types.Repo{ID: dbRepos[0].ID}}
 		if d := cmp.Diff(repos.Diff{Deleted: deleted}, diff); d != "" {
 			t.Fatalf("Deleted mismatch (-want +got):\n%s", d)
 		}
@@ -2013,7 +2016,7 @@ func testSyncReposWithLastErrors(s *repos.Store) func(*testing.T) {
 		if err == nil {
 			t.Fatalf("repo should've been deleted. expected a repo not found error")
 		}
-		if !isRepoNotFoundErr(err) {
+		if !database.IsRepoNotFoundErr(err) {
 			t.Fatalf("expected a RepoNotFound error, got %s", err)
 		}
 		if myRepo != nil {
@@ -2025,63 +2028,60 @@ func testSyncReposWithLastErrors(s *repos.Store) func(*testing.T) {
 func testSyncReposWithLastErrorsHitsRateLimiter(s *repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
-		repoName := api.RepoName("gitlab.com/asdf/jkl")
-		errString := "reached the code host"
-		syncer, _ := setupSyncErroredTest(ctx, s, t, repoName, extsvc.KindGitLab, fmt.Errorf(errString))
-
-		rateLimiterRegistry := ratelimit.NewRegistry()
-		l := rateLimiterRegistry.Get("https://gitlab.com/")
-		l.SetLimit(1)
-		l.SetBurst(1)
+		repoNames := []api.RepoName{
+			"gitlab.com/asdf/jkl",
+			"github.com/foo/bar",
+		}
+		syncer, _ := setupSyncErroredTest(ctx, s, t, extsvc.KindGitLab, &database.RepoNotFoundErr{Name: "gitlab.com/asdf/jkl"}, repoNames...)
 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		// Run the syncer, which should return an error due to hitting the rate limit
-		err := syncer.SyncReposWithLastErrors(ctx, rateLimiterRegistry, 10)
+		err := syncer.SyncReposWithLastErrors(ctx, rate.NewLimiter(1, 1))
 		if err == nil {
 			t.Fatal("SyncReposWithLastErrors should've returned an error due to hitting rate limit")
 		}
-		if strings.Contains(err.Error(), errString) {
-			t.Fatalf("the error %s being returned indicates the code host was touched, which should not have happened with the rate limiter",
-				err)
-		}
-		if !strings.Contains(err.Error(), "error waiting for rate limiter: rate: Wait(n=10) exceeds limiter's burst 1") {
+		if !strings.Contains(err.Error(), "error waiting for rate limiter: rate: Wait(n=1) would exceed context deadline") {
 			t.Fatalf("expected an error from rate limiting, got %s instead", err)
 		}
 	}
 }
 
-func setupSyncErroredTest(ctx context.Context, s *repos.Store, t *testing.T, repoName api.RepoName, serviceType string, externalSvcError error) (*repos.Syncer, *types.Repo) {
+func setupSyncErroredTest(ctx context.Context, s *repos.Store, t *testing.T,
+	serviceType string, externalSvcError error, repoNames ...api.RepoName) (*repos.Syncer, types.Repos) {
 	t.Helper()
 	servicesPerKind := createExternalServices(t, s, func(svc *types.ExternalService) { svc.CloudDefault = true })
-	dbRepo := &types.Repo{
-		Name:        repoName,
-		Description: "Test",
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          fmt.Sprintf("external-%s", repoName), // TODO: make this something else?
-			ServiceID:   "https://gitlab.com/",
-			ServiceType: serviceType,
-		},
-	}
-	// Insert the repo into our database
-	if err := s.RepoStore.Create(ctx, dbRepo); err != nil {
-		t.Fatal(err)
-	}
 
-	// Create an entry in gitserver_repos for this repo which indicates there's been an issue fetching the repo
-	if err := s.GitserverReposStore.Upsert(ctx, &types.GitserverRepo{
-		RepoID:      dbRepo.ID,
-		ShardID:     "test",
-		CloneStatus: types.CloneStatusCloned,
-		LastError:   "error fetching repo: Not found",
-	}); err != nil {
-		t.Fatal(err)
-	}
-
-	// Validate that the repo exists and we can fetch it
-	_, err := s.RepoStore.GetByName(ctx, dbRepo.Name)
-	if err != nil {
-		t.Fatal(err)
+	dbRepos := types.Repos{}
+	for _, repoName := range repoNames {
+		dbRepo := &types.Repo{
+			Name:        repoName,
+			Description: "Test",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          fmt.Sprintf("external-%s", repoName), // TODO: make this something else?
+				ServiceID:   "https://gitlab.com/",
+				ServiceType: serviceType,
+			},
+		}
+		// Insert the repo into our database
+		if err := s.RepoStore.Create(ctx, dbRepo); err != nil {
+			t.Fatal(err)
+		}
+		// Create an entry in gitserver_repos for this repo which indicates there's been an issue fetching the repo
+		if err := s.GitserverReposStore.Upsert(ctx, &types.GitserverRepo{
+			RepoID:      dbRepo.ID,
+			ShardID:     "test",
+			CloneStatus: types.CloneStatusCloned,
+			LastError:   "error fetching repo: Not found",
+		}); err != nil {
+			t.Fatal(err)
+		}
+		// Validate that the repo exists and we can fetch it
+		_, err := s.RepoStore.GetByName(ctx, dbRepo.Name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		dbRepos = append(dbRepos, dbRepo)
 	}
 
 	syncer := &repos.Syncer{
@@ -2092,13 +2092,8 @@ func setupSyncErroredTest(ctx context.Context, s *repos.Store, t *testing.T, rep
 			nil,
 			repos.NewFakeSource(servicesPerKind[serviceType],
 				externalSvcError,
-				dbRepo),
+				dbRepos...),
 		),
 	}
-	return syncer, dbRepo
-}
-
-func isRepoNotFoundErr(err error) bool {
-	_, ok := err.(*database.RepoNotFoundErr)
-	return ok
+	return syncer, dbRepos
 }
