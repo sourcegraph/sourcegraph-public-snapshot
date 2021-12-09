@@ -57,16 +57,7 @@ func NewServices(ctx context.Context, siteConfig conftypes.WatchableSiteConfig, 
 	}
 
 	// Initialize sentry hub
-	hub, err := sentry.NewWithDsn(
-		siteConfig.SiteConfig().Log.Sentry.CodeIntelDSN,
-		siteConfig,
-		func(c conftypes.SiteConfigQuerier) (dsn string) {
-			return c.SiteConfig().Log.Sentry.CodeIntelDSN
-		},
-	)
-	if err != nil {
-		log.Fatalf("Failed to initialize sentry hub: %s", err)
-	}
+	hub := mustInitializeSentryHub(siteConfig)
 
 	// Connect to database
 	codeIntelDB := mustInitializeCodeIntelDB()
@@ -128,4 +119,19 @@ func mustInitializeCodeIntelDB() *sql.DB {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}
 	return db
+}
+
+func mustInitializeSentryHub(c conftypes.WatchableSiteConfig) *sentry.Hub {
+	getDsn := func(c conftypes.SiteConfigQuerier) string {
+		if c.SiteConfig().Log != nil && c.SiteConfig().Log.Sentry != nil {
+			return c.SiteConfig().Log.Sentry.CodeIntelDSN
+		}
+		return ""
+	}
+
+	hub, err := sentry.NewWithDsn(getDsn(c), c, getDsn)
+	if err != nil {
+		log.Fatalf("Failed to initialize sentry hub: %s", err)
+	}
+	return hub
 }
