@@ -808,7 +808,7 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 	if err != nil {
 		return nil, err
 	}
-	ns := make([]graphqlbackend.NamespaceResolver, len(ms))
+	ns := make([]graphqlbackend.NamespaceResolver, 0, len(ms))
 	for _, r := range ms {
 		n := graphqlbackend.NamespaceResolver{}
 		if r.NamespaceOrgID == nil {
