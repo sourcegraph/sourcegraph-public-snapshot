@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
@@ -149,6 +151,10 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 			a.err = errors.New("failed to fetch from any code host")
 		}
 	})
+
+	if envvar.SourcegraphDotComMode() && a.orgID != 0 {
+		a.db.OrgStats().Upsert(ctx, a.orgID, int32(len(a.nodes)))
+	}
 
 	return a.nodes, a.err
 }
