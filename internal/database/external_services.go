@@ -837,10 +837,10 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&dbutil.NullTime{Time: &svcs[i].LastSyncAt},
 			&dbutil.NullTime{Time: &svcs[i].NextSyncAt},
 			&dbutil.NullInt32{N: &svcs[i].NamespaceUserID},
+			&dbutil.NullInt32{N: &svcs[i].NamespaceOrgID},
 			&svcs[i].Unrestricted,
 			&svcs[i].CloudDefault,
 			&encryptionKeyID,
-			&dbutil.NullInt32{N: &svcs[i].NamespaceOrgID},
 			&dbutil.NullBool{B: svcs[i].HasWebhooks},
 		)
 		if err != nil {
@@ -878,6 +878,7 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			nullTimeColumn(s.LastSyncAt),
 			nullTimeColumn(s.NextSyncAt),
 			nullInt32Column(s.NamespaceUserID),
+			nullInt32Column(s.NamespaceOrgID),
 			s.Unrestricted,
 			s.CloudDefault,
 			s.HasWebhooks,
@@ -891,7 +892,7 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -908,6 +909,7 @@ INSERT INTO external_services (
   last_sync_at,
   next_sync_at,
   namespace_user_id,
+  namespace_org_id,
   unrestricted,
   cloud_default,
   has_webhooks
@@ -925,6 +927,7 @@ SET
   last_sync_at       = excluded.last_sync_at,
   next_sync_at       = excluded.next_sync_at,
   namespace_user_id  = excluded.namespace_user_id,
+  namespace_org_id   = excluded.namespace_org_id,
   unrestricted       = excluded.unrestricted,
   cloud_default      = excluded.cloud_default,
   has_webhooks       = excluded.has_webhooks
@@ -939,10 +942,10 @@ RETURNING
 	last_sync_at,
 	next_sync_at,
 	namespace_user_id,
+	namespace_org_id,
 	unrestricted,
 	cloud_default,
 	encryption_key_id,
-	namespace_org_id,
 	has_webhooks
 `
 
@@ -995,6 +998,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			Config:            *update.Config,
 			AuthProviders:     ps,
 			NamespaceUserID:   externalService.NamespaceUserID,
+			NamespaceOrgID:    externalService.NamespaceOrgID,
 		})
 		if err != nil {
 			return err
