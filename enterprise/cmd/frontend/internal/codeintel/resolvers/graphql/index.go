@@ -5,12 +5,14 @@ import (
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/opentracing/opentracing-go/log"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type IndexResolver struct {
@@ -19,9 +21,10 @@ type IndexResolver struct {
 	index            store.Index
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
+	traceErrs        *observation.ErrCollector
 }
 
-func NewIndexResolver(db database.DB, resolver resolvers.Resolver, index store.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver) gql.LSIFIndexResolver {
+func NewIndexResolver(db database.DB, resolver resolvers.Resolver, index store.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTrace *observation.ErrCollector) gql.LSIFIndexResolver {
 	if index.AssociatedUploadID != nil {
 		// Request the next batch of upload fetches to contain the record's associated
 		// upload id, if one exists it exists. This allows the prefetcher.GetUploadByID
@@ -36,6 +39,7 @@ func NewIndexResolver(db database.DB, resolver resolvers.Resolver, index store.I
 		index:            index,
 		prefetcher:       prefetcher,
 		locationResolver: locationResolver,
+		traceErrs:        errTrace,
 	}
 }
 
@@ -61,19 +65,26 @@ func (r *IndexResolver) State() string {
 	return state
 }
 
-func (r *IndexResolver) AssociatedUpload(ctx context.Context) (gql.LSIFUploadResolver, error) {
+func (r *IndexResolver) AssociatedUpload(ctx context.Context) (_ gql.LSIFUploadResolver, err error) {
 	if r.index.AssociatedUploadID == nil {
 		return nil, nil
 	}
+
+	defer r.traceErrs.Collect(&err,
+		log.String("indexResolver.field", "associatedUpload"),
+		log.Int("associatedUpload", *r.index.AssociatedUploadID),
+	)
 
 	upload, exists, err := r.prefetcher.GetUploadByID(ctx, *r.index.AssociatedUploadID)
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	return NewUploadResolver(r.db, r.resolver, upload, r.prefetcher, r.locationResolver), nil
+	return NewUploadResolver(r.db, r.resolver, upload, r.prefetcher, r.locationResolver, r.traceErrs), nil
 }
 
-func (r *IndexResolver) ProjectRoot(ctx context.Context) (*gql.GitTreeEntryResolver, error) {
+func (r *IndexResolver) ProjectRoot(ctx context.Context) (_ *gql.GitTreeEntryResolver, err error) {
+	defer r.traceErrs.Collect(&err, log.String("indexResolver.field", "projectRoot"))
+
 	return r.locationResolver.Path(ctx, api.RepoID(r.index.RepositoryID), r.index.Commit, r.index.Root)
 }
