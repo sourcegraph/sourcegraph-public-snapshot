@@ -1,13 +1,19 @@
 import { ApolloClient, gql } from '@apollo/client'
+import { startCase } from 'lodash'
+import openColor from 'open-color'
 import { LineChartContent } from 'sourcegraph'
 
 import {
     GetCaptureGroupInsightPreviewResult,
     GetCaptureGroupInsightPreviewVariables,
 } from '../../../../../../graphql-operations'
-import { LINE_CHART_WITH_HUGE_NUMBER_OF_LINES } from '../../../../../../views/mocks/charts-content'
 import { CaptureInsightSettings } from '../../code-insights-backend-types'
+import { getDataPoints, InsightDataSeriesData } from '../../utils/create-line-chart-content'
 import { getStepInterval } from '../utils/insight-transformers'
+
+const SERIES_COLORS = Object.keys(openColor)
+    .filter(name => name !== 'white' && name !== 'black' && name !== 'gray')
+    .map(name => ({ name: startCase(name), color: `var(--oc-${name}-7)` }))
 
 const GET_CAPTURE_GROUP_INSIGHT_PREVIEW_GQL = gql`
     query GetCaptureGroupInsightPreview($input: SearchInsightLivePreviewInput!) {
@@ -36,13 +42,36 @@ export const getCaptureGroupInsightsPreview = (
                     label: '',
                     repositoryScope: { repositories: input.repositories },
                     generatedFromCaptureGroups: true,
-                    timeScope: { stepInterval: { unit, value } },
+                    timeScope: { stepInterval: { unit, value: +value } },
                 },
             },
         })
         .then(({ data, error }) => {
-            console.log(data)
+            if (error) {
+                throw error
+            }
 
-            return LINE_CHART_WITH_HUGE_NUMBER_OF_LINES
+            const { searchInsightLivePreview: series } = data
+
+            // Extend series with synthetic index based series id
+            const indexedSeries = series.map<InsightDataSeriesData>((series, index) => ({
+                seriesId: `${index}`,
+                ...series,
+            }))
+
+            return {
+                chart: 'line',
+                data: getDataPoints(indexedSeries),
+                series: indexedSeries.map((series, index) => ({
+                    dataKey: series.seriesId,
+                    name: series.label,
+                    stroke: SERIES_COLORS[index % SERIES_COLORS.length].color,
+                })),
+                xAxis: {
+                    dataKey: 'dateTime',
+                    scale: 'time',
+                    type: 'number',
+                },
+            }
         })
 }

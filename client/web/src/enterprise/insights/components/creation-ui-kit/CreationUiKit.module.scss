@@ -22,13 +22,14 @@
         position: sticky;
         top: 1rem;
         align-self: start;
-        min-height: 18rem;
+        min-height: 22rem;
         grid-column: 2/3;
 
         [data-chart-size-root],
         [data-line-chart-size-root] {
             min-height: 15rem;
             min-width: 15rem;
+            height: 100%;
         }
     }
 

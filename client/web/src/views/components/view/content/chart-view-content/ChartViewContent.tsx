@@ -76,7 +76,10 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
 
     return (
         <div className={classNames(styles.chartViewContent, className)}>
-            <ParentSize data-chart-size-root="" className={classNames({ [styles.chart]: isResponsive })}>
+            <ParentSize
+                data-chart-size-root=""
+                className={classNames(styles.chart, { [styles.chartWithResponsive]: isResponsive })}
+            >
                 {({ width, height }) => {
                     if (content.chart === 'line') {
                         return (

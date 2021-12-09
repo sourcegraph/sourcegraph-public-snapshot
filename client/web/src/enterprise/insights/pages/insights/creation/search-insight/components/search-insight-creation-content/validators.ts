@@ -47,7 +47,9 @@ export const repositoriesExistValidator: AsyncValidator<string> = async value =>
         }
 
         const repositories = await fetchRepositories(repositoryNames).toPromise()
-        const nullRepositoryIndex = repositories.findIndex(repo => !repo.name)
+        const nullRepositoryIndex = repositories.findIndex(
+            (repo, index) => !repo || repo.name !== repositoryNames[index]
+        )
 
         if (nullRepositoryIndex !== -1) {
             const repoName = repositoryNames[nullRepositoryIndex]
