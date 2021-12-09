@@ -641,6 +641,9 @@ export interface HandleCodeHostOptions extends CodeIntelligenceProps {
     background: Pick<BackgroundPageApi, 'notifyPrivateCloudError' | 'openOptionsPage'>
 }
 
+/**
+ * Opens extension options page
+ */
 const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
     event.preventDefault()
     if (isExtension) {
@@ -649,28 +652,30 @@ const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = 
 }
 
 /**
- * Checks whether
- * - connected to cloud URL
- * - and detected private repository
- * - and repository is cloned
+ * @returns boolean indicating whether it is safe to continue initialization
+ *
+ * Returns
+ * - "false"
+ *   - If could not parse repository name
+ *   - Or if detected repository is private and not cloned in sourcegraph
+ * - "true" in all other cases
  *
  * Side-effect:
- * - notifies background about private cloud error
- * - renders "Configure Sourcegraph" or "Sign In" button
+ * - Notifies background about private cloud error
+ * - Renders "Configure Sourcegraph" or "Sign In" button
  */
-const isCloudPrivateRepoCloned = async ({
+const isSafeToContinueCodeIntel = async ({
     sourcegraphURL,
     codeHost,
     requestGraphQL,
     render,
 }: Pick<HandleCodeHostOptions, 'render' | 'codeHost'> &
     Pick<HandleCodeHostOptions['platformContext'], 'requestGraphQL' | 'sourcegraphURL'>): Promise<boolean> => {
-    // Only check if connected to Cloud URL and non-empty getContext implementation
     if (!isDefaultSourcegraphUrl(sourcegraphURL) || !codeHost.getContext) {
         return true
     }
-
     try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { privateRepository, rawRepoName } = await codeHost.getContext()
         if (!privateRepository) {
             // We can auto-clone public repos
@@ -785,36 +790,10 @@ export async function handleCodeHost({
         )
 
     if (codeHost.searchEnhancement) {
-        const { searchViewResolver, resultViewResolver, onChange } = codeHost.searchEnhancement
-        const searchURL = new URL('/search', sourcegraphURL)
-        searchURL.searchParams.append('utm_source', getPlatformName())
-        searchURL.searchParams.append('utm_campaign', 'global-search')
-
-        const searchView = mutations.pipe(
-            trackViews([searchViewResolver]),
-            switchMap(({ element }) =>
-                fromEvent(element, 'input').pipe(
-                    map(event => (event.target as HTMLInputElement).value),
-                    startWith((element as HTMLInputElement).value)
-                )
-            ),
-            map(value => ({
-                value,
-                searchURL: searchURL.href,
-            })),
-            observeOn(asyncScheduler)
-        )
-        const resultView = mutations.pipe(trackViews([resultViewResolver]), observeOn(asyncScheduler))
-
-        const searchEnhancementSubscription = combineLatest([searchView, resultView])
-            .pipe(map(([search, { element: resultElement }]) => ({ ...search, resultElement })))
-            .subscribe(onChange)
-        subscriptions.add(searchEnhancementSubscription)
+        subscriptions.add(initializeSearchEnhancement(codeHost.searchEnhancement, sourcegraphURL, mutations))
     }
 
-    // Securely check if private repository is cloned in cloud URL
-    const isRepoCloned = await isCloudPrivateRepoCloned({ sourcegraphURL, requestGraphQL, codeHost, render })
-    if (!isRepoCloned) {
+    if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {
         // Stop initializing code intelligence
         return subscriptions
     }
@@ -1413,6 +1392,37 @@ export const determineCodeHost = (sourcegraphURL?: string): CodeHost | undefined
     }
 
     return codeHost
+}
+
+function initializeSearchEnhancement(
+    searchEnhancement: NonNullable<CodeHost['searchEnhancement']>,
+    sourcegraphURL: string,
+    mutations: Observable<MutationRecordLike[]>
+): Subscription {
+    const { searchViewResolver, resultViewResolver, onChange } = searchEnhancement
+    const searchURL = new URL('/search', sourcegraphURL)
+    searchURL.searchParams.append('utm_source', getPlatformName())
+    searchURL.searchParams.append('utm_campaign', 'global-search')
+
+    const searchView = mutations.pipe(
+        trackViews([searchViewResolver]),
+        switchMap(({ element }) =>
+            fromEvent(element, 'input').pipe(
+                map(event => (event.target as HTMLInputElement).value),
+                startWith((element as HTMLInputElement).value)
+            )
+        ),
+        map(value => ({
+            value,
+            searchURL: searchURL.href,
+        })),
+        observeOn(asyncScheduler)
+    )
+    const resultView = mutations.pipe(trackViews([resultViewResolver]), observeOn(asyncScheduler))
+
+    return combineLatest([searchView, resultView])
+        .pipe(map(([search, { element: resultElement }]) => ({ ...search, resultElement })))
+        .subscribe(onChange)
 }
 
 export function injectCodeIntelligenceToCodeHost(
