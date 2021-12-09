@@ -2,12 +2,12 @@ package runner
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/fs"
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
