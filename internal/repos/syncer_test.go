@@ -1991,16 +1991,23 @@ func testSyncReposWithLastErrors(s *repos.Store) func(*testing.T) {
 		ctx := context.Background()
 
 		repoName := api.RepoName("github.com/foo/bar")
-		syncer := setupSyncErroredTest(ctx, s, t, repoName, extsvc.KindGitHub,
+		syncer, repo := setupSyncErroredTest(ctx, s, t, repoName, extsvc.KindGitHub,
 			&database.RepoNotFoundErr{Name: repoName})
 
 		// Run the syncer, which should find the repo with non-empty last_error and delete it
-		syncer.SyncReposWithLastErrors(ctx, ratelimit.DefaultRegistry, 1)
+		err := syncer.SyncReposWithLastErrors(ctx, ratelimit.DefaultRegistry, 1)
+		if err == nil {
+			t.Fatalf("expected a repo not found error after syncing")
+		}
 
-		// TODO: Update once code is merged to enable synchronous functionality for syncer.SyncRepo so we no longer
-		// need this sleep statement.
-		time.Sleep(2 * time.Second)
+		diff := <-syncer.Synced
 
+		deleted := types.Repos{&types.Repo{ID: repo.ID}}
+		if d := cmp.Diff(repos.Diff{Deleted: deleted}, diff); d != "" {
+			t.Fatalf("Deleted mismatch (-want +got):\n%s", d)
+		}
+
+		assertDeletedRepoCount(ctx, t, s, 1)
 		// Try to fetch the repo to verify that it was deleted by the syncer
 		myRepo, err := s.RepoStore.GetByName(ctx, repoName)
 		if err == nil {
@@ -2020,7 +2027,7 @@ func testSyncReposWithLastErrorsHitsRateLimiter(s *repos.Store) func(*testing.T)
 		ctx := context.Background()
 		repoName := api.RepoName("gitlab.com/asdf/jkl")
 		errString := "reached the code host"
-		syncer := setupSyncErroredTest(ctx, s, t, repoName, extsvc.KindGitLab, fmt.Errorf(errString))
+		syncer, _ := setupSyncErroredTest(ctx, s, t, repoName, extsvc.KindGitLab, fmt.Errorf(errString))
 
 		rateLimiterRegistry := ratelimit.NewRegistry()
 		l := rateLimiterRegistry.Get("https://gitlab.com/")
@@ -2044,7 +2051,7 @@ func testSyncReposWithLastErrorsHitsRateLimiter(s *repos.Store) func(*testing.T)
 	}
 }
 
-func setupSyncErroredTest(ctx context.Context, s *repos.Store, t *testing.T, repoName api.RepoName, serviceType string, externalSvcError error) *repos.Syncer {
+func setupSyncErroredTest(ctx context.Context, s *repos.Store, t *testing.T, repoName api.RepoName, serviceType string, externalSvcError error) (*repos.Syncer, *types.Repo) {
 	t.Helper()
 	servicesPerKind := createExternalServices(t, s, func(svc *types.ExternalService) { svc.CloudDefault = true })
 	dbRepo := &types.Repo{
@@ -2088,7 +2095,7 @@ func setupSyncErroredTest(ctx context.Context, s *repos.Store, t *testing.T, rep
 				dbRepo),
 		),
 	}
-	return syncer
+	return syncer, dbRepo
 }
 
 func isRepoNotFoundErr(err error) bool {

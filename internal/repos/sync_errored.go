@@ -41,7 +41,7 @@ func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiterRegistr
 		if err != nil {
 			return errors.Errorf("error waiting for rate limiter: %s", err)
 		}
-		_, err = s.SyncRepo(ctx, repo.Name)
+		_, err = s.SyncRepo(ctx, repo.Name, false)
 		if err != nil {
 			return err
 		}
