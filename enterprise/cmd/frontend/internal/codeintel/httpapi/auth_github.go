@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -28,9 +27,7 @@ func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string
 
 	key := makeGitHubAuthCacheKey(githubToken, repoName)
 
-	if authorized, ok, err := githubAuthCache.Get(key); err != nil {
-		log15.Error("failed to retrieve codeintel upload authz result from cache", "error", err)
-	} else if ok {
+	if authorized, ok := githubAuthCache.Get(key); ok {
 		if !authorized {
 			return http.StatusUnauthorized, ErrGitHubUnauthorized
 		}
@@ -39,18 +36,12 @@ func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string
 	}
 
 	defer func() {
-		var authorized bool
 		switch err {
 		case nil:
-			authorized = true
+			githubAuthCache.Set(key, true)
 		case ErrGitHubUnauthorized:
-			authorized = false
+			githubAuthCache.Set(key, false)
 		default:
-			return
-		}
-
-		if err := githubAuthCache.Set(key, authorized); err != nil {
-			log15.Error("failed to write codeintel upload authz result to cache", "error", err)
 		}
 	}()
 

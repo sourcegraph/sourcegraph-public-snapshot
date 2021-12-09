@@ -1,27 +1,37 @@
 package httpapi
 
-import "fmt"
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
+)
 
 type GitHubAuthCache struct {
-	cache map[string]bool
+	cache *rcache.Cache
 }
 
 var githubAuthCache = &GitHubAuthCache{
-	// TODO - replace with redis
-	cache: map[string]bool{},
+	cache: rcache.NewWithTTL("codeintel.github-authz:", 60 /* seconds */),
 }
 
-func (c *GitHubAuthCache) Get(key string) (bool, bool, error) {
-	authorized, ok := c.cache[key]
-	return authorized, ok, nil
+func (c *GitHubAuthCache) Get(key string) (authorized bool, _ bool) {
+	b, ok := c.cache.Get(key)
+	if !ok {
+		return false, false
+	}
+
+	err := json.Unmarshal(b, &authorized)
+	return authorized, err == nil
 }
 
-func (c *GitHubAuthCache) Set(key string, authorized bool) error {
-	c.cache[key] = authorized
-	return nil
+func (c *GitHubAuthCache) Set(key string, authorized bool) {
+	b, _ := json.Marshal(authorized)
+	c.cache.Set(key, b)
 }
 
 func makeGitHubAuthCacheKey(githubToken, repoName string) string {
-	// TODO - hash for privacy
-	return fmt.Sprintf("%s:%s", githubToken, repoName)
+	key := sha256.Sum256([]byte(githubToken + ":" + repoName))
+	return hex.EncodeToString(key[:])
 }
