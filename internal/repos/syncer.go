@@ -380,10 +380,23 @@ func (s *Syncer) syncRepo(
 // RepoLimitError is produced by Syncer.ExternalServiceSync when a user's sync job
 // exceeds the user added repo limits.
 type RepoLimitError struct {
-	SiteAdded, SiteLimit uint64
-	UserAdded, UserLimit uint64
-	UserID               int32
-	UserName             string
+	// Number of repos added to site
+	SiteAdded uint64
+
+	// Limit of repos that can be added to one site
+	SiteLimit uint64
+
+	// Number of repos added by user
+	UserAdded uint64
+
+	// Limit of repos that can be added by one user
+	UserLimit uint64
+
+	// NamespaceUserID of an external service
+	UserID int32
+
+	// Name of user of external service
+	UserName string
 }
 
 func (e *RepoLimitError) Error() string {
