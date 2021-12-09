@@ -294,7 +294,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 	}
 
 	updatedRepo, err, _ := s.syncGroup.Do(string(name), func() (interface{}, error) {
-		return s.syncRepo(ctx, codehost, name, nil)
+		return s.syncRepo(ctx, codehost, name, repo)
 	})
 	if err != nil {
 		return nil, err
