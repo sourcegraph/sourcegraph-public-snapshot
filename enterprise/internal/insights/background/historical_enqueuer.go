@@ -9,6 +9,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
@@ -358,15 +362,16 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 		// For every series that we want to potentially gather historical data for, try.
 		for _, seriesID := range sortedSeriesIDs {
 			series := uniqueSeries[seriesID]
-
-			frames := FirstOfMonthFrames(12, series.CreatedAt.Truncate(time.Hour*24))
+			frames := query.BuildFrames(12, timeseries.TimeInterval{
+				Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
+				Value: series.SampleIntervalValue,
+			}, series.CreatedAt.Truncate(time.Hour*24))
 
 			log15.Debug("insights: starting frames", "repo_id", repo.ID, "series_id", series.SeriesID, "frames", frames)
 			plan := h.frameFilter.FilterFrames(ctx, frames, repo.ID)
-
 			if len(frames) != len(plan.Executions) {
 				h.statistics[seriesID].Compressed += 1
-				log15.Debug("compressed frames", "repo_id", repo.ID, "series_id", series.SeriesID, "plan", plan.Executions)
+				log15.Debug("compressed frames", "repo_id", repo.ID, "series_id", series.SeriesID, "plan", plan)
 			} else {
 				h.statistics[seriesID].Uncompressed += 1
 			}
@@ -376,24 +381,6 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 				err := h.limiter.Wait(ctx)
 				if err != nil {
 					return err
-				}
-
-				to := queryExecution.RecordingTime.Add(time.Hour * 24)
-				// If we already have data for this frame+repo+series, then there's nothing to do.
-				var numDataPoints int
-				numDataPoints, err = h.insightsStore.CountData(ctx, store.CountDataOpts{
-					From:     &queryExecution.RecordingTime,
-					To:       &to,
-					SeriesID: &seriesID,
-					RepoID:   &repo.ID,
-				})
-				if err != nil {
-					softErr = multierror.Append(softErr, err)
-					// In this case we will assume the point does not exist and query for it anyway.
-					h.statistics[seriesID].Errored += 1
-				} else if numDataPoints > 0 {
-					h.statistics[seriesID].Skipped += 1
-					continue
 				}
 
 				// Build historical data for this unique timeframe+repo+series.
@@ -438,7 +425,7 @@ type buildSeriesContext struct {
 
 // FirstOfMonthFrames builds a set of frames with a specific number of elements, such that all of the
 // starting times of each frame < current will fall on the first of a month.
-func FirstOfMonthFrames(numPoints int, current time.Time) []compression.Frame {
+func FirstOfMonthFrames(numPoints int, current time.Time) []itypes.Frame {
 	if numPoints < 1 {
 		return nil
 	}
@@ -452,10 +439,10 @@ func FirstOfMonthFrames(numPoints int, current time.Time) []compression.Frame {
 	times = append(times, firstOfCurrent)
 	times = append(times, current)
 
-	frames := make([]compression.Frame, 0, len(times)-1)
+	frames := make([]itypes.Frame, 0, len(times)-1)
 	for i := 1; i < len(times); i++ {
 		prev := times[i-1]
-		frames = append(frames, compression.Frame{
+		frames = append(frames, itypes.Frame{
 			From: prev,
 			To:   times[i],
 		})
@@ -553,7 +540,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	query = withCountUnlimited(query)
 	query = fmt.Sprintf("%s repo:^%s$@%s", query, regexp.QuoteMeta(repoName), revision)
 
-	job := bctx.execution.ToQueueJob(bctx.seriesID, query, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
+	job := queryrunner.ToQueueJob(bctx.execution, bctx.seriesID, query, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
 	hardErr = h.enqueueQueryRunnerJob(ctx, job)
 	return
 }
