@@ -61,6 +61,7 @@ var (
 			versionCommand,
 			secretCommand,
 			setupCommand,
+			opsCommand,
 			checkCommand,
 			dbCommand,
 		},
