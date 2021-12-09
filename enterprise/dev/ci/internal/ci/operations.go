@@ -100,7 +100,7 @@ func addCheck(pipeline *bk.Pipeline) {
 // yarn ~41s + ~30s
 func addPrettier(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: Prettier",
-		bk.Concurrency(50),
+		bk.Parallelism(50),
 		bk.Cmd("dev/ci/yarn-run.sh prettier-check"))
 }
 
