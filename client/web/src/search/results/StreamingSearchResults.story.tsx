@@ -17,8 +17,11 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
 import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
+import { useExperimentalFeatures } from '../../stores'
 
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
+
+useExperimentalFeatures.setState({ showSearchContext: true })
 
 const history = createBrowserHistory()
 history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
@@ -64,7 +67,6 @@ const defaultProps: StreamingSearchResultsProps = {
     featureFlags: EMPTY_FEATURE_FLAGS,
     extensionViews: () => null,
     isSourcegraphDotCom: false,
-    showSearchContext: true,
     searchContextsEnabled: true,
 }
 

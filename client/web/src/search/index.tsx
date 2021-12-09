@@ -165,7 +165,6 @@ export interface OnboardingTourProps {
 
 export interface SearchContextProps {
     searchContextsEnabled: boolean
-    showSearchContext: boolean
     showSearchContextManagement: boolean
     hasUserAddedRepositories: boolean
     hasUserAddedExternalServices: boolean
@@ -186,7 +185,6 @@ export interface SearchContextProps {
 export type SearchContextInputProps = Pick<
     SearchContextProps,
     | 'searchContextsEnabled'
-    | 'showSearchContext'
     | 'hasUserAddedRepositories'
     | 'hasUserAddedExternalServices'
     | 'showSearchContextManagement'

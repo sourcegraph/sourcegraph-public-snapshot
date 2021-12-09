@@ -40,7 +40,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     platformContext: {} as any,
     keyboardShortcuts: [],
     searchContextsEnabled: true,
-    showSearchContext: false,
     showSearchContextManagement: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => {},
@@ -61,13 +60,18 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     extensionViews: () => null,
 })
 
-const { add } = storiesOf('web/search/home/SearchPage', module).addParameters({
-    design: {
-        type: 'figma',
-        url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
-    },
-    chromatic: { viewports: [544, 577, 769, 993, 1200] },
-})
+const { add } = storiesOf('web/search/home/SearchPage', module)
+    .addParameters({
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/sPRyyv3nt5h0284nqEuAXE/12192-Sourcegraph-server-page-v1?node-id=255%3A3',
+        },
+        chromatic: { viewports: [544, 577, 769, 993, 1200] },
+    })
+    .addDecorator(Story => {
+        useExperimentalFeatures.setState({ showSearchContext: false })
+        return <Story />
+    })
 
 add('Cloud with panels', () => (
     <WebStory>

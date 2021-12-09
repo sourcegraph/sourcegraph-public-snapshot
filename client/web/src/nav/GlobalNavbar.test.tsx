@@ -43,7 +43,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     telemetryService: {} as any,
     isExtensionAlertAnimating: false,
     showSearchBox: true,
-    showSearchContext: false,
     showSearchContextManagement: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,

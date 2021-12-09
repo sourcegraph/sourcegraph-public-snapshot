@@ -13,7 +13,7 @@ import { FuzzyFinder } from '@sourcegraph/web/src/components/fuzzyFinder/FuzzyFi
 import { PatternTypeProps, OnboardingTourProps, SearchContextInputProps, parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '../../keyboardShortcuts/keyboardShortcuts'
-import { useNavbarQueryState } from '../../stores'
+import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
 import { NavbarQueryState } from '../../stores/navbarSearchQueryState'
 import { getExperimentalFeatures } from '../../util/get-experimental-features'
 import { SubmitSearchParameters } from '../helpers'
@@ -64,6 +64,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         searchCaseSensitivity,
         setSearchCaseSensitivity,
     } = useNavbarQueryState(selectQueryState, shallow)
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -104,6 +105,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         >
             <SearchBox
                 {...props}
+                showSearchContext={showSearchContext}
                 caseSensitive={searchCaseSensitivity}
                 setCaseSensitivity={setSearchCaseSensitivity}
                 queryState={queryState}

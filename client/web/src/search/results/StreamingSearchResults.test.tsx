@@ -21,7 +21,7 @@ import {
 
 import { AuthenticatedUser } from '../../auth'
 import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
-import { useNavbarQueryState } from '../../stores'
+import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
 import * as helpers from '../helpers'
 
 import { generateMockedResponses } from './sidebar/Revisions.mocks'
@@ -57,7 +57,6 @@ describe('StreamingSearchResults', () => {
         featureFlags: EMPTY_FEATURE_FLAGS,
         extensionViews: () => null,
         isSourcegraphDotCom: false,
-        showSearchContext: true,
         searchContextsEnabled: true,
     }
 
@@ -81,6 +80,7 @@ describe('StreamingSearchResults', () => {
 
     beforeEach(() => {
         useNavbarQueryState.setState({ searchCaseSensitivity: false })
+        useExperimentalFeatures.setState({ showSearchContext: true })
     })
 
     it('should call streaming search API with the right parameters from URL', async () => {

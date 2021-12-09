@@ -21,7 +21,7 @@ import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
-import { useNavbarQueryState } from '../../stores'
+import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { canSubmitSearch, submitSearch, SubmitSearchParameters } from '../helpers'
 import { SearchBox } from '../input/SearchBox'
@@ -67,6 +67,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
         query: props.queryPrefix ? props.queryPrefix : '',
     })
     const { caseSensitive, setCaseSensitivity } = useNavbarQueryState(queryStateSelector, shallow)
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
 
     useEffect(() => {
         setUserQueryState({ query: props.queryPrefix || '' })
@@ -141,6 +142,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     <SearchBox
                         {...props}
                         {...onboardingTourQueryInputProps}
+                        showSearchContext={showSearchContext}
                         caseSensitive={caseSensitive}
                         setCaseSensitivity={setCaseSensitivity}
                         submitSearchOnToggle={submitSearchOnChange}

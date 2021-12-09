@@ -23,6 +23,7 @@ export interface SearchBoxProps
         TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
+    showSearchContext: boolean
     queryState: QueryState
     onChange: (newState: QueryState) => void
     onSubmit: () => void

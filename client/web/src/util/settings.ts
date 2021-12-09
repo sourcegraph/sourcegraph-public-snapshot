@@ -65,7 +65,6 @@ export function experimentalFeaturesFromSettings(
     showOnboardingTour: boolean
     showEnterpriseHomePanels: boolean
     showMultilineSearchConsole: boolean
-    showSearchContext: boolean
     showSearchContextManagement: boolean
     enableCodeMonitoring: boolean
     enableAPIDocs: boolean
@@ -77,7 +76,6 @@ export function experimentalFeaturesFromSettings(
     const {
         showOnboardingTour = true, // Default to true if not set
         showEnterpriseHomePanels = true, // Default to true if not set
-        showSearchContext = true, // Default to true if not set
         showSearchContextManagement = true, // Default to true if not set
         showMultilineSearchConsole = false,
         codeMonitoring = true, // Default to true if not set
@@ -87,7 +85,6 @@ export function experimentalFeaturesFromSettings(
 
     return {
         showOnboardingTour,
-        showSearchContext,
         showSearchContextManagement,
         showEnterpriseHomePanels,
         showMultilineSearchConsole,

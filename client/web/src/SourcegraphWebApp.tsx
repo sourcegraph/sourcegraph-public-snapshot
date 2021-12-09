@@ -84,7 +84,12 @@ import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
-import { setQueryStateFromSettings, setQueryStateFromURL, setExperimentalFeaturesFromSettings } from './stores'
+import {
+    setQueryStateFromSettings,
+    setQueryStateFromURL,
+    setExperimentalFeaturesFromSettings,
+    getExperimentalFeatures,
+} from './stores'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -161,7 +166,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
 
     showEnterpriseHomePanels: boolean
 
-    showSearchContext: boolean
     showSearchContextManagement: boolean
     selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
@@ -254,7 +258,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             parsedSearchQuery: parsedSearchURL.query || '',
             searchPatternType: urlPatternType,
             showOnboardingTour: false,
-            showSearchContext: false,
             showSearchContextManagement: false,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
@@ -462,7 +465,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                                     showOnboardingTour={this.state.showOnboardingTour}
                                                     searchContextsEnabled={this.props.searchContextsEnabled}
-                                                    showSearchContext={this.state.showSearchContext}
                                                     hasUserAddedRepositories={this.hasUserAddedRepositories()}
                                                     hasUserAddedExternalServices={
                                                         this.state.hasUserAddedExternalServices
@@ -549,7 +551,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.state.hasUserAddedRepositories || this.state.hasUserSyncedPublicRepositories
 
     private getSelectedSearchContextSpec = (): string | undefined =>
-        this.state.showSearchContext ? this.state.selectedSearchContextSpec : undefined
+        getExperimentalFeatures().showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpec = (spec: string): void => {
         if (!this.props.searchContextsEnabled) {

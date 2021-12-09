@@ -86,7 +86,6 @@ export interface LayoutProps
         HomePanelsProps,
         SearchStreamingProps,
         CodeMonitoringProps,
-        SearchContextProps,
         UserExternalServicesOrRepositoriesUpdateProps,
         CodeIntelligenceProps,
         BatchChangesProps,

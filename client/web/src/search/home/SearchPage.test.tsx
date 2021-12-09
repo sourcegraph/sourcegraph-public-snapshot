@@ -57,7 +57,6 @@ describe('SearchPage', () => {
         platformContext: {} as any,
         keyboardShortcuts: [],
         searchContextsEnabled: true,
-        showSearchContext: false,
         showSearchContextManagement: false,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
