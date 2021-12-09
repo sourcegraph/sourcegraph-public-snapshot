@@ -223,18 +223,18 @@ func (r *Runner) validateSchemas(ctx context.Context, schemaContexts map[string]
 	for schemaName, schemaContext := range schemaContexts {
 		definitions, err := schemaContext.schema.Definitions.UpFrom(schemaContext.version, 0)
 		if err != nil {
-			definitions, innerErr := schemaContext.schema.Definitions.UpFrom(0, 0)
-			if innerErr != nil {
-				return innerErr
-			}
-			if len(definitions) == 0 {
-				return err
-			}
+			// An error here means we might just be a very old instance.
+			// In order to figure out what version we expect to be at, we
+			// re-query from a "blank" database so that we can take populate
+			// the definitions variable in the error construction below.
+			//
+			// Note that we can't exit without an error value from this function
+			// from this branch.
 
-			return &SchemaOutOfDateError{
-				schemaName:      schemaName,
-				currentVersion:  schemaContext.version,
-				expectedVersion: definitions[0].ID,
+			var innerErr error
+			definitions, innerErr = schemaContext.schema.Definitions.UpFrom(0, 0)
+			if innerErr != nil || len(definitions) == 0 {
+				return err
 			}
 		}
 		if len(definitions) == 0 {

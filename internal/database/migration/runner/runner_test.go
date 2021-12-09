@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"strings"
@@ -116,16 +117,18 @@ func TestRunnerValidate(t *testing.T) {
 	t.Run("very old schema", func(t *testing.T) {
 		store := testStoreWithVersion(250)
 
-		if err := testRunner(store).Validate(ctx, "well-formed"); err == nil || !strings.Contains(err.Error(), "to be migrated to version") {
-			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "unknown schema", err)
+		outOfDateError := new(SchemaOutOfDateError)
+		if err := testRunner(store).Validate(ctx, "well-formed"); !errors.As(err, &outOfDateError) || outOfDateError.expectedVersion != 10003 || outOfDateError.currentVersion != 250 {
+			t.Fatalf("unexpected error running validation. want=(unexpected version; expected 10003, currently 250) have=%s", err)
 		}
 	})
 
 	t.Run("old schema", func(t *testing.T) {
 		store := testStoreWithVersion(10001)
 
-		if err := testRunner(store).Validate(ctx, "well-formed"); err == nil || !strings.Contains(err.Error(), "to be migrated to version") {
-			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "unknown schema", err)
+		outOfDateError := new(SchemaOutOfDateError)
+		if err := testRunner(store).Validate(ctx, "well-formed"); !errors.As(err, &outOfDateError) || outOfDateError.expectedVersion != 10003 || outOfDateError.currentVersion != 10001 {
+			t.Fatalf("unexpected error running validation. want=(unexpected version; expected 10003, currently 10001) have=%s", err)
 		}
 	})
 
