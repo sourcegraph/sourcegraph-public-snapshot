@@ -9,6 +9,7 @@ import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHel
 
 import { SearchPatternType } from './graphql-operations'
 import { Layout, LayoutProps } from './Layout'
+import { useNavbarQueryState } from './stores'
 
 jest.mock('./theme', () => ({
     useThemeProps: () => ({
@@ -181,63 +182,29 @@ describe('Layout', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=r:golang/oauth2+test+f:travis case:yes' })
 
-        const setCaseSensitivitySpy = sinon.spy()
+        useNavbarQueryState.setState({ searchCaseSensitivity: false })
 
         render(
             <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    caseSensitive={false}
-                    setCaseSensitivity={setCaseSensitivitySpy}
-                />
+                <Layout {...defaultProps} history={history} location={history.location} />
             </BrowserRouter>
         )
 
-        sinon.assert.called(setCaseSensitivitySpy)
-        sinon.assert.calledWith(setCaseSensitivitySpy, true)
-    })
-
-    it('should not update caseSensitive if URL and context are the same', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis+case:yes' })
-
-        const setCaseSensitivitySpy = sinon.spy()
-
-        render(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    caseSensitive={true}
-                    setCaseSensitivity={setCaseSensitivitySpy}
-                />
-            </BrowserRouter>
-        )
-
-        sinon.assert.notCalled(setCaseSensitivitySpy)
+        expect(useNavbarQueryState.getState().searchCaseSensitivity).toBe(true)
     })
 
     it('should not update caseSensitive if query is empty', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=case:yes' })
 
-        const setCaseSensitivitySpy = sinon.spy()
+        useNavbarQueryState.setState({ searchCaseSensitivity: false })
 
         render(
             <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    caseSensitive={false}
-                    setCaseSensitivity={setCaseSensitivitySpy}
-                />
+                <Layout {...defaultProps} history={history} location={history.location} />
             </BrowserRouter>
         )
 
-        sinon.assert.notCalled(setCaseSensitivitySpy)
+        expect(useNavbarQueryState.getState().searchCaseSensitivity).toBe(false)
     })
 })

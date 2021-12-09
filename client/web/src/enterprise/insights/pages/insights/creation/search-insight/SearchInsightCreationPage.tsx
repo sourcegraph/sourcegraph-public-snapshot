@@ -55,7 +55,6 @@ export interface SearchInsightCreationPageProps extends TelemetryProps {
     onCancel: () => void
 }
 
-/** Displays create insight page with creation form. */
 export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCreationPageProps> = props => {
     const { visibility, subjects, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
 
@@ -122,7 +121,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                 // page without resolving URL query based insight values.
                 !loading && (
                     <>
-                        <div className="mb-5">
+                        <header className="mb-5">
                             <h2>Create new code insight</h2>
 
                             <p className="text-muted">
@@ -131,7 +130,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                                     Learn more.
                                 </a>
                             </p>
-                        </div>
+                        </header>
 
                         <SearchInsightCreationContent
                             className="pb-5"

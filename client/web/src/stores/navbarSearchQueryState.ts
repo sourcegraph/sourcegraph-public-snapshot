@@ -8,8 +8,11 @@ import create from 'zustand'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
+import { parseSearchURL } from '../search'
 import { QueryState, SubmitSearchParameters, submitSearch, toggleSubquery, canSubmitSearch } from '../search/helpers'
+import { defaultCaseSensitiveFromSettings } from '../util/settings'
 
 type QueryStateUpdate = QueryState | ((queryState: QueryState) => QueryState)
 
@@ -61,6 +64,7 @@ function updateQuery(query: string, updates: QueryUpdate[]): string {
 }
 
 export interface NavbarQueryState {
+    // DATA
     /**
      * The current seach query and auxiliary information needed by the
      * MonacoQueryInput component. You most likely don't have to read this value
@@ -68,21 +72,29 @@ export interface NavbarQueryState {
      * See {@link QueryState} for more information.
      */
     queryState: QueryState
+    searchCaseSensitivity: boolean
+
+    // ACTIONS
     /**
      * setQueryState updates `queryState`
      */
     setQueryState: (queryState: QueryStateUpdate) => void
+
     /**
      * submitSearch makes it possible to submit a new search query by updating
      * the current query via update directives. It won't submit the query if it
      * is empty.
      * Note that this won't update `queryState` directly.
      */
-    submitSearch: (parameters: Omit<SubmitSearchParameters, 'query'>, updates?: QueryUpdate[]) => void
+    submitSearch: (parameters: Omit<SubmitSearchParameters, 'query' | 'caseSensitive'>, updates?: QueryUpdate[]) => void
+
+    setSearchCaseSensitivity: (caseSensitive: boolean) => void
 }
 
 export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     queryState: { query: '' },
+    searchCaseSensitivity: false,
+
     setQueryState: queryStateUpdate => {
         if (typeof queryStateUpdate === 'function') {
             set({ queryState: queryStateUpdate(get().queryState) })
@@ -90,10 +102,43 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
             set({ queryState: queryStateUpdate })
         }
     },
+
     submitSearch: (parameters, updates = []) => {
-        const query = updateQuery(get().queryState.query, updates)
+        const {
+            queryState: { query },
+            searchCaseSensitivity: caseSensitive,
+        } = get()
+        const updatedQuery = updateQuery(query, updates)
         if (canSubmitSearch(query, parameters.selectedSearchContextSpec)) {
-            submitSearch({ ...parameters, query })
+            submitSearch({ ...parameters, query: updatedQuery, caseSensitive })
         }
     },
+
+    setSearchCaseSensitivity: (caseSensitive: boolean) => {
+        set({ searchCaseSensitivity: caseSensitive })
+    },
 }))
+
+/**
+ * Update or initialize query state related data from URL search parameters
+ */
+export function setQueryStateFromURL(urlParameters: string): void {
+    // This will be updated with the default in settings when the web app mounts.
+    const parsedSearchURL = parseSearchURL(urlParameters)
+    if (parsedSearchURL.query) {
+        // Only update flags if the URL contains a search query.
+        useNavbarQueryState.setState({
+            searchCaseSensitivity: parsedSearchURL.caseSensitive,
+        })
+    }
+}
+
+/**
+ * Update or initialize query state related data from settings
+ */
+export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Settings>): void {
+    const caseSensitive = defaultCaseSensitiveFromSettings(settings)
+    if (caseSensitive) {
+        useNavbarQueryState.setState({ searchCaseSensitivity: caseSensitive })
+    }
+}

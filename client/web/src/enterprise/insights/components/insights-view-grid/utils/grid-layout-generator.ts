@@ -146,6 +146,10 @@ export const recalculateGridLayout = (nextLayouts: ReactGridLayouts, insights: I
         adjustedLayouts[key] = layout.map(item => {
             const insight = insightsMap[item.i]
 
+            if (!insight) {
+                return item
+            }
+
             const isManySeriesChart =
                 isSearchBasedInsight(insight) && insight.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
 

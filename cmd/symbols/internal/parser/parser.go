@@ -19,7 +19,12 @@ import (
 )
 
 type Parser interface {
-	Parse(ctx context.Context, args types.SearchArgs, paths []string) (<-chan result.Symbol, error)
+	Parse(ctx context.Context, args types.SearchArgs, paths []string) (<-chan SymbolOrError, error)
+}
+
+type SymbolOrError struct {
+	Symbol result.Symbol
+	Err    error
 }
 
 type parser struct {
@@ -46,8 +51,8 @@ func NewParser(
 	}
 }
 
-func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []string) (_ <-chan result.Symbol, err error) {
-	ctx, traceLog, endObservation := p.operations.parse.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []string) (_ <-chan SymbolOrError, err error) {
+	ctx, endObservation := p.operations.parse.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(args.Repo)),
 		log.String("commitID", string(args.CommitID)),
 		log.Int("paths", len(paths)),
@@ -76,7 +81,7 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 	var (
 		wg                          sync.WaitGroup                                         // concurrency control
 		parseRequests               = make(chan fetcher.ParseRequest, p.requestBufferSize) // buffered requests
-		symbols                     = make(chan result.Symbol)                             // parsed responses
+		symbolOrErrors              = make(chan SymbolOrError)                             // parsed responses
 		totalRequests, totalSymbols uint32                                                 // stats
 	)
 
@@ -86,12 +91,13 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 		go func() {
 			defer func() {
 				endObservation(1, observation.Args{LogFields: []log.Field{
+					log.Int("numRequests", int(totalRequests)),
 					log.Int("numSymbols", int(totalSymbols)),
 				}})
 			}()
 
 			wg.Wait()
-			close(symbols)
+			close(symbolOrErrors)
 		}()
 	}()
 
@@ -101,31 +107,22 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 		go func() {
 			defer wg.Done()
 
-			for parseRequest := range parseRequests {
-				_ = p.handleParseRequest(ctx, symbols, parseRequest, &totalSymbols)
+			for parseRequestOrError := range parseRequestOrErrors {
+				if parseRequestOrError.Err != nil {
+					symbolOrErrors <- SymbolOrError{Err: parseRequestOrError.Err}
+					break
+				}
+
+				atomic.AddUint32(&totalRequests, 1)
+				_ = p.handleParseRequest(ctx, symbolOrErrors, parseRequestOrError.ParseRequest, &totalSymbols)
 			}
 		}()
 	}
 
-	for v := range parseRequestOrErrors {
-		if v.Err != nil {
-			return nil, v.Err
-		}
-
-		totalRequests++
-
-		select {
-		case parseRequests <- v.ParseRequest:
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
-	}
-	traceLog(log.Int("numRequests", int(totalRequests)))
-
-	return symbols, nil
+	return symbolOrErrors, nil
 }
 
-func (p *parser) handleParseRequest(ctx context.Context, symbols chan<- result.Symbol, parseRequest fetcher.ParseRequest, totalSymbols *uint32) (err error) {
+func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- SymbolOrError, parseRequest fetcher.ParseRequest, totalSymbols *uint32) (err error) {
 	ctx, traceLog, endObservation := p.operations.handleParseRequest.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("fileSize", len(parseRequest.Data)),
 	}})
@@ -183,7 +180,7 @@ func (p *parser) handleParseRequest(ctx context.Context, symbols chan<- result.S
 		}
 
 		select {
-		case symbols <- symbol:
+		case symbolOrErrors <- SymbolOrError{Symbol: symbol}:
 			atomic.AddUint32(totalSymbols, 1)
 
 		case <-ctx.Done():

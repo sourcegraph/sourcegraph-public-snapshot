@@ -49,7 +49,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
 import { CodeInsightsProps } from '../../insights/types'
 import { Settings } from '../../schema/settings.schema'
-import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../../search'
+import { PatternTypeProps, SearchContextProps } from '../../search'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
@@ -115,7 +115,6 @@ interface Props
         TelemetryProps,
         ActivationProps,
         PatternTypeProps,
-        CaseSensitivityProps,
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
@@ -147,7 +146,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
     revision,
     filePath,
     patternType,
-    caseSensitive,
     settingsCascade,
     useBreadcrumb,
     codeIntelligenceEnabled,

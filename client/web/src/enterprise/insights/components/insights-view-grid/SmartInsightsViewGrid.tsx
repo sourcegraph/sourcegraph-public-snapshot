@@ -1,5 +1,5 @@
 import { isEqual } from 'lodash'
-import React, { memo, useCallback, useState } from 'react'
+import React, { memo, useCallback, useEffect, useState } from 'react'
 import { Layout, Layouts } from 'react-grid-layout'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -29,6 +29,10 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
 
     const [layouts, setLayouts] = useState<Layouts>(insightLayoutGenerator(insights))
     const [resizingView, setResizeView] = useState<Layout | null>(null)
+
+    useEffect(() => {
+        setLayouts(insightLayoutGenerator(insights))
+    }, [insights])
 
     const handleLayoutChange = useCallback(
         (currentLayout: Layout[], allLayouts: Layouts): void => {
