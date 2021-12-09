@@ -11,6 +11,6 @@ BEGIN;
 ALTER TABLE insights_query_runner_jobs
     DROP COLUMN persist_mode;
 
-COMMIT;
-
 DROP TYPE PersistMode;
+
+COMMIT;
