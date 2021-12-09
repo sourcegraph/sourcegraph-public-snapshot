@@ -11,12 +11,14 @@ import { InsightDashboard, isVirtualDashboard, Insight } from '../../../core/typ
 import { isUserSubject } from '../../../core/types/subjects'
 import { useQueryParameters } from '../../../hooks/use-query-parameters'
 
+import { CaptureGroupCreationPage } from './capture-group/CaptureGroupCreationPage'
 import { LangStatsInsightCreationPage } from './lang-stats/LangStatsInsightCreationPage'
 import { SearchInsightCreationPage } from './search-insight/SearchInsightCreationPage'
 
 export enum InsightCreationPageType {
     LangStats = 'lang-stats',
     Search = 'search-based',
+    CaptureGroup = 'capture-group',
 }
 
 const getVisibilityFromDashboard = (dashboard: InsightDashboard | null): string | undefined => {
@@ -102,6 +104,10 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
                 onCancel={handleCancel}
             />
         )
+    }
+
+    if (mode === InsightCreationPageType.CaptureGroup) {
+        return <CaptureGroupCreationPage />
     }
 
     return (

@@ -163,28 +163,51 @@ func (s *codeMonitorStore) CountActionJobs(ctx context.Context, opts ListActionJ
 }
 
 const enqueueActionEmailFmtStr = `
-WITH due AS (
+WITH due_emails AS (
 	SELECT id
 	FROM cm_emails
-	WHERE monitor = %s 
+	WHERE monitor = %s
 		AND enabled = true
-),
-busy AS (
+	EXCEPT
 	SELECT DISTINCT email as id FROM cm_action_jobs
 	WHERE state = 'queued'
-	OR state = 'processing'
+		OR state = 'processing'
+), due_webhooks AS (
+	SELECT id
+	FROM cm_webhooks
+	WHERE monitor = %s
+		AND enabled = true
+	EXCEPT
+	SELECT DISTINCT webhook as id FROM cm_action_jobs
+	WHERE state = 'queued'
+		OR state = 'processing'
+), due_slack_webhooks AS (
+	SELECT id
+	FROM cm_slack_webhooks
+	WHERE monitor = %s
+		AND enabled = true
+	EXCEPT
+	SELECT DISTINCT slack_webhook as id FROM cm_action_jobs
+	WHERE state = 'queued'
+		OR state = 'processing'
 )
-INSERT INTO cm_action_jobs (email, trigger_event)
-SELECT id, %s::integer from due EXCEPT SELECT id, %s::integer from busy ORDER BY id
+INSERT INTO cm_action_jobs (email, webhook, slack_webhook, trigger_event)
+SELECT id, CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), %s::integer from due_emails
+UNION
+SELECT CAST(NULL AS BIGINT), id, CAST(NULL AS BIGINT), %s::integer from due_webhooks
+UNION
+SELECT CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), id, %s::integer from due_slack_webhooks
+ORDER BY 1, 2, 3
 RETURNING %s
 `
 
-// TODO(camdencheek): could/should we enqueue based on monitor ID rather than query ID? Would avoid joins above.
 func (s *codeMonitorStore) EnqueueActionJobsForMonitor(ctx context.Context, monitorID int64, triggerJobID int32) ([]*ActionJob, error) {
-	// TODO(camdencheek): Enqueue actions other than emails here
 	q := sqlf.Sprintf(
 		enqueueActionEmailFmtStr,
 		monitorID,
+		monitorID,
+		monitorID,
+		triggerJobID,
 		triggerJobID,
 		triggerJobID,
 		sqlf.Join(ActionJobColumns, ","),

@@ -8,6 +8,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError, isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Badge } from '@sourcegraph/wildcard'
 
 import { querySearchResultsStats } from './backend'
 import { SearchStatsLanguages } from './SearchStatsLanguages'
@@ -57,7 +58,9 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
             <header className="d-flex align-items-center justify-content-between mb-3">
                 <h2 className="d-flex align-items-center mb-0">
                     <ChartLineIcon className="icon-inline mr-2" /> Code statistics{' '}
-                    <small className="badge badge-secondary text-uppercase ml-2">Experimental</small>
+                    <Badge variant="secondary" className="text-uppercase ml-2" as="small">
+                        Experimental
+                    </Badge>
                 </h2>
             </header>
             <Form onSubmit={onSubmit} className="form">

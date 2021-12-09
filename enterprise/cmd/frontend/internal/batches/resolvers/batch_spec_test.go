@@ -265,17 +265,17 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	now := timeutil.Now().Truncate(time.Second)
 	minAgo := func(min int) time.Time { return now.Add(time.Duration(-min) * time.Minute) }
 
-	admin := ct.CreateTestUser(t, db, true)
-	adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
+	user := ct.CreateTestUser(t, db, false)
+	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
 
 	rs, extSvc := ct.CreateTestRepos(t, ctx, db, 3)
 
 	bstore := store.New(db, &observation.TestContext, nil)
 
 	svc := service.New(bstore)
-	spec, err := svc.CreateBatchSpecFromRaw(adminCtx, service.CreateBatchSpecFromRawOpts{
+	spec, err := svc.CreateBatchSpecFromRaw(userCtx, service.CreateBatchSpecFromRawOpts{
 		RawSpec:         ct.TestRawBatchSpecYAML,
-		NamespaceUserID: admin.ID,
+		NamespaceUserID: user.ID,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -300,9 +300,9 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	}
 
 	apiID := string(marshalBatchSpecRandID(spec.RandID))
-	adminAPIID := string(graphqlbackend.MarshalUserID(admin.ID))
+	adminAPIID := string(graphqlbackend.MarshalUserID(user.ID))
 
-	applyUrl := fmt.Sprintf("/users/%s/batch-changes/apply/%s", admin.Username, apiID)
+	applyUrl := fmt.Sprintf("/users/%s/batch-changes/apply/%s", user.Username, apiID)
 	codeHosts := apitest.BatchChangesCodeHostsConnection{
 		TotalCount: 0,
 		Nodes:      []apitest.BatchChangesCodeHost{},
@@ -314,8 +314,8 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		OriginalInput: spec.RawSpec,
 		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
 
-		Namespace:           apitest.UserOrg{ID: adminAPIID, DatabaseID: admin.ID, SiteAdmin: true},
-		Creator:             &apitest.User{ID: adminAPIID, DatabaseID: admin.ID, SiteAdmin: true},
+		Namespace:           apitest.UserOrg{ID: adminAPIID, DatabaseID: user.ID, SiteAdmin: false},
+		Creator:             &apitest.User{ID: adminAPIID, DatabaseID: user.ID, SiteAdmin: false},
 		ViewerCanAdminister: true,
 
 		AllCodeHosts:          codeHosts,
@@ -334,7 +334,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		},
 	}
 
-	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// Complete the workspace resolution
 	var workspaces []*btypes.BatchSpecWorkspace
@@ -348,7 +348,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 
 	setResolutionJobState(t, ctx, bstore, resolutionJob, btypes.BatchSpecResolutionJobStateCompleted)
 	want.WorkspaceResolution.State = btypes.BatchSpecResolutionJobStateCompleted.ToGraphQL()
-	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// Now enqueue jobs
 	var jobs []*btypes.BatchSpecWorkspaceExecutionJob
@@ -361,26 +361,26 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	}
 
 	want.State = "QUEUED"
-	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 1/3 jobs processing
 	jobs[1].StartedAt = minAgo(99)
 	setJobProcessing(t, ctx, bstore, jobs[1])
 	want.State = "PROCESSING"
 	want.StartedAt = graphqlbackend.DateTime{Time: jobs[1].StartedAt}
-	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 3/3 processing
 	setJobProcessing(t, ctx, bstore, jobs[0])
 	setJobProcessing(t, ctx, bstore, jobs[2])
 	// Expect same state
-	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 1/3 jobs complete, 2/3 processing
 	jobs[2].FinishedAt = minAgo(30)
 	setJobCompleted(t, ctx, bstore, jobs[2])
 	// Expect same state
-	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 3/3 jobs complete
 	jobs[0].FinishedAt = minAgo(9)
@@ -390,7 +390,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.State = "COMPLETED"
 	want.ApplyURL = &applyUrl
 	want.FinishedAt = graphqlbackend.DateTime{Time: jobs[0].FinishedAt}
-	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 1/3 jobs is failed, 2/3 completed
 	message1 := "failure message"
@@ -400,7 +400,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.FailureMessage = fmt.Sprintf("Failures:\n\n* %s\n", message1)
 	// We still want users to be able to apply batch specs that executed with errors
 	want.ApplyURL = &applyUrl
-	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 1/3 jobs is failed, 2/3 still processing
 	setJobProcessing(t, ctx, bstore, jobs[0])
@@ -408,7 +408,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.State = "PROCESSING"
 	want.FinishedAt = graphqlbackend.DateTime{}
 	want.ApplyURL = nil
-	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 3/3 jobs canceling and processing
 	setJobCanceling(t, ctx, bstore, jobs[0])
@@ -417,7 +417,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 
 	want.State = "CANCELING"
 	want.FailureMessage = ""
-	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 3/3 canceling and failed
 	jobs[0].FinishedAt = minAgo(9)
@@ -435,7 +435,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 * canceled
 * canceled
 `
-	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 1/3 jobs is failed, 2/3 completed, but produced invalid changeset specs
 	jobs[0].FinishedAt = minAgo(9)
@@ -481,8 +481,16 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	}
 	want.AllCodeHosts = codeHosts
 	want.OnlyWithoutCredential = codeHosts
-	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
+	// PERMISSIONS: Now we view the same batch spec but as another non-admin user.
+	// We want to response to be a 404, so an empty BatchSpec
+	want = apitest.BatchSpec{}
+	// Now we can query
+	otherUser := ct.CreateTestUser(t, db, false)
+	otherUserCtx := actor.WithActor(ctx, actor.FromUser(otherUser.ID))
+
+	queryAndAssertBatchSpec(t, otherUserCtx, s, apiID, want)
 }
 
 func queryAndAssertBatchSpec(t *testing.T, ctx context.Context, s *graphql.Schema, id string, want apitest.BatchSpec) {
@@ -593,7 +601,7 @@ query($batchSpec: ID!) {
       originalInput
       parsedInput
 
-      creator  { ...u }
+      creator { ...u }
       namespace {
         ... on User { ...u }
         ... on Org  { ...o }

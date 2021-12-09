@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
@@ -16,6 +17,7 @@ import (
 // batch_spec_execution_cache_entry columns that are modified in
 // CreateBatchSpecExecutionCacheEntry
 var batchSpecExecutionCacheEntryInsertColumns = SQLColumns{
+	"user_id",
 	"key",
 	"value",
 	"version",
@@ -27,6 +29,7 @@ var batchSpecExecutionCacheEntryInsertColumns = SQLColumns{
 // and create changeset jobs.
 var BatchSpecExecutionCacheEntryColums = SQLColumns{
 	"batch_spec_execution_cache_entries.id",
+	"batch_spec_execution_cache_entries.user_id",
 	"batch_spec_execution_cache_entries.key",
 	"batch_spec_execution_cache_entries.value",
 	"batch_spec_execution_cache_entries.version",
@@ -67,6 +70,7 @@ func (s *Store) createBatchSpecExecutionCacheEntryQuery(ce *btypes.BatchSpecExec
 	return sqlf.Sprintf(
 		createBatchSpecExecutionCacheEntryQueryFmtstr,
 		sqlf.Join(batchSpecExecutionCacheEntryInsertColumns.ToSqlf(), ", "),
+		ce.UserID,
 		ce.Key,
 		ce.Value,
 		ce.Version,
@@ -80,7 +84,7 @@ var createBatchSpecExecutionCacheEntryQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:CreateBatchSpecExecutionCacheEntry
 INSERT INTO batch_spec_execution_cache_entries (%s)
 VALUES ` + batchSpecExecutionCacheEntryInsertColumns.FmtStr() + `
-ON CONFLICT ON CONSTRAINT batch_spec_execution_cache_entries_key_unique
+ON CONFLICT ON CONSTRAINT batch_spec_execution_cache_entries_user_id_key_unique
 DO UPDATE SET
 	value = EXCLUDED.value,
 	version = EXCLUDED.version,
@@ -90,7 +94,8 @@ RETURNING %s
 
 // ListBatchSpecExecutionCacheEntriesOpts captures the query options needed for getting a BatchSpecExecutionCacheEntry
 type ListBatchSpecExecutionCacheEntriesOpts struct {
-	Keys []string
+	Keys   []string
+	UserID int32
 }
 
 // ListBatchSpecExecutionCacheEntries gets the BatchSpecExecutionCacheEntries matching the given options.
@@ -99,6 +104,14 @@ func (s *Store) ListBatchSpecExecutionCacheEntries(ctx context.Context, opts Lis
 		log.Int("Count", len(opts.Keys)),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	if opts.UserID == 0 {
+		return nil, errors.New("cannot query cache entries without specifying UserID")
+	}
+
+	if len(opts.Keys) == 0 {
+		return nil, errors.New("cannot query cache entries without specifying Keys")
+	}
 
 	q := listBatchSpecExecutionCacheEntriesQuery(&opts)
 
@@ -126,6 +139,7 @@ func listBatchSpecExecutionCacheEntriesQuery(opts *ListBatchSpecExecutionCacheEn
 		sqlf.Sprintf("batch_spec_execution_cache_entries.key = ANY (%s)", pq.Array(opts.Keys)),
 		// Only consider records that are in the current cache version.
 		sqlf.Sprintf("batch_spec_execution_cache_entries.version = %s", btypes.CurrentCacheVersion),
+		sqlf.Sprintf("batch_spec_execution_cache_entries.user_id = %s", opts.UserID),
 	}
 
 	return sqlf.Sprintf(
@@ -209,6 +223,7 @@ func (s *Store) CleanBatchSpecExecutionCacheEntries(ctx context.Context, maxCach
 func scanBatchSpecExecutionCacheEntry(wj *btypes.BatchSpecExecutionCacheEntry, s dbutil.Scanner) error {
 	return s.Scan(
 		&wj.ID,
+		&wj.UserID,
 		&wj.Key,
 		&wj.Value,
 		&wj.Version,

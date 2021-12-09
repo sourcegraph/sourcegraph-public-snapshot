@@ -58,6 +58,12 @@ export interface LangStatsInsightsSettings {
     otherThreshold: number
 }
 
+export interface CaptureInsightSettings {
+    repositories: string[]
+    query: string
+    step: Duration
+}
+
 export type ReachableInsight = Insight & {
     owner: {
         id: string

@@ -7,7 +7,7 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import { ConnectionSummary } from '@sourcegraph/web/src/components/FilteredConnection/ui'
-import { useDebounce } from '@sourcegraph/wildcard'
+import { Badge, useDebounce } from '@sourcegraph/wildcard'
 
 import {
     GitCommitAncestorFields,
@@ -88,9 +88,9 @@ const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                 className={styles.link}
                 onClick={onClick}
             >
-                <code className="badge" title={node.oid}>
+                <Badge title={node.oid} as="code">
                     {node.abbreviatedOID}
-                </code>
+                </Badge>
                 <small className={styles.message}>{node.subject.slice(0, 200)}</small>
             </ConnectionPopoverNodeLink>
         </ConnectionPopoverNode>
