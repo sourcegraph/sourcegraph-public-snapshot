@@ -21,10 +21,10 @@ type UploadResolver struct {
 	upload           store.Upload
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
-	op               *observation.Operation
+	traceErrs        *observation.ErrCollector
 }
 
-func NewUploadResolver(db database.DB, resolver resolvers.Resolver, upload store.Upload, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, op *observation.Operation) gql.LSIFUploadResolver {
+func NewUploadResolver(db database.DB, resolver resolvers.Resolver, upload store.Upload, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, traceErrs *observation.ErrCollector) gql.LSIFUploadResolver {
 	if upload.AssociatedIndexID != nil {
 		// Request the next batch of index fetches to contain the record's associated
 		// index id, if one exists it exists. This allows the prefetcher.GetIndexByID
@@ -39,7 +39,7 @@ func NewUploadResolver(db database.DB, resolver resolvers.Resolver, upload store
 		upload:           upload,
 		prefetcher:       prefetcher,
 		locationResolver: locationResolver,
-		op:               op,
+		traceErrs:        traceErrs,
 	}
 }
 
@@ -69,18 +69,17 @@ func (r *UploadResolver) AssociatedIndex(ctx context.Context) (_ gql.LSIFIndexRe
 		return nil, nil
 	}
 
-	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	defer r.traceErrs.Collect(&err,
 		log.String("uploadResolver.field", "associatedIndex"),
 		log.Int("associatedIndex", *r.upload.AssociatedIndexID),
-	}})
-	defer endObservation(1, observation.Args{})
+	)
 
 	index, exists, err := r.prefetcher.GetIndexByID(ctx, *r.upload.AssociatedIndexID)
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	return NewIndexResolver(r.db, r.resolver, index, r.prefetcher, r.locationResolver, r.op), nil
+	return NewIndexResolver(r.db, r.resolver, index, r.prefetcher, r.locationResolver, r.traceErrs), nil
 }
 
 func (r *UploadResolver) ProjectRoot(ctx context.Context) (*gql.GitTreeEntryResolver, error) {

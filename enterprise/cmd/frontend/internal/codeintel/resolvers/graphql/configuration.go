@@ -16,22 +16,19 @@ import (
 type IndexConfigurationResolver struct {
 	resolver     resolvers.Resolver
 	repositoryID int
-	op           *observation.Operation
+	errTracer    *observation.ErrCollector
 }
 
-func NewIndexConfigurationResolver(resolver resolvers.Resolver, repositoryID int, op *observation.Operation) gql.IndexConfigurationResolver {
+func NewIndexConfigurationResolver(resolver resolvers.Resolver, repositoryID int, errTracer *observation.ErrCollector) gql.IndexConfigurationResolver {
 	return &IndexConfigurationResolver{
 		resolver:     resolver,
 		repositoryID: repositoryID,
-		op:           op,
+		errTracer:    errTracer,
 	}
 }
 
 func (r *IndexConfigurationResolver) Configuration(ctx context.Context) (_ *string, err error) {
-	ctx, endObservatioin := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("field", "configuration"),
-	}})
-	defer endObservatioin(1, observation.Args{})
+	defer r.errTracer.Collect(&err, log.String("indexConfigResolver.field", "configuration"))
 
 	configuration, exists, err := r.resolver.IndexConfiguration(ctx, r.repositoryID)
 	if err != nil {
@@ -45,10 +42,7 @@ func (r *IndexConfigurationResolver) Configuration(ctx context.Context) (_ *stri
 }
 
 func (r *IndexConfigurationResolver) InferredConfiguration(ctx context.Context) (_ *string, err error) {
-	ctx, endObservatioin := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("field", "inferredConfiguration"),
-	}})
-	defer endObservatioin(1, observation.Args{})
+	defer r.errTracer.Collect(&err, log.String("indexConfigResolver.field", "inferredConfiguration"))
 
 	configuration, exists, err := r.resolver.InferredIndexConfiguration(ctx, r.repositoryID)
 	if err != nil {

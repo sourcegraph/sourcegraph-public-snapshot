@@ -19,14 +19,14 @@ import (
 type configurationPolicyResolver struct {
 	db                  database.DB
 	configurationPolicy store.ConfigurationPolicy
-	op                  *observation.Operation
+	errTracer           *observation.ErrCollector
 }
 
-func NewConfigurationPolicyResolver(db database.DB, configurationPolicy store.ConfigurationPolicy, op *observation.Operation) gql.CodeIntelligenceConfigurationPolicyResolver {
+func NewConfigurationPolicyResolver(db database.DB, configurationPolicy store.ConfigurationPolicy, op *observation.ErrCollector) gql.CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
 		db:                  db,
 		configurationPolicy: configurationPolicy,
-		op:                  op,
+		errTracer:           op,
 	}
 }
 
@@ -42,11 +42,11 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ *gql.Re
 	if r.configurationPolicy.RepositoryID == nil {
 		return nil, nil
 	}
-	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
+
+	defer r.errTracer.Collect(&err,
 		log.Int("repoID", *r.configurationPolicy.RepositoryID),
 		log.String("configurationPolicyResolver.field", "repository"),
-	}})
-	defer endObservation(1, observation.Args{})
+	)
 
 	repo, err := backend.NewRepos(r.db.Repos()).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
 	if err != nil {
@@ -61,12 +61,11 @@ func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {
 }
 
 func (r *configurationPolicyResolver) Type() (_ gql.GitObjectType, err error) {
-	_, endObservation := r.op.With(context.Background(), &err, observation.Args{LogFields: []log.Field{
+	defer r.errTracer.Collect(&err,
 		log.Int("repoID", *r.configurationPolicy.RepositoryID),
 		log.String("configurationPolicyResolver.field", "type"),
 		log.String("policyType", string(r.configurationPolicy.Type)),
-	}})
-	defer endObservation(1, observation.Args{})
+	)
 
 	switch r.configurationPolicy.Type {
 	case store.GitObjectTypeCommit:

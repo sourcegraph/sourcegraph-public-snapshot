@@ -34,17 +34,17 @@ var ErrIllegalBounds = errors.New("illegal bounds")
 type QueryResolver struct {
 	resolver         resolvers.QueryResolver
 	locationResolver *CachedLocationResolver
-	op               *observation.Operation
+	errTracer        *observation.ErrCollector
 }
 
 // NewQueryResolver creates a new QueryResolver with the given resolver that defines all code intel-specific
 // behavior. A cached location resolver instance is also given to the query resolver, which should be used
 // to resolve all location-related values.
-func NewQueryResolver(resolver resolvers.QueryResolver, locationResolver *CachedLocationResolver, op *observation.Operation) gql.GitBlobLSIFDataResolver {
+func NewQueryResolver(resolver resolvers.QueryResolver, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.GitBlobLSIFDataResolver {
 	return &QueryResolver{
 		resolver:         resolver,
 		locationResolver: locationResolver,
-		op:               op,
+		errTracer:        errTracer,
 	}
 }
 
@@ -52,10 +52,7 @@ func (r *QueryResolver) ToGitTreeLSIFData() (gql.GitTreeLSIFDataResolver, bool) 
 func (r *QueryResolver) ToGitBlobLSIFData() (gql.GitBlobLSIFDataResolver, bool) { return r, true }
 
 func (r *QueryResolver) Stencil(ctx context.Context) (_ []gql.RangeResolver, err error) {
-	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("queryResolver.field", "stencil"),
-	}})
-	defer endObservation(1, observation.Args{})
+	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "stencil"))
 
 	ranges, err := r.resolver.Stencil(ctx)
 	if err != nil {
@@ -71,10 +68,7 @@ func (r *QueryResolver) Stencil(ctx context.Context) (_ []gql.RangeResolver, err
 }
 
 func (r *QueryResolver) Ranges(ctx context.Context, args *gql.LSIFRangesArgs) (_ gql.CodeIntelligenceRangeConnectionResolver, err error) {
-	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("queryResolver.field", "ranges"),
-	}})
-	defer endObservation(1, observation.Args{})
+	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "ranges"))
 
 	if args.StartLine < 0 || args.EndLine < args.StartLine {
 		return nil, ErrIllegalBounds
@@ -92,10 +86,7 @@ func (r *QueryResolver) Ranges(ctx context.Context, args *gql.LSIFRangesArgs) (_
 }
 
 func (r *QueryResolver) Definitions(ctx context.Context, args *gql.LSIFQueryPositionArgs) (_ gql.LocationConnectionResolver, err error) {
-	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("queryResolver.field", "definitions"),
-	}})
-	defer endObservation(1, observation.Args{})
+	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "definitions"))
 
 	locations, err := r.resolver.Definitions(ctx, int(args.Line), int(args.Character))
 	if err != nil {
@@ -106,10 +97,7 @@ func (r *QueryResolver) Definitions(ctx context.Context, args *gql.LSIFQueryPosi
 }
 
 func (r *QueryResolver) References(ctx context.Context, args *gql.LSIFPagedQueryPositionArgs) (_ gql.LocationConnectionResolver, err error) {
-	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("queryResolver.field", "references"),
-	}})
-	defer endObservation(1, observation.Args{})
+	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "references"))
 
 	limit := derefInt32(args.First, DefaultReferencesPageSize)
 	if limit <= 0 {
@@ -130,10 +118,7 @@ func (r *QueryResolver) References(ctx context.Context, args *gql.LSIFPagedQuery
 }
 
 func (r *QueryResolver) Implementations(ctx context.Context, args *gql.LSIFPagedQueryPositionArgs) (_ gql.LocationConnectionResolver, err error) {
-	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("queryResolver.field", "implementations"),
-	}})
-	defer endObservation(1, observation.Args{})
+	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "implementations"))
 
 	limit := derefInt32(args.First, DefaultImplementationsPageSize)
 	if limit <= 0 {
@@ -154,10 +139,7 @@ func (r *QueryResolver) Implementations(ctx context.Context, args *gql.LSIFPaged
 }
 
 func (r *QueryResolver) Hover(ctx context.Context, args *gql.LSIFQueryPositionArgs) (_ gql.HoverResolver, err error) {
-	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("queryResolver.field", "hover"),
-	}})
-	defer endObservation(1, observation.Args{})
+	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "hover"))
 
 	text, rx, exists, err := r.resolver.Hover(ctx, int(args.Line), int(args.Character))
 	if err != nil || !exists {
@@ -168,10 +150,7 @@ func (r *QueryResolver) Hover(ctx context.Context, args *gql.LSIFQueryPositionAr
 }
 
 func (r *QueryResolver) Diagnostics(ctx context.Context, args *gql.LSIFDiagnosticsArgs) (_ gql.DiagnosticConnectionResolver, err error) {
-	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("queryResolver.field", "diagnostics"),
-	}})
-	defer endObservation(1, observation.Args{})
+	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "diagnostics"))
 
 	limit := derefInt32(args.First, DefaultDiagnosticsPageSize)
 	if limit <= 0 {
@@ -187,10 +166,7 @@ func (r *QueryResolver) Diagnostics(ctx context.Context, args *gql.LSIFDiagnosti
 }
 
 func (r *QueryResolver) Documentation(ctx context.Context, args *gql.LSIFQueryPositionArgs) (_ gql.DocumentationResolver, err error) {
-	ctx, endObservation := r.op.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("queryResolver.field", "documentation"),
-	}})
-	defer endObservation(1, observation.Args{})
+	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "documentation"))
 
 	documentations, err := r.resolver.Documentation(ctx, int(args.Line), int(args.Character))
 	if err != nil {
