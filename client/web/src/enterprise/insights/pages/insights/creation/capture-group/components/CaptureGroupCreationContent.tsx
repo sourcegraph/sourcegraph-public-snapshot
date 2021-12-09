@@ -95,9 +95,8 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
         repositories.input.ref.current?.focus()
     }
 
-    const hasFilledValue = form.values.title !== '' ||
-        form.values.repositories !== '' ||
-        form.values.groupSearchQuery !== ''
+    const hasFilledValue =
+        form.values.title !== '' || form.values.repositories !== '' || form.values.groupSearchQuery !== ''
 
     const areAllFieldsForPreviewValid =
         repositories.meta.validState === 'VALID' &&

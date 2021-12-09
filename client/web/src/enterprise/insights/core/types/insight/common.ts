@@ -26,7 +26,7 @@ export enum InsightExecutionType {
 export enum InsightType {
     SearchBased = 'SearchBased',
     LangStats = 'LangStats',
-    CaptureGroup = 'CaptureGroup'
+    CaptureGroup = 'CaptureGroup',
 }
 
 /**

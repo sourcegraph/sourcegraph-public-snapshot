@@ -1,6 +1,6 @@
 import { camelCase } from 'lodash'
 
-import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit/sanitizers/repositories';
+import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit/sanitizers/repositories'
 import { InsightExecutionType, InsightType, InsightTypePrefix, SearchBasedInsight } from '../../../../../core/types'
 import { SearchBasedInsightSeries } from '../../../../../core/types/insight/search-insight'
 import { EDIT_SERIES_PREFIX } from '../components/search-insight-creation-content/hooks/use-editable-series'

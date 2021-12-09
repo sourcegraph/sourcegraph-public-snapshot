@@ -1,8 +1,8 @@
-import { Duration } from 'date-fns';
+import { Duration } from 'date-fns'
 
-import { InsightFilters } from '../../../../../schema/settings.schema';
+import { InsightFilters } from '../../../../../schema/settings.schema'
 
-import { InsightExecutionType, InsightType, SyntheticInsightFields } from './common';
+import { InsightExecutionType, InsightType, SyntheticInsightFields } from './common'
 
 export interface CaptureGroupInsight extends SyntheticInsightFields {
     /**

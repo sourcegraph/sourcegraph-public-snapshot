@@ -1,4 +1,3 @@
-
 import { LineChartSearchInsightInput, UpdateLineChartSearchInsightInput } from '../../../../../../graphql-operations'
 import { CaptureGroupInsight, InsightDashboard, isVirtualDashboard } from '../../../types'
 import { getStepInterval } from '../utils/insight-transformers'
@@ -36,13 +35,15 @@ export function getCaptureGroupInsightUpdateInput(insight: CaptureGroupInsight):
     const [unit, value] = getStepInterval(insight.step)
 
     return {
-        dataSeries: [{
-            query: insight.query,
-            options: {},
-            repositoryScope: { repositories: insight.repositories },
-            timeScope: { stepInterval: { unit, value } },
-            generatedFromCaptureGroups: true,
-        }],
+        dataSeries: [
+            {
+                query: insight.query,
+                options: {},
+                repositoryScope: { repositories: insight.repositories },
+                timeScope: { stepInterval: { unit, value } },
+                generatedFromCaptureGroups: true,
+            },
+        ],
         presentationOptions: {
             title: insight.title,
         },

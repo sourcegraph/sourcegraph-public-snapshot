@@ -1,6 +1,6 @@
-import { gql } from '@apollo/client';
+import { gql } from '@apollo/client'
 
-import { INSIGHT_VIEW_FRAGMENT } from './GetInsights';
+import { INSIGHT_VIEW_FRAGMENT } from './GetInsights'
 
 export const UPDATE_LANG_STATS_INSIGHT_GQL = gql`
     mutation UpdateLangStatsInsight($id: ID!, $input: UpdatePieChartSearchInsightInput!) {

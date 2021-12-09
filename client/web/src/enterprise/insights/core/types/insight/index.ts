@@ -1,4 +1,4 @@
-import { CaptureGroupInsight } from './capture-group-insight';
+import { CaptureGroupInsight } from './capture-group-insight'
 import { InsightExecutionType, InsightType } from './common'
 import { isLangStatsdInsightId, LangStatsInsight, LangStatsInsightConfiguration } from './lang-stat-insight'
 import {

@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService';
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
-import { getSanitizedRepositories } from '../../../../components/creation-ui-kit/sanitizers/repositories';
+import { getSanitizedRepositories } from '../../../../components/creation-ui-kit/sanitizers/repositories'
 import { FormChangeEvent, SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { CaptureGroupInsight, InsightExecutionType, InsightType } from '../../../../core/types';
+import { CaptureGroupInsight, InsightExecutionType, InsightType } from '../../../../core/types'
 
 import { CaptureGroupCreationContent } from './components/CaptureGroupCreationContent'
 import { CaptureGroupFormFields } from './types'

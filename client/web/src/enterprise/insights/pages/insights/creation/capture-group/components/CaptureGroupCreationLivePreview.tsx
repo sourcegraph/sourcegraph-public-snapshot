@@ -5,7 +5,7 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useDebounce } from '@sourcegraph/wildcard/src'
 
 import { LivePreviewContainer } from '../../../../../components/creation-ui-kit/live-preview-container/LivePreviewContainer'
-import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit/sanitizers/repositories';
+import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit/sanitizers/repositories'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import { useDistinctValue } from '../../../../../hooks/use-distinct-value'
 import { InsightStep } from '../../search-insight/types'

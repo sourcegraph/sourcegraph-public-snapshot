@@ -57,11 +57,11 @@ import { GET_INSIGHTS_GQL } from './gql/GetInsights'
 import { GET_INSIGHTS_DASHBOARDS_GQL } from './gql/GetInsightsDashboards'
 import { GET_INSIGHTS_SUBJECTS_GQL } from './gql/GetInsightSubjects'
 import { GET_INSIGHT_VIEW_GQL } from './gql/GetInsightView'
-import { UPDATE_LANG_STATS_INSIGHT_GQL } from './gql/UpdateLangStatsInsight';
-import { UPDATE_LINE_CHART_SEARCH_INSIGHT_GQL } from './gql/UpdateLineChartSearchInsight';
+import { UPDATE_LANG_STATS_INSIGHT_GQL } from './gql/UpdateLangStatsInsight'
+import { UPDATE_LINE_CHART_SEARCH_INSIGHT_GQL } from './gql/UpdateLineChartSearchInsight'
 import { createInsight } from './methods/create-insight'
 import { getCaptureGroupInsightsPreview } from './methods/get-capture-group-insight-preivew'
-import { getCaptureGroupInsightUpdateInput } from './serialization/capture-insight-to-gql-input';
+import { getCaptureGroupInsightUpdateInput } from './serialization/capture-insight-to-gql-input'
 import { getSearchInsightUpdateInput } from './serialization/search-insight-to-gql-input'
 import { createDashboardGrants } from './utils/get-dashboard-grants'
 import { getInsightView } from './utils/insight-transformers'
