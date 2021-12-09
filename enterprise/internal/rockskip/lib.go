@@ -1,6 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"bufio"
+	"fmt"
+	"io"
+	"os/exec"
+)
 
 type Git interface {
 	LogReverse(repo string, commit string, n int) ([]LogEntry, error)
@@ -10,7 +15,7 @@ type Git interface {
 type DB interface {
 	GetCommit(givenCommit string) (commit string, height int, present bool, err error)
 	InsertCommit(commit string, height int, ancestor string) error
-	GetBlob(hop string, status StatusAD, path string) (id int, found bool, err error)
+	GetBlob(hop string, path string) (id int, found bool, err error)
 	UpdateBlobHops(id int, status StatusAD, hop string) error
 	InsertBlob(blob Blob) error
 	AppendHop(hops []string, status StatusAD, hop string) error
@@ -45,6 +50,34 @@ const (
 	ModifiedAMD StatusAMD = 1
 	DeletedAMD  StatusAMD = 2
 )
+
+func invertAMD(status StatusAMD) StatusAMD {
+	switch status {
+	case AddedAMD:
+		return DeletedAMD
+	case ModifiedAMD:
+		return DeletedAMD
+	case DeletedAMD:
+		return AddedAMD
+	default:
+		fmt.Println("invertAMD: invalid status", status)
+		return DeletedAMD
+	}
+}
+
+func statusAMDToString(status StatusAMD) string {
+	switch status {
+	case AddedAMD:
+		return "A"
+	case ModifiedAMD:
+		return "M"
+	case DeletedAMD:
+		return "D"
+	default:
+		fmt.Println("statusAMDToString: invalid status", status)
+		return "?"
+	}
+}
 
 type StatusAD int
 
@@ -99,10 +132,11 @@ func Index(git Git, db DB, repo string, givenCommit string) error {
 			if pathStatus.Status == DeletedAMD || pathStatus.Status == ModifiedAMD {
 				for _, hop := range hops {
 					// TODO time this with some kind of Instants type
-					if id, found, err := db.GetBlob(hop, AddedAD, pathStatus.Path); err != nil {
+					if id, found, err := db.GetBlob(hop, pathStatus.Path); err != nil {
 						return err
 					} else if found {
 						db.UpdateBlobHops(id, DeletedAD, entry.Commit)
+						break
 					}
 				}
 			}
@@ -117,6 +151,9 @@ func Index(git Git, db DB, repo string, givenCommit string) error {
 		tipCommit = entry.Commit
 		tipHeight += 1
 
+		if tipCommit == hops[r] {
+			fmt.Println(tipCommit, r, hops, tipHeight)
+		}
 		db.InsertCommit(tipCommit, tipHeight, hops[r])
 	}
 
@@ -167,4 +204,169 @@ func Search(db DB, commit string) ([]Blob, error) {
 	}
 
 	return db.Search(hops)
+}
+
+type SubprocessGit struct{}
+
+func NewSubprocessGit() SubprocessGit {
+	return SubprocessGit{}
+}
+
+func (git SubprocessGit) LogReverse(repo string, givenCommit string, n int) (logEntries []LogEntry, returnError error) {
+	log := exec.Command("git",
+		"log",
+		"--pretty=%H %P",
+		"--raw",
+		"-z",
+		"-m",
+		// --no-abbrev speeds up git log a lot
+		"--no-abbrev",
+		"--no-renames",
+		"--first-parent",
+		"--reverse",
+		"--ignore-submodules",
+		fmt.Sprintf("-%d", n),
+		givenCommit,
+	)
+	log.Dir = "/Users/chrismwendt/" + repo
+	output, err := log.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+	reader := bufio.NewReader(output)
+
+	err = log.Start()
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		err = log.Wait()
+		if err != nil {
+			returnError = err
+		}
+	}()
+
+	var buf []byte
+
+	for {
+		// abc... ... NULL '\n'?
+
+		// Read the commit
+		commitBytes, err := reader.Peek(40)
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+		commit := string(commitBytes)
+
+		// Skip past the NULL byte
+		_, err = reader.ReadBytes(0)
+		if err != nil {
+			return nil, err
+		}
+
+		// A '\n' indicates a list of paths and their statuses is next
+		buf, err = reader.Peek(1)
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+		if buf[0] == '\n' {
+			// A list of paths and their statuses is next
+
+			// Skip the '\n'
+			discarded, err := reader.Discard(1)
+			if discarded != 1 {
+				return nil, fmt.Errorf("discarded %d bytes, expected 1", discarded)
+			} else if err != nil {
+				return nil, err
+			}
+
+			pathStatuses := []PathStatus{}
+			for {
+				// :100644 100644 abc... def... M NULL file.txt NULL
+				// ^ 0                          ^ 97   ^ 99
+
+				// A ':' indicates a path and its status is next
+				buf, err = reader.Peek(1)
+				if err == io.EOF {
+					break
+				} else if err != nil {
+					return nil, err
+				}
+				if buf[0] != ':' {
+					break
+				}
+
+				// Read the status from index 97 and skip to the path at index 99
+				buf = make([]byte, 99)
+				read, err := reader.Read(buf)
+				if read != 99 {
+					return nil, fmt.Errorf("read %d bytes, expected 99", read)
+				} else if err != nil {
+					return nil, err
+				}
+				var status StatusAMD
+				switch buf[97] {
+				case 'A':
+					status = AddedAMD
+				case 'M':
+					status = ModifiedAMD
+				case 'D':
+					status = DeletedAMD
+				default:
+					// Ignore other statuses (e.g. 'T' for type changed)
+					continue
+				}
+
+				// Read the path
+				path, err := reader.ReadBytes(0)
+				if err != nil {
+					return nil, err
+				}
+				path = path[:len(path)-1] // Drop the trailing NULL byte
+
+				pathStatuses = append(pathStatuses, PathStatus{Path: string(path), Status: status})
+			}
+
+			logEntries = append(logEntries, LogEntry{Commit: commit, PathStatuses: pathStatuses})
+		}
+	}
+
+	return logEntries, nil
+}
+
+func (git SubprocessGit) RevList(repo string, givenCommit string) (commits []string, returnError error) {
+	revList := exec.Command("git", "rev-list", givenCommit)
+	revList.Dir = "/Users/chrismwendt/" + repo
+	output, err := revList.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+	reader := bufio.NewReader(output)
+
+	err = revList.Start()
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		err = revList.Wait()
+		if err != nil {
+			returnError = err
+		}
+	}()
+
+	for {
+		commit, err := reader.ReadString('\n')
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, err
+		}
+		commits = append(commits, commit)
+	}
+
+	return commits, nil
 }
