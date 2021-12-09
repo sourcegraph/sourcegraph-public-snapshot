@@ -8,22 +8,35 @@ import { PageHeader } from '@sourcegraph/wildcard'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { PageTitle } from '../../../components/PageTitle'
+import { OrgAreaOrganizationFields, UserAreaUserFields } from '../../../graphql-operations'
 import { Settings } from '../../../schema/settings.schema'
 
 import { NewCreateBatchChangePage } from './NewCreateBatchChangePage'
 import { OldBatchChangePageContent } from './OldCreateBatchChangeContent'
 
 export interface CreateBatchChangePageProps extends SettingsCascadeProps<Settings>, ThemeProps {
+    // TODO: This can go away once we only have the new SSBC create page
     headingElement: 'h1' | 'h2'
+    namespace: UserAreaUserFields | OrgAreaOrganizationFields
+    // TODO: This affects work on another branch
+    settingsInitiallyOpen?: boolean
 }
 
 export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePageProps> = ({
     settingsCascade,
     isLightTheme,
     headingElement,
+    namespace,
+    // TODO: This affects work on another branch
+    settingsInitiallyOpen,
 }) =>
     isBatchChangesExecutionEnabled(settingsCascade) ? (
-        <NewCreateBatchChangePage isLightTheme={isLightTheme} settingsCascade={settingsCascade} />
+        <NewCreateBatchChangePage
+            isLightTheme={isLightTheme}
+            settingsCascade={settingsCascade}
+            namespace={namespace}
+            settingsInitiallyOpen={settingsInitiallyOpen}
+        />
     ) : (
         <Page>
             <PageTitle title="Create batch change" />
