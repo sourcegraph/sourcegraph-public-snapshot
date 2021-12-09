@@ -8,8 +8,7 @@ parallel_run() {
 }
 
 echo "--- yarn root"
-yarn cache clean
-yarn --frozen-lockfile --network-timeout 60000
+yarn --mutex network --network-timeout 60000
 
 MAYBE_TIME_PREFIX=""
 if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
