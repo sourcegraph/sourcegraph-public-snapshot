@@ -1,6 +1,9 @@
+// TODO: Rename me to editor page
 import classNames from 'classnames'
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graphql/schema'
 import {
     SettingsCascadeProps,
@@ -13,9 +16,17 @@ import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
+import {
+    BatchChangeFields,
+    GetBatchChangeResult,
+    GetBatchChangeVariables,
+    OrgAreaOrganizationFields,
+    UserAreaUserFields,
+} from '../../../graphql-operations'
 import { Settings } from '../../../schema/settings.schema'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
+import { GET_BATCH_CHANGE } from './backend'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import helloWorldSample from './library/hello-world.batch.yaml'
 import { LibraryPane } from './library/LibraryPane'
@@ -48,13 +59,24 @@ const getNamespaceBatchChangesURL = (namespace: SettingsUserSubject | SettingsOr
     }
 }
 
-interface CreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {}
+interface CreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
+    /** The namespace the batch change should be created in, or that it already belongs to. */
+    namespace?: UserAreaUserFields | OrgAreaOrganizationFields
+    /** The batch change name, if it already exists. */
+    batchChangeName?: BatchChangeFields['name']
+    // TODO: This affects work on another branch
+    settingsInitiallyOpen?: boolean
+}
 
 export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChangePageProps> = ({
+    namespace,
+    batchChangeName,
+    // TODO: This affects work on another branch
+    settingsInitiallyOpen: _settingsInitiallyOpen = true,
     isLightTheme,
     settingsCascade,
 }) => {
-    const { namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade)
+    const { namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade, namespace)
 
     // The namespace selected for creating the new batch spec under.
     const [selectedNamespace, setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(

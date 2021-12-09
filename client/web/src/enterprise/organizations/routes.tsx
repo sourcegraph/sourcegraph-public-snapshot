@@ -1,10 +1,10 @@
 import React from 'react'
-import { Redirect } from 'react-router'
 import { RouteComponentProps } from 'react-router'
 
 import { OrgAreaPageProps, OrgAreaRoute } from '../../org/area/OrgArea'
 import { orgAreaRoutes } from '../../org/area/routes'
 import { lazyComponent } from '../../util/lazyComponent'
+import { CreateBatchChangePage } from '../batches/create/CreateBatchChangePage'
 import { NewCreateBatchChangePage } from '../batches/create/NewCreateBatchChangePage'
 import { NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
@@ -19,7 +19,7 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
     ...enterpriseNamespaceAreaRoutes,
     {
         path: '/batch-changes/create',
-        render: props => <Redirect to={`/batch-changes/create?namespace=${props.org.name}`} />,
+        render: props => <CreateBatchChangePage headingElement="h1" {...props} namespace={props.org} />,
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
         fullPage: true,
     },
@@ -30,7 +30,7 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
                 {...props}
                 namespace={props.org}
                 batchChangeName={match.params.batchChangeName}
-                initiallyOpenFormType={false}
+                settingsInitiallyOpen={false}
             />
         ),
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
