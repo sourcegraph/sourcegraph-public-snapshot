@@ -97,8 +97,8 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 	return &monitorConnection{Resolver: r, monitors: mrs, totalCount: totalCount, hasNextPage: hasNextPage}, nil
 }
 
-func (r *Resolver) MonitorByID(ctx context.Context, id graphql.ID) (m graphqlbackend.MonitorResolver, err error) {
-	err = r.isAllowedToEdit(ctx, id)
+func (r *Resolver) MonitorByID(ctx context.Context, id graphql.ID) (graphqlbackend.MonitorResolver, error) {
+	err := r.isAllowedToEdit(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -107,8 +107,7 @@ func (r *Resolver) MonitorByID(ctx context.Context, id graphql.ID) (m graphqlbac
 	if err != nil {
 		return nil, err
 	}
-	var mo *cm.Monitor
-	mo, err = r.store.GetMonitor(ctx, monitorID)
+	mo, err := r.store.GetMonitor(ctx, monitorID)
 	if err != nil {
 		return nil, err
 	}
@@ -163,8 +162,8 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	}, nil
 }
 
-func (r *Resolver) ToggleCodeMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (mr graphqlbackend.MonitorResolver, err error) {
-	err = r.isAllowedToEdit(ctx, args.Id)
+func (r *Resolver) ToggleCodeMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
+	err := r.isAllowedToEdit(ctx, args.Id)
 	if err != nil {
 		return nil, errors.Errorf("UpdateMonitorEnabled: %w", err)
 	}
@@ -197,8 +196,8 @@ func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.D
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (m graphqlbackend.MonitorResolver, err error) {
-	err = r.isAllowedToEdit(ctx, args.Monitor.Id)
+func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
+	err := r.isAllowedToEdit(ctx, args.Monitor.Id)
 	if err != nil {
 		return nil, errors.Errorf("UpdateCodeMonitor: %w", err)
 	}
@@ -226,8 +225,7 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	}
 
 	// Run all queries within a transaction.
-	var tx *Resolver
-	tx, err = r.transact(ctx)
+	tx, err := r.transact(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +239,7 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	if err != nil {
 		return nil, err
 	}
-	m, err = tx.updateCodeMonitor(ctx, args)
+	m, err := tx.updateCodeMonitor(ctx, args)
 	if err != nil {
 		return nil, err
 	}
@@ -339,7 +337,7 @@ func sendTestEmail(ctx context.Context, recipient graphql.ID, description string
 	return background.SendEmailForNewSearchResult(ctx, userID, data)
 }
 
-func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) (actionIDs []graphql.ID, err error) {
+func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) ([]graphql.ID, error) {
 	emailActions, err := r.store.ListEmailActions(ctx, cm.ListActionsOpts{
 		MonitorID: &monitorID,
 	})
@@ -384,7 +382,7 @@ func splitActionIDs(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorA
 	return toCreate, toDelete, nil
 }
 
-func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (m graphqlbackend.MonitorResolver, err error) {
+func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
 	// Update monitor.
 	var monitorID int64
 	if err := relay.UnmarshalSpec(args.Monitor.Id, &monitorID); err != nil {
@@ -423,12 +421,11 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 			Monitor:  mo,
 		}, nil
 	}
-	var emailID int64
-	var e *cm.EmailAction
 	for i, action := range args.Actions {
 		if action.Email == nil {
 			return nil, errors.Errorf("missing email object for action %d", i)
 		}
+		var emailID int64
 		err = relay.UnmarshalSpec(*action.Email.Id, &emailID)
 		if err != nil {
 			return nil, err
@@ -438,7 +435,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 			return nil, err
 		}
 
-		e, err = r.store.UpdateEmailAction(ctx, emailID, &cm.EmailActionArgs{
+		e, err := r.store.UpdateEmailAction(ctx, emailID, &cm.EmailActionArgs{
 			Enabled:  action.Email.Update.Enabled,
 			Priority: action.Email.Update.Priority,
 			Header:   action.Email.Update.Header,
@@ -503,7 +500,7 @@ func (r *Resolver) isAllowedToCreate(ctx context.Context, owner graphql.ID) erro
 	}
 }
 
-func (r *Resolver) ownerForID64(ctx context.Context, monitorID int64) (owner graphql.ID, err error) {
+func (r *Resolver) ownerForID64(ctx context.Context, monitorID int64) (graphql.ID, error) {
 	monitor, err := r.store.GetMonitor(ctx, monitorID)
 	if err != nil {
 		return "", err
@@ -522,19 +519,19 @@ type monitorConnection struct {
 	hasNextPage bool
 }
 
-func (m *monitorConnection) Nodes(ctx context.Context) ([]graphqlbackend.MonitorResolver, error) {
-	return m.monitors, nil
+func (m *monitorConnection) Nodes() []graphqlbackend.MonitorResolver {
+	return m.monitors
 }
 
-func (m *monitorConnection) TotalCount(ctx context.Context) (int32, error) {
-	return m.totalCount, nil
+func (m *monitorConnection) TotalCount() int32 {
+	return m.totalCount
 }
 
-func (m *monitorConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (m *monitorConnection) PageInfo() *graphqlutil.PageInfo {
 	if len(m.monitors) == 0 || !m.hasNextPage {
-		return graphqlutil.HasNextPage(false), nil
+		return graphqlutil.HasNextPage(false)
 	}
-	return graphqlutil.NextPageCursor(string(m.monitors[len(m.monitors)-1].ID())), nil
+	return graphqlutil.NextPageCursor(string(m.monitors[len(m.monitors)-1].ID()))
 }
 
 //
@@ -574,9 +571,9 @@ func (m *monitor) Enabled() bool {
 	return m.Monitor.Enabled
 }
 
-func (m *monitor) Owner(ctx context.Context) (n graphqlbackend.NamespaceResolver, err error) {
-	n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), m.UserID)
-	return n, err
+func (m *monitor) Owner(ctx context.Context) (graphqlbackend.NamespaceResolver, error) {
+	n, err := graphqlbackend.UserByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), m.UserID)
+	return graphqlbackend.NamespaceResolver{Namespace: n}, err
 }
 
 func (m *monitor) Trigger(ctx context.Context) (graphqlbackend.MonitorTrigger, error) {
@@ -688,19 +685,19 @@ type monitorTriggerEventConnection struct {
 	totalCount int32
 }
 
-func (a *monitorTriggerEventConnection) Nodes(ctx context.Context) ([]graphqlbackend.MonitorTriggerEventResolver, error) {
-	return a.events, nil
+func (a *monitorTriggerEventConnection) Nodes() []graphqlbackend.MonitorTriggerEventResolver {
+	return a.events
 }
 
-func (a *monitorTriggerEventConnection) TotalCount(ctx context.Context) (int32, error) {
-	return a.totalCount, nil
+func (a *monitorTriggerEventConnection) TotalCount() int32 {
+	return a.totalCount
 }
 
-func (a *monitorTriggerEventConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (a *monitorTriggerEventConnection) PageInfo() *graphqlutil.PageInfo {
 	if len(a.events) == 0 {
-		return graphqlutil.HasNextPage(false), nil
+		return graphqlutil.HasNextPage(false)
 	}
-	return graphqlutil.NextPageCursor(string(a.events[len(a.events)-1].ID())), nil
+	return graphqlutil.NextPageCursor(string(a.events[len(a.events)-1].ID()))
 }
 
 //
@@ -755,23 +752,23 @@ type monitorActionConnection struct {
 	totalCount int32
 }
 
-func (a *monitorActionConnection) Nodes(ctx context.Context) ([]graphqlbackend.MonitorAction, error) {
-	return a.actions, nil
+func (a *monitorActionConnection) Nodes() []graphqlbackend.MonitorAction {
+	return a.actions
 }
 
-func (a *monitorActionConnection) TotalCount(ctx context.Context) (int32, error) {
-	return a.totalCount, nil
+func (a *monitorActionConnection) TotalCount() int32 {
+	return a.totalCount
 }
 
-func (a *monitorActionConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (a *monitorActionConnection) PageInfo() *graphqlutil.PageInfo {
 	if len(a.actions) == 0 {
-		return graphqlutil.HasNextPage(false), nil
+		return graphqlutil.HasNextPage(false)
 	}
 	last := a.actions[len(a.actions)-1]
 	if email, ok := last.ToMonitorEmail(); ok {
-		return graphqlutil.NextPageCursor(string(email.ID())), nil
+		return graphqlutil.NextPageCursor(string(email.ID()))
 	}
-	return nil, errors.Errorf("we only support email actions for now")
+	panic("found non-email monitor action")
 }
 
 //
@@ -798,13 +795,12 @@ type monitorEmail struct {
 	triggerEventID *int32
 }
 
-func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.ListRecipientsArgs) (c graphqlbackend.MonitorActionEmailRecipientsConnectionResolver, err error) {
+func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.ListRecipientsArgs) (graphqlbackend.MonitorActionEmailRecipientsConnectionResolver, error) {
 	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
 	}
-	var ms []*cm.Recipient
-	ms, err = m.store.ListRecipients(ctx, cm.ListRecipientsOpts{
+	ms, err := m.store.ListRecipients(ctx, cm.ListRecipientsOpts{
 		EmailID: &m.EmailAction.ID,
 		First:   intPtr(int(args.First)),
 		After:   intPtrToInt64Ptr(after),
@@ -812,7 +808,7 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 	if err != nil {
 		return nil, err
 	}
-	var ns []graphqlbackend.NamespaceResolver
+	ns := make([]graphqlbackend.NamespaceResolver, 0, len(ms))
 	for _, r := range ms {
 		n := graphqlbackend.NamespaceResolver{}
 		if r.NamespaceOrgID == nil {
@@ -834,8 +830,7 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 		nextPageCursor = string(relay.MarshalID(monitorActionEmailRecipientKind, ms[len(ms)-1].ID))
 	}
 
-	var total int32
-	total, err = m.store.CountRecipients(ctx, m.EmailAction.ID)
+	total, err := m.store.CountRecipients(ctx, m.EmailAction.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -916,19 +911,19 @@ type monitorActionEmailRecipientsConnection struct {
 	totalCount     int32
 }
 
-func (a *monitorActionEmailRecipientsConnection) Nodes(ctx context.Context) ([]graphqlbackend.NamespaceResolver, error) {
-	return a.recipients, nil
+func (a *monitorActionEmailRecipientsConnection) Nodes() []graphqlbackend.NamespaceResolver {
+	return a.recipients
 }
 
-func (a *monitorActionEmailRecipientsConnection) TotalCount(ctx context.Context) (int32, error) {
-	return a.totalCount, nil
+func (a *monitorActionEmailRecipientsConnection) TotalCount() int32 {
+	return a.totalCount
 }
 
-func (a *monitorActionEmailRecipientsConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (a *monitorActionEmailRecipientsConnection) PageInfo() *graphqlutil.PageInfo {
 	if len(a.recipients) == 0 {
-		return graphqlutil.HasNextPage(false), nil
+		return graphqlutil.HasNextPage(false)
 	}
-	return graphqlutil.NextPageCursor(a.nextPageCursor), nil
+	return graphqlutil.NextPageCursor(a.nextPageCursor)
 }
 
 //
@@ -939,19 +934,19 @@ type monitorActionEventConnection struct {
 	totalCount int32
 }
 
-func (a *monitorActionEventConnection) Nodes(ctx context.Context) ([]graphqlbackend.MonitorActionEventResolver, error) {
-	return a.events, nil
+func (a *monitorActionEventConnection) Nodes() []graphqlbackend.MonitorActionEventResolver {
+	return a.events
 }
 
-func (a *monitorActionEventConnection) TotalCount(ctx context.Context) (int32, error) {
-	return a.totalCount, nil
+func (a *monitorActionEventConnection) TotalCount() int32 {
+	return a.totalCount
 }
 
-func (a *monitorActionEventConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (a *monitorActionEventConnection) PageInfo() *graphqlutil.PageInfo {
 	if len(a.events) == 0 {
-		return graphqlutil.HasNextPage(false), nil
+		return graphqlutil.HasNextPage(false)
 	}
-	return graphqlutil.NextPageCursor(string(a.events[len(a.events)-1].ID())), nil
+	return graphqlutil.NextPageCursor(string(a.events[len(a.events)-1].ID()))
 }
 
 //
