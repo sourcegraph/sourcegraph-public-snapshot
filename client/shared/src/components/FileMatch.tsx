@@ -1,7 +1,9 @@
 import * as H from 'history'
 import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
-import { AggregableBadge, Badge } from 'sourcegraph'
+import { AggregableBadge, Badge as ExtensionBadgeType } from 'sourcegraph'
+
+import { Badge } from '@sourcegraph/wildcard'
 
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '../search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
@@ -11,14 +13,13 @@ import { pluralize } from '../util/strings'
 import { FetchFileParameters } from './CodeExcerpt'
 import { FileMatchChildren } from './FileMatchChildren'
 import { MatchGroup, calculateMatchGroups } from './FileMatchContext'
-import { LinkOrSpan } from './LinkOrSpan'
 import { RepoFileLink } from './RepoFileLink'
 import { RepoIcon } from './RepoIcon'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
 
 const SUBSET_MATCHES_COUNT = 10
 
-export interface MatchItem extends Badge {
+export interface MatchItem extends ExtensionBadgeType {
     highlightRanges: {
         start: number
         highlightLength: number
@@ -134,16 +135,16 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
         items.length > 0 ? (
             <>
                 {aggregateBadges(items).map(badge => (
-                    <LinkOrSpan
+                    <Badge
                         key={badge.text}
-                        to={badge.linkURL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        data-tooltip={badge.hoverMessage}
-                        className="badge badge-secondary badge-sm text-muted text-uppercase file-match__badge"
+                        href={badge.linkURL}
+                        tooltip={badge.hoverMessage}
+                        variant="secondary"
+                        small={true}
+                        className="text-muted text-uppercase file-match__badge"
                     >
                         {badge.text}
-                    </LinkOrSpan>
+                    </Badge>
                 ))}
             </>
         ) : undefined
