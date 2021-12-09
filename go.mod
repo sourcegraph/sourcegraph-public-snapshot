@@ -55,7 +55,6 @@ require (
 	github.com/go-openapi/strfmt v0.21.1
 	github.com/go-redsync/redsync v1.4.2
 	github.com/gobwas/glob v0.2.3
-	github.com/golang-migrate/migrate/v4 v4.15.1
 	github.com/golang/gddo v0.0.0-20210115222349-20d68f94ee1f
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/gomodule/oauth1 v0.2.0
@@ -340,6 +339,7 @@ require (
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
+	gotest.tools/v3 v3.0.3 // indirect
 	k8s.io/klog/v2 v2.30.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.0 // indirect
 )

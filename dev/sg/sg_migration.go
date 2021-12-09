@@ -47,19 +47,6 @@ var (
 		LongHelp:   cliutil.ConstructLongHelp(),
 	}
 
-	migrationFixupFlagSet          = flag.NewFlagSet("sg migration fixup", flag.ExitOnError)
-	migrationFixupDatabaseNameFlag = migrationFixupFlagSet.String("db", "all", "The target database instance (or 'all' for all databases)")
-	migrationFixupMainNameFlag     = migrationFixupFlagSet.String("main", "main", "The branch/revision to compare with")
-	migrationFixupRunFlag          = migrationFixupFlagSet.Bool("run", true, "Run the migrations in your local database")
-	migrationFixupCommand          = &ffcli.Command{
-		Name:       "fixup",
-		ShortUsage: fmt.Sprintf("sg migration fixup [-db=%s] [-main=%s] [-run=true]", "all", "main"),
-		ShortHelp:  "Find and fix any conflicting migration names from rebasing on main. Also properly migrates your local database",
-		FlagSet:    migrationFixupFlagSet,
-		Exec:       migrationFixupExec,
-		LongHelp:   cliutil.ConstructLongHelp(),
-	}
-
 	migrationFlagSet = flag.NewFlagSet("sg migration", flag.ExitOnError)
 	migrationCommand = &ffcli.Command{
 		Name:       "migration",
@@ -74,7 +61,6 @@ var (
 			upCommand,
 			downCommand,
 			migrationSquashCommand,
-			migrationFixupCommand,
 		},
 	}
 )
@@ -158,36 +144,4 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 	out.Writef("Squashing migration files defined up through %s", commit)
 
 	return squash.Run(database, commit)
-}
-
-func migrationFixupExec(ctx context.Context, args []string) (err error) {
-	if len(args) != 0 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
-		return flag.ErrHelp
-	}
-
-	branchName := *migrationFixupMainNameFlag
-	if branchName == "" {
-		branchName = "main"
-	}
-
-	databaseName := *migrationFixupDatabaseNameFlag
-	if databaseName == "all" {
-		for _, databaseName := range db.DatabaseNames() {
-			database, _ := db.DatabaseByName(databaseName)
-			if err := migration.RunFixup(database, branchName, *migrationFixupRunFlag); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	} else {
-		database, ok := db.DatabaseByName(databaseName)
-		if !ok {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
-			return flag.ErrHelp
-		}
-
-		return migration.RunFixup(database, branchName, *migrationFixupRunFlag)
-	}
 }
