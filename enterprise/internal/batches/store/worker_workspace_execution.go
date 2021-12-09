@@ -151,7 +151,18 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 		return false, err
 	}
 
+	workspace, err := tx.GetBatchSpecWorkspace(ctx, GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
+	if err != nil {
+		return false, err
+	}
+
+	spec, err := tx.GetBatchSpec(ctx, GetBatchSpecOpts{ID: workspace.BatchSpecID})
+	if err != nil {
+		return false, err
+	}
+
 	for _, entry := range append(executionResults, stepResults...) {
+		entry.UserID = spec.UserID
 		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
 			return false, err
 		}
@@ -221,6 +232,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 
 	for _, entry := range stepResults {
 		// Store the cache entry.
+		entry.UserID = batchSpec.UserID
 		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
 			return rollbackAndMarkFailed(err, fmt.Sprintf("failed to save cache entry: %s", err))
 		}
@@ -229,6 +241,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 	changesetSpecIDs := []int64{}
 	for _, entry := range executionResults {
 		// Store the cache entry.
+		entry.UserID = batchSpec.UserID
 		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
 			return rollbackAndMarkFailed(err, fmt.Sprintf("failed to save cache entry: %s", err))
 		}
