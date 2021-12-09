@@ -19,6 +19,10 @@ type Definitions struct {
 	definitions []Definition
 }
 
+func (ds *Definitions) Count() int {
+	return len(ds.definitions)
+}
+
 func (ds *Definitions) GetByID(id int) (Definition, bool) {
 	for _, definition := range ds.definitions {
 		if definition.ID == id {
