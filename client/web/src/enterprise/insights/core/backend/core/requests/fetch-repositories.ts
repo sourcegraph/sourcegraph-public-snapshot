@@ -7,13 +7,8 @@ import { requestGraphQL } from '../../../../../../backend/graphql'
 import { BulkSearchRepositories } from '../../../../../../graphql-operations'
 
 const bulkSearchRepositoriesFragment = gql`
-    fragment BulkSearchRepositories on RepositoryRedirect {
-        ... on Repository {
-            name
-        }
-        ... on Redirect {
-            url
-        }
+    fragment BulkSearchRepositories on Repository {
+        name
     }
 `
 

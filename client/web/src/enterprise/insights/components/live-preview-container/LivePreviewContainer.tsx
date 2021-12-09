@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import RefreshIcon from 'mdi-react/RefreshIcon'
-import React, { ReactElement, ReactNode } from 'react'
+import React, { PropsWithChildren, ReactElement, ReactNode } from 'react'
 import { ChartContent } from 'sourcegraph'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -8,9 +8,19 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../../../../components/alerts'
-import { ChartViewContent } from '../../../../views/components/view/content/chart-view-content/ChartViewContent'
+import {
+    LineChartLayoutOrientation,
+    LineChartSettingsContext,
+    ChartViewContent,
+    ChartViewContentLayout,
+} from '../../../../views'
 
 import styles from './LivePreviewContainer.module.scss'
+
+const LINE_CHART_SETTINGS = {
+    zeroYAxisMin: false,
+    layout: LineChartLayoutOrientation.Vertical,
+}
 
 export interface LivePreviewContainerProps {
     onUpdateClick: () => void
@@ -24,7 +34,7 @@ export interface LivePreviewContainerProps {
     description?: ReactNode
 }
 
-export function LivePreviewContainer(props: LivePreviewContainerProps): ReactElement {
+export function LivePreviewContainer(props: PropsWithChildren<LivePreviewContainerProps>): ReactElement {
     const {
         disabled,
         loading,
@@ -61,14 +71,17 @@ export function LivePreviewContainer(props: LivePreviewContainerProps): ReactEle
 
             {!loading && !isErrorLike(dataOrError) && (
                 <div className={classNames(styles.livePreviewChartContainer, chartContentClassName, 'card')}>
-                    <ChartViewContent
-                        className={classNames(styles.livePreviewChart, 'card-body', {
-                            [styles.livePreviewChartWithMock]: !dataOrError,
-                        })}
-                        viewID="search-insight-live-preview"
-                        telemetryService={NOOP_TELEMETRY_SERVICE}
-                        content={dataOrError ?? defaultMock}
-                    />
+                    <LineChartSettingsContext.Provider value={LINE_CHART_SETTINGS}>
+                        <ChartViewContent
+                            className={classNames(styles.livePreviewChart, 'card-body', {
+                                [styles.livePreviewChartWithMock]: !dataOrError,
+                            })}
+                            viewID="search-insight-live-preview"
+                            telemetryService={NOOP_TELEMETRY_SERVICE}
+                            content={dataOrError ?? defaultMock}
+                            layout={ChartViewContentLayout.ByContentSize}
+                        />
+                    </LineChartSettingsContext.Provider>
 
                     {!dataOrError && <p className={styles.livePreviewLoadingChartInfo}>{mockMessage}</p>}
                 </div>

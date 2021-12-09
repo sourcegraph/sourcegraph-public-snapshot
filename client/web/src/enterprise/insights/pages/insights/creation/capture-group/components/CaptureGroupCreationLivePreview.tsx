@@ -1,7 +1,13 @@
-import React, { useState } from 'react'
-import { LineChartContent } from 'sourcegraph'
+import React, { useContext, useEffect, useState } from 'react'
+import { ChartContent, LineChartContent } from 'sourcegraph'
+
+import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { LivePreviewContainer } from '../../../../../components/live-preview-container/LivePreviewContainer'
+import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
+import { useDistinctValue } from '../../../../../hooks/use-distinct-value'
+import { InsightStep } from '../../search-insight/types'
+import { getSanitizedRepositories } from '../../search-insight/utils/insight-sanitizer'
 
 export const DEFAULT_MOCK_CHART_CONTENT: LineChartContent<any, string> = {
     chart: 'line' as const,
@@ -34,22 +40,55 @@ export const DEFAULT_MOCK_CHART_CONTENT: LineChartContent<any, string> = {
 }
 
 interface CaptureGroupCreationLivePreviewProps {
+    disabled: boolean
+    repositories: string
+    query: string
+    stepValue: string
+    step: InsightStep
     className?: string
 }
 
 export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGroupCreationLivePreviewProps> = props => {
-    const { className } = props
+    const { disabled, repositories, query, stepValue, step, className } = props
+    const { getCaptureInsightContent } = useContext(CodeInsightsBackendContext)
+    const [dataOrError, setDataOrError] = useState<ChartContent | Error | undefined>()
 
     // Synthetic deps to trigger dry run for fetching live preview data
     const [lastPreviewVersion, setLastPreviewVersion] = useState(0)
 
-    console.log(lastPreviewVersion)
+    const settings = useDistinctValue({
+        disabled,
+        query,
+        repositories: getSanitizedRepositories(repositories),
+        step: { [step]: stepValue },
+    })
+
+    useEffect(() => {
+        let hasRequestCanceled = false
+
+        setDataOrError(undefined)
+
+        if (settings.disabled) {
+            setDataOrError(undefined)
+            return
+        }
+
+        const { query, repositories, step } = settings
+
+        getCaptureInsightContent({ query, repositories, step })
+            .then(data => !hasRequestCanceled && setDataOrError(data))
+            .catch(error => !hasRequestCanceled && setDataOrError(asError(error)))
+
+        return () => {
+            hasRequestCanceled = false
+        }
+    }, [settings, getCaptureInsightContent, lastPreviewVersion])
 
     return (
         <LivePreviewContainer
-            dataOrError={undefined}
-            loading={false}
-            disabled={true}
+            dataOrError={dataOrError}
+            loading={!disabled && !dataOrError}
+            disabled={disabled}
             defaultMock={DEFAULT_MOCK_CHART_CONTENT}
             mockMessage=" The chart preview will be shown here once you have filled out the repositories and series field"
             className={className}

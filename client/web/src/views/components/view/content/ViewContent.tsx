@@ -101,12 +101,7 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
                 ) : 'chart' in content ? (
                     <React.Fragment key={index}>
                         {alert && <div className={styles.viewContentAlertOverlay}>{alert}</div>}
-                        <ChartViewContent
-                            content={content}
-                            viewID={viewID}
-                            telemetryService={props.telemetryService}
-                            className={styles.chart}
-                        />
+                        <ChartViewContent content={content} viewID={viewID} telemetryService={props.telemetryService} />
                     </React.Fragment>
                 ) : null
             )}

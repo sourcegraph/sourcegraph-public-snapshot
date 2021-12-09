@@ -84,6 +84,10 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
         validators: { sync: requiredStepValueField },
     })
 
+    const areAllFieldsForPreviewValid =
+        // repositories.meta.validState === 'VALID' &&
+        stepValue.meta.validState === 'VALID' && query.meta.validState === 'VALID'
+
     return (
         <div className={classNames(styles.content, className)}>
             <CaptureGroupCreationForm
@@ -100,7 +104,14 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
                 className={styles.contentForm}
             />
 
-            <CaptureGroupCreationLivePreview className={styles.contentLivePreview} />
+            <CaptureGroupCreationLivePreview
+                disabled={!areAllFieldsForPreviewValid}
+                repositories={repositories.meta.value}
+                query={query.meta.value}
+                step={step.meta.value}
+                stepValue={stepValue.meta.value}
+                className={styles.contentLivePreview}
+            />
         </div>
     )
 }

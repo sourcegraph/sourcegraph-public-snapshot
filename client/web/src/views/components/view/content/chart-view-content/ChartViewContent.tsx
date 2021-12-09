@@ -6,11 +6,27 @@ import { ChartContent } from 'sourcegraph'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { BarChart } from './charts/bar/BarChart'
-import { LineChart } from './charts/line/LineChart'
+import { LineChart } from './charts/line'
 import { DatumZoneClickEvent } from './charts/line/types'
 import { PieChart } from './charts/pie/PieChart'
 import styles from './ChartViewContent.module.scss'
 import { getInsightTypeByViewId } from './utils/get-insight-type-by-view-id'
+
+export enum ChartViewContentLayout {
+    /**
+     * With this layout chart takes all available space inside parent
+     * block and tries to fit chart content to this rectangle.
+     *
+     * This by default mode is used in code insights grid layout.
+     */
+    ByParentSize,
+
+    /**
+     * With this layout chart render content and if expand parent
+     * block if it's too small to fit all content.
+     */
+    ByContentSize,
+}
 
 export interface ChartViewContentProps {
     /** Data for chart (lines, bar, pie arcs)*/
@@ -19,13 +35,14 @@ export interface ChartViewContentProps {
     viewID: string
     telemetryService: TelemetryService
     className?: string
+    layout?: ChartViewContentLayout
 }
 
 /**
  * Display chart content with different type of charts (line, bar, pie)
  */
 export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props => {
-    const { content, className = '', viewID, telemetryService } = props
+    const { content, className = '', viewID, telemetryService, layout = ChartViewContentLayout.ByParentSize } = props
 
     const handleDatumLinkClick = useCallback((): void => {
         telemetryService.log(
@@ -55,9 +72,11 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
         [viewID, telemetryService]
     )
 
+    const isResponsive = layout === ChartViewContentLayout.ByParentSize
+
     return (
         <div className={classNames(styles.chartViewContent, className)}>
-            <ParentSize className={styles.chart}>
+            <ParentSize data-chart-size-root="" className={classNames({ [styles.chart]: isResponsive })}>
                 {({ width, height }) => {
                     if (content.chart === 'line') {
                         return (
@@ -67,6 +86,7 @@ export const ChartViewContent: FunctionComponent<ChartViewContentProps> = props 
                                 onDatumLinkClick={handleDatumLinkClick}
                                 width={width}
                                 height={height}
+                                hasChartParentFixedSize={isResponsive}
                             />
                         )
                     }
