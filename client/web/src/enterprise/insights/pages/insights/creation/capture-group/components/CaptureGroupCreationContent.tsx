@@ -84,6 +84,21 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
         validators: { sync: requiredStepValueField },
     })
 
+    const handleFormReset = (): void => {
+        title.input.onChange('')
+        repositories.input.onChange('')
+        query.input.onChange('')
+        step.input.onChange('weeks')
+        stepValue.input.onChange('2')
+
+        // Focus first element of the form
+        repositories.input.ref.current?.focus()
+    }
+
+    const hasFilledValue = form.values.title !== '' ||
+        form.values.repositories !== '' ||
+        form.values.groupSearchQuery !== ''
+
     const areAllFieldsForPreviewValid =
         repositories.meta.validState === 'VALID' &&
         stepValue.meta.validState === 'VALID' &&
@@ -99,9 +114,9 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
                 step={step}
                 stepValue={stepValue}
                 query={query}
-                isFormClearActive={false}
+                isFormClearActive={hasFilledValue}
                 onCancel={onCancel}
-                onFormReset={() => {}}
+                onFormReset={handleFormReset}
                 className={styles.contentForm}
             />
 
