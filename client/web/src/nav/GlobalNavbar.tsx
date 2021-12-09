@@ -43,7 +43,6 @@ import { LayoutRouteProps } from '../routes'
 import { Settings } from '../schema/settings.schema'
 import {
     PatternTypeProps,
-    CaseSensitivityProps,
     OnboardingTourProps,
     ParsedSearchQueryProps,
     isSearchContextSpecAvailable,
@@ -71,7 +70,6 @@ interface Props
         ActivationProps,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
-        CaseSensitivityProps,
         SearchContextInputProps,
         CodeMonitoringProps,
         CodeInsightsProps,
@@ -107,7 +105,6 @@ interface Props
 export const GlobalNavbar: React.FunctionComponent<Props> = ({
     authRequired,
     showSearchBox,
-    caseSensitive,
     patternType,
     variant,
     isLightTheme,
@@ -191,7 +188,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             history={history}
             isLightTheme={isLightTheme}
             patternType={patternType}
-            caseSensitive={caseSensitive}
             isSourcegraphDotCom={isSourcegraphDotCom}
             searchContextsEnabled={searchContextsEnabled}
             isRepositoryRelatedPage={isRepositoryRelatedPage}

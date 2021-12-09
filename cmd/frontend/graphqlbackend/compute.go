@@ -233,7 +233,7 @@ func NewComputeImplementer(ctx context.Context, db database.DB, args *ComputeArg
 	if err != nil {
 		return nil, err
 	}
-	log15.Info("compute", "search", searchQuery)
+	log15.Debug("compute", "search", searchQuery)
 
 	patternType := "regexp"
 	job, err := NewSearchImplementer(ctx, db, &SearchArgs{Query: searchQuery, PatternType: &patternType})

@@ -50,19 +50,15 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
     // Synthetic deps to trigger dry run for fetching live preview data
     const [lastPreviewVersion, setLastPreviewVersion] = useState(0)
 
-    const liveSeries = useDistinctValue(
-        series
+    // Compare live insight settings with deep check to avoid unnecessary
+    // search insight content fetching
+    const liveSettings = useDistinctValue({
+        series: series
             .filter(series => series.valid)
             // Cut off all unnecessary for live preview fields in order to
             // not trigger live preview update if any of unnecessary has been updated
             // Example: edit true => false - chart shouldn't re-fetch data
-            .map<SearchBasedInsightSeries>(getSanitizedLine)
-    )
-
-    // Compare live insight settings with deep check to avoid unnecessary
-    // search insight content fetching
-    const liveSettings = useDistinctValue({
-        series: liveSeries,
+            .map<SearchBasedInsightSeries>(getSanitizedLine),
         repositories: getSanitizedRepositories(repositories),
         step: { [step]: stepValue },
         disabled,

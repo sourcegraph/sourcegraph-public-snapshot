@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Badge } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
@@ -51,8 +52,10 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
                 subtitle={
                     <span>
                         We couldn't find that insight. Try to find the insight with ID:{' '}
-                        <code className="badge badge-secondary">{insightID}</code> in your{' '}
-                        <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
+                        <Badge variant="secondary" as="code">
+                            {insightID}
+                        </Badge>{' '}
+                        in your <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
                     </span>
                 }
             />

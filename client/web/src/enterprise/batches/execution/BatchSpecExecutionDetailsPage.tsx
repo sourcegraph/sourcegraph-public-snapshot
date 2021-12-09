@@ -34,7 +34,7 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { LogOutput } from '@sourcegraph/web/src/components/LogOutput'
 import { Timeline, TimelineStage } from '@sourcegraph/web/src/components/Timeline'
-import { Container, PageHeader, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
+import { Badge, Container, PageHeader, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { ErrorAlert } from '../../../components/alerts'
@@ -324,7 +324,7 @@ const WorkspaceNode: React.FunctionComponent<WorkspaceNodeProps> = ({ node, sele
             </div>
             {/* Only display the branch if it's not the default branch. */}
             {node.repository.defaultBranch?.abbrevName !== node.branch.abbrevName && (
-                <span className="badge badge-secondary">{node.branch.abbrevName}</span>
+                <Badge variant="secondary">{node.branch.abbrevName}</Badge>
             )}
         </Link>
     </li>
@@ -495,8 +495,8 @@ const ChangesetSpecNode: React.FunctionComponent<{ node: BatchSpecWorkspaceChang
                     <Link to={node.description.baseRepository.url}>{node.description.baseRepository.name}</Link>
                 </p>
                 <p>
-                    <span className="badge badge-secondary">{node.description.baseRef}</span> &larr;
-                    <span className="badge badge-secondary">{node.description.headRef}</span>
+                    <Badge variant="secondary">{node.description.baseRef}</Badge> &larr;
+                    <Badge variant="secondary">{node.description.headRef}</Badge>
                 </p>
                 <p>
                     <strong>Published:</strong> <PublishedValue published={node.description.published} />
@@ -897,10 +897,10 @@ const BatchSpecStateBadge: React.FunctionComponent<{ state: BatchSpecState }> = 
         case BatchSpecState.PROCESSING:
         case BatchSpecState.CANCELED:
         case BatchSpecState.CANCELING:
-            return <span className="badge badge-secondary">{state}</span>
+            return <Badge variant="secondary">{state}</Badge>
         case BatchSpecState.FAILED:
-            return <span className="badge badge-danger">{state}</span>
+            return <Badge variant="danger">{state}</Badge>
         case BatchSpecState.COMPLETED:
-            return <span className="badge badge-success">{state}</span>
+            return <Badge variant="success">{state}</Badge>
     }
 }

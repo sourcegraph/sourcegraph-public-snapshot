@@ -247,6 +247,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		entry.UserID = batchSpec.UserID
 		if err := s.CreateBatchSpecExecutionCacheEntry(context.Background(), entry); err != nil {
 			t.Fatal(err)
 		}
@@ -303,7 +304,10 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 			t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
 		}
 
-		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{Keys: []string{entry.Key}})
+		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
+			UserID: batchSpec.UserID,
+			Keys:   []string{entry.Key},
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -348,7 +352,10 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 			},
 		})
 
-		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{Keys: []string{entry.Key}})
+		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
+			UserID: batchSpec.UserID,
+			Keys:   []string{entry.Key},
+		})
 		if err != nil {
 			t.Fatal(err)
 		}

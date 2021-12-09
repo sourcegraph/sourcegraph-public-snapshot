@@ -6,6 +6,8 @@ import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { Badge } from '@sourcegraph/wildcard'
+import { BADGE_VARIANTS } from '@sourcegraph/wildcard/src/components/Badge/constants'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -36,17 +38,14 @@ interface SurveyResponseNodeProps {
 
 interface SurveyResponseNodeState {}
 
-function scoreToClassSuffix(score: number): string {
+function scoreToClassSuffix(score: number): typeof BADGE_VARIANTS[number] {
     return score > 8 ? 'success' : score > 6 ? 'info' : 'danger'
 }
 
 const ScoreBadge: React.FunctionComponent<{ score: number }> = props => (
-    <div
-        className={`ml-4 badge badge-pill badge-${scoreToClassSuffix(props.score)}`}
-        data-tooltip={`${props.score} out of 10`}
-    >
+    <Badge className="ml-4" pill={true} variant={scoreToClassSuffix(props.score)} tooltip={`${props.score} out of 10`}>
         Score: {props.score}
-    </div>
+    </Badge>
 )
 
 class SurveyResponseNode extends React.PureComponent<SurveyResponseNodeProps, SurveyResponseNodeState> {

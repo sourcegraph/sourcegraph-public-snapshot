@@ -619,6 +619,19 @@ func fsync(path string) error {
 	return err
 }
 
+// isPaused returns true if a file "SG_PAUSE" is present in dir. If the file is
+// present, its first 40 bytes are returned as first argument.
+func isPaused(dir string) (string, bool) {
+	f, err := os.Open(filepath.Join(dir, "SG_PAUSE"))
+	if err != nil {
+		return "", false
+	}
+	defer f.Close()
+	b := make([]byte, 40)
+	io.ReadFull(f, b)
+	return string(b), true
+}
+
 // bestEffortWalk is a filepath.Walk which ignores errors that can be passed
 // to walkFn. This is a common pattern used in gitserver for best effort work.
 //
@@ -631,6 +644,11 @@ func bestEffortWalk(root string, walkFn func(path string, info fs.FileInfo) erro
 	return filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return nil
+		}
+
+		if msg, ok := isPaused(path); ok {
+			log15.Warn("bestEffortWalk paused", "dir", path, "reason", msg)
+			return filepath.SkipDir
 		}
 
 		return walkFn(path, info)

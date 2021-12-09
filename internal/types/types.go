@@ -678,6 +678,11 @@ type OrgMembership struct {
 	UpdatedAt time.Time
 }
 
+type OrgStats struct {
+	OrgID             int32
+	CodeHostRepoCount int32
+}
+
 type PhabricatorRepo struct {
 	ID       int32
 	Name     api.RepoName

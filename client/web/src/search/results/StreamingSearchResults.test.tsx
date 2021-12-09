@@ -21,6 +21,7 @@ import {
 
 import { AuthenticatedUser } from '../../auth'
 import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
+import { useNavbarQueryState } from '../../stores'
 import * as helpers from '../helpers'
 
 import { generateMockedResponses } from './sidebar/Revisions.mocks'
@@ -33,7 +34,6 @@ describe('StreamingSearchResults', () => {
 
     const defaultProps: StreamingSearchResultsProps = {
         parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-        caseSensitive: false,
         patternType: SearchPatternType.literal,
 
         extensionsController,
@@ -79,7 +79,12 @@ describe('StreamingSearchResults', () => {
         siteAdmin: true,
     } as AuthenticatedUser
 
+    beforeEach(() => {
+        useNavbarQueryState.setState({ searchCaseSensitivity: false })
+    })
+
     it('should call streaming search API with the right parameters from URL', async () => {
+        useNavbarQueryState.setState({ searchCaseSensitivity: true })
         const searchSpy = sinon.spy(defaultProps.streamSearch)
 
         renderWrapper(
@@ -87,7 +92,6 @@ describe('StreamingSearchResults', () => {
                 {...defaultProps}
                 parsedSearchQuery="r:golang/oauth2 test f:travis"
                 patternType={SearchPatternType.regexp}
-                caseSensitive={true}
                 streamSearch={searchSpy}
             />
         )

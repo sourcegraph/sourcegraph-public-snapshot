@@ -26,7 +26,6 @@ import { SearchPatternType } from '../graphql-operations'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import {
     PatternTypeProps,
-    CaseSensitivityProps,
     OnboardingTourProps,
     ParsedSearchQueryProps,
     SearchContextInputProps,
@@ -34,6 +33,7 @@ import {
 } from '../search'
 import { submitSearch } from '../search/helpers'
 import { SearchPageInput } from '../search/home/SearchPageInput'
+import { useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -48,7 +48,6 @@ export interface CommunitySearchContextPageProps
         TelemetryProps,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
-        CaseSensitivityProps,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
@@ -77,6 +76,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
             props.telemetryService.logViewEvent(`CommunitySearchContext:${props.communitySearchContextMetadata.spec}`),
         [props.communitySearchContextMetadata.spec, props.telemetryService]
     )
+    const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
 
     const contextQuery = `context:${props.communitySearchContextMetadata.spec}`
 
@@ -97,7 +97,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
     ): void => {
         eventLogger.log('CommunitySearchContextSuggestionClicked')
         event?.preventDefault()
-        submitSearch({ ...props, query, patternType, source: 'communitySearchContextPage' })
+        submitSearch({ ...props, query, caseSensitive, patternType, source: 'communitySearchContextPage' })
     }
 
     return (

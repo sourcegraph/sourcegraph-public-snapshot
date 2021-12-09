@@ -77,13 +77,14 @@ import {
     fetchSearchContextBySpec,
 } from './search/backend'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
+import { SearchStack } from './search/SearchStack'
 import { TemporarySettingsProvider } from './settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from './settings/temporary/TemporarySettingsStorage'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
-import { setExperimentalFeaturesFromSettings } from './stores'
+import { setQueryStateFromSettings, setQueryStateFromURL, setExperimentalFeaturesFromSettings } from './stores'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -94,9 +95,8 @@ import { UserSessionStores } from './UserSessionStores'
 import { globbingEnabledFromSettings } from './util/globbing'
 import { observeLocation } from './util/location'
 import {
-    SITE_SUBJECT_NO_ADMIN,
+    siteSubjectNoAdmin,
     viewerSubjectFromSettings,
-    defaultCaseSensitiveFromSettings,
     defaultPatternTypeFromSettings,
     experimentalFeaturesFromSettings,
 } from './util/settings'
@@ -156,11 +156,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * The current search pattern type.
      */
     searchPatternType: SearchPatternType
-
-    /**
-     * Whether the current search is case sensitive.
-     */
-    searchCaseSensitivity: boolean
 
     showOnboardingTour: boolean
 
@@ -250,14 +245,14 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         // The patternType in the URL query parameter. If none is provided, default to literal.
         // This will be updated with the default in settings when the web app mounts.
         const urlPatternType = parsedSearchURL.patternType || SearchPatternType.literal
-        const urlCase = parsedSearchURL.caseSensitive
+
+        setQueryStateFromURL(window.location.search)
 
         this.state = {
             settingsCascade: EMPTY_SETTINGS_CASCADE,
-            viewerSubject: SITE_SUBJECT_NO_ADMIN,
+            viewerSubject: siteSubjectNoAdmin(),
             parsedSearchQuery: parsedSearchURL.query || '',
             searchPatternType: urlPatternType,
-            searchCaseSensitivity: urlCase,
             showOnboardingTour: false,
             showSearchContext: false,
             showSearchContextManagement: false,
@@ -302,14 +297,12 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             ]).subscribe(
                 ([settingsCascade, authenticatedUser]) => {
                     setExperimentalFeaturesFromSettings(settingsCascade)
-
+                    setQueryStateFromSettings(settingsCascade)
                     this.setState(state => ({
                         settingsCascade,
                         authenticatedUser,
                         ...experimentalFeaturesFromSettings(settingsCascade),
                         globbing: globbingEnabledFromSettings(settingsCascade),
-                        searchCaseSensitivity:
-                            defaultCaseSensitiveFromSettings(settingsCascade) || state.searchCaseSensitivity,
                         searchPatternType: defaultPatternTypeFromSettings(settingsCascade) || state.searchPatternType,
                         viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
                     }))
@@ -462,8 +455,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     setParsedSearchQuery={this.setParsedSearchQuery}
                                                     patternType={this.state.searchPatternType}
                                                     setPatternType={this.setPatternType}
-                                                    caseSensitive={this.state.searchCaseSensitivity}
-                                                    setCaseSensitivity={this.setCaseSensitivity}
                                                     // Extensions
                                                     platformContext={this.platformContext}
                                                     extensionsController={this.extensionsController}
@@ -511,6 +502,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                             </CodeHostScopeProvider>
                                         )}
                                     />
+                                    <SearchStack />
                                 </Router>
                                 <Tooltip key={1} />
                                 <Notifications
@@ -534,12 +526,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     private setPatternType = (patternType: SearchPatternType): void => {
         this.setState({
             searchPatternType: patternType,
-        })
-    }
-
-    private setCaseSensitivity = (caseSensitive: boolean): void => {
-        this.setState({
-            searchCaseSensitivity: caseSensitive,
         })
     }
 

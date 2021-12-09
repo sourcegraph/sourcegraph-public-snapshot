@@ -56,9 +56,9 @@ type NotebooksStore interface {
 	basestore.ShareableStore
 	GetNotebook(context.Context, int64) (*Notebook, error)
 	CreateNotebook(context.Context, *Notebook) (*Notebook, error)
+	UpdateNotebook(context.Context, *Notebook) (*Notebook, error)
+	DeleteNotebook(context.Context, int64) error
 	// TODO
-	// UpdateNotebook(context.Context, *Notebook) (*Notebook, error)
-	// DeleteNotebook(context.Context, int64) (*Notebook, error)
 	// ListNotebooks(context.Context, ListNotebooksPageOptions, ListNotebooksOptions) ([]*Notebook, error)
 	// CountNotebooks(context.Context, ListNotebooksOptions) (int, error)
 }
@@ -180,6 +180,37 @@ func (s *notebooksStore) CreateNotebook(ctx context.Context, n *Notebook) (*Note
 	row := s.QueryRow(
 		ctx,
 		sqlf.Sprintf(insertNotebookFmtStr, n.Title, n.Blocks, n.Public, nullInt32Column(n.CreatorUserID), sqlf.Join(notebookColumns, ",")),
+	)
+	return scanNotebook(row)
+}
+
+const deleteNotebookFmtStr = `DELETE FROM notebooks WHERE id = %d`
+
+// 🚨 SECURITY: The caller must ensure that the actor has permission to delete the notebook.
+func (s *notebooksStore) DeleteNotebook(ctx context.Context, id int64) error {
+	return s.Exec(ctx, sqlf.Sprintf(deleteNotebookFmtStr, id))
+}
+
+const updateNotebookFmtStr = `
+UPDATE notebooks
+SET
+	title = %s,
+	blocks = %s,
+	public = %s,
+	updated_at = now()
+WHERE id = %d
+RETURNING %s
+`
+
+// 🚨 SECURITY: The caller must ensure that the actor has permission to update the notebook.
+func (s *notebooksStore) UpdateNotebook(ctx context.Context, n *Notebook) (*Notebook, error) {
+	err := validateNotebookBlocks(n.Blocks)
+	if err != nil {
+		return nil, err
+	}
+	row := s.QueryRow(
+		ctx,
+		sqlf.Sprintf(updateNotebookFmtStr, n.Title, n.Blocks, n.Public, n.ID, sqlf.Join(notebookColumns, ",")),
 	)
 	return scanNotebook(row)
 }
