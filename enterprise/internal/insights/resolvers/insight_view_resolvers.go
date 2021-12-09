@@ -137,8 +137,7 @@ func filterRepositories(filters types.InsightViewFilters, repositories []string)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to compile IncludeRepoRegex")
 		}
-
-		for match, _ := range matches {
+		for match := range matches {
 			if !includeRegexp.MatchString(match) {
 				delete(matches, match)
 			}
@@ -146,7 +145,7 @@ func filterRepositories(filters types.InsightViewFilters, repositories []string)
 	}
 
 	results := make([]string, 0, len(matches))
-	for match, _ := range matches {
+	for match := range matches {
 		results = append(results, match)
 	}
 	return results, nil
