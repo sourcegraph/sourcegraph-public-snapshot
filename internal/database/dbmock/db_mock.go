@@ -57,8 +57,8 @@ type MockDB struct {
 	// OrgMembersFunc is an instance of a mock function object controlling
 	// the behavior of the method OrgMembers.
 	OrgMembersFunc *DBOrgMembersFunc
-	// OrgStatsFunc is an instance of a mock function object controlling
-	// the behavior of the method OrgStats.
+	// OrgStatsFunc is an instance of a mock function object controlling the
+	// behavior of the method OrgStats.
 	OrgStatsFunc *DBOrgStatsFunc
 	// OrgsFunc is an instance of a mock function object controlling the
 	// behavior of the method Orgs.
@@ -184,6 +184,11 @@ func NewMockDB() *MockDB {
 		},
 		OrgMembersFunc: &DBOrgMembersFunc{
 			defaultHook: func() database.OrgMemberStore {
+				return nil
+			},
+		},
+		OrgStatsFunc: &DBOrgStatsFunc{
+			defaultHook: func() database.OrgStatsStore {
 				return nil
 			},
 		},
@@ -349,6 +354,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.OrgMembers")
 			},
 		},
+		OrgStatsFunc: &DBOrgStatsFunc{
+			defaultHook: func() database.OrgStatsStore {
+				panic("unexpected invocation of MockDB.OrgStats")
+			},
+		},
 		OrgsFunc: &DBOrgsFunc{
 			defaultHook: func() database.OrgStore {
 				panic("unexpected invocation of MockDB.Orgs")
@@ -482,6 +492,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		OrgMembersFunc: &DBOrgMembersFunc{
 			defaultHook: i.OrgMembers,
+		},
+		OrgStatsFunc: &DBOrgStatsFunc{
+			defaultHook: i.OrgStats,
 		},
 		OrgsFunc: &DBOrgsFunc{
 			defaultHook: i.Orgs,
@@ -1948,8 +1961,8 @@ func (c DBOrgMembersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// DBOrgStatsFunc describes the behavior when the OrgStats
-// method of the parent MockDB instance is invoked.
+// DBOrgStatsFunc describes the behavior when the OrgStats method of the
+// parent MockDB instance is invoked.
 type DBOrgStatsFunc struct {
 	defaultHook func() database.OrgStatsStore
 	hooks       []func() database.OrgStatsStore
@@ -1957,25 +1970,24 @@ type DBOrgStatsFunc struct {
 	mutex       sync.Mutex
 }
 
-// OrgStats delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
+// OrgStats delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
 func (m *MockDB) OrgStats() database.OrgStatsStore {
 	r0 := m.OrgStatsFunc.nextHook()()
 	m.OrgStatsFunc.appendCall(DBOrgStatsFuncCall{r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the OrgStats
-// method of the parent MockDB instance is invoked and the hook queue is
-// empty.
+// SetDefaultHook sets function that is called when the OrgStats method of
+// the parent MockDB instance is invoked and the hook queue is empty.
 func (f *DBOrgStatsFunc) SetDefaultHook(hook func() database.OrgStatsStore) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// OrgStats method of the parent MockDB instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
+// OrgStats method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
 func (f *DBOrgStatsFunc) PushHook(hook func() database.OrgStatsStore) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
@@ -2017,8 +2029,8 @@ func (f *DBOrgStatsFunc) appendCall(r0 DBOrgStatsFuncCall) {
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of DBOrgStatsFuncCall objects describing
-// the invocations of this function.
+// History returns a sequence of DBOrgStatsFuncCall objects describing the
+// invocations of this function.
 func (f *DBOrgStatsFunc) History() []DBOrgStatsFuncCall {
 	f.mutex.Lock()
 	history := make([]DBOrgStatsFuncCall, len(f.history))
@@ -2028,8 +2040,8 @@ func (f *DBOrgStatsFunc) History() []DBOrgStatsFuncCall {
 	return history
 }
 
-// DBOrgStatsFuncCall is an object that describes an invocation of
-// method OrgStats on an instance of MockDB.
+// DBOrgStatsFuncCall is an object that describes an invocation of method
+// OrgStats on an instance of MockDB.
 type DBOrgStatsFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
