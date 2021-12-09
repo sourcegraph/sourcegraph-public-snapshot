@@ -119,7 +119,7 @@ exports[`GlobalNavbar default 1`] = `
               >
                 Contexts 
                 <span
-                  class="badge badge badge-info productStatusBadge ml-1"
+                  class="badge info productStatusBadge ml-1"
                   status="new"
                 >
                   new
@@ -172,7 +172,7 @@ exports[`GlobalNavbar default 1`] = `
               >
                 Contexts 
                 <span
-                  class="badge badge badge-info productStatusBadge ml-1"
+                  class="badge info productStatusBadge ml-1"
                   status="new"
                 >
                   new
@@ -395,7 +395,7 @@ exports[`GlobalNavbar low-profile 1`] = `
               >
                 Contexts 
                 <span
-                  class="badge badge badge-info productStatusBadge ml-1"
+                  class="badge info productStatusBadge ml-1"
                   status="new"
                 >
                   new
@@ -448,7 +448,7 @@ exports[`GlobalNavbar low-profile 1`] = `
               >
                 Contexts 
                 <span
-                  class="badge badge badge-info productStatusBadge ml-1"
+                  class="badge info productStatusBadge ml-1"
                   status="new"
                 >
                   new

@@ -41,7 +41,7 @@ export const Badges = () => (
         ))}
         <h2 className="mt-4">Size</h2>
         <p>We can also make our badges smaller.</p>
-        <Badge size="sm">I am a small badge</Badge>
+        <Badge small={true}>I am a small badge</Badge>
         <h2 className="mt-4">Pills</h2>
         <p>Commonly used to display counts, we can style badges as pills.</p>
         <Badge pill={true} variant="secondary">
@@ -49,7 +49,7 @@ export const Badges = () => (
         </Badge>
         <h2 className="mt-4">Links</h2>
         <p>For more advanced functionality, badges can also function as links.</p>
-        <Badge href="https://example.com" variant="link">
+        <Badge href="https://example.com" variant="secondary">
             I am a link
         </Badge>
     </>
