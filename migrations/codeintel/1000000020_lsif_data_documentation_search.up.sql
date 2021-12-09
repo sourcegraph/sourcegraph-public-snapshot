@@ -20,17 +20,17 @@ CREATE TABLE IF NOT EXISTS lsif_data_documentation_search_public (
     repo_name TEXT NOT NULL,
     search_key TEXT NOT NULL,
     label TEXT NOT NULL,
-    tags TEXT NOT NULL
+    tags TEXT NOT NULL,
+
+    PRIMARY KEY (dump_id, path_id)
 );
 
-ALTER TABLE lsif_data_documentation_search_public ADD PRIMARY KEY (dump_id, path_id);
-
-CREATE INDEX lsif_data_documentation_search_public_repo_id_idx ON lsif_data_documentation_search_public USING BTREE(repo_id);
-CREATE INDEX lsif_data_documentation_search_public_lang_trgm ON lsif_data_documentation_search_public USING gin(lang gin_trgm_ops);
-CREATE INDEX lsif_data_documentation_search_public_repo_name_trgm ON lsif_data_documentation_search_public USING gin(repo_name gin_trgm_ops);
-CREATE INDEX lsif_data_documentation_search_public_search_key_trgm ON lsif_data_documentation_search_public USING gin(search_key gin_trgm_ops);
-CREATE INDEX lsif_data_documentation_search_public_label_trgm ON lsif_data_documentation_search_public USING gin(label gin_trgm_ops);
-CREATE INDEX lsif_data_documentation_search_public_tags_trgm ON lsif_data_documentation_search_public USING gin(tags gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS lsif_data_documentation_search_public_repo_id_idx ON lsif_data_documentation_search_public USING BTREE(repo_id);
+CREATE INDEX IF NOT EXISTS lsif_data_documentation_search_public_lang_trgm ON lsif_data_documentation_search_public USING gin(lang gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS lsif_data_documentation_search_public_repo_name_trgm ON lsif_data_documentation_search_public USING gin(repo_name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS lsif_data_documentation_search_public_search_key_trgm ON lsif_data_documentation_search_public USING gin(search_key gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS lsif_data_documentation_search_public_label_trgm ON lsif_data_documentation_search_public USING gin(label gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS lsif_data_documentation_search_public_tags_trgm ON lsif_data_documentation_search_public USING gin(tags gin_trgm_ops);
 
 COMMENT ON TABLE lsif_data_documentation_search_public IS 'A trigram index over documentation for search (public repos only)';
 COMMENT ON COLUMN lsif_data_documentation_search_public.dump_id IS 'The identifier of the associated dump in the lsif_uploads table (state=completed).';
@@ -57,17 +57,17 @@ CREATE TABLE IF NOT EXISTS lsif_data_documentation_search_private (
     repo_name TEXT NOT NULL,
     search_key TEXT NOT NULL,
     label TEXT NOT NULL,
-    tags TEXT NOT NULL
+    tags TEXT NOT NULL,
+
+    PRIMARY KEY (dump_id, path_id)
 );
 
-ALTER TABLE lsif_data_documentation_search_private ADD PRIMARY KEY (dump_id, path_id);
-
-CREATE INDEX lsif_data_documentation_search_private_repo_id_idx ON lsif_data_documentation_search_private USING BTREE(repo_id);
-CREATE INDEX lsif_data_documentation_search_private_lang_trgm ON lsif_data_documentation_search_private USING gin(lang gin_trgm_ops);
-CREATE INDEX lsif_data_documentation_search_private_repo_name_trgm ON lsif_data_documentation_search_private USING gin(repo_name gin_trgm_ops);
-CREATE INDEX lsif_data_documentation_search_private_search_key_trgm ON lsif_data_documentation_search_private USING gin(search_key gin_trgm_ops);
-CREATE INDEX lsif_data_documentation_search_private_label_trgm ON lsif_data_documentation_search_private USING gin(label gin_trgm_ops);
-CREATE INDEX lsif_data_documentation_search_private_tags_trgm ON lsif_data_documentation_search_private USING gin(tags gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS lsif_data_documentation_search_private_repo_id_idx ON lsif_data_documentation_search_private USING BTREE(repo_id);
+CREATE INDEX IF NOT EXISTS lsif_data_documentation_search_private_lang_trgm ON lsif_data_documentation_search_private USING gin(lang gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS lsif_data_documentation_search_private_repo_name_trgm ON lsif_data_documentation_search_private USING gin(repo_name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS lsif_data_documentation_search_private_search_key_trgm ON lsif_data_documentation_search_private USING gin(search_key gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS lsif_data_documentation_search_private_label_trgm ON lsif_data_documentation_search_private USING gin(label gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS lsif_data_documentation_search_private_tags_trgm ON lsif_data_documentation_search_private USING gin(tags gin_trgm_ops);
 
 COMMENT ON TABLE lsif_data_documentation_search_private IS 'A trigram index over documentation for search (private repos only)';
 COMMENT ON COLUMN lsif_data_documentation_search_private.dump_id IS 'The identifier of the associated dump in the lsif_uploads table (state=completed).';
