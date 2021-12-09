@@ -11,13 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type Store interface {
-	runner.Store
-	EnsureSchemaTable(ctx context.Context) error
-}
-
-type StoreFactory func(db *sql.DB, migrationsTable string) Store
-
 func RunnerFromDSNs(dsns map[string]string, appName string, newStore StoreFactory) *runner.Runner {
 	makeFactory := func(
 		name string,
@@ -54,18 +47,4 @@ func runnerFromDB(newStore StoreFactory, db *sql.DB, schemas ...*schemas.Schema)
 	}
 
 	return runner.NewRunner(storeFactoryMap)
-}
-
-func initStore(ctx context.Context, newStore StoreFactory, db *sql.DB, schema *schemas.Schema) (Store, error) {
-	store := newStore(db, schema.MigrationsTableName)
-
-	if err := store.EnsureSchemaTable(ctx); err != nil {
-		if closeErr := db.Close(); closeErr != nil {
-			err = multierror.Append(err, closeErr)
-		}
-
-		return nil, err
-	}
-
-	return store, nil
 }
