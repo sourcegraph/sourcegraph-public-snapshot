@@ -684,14 +684,14 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	}
 	isSiteAdmin := authErr != backend.ErrMustBeSiteAdmin
 	if !isSiteAdmin {
+		actor := actor.FromContext(ctx)
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
-			actor := actor.FromContext(ctx)
 			opts.InitialApplierID = actor.UID
 		}
 
 		// 🚨 SECURITY: If the user is not an admin, we don't want to include
 		// unapplied (draft) BatchChanges except those that the user owns.
-		opts.ExcludeDraftsNotOwnedByUserID = actor.FromContext(ctx).UID
+		opts.ExcludeDraftsNotOwnedByUserID = actor.UID
 	}
 
 	if args.Namespace != nil {
