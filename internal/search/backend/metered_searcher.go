@@ -215,10 +215,15 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 
 	var cat string
 	var tags []trace.Tag
+
 	if m.hostname == "" {
 		cat = "ListAll"
 	} else {
-		cat = "List"
+		if opts == nil || !opts.Minimal {
+			cat = "List"
+		} else {
+			cat = "ListMinimal"
+		}
 		tags = []trace.Tag{
 			{Key: "span.kind", Value: "client"},
 			{Key: "peer.address", Value: m.hostname},

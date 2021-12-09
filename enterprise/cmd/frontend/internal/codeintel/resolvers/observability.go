@@ -46,9 +46,6 @@ func newOperations(observationContext *observation.Context) *operations {
 			Name:              fmt.Sprintf("codeintel.resolvers.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
-			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				return observation.EmitForSentry | observation.EmitForDefault
-			},
 		})
 	}
 

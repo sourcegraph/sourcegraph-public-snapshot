@@ -19,12 +19,39 @@ var (
 	githubURL = &url.URL{Scheme: "https", Host: "api.github.com"}
 )
 
-func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string) (int, error) {
+func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string) (statusCode int, err error) {
 	githubToken := query.Get("github_token")
 	if githubToken == "" {
 		return http.StatusUnauthorized, ErrGitHubMissingToken
 	}
 
+	key := makeGitHubAuthCacheKey(githubToken, repoName)
+
+	if authorized, ok := githubAuthCache.Get(key); ok {
+		if !authorized {
+			return http.StatusUnauthorized, ErrGitHubUnauthorized
+		}
+
+		return 0, nil
+	}
+
+	defer func() {
+		switch err {
+		case nil:
+			githubAuthCache.Set(key, true)
+		case ErrGitHubUnauthorized:
+			// Note: We explicitly do not store false here in case a user is
+			// adjusting permissions on a cache key. Storing false here would
+			// result in a cached rejection after the key has been modified
+			// on the code host.
+		default:
+		}
+	}()
+
+	return uncachedEnforceAuthViaGitHub(ctx, githubToken, repoName)
+}
+
+func uncachedEnforceAuthViaGitHub(ctx context.Context, githubToken, repoName string) (int, error) {
 	if author, err := checkGitHubPermissions(ctx, repoName, github.NewV3Client(githubURL, &auth.OAuthBearerToken{Token: githubToken}, nil)); err != nil {
 		return http.StatusInternalServerError, err
 	} else if !author {

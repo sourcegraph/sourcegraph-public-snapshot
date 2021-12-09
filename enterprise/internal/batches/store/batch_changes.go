@@ -164,6 +164,8 @@ type CountBatchChangesOpts struct {
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32
+
+	ExcludeDraftsNotOwnedByUserID int32
 }
 
 // CountBatchChanges returns the number of batch changes in the database.
@@ -215,6 +217,21 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 
 	if opts.NamespaceUserID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_user_id = %s", opts.NamespaceUserID))
+
+		// If it's not my namespace and I can't see other users' drafts, filter out
+		// unapplied (draft) batch changes from this list.
+		if opts.ExcludeDraftsNotOwnedByUserID != 0 && opts.ExcludeDraftsNotOwnedByUserID != opts.NamespaceUserID {
+			preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NOT NULL"))
+		}
+		// For batch changes filtered by org namespace, or not filtered by namespace at
+		// all, if I can't see other users' drafts, filter out unapplied (draft) batch
+		// changes except those that I authored the batch spec of from this list.
+	} else if opts.ExcludeDraftsNotOwnedByUserID != 0 {
+		cond := sqlf.Sprintf(`(batch_changes.last_applied_at IS NOT NULL
+		OR
+		EXISTS (SELECT 1 FROM batch_specs WHERE batch_specs.id = batch_changes.batch_spec_id AND batch_specs.user_id = %s))
+		`, opts.ExcludeDraftsNotOwnedByUserID)
+		preds = append(preds, cond)
 	}
 
 	if opts.NamespaceOrgID != 0 {
@@ -424,6 +441,8 @@ type ListBatchChangesOpts struct {
 	NamespaceOrgID  int32
 
 	RepoID api.RepoID
+
+	ExcludeDraftsNotOwnedByUserID int32
 }
 
 // ListBatchChanges lists batch changes with the given filters.
@@ -495,6 +514,20 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 
 	if opts.NamespaceUserID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_user_id = %s", opts.NamespaceUserID))
+		// If it's not my namespace and I can't see other users' drafts, filter out
+		// unapplied (draft) batch changes from this list.
+		if opts.ExcludeDraftsNotOwnedByUserID != 0 && opts.ExcludeDraftsNotOwnedByUserID != opts.NamespaceUserID {
+			preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NOT NULL"))
+		}
+		// For batch changes filtered by org namespace, or not filtered by namespace at
+		// all, if I can't see other users' drafts, filter out unapplied (draft) batch
+		// changes except those that I authored the batch spec of from this list.
+	} else if opts.ExcludeDraftsNotOwnedByUserID != 0 {
+		cond := sqlf.Sprintf(`(batch_changes.last_applied_at IS NOT NULL
+		OR
+		EXISTS (SELECT 1 FROM batch_specs WHERE batch_specs.id = batch_changes.batch_spec_id AND batch_specs.user_id = %s))
+		`, opts.ExcludeDraftsNotOwnedByUserID)
+		preds = append(preds, cond)
 	}
 
 	if opts.NamespaceOrgID != 0 {

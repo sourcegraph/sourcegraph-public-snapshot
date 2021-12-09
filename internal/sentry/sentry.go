@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/cockroachdb/errors"
-	"github.com/cockroachdb/redact"
 	"github.com/cockroachdb/sentry-go"
 	"github.com/inconshreveable/log15"
 
@@ -123,7 +122,7 @@ func Recoverer(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if r := recover(); r != nil {
-				err := errors.Errorf("handler panic: %v", redact.Safe(r))
+				err := errors.Errorf("handler panic: %v", errors.Safe(r))
 				CapturePanic(err, nil)
 
 				log15.Error("recovered from panic", "error", err)
