@@ -68,6 +68,9 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     })
     const { caseSensitive, setCaseSensitivity } = useNavbarQueryState(queryStateSelector, shallow)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
+    const showSearchContextManagement = useExperimentalFeatures(
+        features => features.showSearchContextManagement ?? false
+    )
 
     useEffect(() => {
         setUserQueryState({ query: props.queryPrefix || '' })
@@ -143,6 +146,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         {...props}
                         {...onboardingTourQueryInputProps}
                         showSearchContext={showSearchContext}
+                        showSearchContextManagement={showSearchContextManagement}
                         caseSensitive={caseSensitive}
                         setCaseSensitivity={setCaseSensitivity}
                         submitSearchOnToggle={submitSearchOnChange}

@@ -166,7 +166,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
 
     showEnterpriseHomePanels: boolean
 
-    showSearchContextManagement: boolean
     selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
     hasUserAddedRepositories: boolean
@@ -258,7 +257,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             parsedSearchQuery: parsedSearchURL.query || '',
             searchPatternType: urlPatternType,
             showOnboardingTour: false,
-            showSearchContextManagement: false,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
             hasUserSyncedPublicRepositories: false,
@@ -469,7 +467,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     hasUserAddedExternalServices={
                                                         this.state.hasUserAddedExternalServices
                                                     }
-                                                    showSearchContextManagement={this.state.showSearchContextManagement}
                                                     selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
                                                     getUserSearchContextNamespaces={getUserSearchContextNamespaces}

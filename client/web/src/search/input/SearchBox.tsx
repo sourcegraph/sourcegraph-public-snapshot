@@ -24,6 +24,7 @@ export interface SearchBoxProps
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
     showSearchContext: boolean
+    showSearchContextManagement: boolean
     queryState: QueryState
     onChange: (newState: QueryState) => void
     onSubmit: () => void

@@ -65,6 +65,9 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         setSearchCaseSensitivity,
     } = useNavbarQueryState(selectQueryState, shallow)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
+    const showSearchContextManagement = useExperimentalFeatures(
+        features => features.showSearchContextManagement ?? false
+    )
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -106,6 +109,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
             <SearchBox
                 {...props}
                 showSearchContext={showSearchContext}
+                showSearchContextManagement={showSearchContextManagement}
                 caseSensitive={searchCaseSensitivity}
                 setCaseSensitivity={setSearchCaseSensitivity}
                 queryState={queryState}

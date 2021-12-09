@@ -6,8 +6,9 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { SettingsExperimentalFeatures } from '../schema/settings.schema'
 
 const defaultSettings: SettingsExperimentalFeatures = {
-    showSearchNotebook: false,
     showSearchContext: true,
+    showSearchContextManagement: true,
+    showSearchNotebook: false,
 }
 
 export const useExperimentalFeatures = create<SettingsExperimentalFeatures>(() => ({}))

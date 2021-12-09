@@ -49,7 +49,6 @@ const defaultProps = (
     setPatternType: () => undefined,
     platformContext: {} as any,
     keyboardShortcuts: [],
-    showSearchContextManagement: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
     defaultSearchContextSpec: '',

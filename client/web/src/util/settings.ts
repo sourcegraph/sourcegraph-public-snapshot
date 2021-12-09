@@ -65,7 +65,6 @@ export function experimentalFeaturesFromSettings(
     showOnboardingTour: boolean
     showEnterpriseHomePanels: boolean
     showMultilineSearchConsole: boolean
-    showSearchContextManagement: boolean
     enableCodeMonitoring: boolean
     enableAPIDocs: boolean
 } {
@@ -76,7 +75,6 @@ export function experimentalFeaturesFromSettings(
     const {
         showOnboardingTour = true, // Default to true if not set
         showEnterpriseHomePanels = true, // Default to true if not set
-        showSearchContextManagement = true, // Default to true if not set
         showMultilineSearchConsole = false,
         codeMonitoring = true, // Default to true if not set
         // eslint-disable-next-line unicorn/prevent-abbreviations
@@ -85,7 +83,6 @@ export function experimentalFeaturesFromSettings(
 
     return {
         showOnboardingTour,
-        showSearchContextManagement,
         showEnterpriseHomePanels,
         showMultilineSearchConsole,
         enableCodeMonitoring: codeMonitoring,

@@ -40,7 +40,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     platformContext: {} as any,
     keyboardShortcuts: [],
     searchContextsEnabled: true,
-    showSearchContextManagement: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => {},
     defaultSearchContextSpec: '',
