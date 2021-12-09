@@ -60,7 +60,9 @@ export const USER_AREA_USER_PROFILE = gql`
     ${UserAreaGQLFragment}
 `
 
-export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {}
+export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {
+    fullPage?: boolean
+}
 
 interface UserAreaProps
     extends RouteComponentProps<{ username: string }>,
@@ -184,33 +186,42 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
     }
 
     return (
-        <Page>
-            <UserAreaHeader {...props} {...context} navItems={props.userAreaHeaderNavItems} />
-            <div className="container mt-3">
-                <ErrorBoundary location={props.location}>
-                    <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
-                        <Switch>
-                            {userAreaRoutes.map(
-                                ({ path, exact, render, condition = () => true }) =>
-                                    condition(context) && (
-                                        <Route
-                                            render={routeComponentProps =>
-                                                render({ ...context, ...routeComponentProps })
-                                            }
-                                            path={url + path}
-                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                            exact={exact}
-                                        />
-                                    )
-                            )}
-                            <Route key="hardcoded-key">
-                                <NotFoundPage />
-                            </Route>
-                        </Switch>
-                    </React.Suspense>
-                </ErrorBoundary>
-            </div>
-        </Page>
+        <ErrorBoundary location={props.location}>
+            <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                <Switch>
+                    {userAreaRoutes.map(
+                        ({ path, exact, render, condition = () => true, fullPage }) =>
+                            condition(context) && (
+                                <Route
+                                    render={routeComponentProps =>
+                                        fullPage ? (
+                                            render({ ...context, ...routeComponentProps })
+                                        ) : (
+                                            <Page>
+                                                <UserAreaHeader
+                                                    {...props}
+                                                    {...context}
+                                                    className="mb-3"
+                                                    navItems={props.userAreaHeaderNavItems}
+                                                />
+                                                <div className="container">
+                                                    {render({ ...context, ...routeComponentProps })}
+                                                </div>
+                                            </Page>
+                                        )
+                                    }
+                                    path={url + path}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    exact={exact}
+                                />
+                            )
+                    )}
+                    <Route key="hardcoded-key">
+                        <NotFoundPage />
+                    </Route>
+                </Switch>
+            </React.Suspense>
+        </ErrorBoundary>
     )
 }
 
