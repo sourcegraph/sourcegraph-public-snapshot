@@ -83,7 +83,7 @@ export interface CodeInsightsBackend {
 
     createInsight: (input: InsightCreateInput) => Observable<unknown>
 
-    updateInsight: (event: InsightUpdateInput) => Observable<void[]>
+    updateInsight: (event: InsightUpdateInput) => Observable<unknown>
 
     deleteInsight: (insightId: string) => Observable<unknown>
 
