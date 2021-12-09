@@ -113,6 +113,8 @@ function addSearchStackEntry(entry: SearchStackEntry, update?: (entry: SearchSta
         // feature should really be considered to be session related but at the
         // same time we want to make it possible to restore information from the
         // previous session (e.g. in case the page was accidentally closed).
+        // Storing the entries in local storage allows us to do that (see
+        // useSearchStackState above).
         const serializedEntries = JSON.stringify(newState.entries)
         localStorage.setItem(SEARCH_STACK_SESSION_KEY, serializedEntries)
         sessionStorage.setItem(SEARCH_STACK_SESSION_KEY, serializedEntries)

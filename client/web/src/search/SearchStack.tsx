@@ -66,7 +66,7 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
             <div className={classNames(styles.header, 'd-flex align-items-center justify-content-between')}>
                 <button
                     type="button"
-                    aria-label="Close alert"
+                    aria-label={`${open ? 'Close' : 'Open'} search session`}
                     className={classNames('btn btn-icon p-2')}
                     onClick={() => setOpen(open => !open)}
                 >
@@ -75,7 +75,7 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
                 </button>
                 <button
                     type="button"
-                    aria-label="Close search stack"
+                    aria-label="Close search session"
                     className={classNames('btn btn-icon pr-2', styles.closeButton, styles.openVisible)}
                     onClick={() => setOpen(false)}
                 >
@@ -164,7 +164,6 @@ function renderSearchEntry(entry: SearchStackEntry): React.ReactChild {
 
 function toSearchQuery(entry: SearchEntry): string {
     let { query } = entry
-    console.debug(entry)
     if (entry.patternType !== SearchPatternType.literal) {
         query = updateFilter(entry.query, FilterType.patterntype, entry.patternType)
     }
@@ -177,6 +176,13 @@ function toSearchQuery(entry: SearchEntry): string {
     return query
 }
 
+/**
+ * This function takes a file path and shortens any path segment to the first
+ * character, except for the first and last segment and any segment that
+ * contains less than five characters.
+ *
+ * Example: path/to/deeply/nested/file => path/to/d/n/file
+ */
 function shortenFilePath(path: string): string {
     const parts = path.split('/')
     if (parts.length === 1) {

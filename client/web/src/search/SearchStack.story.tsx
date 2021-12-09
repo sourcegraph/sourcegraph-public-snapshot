@@ -1,10 +1,11 @@
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { ComponentStory, ComponentMeta } from '@storybook/react'
 import React, { useEffect } from 'react'
-import { WebStory } from '../components/WebStory'
-import { SearchStackEntry, SearchStackStore } from '../stores/searchStack'
 
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+
+import { WebStory } from '../components/WebStory'
 import { useExperimentalFeatures, useSearchStackState } from '../stores'
+import { SearchStackEntry, SearchStackStore } from '../stores/searchStack'
 
 import { SearchStack } from './SearchStack'
 
@@ -83,7 +84,7 @@ SearchStackEmptyWithoutRestore.args = {
 
 export const SearchStackManyEntries = Template.bind({})
 SearchStackManyEntries.args = {
-    entries: Array.from({ length: 50 }, (_, index) => ({
+    entries: Array.from({ length: 50 }, (_element, index) => ({
         type: 'search',
         query: `TODO${index}`,
         caseSensitive: false,
