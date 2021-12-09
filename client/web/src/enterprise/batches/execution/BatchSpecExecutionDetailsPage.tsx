@@ -234,7 +234,9 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                                         Preview
                                     </Link>
                                 )}
-                                {batchSpec.viewerCanRetry && (
+                                {batchSpec.viewerCanRetry && batchSpec.state !== BatchSpecState.COMPLETED && (
+                                    // TODO: Add a second button to allow retrying an entire batch spec,
+                                    // including completed jobs.
                                     <button
                                         type="button"
                                         className="btn btn-outline-secondary"
