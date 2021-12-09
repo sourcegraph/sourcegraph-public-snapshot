@@ -223,8 +223,11 @@ func (r *Runner) validateSchemas(ctx context.Context, schemaContexts map[string]
 	for schemaName, schemaContext := range schemaContexts {
 		definitions, err := schemaContext.schema.Definitions.UpFrom(schemaContext.version, 0)
 		if err != nil {
-			definitions, err := schemaContext.schema.Definitions.UpFrom(0, 0)
-			if err != nil {
+			definitions, innerErr := schemaContext.schema.Definitions.UpFrom(0, 0)
+			if innerErr != nil {
+				return innerErr
+			}
+			if len(definitions) == 0 {
 				return err
 			}
 
