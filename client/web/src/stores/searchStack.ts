@@ -38,6 +38,8 @@ export interface SearchStackStore {
 /**
  * Hook to get the search stack's current state. Used by the SearchStack
  * component itself and by internal functions to add a new entry to the stack.
+ * The current entries persist in local and session storage. Currently this
+ * doesn't work well with multiple tabs.
  */
 export const useSearchStackState = create<SearchStackStore>(() => {
     // We have to get data for the current and previous session here (and retain
@@ -56,7 +58,11 @@ export const useSearchStackState = create<SearchStackStore>(() => {
 /**
  * Hook to add a new entry to the search stack. Use `useMemo` to avoid
  * unnecessary triggers. This hook will *update* an existing entry if
- * necessary.
+ * necessary:
+ * - A search entry is considered the same if the query is the same (search
+ * type, case and context are updated)
+ * - A file entry is considered the same if the repo and the path are the same
+ * (revison and line range are updated)
  */
 export function useSearchStack(newEntry: SearchStackEntry | null): void {
     const enableSearchStack = useExperimentalFeatures(features => features.enableSearchStack)
