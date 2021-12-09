@@ -90,9 +90,9 @@ There are more mitigation techniques, and risks, that you should be aware of. Se
 
 These diagrams cover our CSRF security model at a high level (click to expand), the document below elaborates in greater detail.
 
-[![](diagram-csrf-security-model-1.png)]([diagram-csrf-security-model-1.svg](https://user-images.githubusercontent.com/3173176/145488487-904541ca-2639-4b62-ae9b-7122a2151311.png))
+[![](https://user-images.githubusercontent.com/3173176/145488487-904541ca-2639-4b62-ae9b-7122a2151311.png)](https://user-images.githubusercontent.com/3173176/145488487-904541ca-2639-4b62-ae9b-7122a2151311.png)
 
-[![](diagram-csrf-security-model-2.png)]([diagram-csrf-security-model-2.svg](https://user-images.githubusercontent.com/3173176/145488529-ad7daec8-b0a7-4914-ad75-1c2b50d911e3.png))
+[![](https://user-images.githubusercontent.com/3173176/145488529-ad7daec8-b0a7-4914-ad75-1c2b50d911e3.png)](https://user-images.githubusercontent.com/3173176/145488529-ad7daec8-b0a7-4914-ad75-1c2b50d911e3.png)
 
 ## Request delineation: API and non-API endpoints
 
