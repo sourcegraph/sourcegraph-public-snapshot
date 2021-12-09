@@ -89,7 +89,7 @@ import { toTextDocumentPositionParameters } from '../../backend/extension-api-co
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
-import { resolveRevision, retryWhenCloneInProgressError, secureCheckRepoCloned } from '../../repo/backend'
+import { resolveRevision, retryWhenCloneInProgressError, resolvePrivateRepo } from '../../repo/backend'
 import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
 import {
     DEFAULT_SOURCEGRAPH_URL,
@@ -643,10 +643,6 @@ export interface HandleCodeHostOptions extends CodeIntelligenceProps {
 
 const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
     event.preventDefault()
-    // If we're here, then `isInPage` should have been checked already,
-    // but we double check to be sure and to indicate the intent, for
-    // when we might refactor this, that it must only be called in the
-    // extension.
     if (isExtension) {
         await background.openOptionsPage()
     }
@@ -660,7 +656,7 @@ const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = 
  *
  * Side-effect:
  * - notifies background about private cloud error
- * - renders "Configure Sourcegraph" button
+ * - renders "Configure Sourcegraph" or "Sign In" button
  */
 const isCloudPrivateRepoCloned = async ({
     sourcegraphURL,
@@ -669,7 +665,7 @@ const isCloudPrivateRepoCloned = async ({
     render,
 }: Pick<HandleCodeHostOptions, 'render' | 'codeHost'> &
     Pick<HandleCodeHostOptions['platformContext'], 'requestGraphQL' | 'sourcegraphURL'>): Promise<boolean> => {
-    // Only check if cloud URL and getContext is defined
+    // Only check if connected to Cloud URL and non-empty getContext implementation
     if (!isDefaultSourcegraphUrl(sourcegraphURL) || !codeHost.getContext) {
         return true
     }
@@ -680,10 +676,13 @@ const isCloudPrivateRepoCloned = async ({
             // We can auto-clone public repos
             return true
         }
-        return await secureCheckRepoCloned({
+
+        const isRepoCloned = await resolvePrivateRepo({
             rawRepoName,
             requestGraphQL,
         }).toPromise()
+
+        return isRepoCloned
     } catch (error) {
         // Ignore non-repository pages
         if (error instanceof RepoURLParseError) {
@@ -722,7 +721,6 @@ const isCloudPrivateRepoCloned = async ({
                 codeHost.getViewContextOnSourcegraphMount(document.body)
             )
         }
-        // TODO: handle cloneInProgress
 
         return false
     }

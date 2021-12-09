@@ -55,20 +55,24 @@ export const resolveRepo = memoizeObservable(
 )
 
 /**
+ * Checks if private repository is cloned on the instance using repository hashed name
+ *
  * @returns Observable that emits if the repo exists on the instance.
- * Emits the repo name on the Sourcegraph instance as affected by `repositoryPathPattern`.
- * Errors with a `RepoNotFoundError` if the repo is not found.
+ *
+ * Errors with:
+ * - `NotAuthenticatedError` if user is not authenticated
+ * - `RepoNotFoundError` if the repo is not found
  */
-export const secureCheckRepoCloned = memoizeObservable(
+export const resolvePrivateRepo = memoizeObservable(
     ({
         rawRepoName,
         requestGraphQL,
     }: { rawRepoName: string } & Pick<PlatformContext, 'requestGraphQL'>): Observable<boolean> =>
-        from(sha256(rawRepoName?.toLowerCase())).pipe(
+        from(sha256(rawRepoName.toLowerCase())).pipe(
             switchMap(hashedRepoName =>
                 requestGraphQL<GQL.IQuery>({
                     request: gql`
-                        query SecureCheckRepoCloned($hashedRepoName: String!) {
+                        query ResolvePrivateRepo($hashedRepoName: String!) {
                             repositoryRedirect(hashedName: $hashedRepoName) {
                                 __typename
                                 ... on Repository {
@@ -90,7 +94,9 @@ export const secureCheckRepoCloned = memoizeObservable(
                         if (!data) {
                             throw new Error(errors?.join('\n'))
                         }
-                        const { repositoryRedirect, currentUser } = data
+                        return data
+                    }),
+                    map(({ repositoryRedirect, currentUser }) => {
                         if (!currentUser) {
                             throw new NotAuthenticatedError('Not authenticated to see private repository.')
                         }
@@ -99,7 +105,7 @@ export const secureCheckRepoCloned = memoizeObservable(
                             repositoryRedirect.__typename !== 'Repository' ||
                             !repositoryRedirect.mirrorInfo?.cloned
                         ) {
-                            throw new RepoNotFoundError(`hashed name ${hashedRepoName}`)
+                            throw new RepoNotFoundError(`with hashed name "${hashedRepoName}"`)
                         }
                         if (repositoryRedirect.mirrorInfo?.cloneInProgress) {
                             throw new CloneInProgressError(hashedRepoName)
