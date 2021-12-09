@@ -17,7 +17,7 @@ cleanup() {
   if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
     docker rm -f "$(docker ps -aq)"
   fi
-  docker rmi "$(docker images -q)"
+  docker rmi -f "$(docker images -q)"
 }
 trap cleanup EXIT
 
