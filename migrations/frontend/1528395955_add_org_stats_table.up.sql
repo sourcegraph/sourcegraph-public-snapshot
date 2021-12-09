@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS org_stats
     org_id INTEGER
         REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
             PRIMARY KEY,
-    code_host_repo_count INTEGER DEFAULT 0
+    code_host_repo_count INTEGER DEFAULT 0,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 COMMENT ON TABLE org_stats IS 'Business statistics for organizations';
