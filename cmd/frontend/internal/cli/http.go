@@ -219,34 +219,12 @@ func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOrigi
 	}
 
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-	if isTrustedOrigin(r) {
-		// The request came from a trusted origin, either from the browser extension's fixed origin
-		// identifier or from an origin present in the site configuration `corsOrigin` allow list.
-		//
-		// This means we should allow the exact origin to make the request, the browser will grant
-		// their request the ability to authenticate via a session cookie.
-		//
-		// Note: API users also rely on this codepath handling wildcards properly. For example, if
-		// Sourcegraph is behind a corporate VPN an admin may choose to set the CORS origin to "*"
-		// (via a proxy, not what a browser would ever send) and would expect Sourcegraph to respond
-		// appropriately to any Origin request header:
-		//
-		// 	"Origin: *" -> "Access-Control-Allow-Origin: *"
-		// 	"Origin: https://foobar.com" -> "Access-Control-Allow-Origin: https://foobar.com"
-		//
-		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-	}
+	w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 
 	if r.Method == "OPTIONS" {
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		// Only trusted origins are allowed to send the secure X-Requested-With and X-Sourcegraph-Client
 		// headers, which indicate the client passed CORS AND is a trusted origin.
-		//
-		// In the future, untrusted origins will be allowed to send cross-origin requests with
-		// authentication, but we will only respect session authentication iff the secure header
-		// X-Requested-With is present, indicating the request came from a trusted origin or a
-		// client that does not respect CORS (e.g. curl.)
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		if isTrustedOrigin(r) {
 			w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization, X-Sourcegraph-Should-Trace")
 		} else {
