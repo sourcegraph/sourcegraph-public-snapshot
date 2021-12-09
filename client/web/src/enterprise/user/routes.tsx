@@ -4,6 +4,7 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { userAreaRoutes } from '../../user/area/routes'
 import { UserAreaRoute, UserAreaRouteContext } from '../../user/area/UserArea'
 import { lazyComponent } from '../../util/lazyComponent'
+import { NewCreateBatchChangePage } from '../batches/create/NewCreateBatchChangePage'
 import { NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
@@ -33,6 +34,21 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
         path: '/batch-changes/create',
         render: props => <Redirect to={`/batch-changes/create?namespace=${props.user.username}`} />,
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+        fullPage: true,
+    },
+    {
+        path: '/batch-changes/:batchChangeName/edit',
+        render: ({ match, ...props }: UserAreaRouteContext & RouteComponentProps<{ batchChangeName: string }>) => (
+            <NewCreateBatchChangePage
+                {...props}
+                namespace={props.user}
+                batchChangeName={match.params.batchChangeName}
+                initiallyOpenFormType={false}
+            />
+        ),
+        condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
+            batchChangesEnabled && batchChangesExecutionEnabled,
+        fullPage: true,
     },
     {
         path: '/batch-changes',
