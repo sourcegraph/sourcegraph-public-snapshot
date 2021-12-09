@@ -31,28 +31,6 @@ func NewFastDB(t testing.TB) *sql.DB {
 	return newFromPool(t, u, pool)
 }
 
-// NewFastDBWithDSN returns a clean database using the given connection string
-// that will be deleted at the end of the test
-func NewFastDBWithDSN(t testing.TB, dsn string) *sql.DB {
-	if testing.Short() {
-		t.Skip("skipping DB test since -short specified")
-	}
-	t.Helper()
-
-	u, err := getDSN(dsn)
-	if err != nil {
-		t.Fatalf("failed to parse dsn %q: %s", dsn, err)
-	}
-
-	pool, err := newPoolFromURL(u)
-	if err != nil {
-		t.Fatalf("failed to create new pool: %s", err)
-	}
-	t.Cleanup(func() { pool.Close() })
-
-	return newFromPool(t, u, pool)
-}
-
 // NewFastTx returns a transaction in a clean database. At the end of the test,
 // the transaction will be rolled back, and the clean database can be reused
 func NewFastTx(t testing.TB) *sql.Tx {
