@@ -17,10 +17,11 @@ func TestSlackWebhook(t *testing.T) {
 
 	t.Run("no error", func(t *testing.T) {
 		action := actionArgs{
-			MonitorDescription: "My test monitor", MonitorURL: "https://google.com",
-			Query:      "repo:camdentest -file:id_rsa.pub BEGIN",
-			QueryURL:   "https://youtube.com",
-			NumResults: 31313,
+			MonitorDescription: "My test monitor",
+			MonitorURL:         "https://google.com",
+			Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
+			QueryURL:           "https://youtube.com",
+			NumResults:         31313,
 		}
 
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -38,10 +39,11 @@ func TestSlackWebhook(t *testing.T) {
 
 	t.Run("error is returned", func(t *testing.T) {
 		action := actionArgs{
-			MonitorDescription: "My test monitor", MonitorURL: "https://google.com",
-			Query:      "repo:camdentest -file:id_rsa.pub BEGIN",
-			QueryURL:   "https://youtube.com",
-			NumResults: 31313,
+			MonitorDescription: "My test monitor",
+			MonitorURL:         "https://google.com",
+			Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
+			QueryURL:           "https://youtube.com",
+			NumResults:         31313,
 		}
 
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
