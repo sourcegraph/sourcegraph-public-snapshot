@@ -110,6 +110,10 @@ const webviewConfig = {
     vscode: 'commonjs vscode', // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
   },
   resolve: {
+    alias: {
+      './Link': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'Link'),
+      '@sourcegraph/shared/src/components/Link': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'Link'),
+    },
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     fallback: {

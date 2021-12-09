@@ -40,6 +40,10 @@
         "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
         "--disable-extension=kandalatj.sourcegraph-preview"
       ],
+      "skipFiles": [
+				"<node_internals>/**/*.js",
+				"**/node_modules/**/*.js"
+			],
       "smartStep": true,
 			"sourceMaps": true,
       "outFiles": ["${workspaceRoot}/client/vscode/dist/extension.js"],
