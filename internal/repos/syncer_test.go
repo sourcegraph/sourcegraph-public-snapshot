@@ -9,6 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
@@ -1729,6 +1732,110 @@ func testDeleteExternalService(store *repos.Store) func(*testing.T) {
 
 		// We should have one deleted repo
 		assertDeletedRepoCount(ctx, t, store, 1)
+	}
+}
+
+func testAbortSyncWhenThereIsRepoLimitError(store *repos.Store) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		now := time.Now()
+
+		// create fake org
+		orgName := "sample-org101"
+		org, err := database.OrgsWith(store).Create(ctx, orgName, &orgName)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// create fake user
+		user, err := database.UsersWith(store).Create(ctx, database.NewUser{
+			Email:                 "Email",
+			Username:              "Username",
+			DisplayName:           "DisplayName",
+			Password:              "Password",
+			EmailIsVerified:       true,
+			FailIfNotInitialUser:  false,
+			EnforcePasswordLength: false,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// create fake source
+		svc := &types.ExternalService{
+			Kind:            extsvc.KindGitHub,
+			DisplayName:     "Github - Test1",
+			Config:          `{"url": "https://github.com"}`,
+			CreatedAt:       now,
+			UpdatedAt:       now,
+			NamespaceUserID: user.ID,
+			NamespaceOrgID:  org.ID,
+		}
+
+		// setup services
+		if err := store.ExternalServiceStore.Upsert(ctx, svc); err != nil {
+			t.Fatal(err)
+		}
+
+		githubRepo := &types.Repo{
+			Name:     "github.com/org/foo",
+			Metadata: &github.Repository{},
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "foo-external-12345",
+				ServiceID:   "https://github.com/",
+				ServiceType: extsvc.TypeGitHub,
+			},
+		}
+
+		githubRepo2 := &types.Repo{
+			Name:     "github.com/org/foo2",
+			Metadata: &github.Repository{},
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "foo-external-123456",
+				ServiceID:   "https://github.com/",
+				ServiceType: extsvc.TypeGitHub,
+			},
+		}
+
+		// Sync first service
+		syncer := &repos.Syncer{
+			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+				s := repos.NewFakeSource(svc, nil, githubRepo, githubRepo2)
+				return s, nil
+			},
+			Store:               store,
+			Now:                 time.Now,
+			UserReposMaxPerSite: 1,
+			UserReposMaxPerUser: 1,
+		}
+
+		if err := syncer.SyncExternalService(ctx, svc.ID, 10*time.Second); err != nil {
+			me, ok := err.(*multierror.Error)
+			if !ok {
+				t.Fatalf("Expected multierror.Error, got: %T", err)
+			}
+			actualErr := me.Errors[0]
+
+			var r *repos.RepoLimitError
+
+			if !errors.As(err, &r) {
+				t.Fatalf("Expected RepoLimitError.Error, got: %T", err)
+			}
+
+			expectedErr := &repos.RepoLimitError{
+				SiteAdded: 1,
+				SiteLimit: 1,
+				UserAdded: 1,
+				UserLimit: 1,
+				UserID:    1,
+				UserName:  "Username",
+			}
+			if diff := cmp.Diff(expectedErr, actualErr); diff != "" {
+				t.Fatalf("Unexpected error occurred. Expected: %v, actual: %v", expectedErr, actualErr)
+			}
+		}
 	}
 }
 
