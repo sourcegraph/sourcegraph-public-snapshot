@@ -39,7 +39,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("downgrade", func(t *testing.T) {
-		store := testStoreWithVersion(10004)
+		store := testStoreWithVersion(10003)
 
 		if err := testRunner(store).Run(ctx, Options{
 			Up:            false,
@@ -70,7 +70,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("downgrade error", func(t *testing.T) {
-		store := testStoreWithVersion(10002)
+		store := testStoreWithVersion(10001)
 		store.DownFunc.PushReturn(fmt.Errorf("uh-oh"))
 
 		if err := testRunner(store).Run(ctx, Options{
