@@ -1693,7 +1693,7 @@ func (r *Resolver) CancelBatchSpecWorkspaceExecution(ctx context.Context, args *
 	return nil, errors.New("not implemented yet")
 }
 
-func (r *Resolver) RetryBatchSpecExecution(ctx context.Context, args *graphqlbackend.RetryBatchSpecExecutionArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+func (r *Resolver) RetryBatchSpecExecution(ctx context.Context, args *graphqlbackend.RetryBatchSpecExecutionArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.RetryBatchSpecExecution", fmt.Sprintf("BatchSpec: %+v", args.BatchSpec))
 	defer func() {
 		tr.SetError(err)
@@ -1723,7 +1723,7 @@ func (r *Resolver) RetryBatchSpecExecution(ctx context.Context, args *graphqlbac
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return r.batchSpecByID(ctx, args.BatchSpec)
 }
 
 func (r *Resolver) EnqueueBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.EnqueueBatchSpecWorkspaceExecutionArgs) (*graphqlbackend.EmptyResponse, error) {

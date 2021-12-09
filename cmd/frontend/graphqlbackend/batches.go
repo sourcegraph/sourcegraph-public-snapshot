@@ -248,7 +248,7 @@ type BatchChangesResolver interface {
 	CancelBatchSpecExecution(ctx context.Context, args *CancelBatchSpecExecutionArgs) (BatchSpecResolver, error)
 	CancelBatchSpecWorkspaceExecution(ctx context.Context, args *CancelBatchSpecWorkspaceExecutionArgs) (*EmptyResponse, error)
 	RetryBatchSpecWorkspaceExecution(ctx context.Context, args *RetryBatchSpecWorkspaceExecutionArgs) (*EmptyResponse, error)
-	RetryBatchSpecExecution(ctx context.Context, args *RetryBatchSpecExecutionArgs) (*EmptyResponse, error)
+	RetryBatchSpecExecution(ctx context.Context, args *RetryBatchSpecExecutionArgs) (BatchSpecResolver, error)
 	EnqueueBatchSpecWorkspaceExecution(ctx context.Context, args *EnqueueBatchSpecWorkspaceExecutionArgs) (*EmptyResponse, error)
 	ToggleBatchSpecAutoApply(ctx context.Context, args *ToggleBatchSpecAutoApplyArgs) (BatchSpecResolver, error)
 
