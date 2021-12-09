@@ -90,6 +90,11 @@ func (h *Hub) CapturePanic(err error, tags map[string]string) {
 	h.captureError(err, sentry.LevelFatal, tags)
 }
 
+// Recovery handler to wrap the stdlib net/http Mux.
+// Example:
+//  mux := http.NewServeMux
+//  ...
+//	http.Handle("/", myHub.Recoverer(mux))
 func (h *Hub) Recoverer(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
