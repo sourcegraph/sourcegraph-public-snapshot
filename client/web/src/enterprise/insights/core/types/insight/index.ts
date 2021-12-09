@@ -42,6 +42,10 @@ export function isSearchBasedInsight(insight: Insight): insight is SearchBasedIn
     return insight.viewType === InsightType.SearchBased
 }
 
+export function isCaptureGroupInsight(insight: Insight): insight is CaptureGroupInsight {
+    return insight.viewType === InsightType.CaptureGroup
+}
+
 export function isLangStatsInsight(insight: Insight): insight is LangStatsInsight {
     return insight.viewType === InsightType.LangStats
 }
