@@ -24,6 +24,7 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -40,9 +41,10 @@ type Services struct {
 	locker          *locker.Locker
 	gitserverClient *gitserver.Client
 	indexEnqueuer   *enqueuer.IndexEnqueuer
+	hub             *sentry.Hub
 }
 
-func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db database.DB) (*Services, error) {
+func NewServices(ctx context.Context, siteConfig conftypes.WatchableSiteConfig, db database.DB) (*Services, error) {
 	if err := config.UploadStoreConfig.Validate(); err != nil {
 		return nil, errors.Errorf("failed to load config: %s", err)
 	}
@@ -52,6 +54,18 @@ func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	// Initialize sentry hub
+	hub, err := sentry.NewWithDsn(
+		siteConfig.SiteConfig().Log.Sentry.CodeIntelDSN,
+		siteConfig,
+		func(c conftypes.SiteConfigQuerier) (dsn string) {
+			return c.SiteConfig().Log.Sentry.CodeIntelDSN
+		},
+	)
+	if err != nil {
+		log.Fatalf("Failed to initialize sentry hub: %s", err)
 	}
 
 	// Connect to database
@@ -76,6 +90,7 @@ func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db
 			internal,
 			httpapi.DefaultValidatorByCodeHost,
 			operations,
+			hub,
 		)
 	}
 	internalUploadHandler := newUploadHandler(true)
@@ -100,6 +115,7 @@ func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db
 		locker:          locker,
 		gitserverClient: gitserverClient,
 		indexEnqueuer:   indexEnqueuer,
+		hub:             hub,
 	}, nil
 }
 

@@ -518,7 +518,7 @@ function initCodeIntelligence({
                     location={H.createLocation(window.location)}
                     onCloseButtonClick={this.nextCloseButtonClick}
                     onAlertDismissed={onHoverAlertDismissed}
-                    isBranded={true}
+                    useBrandedLogo={true}
                 />
             ) : null
         }

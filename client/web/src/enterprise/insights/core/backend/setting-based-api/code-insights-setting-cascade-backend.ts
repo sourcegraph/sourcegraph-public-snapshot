@@ -265,6 +265,9 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
         input: GetLangStatsInsightContentInput<D>
     ): Promise<PieChartContent<any>> => getLangStatsInsightContent(input.insight, input.options)
 
+    public getCaptureInsightContent = (): Promise<LineChartContent<any, string>> =>
+        Promise.reject(new Error('Setting based api doesnt support capture group insight'))
+
     // Repositories API
     public getRepositorySuggestions = getRepositorySuggestions
     public getResolvedSearchRepositories = getResolvedSearchRepositories

@@ -6,6 +6,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 )
@@ -37,6 +38,8 @@ func (w *cachedDatabaseWriter) GetOrCreateDatabaseFile(ctx context.Context, args
 		fmt.Sprintf("%s-%d", args.CommitID, symbolsDBVersion),
 	}
 
+	// set to noop parse originally, this will be overridden if the fetcher func below is called
+	observability.SetParseAmount(ctx, observability.CachedParse)
 	cacheFile, err := w.cache.OpenWithPath(ctx, key, func(fetcherCtx context.Context, tempDBFile string) error {
 		if err := w.databaseWriter.WriteDBFile(fetcherCtx, args, tempDBFile); err != nil {
 			return errors.Wrap(err, "databaseWriter.WriteDBFile")

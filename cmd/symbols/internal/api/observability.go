@@ -15,7 +15,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_symbols_api",
-		metrics.WithLabels("op"),
+		metrics.WithLabels("op", "parseAmount"),
 		metrics.WithCountHelp("Total number of method invocations."),
 		metrics.WithDurationBuckets([]float64{1, 2, 5, 10, 30, 60}),
 	)

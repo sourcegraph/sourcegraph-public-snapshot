@@ -10,6 +10,11 @@ func getDSN(dsn string) (*url.URL, error) {
 		var ok bool
 		if dsn, ok = os.LookupEnv("PGDATASOURCE"); !ok {
 			dsn = `postgres://sourcegraph:sourcegraph@127.0.0.1:5432/sourcegraph?sslmode=disable&timezone=UTC`
+		} else {
+			// If the user specified PGDATASOURCE, don't try and mux in other
+			// environment variables. Our code which does that is not always
+			// correct. For example it fails on unix sockets.
+			return url.Parse(dsn)
 		}
 	}
 
