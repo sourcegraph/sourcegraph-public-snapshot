@@ -51,23 +51,24 @@ func testMigrations(t *testing.T, name string, schema *schemas.Schema) {
 		SchemaNames: []string{name},
 	}
 	downOptions := runner.Options{
-		Up:          false,
-		SchemaNames: []string{name},
+		Up: false,
+		// Run down to the root "squashed commits" migration. We don't go
+		// any farther than that because it would require a fresh database,
+		// and that doesn't adequately test upgrade idempotency.
+		NumMigrations: schema.Definitions.Count() - 1,
+		SchemaNames:   []string{name},
 	}
 
+	//
+	// Run migrations up -> down -> up
+
 	if err := migrationRunner.Run(ctx, upOptions); err != nil {
-		t.Fatalf("failed to perform initial migration: %s", err)
+		t.Fatalf("failed to perform initial upgrade: %s", err)
 	}
 	if err := migrationRunner.Run(ctx, downOptions); err != nil {
-		t.Fatalf("failed to perform down migration: %s", err)
+		t.Fatalf("failed to perform downgrade: %s", err)
 	}
-
-	// TEMPORARY
-	if _, err := db.Exec("DROP SCHEMA public CASCADE; CREATE SCHEMA public;"); err != nil {
-		t.Fatalf("failed to drop schema: %s\n", err)
-	}
-
 	if err := migrationRunner.Run(ctx, upOptions); err != nil {
-		t.Fatalf("failed to perform subsequent migration: %s", err)
+		t.Fatalf("failed to perform subsequent upgrade: %s", err)
 	}
 }
