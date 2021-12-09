@@ -125,10 +125,9 @@ func TestCleanupInactive(t *testing.T) {
 // relevant internal magic numbers and transformations change.
 func TestGitGCAuto(t *testing.T) {
 	// Create a test repository with detectable garbage that GC can prune.
-	root := t.TempDir()
-	repo := filepath.Join(root, "garbage-repo")
-	defer os.RemoveAll(root)
-	runCmd(t, root, "git", "init", repo)
+	wd := t.TempDir()
+	repo := filepath.Join(wd, "garbage-repo")
+	runCmd(t, wd, "git", "init", repo)
 
 	// First we need to generate a moderate number of commits.
 	for i := 0; i < 50; i++ {
@@ -148,6 +147,12 @@ func TestGitGCAuto(t *testing.T) {
 	// Bring everything back together in one branch.
 	runCmd(t, repo, "git", "checkout", "master")
 	runCmd(t, repo, "git", "merge", "secondary")
+
+	// Now create a bare repo like gitserver expects
+	root := t.TempDir()
+	wdRepo := repo
+	repo = filepath.Join(root, "garbage-repo")
+	runCmd(t, root, "git", "clone", "--bare", wdRepo, filepath.Join(repo, ".git"))
 
 	// `git count-objects -v` can indicate objects, packs, etc.
 	// We'll run this before and after to verify that an action
