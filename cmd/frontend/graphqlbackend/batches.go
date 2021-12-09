@@ -71,6 +71,11 @@ type CreateBatchSpecArgs struct {
 	ChangesetSpecs []graphql.ID
 }
 
+type CreateEmptyBatchChangeArgs struct {
+	Namespace graphql.ID
+	Name      string
+}
+
 type CreateBatchSpecFromRawArgs struct {
 	BatchSpec        string
 	AllowIgnored     bool
@@ -234,6 +239,7 @@ type BatchChangesResolver interface {
 	//
 	CreateBatchChange(ctx context.Context, args *CreateBatchChangeArgs) (BatchChangeResolver, error)
 	CreateBatchSpec(ctx context.Context, args *CreateBatchSpecArgs) (BatchSpecResolver, error)
+	CreateEmptyBatchChange(ctx context.Context, args *CreateEmptyBatchChangeArgs) (BatchChangeResolver, error)
 	CreateBatchSpecFromRaw(ctx context.Context, args *CreateBatchSpecFromRawArgs) (BatchSpecResolver, error)
 	ReplaceBatchSpecInput(ctx context.Context, args *ReplaceBatchSpecInputArgs) (BatchSpecResolver, error)
 	DeleteBatchSpec(ctx context.Context, args *DeleteBatchSpecArgs) (*EmptyResponse, error)

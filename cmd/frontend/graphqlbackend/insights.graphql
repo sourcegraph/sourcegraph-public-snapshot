@@ -862,6 +862,12 @@ type SearchInsightDataSeriesDefinition {
     Whether or not the the time series are derived from the captured groups of the search results.
     """
     generatedFromCaptureGroups: Boolean!
+
+    """
+    Whether or not the series has been pre-calculated, or still needs to be resolved. This field is largely only used
+    for the code insights webapp, and should be considered unstable (planned to be deprecated in a future release).
+    """
+    isCalculated: Boolean!
 }
 
 """

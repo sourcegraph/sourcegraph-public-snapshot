@@ -7,11 +7,11 @@ import { Redirect } from 'react-router-dom'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
+import { CodeInsightsContextProps } from '../../insights/types'
 import { Settings } from '../../schema/settings.schema'
 import { lazyComponent } from '../../util/lazyComponent'
 
@@ -34,7 +34,11 @@ const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIco
  * Because we need to pass all required prop from main Sourcegraph.tsx component to
  * sub-components withing app tree.
  */
-export interface InsightsRouterProps extends SettingsCascadeProps<Settings>, PlatformContextProps, TelemetryProps {
+export interface InsightsRouterProps
+    extends CodeInsightsContextProps,
+        SettingsCascadeProps<Settings>,
+        PlatformContextProps,
+        TelemetryProps {
     /**
      * Authenticated user info, Used to decide where code insight will appears
      * in personal dashboard (private) or in organisation dashboard (public)
@@ -46,19 +50,19 @@ export interface InsightsRouterProps extends SettingsCascadeProps<Settings>, Pla
  * Main Insight routing component. Main entry point to code insights UI.
  */
 export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props => {
-    const { platformContext, settingsCascade, telemetryService, authenticatedUser } = props
+    const { isCodeInsightsGqlApiEnabled, platformContext, settingsCascade, telemetryService, authenticatedUser } = props
 
     const match = useRouteMatch()
     const apolloClient = useApolloClient()
 
     const gqlApi = useMemo(() => new CodeInsightsGqlBackend(apolloClient), [apolloClient])
-    const api = useMemo(() => {
-        // Disabled by default condition
-        const isNewGqlApiEnabled =
-            !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.codeInsightsGqlApi
-
-        return isNewGqlApiEnabled ? gqlApi : new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext)
-    }, [platformContext, settingsCascade, gqlApi])
+    const api = useMemo(
+        () =>
+            isCodeInsightsGqlApiEnabled
+                ? gqlApi
+                : new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext),
+        [isCodeInsightsGqlApiEnabled, gqlApi, settingsCascade, platformContext]
+    )
 
     return (
         <CodeInsightsBackendContext.Provider value={api}>

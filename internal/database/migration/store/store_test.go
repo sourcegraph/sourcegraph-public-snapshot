@@ -84,6 +84,26 @@ func TestVersion(t *testing.T) {
 	}
 }
 
+func TestLock(t *testing.T) {
+	db := dbtest.NewDB(t)
+	store := testStore(db)
+	ctx := context.Background()
+
+	t.Run("sanity test", func(t *testing.T) {
+		acquired, close, err := store.Lock(ctx)
+		if err != nil {
+			t.Fatalf("unexpected error acquiring lock: %s", err)
+		}
+		if !acquired {
+			t.Fatalf("expected lock to be acquired")
+		}
+
+		if err := close(nil); err != nil {
+			t.Fatalf("unexpected error releasing lock: %s", err)
+		}
+	})
+}
+
 func TestUp(t *testing.T) {
 	db := dbtest.NewDB(t)
 	store := testStore(db)

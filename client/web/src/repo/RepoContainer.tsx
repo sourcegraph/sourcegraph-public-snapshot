@@ -44,13 +44,7 @@ import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { IS_CHROME } from '../marketing/util'
 import { Settings } from '../schema/settings.schema'
-import {
-    CaseSensitivityProps,
-    PatternTypeProps,
-    SearchContextProps,
-    searchQueryForRepoRevision,
-    SearchStreamingProps,
-} from '../search'
+import { PatternTypeProps, SearchContextProps, searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { useNavbarQueryState } from '../stores'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
@@ -84,7 +78,6 @@ export interface RepoContainerContext
         TelemetryProps,
         ActivationProps,
         PatternTypeProps,
-        CaseSensitivityProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled' | 'showSearchContext'>,
         BreadcrumbSetters,
         ActionItemsBarProps,
@@ -104,8 +97,6 @@ export interface RepoContainerContext
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 
     globbing: boolean
-
-    showSearchNotebook: boolean
 
     isMacPlatform: boolean
 
@@ -129,7 +120,6 @@ interface RepoContainerProps
         ThemeProps,
         ExtensionAlertProps,
         PatternTypeProps,
-        CaseSensitivityProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled' | 'showSearchContext'>,
         BreadcrumbSetters,
         BreadcrumbsProps,
@@ -146,7 +136,6 @@ interface RepoContainerProps
     authenticatedUser: AuthenticatedUser | null
     history: H.History
     globbing: boolean
-    showSearchNotebook: boolean
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
 }

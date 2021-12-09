@@ -187,9 +187,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 	}
 	fetchQueueSize.Dec()
 
-	// We expect git archive, even for large repos, to finish relatively
-	// quickly.
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	ctx, cancel := context.WithCancel(ctx)
 
 	fetching.Inc()
 	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch")

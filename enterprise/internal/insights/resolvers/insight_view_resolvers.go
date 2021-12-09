@@ -153,6 +153,15 @@ type searchInsightDataSeriesDefinitionResolver struct {
 	series *types.InsightViewSeries
 }
 
+func (s *searchInsightDataSeriesDefinitionResolver) IsCalculated() (bool, error) {
+	if s.series.GeneratedFromCaptureGroups {
+		// capture groups series are always pre-calculated!
+		return true, nil
+	} else {
+		return !s.series.JustInTime, nil
+	}
+}
+
 func (s *searchInsightDataSeriesDefinitionResolver) SeriesId(ctx context.Context) (string, error) {
 	return s.series.SeriesID, nil
 }

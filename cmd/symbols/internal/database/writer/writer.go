@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 type DatabaseWriter interface {
@@ -67,7 +66,7 @@ func (w *databaseWriter) getNewestCommit(ctx context.Context, args types.SearchA
 }
 
 func (w *databaseWriter) writeDBFile(ctx context.Context, args types.SearchArgs, dbFile string) error {
-	return w.parseAndWriteInTransaction(ctx, args, nil, dbFile, func(tx store.Store, symbols <-chan result.Symbol) error {
+	return w.parseAndWriteInTransaction(ctx, args, nil, dbFile, func(tx store.Store, symbolOrErrors <-chan parser.SymbolOrError) error {
 		if err := tx.CreateMetaTable(ctx); err != nil {
 			return errors.Wrap(err, "store.CreateMetaTable")
 		}
@@ -77,7 +76,7 @@ func (w *databaseWriter) writeDBFile(ctx context.Context, args types.SearchArgs,
 		if err := tx.InsertMeta(ctx, string(args.CommitID)); err != nil {
 			return errors.Wrap(err, "store.InsertMeta")
 		}
-		if err := tx.WriteSymbols(ctx, symbols); err != nil {
+		if err := tx.WriteSymbols(ctx, symbolOrErrors); err != nil {
 			return errors.Wrap(err, "store.WriteSymbols")
 		}
 		if err := tx.CreateSymbolIndexes(ctx); err != nil {
@@ -129,14 +128,14 @@ func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.
 		return false, err
 	}
 
-	return true, w.parseAndWriteInTransaction(ctx, args, addedOrModifiedPaths, dbFile, func(tx store.Store, symbols <-chan result.Symbol) error {
+	return true, w.parseAndWriteInTransaction(ctx, args, addedOrModifiedPaths, dbFile, func(tx store.Store, symbolOrErrors <-chan parser.SymbolOrError) error {
 		if err := tx.UpdateMeta(ctx, string(args.CommitID)); err != nil {
 			return errors.Wrap(err, "store.UpdateMeta")
 		}
 		if err := tx.DeletePaths(ctx, addedModifiedOrDeletedPaths); err != nil {
 			return errors.Wrap(err, "store.DeletePaths")
 		}
-		if err := tx.WriteSymbols(ctx, symbols); err != nil {
+		if err := tx.WriteSymbols(ctx, symbolOrErrors); err != nil {
 			return errors.Wrap(err, "store.WriteSymbols")
 		}
 
@@ -144,13 +143,22 @@ func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.
 	})
 }
 
-func (w *databaseWriter) parseAndWriteInTransaction(ctx context.Context, args types.SearchArgs, paths []string, dbFile string, callback func(tx store.Store, symbols <-chan result.Symbol) error) error {
-	symbols, err := w.parser.Parse(ctx, args, paths)
+func (w *databaseWriter) parseAndWriteInTransaction(ctx context.Context, args types.SearchArgs, paths []string, dbFile string, callback func(tx store.Store, symbolOrErrors <-chan parser.SymbolOrError) error) (err error) {
+	symbolOrErrors, err := w.parser.Parse(ctx, args, paths)
 	if err != nil {
 		return errors.Wrap(err, "parser.Parse")
 	}
+	defer func() {
+		if err != nil {
+			go func() {
+				// Drain channel on early exit
+				for range symbolOrErrors {
+				}
+			}()
+		}
+	}()
 
 	return store.WithSQLiteStoreTransaction(ctx, dbFile, func(tx store.Store) error {
-		return callback(tx, symbols)
+		return callback(tx, symbolOrErrors)
 	})
 }

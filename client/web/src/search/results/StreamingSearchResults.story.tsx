@@ -36,7 +36,6 @@ const streamingSearchResult: AggregateStreamingSearchResults = {
 
 const defaultProps: StreamingSearchResultsProps = {
     parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-    caseSensitive: false,
     patternType: SearchPatternType.literal,
 
     extensionsController,

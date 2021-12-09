@@ -11,6 +11,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
+	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -28,7 +29,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
+
+// ErrNameNotUnique is returned by CreateEmptyBatchChange if the combination of name and
+// namespace provided are already used by another batch change.
+var ErrNameNotUnique = errors.New("a batch change with this name already exists in this namespace")
 
 // New returns a Service.
 func New(store *store.Store) *Service {
@@ -137,6 +143,77 @@ func newOperations(observationContext *observation.Context) *operations {
 // given Store.
 func (s *Service) WithStore(store *store.Store) *Service {
 	return &Service{store: store, sourcer: s.sourcer, clock: s.clock, operations: s.operations}
+}
+
+type CreateEmptyBatchChangeOpts struct {
+	NamespaceUserID int32
+	NamespaceOrgID  int32
+
+	Name string
+}
+
+// CreateEmptyBatchChange creates a new batch change with an empty batch spec. It enforces
+// namespace permissions of the caller and validates that the combination of name +
+// namespace is unique.
+func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Construct and parse the batch spec YAML of just the provided name to validate the
+	// pattern of the name is okay
+	rawSpec, err := yaml.Marshal(struct {
+		Name string `yaml:"name"`
+	}{Name: opts.Name})
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling name")
+	}
+	spec, err := batcheslib.ParseBatchSpec(rawSpec, batcheslib.ParseBatchSpecOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	actor := actor.FromContext(ctx)
+	batchSpec := &btypes.BatchSpec{
+		RawSpec:         string(rawSpec),
+		Spec:            spec,
+		NamespaceUserID: opts.NamespaceUserID,
+		NamespaceOrgID:  opts.NamespaceOrgID,
+		UserID:          actor.UID,
+	}
+
+	// The combination of name + namespace must be unique
+	batchChange, err = s.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
+	if err != nil {
+		return nil, err
+	}
+	if batchChange != nil {
+		return nil, ErrNameNotUnique
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := tx.CreateBatchSpec(ctx, batchSpec); err != nil {
+		return nil, err
+	}
+
+	batchChange = &btypes.BatchChange{
+		Name:            opts.Name,
+		NamespaceUserID: opts.NamespaceUserID,
+		NamespaceOrgID:  opts.NamespaceOrgID,
+		BatchSpecID:     batchSpec.ID,
+	}
+	if err := tx.CreateBatchChange(ctx, batchChange); err != nil {
+		return nil, err
+	}
+
+	return batchChange, nil
 }
 
 type CreateBatchSpecOpts struct {

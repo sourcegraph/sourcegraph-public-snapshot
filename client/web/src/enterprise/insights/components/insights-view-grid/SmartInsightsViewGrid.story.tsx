@@ -94,6 +94,8 @@ const insightsWithManyLines: Insight[] = [
             { id: '', query: '', stroke: '', name: '' },
             { id: '', query: '', stroke: '', name: '' },
             { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
         ],
         visibility: 'personal',
     },
@@ -111,6 +113,20 @@ const insightsWithManyLines: Insight[] = [
         viewType: InsightType.SearchBased,
         title: 'Backend insight #2',
         series: [
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
             { id: '', query: '', stroke: '', name: '' },
             { id: '', query: '', stroke: '', name: '' },
             { id: '', query: '', stroke: '', name: '' },
@@ -150,8 +166,8 @@ class StoryBackendWithManyLinesCharts extends CodeInsightsSettingsCascadeBackend
                 title: 'Backend Insight Mock',
                 subtitle: 'Backend insight description text',
                 content: [
-                    input.series.length >= 3
-                        ? input.series.length >= 5
+                    input.series.length >= 6
+                        ? input.series.length >= 15
                             ? LINE_CHART_WITH_HUGE_NUMBER_OF_LINES
                             : LINE_CHART_WITH_MANY_LINES
                         : LINE_CHART_CONTENT_MOCK,

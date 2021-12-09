@@ -68,9 +68,7 @@ export function getStepInterval(insight: SearchBasedInsight): [TimeIntervalStepU
 export const getInsightView = (insight: InsightViewNode): Insight | undefined => {
     switch (insight.presentation.__typename) {
         case 'LineChartInsightViewPresentation': {
-            const isBackendInsight = insight.dataSeriesDefinitions.every(
-                series => series.repositoryScope.repositories.length === 0
-            )
+            const isBackendInsight = insight.dataSeriesDefinitions.every(series => series.isCalculated)
 
             const series = insight.presentation.seriesPresentation.map(series => ({
                 id: series.seriesId,

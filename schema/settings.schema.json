@@ -21,7 +21,8 @@
           }
         },
         "codeInsightsGqlApi": {
-          "description": "Enables gql api instead of using setting cascade as a main storage fro code insights entities",
+          "deprecated": true,
+          "description": "DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities",
           "type": "boolean",
           "default": false,
           "!go": {

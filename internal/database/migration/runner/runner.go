@@ -6,7 +6,6 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
@@ -14,7 +13,7 @@ type Runner struct {
 	storeFactories map[string]StoreFactory
 }
 
-type StoreFactory func() (Store, error)
+type StoreFactory func(ctx context.Context) (Store, error)
 
 func NewRunner(storeFactories map[string]StoreFactory) *Runner {
 	return &Runner{
@@ -50,16 +49,10 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 	// Invert maps so we can get the set of data necessary to run each schema
 	schemaContexts := make(map[string]schemaContext, len(options.SchemaNames))
 	for _, schemaName := range options.SchemaNames {
-		schema := schemaMap[schemaName]
-		store := storeMap[schemaName]
-		version := versionMap[schemaName]
-		locker := locker.NewWithDB(store.Handle().DB(), fmt.Sprintf("%s:migrations", schemaName))
-
 		schemaContexts[schemaName] = schemaContext{
-			schema:  schema,
-			store:   store,
-			version: version,
-			locker:  locker,
+			schema:  schemaMap[schemaName],
+			store:   storeMap[schemaName],
+			version: versionMap[schemaName],
 		}
 	}
 
@@ -98,7 +91,7 @@ func (r *Runner) prepareStores(ctx context.Context, schemaNames []string) (map[s
 			return nil, fmt.Errorf("unknown schema %q", schemaName)
 		}
 
-		store, err := storeFactory()
+		store, err := storeFactory(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -133,7 +126,6 @@ func (r *Runner) fetchVersions(ctx context.Context, storeMap map[string]Store) (
 type schemaContext struct {
 	schema  *schemas.Schema
 	store   Store
-	locker  *locker.Locker
 	version int
 }
 
@@ -148,7 +140,7 @@ func (r *Runner) runSchemas(ctx context.Context, options Options, schemaContexts
 }
 
 func (r *Runner) runSchema(ctx context.Context, options Options, context schemaContext) error {
-	if locked, unlock, err := context.locker.Lock(ctx, 0, true); err != nil {
+	if locked, unlock, err := context.store.Lock(ctx); err != nil {
 		return err
 	} else if !locked {
 		return fmt.Errorf("failed to acquire lock")

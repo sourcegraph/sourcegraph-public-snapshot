@@ -52,7 +52,10 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
             </div>
 
             <div className={classNames(styles.createIntroPageInsights, 'pb-5')}>
-                <section className={classNames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
+                <section
+                    className={classNames(styles.createIntroPageInsightCard, 'card card-body p-3')}
+                    data-testid="create-search-insights"
+                >
                     <h3>Based on your search query</h3>
 
                     <p>
@@ -78,7 +81,10 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     </div>
                 </section>
 
-                <section className={classNames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
+                <section
+                    className={classNames(styles.createIntroPageInsightCard, 'card card-body p-3')}
+                    data-testid="create-lang-usage-insight"
+                >
                     <h3>Language usage</h3>
 
                     <p>Shows language usage in your repository by lines of code.</p>
@@ -101,7 +107,10 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     </div>
                 </section>
 
-                <section className={classNames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
+                <section
+                    className={classNames(styles.createIntroPageInsightCard, 'card card-body p-3')}
+                    data-testid="explore-extensions"
+                >
                     <h3>Based on Sourcegraph extensions</h3>
 
                     <p>

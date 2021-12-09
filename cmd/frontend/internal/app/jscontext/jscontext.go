@@ -92,7 +92,7 @@ type JSContext struct {
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
 	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
 
-	CodeInsightsGQLApiEnabled bool `json:"CodeInsightsGQLApiEnabled"`
+	CodeInsightsGQLApiEnabled bool `json:"codeInsightsGqlApiEnabled"`
 
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
