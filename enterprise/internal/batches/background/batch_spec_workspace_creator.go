@@ -163,9 +163,9 @@ func (r *batchSpecWorkspaceCreator) process(
 	}
 	entriesByCacheKey := make(map[string]*btypes.BatchSpecExecutionCacheEntry)
 	if len(cacheKeys) > 0 {
-		// TODO: Once implemented, enforce ownership of cache entries here.
 		entries, err := tx.ListBatchSpecExecutionCacheEntries(ctx, store.ListBatchSpecExecutionCacheEntriesOpts{
-			Keys: cacheKeys,
+			UserID: spec.UserID,
+			Keys:   cacheKeys,
 		})
 		if err != nil {
 			return err
@@ -176,9 +176,9 @@ func (r *batchSpecWorkspaceCreator) process(
 	}
 	stepEntriesByCacheKey := make(map[string]*btypes.BatchSpecExecutionCacheEntry)
 	if len(stepCacheKeys) > 0 {
-		// TODO: Once implemented, enforce ownership of cache entries here.
 		entries, err := tx.ListBatchSpecExecutionCacheEntries(ctx, store.ListBatchSpecExecutionCacheEntriesOpts{
-			Keys: stepCacheKeys,
+			UserID: spec.UserID,
+			Keys:   stepCacheKeys,
 		})
 		if err != nil {
 			return err

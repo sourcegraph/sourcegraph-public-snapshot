@@ -60,7 +60,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
     <div>
       Tags: 
       <div
-        class="mr-1 badge badge-secondary"
+        class="badge secondary mr-1"
       >
         a
       </div>
@@ -159,7 +159,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
     <div>
       Tags: 
       <div
-        class="mr-1 badge badge-secondary"
+        class="badge secondary mr-1"
       >
         a
       </div>

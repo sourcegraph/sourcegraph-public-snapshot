@@ -25,9 +25,9 @@ type CodeMonitorsResolver interface {
 }
 
 type MonitorConnectionResolver interface {
-	Nodes(ctx context.Context) ([]MonitorResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Nodes() []MonitorResolver
+	TotalCount() int32
+	PageInfo() *graphqlutil.PageInfo
 }
 
 type MonitorResolver interface {
@@ -52,9 +52,9 @@ type MonitorQueryResolver interface {
 }
 
 type MonitorTriggerEventConnectionResolver interface {
-	Nodes(ctx context.Context) ([]MonitorTriggerEventResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Nodes() []MonitorTriggerEventResolver
+	TotalCount() int32
+	PageInfo() *graphqlutil.PageInfo
 }
 
 type MonitorTriggerEventResolver interface {
@@ -66,9 +66,9 @@ type MonitorTriggerEventResolver interface {
 }
 
 type MonitorActionConnectionResolver interface {
-	Nodes(ctx context.Context) ([]MonitorAction, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Nodes() []MonitorAction
+	TotalCount() int32
+	PageInfo() *graphqlutil.PageInfo
 }
 
 type MonitorAction interface {
@@ -89,15 +89,15 @@ type MonitorEmailRecipient interface {
 }
 
 type MonitorActionEmailRecipientsConnectionResolver interface {
-	Nodes(ctx context.Context) ([]NamespaceResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Nodes() []NamespaceResolver
+	TotalCount() int32
+	PageInfo() *graphqlutil.PageInfo
 }
 
 type MonitorActionEventConnectionResolver interface {
-	Nodes(ctx context.Context) ([]MonitorActionEventResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Nodes() []MonitorActionEventResolver
+	TotalCount() int32
+	PageInfo() *graphqlutil.PageInfo
 }
 
 type MonitorActionEventResolver interface {
