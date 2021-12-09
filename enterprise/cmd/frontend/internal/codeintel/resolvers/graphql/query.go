@@ -34,13 +34,13 @@ var ErrIllegalBounds = errors.New("illegal bounds")
 type QueryResolver struct {
 	resolver         resolvers.QueryResolver
 	locationResolver *CachedLocationResolver
-	errTracer        *observation.ErrorTracer
+	errTracer        *observation.ErrCollector
 }
 
 // NewQueryResolver creates a new QueryResolver with the given resolver that defines all code intel-specific
 // behavior. A cached location resolver instance is also given to the query resolver, which should be used
 // to resolve all location-related values.
-func NewQueryResolver(resolver resolvers.QueryResolver, locationResolver *CachedLocationResolver, errTracer *observation.ErrorTracer) gql.GitBlobLSIFDataResolver {
+func NewQueryResolver(resolver resolvers.QueryResolver, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.GitBlobLSIFDataResolver {
 	return &QueryResolver{
 		resolver:         resolver,
 		locationResolver: locationResolver,

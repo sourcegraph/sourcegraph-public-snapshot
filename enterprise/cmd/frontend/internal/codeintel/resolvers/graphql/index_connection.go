@@ -18,10 +18,10 @@ type IndexConnectionResolver struct {
 	indexesResolver  *resolvers.IndexesResolver
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
-	errTracer        *observation.ErrorTracer
+	errTracer        *observation.ErrCollector
 }
 
-func NewIndexConnectionResolver(db database.DB, resolver resolvers.Resolver, indexesResolver *resolvers.IndexesResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTracer *observation.ErrorTracer) gql.LSIFIndexConnectionResolver {
+func NewIndexConnectionResolver(db database.DB, resolver resolvers.Resolver, indexesResolver *resolvers.IndexesResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.LSIFIndexConnectionResolver {
 	return &IndexConnectionResolver{
 		db:               db,
 		resolver:         resolver,

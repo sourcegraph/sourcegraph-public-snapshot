@@ -16,10 +16,10 @@ import (
 type IndexConfigurationResolver struct {
 	resolver     resolvers.Resolver
 	repositoryID int
-	errTracer    *observation.ErrorTracer
+	errTracer    *observation.ErrCollector
 }
 
-func NewIndexConfigurationResolver(resolver resolvers.Resolver, repositoryID int, errTracer *observation.ErrorTracer) gql.IndexConfigurationResolver {
+func NewIndexConfigurationResolver(resolver resolvers.Resolver, repositoryID int, errTracer *observation.ErrCollector) gql.IndexConfigurationResolver {
 	return &IndexConfigurationResolver{
 		resolver:     resolver,
 		repositoryID: repositoryID,

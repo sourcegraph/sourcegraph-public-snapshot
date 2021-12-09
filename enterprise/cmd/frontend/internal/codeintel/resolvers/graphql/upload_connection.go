@@ -18,10 +18,10 @@ type UploadConnectionResolver struct {
 	uploadsResolver  *resolvers.UploadsResolver
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
-	errTracer        *observation.ErrorTracer
+	errTracer        *observation.ErrCollector
 }
 
-func NewUploadConnectionResolver(db database.DB, resolver resolvers.Resolver, uploadsResolver *resolvers.UploadsResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTracer *observation.ErrorTracer) gql.LSIFUploadConnectionResolver {
+func NewUploadConnectionResolver(db database.DB, resolver resolvers.Resolver, uploadsResolver *resolvers.UploadsResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTracer *observation.ErrCollector) gql.LSIFUploadConnectionResolver {
 	return &UploadConnectionResolver{
 		resolver:         resolver,
 		uploadsResolver:  uploadsResolver,

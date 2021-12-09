@@ -19,10 +19,10 @@ import (
 type configurationPolicyResolver struct {
 	db                  database.DB
 	configurationPolicy store.ConfigurationPolicy
-	errTracer           *observation.ErrorTracer
+	errTracer           *observation.ErrCollector
 }
 
-func NewConfigurationPolicyResolver(db database.DB, configurationPolicy store.ConfigurationPolicy, op *observation.ErrorTracer) gql.CodeIntelligenceConfigurationPolicyResolver {
+func NewConfigurationPolicyResolver(db database.DB, configurationPolicy store.ConfigurationPolicy, op *observation.ErrCollector) gql.CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
 		db:                  db,
 		configurationPolicy: configurationPolicy,

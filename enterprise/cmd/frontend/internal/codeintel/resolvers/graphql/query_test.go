@@ -126,7 +126,7 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 	db := database.NewDB(nil)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), observation.NewErrorTracer())
+	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), observation.NewErrorCollector())
 
 	offset := int32(-1)
 	args := &gql.LSIFPagedQueryPositionArgs{
@@ -214,7 +214,7 @@ func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
 	db := database.NewDB(nil)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
-	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), nil)
+	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db), observation.NewErrorCollector())
 
 	offset := int32(-1)
 	args := &gql.LSIFDiagnosticsArgs{

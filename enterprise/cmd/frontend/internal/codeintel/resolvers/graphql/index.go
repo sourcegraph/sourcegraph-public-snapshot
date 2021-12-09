@@ -21,10 +21,10 @@ type IndexResolver struct {
 	index            store.Index
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
-	traceErrs        *observation.ErrorTracer
+	traceErrs        *observation.ErrCollector
 }
 
-func NewIndexResolver(db database.DB, resolver resolvers.Resolver, index store.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTrace *observation.ErrorTracer) gql.LSIFIndexResolver {
+func NewIndexResolver(db database.DB, resolver resolvers.Resolver, index store.Index, prefetcher *Prefetcher, locationResolver *CachedLocationResolver, errTrace *observation.ErrCollector) gql.LSIFIndexResolver {
 	if index.AssociatedUploadID != nil {
 		// Request the next batch of upload fetches to contain the record's associated
 		// upload id, if one exists it exists. This allows the prefetcher.GetUploadByID

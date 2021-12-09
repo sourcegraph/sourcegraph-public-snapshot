@@ -14,10 +14,10 @@ type codeIntelligenceConfigurationPolicyConnectionResolver struct {
 	db         database.DB
 	policies   []dbstore.ConfigurationPolicy
 	totalCount int
-	errTracer  *observation.ErrorTracer
+	errTracer  *observation.ErrCollector
 }
 
-func NewCodeIntelligenceConfigurationPolicyConnectionResolver(db database.DB, policies []dbstore.ConfigurationPolicy, totalCount int, errTracer *observation.ErrorTracer) gql.CodeIntelligenceConfigurationPolicyConnectionResolver {
+func NewCodeIntelligenceConfigurationPolicyConnectionResolver(db database.DB, policies []dbstore.ConfigurationPolicy, totalCount int, errTracer *observation.ErrCollector) gql.CodeIntelligenceConfigurationPolicyConnectionResolver {
 	return &codeIntelligenceConfigurationPolicyConnectionResolver{
 		db:         db,
 		policies:   policies,

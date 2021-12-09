@@ -168,21 +168,22 @@ func (f FinishFunc) OnCancel(ctx context.Context, count float64, args Args) {
 	}()
 }
 
-type ErrorTracer struct {
+// ErrCollector represents multiple errors and additional log fields that arose from those errors.
+type ErrCollector struct {
 	multi       *multierror.Error
 	extraFields []log.Field
 }
 
-func NewErrorTracer() *ErrorTracer { return &ErrorTracer{multi: &multierror.Error{}} }
+func NewErrorCollector() *ErrCollector { return &ErrCollector{multi: &multierror.Error{}} }
 
-func (e *ErrorTracer) Collect(err *error, fields ...log.Field) {
+func (e *ErrCollector) Collect(err *error, fields ...log.Field) {
 	if err != nil && *err != nil {
 		e.multi.Errors = append(e.multi.Errors, *err)
 		e.extraFields = append(e.extraFields, fields...)
 	}
 }
 
-func (e *ErrorTracer) Error() string {
+func (e *ErrCollector) Error() string {
 	return e.multi.Error()
 }
 
@@ -219,7 +220,7 @@ func (args Args) LogFieldPairs() []interface{} {
 // WithErrors prepares the necessary timers, loggers, and metrics to observe the invocation of an
 // operation. This method returns a modified context, an multi-error capturing type and a function to be deferred until the
 // end of the operation. It can be used with FinishFunc.OnCancel to capture multiple async errors.
-func (op *Operation) WithErrors(ctx context.Context, root *error, args Args) (context.Context, *ErrorTracer, FinishFunc) {
+func (op *Operation) WithErrors(ctx context.Context, root *error, args Args) (context.Context, *ErrCollector, FinishFunc) {
 	ctx, collector, _, endObservation := op.WithErrorsAndLogger(ctx, root, args)
 	return ctx, collector, endObservation
 }
@@ -228,19 +229,19 @@ func (op *Operation) WithErrors(ctx context.Context, root *error, args Args) (co
 // operation. This method returns a modified context, an multi-error capturing type, a function that will add a log field
 // to the active trace, and a function to be deferred until the end of the operation. It can be used with
 // FinishFunc.OnCancel to capture multiple async errors.
-func (op *Operation) WithErrorsAndLogger(ctx context.Context, root *error, args Args) (context.Context, *ErrorTracer, TraceLogger, FinishFunc) {
-	collector := NewErrorTracer()
-	err := error(collector)
+func (op *Operation) WithErrorsAndLogger(ctx context.Context, root *error, args Args) (context.Context, *ErrCollector, TraceLogger, FinishFunc) {
+	errTracer := NewErrorCollector()
+	err := error(errTracer)
 	ctx, traceLogger, endObservation := op.WithAndLogger(ctx, &err, args)
 	if root != nil {
 		endObservation = func(count float64, args Args) {
 			if *root != nil {
-				collector.multi.Errors = append(collector.multi.Errors, *root)
+				errTracer.multi.Errors = append(errTracer.multi.Errors, *root)
 			}
 			endObservation(count, args)
 		}
 	}
-	return ctx, collector, traceLogger, endObservation
+	return ctx, errTracer, traceLogger, endObservation
 }
 
 // With prepares the necessary timers, loggers, and metrics to observe the invocation of an
@@ -296,7 +297,7 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 		logFields := mergeLogFields(defaultFinishFields, finishArgs.LogFields, args.LogFields)
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
 
-		if multi := new(ErrorTracer); err != nil && errors.As(*err, &multi) {
+		if multi := new(ErrCollector); err != nil && errors.As(*err, &multi) {
 			logFields = append(logFields, multi.extraFields...)
 		}
 
