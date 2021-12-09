@@ -107,7 +107,7 @@ func (s *Store) Up(ctx context.Context, definition definition.Definition) (err e
 	ctx, endObservation := s.operations.up.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if err := s.runMigrationQuery(ctx, definition, definition.ID-1, definition.UpQuery); err != nil {
+	if err := s.runMigrationQuery(ctx, definition.ID-1, definition.ID, definition.UpQuery); err != nil {
 		return err
 	}
 
@@ -118,15 +118,15 @@ func (s *Store) Down(ctx context.Context, definition definition.Definition) (err
 	ctx, endObservation := s.operations.down.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if err := s.runMigrationQuery(ctx, definition, definition.ID+1, definition.DownQuery); err != nil {
+	if err := s.runMigrationQuery(ctx, definition.ID, definition.ID-1, definition.DownQuery); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *Store) runMigrationQuery(ctx context.Context, definition definition.Definition, expectedCurrentVersion int, query *sqlf.Query) error {
-	if err := s.setVersion(ctx, expectedCurrentVersion, definition.ID); err != nil {
+func (s *Store) runMigrationQuery(ctx context.Context, expectedCurrentVersion, version int, query *sqlf.Query) error {
+	if err := s.setVersion(ctx, expectedCurrentVersion, version); err != nil {
 		return err
 	}
 
