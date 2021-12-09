@@ -2769,6 +2769,13 @@ type BatchSpec implements Node {
     Null, if not created through createBatchSpecFromRaw.
     """
     allowUnsupported: Boolean
+
+
+    """
+    If true, viewer can retry the batch spec execution by calling
+    retryBatchSpecExecution.
+    """
+    viewerCanRetry: Boolean!
 }
 
 """

@@ -343,6 +343,8 @@ type BatchSpecResolver interface {
 
 	AllowIgnored() *bool
 	AllowUnsupported() *bool
+
+	ViewerCanRetry(context.Context) (bool, error)
 }
 
 type BatchChangeDescriptionResolver interface {

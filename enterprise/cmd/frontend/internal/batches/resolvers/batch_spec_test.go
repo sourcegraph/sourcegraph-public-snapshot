@@ -390,6 +390,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.State = "COMPLETED"
 	want.ApplyURL = &applyUrl
 	want.FinishedAt = graphqlbackend.DateTime{Time: jobs[0].FinishedAt}
+	want.ViewerCanRetry = true
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 1/3 jobs is failed, 2/3 completed
@@ -400,6 +401,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.FailureMessage = fmt.Sprintf("Failures:\n\n* %s\n", message1)
 	// We still want users to be able to apply batch specs that executed with errors
 	want.ApplyURL = &applyUrl
+	want.ViewerCanRetry = true
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 1/3 jobs is failed, 2/3 still processing
@@ -408,6 +410,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.State = "PROCESSING"
 	want.FinishedAt = graphqlbackend.DateTime{}
 	want.ApplyURL = nil
+	want.ViewerCanRetry = false
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
 	// 3/3 jobs canceling and processing
@@ -419,7 +422,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.FailureMessage = ""
 	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
 
-	// 3/3 canceling and failed
+	// 3/3 canceled
 	jobs[0].FinishedAt = minAgo(9)
 	jobs[1].FinishedAt = minAgo(15)
 	jobs[2].FinishedAt = minAgo(30)
@@ -429,6 +432,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 
 	want.State = "CANCELED"
 	want.FinishedAt = graphqlbackend.DateTime{Time: jobs[0].FinishedAt}
+	want.ViewerCanRetry = true
 	want.FailureMessage = `Failures:
 
 * canceled
@@ -472,6 +476,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.DiffStat.Added = 20
 	want.DiffStat.Deleted = 4
 	want.DiffStat.Changed = 10
+	want.ViewerCanRetry = true
 
 	codeHosts = apitest.BatchChangesCodeHostsConnection{
 		TotalCount: 1,
@@ -674,6 +679,7 @@ query($batchSpec: ID!) {
       startedAt
       finishedAt
       failureMessage
+      viewerCanRetry
     }
   }
 }
