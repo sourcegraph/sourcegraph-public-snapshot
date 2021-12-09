@@ -274,7 +274,7 @@ func TestDeleteDashboard(t *testing.T) {
 	})
 }
 
-func TestAssociateViewsById(t *testing.T) {
+func TestAddViewsToDashboard(t *testing.T) {
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
 	now := time.Now().Truncate(time.Microsecond).Round(0)
@@ -296,10 +296,19 @@ func TestAssociateViewsById(t *testing.T) {
 
 	t.Run("create and add view to dashboard", func(t *testing.T) {
 		insightStore := NewInsightStore(timescale)
-		view, err := insightStore.CreateView(ctx, types.InsightView{
+		view1, err := insightStore.CreateView(ctx, types.InsightView{
 			Title:            "great view",
 			Description:      "my view",
 			UniqueID:         "view1234567",
+			PresentationType: types.Line,
+		}, []InsightViewGrant{GlobalGrant()})
+		if err != nil {
+			t.Fatal(err)
+		}
+		view2, err := insightStore.CreateView(ctx, types.InsightView{
+			Title:            "great view 2",
+			Description:      "my view",
+			UniqueID:         "view1234567-2",
 			PresentationType: types.Line,
 		}, []InsightViewGrant{GlobalGrant()})
 		if err != nil {
@@ -315,7 +324,7 @@ func TestAssociateViewsById(t *testing.T) {
 		if len(dashboard.InsightIDs) != 0 {
 			t.Errorf("unexpected value for insight views on dashboard before adding view")
 		}
-		err = store.AddViewsToDashboard(ctx, dashboard.ID, []string{view.UniqueID})
+		err = store.AddViewsToDashboard(ctx, dashboard.ID, []string{view2.UniqueID, view1.UniqueID})
 		if err != nil {
 			t.Errorf("failed to add view to dashboard")
 		}
@@ -324,14 +333,7 @@ func TestAssociateViewsById(t *testing.T) {
 			t.Errorf("failed to fetch dashboard after adding insight")
 		}
 		got := dashboards[0]
-		autogold.Want("check views are added to dashboard", &types.Dashboard{
-			ID: 1, Title: "test dashboard 1", InsightIDs: []string{
-				"view1234567",
-			},
-			UserIdGrants: []int64{},
-			OrgIdGrants:  []int64{},
-			GlobalGrant:  true,
-		}).Equal(t, got)
+		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 }
 

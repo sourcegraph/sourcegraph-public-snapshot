@@ -126,6 +126,31 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
+type InsightsOnDashboardQueryArgs struct {
+	DashboardID int
+	After       string
+	Limit       int
+}
+
+// GetAllOnDashboard returns a page of insights on a dashboard
+func (s *InsightStore) GetAllOnDashboard(ctx context.Context, args InsightsOnDashboardQueryArgs) ([]types.InsightViewSeries, error) {
+	where := make([]*sqlf.Query, 0, 2)
+	var limit *sqlf.Query
+
+	where = append(where, sqlf.Sprintf("dbiv.dashboard_id = %s", args.DashboardID))
+	if args.After != "" {
+		where = append(where, sqlf.Sprintf("dbiv.id > %s", args.After))
+	}
+	if args.Limit > 0 {
+		limit = sqlf.Sprintf("LIMIT %s", args.Limit)
+	} else {
+		limit = sqlf.Sprintf("")
+	}
+
+	q := sqlf.Sprintf(getInsightsByDashboardSql, sqlf.Join(where, "AND"), limit)
+	return scanInsightViewSeries(s.Query(ctx, q))
+}
+
 // visibleViewsQuery generates the SQL query for filtering insight views based on granted permissions.
 // This returns a query that will generate a set of insight_view.id that the provided context can see.
 func visibleViewsQuery(userIDs, orgIDs []int) *sqlf.Query {
@@ -176,11 +201,12 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 	results := make([]types.Insight, 0, len(mapped))
 	for _, seriesSet := range mapped {
 		results = append(results, types.Insight{
-			ViewID:      seriesSet[0].ViewID,
-			UniqueID:    seriesSet[0].UniqueID,
-			Title:       seriesSet[0].Title,
-			Description: seriesSet[0].Description,
-			Series:      seriesSet,
+			ViewID:          seriesSet[0].ViewID,
+			DashboardViewId: seriesSet[0].DashboardViewID,
+			UniqueID:        seriesSet[0].UniqueID,
+			Title:           seriesSet[0].Title,
+			Description:     seriesSet[0].Description,
+			Series:          seriesSet,
 			Filters: types.InsightViewFilters{
 				IncludeRepoRegex: seriesSet[0].DefaultFilterIncludeRepoRegex,
 				ExcludeRepoRegex: seriesSet[0].DefaultFilterExcludeRepoRegex,
@@ -193,7 +219,6 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].ViewID < results[j].ViewID
 	})
-
 	return results
 }
 
@@ -362,6 +387,7 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 		var temp types.InsightViewSeries
 		if err := rows.Scan(
 			&temp.ViewID,
+			&temp.DashboardViewID,
 			&temp.UniqueID,
 			&temp.Title,
 			&temp.Description,
@@ -780,7 +806,7 @@ RETURNING id;`
 
 const getInsightByViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:Get
-SELECT iv.id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
+SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
@@ -790,6 +816,21 @@ FROM (%s) iv
          JOIN insight_series i ON ivs.insight_series_id = i.id
 WHERE %s
 ORDER BY iv.id, i.series_id
+`
+
+const getInsightsByDashboardSql = `
+SELECT iv.id, dbiv.id as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
+i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
+i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
+i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
+iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method
+FROM dashboard_insight_view as dbiv
+		 JOIN insight_view iv ON iv.id = dbiv.insight_view_id
+         JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
+         JOIN insight_series i ON ivs.insight_series_id = i.id
+WHERE %s
+ORDER BY dbiv.id
+%s;
 `
 
 const getInsightDataSeriesSql = `
@@ -804,7 +845,7 @@ WHERE %s
 
 const getInsightsVisibleToUserSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetAllInsights
-SELECT iv.id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
+SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
        i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
        i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,

@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/inconshreveable/log15"
@@ -197,11 +198,7 @@ func (d *DashboardInsightViewConnectionResolver) PageInfo(ctx context.Context) (
 
 func (d *DashboardInsightViewConnectionResolver) computeConnectedViews(ctx context.Context) ([]types.Insight, string, error) {
 	d.once.Do(func() {
-		// 🚨 SECURITY: This disabled authorization because we want to resolve all direct connections to the dashboard, regardless
-		// of insight view permissions.
-		// In this case, we are making the **VERY IMPORTANT** assumption that we have already pre-validated the
-		// dashboard is visible to the user context.
-		args := store.InsightQueryArgs{DashboardID: d.dashboard.ID, WithoutAuthorization: true}
+		args := store.InsightsOnDashboardQueryArgs{DashboardID: d.dashboard.ID}
 		if d.args.After != nil {
 			var afterID string
 			err := relay.UnmarshalSpec(graphql.ID(*d.args.After), &afterID)
@@ -216,16 +213,19 @@ func (d *DashboardInsightViewConnectionResolver) computeConnectedViews(ctx conte
 		}
 		var err error
 
-		viewSeries, err := d.insightStore.Get(ctx, args)
+		viewSeries, err := d.insightStore.GetAllOnDashboard(ctx, args)
 		if err != nil {
 			d.err = err
 			return
 		}
 
 		d.views = d.insightStore.GroupByView(ctx, viewSeries)
+		sort.Slice(d.views, func(i, j int) bool {
+			return d.views[i].DashboardViewId < d.views[j].DashboardViewId
+		})
 
 		if len(d.views) > 0 {
-			d.next = d.views[len(d.views)-1].UniqueID
+			d.next = fmt.Sprintf("%d", d.views[len(d.views)-1].DashboardViewId)
 		}
 	})
 	return d.views, d.next, d.err
