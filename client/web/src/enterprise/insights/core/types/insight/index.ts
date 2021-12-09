@@ -1,3 +1,4 @@
+import { CaptureGroupInsight } from './capture-group-insight';
 import { InsightExecutionType, InsightType } from './common'
 import { isLangStatsdInsightId, LangStatsInsight, LangStatsInsightConfiguration } from './lang-stat-insight'
 import {
@@ -10,13 +11,13 @@ import {
 } from './search-insight'
 
 export * from './common'
-export type { SearchBasedInsight, LangStatsInsight }
+export type { SearchBasedInsight, LangStatsInsight, CaptureGroupInsight }
 
 /**
- * Main insight model. Union of all different by type (backend, runtime)
- * and view (lang-stats, search based) insights.
+ * Main insight model. Union of all different insights by execution type (backend, runtime)
+ * and insight type (lang-stats, search based, capture group) insights.
  */
-export type Insight = SearchBasedInsight | LangStatsInsight
+export type Insight = SearchBasedInsight | LangStatsInsight | CaptureGroupInsight
 
 /**
  * Extension insights - insights that are processed in FE runtime via search API.
