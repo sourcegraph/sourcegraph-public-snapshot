@@ -6,6 +6,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
@@ -66,6 +67,8 @@ func (w *databaseWriter) getNewestCommit(ctx context.Context, args types.SearchA
 }
 
 func (w *databaseWriter) writeDBFile(ctx context.Context, args types.SearchArgs, dbFile string) error {
+	observability.SetParseAmount(ctx, observability.FullParse)
+
 	return w.parseAndWriteInTransaction(ctx, args, nil, dbFile, func(tx store.Store, symbolOrErrors <-chan parser.SymbolOrError) error {
 		if err := tx.CreateMetaTable(ctx); err != nil {
 			return errors.Wrap(err, "store.CreateMetaTable")
@@ -99,6 +102,8 @@ const maxTotalPaths = 999
 const maxTotalPathsLength = 100000
 
 func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.SearchArgs, dbFile, newestDBFile, oldCommit string) (bool, error) {
+	observability.SetParseAmount(ctx, observability.PartialParse)
+
 	changes, err := w.gitserverClient.GitDiff(ctx, args.Repo, api.CommitID(oldCommit), args.CommitID)
 	if err != nil {
 		return false, errors.Wrap(err, "gitserverClient.GitDiff")
