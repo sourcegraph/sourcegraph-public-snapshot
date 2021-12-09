@@ -628,7 +628,7 @@ func isPaused(dir string) (string, bool) {
 	}
 	defer f.Close()
 	b := make([]byte, 40)
-	f.Read(b)
+	io.ReadFull(f, b)
 	return string(b), true
 }
 
