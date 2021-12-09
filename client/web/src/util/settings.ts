@@ -62,7 +62,6 @@ export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascad
 export function experimentalFeaturesFromSettings(
     settingsCascade: SettingsCascadeOrError
 ): {
-    showOnboardingTour: boolean
     showEnterpriseHomePanels: boolean
     showMultilineSearchConsole: boolean
     enableCodeMonitoring: boolean
@@ -73,7 +72,6 @@ export function experimentalFeaturesFromSettings(
         {}
 
     const {
-        showOnboardingTour = true, // Default to true if not set
         showEnterpriseHomePanels = true, // Default to true if not set
         showMultilineSearchConsole = false,
         codeMonitoring = true, // Default to true if not set
@@ -82,7 +80,6 @@ export function experimentalFeaturesFromSettings(
     } = experimentalFeatures
 
     return {
-        showOnboardingTour,
         showEnterpriseHomePanels,
         showMultilineSearchConsole,
         enableCodeMonitoring: codeMonitoring,

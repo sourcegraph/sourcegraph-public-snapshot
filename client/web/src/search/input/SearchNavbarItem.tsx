@@ -10,7 +10,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FuzzyFinder } from '@sourcegraph/web/src/components/fuzzyFinder/FuzzyFinder'
 
-import { PatternTypeProps, OnboardingTourProps, SearchContextInputProps, parseSearchURLQuery } from '..'
+import { PatternTypeProps, SearchContextInputProps, parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '../../keyboardShortcuts/keyboardShortcuts'
 import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
@@ -26,7 +26,6 @@ interface Props
         SettingsCascadeProps,
         ThemeProps,
         SearchContextInputProps,
-        OnboardingTourProps,
         TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location

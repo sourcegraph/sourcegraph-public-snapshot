@@ -43,7 +43,6 @@ import { LayoutRouteProps } from '../routes'
 import { Settings } from '../schema/settings.schema'
 import {
     PatternTypeProps,
-    OnboardingTourProps,
     ParsedSearchQueryProps,
     isSearchContextSpecAvailable,
     getGlobalSearchContextFilter,
@@ -73,7 +72,6 @@ interface Props
         SearchContextInputProps,
         CodeMonitoringProps,
         CodeInsightsProps,
-        OnboardingTourProps,
         BatchChangesProps {
     history: H.History
     location: H.Location<{ query: string }>

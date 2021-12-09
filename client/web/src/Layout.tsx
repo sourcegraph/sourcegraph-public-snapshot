@@ -52,7 +52,6 @@ import { Settings } from './schema/settings.schema'
 import {
     parseSearchURLQuery,
     PatternTypeProps,
-    OnboardingTourProps,
     HomePanelsProps,
     SearchStreamingProps,
     ParsedSearchQueryProps,
@@ -81,7 +80,6 @@ export interface LayoutProps
         ActivationProps,
         ParsedSearchQueryProps,
         PatternTypeProps,
-        OnboardingTourProps,
         SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,

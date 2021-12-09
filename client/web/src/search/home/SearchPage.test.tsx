@@ -61,7 +61,6 @@ describe('SearchPage', () => {
         setSelectedSearchContextSpec: () => {},
         defaultSearchContextSpec: '',
         showEnterpriseHomePanels: false,
-        showOnboardingTour: false,
         isLightTheme: true,
         fetchSavedSearches: () => of([]),
         fetchRecentSearches: () => of({ nodes: [], totalCount: 0, pageInfo: { hasNextPage: false, endCursor: null } }),

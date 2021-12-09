@@ -162,8 +162,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      */
     searchPatternType: SearchPatternType
 
-    showOnboardingTour: boolean
-
     showEnterpriseHomePanels: boolean
 
     selectedSearchContextSpec?: string
@@ -256,7 +254,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             viewerSubject: siteSubjectNoAdmin(),
             parsedSearchQuery: parsedSearchURL.query || '',
             searchPatternType: urlPatternType,
-            showOnboardingTour: false,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
             hasUserSyncedPublicRepositories: false,
@@ -461,7 +458,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     extensionsController={this.extensionsController}
                                                     telemetryService={eventLogger}
                                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                    showOnboardingTour={this.state.showOnboardingTour}
                                                     searchContextsEnabled={this.props.searchContextsEnabled}
                                                     hasUserAddedRepositories={this.hasUserAddedRepositories()}
                                                     hasUserAddedExternalServices={

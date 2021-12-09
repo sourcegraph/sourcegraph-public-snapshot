@@ -159,10 +159,6 @@ export interface CaseSensitivityProps {
     setCaseSensitivity: (caseSensitive: boolean) => void
 }
 
-export interface OnboardingTourProps {
-    showOnboardingTour: boolean
-}
-
 export interface SearchContextProps {
     searchContextsEnabled: boolean
     hasUserAddedRepositories: boolean

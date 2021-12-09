@@ -44,7 +44,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     setSelectedSearchContextSpec: () => {},
     defaultSearchContextSpec: '',
     showEnterpriseHomePanels: false,
-    showOnboardingTour: false,
     isLightTheme: props.isLightTheme,
     fetchSavedSearches: _fetchSavedSearches,
     fetchRecentSearches: _fetchRecentSearches,
