@@ -57,7 +57,7 @@ func (ds *Definitions) UpFrom(id, n int) ([]Definition, error) {
 func (ds *Definitions) DownFrom(id, n int) ([]Definition, error) {
 	slice := make([]Definition, 0, len(ds.definitions))
 	for _, definition := range ds.definitions {
-		if definition.ID < id {
+		if definition.ID <= id {
 			slice = append(slice, definition)
 		}
 	}
@@ -70,8 +70,8 @@ func (ds *Definitions) DownFrom(id, n int) ([]Definition, error) {
 		slice = slice[:n]
 	}
 
-	if id != 0 && len(slice) != 0 && slice[0].ID != id-1 {
-		return nil, errors.Newf("missing migrations [%d, %d]", slice[0].ID+1, id-1)
+	if id != 0 && len(slice) != 0 && slice[0].ID != id {
+		return nil, errors.Newf("missing migrations [%d, %d]", slice[0].ID+1, id)
 	}
 
 	return slice, nil

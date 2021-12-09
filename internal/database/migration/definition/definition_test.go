@@ -110,7 +110,7 @@ func TestDownFrom(t *testing.T) {
 			definitionIDs = append(definitionIDs, definition.ID)
 		}
 
-		expectedIDs := []int{13, 12, 11}
+		expectedIDs := []int{14, 13, 12, 11}
 		if diff := cmp.Diff(expectedIDs, definitionIDs); diff != "" {
 			t.Fatalf("unexpected ids (-want +got):\n%s", diff)
 		}
@@ -128,8 +128,8 @@ func TestDownFrom(t *testing.T) {
 	})
 
 	t.Run("with limit", func(t *testing.T) {
-		// directly aftersequence
-		ds, err := definitions.DownFrom(16, 2)
+		// end of sequence
+		ds, err := definitions.DownFrom(15, 2)
 		if err != nil {
 			t.Fatalf("unexpected error")
 		}
@@ -147,8 +147,8 @@ func TestDownFrom(t *testing.T) {
 
 	t.Run("missing migrations", func(t *testing.T) {
 		// missing migration 16
-		if _, err := definitions.DownFrom(17, 2); err == nil {
-			t.Fatalf("expected error")
+		if _, err := definitions.DownFrom(16, 2); err == nil {
+			t.Fatalf("expected error %v", err)
 		}
 	})
 }
