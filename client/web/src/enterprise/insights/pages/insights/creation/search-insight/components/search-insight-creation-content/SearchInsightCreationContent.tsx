@@ -75,7 +75,6 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     // we should disabled live chart preview
     const allFieldsForPreviewAreValid =
         repositories.meta.validState === 'VALID' &&
-        // repositoriesList.length > 0 &&
         (series.meta.validState === 'VALID' || editSeries.some(series => series.valid)) &&
         stepValue.meta.validState === 'VALID' &&
         // For all repos mode we are not able to show the live preview chart
