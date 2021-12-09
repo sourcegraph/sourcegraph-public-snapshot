@@ -3,6 +3,8 @@ package repos_test
 import (
 	"context"
 	"fmt"
+	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 	"io"
 	"sort"
 	"strings"
@@ -1809,9 +1811,28 @@ func testAbortSyncWhenThereIsRepoLimitError(store *repos.Store) func(*testing.T)
 		}
 
 		if err := syncer.SyncExternalService(ctx, svc.ID, 10*time.Second); err != nil {
-			expectedErr := "1 error occurred:\n\t* reached maximum allowed user added repos: site:1/1, user:1/1 (user-id: 1, username: \"Username\")\n\n"
-			if err.Error() != expectedErr {
-				t.Fatal(err)
+			me, ok := err.(*multierror.Error)
+			if !ok {
+				t.Fatalf("Expected multierror.Error, got: %T", err)
+			}
+			actualErr := me.Errors[0]
+
+			var r *repos.RepoLimitError
+
+			if !errors.As(err, &r) {
+				t.Fatalf("Expected RepoLimitError.Error, got: %T", err)
+			}
+
+			expectedErr := &repos.RepoLimitError{
+				SiteAdded: 1,
+				SiteLimit: 1,
+				UserAdded: 1,
+				UserLimit: 1,
+				UserID:    1,
+				UserName:  "Username",
+			}
+			if diff := cmp.Diff(expectedErr, actualErr); diff != "" {
+				t.Fatalf("Unexpected error occurred. Expected: %v, actual: %v", expectedErr, actualErr)
 			}
 		}
 	}

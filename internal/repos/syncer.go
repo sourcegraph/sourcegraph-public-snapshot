@@ -566,13 +566,12 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		observeDiff(d)
 		// We must commit the transaction before publishing to s.Synced
 		// so that gitserver finds the repo in the database.
-		if txerr := tx.Done(err); txerr != nil {
-			// this check is added so that if txerr is just the same err returned from sync (not some error related to
-			// data access layer) it is not doubled and transformed into multierror with 2 equal lines containing err
-			if err != txerr {
-				err = multierror.Append(txerr, err)
-			}
-		} else if s.Synced != nil && d.Len() > 0 {
+		err = tx.Done(err)
+		if err != nil {
+			return
+		}
+
+		if s.Synced != nil && d.Len() > 0 {
 			select {
 			case <-ctx.Done():
 			case s.Synced <- d:
