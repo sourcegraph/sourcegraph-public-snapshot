@@ -13,6 +13,8 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+- Browser Extension Telemetry documentation [#pull/28689](https://github.com/sourcegraph/sourcegraph/pull/28689), [#issues/27383](https://github.com/sourcegraph/sourcegraph/issues/27383)
+
 ## Chrome / Firefox v21.11.25.1400, Safari v1.8
 
 - Fix omnibox opening in wrong tab [#issues/23475](https://github.com/sourcegraph/sourcegraph/issues/23475), [#pull/27525](https://github.com/sourcegraph/sourcegraph/pull/27525)

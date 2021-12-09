@@ -225,6 +225,12 @@ type BatchSpec struct {
 	FailureMessage string
 }
 
+type BatchSpecConnection struct {
+	Nodes      []BatchSpec
+	TotalCount int
+	PageInfo   PageInfo
+}
+
 type BatchSpecWorkspaceResolution struct {
 	State string
 }

@@ -28,7 +28,7 @@ func (e *InsightsPingEmitter) GetTotalCountByViewType(ctx context.Context) (_ []
 }
 
 func (e *InsightsPingEmitter) GetTotalCountByViewSeriesType(ctx context.Context) (_ []types.InsightViewSeriesCountPing, err error) {
-	q := fmt.Sprintf(insightViewSeriesTotalCountQuery, generationMethodCaseStr)
+	q := fmt.Sprintf(insightViewSeriesTotalCountQuery, pingSeriesType)
 	rows, err := e.insightsDb.QueryContext(ctx, q)
 	if err != nil {
 		return []types.InsightViewSeriesCountPing{}, err
@@ -48,7 +48,7 @@ func (e *InsightsPingEmitter) GetTotalCountByViewSeriesType(ctx context.Context)
 }
 
 func (e *InsightsPingEmitter) GetTotalCountBySeriesType(ctx context.Context) (_ []types.InsightSeriesCountPing, err error) {
-	q := fmt.Sprintf(insightSeriesTotalCountQuery, generationMethodCaseStr)
+	q := fmt.Sprintf(insightSeriesTotalCountQuery, pingSeriesType)
 	rows, err := e.insightsDb.QueryContext(ctx, q)
 	if err != nil {
 		return []types.InsightSeriesCountPing{}, err
@@ -142,12 +142,14 @@ func regroupIntervalCounts(fromGroups []types.InsightTimeIntervalPing) []types.I
 	return newGroups
 }
 
-const generationMethodCaseStr = `
-CASE
-   WHEN (sample_interval_unit = 'MONTH' AND sample_interval_value = 0) THEN 'language-stats'
-   WHEN (CARDINALITY(repositories) = 0 OR repositories IS NULL) THEN 'search-global'
-   ELSE 'search'
-END AS generation_method
+const pingSeriesType = `
+CONCAT(
+   CASE WHEN ((generation_method = 'search' or generation_method = 'search-compute') and generated_from_capture_groups) THEN 'capture-groups' ELSE generation_method END,
+    '::',
+   CASE WHEN (cardinality(repositories) = 0 or repositories is null) THEN 'global' ELSE 'scoped' END,
+    '::',
+   CASE WHEN (just_in_time = true) THEN 'jit' ELSE 'recorded' END
+    ) as ping_series_type
 `
 
 const insightViewSeriesTotalCountQuery = `
@@ -158,7 +160,7 @@ FROM insight_series
          JOIN insight_view_series ivs ON insight_series.id = ivs.insight_series_id
          JOIN insight_view iv ON ivs.insight_view_id = iv.id
 WHERE deleted_at IS NULL
-GROUP BY presentation_type, generation_method;
+GROUP BY presentation_type, ping_series_type;
 `
 
 const insightSeriesTotalCountQuery = `
@@ -166,7 +168,7 @@ SELECT %s,
        COUNT(*)
 FROM insight_series
 WHERE deleted_at IS NULL
-GROUP BY generation_method;
+GROUP BY ping_series_type;
 `
 
 const insightViewTotalCountQuery = `

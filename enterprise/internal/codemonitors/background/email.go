@@ -1,4 +1,4 @@
-package email
+package background
 
 import (
 	"context"

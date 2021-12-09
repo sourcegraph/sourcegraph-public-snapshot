@@ -7,6 +7,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/jmoiron/sqlx"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -27,7 +28,7 @@ type Store interface {
 	CreateSymbolsTable(ctx context.Context) error
 	CreateSymbolIndexes(ctx context.Context) error
 	DeletePaths(ctx context.Context, paths []string) error
-	WriteSymbols(ctx context.Context, symbols <-chan result.Symbol) error
+	WriteSymbols(ctx context.Context, symbolOrErrors <-chan parser.SymbolOrError) error
 }
 
 type store struct {
