@@ -17,14 +17,14 @@ export interface ViewOnSourcegraphButtonClassProps {
     iconClassName?: string
 }
 
-interface ViewOnSourcegraphButtonProps extends ViewOnSourcegraphButtonClassProps {
-    codeHostType: string
+interface ViewOnSourcegraphButtonProps
+    extends ViewOnSourcegraphButtonClassProps,
+        Pick<ConfigureSourcegraphButtonProps, 'codeHostType' | 'onConfigureSourcegraphClick'> {
     context: CodeHostContext
     sourcegraphURL: string
     minimalUI: boolean
     repoExistsOrError?: boolean | ErrorLike
     showSignInButton?: boolean
-    onConfigureSourcegraphClick?: React.MouseEventHandler<HTMLAnchorElement>
 
     /**
      * A callback for when the user finished a sign in flow.
@@ -115,13 +115,10 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
 
     if (isPrivateCloudError) {
         return (
-            <SourcegraphIconButton
+            <ConfigureSourcegraphButton
+                codeHostType={codeHostType}
+                onConfigureSourcegraphClick={onConfigureSourcegraphClick}
                 {...commonProps}
-                href={new URL(snakeCase(codeHostType), 'https://docs.sourcegraph.com/integration/').href}
-                onClick={onConfigureSourcegraphClick}
-                label="Configure Sourcegraph"
-                title="Set up Sourcegraph for search and code intelligence on private repositories"
-                ariaLabel="Set up Sourcegraph for search and code intelligence on private repositories"
             />
         )
     }
@@ -155,3 +152,22 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
         />
     )
 }
+interface ConfigureSourcegraphButtonProps extends Partial<SourcegraphIconButtonProps> {
+    codeHostType: string
+    onConfigureSourcegraphClick?: React.MouseEventHandler<HTMLAnchorElement>
+}
+
+export const ConfigureSourcegraphButton: React.FunctionComponent<ConfigureSourcegraphButtonProps> = ({
+    onConfigureSourcegraphClick,
+    codeHostType,
+    ...commonProps
+}) => (
+    <SourcegraphIconButton
+        {...commonProps}
+        href={new URL(snakeCase(codeHostType), 'https://docs.sourcegraph.com/integration/').href}
+        onClick={onConfigureSourcegraphClick}
+        label="Configure Sourcegraph"
+        title="Set up Sourcegraph for search and code intelligence on private repositories"
+        ariaLabel="Set up Sourcegraph for search and code intelligence on private repositories"
+    />
+)

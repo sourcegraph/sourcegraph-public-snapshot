@@ -22,6 +22,8 @@ import {
     RevisionSpec,
 } from '@sourcegraph/shared/src/util/url'
 
+import { NotAuthenticatedError } from '../code-hosts/shared/errors'
+
 /**
  * @returns Observable that emits if the repo exists on the instance.
  * Emits the repo name on the Sourcegraph instance as affected by `repositoryPathPattern`.
@@ -76,19 +78,28 @@ export const secureCheckRepoCloned = memoizeObservable(
                                     }
                                 }
                             }
+                            currentUser {
+                                username
+                            }
                         }
                     `,
                     variables: { hashedRepoName },
                     mightContainPrivateInfo: true,
                 }).pipe(
-                    map(dataOrThrowErrors),
-                    map(({ repositoryRedirect }) => {
+                    map(({ data, errors }) => {
+                        if (!data) {
+                            throw new Error(errors?.join('\n'))
+                        }
+                        const { repositoryRedirect, currentUser } = data
+                        if (!currentUser) {
+                            throw new NotAuthenticatedError('Not authenticated to see private repository.')
+                        }
                         if (
                             !repositoryRedirect ||
                             repositoryRedirect.__typename !== 'Repository' ||
                             !repositoryRedirect.mirrorInfo?.cloned
                         ) {
-                            throw new RepoNotFoundError(hashedRepoName)
+                            throw new RepoNotFoundError(`hashed name ${hashedRepoName}`)
                         }
                         if (repositoryRedirect.mirrorInfo?.cloneInProgress) {
                             throw new CloneInProgressError(hashedRepoName)

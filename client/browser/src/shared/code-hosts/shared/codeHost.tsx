@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 import { render as reactDOMRender } from 'react-dom'
@@ -108,7 +109,7 @@ import { phabricatorCodeHost } from '../phabricator/codeHost'
 
 import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
 import { ContentView, handleContentViews } from './contentViews'
-import { RepoURLParseError } from './errors'
+import { NotAuthenticatedError, RepoURLParseError } from './errors'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { createPrivateCodeHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
 import {
@@ -117,8 +118,13 @@ import {
     nativeTooltipsEnabledFromSettings,
     registerNativeTooltipContributions,
 } from './nativeTooltips'
+import { SignInButton } from './SignInButton'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
-import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
+import {
+    ViewOnSourcegraphButtonClassProps,
+    ViewOnSourcegraphButton,
+    ConfigureSourcegraphButton,
+} from './ViewOnSourcegraphButton'
 import { delayUntilIntersecting, trackViews, ViewResolver } from './views'
 
 registerHighlightContributions()
@@ -635,6 +641,93 @@ export interface HandleCodeHostOptions extends CodeIntelligenceProps {
     background: Pick<BackgroundPageApi, 'notifyPrivateCloudError' | 'openOptionsPage'>
 }
 
+const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
+    event.preventDefault()
+    // If we're here, then `isInPage` should have been checked already,
+    // but we double check to be sure and to indicate the intent, for
+    // when we might refactor this, that it must only be called in the
+    // extension.
+    if (isExtension) {
+        await background.openOptionsPage()
+    }
+}
+
+/**
+ * Checks whether
+ * - connected to cloud URL
+ * - and detected private repository
+ * - and repository is cloned
+ *
+ * Side-effect:
+ * - notifies background about private cloud error
+ * - renders "Configure Sourcegraph" button
+ */
+const isCloudPrivateRepoCloned = async ({
+    sourcegraphURL,
+    codeHost,
+    requestGraphQL,
+    render,
+}: Pick<HandleCodeHostOptions, 'render' | 'codeHost'> &
+    Pick<HandleCodeHostOptions['platformContext'], 'requestGraphQL' | 'sourcegraphURL'>): Promise<boolean> => {
+    // Only check if cloud URL and getContext is defined
+    if (!isDefaultSourcegraphUrl(sourcegraphURL) || !codeHost.getContext) {
+        return true
+    }
+
+    try {
+        const { privateRepository, rawRepoName } = await codeHost.getContext()
+        if (!privateRepository) {
+            // We can auto-clone public repos
+            return true
+        }
+        return await secureCheckRepoCloned({
+            rawRepoName,
+            requestGraphQL,
+        }).toPromise()
+    } catch (error) {
+        // Ignore non-repository pages
+        if (error instanceof RepoURLParseError) {
+            return false
+        }
+
+        if (isExtension) {
+            // Notify to show extension alert-icon
+            background.notifyPrivateCloudError(true).catch(error => {
+                console.error('Error notifying background page of private cloud.', error)
+            })
+        }
+
+        if (!codeHost.getViewContextOnSourcegraphMount) {
+            console.warn('Repository is not cloned or you are not authenticated to Sourcegraph.', error)
+            return false
+        }
+
+        if (error instanceof NotAuthenticatedError) {
+            // Show "Sign In" button
+            console.warn('Not authenticated to Sourcegraph.', error)
+            render(
+                <SignInButton {...{ ...codeHost.viewOnSourcegraphButtonClassProps }} sourcegraphURL={sourcegraphURL} />,
+                codeHost.getViewContextOnSourcegraphMount(document.body)
+            )
+        } else {
+            // Show "Configure Sourcegraph" button
+            console.warn('Repository is not cloned.', error)
+            render(
+                <ConfigureSourcegraphButton
+                    {...codeHost.viewOnSourcegraphButtonClassProps}
+                    className={classNames('open-on-sourcegraph', codeHost.viewOnSourcegraphButtonClassProps?.className)}
+                    codeHostType={codeHost.type}
+                    onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
+                />,
+                codeHost.getViewContextOnSourcegraphMount(document.body)
+            )
+        }
+        // TODO: handle cloneInProgress
+
+        return false
+    }
+}
+
 export async function handleCodeHost({
     mutations,
     codeHost,
@@ -722,27 +815,10 @@ export async function handleCodeHost({
     }
 
     // Securely check if private repository is cloned in cloud URL
-    if (isDefaultSourcegraphUrl(sourcegraphURL) && codeHost.getContext) {
-        try {
-            await codeHost.getContext().then(({ privateRepository, rawRepoName }) => {
-                if (!privateRepository) {
-                    // we can auto-clone public repos
-                    return true
-                }
-                return secureCheckRepoCloned({
-                    rawRepoName,
-                    requestGraphQL,
-                }).toPromise()
-            })
-        } catch (error) {
-            console.warn('Repository is not cloned.', error)
-            if (isExtension && !(error instanceof RepoURLParseError)) {
-                background.notifyPrivateCloudError(true).catch(error => {
-                    console.error('Error notifying background page of private cloud.', error)
-                })
-            }
-            return subscriptions
-        }
+    const isRepoCloned = await isCloudPrivateRepoCloned({ sourcegraphURL, requestGraphQL, codeHost, render })
+    if (!isRepoCloned) {
+        // Stop initializing code intelligence
+        return subscriptions
     }
 
     if (codeHost.nativeTooltipResolvers) {
@@ -838,16 +914,6 @@ export async function handleCodeHost({
                 return [asError(error)]
             })
         )
-        const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
-            event.preventDefault()
-            // If we're here, then `isInPage` should have been checked already,
-            // but we double check to be sure and to indicate the intent, for
-            // when we might refactor this, that it must only be called in the
-            // extension.
-            if (isExtension) {
-                await background.openOptionsPage()
-            }
-        }
         const onPrivateCloudError = (hasPrivateCloudError: boolean): void => {
             setPrivateCloudError(hasPrivateCloudError)
             if (isExtension) {
