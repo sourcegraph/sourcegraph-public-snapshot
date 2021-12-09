@@ -482,7 +482,7 @@ func (s *Syncer) SyncExternalService(
 			s.log().Error("failed to sync, skipping", "repo", sourced.Name, "err", err)
 			multierror.Append(errs, err)
 
-			if errors.Is(err, &RepoLimitError{}) {
+			if errors.HasType(err, &RepoLimitError{}) {
 				break
 			}
 
@@ -567,7 +567,11 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		// We must commit the transaction before publishing to s.Synced
 		// so that gitserver finds the repo in the database.
 		if txerr := tx.Done(err); txerr != nil {
-			err = multierror.Append(txerr, err)
+			// this check is added so that if txerr is just the same err returned from sync (not some error related to
+			// data access layer) it is not doubled and transformed into multierror with 2 equal lines containing err
+			if err != txerr {
+				err = multierror.Append(txerr, err)
+			}
 		} else if s.Synced != nil && d.Len() > 0 {
 			select {
 			case <-ctx.Done():
