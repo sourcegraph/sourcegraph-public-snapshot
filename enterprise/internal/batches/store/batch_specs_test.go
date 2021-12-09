@@ -92,6 +92,24 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		if have, want := count, len(batchSpecs); have != want {
 			t.Fatalf("have count: %d, want: %d", have, want)
 		}
+
+		t.Run("ExcludeCreatedFromRawNotOwnedByUser", func(t *testing.T) {
+			for _, spec := range batchSpecs {
+				spec.CreatedFromRaw = true
+				if err := s.UpdateBatchSpec(ctx, spec); err != nil {
+					t.Fatal(err)
+				}
+
+				count, err = s.CountBatchSpecs(ctx, CountBatchSpecsOpts{ExcludeCreatedFromRawNotOwnedByUser: spec.UserID})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, 1; have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+			}
+		})
 	})
 
 	t.Run("List", func(t *testing.T) {
@@ -167,6 +185,26 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				cursor = next
 			}
 		})
+
+		t.Run("ExcludeCreatedFromRawNotOwnedByUser", func(t *testing.T) {
+			for _, spec := range batchSpecs {
+				spec.CreatedFromRaw = true
+				if err := s.UpdateBatchSpec(ctx, spec); err != nil {
+					t.Fatal(err)
+				}
+
+				opts := ListBatchSpecsOpts{ExcludeCreatedFromRawNotOwnedByUser: spec.UserID}
+				have, _, err := s.ListBatchSpecs(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				want := []*btypes.BatchSpec{spec}
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+		})
 	})
 
 	t.Run("Update", func(t *testing.T) {
@@ -221,6 +259,39 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 			if have != want {
 				t.Fatalf("have err %v, want %v", have, want)
+			}
+		})
+
+		t.Run("ExcludeCreatedFromRawNotOwnedByUser", func(t *testing.T) {
+			for _, spec := range batchSpecs {
+				opts := GetBatchSpecOpts{ID: spec.ID, ExcludeCreatedFromRawNotOwnedByUser: spec.UserID}
+				have, err := s.GetBatchSpec(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if diff := cmp.Diff(have, spec); diff != "" {
+					t.Fatal(diff)
+				}
+
+				spec.CreatedFromRaw = true
+				if err := s.UpdateBatchSpec(ctx, spec); err != nil {
+					t.Fatal(err)
+				}
+
+				// Confirm that it won't be returned if another user looks at it
+				opts.ExcludeCreatedFromRawNotOwnedByUser += 9999
+				if _, err = s.GetBatchSpec(ctx, opts); err != ErrNoResults {
+					t.Fatalf("have err %v, want %v", err, ErrNoResults)
+				}
+
+				spec.CreatedFromRaw = false
+				if err := s.UpdateBatchSpec(ctx, spec); err != nil {
+					t.Fatal(err)
+				}
+
+				if _, err = s.GetBatchSpec(ctx, opts); err == ErrNoResults {
+					t.Fatalf("unexpected ErrNoResults")
+				}
 			}
 		})
 	})
