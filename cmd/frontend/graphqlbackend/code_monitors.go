@@ -72,7 +72,10 @@ type MonitorActionConnectionResolver interface {
 }
 
 type MonitorAction interface {
+	ID() graphql.ID
 	ToMonitorEmail() (MonitorEmailResolver, bool)
+	ToMonitorWebhook() (MonitorWebhookResolver, bool)
+	ToMonitorSlackWebhook() (MonitorSlackWebhookResolver, bool)
 }
 
 type MonitorEmailResolver interface {
@@ -81,6 +84,20 @@ type MonitorEmailResolver interface {
 	Priority() string
 	Header() string
 	Recipients(ctx context.Context, args *ListRecipientsArgs) (MonitorActionEmailRecipientsConnectionResolver, error)
+	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
+}
+
+type MonitorWebhookResolver interface {
+	ID() graphql.ID
+	Enabled() bool
+	URL() string
+	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
+}
+
+type MonitorSlackWebhookResolver interface {
+	ID() graphql.ID
+	Enabled() bool
+	URL() string
 	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
 }
 

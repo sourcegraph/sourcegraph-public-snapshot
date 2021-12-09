@@ -390,13 +390,13 @@ func TestQueryMonitor(t *testing.T) {
 func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Resolver, user1 *testUser, user2 *testUser) {
 	input := map[string]interface{}{
 		"userName":     user1.name,
-		"actionCursor": relay.MarshalID(monitorActionEventKind, 1),
+		"actionCursor": relay.MarshalID(monitorActionEmailKind, 1),
 	}
 	response := apitest.Response{}
 	batchesApitest.MustExec(ctx, t, schema, input, &response, queryByUserFmtStr)
 
 	triggerEventEndCursor := string(relay.MarshalID(monitorTriggerEventKind, 1))
-	actionEventEndCursor := string(relay.MarshalID(monitorActionEventKind, 2))
+	actionEventEndCursor := string(relay.MarshalID(monitorActionEmailEventKind, 2))
 	want := apitest.Response{
 		User: apitest.User{
 			Monitors: apitest.MonitorConnection{
@@ -446,13 +446,13 @@ func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *R
 									Events: apitest.ActionEventConnection{
 										Nodes: []apitest.ActionEvent{
 											{
-												Id:        string(relay.MarshalID(monitorActionEventKind, 1)),
+												Id:        string(relay.MarshalID(monitorActionEmailEventKind, 1)),
 												Status:    "SUCCESS",
 												Timestamp: r.Now().UTC().Format(time.RFC3339),
 												Message:   nil,
 											},
 											{
-												Id:        string(relay.MarshalID(monitorActionEventKind, 2)),
+												Id:        string(relay.MarshalID(monitorActionEmailEventKind, 2)),
 												Status:    "PENDING",
 												Timestamp: r.Now().UTC().Format(time.RFC3339),
 												Message:   nil,
@@ -1063,7 +1063,7 @@ func actionEventPaging(ctx context.Context, t *testing.T, schema *graphql.Schema
 	queryInput := map[string]interface{}{
 		"userName":          user1.name,
 		"actionCursor":      string(relay.MarshalID(monitorActionEmailKind, 1)),
-		"actionEventCursor": relay.MarshalID(monitorActionEventKind, 1),
+		"actionEventCursor": relay.MarshalID(monitorActionEmailEventKind, 1),
 	}
 	got := apitest.Response{}
 	batchesApitest.MustExec(ctx, t, schema, queryInput, &got, actionEventPagingFmtStr)
@@ -1082,7 +1082,7 @@ func actionEventPaging(ctx context.Context, t *testing.T, schema *graphql.Schema
 										TotalCount: 2,
 										Nodes: []apitest.ActionEvent{
 											{
-												Id: string(relay.MarshalID(monitorActionEventKind, 2)),
+												Id: string(relay.MarshalID(monitorActionEmailEventKind, 2)),
 											},
 										},
 									},
