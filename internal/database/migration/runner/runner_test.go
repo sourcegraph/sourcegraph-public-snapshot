@@ -19,12 +19,12 @@ var testSchemas = []*schemas.Schema{
 	makeTestSchema("query-error"),
 }
 
-func TestRunner(t *testing.T) {
+func TestRunnerRun(t *testing.T) {
 	overrideSchemas(t)
 	ctx := context.Background()
 
 	t.Run("upgrade", func(t *testing.T) {
-		store := testStore()
+		store := testStoreWithVersion(10000)
 
 		if err := testRunner(store).Run(ctx, Options{
 			Up:            true,
@@ -54,7 +54,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("upgrade error", func(t *testing.T) {
-		store := testStore()
+		store := testStoreWithVersion(10000)
 		store.UpFunc.PushReturn(fmt.Errorf("uh-oh"))
 
 		if err := testRunner(store).Run(ctx, Options{
@@ -86,7 +86,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("unknown schema", func(t *testing.T) {
-		if err := testRunner(testStore()).Run(ctx, Options{
+		if err := testRunner(testStoreWithVersion(10000)).Run(ctx, Options{
 			Up:            true,
 			NumMigrations: 1,
 			SchemaNames:   []string{"unknown"},
@@ -96,7 +96,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("checks dirty database on startup", func(t *testing.T) {
-		store := testStore()
+		store := testStoreWithVersion(10000)
 		store.VersionFunc.SetDefaultReturn(10002, true, true, nil)
 
 		if err := testRunner(store).Run(ctx, Options{
@@ -105,6 +105,51 @@ func TestRunner(t *testing.T) {
 			SchemaNames:   []string{"well-formed"},
 		}); err == nil || !strings.Contains(err.Error(), "dirty database") {
 			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "dirty database", err)
+		}
+	})
+}
+
+func TestRunnerValidate(t *testing.T) {
+	overrideSchemas(t)
+	ctx := context.Background()
+
+	t.Run("very old schema", func(t *testing.T) {
+		store := testStoreWithVersion(250)
+
+		if err := testRunner(store).Validate(ctx, "well-formed"); err == nil || !strings.Contains(err.Error(), "to be migrated to version") {
+			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "unknown schema", err)
+		}
+	})
+
+	t.Run("old schema", func(t *testing.T) {
+		store := testStoreWithVersion(10001)
+
+		if err := testRunner(store).Validate(ctx, "well-formed"); err == nil || !strings.Contains(err.Error(), "to be migrated to version") {
+			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "unknown schema", err)
+		}
+	})
+
+	t.Run("correct version", func(t *testing.T) {
+		store := testStoreWithVersion(10003)
+
+		if err := testRunner(store).Validate(ctx, "well-formed"); err != nil {
+			t.Fatalf("unexpected error running validation: %s", err)
+		}
+	})
+
+	t.Run("future schema", func(t *testing.T) {
+		store := testStoreWithVersion(10004)
+
+		if err := testRunner(store).Validate(ctx, "well-formed"); err != nil {
+			t.Fatalf("unexpected error running validation: %s", err)
+		}
+	})
+
+	t.Run("distant future schema", func(t *testing.T) {
+		store := testStoreWithVersion(50010)
+
+		if err := testRunner(store).Validate(ctx, "well-formed"); err != nil {
+			t.Fatalf("unexpected error running validation: %s", err)
 		}
 	})
 }
@@ -132,10 +177,6 @@ func overrideSchemas(t *testing.T) {
 	liveSchemas := schemas.Schemas
 	schemas.Schemas = testSchemas
 	t.Cleanup(func() { schemas.Schemas = liveSchemas })
-}
-
-func testStore() *MockStore {
-	return testStoreWithVersion(10000)
 }
 
 func testStoreWithVersion(version int) *MockStore {

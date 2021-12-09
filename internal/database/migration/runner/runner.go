@@ -29,27 +29,37 @@ type Options struct {
 }
 
 func (r *Runner) Run(ctx context.Context, options Options) error {
-	// Create map of relevant schemas keyed by name
-	schemaMap, err := r.prepareSchemas(options.SchemaNames)
+	schemaContexts, err := r.prepareContexts(ctx, options.SchemaNames)
 	if err != nil {
 		return err
 	}
 
-	// Create map of migration stores keyed by name
-	storeMap, err := r.prepareStores(ctx, options.SchemaNames)
+	// Run the migrations
+	return r.runSchemas(ctx, options, schemaContexts)
+}
+
+func (r *Runner) prepareContexts(ctx context.Context, schemaNames []string) (map[string]schemaContext, error) {
+	// Create map of relevant schemas keyed by name
+	schemaMap, err := r.prepareSchemas(schemaNames)
 	if err != nil {
-		return err
+		return nil, err
+	}
+
+	// Create map of migration stores keyed by name
+	storeMap, err := r.prepareStores(ctx, schemaNames)
+	if err != nil {
+		return nil, err
 	}
 
 	// Create map of versions keyed by name
 	versionMap, err := r.fetchVersions(ctx, storeMap)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Invert maps so we can get the set of data necessary to run each schema
-	schemaContexts := make(map[string]schemaContext, len(options.SchemaNames))
-	for _, schemaName := range options.SchemaNames {
+	schemaContexts := make(map[string]schemaContext, len(schemaNames))
+	for _, schemaName := range schemaNames {
 		schemaContexts[schemaName] = schemaContext{
 			schema:  schemaMap[schemaName],
 			store:   storeMap[schemaName],
@@ -57,8 +67,7 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 		}
 	}
 
-	// Run the migrations
-	return r.runSchemas(ctx, options, schemaContexts)
+	return schemaContexts, nil
 }
 
 func (r *Runner) prepareSchemas(schemaNames []string) (map[string]*schemas.Schema, error) {
@@ -194,6 +203,45 @@ func (r *Runner) runSchemaDown(ctx context.Context, options Options, context sch
 
 		if err := context.store.Down(ctx, definition); err != nil {
 			return errors.Wrapf(err, "failed downgrade migration %d", definition.ID)
+		}
+	}
+
+	return nil
+}
+
+func (r *Runner) Validate(ctx context.Context, schemaNames ...string) error {
+	schemaContexts, err := r.prepareContexts(ctx, schemaNames)
+	if err != nil {
+		return err
+	}
+
+	// Validate database schemas are up to date
+	return r.validateSchemas(ctx, schemaContexts)
+}
+
+func (r *Runner) validateSchemas(ctx context.Context, schemaContexts map[string]schemaContext) error {
+	for schemaName, schemaContext := range schemaContexts {
+		definitions, err := schemaContext.schema.Definitions.UpFrom(schemaContext.version, 0)
+		if err != nil {
+			definitions, err := schemaContext.schema.Definitions.UpFrom(0, 0)
+			if err != nil {
+				return err
+			}
+
+			return &SchemaOutOfDateError{
+				schemaName:      schemaName,
+				currentVersion:  schemaContext.version,
+				expectedVersion: definitions[0].ID,
+			}
+		}
+		if len(definitions) == 0 {
+			continue
+		}
+
+		return &SchemaOutOfDateError{
+			schemaName:      schemaName,
+			currentVersion:  schemaContext.version,
+			expectedVersion: definitions[len(definitions)-1].ID,
 		}
 	}
 
