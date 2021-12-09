@@ -77,7 +77,8 @@ echo "  sg installed to $target"
 # accordingly in terms of usage.
 
 set +e # Don't fail if it the check fails
-sg_in_path=$(command -v sg)
+# We try to follow possible symlinks to display the actual path
+sg_in_path=$(readlink -f $(command -v sg))
 set -e
 
 red_bg=$'\033[41m'
