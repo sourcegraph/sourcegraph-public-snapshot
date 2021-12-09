@@ -3,13 +3,14 @@ package repos_test
 import (
 	"context"
 	"fmt"
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"io"
 	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
