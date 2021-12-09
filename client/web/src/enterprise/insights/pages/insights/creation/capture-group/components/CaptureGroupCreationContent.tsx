@@ -88,8 +88,8 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
         title.input.onChange('')
         repositories.input.onChange('')
         query.input.onChange('')
-        step.input.onChange('weeks')
-        stepValue.input.onChange('2')
+        step.input.onChange('months')
+        stepValue.input.onChange('1')
 
         // Focus first element of the form
         repositories.input.ref.current?.focus()

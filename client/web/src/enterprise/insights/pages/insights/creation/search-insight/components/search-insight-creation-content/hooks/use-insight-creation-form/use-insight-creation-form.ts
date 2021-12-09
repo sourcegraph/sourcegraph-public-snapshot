@@ -60,8 +60,8 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
             // Reset form values in case if All repos mode was activated
             if (checked) {
                 repositories.input.onChange('')
-                step.input.onChange('weeks')
-                stepValue.input.onChange('2')
+                step.input.onChange('months')
+                stepValue.input.onChange('1')
             }
         },
     })

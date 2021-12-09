@@ -89,13 +89,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 query: GET_DASHBOARD_INSIGHTS_GQL,
                 variables: { id: dashboardId },
             })
-        ).pipe(
-            map(
-                ({ data }) =>
-                    (data.insightsDashboards.nodes[0].views?.nodes.map(getInsightView).filter(Boolean) as Insight[]) ??
-                    []
-            )
-        )
+        ).pipe(map(({ data }) => data.insightsDashboards.nodes[0].views?.nodes.map(getInsightView) ?? []))
     }
 
     public getInsightById = (id: string): Observable<Insight | null> =>

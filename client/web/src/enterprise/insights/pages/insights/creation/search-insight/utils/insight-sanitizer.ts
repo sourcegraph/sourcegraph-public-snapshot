@@ -37,6 +37,7 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
             title: rawInsight.title,
             series: getSanitizedSeries(rawInsight.series),
             visibility: rawInsight.visibility,
+            step: { [rawInsight.step]: +rawInsight.stepValue },
         }
     }
 
