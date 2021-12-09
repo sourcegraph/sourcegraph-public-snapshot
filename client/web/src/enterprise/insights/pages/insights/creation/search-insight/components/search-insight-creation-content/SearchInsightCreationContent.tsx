@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
+import styles from '../../../../../../components/creation-ui-kit/CreationUiKit.module.scss'
 import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { CreateInsightFormFields } from '../../types'
@@ -11,7 +12,6 @@ import { SearchInsightCreationForm } from '../search-insight-creation-form/Searc
 
 import { useEditableSeries, createDefaultEditSeries } from './hooks/use-editable-series'
 import { useInsightCreationForm } from './hooks/use-insight-creation-form/use-insight-creation-form'
-import styles from './SearchInsightCreationContent.module.scss'
 
 export interface SearchInsightCreationContentProps {
     /** This component might be used in edit or creation insight case. */
