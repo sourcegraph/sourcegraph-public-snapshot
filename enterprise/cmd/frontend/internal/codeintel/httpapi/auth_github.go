@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -19,12 +20,44 @@ var (
 	githubURL = &url.URL{Scheme: "https", Host: "api.github.com"}
 )
 
-func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string) (int, error) {
+func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string) (statusCode int, err error) {
 	githubToken := query.Get("github_token")
 	if githubToken == "" {
 		return http.StatusUnauthorized, ErrGitHubMissingToken
 	}
 
+	key := makeGitHubAuthCacheKey(githubToken, repoName)
+
+	if authorized, ok, err := githubAuthCache.Get(key); err != nil {
+		log15.Error("failed to retrieve codeintel upload authz result from cache", "error", err)
+	} else if ok {
+		if !authorized {
+			return http.StatusUnauthorized, ErrGitHubUnauthorized
+		}
+
+		return 0, nil
+	}
+
+	defer func() {
+		var authorized bool
+		switch err {
+		case nil:
+			authorized = true
+		case ErrGitHubUnauthorized:
+			authorized = false
+		default:
+			return
+		}
+
+		if err := githubAuthCache.Set(key, authorized); err != nil {
+			log15.Error("failed to write codeintel upload authz result to cache", "error", err)
+		}
+	}()
+
+	return uncachedEnforceAuthViaGitHub(ctx, githubToken, repoName)
+}
+
+func uncachedEnforceAuthViaGitHub(ctx context.Context, githubToken, repoName string) (int, error) {
 	if author, err := checkGitHubPermissions(ctx, repoName, github.NewV3Client(githubURL, &auth.OAuthBearerToken{Token: githubToken}, nil)); err != nil {
 		return http.StatusInternalServerError, err
 	} else if !author {
