@@ -1,7 +1,7 @@
 .root {
     position: fixed;
     right: 0.5rem;
-    bottom: 0rem;
+    bottom: 0;
 
     color: var(--body-color);
     background-color: var(--color-bg-1);
@@ -20,7 +20,7 @@
 
     ul {
         padding: 0;
-        margin: 0.25rem 0rem 0.25rem 0.5rem;
+        margin: 0.25rem 0 0.25rem 0.5rem;
         list-style: none;
         overflow-y: auto;
         flex: 1;
@@ -44,12 +44,6 @@
         float: right;
     }
 
-    &.open {
-        .header {
-            border-bottom: 1px solid var(--border-color-2);
-        }
-    }
-
     .open-visible {
         display: none;
     }
@@ -62,6 +56,10 @@
 
         .open-visible {
             display: initial;
+        }
+
+        .header {
+            border-bottom: 1px solid var(--border-color-2);
         }
     }
 }
