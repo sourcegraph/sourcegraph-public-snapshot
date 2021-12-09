@@ -13,6 +13,7 @@ import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
+import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { Settings } from '../../../schema/settings.schema'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
@@ -181,6 +182,9 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                             { text: 'Create batch change' },
                         ]}
                         className="flex-1 pb-2"
+                        annotation={
+                            <FeedbackBadge status="experimental" feedback={{ mailto: 'support@sourcegraph.com' }} />
+                        }
                         description="Run custom code over hundreds of repositories and manage the resulting changesets."
                     />
 

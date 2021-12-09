@@ -40,6 +40,7 @@ import { Badge, PageHeader, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sou
 import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { ErrorAlert } from '../../../components/alerts'
+import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
@@ -164,6 +165,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
                         text: batchSpec.description.name,
                     },
                 ]}
+                annotation={<FeedbackBadge status="experimental" feedback={{ mailto: 'support@sourcegraph.com' }} />}
                 byline={
                     <>
                         Created <Timestamp date={batchSpec.createdAt} /> by{' '}
@@ -174,7 +176,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
                 }
                 actions={
                     <div className="d-flex">
-                        <span className="align-self-center">
+                        <span className="align-self-center mr-2">
                             <BatchSpecStateBadge state={batchSpec.state} />
                         </span>
                         {batchSpec.startedAt && (
@@ -230,7 +232,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
                             </>
                         )}
                         <span>
-                            <div className="btn-group-vertical">
+                            <div className="btn-group-vertical ml-2">
                                 {(batchSpec.state === BatchSpecState.QUEUED ||
                                     batchSpec.state === BatchSpecState.PROCESSING) && (
                                     <button
@@ -483,7 +485,7 @@ const WorkspaceDetails: React.FunctionComponent<
                     <CloseIcon className="icon-inline" />
                 </button>
             </div>
-            <div className="text-muted mb-3">
+            <div className="text-muted">
                 {workspace.path && <>{workspace.path} | </>}
                 <SourceBranchIcon className="icon-inline" /> base: <strong>{workspace.branch.abbrevName}</strong>
                 {workspace.startedAt && (
@@ -493,6 +495,15 @@ const WorkspaceDetails: React.FunctionComponent<
                         <strong>
                             <Duration start={workspace.startedAt} end={workspace.finishedAt ?? undefined} />
                         </strong>
+                    </>
+                )}
+                {typeof workspace.placeInQueue === 'number' && (
+                    <>
+                        {' '}
+                        |{' '}
+                        <p className="mb-0">
+                            <SyncIcon className="icon-inline" /> #{workspace.placeInQueue} in queue
+                        </p>
                     </>
                 )}
             </div>
@@ -510,14 +521,9 @@ const WorkspaceDetails: React.FunctionComponent<
                     {isErrorLike(retrying) && <ErrorAlert error={retrying} />}
                 </>
             )}
-            {typeof workspace.placeInQueue === 'number' && (
-                <p>
-                    <SyncIcon className="icon-inline text-muted" /> #{workspace.placeInQueue} in queue
-                </p>
-            )}
+            <hr />
             {workspace.state === BatchSpecWorkspaceState.COMPLETED && (
                 <>
-                    <h4>Changeset specs</h4>
                     {workspace.changesetSpecs?.length === 0 && (
                         <p className="mb-2 text-muted">This workspace generated no changeset specs.</p>
                     )}
@@ -529,6 +535,7 @@ const WorkspaceDetails: React.FunctionComponent<
             {workspace.steps.map((step, index) => (
                 <WorkspaceStep
                     step={step}
+                    cachedResultFound={workspace.cachedResultFound}
                     stepIndex={index}
                     workspaceID={workspace.id}
                     key={index}
@@ -569,37 +576,42 @@ const ChangesetSpecNode: React.FunctionComponent<{ node: BatchSpecWorkspaceChang
         return null
     }
     return (
-        <div className="card mb-2">
-            <div className="card-body">
-                <div className="d-flex justify-content-between">
-                    <h4>{node.description.title}</h4>
-                    <DiffStat {...node.description.diffStat} expandedCounts={true} />
+        <Collapsible
+            title={
+                <h4 className="mb-0">
+                    <strong>RESULT 1</strong> <Badge>WILL PUBLISH</Badge> <SourceBranchIcon className="icon-inline" />{' '}
+                    changeset branch: <strong>{node.description.headRef}</strong>
+                </h4>
+            }
+            titleClassName="flex-grow-1"
+            defaultExpanded={1 === 1}
+        >
+            <div className={classNames('card mt-2', styles.resultCard)}>
+                <div className="card-body">
+                    <h3>Changeset template</h3>
+                    <div className="d-flex justify-content-between">
+                        <h4>{node.description.title}</h4>
+                        <DiffStat {...node.description.diffStat} expandedCounts={true} />
+                    </div>
+                    <p>
+                        <strong>Published:</strong> <PublishedValue published={node.description.published} />
+                    </p>
+                    <Collapsible
+                        title={<h3 className="mb-0">Changes</h3>}
+                        titleClassName="flex-grow-1"
+                        defaultExpanded={false}
+                    >
+                        <ChangesetSpecFileDiffConnection
+                            history={history}
+                            isLightTheme={isLightTheme}
+                            location={history.location}
+                            spec={node.id}
+                            queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
+                        />
+                    </Collapsible>
                 </div>
-                <p>
-                    <Link to={node.description.baseRepository.url}>{node.description.baseRepository.name}</Link>
-                </p>
-                <p>
-                    <Badge variant="secondary">{node.description.baseRef}</Badge> &larr;
-                    <Badge variant="secondary">{node.description.headRef}</Badge>
-                </p>
-                <p>
-                    <strong>Published:</strong> <PublishedValue published={node.description.published} />
-                </p>
-                <Collapsible
-                    title={<h4 className="mb-0">Changed files</h4>}
-                    titleClassName="flex-grow-1"
-                    defaultExpanded={false}
-                >
-                    <ChangesetSpecFileDiffConnection
-                        history={history}
-                        isLightTheme={isLightTheme}
-                        location={history.location}
-                        spec={node.id}
-                        queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
-                    />
-                </Collapsible>
             </div>
-        </div>
+        </Collapsible>
     )
 }
 
@@ -613,9 +625,20 @@ const PublishedValue: React.FunctionComponent<{ published: Scalars['PublishedVal
     return <>{String(published)}</>
 }
 
-const WorkspaceStep: React.FunctionComponent<
-    { step: BatchSpecWorkspaceStepFields; workspaceID: Scalars['ID']; stepIndex: number } & ThemeProps
-> = ({ step, stepIndex, isLightTheme, workspaceID }) => {
+interface WorkspaceStepProps extends ThemeProps {
+    cachedResultFound: boolean
+    step: BatchSpecWorkspaceStepFields
+    workspaceID: Scalars['ID']
+    stepIndex: number
+}
+
+const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
+    step,
+    stepIndex,
+    isLightTheme,
+    workspaceID,
+    cachedResultFound,
+}) => {
     const outputLines = useMemo(() => {
         const outputLines = step.outputLines
         if (outputLines !== null) {
@@ -645,7 +668,7 @@ const WorkspaceStep: React.FunctionComponent<
                 <div className="d-flex justify-content-between">
                     <div className="flex-grow-1">
                         <StepStateIcon step={step} /> Step {stepIndex + 1}{' '}
-                        <span className="text-monospace text-muted">{step.run.slice(0, 25)}...</span>
+                        <span className="text-monospace text-ellipsis text-muted">{step.run}</span>
                     </div>
                     <div>{step.diffStat && <DiffStat {...step.diffStat} expandedCounts={true} />}</div>
                     <span className="text-monospace text-muted ml-2">
@@ -732,7 +755,10 @@ const WorkspaceStep: React.FunctionComponent<
                     )}
                     {step.skipped && (
                         <p className="mb-0">
-                            <strong>Step has been skipped.</strong>
+                            <strong>
+                                Step has been skipped
+                                {cachedResultFound && <> because a cache result was found for this workspace</>}.
+                            </strong>
                         </p>
                     )}
                 </div>
