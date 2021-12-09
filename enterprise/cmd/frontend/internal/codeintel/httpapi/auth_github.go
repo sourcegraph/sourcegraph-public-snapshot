@@ -53,6 +53,11 @@ func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string
 
 func uncachedEnforceAuthViaGitHub(ctx context.Context, githubToken, repoName string) (int, error) {
 	if author, err := checkGitHubPermissions(ctx, repoName, github.NewV3Client(githubURL, &auth.OAuthBearerToken{Token: githubToken}, nil)); err != nil {
+		// Change status for particular types of errors
+		if githubErr, ok := errors.Unwrap(err).(*github.APIError); ok && githubErr.Code == 429 {
+			return 429, err
+		}
+
 		return http.StatusInternalServerError, err
 	} else if !author {
 		return http.StatusUnauthorized, ErrGitHubUnauthorized
