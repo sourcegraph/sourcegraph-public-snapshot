@@ -147,6 +147,8 @@ func addWebApp(pipeline *bk.Pipeline) {
 // We provide our own Chromium instance that is installed through the `download-puppeteer-browser` script
 var percyBrowserExecutableEnv = bk.Env("PERCY_BROWSER_EXECUTABLE", "node_modules/puppeteer/.local-chromium/linux-901812/chrome-linux/chrome")
 
+const yarnInstallCmd = "yarn --mutex network --frozen-lockfile --network-timeout 60000"
+
 // Builds and tests the browser extension.
 func addBrowserExt(pipeline *bk.Pipeline) {
 	// Browser extension integration tests
@@ -159,7 +161,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 			bk.Env("RECORD", "false"), // ensure that we use existing recordings
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd(yarnInstallCmd),
 			bk.Cmd("yarn --cwd client/shared run download-puppeteer-browser"),
 			bk.Cmd("yarn --cwd client/browser -s run build"),
 			bk.Cmd("yarn run cover-browser-integration"),
@@ -325,7 +327,7 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd(yarnInstallCmd),
 			bk.Cmd("yarn --cwd client/shared run download-puppeteer-browser"),
 			bk.Cmd("pushd client/browser"),
 			bk.Cmd("yarn -s run build"),
@@ -343,7 +345,7 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 
 	// Release to the Chrome Webstore
 	pipeline.AddStep(":rocket::chrome: Extension release",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd(yarnInstallCmd),
 		bk.Cmd("pushd client/browser"),
 		bk.Cmd("yarn -s run build"),
 		bk.Cmd("yarn release:chrome"),
@@ -351,14 +353,14 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 
 	// Build and self sign the FF add-on and upload it to a storage bucket
 	pipeline.AddStep(":rocket::firefox: Extension release",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd(yarnInstallCmd),
 		bk.Cmd("pushd client/browser"),
 		bk.Cmd("yarn release:firefox"),
 		bk.Cmd("popd"))
 
 	// Release to npm
 	pipeline.AddStep(":rocket::npm: NPM Release",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd(yarnInstallCmd),
 		bk.Cmd("pushd client/browser"),
 		bk.Cmd("yarn -s run build"),
 		bk.Cmd("yarn release:npm"),
