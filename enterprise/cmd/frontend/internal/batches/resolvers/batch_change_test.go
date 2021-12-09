@@ -160,7 +160,6 @@ query($batchChange: ID!){
   }
 }
 `
-
 const queryBatchChangeByName = `
 fragment u on User { databaseID, siteAdmin }
 fragment o on Org  { id, name }

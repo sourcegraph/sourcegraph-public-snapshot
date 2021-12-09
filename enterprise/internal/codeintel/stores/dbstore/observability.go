@@ -90,9 +90,6 @@ func newOperations(observationContext *observation.Context, metrics *metrics.RED
 			Name:              fmt.Sprintf("codeintel.dbstore.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
-			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				return observation.EmitForSentry | observation.EmitForDefault
-			},
 		})
 	}
 

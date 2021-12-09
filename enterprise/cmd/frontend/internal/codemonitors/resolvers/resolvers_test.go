@@ -574,8 +574,7 @@ func TestEditCodeMonitor(t *testing.T) {
 				Priority:   "NORMAL",
 				Recipients: []graphql.ID{ns1},
 				Header:     "header action 1",
-			},
-		},
+			}},
 		{
 			Email: &graphqlbackend.CreateActionEmailArgs{
 				Enabled:    true,
@@ -623,43 +622,39 @@ func TestEditCodeMonitor(t *testing.T) {
 				Query: "repo:bar",
 			},
 			Actions: apitest.ActionConnection{
-				Nodes: []apitest.Action{
-					{
-						ActionEmail: apitest.ActionEmail{
-							Id:       string(relay.MarshalID(monitorActionEmailKind, 1)),
-							Enabled:  false,
-							Priority: "CRITICAL",
-							Recipients: apitest.RecipientsConnection{
-								Nodes: []apitest.UserOrg{
-									{
-										Name: user2Name,
-									},
+				Nodes: []apitest.Action{{
+					ActionEmail: apitest.ActionEmail{
+						Id:       string(relay.MarshalID(monitorActionEmailKind, 1)),
+						Enabled:  false,
+						Priority: "CRITICAL",
+						Recipients: apitest.RecipientsConnection{
+							Nodes: []apitest.UserOrg{
+								{
+									Name: user2Name,
 								},
 							},
-							Header: "updated header action 1",
 						},
-					}, {
-						ActionEmail: apitest.ActionEmail{
-							Id:       string(relay.MarshalID(monitorActionEmailKind, 3)),
-							Enabled:  true,
-							Priority: "NORMAL",
-							Recipients: apitest.RecipientsConnection{
-								Nodes: []apitest.UserOrg{
-									{
-										Name: user1Name,
-									},
-									{
-										Name: user2Name,
-									},
+						Header: "updated header action 1",
+					}}, {
+					ActionEmail: apitest.ActionEmail{
+						Id:       string(relay.MarshalID(monitorActionEmailKind, 3)),
+						Enabled:  true,
+						Priority: "NORMAL",
+						Recipients: apitest.RecipientsConnection{
+							Nodes: []apitest.UserOrg{
+								{
+									Name: user1Name,
+								},
+								{
+									Name: user2Name,
 								},
 							},
-							Header: "header action 3",
 						},
-					},
+						Header: "header action 3",
+					}},
 				},
 			},
-		},
-	}
+		}}
 
 	if !reflect.DeepEqual(&got, &want) {
 		t.Fatalf("\ngot:\t%+v\nwant:\t%+v\n", got, want)
@@ -1151,6 +1146,7 @@ func TestTriggerTestEmailAction(t *testing.T) {
 			Header:     "test header 1",
 		},
 	})
+
 	if err != nil {
 		t.Fatal(err)
 	}
