@@ -1541,6 +1541,11 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			if newSpec.ID == spec.ID {
+				t.Fatalf("new batch spec has same ID as old one: %d", newSpec.ID)
+			}
+
+			// Assert that batch change was updated with new batch spec id
 			batchChange, err = s.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChange.ID})
 			if err != nil {
 				t.Fatal(err)
