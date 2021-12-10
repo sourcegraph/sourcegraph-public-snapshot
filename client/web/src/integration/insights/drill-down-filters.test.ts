@@ -187,7 +187,7 @@ describe('Backend insight drill down filters', () => {
                         },
                     ],
                     step: {
-                        months: 1
+                        months: 1,
                     },
                     filters: {
                         includeRepoRegexp: '',
