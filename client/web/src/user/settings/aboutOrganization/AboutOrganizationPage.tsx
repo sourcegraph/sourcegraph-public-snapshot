@@ -1,5 +1,4 @@
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-
 import React, { useEffect } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
