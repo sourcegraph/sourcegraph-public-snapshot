@@ -249,7 +249,8 @@ func (d Diff) Len() int {
 // SyncRepo syncs a single repository by name. It's only currently used on sourcegraph.com
 // because we don't sync our "cloud_default" code hosts in the background
 // since there are too many repos. Instead we use an incremental approach where we check for
-// changes everytime a user browses a repo.
+// changes everytime a user browses a repo. The "background" boolean flag indicates that we should run this
+// sync in the background vs block and call s.syncRepo synchronously.
 func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background bool) (repo *types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", string(name))
 	defer tr.Finish()
