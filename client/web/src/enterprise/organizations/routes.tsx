@@ -5,7 +5,7 @@ import { OrgAreaPageProps, OrgAreaRoute } from '../../org/area/OrgArea'
 import { orgAreaRoutes } from '../../org/area/routes'
 import { lazyComponent } from '../../util/lazyComponent'
 import { CreateBatchChangePageProps } from '../batches/create/CreateBatchChangePage'
-import { NewCreateBatchChangePageProps } from '../batches/create/NewCreateBatchChangePage'
+import { CreateOrEditBatchChangePageProps } from '../batches/create/CreateOrEditBatchChangePage'
 import { NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
 
@@ -14,9 +14,9 @@ const NamespaceBatchChangesArea = lazyComponent<NamespaceBatchChangesAreaProps, 
     'NamespaceBatchChangesArea'
 )
 
-const NewCreateBatchChangePage = lazyComponent<NewCreateBatchChangePageProps, 'NewCreateBatchChangePage'>(
-    () => import('../batches/create/NewCreateBatchChangePage'),
-    'NewCreateBatchChangePage'
+const CreateOrEditBatchChangePage = lazyComponent<CreateOrEditBatchChangePageProps, 'CreateOrEditBatchChangePage'>(
+    () => import('../batches/create/CreateOrEditBatchChangePage'),
+    'CreateOrEditBatchChangePage'
 )
 
 const CreateBatchChangePage = lazyComponent<CreateBatchChangePageProps, 'CreateBatchChangePage'>(
@@ -36,7 +36,7 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
     {
         path: '/batch-changes/:batchChangeName/edit',
         render: ({ match, ...props }: OrgAreaPageProps & RouteComponentProps<{ batchChangeName: string }>) => (
-            <NewCreateBatchChangePage
+            <CreateOrEditBatchChangePage
                 {...props}
                 initialNamespaceID={props.org.id}
                 batchChangeName={match.params.batchChangeName}

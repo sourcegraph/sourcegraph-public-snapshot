@@ -1,4 +1,3 @@
-// TODO: Rename me to editor page
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -32,11 +31,11 @@ import { BatchChangePage } from '../BatchChangePage'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE, CREATE_EMPTY_BATCH_CHANGE } from './backend'
+import styles from './CreateOrEditBatchChangePage.module.scss'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import helloWorldSample from './library/hello-world.batch.yaml'
 import { LibraryPane } from './library/LibraryPane'
 import { NamespaceSelector } from './NamespaceSelector'
-import styles from './NewCreateBatchChangePage.module.scss'
 import { useBatchSpecCode } from './useBatchSpecCode'
 import { usePreviewBatchSpec } from './useBatchSpecPreview'
 import { useExecuteBatchSpec } from './useExecuteBatchSpec'
@@ -44,7 +43,7 @@ import { useNamespaces } from './useNamespaces'
 import { useBatchSpecWorkspaceResolution, WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
 import { insertNameIntoLibraryItem, isMinimalBatchSpec } from './yaml-util'
 
-interface NewCreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
+export interface CreateOrEditBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     /**
      * The id for the namespace that the batch change should be created in, or that it
      * already belongs to, if it already exists.
@@ -55,11 +54,10 @@ interface NewCreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps
 }
 
 /**
- * TODO: Rename me once create/update settings form is ready
- * NewCreateBatchChangePage is the new SSBC-oriented page for creating a new batch change
+ * CreateOrEditBatchChangePage is the new SSBC-oriented page for creating a new batch change
  * or editing and re-executing a new batch spec for an existing one.
  */
-export const NewCreateBatchChangePage: React.FunctionComponent<NewCreateBatchChangePageProps> = ({
+export const CreateOrEditBatchChangePage: React.FunctionComponent<CreateOrEditBatchChangePageProps> = ({
     initialNamespaceID,
     batchChangeName,
     ...props

@@ -11,7 +11,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { Scalars } from '../../../graphql-operations'
 import { Settings } from '../../../schema/settings.schema'
 
-import { NewCreateBatchChangePage } from './NewCreateBatchChangePage'
+import { CreateOrEditBatchChangePage } from './CreateOrEditBatchChangePage'
 import { OldBatchChangePageContent } from './OldCreateBatchChangeContent'
 
 export interface CreateBatchChangePageProps extends SettingsCascadeProps<Settings>, ThemeProps {
@@ -35,7 +35,7 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
     initialNamespaceID,
 }) =>
     isBatchChangesExecutionEnabled(settingsCascade) ? (
-        <NewCreateBatchChangePage
+        <CreateOrEditBatchChangePage
             isLightTheme={isLightTheme}
             settingsCascade={settingsCascade}
             initialNamespaceID={initialNamespaceID}
