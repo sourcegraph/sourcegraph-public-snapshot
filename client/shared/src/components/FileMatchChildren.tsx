@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import * as H from 'history'
 import React from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -24,7 +23,6 @@ import { Link } from './Link'
 import { MatchGroup } from './ranking/PerFileResultRanking'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
-    location: H.Location
     result: ContentMatch | SymbolMatch | PathMatch
     grouped: MatchGroup[]
     /* Called when the first result has fully loaded. */
@@ -91,7 +89,6 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
             positionOrRangeQueryParameter
         )
     }
-
     return (
         <div className={styles.fileMatchChildren} data-testid="file-match-children">
             {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
@@ -109,6 +106,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     className={classNames('test-file-match-children-item', styles.item)}
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                     data-testid="file-match-children-item"
+                    onClick={props.onSelect}
                 >
                     <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
                     <code>

@@ -21,7 +21,7 @@ import { RepoIcon } from './RepoIcon'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
 
 interface Props extends SettingsCascadeProps, TelemetryProps {
-    location: H.Location
+    location?: H.Location
     /**
      * The file match search result.
      */
@@ -95,7 +95,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
 
     // The number of lines of context to show before and after each match.
     const context = useMemo(() => {
-        if (props.location.pathname === '/search') {
+        if (props.location?.pathname === '/search') {
             // Check if search.contextLines is configured in settings.
             const contextLinesSetting =
                 isSettingsValid(props.settingsCascade) &&

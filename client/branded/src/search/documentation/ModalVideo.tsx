@@ -15,6 +15,7 @@ interface ModalVideoProps {
     onToggle?: (isOpen: boolean) => void
     showCaption?: boolean
     className?: string
+    assetsRoot?: string
 }
 
 export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
@@ -25,8 +26,8 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
     onToggle,
     showCaption = false,
     className,
+    assetsRoot = '',
 }) => {
-    const assetsRoot = window.context?.assetsRoot || ''
     const [isOpen, setIsOpen] = useState(false)
     const toggleDialog = useCallback(
         isOpen => {
