@@ -82,7 +82,7 @@ const getSanitizedInsight = (insight: Insight): InsightConfiguration | undefined
     }
 
     if (isSearchBasedInsight(insight)) {
-        const { id, visibility, type, viewType, step, ...originalInsight } = insight
+        const { id, visibility, type, viewType, ...originalInsight } = insight
         const sanitizedSeries = originalInsight.series.map(line => ({
             name: line.name,
             query: line.query,
