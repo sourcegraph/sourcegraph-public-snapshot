@@ -17,7 +17,7 @@ const MaximumRangesDefinitionLocations = 10000
 
 // Ranges returns definition, reference, implementation, hover, and documentation data for each range within the given span of lines.
 func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []CodeIntelligenceRange, err error) {
-	ctx, traceLog, endObservation := s.operations.ranges.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.ranges.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 		log.Int("startLine", startLine),
@@ -30,9 +30,9 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 		return nil, err
 	}
 
-	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
+	trace.Log(log.Int("numRanges", len(documentData.Document.Ranges)))
 	ranges := precise.FindRangesInWindow(documentData.Document.Ranges, startLine, endLine)
-	traceLog(log.Int("numIntersectingRanges", len(ranges)))
+	trace.Log(log.Int("numIntersectingRanges", len(ranges)))
 
 	definitionResultIDs := extractResultIDs(ranges, func(r precise.RangeData) precise.ID { return r.DefinitionResultID })
 	definitionLocations, _, err := s.locations(ctx, bundleID, definitionResultIDs, MaximumRangesDefinitionLocations, 0)
@@ -78,7 +78,7 @@ func (s *Store) Ranges(ctx context.Context, bundleID int, path string, startLine
 
 // DocumentationAtPosition returns documentation path IDs found at the given position.
 func (s *Store) DocumentationAtPosition(ctx context.Context, bundleID int, path string, line, character int) (_ []string, err error) {
-	ctx, traceLog, endObservation := s.operations.documentationAtPosition.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.documentationAtPosition.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 		log.Int("line", line),
@@ -91,9 +91,9 @@ func (s *Store) DocumentationAtPosition(ctx context.Context, bundleID int, path 
 		return nil, err
 	}
 
-	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
+	trace.Log(log.Int("numRanges", len(documentData.Document.Ranges)))
 	ranges := precise.FindRanges(documentData.Document.Ranges, line, character)
-	traceLog(log.Int("numIntersectingRanges", len(ranges)))
+	trace.Log(log.Int("numIntersectingRanges", len(ranges)))
 
 	documentationResultIDs := extractResultIDs(ranges, func(r precise.RangeData) precise.ID { return r.DocumentationResultID })
 	documentationPathIDs, err := s.documentationIDsToPathIDs(ctx, bundleID, documentationResultIDs)
@@ -131,7 +131,7 @@ LIMIT 1
 // identifiers. Like locations, this method returns a map from result set identifiers to another map from
 // document paths to locations within that document.
 func (s *Store) locationsWithinFile(ctx context.Context, bundleID int, ids []precise.ID, path string, documentData precise.DocumentData) (_ map[precise.ID][]Location, err error) {
-	ctx, traceLog, endObservation := s.operations.locationsWithinFile.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.locationsWithinFile.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.Int("numIDs", len(ids)),
 		log.String("ids", idsToString(ids)),
@@ -148,7 +148,7 @@ func (s *Store) locationsWithinFile(ctx context.Context, bundleID int, ids []pre
 	if err != nil {
 		return nil, err
 	}
-	traceLog(
+	trace.Log(
 		log.Int("numIndexes", len(indexes)),
 		log.String("indexes", intsToString(indexes)),
 	)
@@ -163,8 +163,8 @@ func (s *Store) locationsWithinFile(ctx context.Context, bundleID int, ids []pre
 	// Hydrate the locations result set by replacing range ids with their actual data from their
 	// containing document. This refines the map constructed in the previous step.
 	locationsByResultID := make(map[precise.ID][]Location, len(ids))
-	totalCount := s.readRangesFromDocument(bundleID, rangeIDsByResultID, locationsByResultID, path, documentData, traceLog)
-	traceLog(log.Int("numLocations", totalCount))
+	totalCount := s.readRangesFromDocument(bundleID, rangeIDsByResultID, locationsByResultID, path, documentData, trace)
+	trace.Log(log.Int("numLocations", totalCount))
 
 	return locationsByResultID, nil
 }
