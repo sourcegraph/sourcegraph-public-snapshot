@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"time"
 
@@ -49,11 +50,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := buildsherrif(ctx, ghc, builds, sherrifOptions{
-		Branch:            newBranchLocker(ghc, "sourcegraph", "sourcegraph", branch),
+	opts := sherrifOptions{
 		FailuresThreshold: threshold,
 		BuildTimeout:      time.Duration(timeoutMins) * time.Minute,
-	}); err != nil {
+	}
+	fmt.Printf("running buildsherrif over %d builds with option: %+v\n", len(builds), opts)
+	if err := buildsherrif(
+		ctx,
+		newBranchLocker(ghc, "sourcegraph", "sourcegraph", branch),
+		builds,
+		opts,
+	); err != nil {
 		log.Fatal(err)
 	}
 }

@@ -7,23 +7,20 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/google/go-github/v41/github"
 )
 
 type sherrifOptions struct {
-	Branch branchLocker
-
 	FailuresThreshold int
 	BuildTimeout      time.Duration
 }
 
-func buildsherrif(ctx context.Context, ghc *github.Client, builds []buildkite.Build, opts sherrifOptions) error {
+func buildsherrif(ctx context.Context, branch branchLocker, builds []buildkite.Build, opts sherrifOptions) error {
 	// Scan for first build with a meaningful state
 	var firstFailedBuild int
 	for i, b := range builds {
 		if isBuildPassed(b) {
 			fmt.Printf("most recent finished build %d passed\n", *b.Number)
-			if err := opts.Branch.Unlock(ctx); err != nil {
+			if err := branch.Unlock(ctx); err != nil {
 				return fmt.Errorf("unlockBranch: %w", err)
 			}
 			return nil
@@ -46,14 +43,14 @@ func buildsherrif(ctx context.Context, ghc *github.Client, builds []buildkite.Bu
 		opts.BuildTimeout)
 	if !exceeded {
 		fmt.Println("threshold not exceeded")
-		if err := opts.Branch.Unlock(ctx); err != nil {
+		if err := branch.Unlock(ctx); err != nil {
 			return fmt.Errorf("unlockBranch: %w", err)
 		}
 		return nil
 	}
 
 	fmt.Println("threshold exceeded, this is a big deal!")
-	if err := opts.Branch.Lock(ctx, failedCommits, []string{"dev-experience"}); err != nil {
+	if err := branch.Lock(ctx, failedCommits, []string{"dev-experience"}); err != nil {
 		return fmt.Errorf("lockBranch: %w", err)
 	}
 
