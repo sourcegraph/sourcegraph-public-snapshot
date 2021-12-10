@@ -37,7 +37,7 @@ RUN apk add --no-cache -verbose \
     # We require git>=2.30 because we use git maintenance.
     'git>=2.30' \
     git-p4 \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.13/main  \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main  \
     && apk add --no-cache --verbose \
     # NOTE that the Postgres version we run is different
     # from our *Minimum Supported Version* which alone dictates
