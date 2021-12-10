@@ -10,7 +10,7 @@ import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
 import type { ExtensionAlertProps } from './repo/RepoContainer'
 import { PageRoutes } from './routes.constants'
-import { useExperimentalFeatures } from './stores'
+import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
@@ -83,7 +83,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: PageRoutes.SearchConsole,
         render: props =>
-            props.showMultilineSearchConsole ? <SearchConsolePage {...props} /> : <Redirect to="/search" />,
+            getExperimentalFeatures().showMultilineSearchConsole ? (
+                <SearchConsolePage {...props} />
+            ) : (
+                <Redirect to="/search" />
+            ),
         exact: true,
     },
     {

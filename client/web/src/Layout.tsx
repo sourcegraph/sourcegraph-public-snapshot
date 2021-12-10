@@ -122,7 +122,6 @@ export interface LayoutProps
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 
     globbing: boolean
-    showMultilineSearchConsole: boolean
     isSourcegraphDotCom: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never

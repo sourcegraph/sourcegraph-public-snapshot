@@ -174,11 +174,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     globbing: boolean
 
     /**
-     * Whether we show the mulitiline editor at /search/console
-     */
-    showMultilineSearchConsole: boolean
-
-    /**
      * Whether the code monitoring feature flag is enabled.
      */
     enableCodeMonitoring: boolean
@@ -257,7 +252,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             hasUserSyncedPublicRepositories: false,
             hasUserAddedExternalServices: false,
             globbing: false,
-            showMultilineSearchConsole: false,
             enableCodeMonitoring: false,
             // Disabling linter here as otherwise the application fails to compile. Bad lint?
             // See 7a137b201330eb2118c746f8cc5acddf63c1f039
@@ -473,7 +467,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                                                     defaultSearchContextSpec={this.state.defaultSearchContextSpec}
                                                     globbing={this.state.globbing}
-                                                    showMultilineSearchConsole={this.state.showMultilineSearchConsole}
                                                     enableCodeMonitoring={this.state.enableCodeMonitoring}
                                                     isCodeInsightsGqlApiEnabled={
                                                         window.context.codeInsightsGqlApiEnabled

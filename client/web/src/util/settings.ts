@@ -62,7 +62,6 @@ export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascad
 export function experimentalFeaturesFromSettings(
     settingsCascade: SettingsCascadeOrError
 ): {
-    showMultilineSearchConsole: boolean
     enableCodeMonitoring: boolean
     enableAPIDocs: boolean
 } {
@@ -71,14 +70,12 @@ export function experimentalFeaturesFromSettings(
         {}
 
     const {
-        showMultilineSearchConsole = false,
         codeMonitoring = true, // Default to true if not set
         // eslint-disable-next-line unicorn/prevent-abbreviations
         apiDocs = true, // Default to true if not set
     } = experimentalFeatures
 
     return {
-        showMultilineSearchConsole,
         enableCodeMonitoring: codeMonitoring,
         enableAPIDocs: apiDocs,
     }

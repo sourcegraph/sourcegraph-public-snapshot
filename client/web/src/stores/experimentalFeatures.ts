@@ -7,6 +7,10 @@ import { SettingsExperimentalFeatures } from '../schema/settings.schema'
 
 const defaultSettings: SettingsExperimentalFeatures = {
     showEnterpriseHomePanels: true,
+    /**
+     * Whether we show the mulitiline editor at /search/console
+     */
+    showMultilineSearchConsole: false,
     showOnboardingTour: true,
     showSearchContext: true,
     showSearchContextManagement: true,
