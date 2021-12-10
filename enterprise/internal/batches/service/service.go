@@ -566,9 +566,7 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 		return nil, errors.Wrap(err, "getting batch change")
 	}
 	var batchChangeID int64
-	if batchChange == nil {
-		batchChangeID = 0
-	} else {
+	if batchChange != nil {
 		batchChangeID = batchChange.ID
 	}
 
