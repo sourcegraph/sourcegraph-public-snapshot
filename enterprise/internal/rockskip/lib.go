@@ -2,9 +2,13 @@ package main
 
 import (
 	"bufio"
+	"database/sql"
 	"fmt"
 	"io"
 	"os/exec"
+
+	pg "github.com/lib/pq"
+	"github.com/pkg/errors"
 )
 
 type Git interface {
@@ -13,7 +17,7 @@ type Git interface {
 }
 
 type DB interface {
-	GetCommit(givenCommit string) (commit string, height int, present bool, err error)
+	GetCommit(givenCommit string) (ancestor string, height int, present bool, err error)
 	InsertCommit(commit string, height int, ancestor string) error
 	GetBlob(hop string, path string) (id int, found bool, err error)
 	UpdateBlobHops(id int, status StatusAD, hop string) error
@@ -92,12 +96,14 @@ func Index(git Git, db DB, repo string, givenCommit string) error {
 	tipCommit := NULL
 	tipHeight := 0
 	missingCount := 0
+	fmt.Println("REVS")
 	revs, err := git.RevList(repo, givenCommit)
 	if err != nil {
 		return err
 	}
 	for _, commit := range revs {
-		if commit, height, present, err := db.GetCommit(commit); err != nil {
+		fmt.Println("cmt")
+		if _, height, present, err := db.GetCommit(commit); err != nil {
 			return err
 		} else if present {
 			tipCommit = commit
@@ -107,11 +113,15 @@ func Index(git Git, db DB, repo string, givenCommit string) error {
 		missingCount += 1
 	}
 
+	fmt.Println("log")
 	entries, err := git.LogReverse(repo, givenCommit, missingCount)
 	if err != nil {
+		fmt.Println("logerrror", err)
 		return err
 	}
+	fmt.Println("after log")
 	for _, entry := range entries {
+		fmt.Println("entry")
 		hops, err := getHops(db, tipCommit)
 		if err != nil {
 			return err
@@ -122,8 +132,14 @@ func Index(git Git, db DB, repo string, givenCommit string) error {
 			return fmt.Errorf("ruler(%d) = %d is out of range of len(hops) = %d", tipHeight+1, r, len(hops))
 		}
 
-		db.AppendHop(hops[0:r], AddedAD, entry.Commit)
-		db.AppendHop(hops[0:r], DeletedAD, entry.Commit)
+		err = db.AppendHop(hops[0:r], AddedAD, entry.Commit)
+		if err != nil {
+			return err
+		}
+		err = db.AppendHop(hops[0:r], DeletedAD, entry.Commit)
+		if err != nil {
+			return err
+		}
 
 		// Could delete redundant hops here, but skipping instead because it would make the DB interface
 		// more complex. Besides, it doesn't change the asymptotic space complexity.
@@ -160,12 +176,12 @@ func Index(git Git, db DB, repo string, givenCommit string) error {
 	return nil
 }
 
-func getHops(db DB, givenCommit string) ([]string, error) {
-	current := givenCommit
+func getHops(db DB, commit string) ([]string, error) {
+	current := commit
 	spine := []string{current}
 
 	for {
-		if commit, _, present, err := db.GetCommit(current); err != nil {
+		if ancestor, _, present, err := db.GetCommit(current); err != nil {
 			return nil, err
 		} else if !present {
 			break
@@ -173,7 +189,7 @@ func getHops(db DB, givenCommit string) ([]string, error) {
 			if current == NULL {
 				break
 			}
-			current = commit
+			current = ancestor
 			spine = append(spine, current)
 		}
 	}
@@ -240,7 +256,9 @@ func (git SubprocessGit) LogReverse(repo string, givenCommit string, n int) (log
 		return nil, err
 	}
 	defer func() {
+		fmt.Println("Waiting", reader.Buffered(), err, returnError)
 		err = log.Wait()
+		fmt.Println("Waiting, done")
 		if err != nil {
 			returnError = err
 		}
@@ -249,6 +267,7 @@ func (git SubprocessGit) LogReverse(repo string, givenCommit string, n int) (log
 	var buf []byte
 
 	for {
+		fmt.Println("LEWG")
 		// abc... ... NULL '\n'?
 
 		// Read the commit
@@ -286,6 +305,7 @@ func (git SubprocessGit) LogReverse(repo string, givenCommit string, n int) (log
 
 			pathStatuses := []PathStatus{}
 			for {
+				fmt.Println("FL")
 				// :100644 100644 abc... def... M NULL file.txt NULL
 				// ^ 0                          ^ 97   ^ 99
 
@@ -302,8 +322,12 @@ func (git SubprocessGit) LogReverse(repo string, givenCommit string, n int) (log
 
 				// Read the status from index 97 and skip to the path at index 99
 				buf = make([]byte, 99)
+				fmt.Println("FL2", reader.Buffered())
 				read, err := reader.Read(buf)
+				fmt.Println("FL2.sdf", reader.Buffered(), err, read)
 				if read != 99 {
+					// TODO figure out this 🐛
+					fmt.Println("FL2.sdf not read", string(buf))
 					return nil, fmt.Errorf("read %d bytes, expected 99", read)
 				} else if err != nil {
 					return nil, err
@@ -322,6 +346,7 @@ func (git SubprocessGit) LogReverse(repo string, givenCommit string, n int) (log
 				}
 
 				// Read the path
+				fmt.Println("FL3")
 				path, err := reader.ReadBytes(0)
 				if err != nil {
 					return nil, err
@@ -369,4 +394,215 @@ func (git SubprocessGit) RevList(repo string, givenCommit string) (commits []str
 	}
 
 	return commits, nil
+}
+
+type PostgresDB struct {
+	db *sql.DB
+}
+
+func NewPostgresDB() (*PostgresDB, error) {
+	db, err := sql.Open("postgres", "postgres://sourcegraph:sourcegraph@localhost:5432/sourcegraph?sslmode=disable")
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = db.Exec("DROP TABLE IF EXISTS rockskip_ancestry")
+	if err != nil {
+		return nil, fmt.Errorf("dropping rockskip_ancestry: %s", err)
+	}
+
+	_, err = db.Exec("DROP TABLE IF EXISTS rockskip_blobs")
+	if err != nil {
+		return nil, fmt.Errorf("dropping rockskip_blobs: %s", err)
+	}
+
+	_, err = db.Exec(`
+		CREATE TABLE rockskip_ancestry (
+			commit_id   VARCHAR(40) PRIMARY KEY,
+			height      INTEGER     NOT NULL,
+			ancestor_id VARCHAR(40) NOT NULL
+		)`)
+	if err != nil {
+		return nil, fmt.Errorf("creating rockskip_ancestry: %s", err)
+	}
+
+	_, err = db.Exec(`
+		CREATE TABLE rockskip_blobs (
+			id      SERIAL        PRIMARY KEY,
+			path    BYTEA         NOT NULL,
+			added   VARCHAR(40)[] NOT NULL,
+			deleted VARCHAR(40)[] NOT NULL
+		)`)
+	if err != nil {
+		return nil, fmt.Errorf("creating rockskip_blobs: %s", err)
+	}
+
+	fmt.Println("TODO add indexes")
+	fmt.Println("TODO use transactions")
+
+	return &PostgresDB{db: db}, nil
+}
+
+func (db PostgresDB) GetCommit(givenCommit string) (ancestor string, height int, present bool, err error) {
+	err = db.db.QueryRow(`
+		SELECT ancestor_id, height
+		FROM rockskip_ancestry
+		WHERE commit_id = $1
+	`, givenCommit).Scan(&ancestor, &height)
+	if err == sql.ErrNoRows {
+		return "", 0, false, nil
+	} else if err != nil {
+		return "", 0, false, fmt.Errorf("GetCommit: %s", err)
+	}
+	return ancestor, height, true, nil
+}
+
+func (db PostgresDB) InsertCommit(commit string, height int, ancestor string) error {
+	_, err := db.db.Exec(`
+		INSERT INTO rockskip_ancestry (commit_id, height, ancestor_id)
+		VALUES ($1, $2, $3)
+	`, commit, height, ancestor)
+	return errors.Wrap(err, "InsertCommit")
+}
+
+func (db PostgresDB) GetBlob(hop string, path string) (id int, found bool, err error) {
+	err = db.db.QueryRow(`
+		SELECT id
+		FROM rockskip_blobs
+		WHERE path = $1 AND $2 = ANY (added) AND NOT $2 = ANY (deleted)
+	`, path, hop).Scan(&id)
+	if err == sql.ErrNoRows {
+		return 0, false, nil
+	} else if err != nil {
+		return 0, false, fmt.Errorf("GetBlob: %s", err)
+	}
+	return id, true, nil
+}
+
+func (db PostgresDB) UpdateBlobHops(id int, status StatusAD, hop string) error {
+	column := statusADToColumn(status)
+	// TODO also try `||` instead of `array_append``
+	_, err := db.db.Exec(fmt.Sprintf(`
+		UPDATE rockskip_blobs
+		SET %s = array_append(%s, $1)
+		WHERE id = $2
+	`, column, column), hop, id)
+	return errors.Wrap(err, "UpdateBlobHops")
+}
+
+func (db PostgresDB) InsertBlob(blob Blob) error {
+	_, err := db.db.Exec(`
+		INSERT INTO rockskip_blobs (path, added, deleted)
+		VALUES ($1, $2, $3)
+	`, blob.path, pg.Array(blob.added), pg.Array(blob.deleted))
+	return errors.Wrap(err, "InsertBlob")
+}
+
+func (db PostgresDB) AppendHop(hops []string, givenStatus StatusAD, newHop string) error {
+	column := statusADToColumn(givenStatus)
+	_, err := db.db.Exec(fmt.Sprintf(`
+		UPDATE rockskip_blobs
+		SET %s = array_append(%s, $1)
+		WHERE $2 && %s
+	`, column, column, column), newHop, pg.Array(hops))
+	return errors.Wrap(err, "AppendHop")
+}
+
+func (db PostgresDB) Search(hops []string) ([]Blob, error) {
+	rows, err := db.db.Query(`
+		SELECT id, path, added, deleted
+		FROM rockskip_blobs
+		WHERE $1 && added AND NOT $1 && deleted
+	`, pg.Array(hops))
+	if err != nil {
+		return nil, errors.Wrap(err, "Search")
+	}
+	defer rows.Close()
+
+	blobs := []Blob{}
+	for rows.Next() {
+		var id int
+		var path string
+		var added, deleted []string
+		err = rows.Scan(&id, &path, pg.Array(&added), pg.Array(&deleted))
+		if err != nil {
+			return nil, errors.Wrap(err, "Search: Scan")
+		}
+		blobs = append(blobs, Blob{path: path, added: added, deleted: deleted})
+	}
+	return blobs, nil
+}
+
+func (db PostgresDB) PrintInternals() error {
+	fmt.Println("Commit ancestry:")
+	fmt.Println()
+
+	// print all rows in the rockskip_ancestry table
+	rows, err := db.db.Query(`
+		SELECT commit_id, height, ancestor_id
+		FROM rockskip_ancestry
+		ORDER BY height ASC
+	`)
+	if err != nil {
+		return errors.Wrap(err, "PrintInternals")
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var commit, ancestor string
+		var height int
+		err = rows.Scan(&commit, &height, &ancestor)
+		if err != nil {
+			return errors.Wrap(err, "PrintInternals: Scan")
+		}
+		fmt.Printf("height %3d commit %s ancestor %s\n", height, commit, ancestor)
+	}
+
+	fmt.Println()
+	fmt.Println("Blobs:")
+	fmt.Println()
+
+	rows, err = db.db.Query(`
+		SELECT id, path, added, deleted
+		FROM rockskip_blobs
+		ORDER BY id ASC
+	`)
+	if err != nil {
+		return errors.Wrap(err, "PrintInternals")
+	}
+
+	for rows.Next() {
+		var id int
+		var path string
+		var added, deleted []string
+		err = rows.Scan(&id, &path, pg.Array(&added), pg.Array(&deleted))
+		if err != nil {
+			return errors.Wrap(err, "PrintInternals: Scan")
+		}
+		fmt.Printf("  id %d path %-10s\n", id, path)
+		for _, a := range added {
+			fmt.Printf("    + %-40s\n", a)
+		}
+		fmt.Println()
+		for _, d := range deleted {
+			fmt.Printf("    - %-40s\n", d)
+		}
+		fmt.Println()
+
+	}
+
+	fmt.Println()
+	return nil
+}
+
+func statusADToColumn(status StatusAD) string {
+	switch status {
+	case AddedAD:
+		return "added"
+	case DeletedAD:
+		return "deleted"
+	default:
+		fmt.Println("unexpected status StatusAD: ", status)
+		return "unknown_status"
+	}
 }

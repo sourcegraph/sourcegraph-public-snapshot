@@ -130,17 +130,17 @@ func NewMockDB() MockDB {
 	}
 }
 
-func (db MockDB) GetCommit(givenCommit string) (commit string, height int, present bool, err error) {
+func (db MockDB) GetCommit(givenCommit string) (ancestor string, height int, present bool, err error) {
 	height, ok := db.commitToHeight[givenCommit]
 	if !ok {
 		return "", 0, false, nil
 	}
-	ancestor, ok := db.commitToAncestor[givenCommit]
+	ancestorMaybe, ok := db.commitToAncestor[givenCommit]
 	if !ok {
 		return "", 0, false, nil
 	}
 
-	return ancestor, height, true, nil
+	return ancestorMaybe, height, true, nil
 }
 
 func (db MockDB) InsertCommit(commit string, height int, ancestor string) error {
@@ -314,7 +314,7 @@ func (db MockDB) PrintInternals() {
 	fmt.Println()
 }
 
-func TestIndex(t *testing.T) {
+func TestIndexMocks(t *testing.T) {
 	git := NewMockGit()
 	db := NewMockDB()
 
@@ -356,20 +356,24 @@ func TestIndex(t *testing.T) {
 	sort.Strings(expected)
 
 	if diff := cmp.Diff(paths, expected); diff != "" {
-		fmt.Println("🚨 PathsAtCommit: unexpected paths (-got +want)", diff)
+		fmt.Println("🚨 PathsAtCommit: unexpected paths (-got +want)")
+		fmt.Println(diff)
 		git.PrintInternals()
 		db.PrintInternals()
 		t.Fail()
 	}
 }
 
-func TestIndexMux(t *testing.T) {
+func TestIndexReal(t *testing.T) {
 	git := NewSubprocessGit()
-	db := NewMockDB()
+	db, err := NewPostgresDB()
+	if err != nil {
+		t.Fatalf("🚨 NewPostgresDB: %s", err)
+	}
 
-	repo := "github.com/gorilla/mux"
-	head := "3cf0d013e53d62a96c096366d300c84489c26dd5"
-	err := Index(git, db, repo, head)
+	repo := "github.com/sourcegraph/sourcegraph"
+	head := "18b467b641aa5d2703f14a1aa86666cd2d8c99c1"
+	err = Index(git, db, repo, head)
 	if err != nil {
 		t.Fatalf("🚨 Index: %s", err)
 	}
@@ -395,7 +399,8 @@ func TestIndexMux(t *testing.T) {
 	sort.Strings(expected)
 
 	if diff := cmp.Diff(paths, expected); diff != "" {
-		fmt.Println("🚨 PathsAtCommit: unexpected paths (-got +want)", diff)
+		fmt.Println("🚨 PathsAtCommit: unexpected paths (-got +want)")
+		fmt.Println(diff)
 		db.PrintInternals()
 		t.Fail()
 	}
