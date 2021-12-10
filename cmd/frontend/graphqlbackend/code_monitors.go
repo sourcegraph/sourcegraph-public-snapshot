@@ -155,7 +155,9 @@ type CreateTriggerArgs struct {
 }
 
 type CreateActionArgs struct {
-	Email *CreateActionEmailArgs
+	Email        *CreateActionEmailArgs
+	Webhook      *CreateActionWebhookArgs
+	SlackWebhook *CreateActionSlackWebhookArgs
 }
 
 type CreateActionEmailArgs struct {
@@ -163,6 +165,16 @@ type CreateActionEmailArgs struct {
 	Priority   string
 	Recipients []graphql.ID
 	Header     string
+}
+
+type CreateActionWebhookArgs struct {
+	Enabled bool
+	URL     string
+}
+
+type CreateActionSlackWebhookArgs struct {
+	Enabled bool
+	URL     string
 }
 
 type ToggleCodeMonitorArgs struct {
@@ -195,8 +207,20 @@ type EditActionEmailArgs struct {
 	Update *CreateActionEmailArgs
 }
 
+type EditActionWebhookArgs struct {
+	Id     *graphql.ID
+	Update *CreateActionWebhookArgs
+}
+
+type EditActionSlackWebhookArgs struct {
+	Id     *graphql.ID
+	Update *CreateActionSlackWebhookArgs
+}
+
 type EditActionArgs struct {
-	Email *EditActionEmailArgs
+	Email        *EditActionEmailArgs
+	Webhook      *EditActionWebhookArgs
+	SlackWebhook *EditActionSlackWebhookArgs
 }
 
 type EditTriggerArgs struct {

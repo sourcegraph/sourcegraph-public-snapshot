@@ -243,13 +243,14 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		return nil, err
 	}
 	// Hydrate monitor with Resolver.
-	m.(*monitor).Resolver = r
+	m.Resolver = r
 	return m, nil
 }
 
 func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*graphqlbackend.CreateActionArgs) error {
 	for _, a := range args {
-		if a.Email != nil {
+		switch {
+		case a.Email != nil:
 			e, err := r.store.CreateEmailAction(ctx, monitorID, &cm.EmailActionArgs{
 				Enabled:  a.Email.Enabled,
 				Priority: a.Email.Priority,
@@ -262,8 +263,19 @@ func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*g
 			if err := r.createRecipients(ctx, e.ID, a.Email.Recipients); err != nil {
 				return err
 			}
+		case a.Webhook != nil:
+			_, err := r.store.CreateWebhookAction(ctx, monitorID, a.Webhook.Enabled, a.Webhook.URL)
+			if err != nil {
+				return err
+			}
+		case a.SlackWebhook != nil:
+			_, err := r.store.CreateSlackWebhookAction(ctx, monitorID, a.SlackWebhook.Enabled, a.SlackWebhook.URL)
+			if err != nil {
+				return err
+			}
+		default:
+			return errors.New("exactly one of Email, Webhook, or SlackWebhook must be set")
 		}
-		// TODO(camdencheek): add other action types (webhooks) here
 	}
 	return nil
 }
@@ -381,7 +393,7 @@ func splitActionIDs(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorA
 	return toCreate, toDelete, nil
 }
 
-func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
+func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (*monitor, error) {
 	// Update monitor.
 	var monitorID int64
 	if err := relay.UnmarshalSpec(args.Monitor.Id, &monitorID); err != nil {
