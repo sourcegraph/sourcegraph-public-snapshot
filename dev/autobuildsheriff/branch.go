@@ -9,8 +9,8 @@ import (
 )
 
 type branchLocker interface {
-	Unlock(ctx context.Context) error
-	Lock(ctx context.Context, allowAuthorEmails []string, allowTeams []string) error
+	Unlock(ctx context.Context) (modified bool, err error)
+	Lock(ctx context.Context, commits []commitInfo, allowTeams []string) (modified bool, err error)
 }
 
 type repoBranchLocker struct {
@@ -29,22 +29,32 @@ func newBranchLocker(ghc *github.Client, owner, repo, branch string) branchLocke
 	}
 }
 
-func (b *repoBranchLocker) Lock(ctx context.Context, commits []string, allowTeams []string) error {
+func (b *repoBranchLocker) Lock(ctx context.Context, commits []commitInfo, allowTeams []string) (bool, error) {
+	protects, _, err := b.ghc.Repositories.GetBranchProtection(ctx, b.owner, b.repo, b.branch)
+	if err != nil {
+		return false, err
+	}
+	if protects.Restrictions != nil {
+		// restrictions already in place, do not overwrite
+		return false, nil
+	}
+
+	// Get the commit authors to determine who to exclude from branch lock
 	var failureAuthors []*github.User
-	for _, sha := range commits {
-		commit, _, err := b.ghc.Repositories.GetCommit(ctx, b.owner, b.repo, sha, &github.ListOptions{})
+	for _, c := range commits {
+		commit, _, err := b.ghc.Repositories.GetCommit(ctx, b.owner, b.repo, c.Commit, &github.ListOptions{})
 		if err != nil {
-			return err
+			return false, err
 		}
 		failureAuthors = append(failureAuthors, commit.Author)
 	}
 
+	// Get authors that are in Sourcegraph org
 	failureAuthorsLogins := []string{}
 	for _, u := range failureAuthors {
-		// Make sure this user is in the Sourcegraph org
 		membership, _, err := b.ghc.Organizations.GetOrgMembership(ctx, *u.Login, "sourcegraph")
 		if err != nil {
-			return err
+			return false, err
 		}
 		if membership == nil || *membership.State != "active" {
 			continue // we don't want this user
@@ -79,18 +89,31 @@ func (b *repoBranchLocker) Lock(ctx context.Context, commits []string, allowTeam
 		// 	RequiredApprovingReviewCount: 0, // this fails
 		// },
 	}); err != nil {
-		return err
+		return false, err
 	}
-	return nil
+	return true, nil
 }
 
-func (b *repoBranchLocker) Unlock(ctx context.Context) error {
-	req, err := b.ghc.NewRequest(http.MethodDelete, fmt.Sprintf("/repos/%s/%s/branches/%s/protection/restrictions",
-		b.owner, b.repo, b.branch),
+func (b *repoBranchLocker) Unlock(ctx context.Context) (bool, error) {
+	protects, _, err := b.ghc.Repositories.GetBranchProtection(ctx, b.owner, b.repo, b.branch)
+	if err != nil {
+		return false, err
+	}
+	if protects.Restrictions == nil {
+		// no restrictions in place, we are done
+		return false, nil
+	}
+
+	req, err := b.ghc.NewRequest(http.MethodDelete,
+		fmt.Sprintf("/repos/%s/%s/branches/%s/protection/restrictions",
+			b.owner, b.repo, b.branch),
 		nil)
 	if err != nil {
-		return err
+		return false, err
 	}
 	_, err = b.ghc.Do(ctx, req, nil)
-	return err
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }

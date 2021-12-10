@@ -42,59 +42,55 @@ func TestRepoBranchLocker(t *testing.T) {
 
 	const testBranch = "test-buildsherrif-branch"
 
-	t.Run("lock to a user and team", func(t *testing.T) {
+	t.Run("lock", func(t *testing.T) {
 		ghc, stop := newTestGitHubClient(ctx, t)
 		defer stop()
 		locker := newBranchLocker(ghc, "sourcegraph", "sourcegraph", testBranch)
 
-		commits := []string{
-			"be7f0f51b73b1966254db4aac65b656daa36e2fb", // @davejrt
-			"fac6d4973acad43fcd2f7579a3b496cd92619172", // @bobheadxi
-			"06a8636c2e0bea69944d8419aafa03ff3992527a", // @bobheadxi
-			"93971fa0b036b3e258cbb9a3eb7098e4032eefc4", // @jhchabran
+		commits := []commitInfo{
+			{Commit: "be7f0f51b73b1966254db4aac65b656daa36e2fb"}, // @davejrt
+			{Commit: "fac6d4973acad43fcd2f7579a3b496cd92619172"}, // @bobheadxi
+			{Commit: "06a8636c2e0bea69944d8419aafa03ff3992527a"}, // @bobheadxi
+			{Commit: "93971fa0b036b3e258cbb9a3eb7098e4032eefc4"}, // @jhchabran
 		}
-		if err := locker.Lock(ctx, commits, []string{"dev-experience"}); err != nil {
-			t.Fatal(err)
-		}
-
-		// Validate live state
-		protects, _, err := ghc.Repositories.GetBranchProtection(ctx, "sourcegraph", "sourcegraph", testBranch)
+		modified, err := locker.Lock(ctx, commits, []string{"dev-experience"})
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.NotNil(t, protects.Restrictions)
-
-		users := []string{}
-		for _, u := range protects.Restrictions.Users {
-			users = append(users, *u.Login)
-		}
-		sort.Strings(users)
-		assert.Equal(t, []string{"bobheadxi", "davejrt", "jhchabran"}, users)
-
-		teams := []string{}
-		for _, t := range protects.Restrictions.Teams {
-			teams = append(teams, *t.Slug)
-		}
-		assert.Equal(t, []string{"dev-experience"}, teams)
-	})
-
-	t.Run("lock to no users and no teams", func(t *testing.T) {
-		ghc, stop := newTestGitHubClient(ctx, t)
-		defer stop()
-		locker := newBranchLocker(ghc, "sourcegraph", "sourcegraph", testBranch)
-
-		if err := locker.Lock(ctx, []string{}, []string{}); err != nil {
-			t.Fatal(err)
-		}
+		assert.True(t, modified)
 
 		// Validate live state
-		protects, _, err := ghc.Repositories.GetBranchProtection(ctx, "sourcegraph", "sourcegraph", testBranch)
+		validateLiveState := func() {
+			protects, _, err := ghc.Repositories.GetBranchProtection(ctx, "sourcegraph", "sourcegraph", testBranch)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assert.NotNil(t, protects.Restrictions)
+
+			users := []string{}
+			for _, u := range protects.Restrictions.Users {
+				users = append(users, *u.Login)
+			}
+			sort.Strings(users)
+			assert.Equal(t, []string{"bobheadxi", "davejrt", "jhchabran"}, users)
+
+			teams := []string{}
+			for _, t := range protects.Restrictions.Teams {
+				teams = append(teams, *t.Slug)
+			}
+			assert.Equal(t, []string{"dev-experience"}, teams)
+		}
+		validateLiveState()
+
+		// Repeated lock attempt shouldn't change anything
+		modified, err = locker.Lock(ctx, []commitInfo{}, []string{})
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.NotNil(t, protects.Restrictions)
-		assert.Empty(t, protects.Restrictions.Users)
-		assert.Empty(t, protects.Restrictions.Teams)
+		assert.False(t, modified)
+
+		// should have same state as before
+		validateLiveState()
 	})
 
 	t.Run("unlock", func(t *testing.T) {
@@ -102,9 +98,11 @@ func TestRepoBranchLocker(t *testing.T) {
 		defer stop()
 		locker := newBranchLocker(ghc, "sourcegraph", "sourcegraph", testBranch)
 
-		if err := locker.Unlock(ctx); err != nil {
+		modified, err := locker.Unlock(ctx)
+		if err != nil {
 			t.Fatal(err)
 		}
+		assert.True(t, modified)
 
 		// Validate live state
 		protects, _, err := ghc.Repositories.GetBranchProtection(ctx, "sourcegraph", "sourcegraph", testBranch)
@@ -112,5 +110,12 @@ func TestRepoBranchLocker(t *testing.T) {
 			t.Fatal(err)
 		}
 		assert.Nil(t, protects.Restrictions)
+
+		// Repeat unlock
+		modified, err = locker.Unlock(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.False(t, modified)
 	})
 }

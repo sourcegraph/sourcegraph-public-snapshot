@@ -14,16 +14,30 @@ type sherrifOptions struct {
 	BuildTimeout      time.Duration
 }
 
-func buildsherrif(ctx context.Context, branch branchLocker, builds []buildkite.Build, opts sherrifOptions) error {
+type commitInfo struct {
+	Commit string
+	Author string
+}
+
+type sherrifResults struct {
+	Locked        bool
+	LockModified  bool
+	FailedCommits []commitInfo
+}
+
+func buildsherrif(ctx context.Context, branch branchLocker, builds []buildkite.Build, opts sherrifOptions) (results *sherrifResults, err error) {
+	results = &sherrifResults{}
+
 	// Scan for first build with a meaningful state
 	var firstFailedBuild int
 	for i, b := range builds {
 		if isBuildPassed(b) {
 			fmt.Printf("most recent finished build %d passed\n", *b.Number)
-			if err := branch.Unlock(ctx); err != nil {
-				return fmt.Errorf("unlockBranch: %w", err)
+			results.LockModified, err = branch.Unlock(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("unlockBranch: %w", err)
 			}
-			return nil
+			return
 		}
 		if isBuildFailed(b, opts.BuildTimeout) {
 			fmt.Printf("most recent finished build %d failed\n", *b.Number)
@@ -35,7 +49,8 @@ func buildsherrif(ctx context.Context, branch branchLocker, builds []buildkite.B
 	}
 
 	// if failed, check if failures are consecutive
-	failedCommits, exceeded := checkConsecutiveFailures(
+	var exceeded bool
+	results.FailedCommits, exceeded = checkConsecutiveFailures(
 		// Check builds after the failed one we found
 		builds[firstFailedBuild:],
 		// We already have 1 failed build, so we need to find n-1 more
@@ -43,18 +58,20 @@ func buildsherrif(ctx context.Context, branch branchLocker, builds []buildkite.B
 		opts.BuildTimeout)
 	if !exceeded {
 		fmt.Println("threshold not exceeded")
-		if err := branch.Unlock(ctx); err != nil {
-			return fmt.Errorf("unlockBranch: %w", err)
+		results.LockModified, err = branch.Unlock(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("unlockBranch: %w", err)
 		}
-		return nil
+		return
 	}
 
 	fmt.Println("threshold exceeded, this is a big deal!")
-	if err := branch.Lock(ctx, failedCommits, []string{"dev-experience"}); err != nil {
-		return fmt.Errorf("lockBranch: %w", err)
+	results.LockModified, err = branch.Lock(ctx, results.FailedCommits, []string{"dev-experience"})
+	if err != nil {
+		return nil, fmt.Errorf("lockBranch: %w", err)
 	}
 
-	return nil
+	return
 }
 
 func isBuildPassed(build buildkite.Build) bool {
@@ -87,8 +104,8 @@ func buildSummary(build buildkite.Build) string {
 	return strings.Join(summary, ", ")
 }
 
-func checkConsecutiveFailures(builds []buildkite.Build, threshold int, timeout time.Duration) (failedCommits []string, thresholdExceeded bool) {
-	failedCommits = []string{}
+func checkConsecutiveFailures(builds []buildkite.Build, threshold int, timeout time.Duration) (failedCommits []commitInfo, thresholdExceeded bool) {
+	failedCommits = []commitInfo{}
 
 	var consecutiveFailures int
 	for _, b := range builds {
@@ -104,7 +121,14 @@ func checkConsecutiveFailures(builds []buildkite.Build, threshold int, timeout t
 		}
 
 		consecutiveFailures += 1
-		failedCommits = append(failedCommits, *b.Commit)
+		var author string
+		if b.Author != nil {
+			author = fmt.Sprintf("%s (%s)", b.Author.Name, b.Author.Email)
+		}
+		failedCommits = append(failedCommits, commitInfo{
+			Commit: *b.Commit,
+			Author: author,
+		})
 		fmt.Printf("build %d is a failure: count %d, %s\n", *b.Number, consecutiveFailures, buildSummary(b))
 		if consecutiveFailures >= threshold {
 			return failedCommits, true

@@ -17,6 +17,7 @@ func main() {
 		ctx            = context.Background()
 		buildkiteToken string
 		githubToken    string
+		slackWebhook   string
 		pipeline       string
 		branch         string
 		threshold      int
@@ -29,6 +30,7 @@ func main() {
 	flag.StringVar(&branch, "branch", "main", "name of the branch to inspect")
 	flag.IntVar(&threshold, "failures.threshold", 3, "failures required to trigger an incident")
 	flag.IntVar(&timeoutMins, "failures.timeout", 40, "duration of a run required to be considered a failure (minutes)")
+	flag.StringVar(&slackWebhook, "slack", "", "Slack Webhook URL to post the results on")
 
 	config, err := buildkite.NewTokenConfig(buildkiteToken, false)
 	if err != nil {
@@ -55,12 +57,20 @@ func main() {
 		BuildTimeout:      time.Duration(timeoutMins) * time.Minute,
 	}
 	fmt.Printf("running buildsherrif over %d builds with option: %+v\n", len(builds), opts)
-	if err := buildsherrif(
+	results, err := buildsherrif(
 		ctx,
 		newBranchLocker(ghc, "sourcegraph", "sourcegraph", branch),
 		builds,
 		opts,
-	); err != nil {
+	)
+	if err != nil {
 		log.Fatal(err)
+	}
+
+	// Only post an update if the lock has been modified
+	if results.LockModified {
+		if err := postSlackUpdate(slackWebhook, slackSummary(results.Locked, results.FailedCommits)); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
