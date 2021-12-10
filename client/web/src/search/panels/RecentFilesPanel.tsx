@@ -4,11 +4,11 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { EventLogResult } from '@sourcegraph/shared/src/search/backend'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser } from '../../auth'
-import { EventLogResult } from '../backend'
 
 import { EmptyPanelContainer } from './EmptyPanelContainer'
 import { LoadingPanelView } from './LoadingPanelView'

@@ -1,4 +1,4 @@
-import { SearchPatternType } from 'src/graphql-operations'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
 import {
     AliasedFilterType,

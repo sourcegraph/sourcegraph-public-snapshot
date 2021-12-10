@@ -10,6 +10,7 @@ import { KEYBOARD_SHORTCUT_COPY_FULL_QUERY } from '@sourcegraph/shared/src/keybo
 import {
     CaseSensitivityProps,
     SearchContextProps,
+    SearchPatternTypeProps,
     SearchPatternTypeMutationProps,
 } from '@sourcegraph/shared/src/search'
 import { SubmitSearchProps } from '@sourcegraph/shared/src/search/helpers'

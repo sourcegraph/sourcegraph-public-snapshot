@@ -4,6 +4,7 @@ import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
 import shallow from 'zustand/shallow'
 
+import { SubmitSearchParameters } from '@sourcegraph/shared/src/search/helpers'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -14,7 +15,6 @@ import { TemporarySettings } from '../../../settings/temporary/TemporarySettings
 import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
 import { useNavbarQueryState } from '../../../stores'
 import { NavbarQueryState, QueryUpdate } from '../../../stores/navbarSearchQueryState'
-import { SubmitSearchParameters } from '../../helpers'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'

@@ -4,13 +4,16 @@ import { Form } from 'reactstrap'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
+import { SearchBox } from '@sourcegraph/branded/src/search/input/SearchBox'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { CaseSensitivityProps, SearchContextInputProps, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
+import { SubmitSearchParameters } from '@sourcegraph/shared/src/search/helpers'
 import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { ParsedSearchQueryProps, SearchContextInputProps, CaseSensitivityProps, SearchPatternTypeProps } from '..'
+import { ParsedSearchQueryProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
@@ -22,8 +25,7 @@ import {
     setSearchPatternType,
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
-import { canSubmitSearch, submitSearch, SubmitSearchParameters } from '../helpers'
-import { SearchBox } from '../input/SearchBox'
+import { canSubmitSearch, submitSearch } from '../helpers'
 import { useSearchOnboardingTour } from '../input/SearchOnboardingTour'
 import { QuickLinks } from '../QuickLinks'
 

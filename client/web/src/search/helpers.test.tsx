@@ -1,9 +1,9 @@
 import * as H from 'history'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { SearchType } from '@sourcegraph/shared/src/search/stream'
 
-import { getSearchTypeFromQuery, toggleSearchType, toggleSubquery, submitSearch } from './helpers'
-import { SearchType } from './results/StreamingSearchResults'
+import { getSearchTypeFromQuery, toggleSearchType, submitSearch } from './helpers'
 
 describe('search/helpers', () => {
     describe('submitSearch()', () => {
@@ -104,20 +104,6 @@ describe('search/helpers', () => {
             expect(toggleSearchType('test type:symbol type:commit repo:^sourcegraph/test', 'diff')).toEqual(
                 'test type:diff type:commit repo:^sourcegraph/test'
             )
-        })
-    })
-
-    describe('toggleSearchFilter', () => {
-        it('adds filter if it is not already in query', () => {
-            expect(toggleSubquery('repo:test ', 'lang:c++')).toStrictEqual('repo:test lang:c++ ')
-        })
-
-        it('adds filter if it is not already in query, even if it matches substring for an existing filter', () => {
-            expect(toggleSubquery('repo:test lang:c++ ', 'lang:c')).toStrictEqual('repo:test lang:c++ lang:c ')
-        })
-
-        it('removes filter from query it it exists', () => {
-            expect(toggleSubquery('repo:test lang:c++ lang:c ', 'lang:c')).toStrictEqual('repo:test lang:c++')
         })
     })
 })
