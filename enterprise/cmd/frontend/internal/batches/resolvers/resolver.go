@@ -359,7 +359,7 @@ func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID)
 	}
 
 	if id == 0 {
-		return nil, ErrIDIsZero{}
+		return nil, nil
 	}
 
 	w, err := r.store.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: id})
@@ -1693,13 +1693,37 @@ func (r *Resolver) CancelBatchSpecWorkspaceExecution(ctx context.Context, args *
 	return nil, errors.New("not implemented yet")
 }
 
-func (r *Resolver) RetryBatchSpecExecution(ctx context.Context, args *graphqlbackend.RetryBatchSpecExecutionArgs) (*graphqlbackend.EmptyResponse, error) {
-	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) RetryBatchSpecExecution(ctx context.Context, args *graphqlbackend.RetryBatchSpecExecutionArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.RetryBatchSpecExecution", fmt.Sprintf("BatchSpec: %+v", args.BatchSpec))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
-	// TODO(ssbc): not implemented
-	return nil, errors.New("not implemented yet")
+
+	batchSpecRandID, err := unmarshalBatchSpecID(args.BatchSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	if batchSpecRandID == "" {
+		return nil, ErrIDIsZero{}
+	}
+
+	// 🚨 SECURITY: RetryBatchSpecExecution checks whether current user is authorized
+	// and has access to namespace.
+	svc := service.New(r.store)
+	if err = svc.RetryBatchSpecExecution(ctx, service.RetryBatchSpecExecutionOpts{
+		BatchSpecRandID:  batchSpecRandID,
+		IncludeCompleted: args.IncludeCompleted,
+	}); err != nil {
+		return nil, err
+	}
+
+	return r.batchSpecByID(ctx, args.BatchSpec)
 }
 
 func (r *Resolver) EnqueueBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.EnqueueBatchSpecWorkspaceExecutionArgs) (*graphqlbackend.EmptyResponse, error) {
