@@ -1522,10 +1522,16 @@ func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlback
 		return nil, err
 	}
 
+	batchChangeID, err := unmarshalBatchChangeID(*args.BatchChange)
+	if err != nil {
+		return nil, err
+	}
+
 	svc := service.New(r.store)
 	batchSpec, err := svc.CreateBatchSpecFromRaw(ctx, service.CreateBatchSpecFromRawOpts{
 		// TODO: Handle namespace like for CreateEmptyBatchChange
 		NamespaceUserID:  actor.FromContext(ctx).UID,
+		BatchChangeID:    batchChangeID,
 		RawSpec:          args.BatchSpec,
 		AllowIgnored:     args.AllowIgnored,
 		AllowUnsupported: args.AllowUnsupported,

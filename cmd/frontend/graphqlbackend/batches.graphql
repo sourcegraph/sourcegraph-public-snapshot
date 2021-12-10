@@ -1362,8 +1362,8 @@ extend type Mutation {
         allowIgnored: Boolean = false
 
         """
-        If true, repos on unsupported codehosts will be included. Resulting changesets in these repos cannot
-        be published.
+        If true, repos on unsupported codehosts will be included. Resulting changesets in
+        these repos cannot be published.
         """
         allowUnsupported: Boolean = false
 
@@ -1382,12 +1382,22 @@ extend type Mutation {
         noCache: Boolean = false
 
         """
-        The namespace (either a user or organization). A batch spec can only be applied to (or
-        used to create) batch changes in this namespace.
+        The namespace (either a user or organization). A batch spec can only be applied to
+        (or used to create) batch changes in this namespace.
 
         Defaults to the user who created the batch spec.
+
+        TODO: Not implemented yet.
         """
         namespace: ID
+
+        """
+        The existing batch change that the new batch spec should be associated with, if
+        one exists.
+
+        If provided, the argument for `namespace` will be ignored.
+        """
+        batchChange: ID
     ): BatchSpec!
 
     """

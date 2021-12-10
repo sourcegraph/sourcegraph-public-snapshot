@@ -311,6 +311,8 @@ type CreateBatchSpecFromRawOpts struct {
 	AllowIgnored     bool
 	AllowUnsupported bool
 	NoCache          bool
+
+	BatchChangeID int64
 }
 
 // CreateBatchSpecFromRaw creates the BatchSpec.
@@ -344,6 +346,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 
 	return spec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
 		spec:             spec,
+		batchChangeID:    opts.BatchChangeID,
 		allowIgnored:     opts.AllowIgnored,
 		allowUnsupported: opts.AllowUnsupported,
 		noCache:          opts.NoCache,
@@ -352,14 +355,16 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 
 type createBatchSpecForExecutionOpts struct {
 	spec             *btypes.BatchSpec
+	batchChangeID    int64
 	allowUnsupported bool
 	allowIgnored     bool
 	noCache          bool
 }
 
-// createBatchSpecForExecution persists the given BatchSpec in the given
-// transaction, possibly creating ChangesetSpecs if the spec contains
-// importChangesets statements, and finally creating a BatchSpecResolutionJob.
+// createBatchSpecForExecution persists the given BatchSpec in the given transaction,
+// possibly creating ChangesetSpecs if the spec contains importChangesets statements,
+// possibly updating a BatchChange to point to this new spec, and finally creating a
+// BatchSpecResolutionJob.
 func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Store, opts createBatchSpecForExecutionOpts) error {
 	opts.spec.CreatedFromRaw = true
 	opts.spec.AllowIgnored = opts.allowIgnored
@@ -368,6 +373,19 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 
 	if err := tx.CreateBatchSpec(ctx, opts.spec); err != nil {
 		return err
+	}
+
+	if opts.batchChangeID != 0 {
+		batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: opts.batchChangeID})
+		if err != nil {
+			return errors.Wrap(err, "getting batch change")
+		}
+
+		batchChange.BatchSpecID = opts.spec.ID
+
+		if err := tx.UpdateBatchChange(ctx, batchChange); err != nil {
+			return err
+		}
 	}
 
 	// Return spec and enqueue resolution

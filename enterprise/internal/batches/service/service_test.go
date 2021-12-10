@@ -1515,6 +1515,42 @@ func TestService(t *testing.T) {
 			}
 		})
 
+		t.Run("success, with existing batch change", func(t *testing.T) {
+			// Existing batch change needs an existing batch spec
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			batchChange := &btypes.BatchChange{
+				Name:            "my-cool-change",
+				NamespaceUserID: admin.ID,
+				BatchSpecID:     spec.ID,
+			}
+
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+
+			newSpec, err := svc.CreateBatchSpecFromRaw(ctx, CreateBatchSpecFromRawOpts{
+				RawSpec:         ct.TestRawBatchSpecYAML,
+				NamespaceUserID: admin.ID,
+				BatchChangeID:   batchChange.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			batchChange, err = s.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChange.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if batchChange.BatchSpecID != newSpec.ID {
+				t.Fatalf("batch change has wrong batch spec ID. want=%d, have=%d", newSpec.ID, batchChange.BatchSpecID)
+			}
+		})
+
 		t.Run("validation error", func(t *testing.T) {
 			rawSpec := batcheslib.BatchSpec{
 				Name:        "test-batch-change",
