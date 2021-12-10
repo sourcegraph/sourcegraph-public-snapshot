@@ -1619,7 +1619,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			}
 		}()
 
-		services := append(svcs, namespaced_svcs...)
+		services := append(svcs, namespacedSvcs...)
 		want := typestest.GenerateExternalServices(11, services...)
 
 		if err := tx.Upsert(ctx, want...); err != nil {
