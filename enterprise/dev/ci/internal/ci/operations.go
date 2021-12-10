@@ -40,47 +40,47 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		// lightweight check that works over a lot of stuff - we are okay with running
 		// these on all PRs
 		addPrettier,
-		addCheck,
+		// addCheck,
 	})
 
 	if runAll || changedFiles.AffectsClient() || changedFiles.AffectsGraphQL() {
 		// If there are any Graphql changes, they are impacting the client as well.
 		ops.Append(
-			clientIntegrationTests,
-			clientChromaticTests(opts.ChromaticShouldAutoAccept),
-			frontendTests,   // ~4.5m
-			addWebApp,       // ~3m
-			addBrowserExt,   // ~2m
-			addBrandedTests, // ~1.5m
-			addTsLint,
+		// clientIntegrationTests,
+		// clientChromaticTests(opts.ChromaticShouldAutoAccept),
+		// frontendTests,   // ~4.5m
+		// addWebApp,       // ~3m
+		// addBrowserExt,   // ~2m
+		// addBrandedTests, // ~1.5m
+		// addTsLint,
 		)
 	}
 
-	if runAll || changedFiles.AffectsGo() || changedFiles.AffectsGraphQL() {
-		// If there are any Graphql changes, they are impacting the backend as well.
-		ops.Append(
-			addGoTests,
-		)
+	// if runAll || changedFiles.AffectsGo() || changedFiles.AffectsGraphQL() {
+	// 	// If there are any Graphql changes, they are impacting the backend as well.
+	// 	ops.Append(
+	// 		addGoTests,
+	// 	)
 
-		// If the changes are only in ./dev/sg then we skip the build
-		if runAll || !changedFiles.AffectsSg() {
-			ops.Append(
-				addGoBuild, // ~0.5m
-			)
-		}
-	}
+	// 	// If the changes are only in ./dev/sg then we skip the build
+	// 	if runAll || !changedFiles.AffectsSg() {
+	// 		ops.Append(
+	// 			addGoBuild, // ~0.5m
+	// 		)
+	// 	}
+	// }
 
-	if runAll || changedFiles.AffectsGraphQL() {
-		ops.Append(addGraphQLLint)
-	}
+	// if runAll || changedFiles.AffectsGraphQL() {
+	// 	ops.Append(addGraphQLLint)
+	// }
 
-	if runAll || changedFiles.AffectsDockerfiles() {
-		ops.Append(addDockerfileLint)
-	}
+	// if runAll || changedFiles.AffectsDockerfiles() {
+	// 	ops.Append(addDockerfileLint)
+	// }
 
-	if runAll || changedFiles.AffectsDocs() {
-		ops.Append(addDocs)
-	}
+	// if runAll || changedFiles.AffectsDocs() {
+	// 	ops.Append(addDocs)
+	// }
 
 	return &ops
 }
@@ -100,6 +100,7 @@ func addCheck(pipeline *bk.Pipeline) {
 // yarn ~41s + ~30s
 func addPrettier(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: Prettier",
+		bk.Parallelism(50),
 		bk.Cmd("dev/ci/yarn-run.sh prettier-check"))
 }
 
