@@ -1,7 +1,7 @@
 import { Optional } from 'utility-types'
 
-import { SectionID as NoResultsSectionID } from '../../search/results/NoResultsPage'
-import { SectionID } from '../../search/results/sidebar/SearchSidebar'
+import { SectionID as NoResultsSectionID } from '@sourcegraph/branded/src/search/results/NoResultsPage'
+import { SectionID } from '@sourcegraph/branded/src/search/results/sidebar/SearchSidebar'
 
 /**
  * Schema for temporary settings.

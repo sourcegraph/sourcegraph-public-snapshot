@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
 
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Checkbox } from '@sourcegraph/wildcard'
 
-import { useTemporarySetting } from '../settings/temporary/useTemporarySetting'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { SurveyRatingRadio } from './SurveyRatingRadio'
