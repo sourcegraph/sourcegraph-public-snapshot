@@ -1,13 +1,14 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
+import create from 'zustand'
 
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { QuickLink, SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
+import { SearchQueryState } from '@sourcegraph/shared/src/search/searchQueryState'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-
-import { WebStory } from '../../../components/WebStory'
-import { SearchPatternType } from '../../../graphql-operations'
-import { QuickLink, SearchScope } from '../../../schema/settings.schema'
 
 import { SearchSidebar, SearchSidebarProps } from './SearchSidebar'
 
@@ -19,12 +20,25 @@ const { add } = storiesOf('web/search/results/sidebar/SearchSidebar', module).ad
     chromatic: { viewports: [544, 577, 993] },
 })
 
+const mockUseQueryState = create<SearchQueryState>((set, get) => ({
+    queryState: { query: '' },
+    setQueryState: queryStateUpdate => {
+        if (typeof queryStateUpdate === 'function') {
+            set({ queryState: queryStateUpdate(get().queryState) })
+        } else {
+            set({ queryState: queryStateUpdate })
+        }
+    },
+    submitSearch: () => {},
+}))
+
 const defaultProps: SearchSidebarProps = {
     caseSensitive: false,
     patternType: SearchPatternType.literal,
     selectedSearchContextSpec: 'global',
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,
+    useQueryState: mockUseQueryState,
 }
 
 const quicklinks: QuickLink[] = [
@@ -111,10 +125,10 @@ const filters: Filter[] = [
     })),
 ]
 
-add('empty sidebar', () => <WebStory>{() => <SearchSidebar {...defaultProps} />}</WebStory>)
+add('empty sidebar', () => <BrandedStory>{() => <SearchSidebar {...defaultProps} />}</BrandedStory>)
 
 add('with everything', () => (
-    <WebStory>
+    <BrandedStory>
         {() => (
             <SearchSidebar
                 {...defaultProps}
@@ -122,5 +136,5 @@ add('with everything', () => (
                 filters={filters}
             />
         )}
-    </WebStory>
+    </BrandedStory>
 ))

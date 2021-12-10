@@ -1,16 +1,17 @@
 import { MockedResponse } from '@apollo/client/testing'
 import { GraphQLError } from 'graphql'
 
+import { RevisionsProps } from '@sourcegraph/branded/src/search/results/sidebar/Revisions'
+import { GitRefType } from '@sourcegraph/shared/src/graphql-operations'
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
 
-import { GitRefType } from '../../../../../shared/src/graphql-operations'
 import {
     SearchSidebarGitRefsResult,
     // SearchSidebarGitRefsVariables,
     SearchSidebarGitRefFields,
 } from '../../../graphql-operations'
 
-import { GIT_REVS_QUERY, RevisionsProps } from './Revisions'
+import { GIT_REVS_QUERY } from './Revisions'
 
 export const MOCK_PROPS: RevisionsProps = {
     query: '',

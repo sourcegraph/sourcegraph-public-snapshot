@@ -1,3 +1,5 @@
+import { SearchPatternType } from '../graphql/schema'
+
 import { QueryState, SubmitSearchParameters, toggleSubquery } from './helpers'
 import { FilterType } from './query/filters'
 import { appendFilter, updateFilter } from './query/transformer'
@@ -5,23 +7,43 @@ import { filterExists } from './query/validate'
 
 // Implemented in /web as navbar query state, /vscode as webview query state.
 export interface SearchQueryState {
+    // DATA
     /**
-     * The current search query (usually visible in the main search input).
+     * The current seach query and auxiliary information needed by the
+     * MonacoQueryInput component. You most likely don't have to read this value
+     * directly.
+     * See {@link QueryState} for more information.
      */
     queryState: QueryState
+    searchCaseSensitivity: boolean
+    searchPatternType: SearchPatternType
+
+    // ACTIONS
+    /**
+     * setQueryState updates `queryState`
+     */
     setQueryState: (queryState: QueryStateUpdate) => void
+
     /**
      * submitSearch makes it possible to submit a new search query by updating
      * the current query via update directives. It won't submit the query if it
      * is empty.
+     * Note that this won't update `queryState` directly.
      */
-    submitSearch: (parameters: Omit<SubmitSearchParameters, 'query'>, updates?: QueryUpdate[]) => void
+    submitSearch: (
+        parameters: Omit<SubmitSearchParameters, 'query' | 'caseSensitive' | 'patternType'>,
+        updates?: QueryUpdate[]
+    ) => void
 }
 
 type QueryStateUpdate = QueryState | ((queryState: QueryState) => QueryState)
 
 export type QueryUpdate =
-    | {
+    | /**
+     * Appends a filter to the current search query. If the filter is unique and
+     * already exists in the query, the update is ignored.
+     */
+    {
           type: 'appendFilter'
           field: FilterType
           value: string
@@ -31,12 +53,15 @@ export type QueryUpdate =
            */
           unique?: true
       }
+    /**
+     * Appends or updates a filter to/in the query.
+     */
     | {
           type: 'updateOrAppendFilter'
           field: FilterType
           value: string
       }
-    // Only exists for the filters from the serach sidebar since they come in
+    // Only exists for the filters from the search sidebar since they come in
     // filter:value form. Should not be used elsewhere.
     | {
           type: 'toggleSubquery'
@@ -58,4 +83,12 @@ export function updateQuery(query: string, updates: QueryUpdate[]): string {
         }
         return query
     }, query)
+}
+
+export interface BuildSearchQueryURLParameters {
+    query: string
+    patternType?: SearchPatternType
+    caseSensitive?: boolean
+    searchContextSpec?: string
+    searchParametersList?: { key: string; value: string }[]
 }

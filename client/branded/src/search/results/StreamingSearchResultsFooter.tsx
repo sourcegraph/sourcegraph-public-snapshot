@@ -3,8 +3,8 @@ import React from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { StreamingProgressCount } from '@sourcegraph/branded/src/search/results/progress/StreamingProgressCount'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 export const StreamingSearchResultFooter: React.FunctionComponent<{
     results?: AggregateStreamingSearchResults

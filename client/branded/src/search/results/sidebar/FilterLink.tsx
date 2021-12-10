@@ -1,16 +1,15 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded/src/components/SyntaxHighlightedSearchQuery'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { Button } from '@sourcegraph/wildcard'
-
-import { SyntaxHighlightedSearchQuery } from '../../../components/SyntaxHighlightedSearchQuery'
-import { Settings } from '../../../schema/settings.schema'
 
 import { getFiltersOfKind } from './helpers'
 import styles from './SearchSidebarSection.module.scss'

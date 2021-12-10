@@ -2,24 +2,26 @@ import classNames from 'classnames'
 import React, { useCallback, useMemo } from 'react'
 import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
+import { UseStore } from 'zustand'
 import shallow from 'zustand/shallow'
 
 import { SubmitSearchParameters } from '@sourcegraph/shared/src/search/helpers'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import {
+    BuildSearchQueryURLParameters,
+    QueryUpdate,
+    SearchQueryState,
+} from '@sourcegraph/shared/src/search/searchQueryState'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-
-import { OnboardingTour } from '../../../onboarding-tour/OnboardingTour'
-import { TemporarySettings } from '../../../settings/temporary/TemporarySettings'
-import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
-import { useNavbarQueryState } from '../../../stores'
-import { NavbarQueryState, QueryUpdate } from '../../../stores/navbarSearchQueryState'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'
 import { getQuickLinks } from './QuickLink'
-import { getRevisions } from './Revisions'
+import { RevisionsProps } from './Revisions'
 import { getSearchReferenceFactory } from './SearchReference'
 import styles from './SearchSidebar.module.scss'
 import { SearchSidebarSection } from './SearchSidebarSection'
@@ -31,7 +33,31 @@ export interface SearchSidebarProps
         TelemetryProps {
     filters?: Filter[]
     className?: string
-    showOnboardingTour?: boolean
+
+    /**
+     * Content to render inside sidebar, but before other sections.
+     */
+    prefixContent?: JSX.Element
+
+    /**
+     * Not yet implemented in the VS Code extension (blocked on Apollo Client integration).
+     * */
+    getRevisions?: (revisionsProps: Omit<RevisionsProps, 'query'>) => (query: string) => JSX.Element
+
+    /**
+     * Zustand store. Passed as a prop because there may be different global stores across clients
+     * (e.g. VS Code extension, web app), so the sidebar expects a store with the minimal interface
+     * for search.
+     */
+    useQueryState: UseStore<SearchQueryState>
+
+    buildSearchURLQueryFromQueryState: (queryParameters: BuildSearchQueryURLParameters) => string
+
+    /**
+     * Force search type links to be rendered as buttons.
+     * Used e.g. in the VS Code extension to update search query state.
+     * */
+    forceButton?: boolean
 }
 
 export enum SectionID {
@@ -48,10 +74,10 @@ const selectFromQueryState = ({
     queryState: { query },
     setQueryState,
     submitSearch,
-}: NavbarQueryState): {
+}: SearchQueryState): {
     query: string
-    setQueryState: NavbarQueryState['setQueryState']
-    submitSearch: NavbarQueryState['submitSearch']
+    setQueryState: SearchQueryState['setQueryState']
+    submitSearch: SearchQueryState['submitSearch']
 } => ({
     query,
     setQueryState,
@@ -61,7 +87,7 @@ const selectFromQueryState = ({
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
     const history = useHistory()
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
-    const { query, setQueryState, submitSearch } = useNavbarQueryState(selectFromQueryState, shallow)
+    const { query, setQueryState, submitSearch } = props.useQueryState(selectFromQueryState, shallow)
 
     // Unlike onFilterClicked, this function will always append or update a filter
     const submitQueryWithProps = useCallback(
@@ -139,6 +165,8 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         onNavbarQueryChange: setQueryState,
                         query,
                         selectedSearchContextSpec: props.selectedSearchContextSpec,
+                        forceButton: props.forceButton,
+                        buildSearchURLQueryFromQueryState: props.buildSearchURLQueryFromQueryState,
                     })}
                 </SearchSidebarSection>
                 <SearchSidebarSection
@@ -168,7 +196,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         {repoFilterLinks}
                     </SearchSidebarSection>
                 ) : null}
-                {repoName ? (
+                {repoName && props.getRevisions ? (
                     <SearchSidebarSection
                         sectionId={SectionID.REVISIONS}
                         className={styles.searchSidebarItem}
@@ -178,7 +206,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         showSearch={true}
                         clearSearchOnChange={repoName}
                     >
-                        {getRevisions({ repoName, onFilterClick: submitQueryWithProps })}
+                        {props.getRevisions({ repoName, onFilterClick: submitQueryWithProps })}
                     </SearchSidebarSection>
                 ) : null}
                 <SearchSidebarSection
@@ -221,7 +249,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
 
     return (
         <div className={classNames(styles.searchSidebar, props.className)}>
-            {props.showOnboardingTour && <OnboardingTour className="mb-1" telemetryService={props.telemetryService} />}
+            {props.prefixContent}
             {body}
         </div>
     )

@@ -10,16 +10,19 @@ import { Collapse } from 'reactstrap'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { QueryChangeSource } from '@sourcegraph/shared/src/search/helpers'
+import {
+    createQueryExampleFromString,
+    updateQueryWithFilterAndExample,
+    QueryExample,
+} from '@sourcegraph/shared/src/search/helpers/queryExample'
 import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { SearchQueryState } from '@sourcegraph/shared/src/search/searchQueryState'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { Button } from '@sourcegraph/wildcard'
-
-import { NavbarQueryState } from '../../../stores/navbarSearchQueryState'
-import { QueryChangeSource } from '../../helpers'
-import { createQueryExampleFromString, updateQueryWithFilterAndExample, QueryExample } from '../../helpers/queryExample'
 
 import styles from './SearchReference.module.scss'
 import sidebarStyles from './SearchSidebarSection.module.scss'
@@ -464,7 +467,7 @@ const FilterInfoList = ({ filters, onClick, onExampleClick }: FilterInfoListProp
     </ul>
 )
 
-export interface SearchReferenceProps extends TelemetryProps, Pick<NavbarQueryState, 'setQueryState'> {
+export interface SearchReferenceProps extends TelemetryProps, Pick<SearchQueryState, 'setQueryState'> {
     filter: string
 }
 

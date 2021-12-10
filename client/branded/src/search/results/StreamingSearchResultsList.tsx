@@ -10,7 +10,6 @@ import { Observable } from 'rxjs'
 import { SearchResult } from '@sourcegraph/branded/src/components/SearchResult'
 import { NoResultsPage } from '@sourcegraph/branded/src/search/results/NoResultsPage'
 import { StreamingSearchResultFooter } from '@sourcegraph/branded/src/search/results/StreamingSearchResultsFooter'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
@@ -42,7 +41,6 @@ export interface StreamingSearchResultsListProps
     location?: H.Location
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    authenticatedUser: AuthenticatedUser | null
     footerClassName?: string
     /** Available to web app through JS Context */
     assetsRoot?: string
@@ -65,8 +63,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     isLightTheme,
     isSourcegraphDotCom,
     searchContextsEnabled,
-    selectedSearchContextSpec,
-    authenticatedUser,
     platformContext,
     footerClassName,
     assetsRoot,

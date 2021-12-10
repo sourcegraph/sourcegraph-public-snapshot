@@ -2,22 +2,30 @@ import classNames from 'classnames'
 import React, { ReactElement, useCallback } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search/helpers'
+import {
+    createQueryExampleFromString,
+    updateQueryWithFilterAndExample,
+} from '@sourcegraph/shared/src/search/helpers/queryExample'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { containsLiteralOrPattern } from '@sourcegraph/shared/src/search/query/validate'
+import { BuildSearchQueryURLParameters } from '@sourcegraph/shared/src/search/searchQueryState'
+import { SearchType } from '@sourcegraph/shared/src/search/stream'
 import { Button } from '@sourcegraph/wildcard'
-
-import { SearchContextProps } from '../..'
-import { buildSearchURLQueryFromQueryState } from '../../../stores'
-import { QueryChangeSource, QueryState } from '../../helpers'
-import { createQueryExampleFromString, updateQueryWithFilterAndExample } from '../../helpers/queryExample'
-import { SearchType } from '../StreamingSearchResults'
 
 import styles from './SearchSidebarSection.module.scss'
 
 export interface SearchTypeLinksProps extends Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     query: string
     onNavbarQueryChange: (queryState: QueryState) => void
+    buildSearchURLQueryFromQueryState: (queryParameters: BuildSearchQueryURLParameters) => string
+    /**
+     * Force search type links to be rendered as buttons.
+     * Used e.g. in the VS Code extension to update search query state.
+     * */
+    forceButton?: boolean
 }
 
 interface SearchTypeLinkProps extends SearchTypeLinksProps {
@@ -33,6 +41,7 @@ const SearchTypeLink: React.FunctionComponent<SearchTypeLinkProps> = ({
     type,
     query,
     selectedSearchContextSpec,
+    buildSearchURLQueryFromQueryState,
     children,
 }) => {
     const builtURLQuery = buildSearchURLQueryFromQueryState({
@@ -83,7 +92,7 @@ const SearchSymbol: React.FunctionComponent<Omit<SearchTypeLinkProps, 'type'>> =
         })
     }, [query, onNavbarQueryChange])
 
-    if (containsLiteralOrPattern(query)) {
+    if (!props.forceButton && containsLiteralOrPattern(query)) {
         return (
             <SearchTypeLink {...props} type={type}>
                 {props.children}
@@ -111,6 +120,14 @@ export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] 
         })
     }
 
+    function updateQueryWithType(type: string): void {
+        props.onNavbarQueryChange({
+            query: updateFilter(props.query, FilterType.type, type),
+        })
+    }
+
+    const SearchTypeLinkOrButton = props.forceButton ? SearchTypeButton : SearchTypeLink
+
     return [
         <SearchTypeButton onClick={updateQueryWithRepoExample} key="repo">
             Search repos by org or name
@@ -118,11 +135,11 @@ export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] 
         <SearchSymbol {...props} key="symbol">
             Find a symbol
         </SearchSymbol>,
-        <SearchTypeLink {...props} type="diff" key="diff">
+        <SearchTypeLinkOrButton {...props} type="diff" key="diff" onClick={() => updateQueryWithType('diff')}>
             Search diffs
-        </SearchTypeLink>,
-        <SearchTypeLink {...props} type="commit" key="commit">
+        </SearchTypeLinkOrButton>,
+        <SearchTypeLinkOrButton {...props} type="commit" key="commit" onClick={() => updateQueryWithType('commit')}>
             Search commit messages
-        </SearchTypeLink>,
+        </SearchTypeLinkOrButton>,
     ]
 }

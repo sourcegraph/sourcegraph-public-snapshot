@@ -1,10 +1,11 @@
 import { cleanup, within, fireEvent } from '@testing-library/react'
 import React from 'react'
 
+import { RevisionsProps } from '@sourcegraph/branded/src/search/results/sidebar/Revisions'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
-import { Revisions, RevisionsProps } from './Revisions'
+import { Revisions } from './Revisions'
 import { DEFAULT_MOCKS, MOCK_PROPS } from './Revisions.mocks'
 
 describe('Search Sidebar > Revisions', () => {
