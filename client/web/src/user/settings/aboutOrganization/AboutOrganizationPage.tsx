@@ -1,10 +1,11 @@
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
+
 import React, { useEffect } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SelfHostedCta } from '@sourcegraph/web/src/components/SelfHostedCta'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import styles from './AboutOrganizationPage.module.scss'
 
