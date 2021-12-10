@@ -2,7 +2,7 @@ import { Meta } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/out/src/telemetry/telemetryService'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { LINE_CHART_WITH_HUGE_NUMBER_OF_LINES } from '../../../../../../views/mocks/charts-content'
