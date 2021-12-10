@@ -12,8 +12,7 @@ import {
 } from '../../../../views/mocks/charts-content'
 import { CodeInsightsBackendContext } from '../../core/backend/code-insights-backend-context'
 import { CodeInsightsSettingsCascadeBackend } from '../../core/backend/setting-based-api/code-insights-setting-cascade-backend'
-import { Insight, InsightExecutionType, InsightType } from '../../core/types'
-import { SearchBackendBasedInsight } from '../../core/types/insight/search-insight'
+import { BackendInsight, Insight, InsightExecutionType, InsightType, isCaptureGroupInsight } from '../../core/types'
 import { SETTINGS_CASCADE_MOCK } from '../../mocks/settings-cascade'
 
 import { SmartInsightsViewGrid } from './SmartInsightsViewGrid'
@@ -49,8 +48,12 @@ class CodeInsightsStoryBackend extends CodeInsightsSettingsCascadeBackend {
         super(SETTINGS_CASCADE_MOCK, {} as any)
     }
 
-    public getBackendInsightData = (input: SearchBackendBasedInsight) =>
-        of({
+    public getBackendInsightData = (input: BackendInsight) => {
+        if (isCaptureGroupInsight(input)) {
+            throw new Error('This demo does not support capture group insight')
+        }
+
+        return of({
             id: input.id,
             view: {
                 title: 'Backend Insight Mock',
@@ -59,6 +62,7 @@ class CodeInsightsStoryBackend extends CodeInsightsSettingsCascadeBackend {
                 isFetchingHistoricalData: false,
             },
         })
+    }
 }
 
 const codeInsightsApi = new CodeInsightsStoryBackend()
@@ -168,15 +172,19 @@ class StoryBackendWithManyLinesCharts extends CodeInsightsSettingsCascadeBackend
         super(SETTINGS_CASCADE_MOCK, {} as any)
     }
 
-    public getBackendInsightData = (input: SearchBackendBasedInsight) =>
-        of({
-            id: input.id,
+    public getBackendInsightData = (insight: BackendInsight) => {
+        if (isCaptureGroupInsight(insight)) {
+            throw new Error('This demo does not support capture group insight')
+        }
+
+        return of({
+            id: insight.id,
             view: {
                 title: 'Backend Insight Mock',
                 subtitle: 'Backend insight description text',
                 content: [
-                    input.series.length >= 6
-                        ? input.series.length >= 15
+                    insight.series.length >= 6
+                        ? insight.series.length >= 15
                             ? LINE_CHART_WITH_HUGE_NUMBER_OF_LINES
                             : LINE_CHART_WITH_MANY_LINES
                         : LINE_CHART_CONTENT_MOCK,
@@ -184,6 +192,7 @@ class StoryBackendWithManyLinesCharts extends CodeInsightsSettingsCascadeBackend
                 isFetchingHistoricalData: false,
             },
         })
+    }
 }
 
 const codeInsightsApiWithManyLines = new StoryBackendWithManyLinesCharts()
