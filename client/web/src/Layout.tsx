@@ -16,7 +16,6 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { BatchChangesProps } from './batches'
-import { CodeMonitoringProps } from './code-monitoring'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
@@ -83,7 +82,6 @@ export interface LayoutProps
         SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,
-        CodeMonitoringProps,
         UserExternalServicesOrRepositoriesUpdateProps,
         CodeIntelligenceProps,
         BatchChangesProps,

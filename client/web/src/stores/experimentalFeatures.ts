@@ -6,6 +6,7 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { SettingsExperimentalFeatures } from '../schema/settings.schema'
 
 const defaultSettings: SettingsExperimentalFeatures = {
+    codeMonitoring: true,
     showEnterpriseHomePanels: true,
     /**
      * Whether we show the mulitiline editor at /search/console

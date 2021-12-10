@@ -16,6 +16,7 @@ import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
+import { useExperimentalFeatures } from '../stores'
 import { ThemePreference } from '../stores/themeState'
 
 import { GlobalNavbar } from './GlobalNavbar'
@@ -58,7 +59,6 @@ const defaultProps = (
     batchChangesEnabled: true,
     batchChangesExecutionEnabled: true,
     batchChangesWebhookLogsEnabled: true,
-    enableCodeMonitoring: true,
     activation: undefined,
     routes: [],
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
@@ -69,7 +69,10 @@ const defaultProps = (
     extensionViews: () => null,
 })
 
-const { add } = storiesOf('web/nav/GlobalNav', module)
+const { add } = storiesOf('web/nav/GlobalNav', module).addDecorator(Story => {
+    useExperimentalFeatures.setState({ codeMonitoring: true })
+    return <Story />
+})
 
 add('Anonymous viewer', () => (
     <WebStory>

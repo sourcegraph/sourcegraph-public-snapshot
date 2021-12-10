@@ -101,13 +101,11 @@ add('Cloud with notebook onboarding', () => (
 
 add('Server without panels', () => <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} />}</WebStory>)
 
-add('Server with panels', () => {
-    return (
-        <WebStory>
-            {webProps => {
-                useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
-                return <SearchPage {...defaultProps(webProps)} />
-            }}
-        </WebStory>
-    )
-})
+add('Server with panels', () => (
+    <WebStory>
+        {webProps => {
+            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
+            return <SearchPage {...defaultProps(webProps)} />
+        }}
+    </WebStory>
+))

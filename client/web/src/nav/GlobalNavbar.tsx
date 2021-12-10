@@ -29,7 +29,6 @@ import { ProductStatusBadge } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
-import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { CodeInsightsProps } from '../insights/types'
@@ -70,7 +69,6 @@ interface Props
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
         SearchContextInputProps,
-        CodeMonitoringProps,
         CodeInsightsProps,
         BatchChangesProps {
     history: H.History
@@ -145,6 +143,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext)
+    const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring)
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -220,7 +219,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             },
                         ]}
                     />
-                    {props.enableCodeMonitoring && (
+                    {enableCodeMonitoring && (
                         <NavItem icon={CodeMonitoringLogo}>
                             <NavLink to="/code-monitoring">Monitoring</NavLink>
                         </NavItem>

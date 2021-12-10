@@ -12,7 +12,7 @@ import {
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { SearchPatternType } from '../graphql-operations'
-import { useNavbarQueryState } from '../stores'
+import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreference } from '../stores/themeState'
 
 import { GlobalNavbar } from './GlobalNavbar'
@@ -39,7 +39,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     batchChangesEnabled: false,
     batchChangesExecutionEnabled: false,
     batchChangesWebhookLogsEnabled: false,
-    enableCodeMonitoring: false,
     telemetryService: {} as any,
     isExtensionAlertAnimating: false,
     showSearchBox: true,
@@ -64,6 +63,7 @@ describe('GlobalNavbar', () => {
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
     beforeEach(() => {
         useNavbarQueryState.setState({ searchCaseSensitivity: false })
+        useExperimentalFeatures.setState({ codeMonitoring: false })
     })
 
     test('default', () => {

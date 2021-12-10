@@ -174,11 +174,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     globbing: boolean
 
     /**
-     * Whether the code monitoring feature flag is enabled.
-     */
-    enableCodeMonitoring: boolean
-
-    /**
      * Whether the API docs feature flag is enabled.
      */
     enableAPIDocs: boolean
@@ -252,7 +247,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             hasUserSyncedPublicRepositories: false,
             hasUserAddedExternalServices: false,
             globbing: false,
-            enableCodeMonitoring: false,
             // Disabling linter here as otherwise the application fails to compile. Bad lint?
             // See 7a137b201330eb2118c746f8cc5acddf63c1f039
             // eslint-disable-next-line react/no-unused-state
@@ -467,7 +461,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                                                     defaultSearchContextSpec={this.state.defaultSearchContextSpec}
                                                     globbing={this.state.globbing}
-                                                    enableCodeMonitoring={this.state.enableCodeMonitoring}
                                                     isCodeInsightsGqlApiEnabled={
                                                         window.context.codeInsightsGqlApiEnabled
                                                     }
