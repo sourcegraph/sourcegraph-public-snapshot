@@ -107,7 +107,7 @@ export function useAsyncValidation<FieldValue>(
                     const validity = inputElement?.validity ?? null
 
                     if (validationMessage) {
-                        inputElement?.setCustomValidity?.(`${validationMessage}`)
+                        inputElement?.setCustomValidity?.(validationMessage)
                         onValidationChangeReference.current?.({
                             validState: 'INVALID',
                             error: validationMessage,

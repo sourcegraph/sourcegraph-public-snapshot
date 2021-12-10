@@ -118,9 +118,7 @@ export function useField<FormValues, Key extends keyof FormAPI<FormValues>['init
             // [1] Custom error message or fallback on native error message
             const validationMessage = customValidation || nativeErrorMessage
 
-            if (typeof validationMessage === 'string') {
-                inputElement?.setCustomValidity?.(validationMessage)
-            }
+            inputElement?.setCustomValidity?.(validationMessage)
 
             return setState(state => ({
                 ...state,
