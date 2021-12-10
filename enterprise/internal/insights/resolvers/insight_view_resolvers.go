@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/service"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
@@ -153,8 +155,8 @@ func filterRepositories(filters types.InsightViewFilters, repositories []string)
 
 func expandCaptureGroupSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
 	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
-	interval := query.TimeInterval{
-		Unit:  definition.SampleIntervalUnit,
+	interval := timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
 		Value: definition.SampleIntervalValue,
 	}
 
