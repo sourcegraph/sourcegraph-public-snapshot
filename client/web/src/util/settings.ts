@@ -5,7 +5,6 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../auth'
 import { LayoutProps } from '../Layout'
-import { SettingsExperimentalFeatures } from '../schema/settings.schema'
 import { parseSearchURLPatternType } from '../search'
 
 /** A fallback settings subject that can be constructed synchronously at initialization time. */
@@ -57,23 +56,4 @@ export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascad
         return defaultCaseSensitive || false
     }
     return false
-}
-
-export function experimentalFeaturesFromSettings(
-    settingsCascade: SettingsCascadeOrError
-): {
-    enableAPIDocs: boolean
-} {
-    const experimentalFeatures: SettingsExperimentalFeatures =
-        (settingsCascade.final && !isErrorLike(settingsCascade.final) && settingsCascade.final.experimentalFeatures) ||
-        {}
-
-    const {
-        // eslint-disable-next-line unicorn/prevent-abbreviations
-        apiDocs = true, // Default to true if not set
-    } = experimentalFeatures
-
-    return {
-        enableAPIDocs: apiDocs,
-    }
 }

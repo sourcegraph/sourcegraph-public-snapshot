@@ -99,12 +99,7 @@ import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { UserSessionStores } from './UserSessionStores'
 import { globbingEnabledFromSettings } from './util/globbing'
 import { observeLocation } from './util/location'
-import {
-    siteSubjectNoAdmin,
-    viewerSubjectFromSettings,
-    defaultPatternTypeFromSettings,
-    experimentalFeaturesFromSettings,
-} from './util/settings'
+import { siteSubjectNoAdmin, viewerSubjectFromSettings, defaultPatternTypeFromSettings } from './util/settings'
 
 export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
@@ -172,11 +167,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether globbing is enabled for filters.
      */
     globbing: boolean
-
-    /**
-     * Whether the API docs feature flag is enabled.
-     */
-    enableAPIDocs: boolean
 
     /**
      * Evaluated feature flags for the current viewer
@@ -247,10 +237,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             hasUserSyncedPublicRepositories: false,
             hasUserAddedExternalServices: false,
             globbing: false,
-            // Disabling linter here as otherwise the application fails to compile. Bad lint?
-            // See 7a137b201330eb2118c746f8cc5acddf63c1f039
-            // eslint-disable-next-line react/no-unused-state
-            enableAPIDocs: false,
             featureFlags: new Map<FeatureFlagName, boolean>(),
         }
     }
@@ -284,7 +270,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     this.setState(state => ({
                         settingsCascade,
                         authenticatedUser,
-                        ...experimentalFeaturesFromSettings(settingsCascade),
                         globbing: globbingEnabledFromSettings(settingsCascade),
                         searchPatternType: defaultPatternTypeFromSettings(settingsCascade) || state.searchPatternType,
                         viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
