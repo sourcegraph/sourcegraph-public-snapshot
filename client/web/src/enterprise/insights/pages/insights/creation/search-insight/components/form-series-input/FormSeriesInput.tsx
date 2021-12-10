@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useCallback, useState } from 'react'
+import React from 'react'
 import { noop } from 'rxjs'
 
 import { Button } from '@sourcegraph/wildcard/src'
@@ -11,9 +11,6 @@ import { MonacoField } from '../../../../../../components/form/monaco-field/Mona
 import { createRequiredValidator } from '../../../../../../components/form/validators'
 import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
-
-import { searchQueryValidator, Checks } from './search-query-validator'
-import { SearchQueryChecks } from './SearchQueryChecks'
 
 const requiredNameField = createRequiredValidator('Name is a required field for data series.')
 const validQuery = createRequiredValidator('Query is a required field for data series.')
@@ -77,45 +74,6 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
     const hasNameControlledValue = !!name
     const hasQueryControlledValue = !!query
 
-    // Search query validators
-    const [checks, setChecks] = useState<Checks>({
-        isValidRegex: false,
-        isValidOperator: false,
-        isValidPatternType: false,
-        isNotRepoOrFile: false,
-        isNotCommitOrDiff: false,
-        isNoRepoFilter: false,
-    })
-
-    const {
-        isValidOperator,
-        isValidRegex,
-        isValidPatternType,
-        isNotRepoOrFile,
-        isNotCommitOrDiff,
-        isNoRepoFilter,
-    } = checks
-
-    const validateChecks = useCallback(
-        (value: string | undefined) => {
-            if (!value) {
-                return validQuery(value)
-            }
-            const validatedChecks = searchQueryValidator(value, {
-                isValidOperator,
-                isValidRegex,
-                isValidPatternType,
-                isNotRepoOrFile,
-                isNotCommitOrDiff,
-                isNoRepoFilter,
-            })
-            setChecks(validatedChecks)
-
-            return validQuery(value)
-        },
-        [isValidOperator, isValidRegex, isValidPatternType, isNotRepoOrFile, isNotCommitOrDiff, isNoRepoFilter]
-    )
-
     const { formAPI, handleSubmit, ref } = useForm({
         touched: showValidationErrorsOnMount,
         initialValues: {
@@ -154,7 +112,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
     const queryField = useField({
         name: 'seriesQuery',
         formApi: formAPI,
-        validators: { sync: validateChecks },
+        validators: { sync: validQuery },
         disabled: isSearchQueryDisabled,
     })
 
@@ -183,7 +141,14 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                 description={
                     <span>
-                        {isSearchQueryDisabled && (
+                        {!isSearchQueryDisabled ? (
+                            <>
+                                Do not include the <code>repo:</code> filter; if needed, it will be added automatically.
+                                <br />
+                                Tip: include <code>archived:no</code> and <code>fork:no</code> if you don't want results
+                                from archived or forked repos.
+                            </>
+                        ) : (
                             <>
                                 We don't yet allow editing queries for insights over all repos. To change the query,
                                 make a new insight. This is a known{' '}
@@ -200,12 +165,9 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                 }
                 valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.validState === 'VALID'}
                 error={queryField.meta.touched && queryField.meta.error}
-                errorInputState={queryField.meta.touched && queryField.meta.validState === 'INVALID'}
                 className="mt-4"
                 {...queryField.input}
             />
-
-            <SearchQueryChecks checks={checks} />
 
             <FormColorInput
                 name={`color group of ${index} series`}

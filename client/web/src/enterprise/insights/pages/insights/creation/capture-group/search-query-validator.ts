@@ -17,24 +17,17 @@ export interface Checks {
     isValidPatternType: boolean
     isNotRepoOrFile: boolean
     isNotCommitOrDiff: boolean
-    isNoRepoFilter: boolean
 }
 
-export const searchQueryValidator = (value: string, checks: Checks): Checks => {
+export const searchQueryValidator = (value: string): Checks => {
     const tokens = scanSearchQuery(value)
-    const validatedChecks = { ...checks }
 
     if (tokens.type === 'success') {
         const filters = tokens.term.filter(token => token.type === 'filter') as Filter[]
         const keywords = tokens.term.filter(token => token.type === 'keyword') as Keyword[]
 
-        const hasRepo = filters.some(
-            filter => resolveFilter(filter.field.value)?.type === FilterType.repo && filter.value
-        )
-
-        const hasFile = filters.some(
-            filter => resolveFilter(filter.field.value)?.type === FilterType.file && filter.value
-        )
+        const hasAnd = keywords.some(filter => filter.kind === 'and')
+        const hasOr = keywords.some(filter => filter.kind === 'or')
 
         const hasLiteralPattern = filters.some(
             filter =>
@@ -47,6 +40,14 @@ export const searchQueryValidator = (value: string, checks: Checks): Checks => {
                 filter.value?.value === 'structural'
         )
 
+        const hasRepo = filters.some(
+            filter => resolveFilter(filter.field.value)?.type === FilterType.repo && filter.value
+        )
+
+        const hasFile = filters.some(
+            filter => resolveFilter(filter.field.value)?.type === FilterType.file && filter.value
+        )
+
         const hasCommit = filters.some(
             filter => resolveFilter(filter.field.value)?.type === FilterType.type && filter.value?.value === 'commit'
         )
@@ -55,16 +56,20 @@ export const searchQueryValidator = (value: string, checks: Checks): Checks => {
             filter => resolveFilter(filter.field.value)?.type === FilterType.type && filter.value?.value === 'diff'
         )
 
-        const hasAnd = keywords.some(filter => filter.kind === 'and')
-        const hasOr = keywords.some(filter => filter.kind === 'or')
-
-        validatedChecks.isValidRegex = regexCheck(value)
-        validatedChecks.isNotCommitOrDiff = !hasCommit && !hasDiff
-        validatedChecks.isNoRepoFilter = !hasRepo
-        validatedChecks.isNotRepoOrFile = !hasRepo && !hasFile
-        validatedChecks.isValidPatternType = !hasLiteralPattern && !hasStructuralPattern
-        validatedChecks.isValidOperator = !hasAnd && !hasOr
+        return {
+            isValidRegex: regexCheck(value),
+            isValidOperator: !hasAnd && !hasOr,
+            isValidPatternType: !hasLiteralPattern && !hasStructuralPattern,
+            isNotRepoOrFile: !hasRepo && !hasFile,
+            isNotCommitOrDiff: !hasCommit && !hasDiff,
+        }
     }
 
-    return validatedChecks
+    return {
+        isValidRegex: false,
+        isValidOperator: false,
+        isValidPatternType: false,
+        isNotRepoOrFile: false,
+        isNotCommitOrDiff: false,
+    }
 }

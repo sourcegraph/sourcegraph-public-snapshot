@@ -4,7 +4,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import Info from 'mdi-react/InfoCircleOutlineIcon'
 import React from 'react'
 
-import styles from './FormSeriesInput.module.scss'
+import styles from './SearchQueryChecks.module.scss'
 
 interface SearchQueryChecksProps {
     checks: {
@@ -13,7 +13,6 @@ interface SearchQueryChecksProps {
         isValidPatternType: boolean
         isNotRepoOrFile: boolean
         isNotCommitOrDiff: boolean
-        isNoRepoFilter: boolean
     }
 }
 
@@ -29,11 +28,11 @@ const CheckListItem: React.FunctionComponent<{ valid?: boolean }> = ({ children,
     )
 
 export const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> = ({ checks }) => (
-    <div className={classNames(styles.formSeriesInput)}>
-        <ul className={classNames(['mt-4 text-muted', styles.formSeriesInputSeriesCheck])}>
+    <div className={classNames(styles.formSeriesChecks)}>
+        <ul className={classNames(['mt-4 text-muted', styles.formSeriesChecksSeriesCheck])}>
             <li>
                 <CheckListItem valid={checks.isValidRegex}>
-                    Contains a properly formatted regular expression with at least one capture group
+                    Contains a properly formatted regular expression
                 </CheckListItem>
             </li>
             <li>
@@ -55,11 +54,6 @@ export const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> 
             <li>
                 <CheckListItem valid={checks.isNotCommitOrDiff}>
                     Does not contain <code>commit</code> or <code>diff</code> search
-                </CheckListItem>
-            </li>
-            <li>
-                <CheckListItem valid={checks.isNoRepoFilter}>
-                    Does not contain the <code>repo:</code> filter as it will be added automatically if needed
                 </CheckListItem>
             </li>
         </ul>

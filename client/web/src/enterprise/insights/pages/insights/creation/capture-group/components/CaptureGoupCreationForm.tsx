@@ -13,9 +13,11 @@ import { Form, FORM_ERROR } from '../../../../../components/form/hooks/useForm'
 import { MonacoField } from '../../../../../components/form/monaco-field/MonacoField'
 import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
 import { LinkWithQuery } from '../../../../../components/link-with-query'
+import { searchQueryValidator } from '../search-query-validator'
 import { CaptureGroupFormFields } from '../types'
 
 import { CaptureGroupSeriesInfoBadge } from './info-badge/CaptureGroupSeriesInfoBadge'
+import { SearchQueryChecks } from './SearchQueryChecks'
 
 interface CaptureGroupCreationFormProps {
     mode: 'creation' | 'edit'
@@ -109,9 +111,12 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                         placeholder="Example: file:\.pom$ <java\.version>(.*)</java\.version>"
                         valid={query.meta.touched && query.meta.validState === 'VALID'}
                         error={query.meta.touched && query.meta.error}
+                        errorInputState={query.meta.touched && query.meta.validState === 'INVALID'}
                         className="mb-4"
                         {...query.input}
                     />
+
+                    <SearchQueryChecks checks={searchQueryValidator(query.input.value)} />
 
                     <CaptureGroupSeriesInfoBadge>
                         <b>Name</b> and <b>color</b> of each data series will be generated automatically. Chart will
