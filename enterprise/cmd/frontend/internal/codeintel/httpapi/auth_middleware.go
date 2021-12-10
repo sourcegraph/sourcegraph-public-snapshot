@@ -18,8 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type AuthValidator func(context.Context, url.Values, string) (int, error)
-type AuthValidatorMap = map[string]AuthValidator
+type (
+	AuthValidator    func(context.Context, url.Values, string) (int, error)
+	AuthValidatorMap = map[string]AuthValidator
+)
 
 var DefaultValidatorByCodeHost = AuthValidatorMap{
 	"github.com": enforceAuthViaGitHub,
@@ -36,14 +38,14 @@ var errVerificaitonNotSupported = errors.New("verification not supported for cod
 func authMiddleware(next http.Handler, db dbutil.DB, authValidators AuthValidatorMap, operation *observation.Operation) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		statusCode, err := func() (_ int, err error) {
-			ctx, traceLog, endObservation := operation.WithAndLogger(r.Context(), &err, observation.Args{})
+			ctx, trace, endObservation := operation.WithAndLogger(r.Context(), &err, observation.Args{})
 			defer endObservation(1, observation.Args{})
 
 			// Skip auth check if it's not enabled in the instance's site configuration, if this
 			// user is a site admin (who can upload LSIF to any repository on the instance), or
 			// if the request a subsequent request of a multi-part upload.
 			if !conf.Get().LsifEnforceAuth || isSiteAdmin(ctx, db) || hasQuery(r, "uploadId") {
-				traceLog(log.Event("bypassing code host auth check"))
+				trace.Log(log.Event("bypassing code host auth check"))
 				return 0, nil
 			}
 
@@ -54,13 +56,12 @@ func authMiddleware(next http.Handler, db dbutil.DB, authValidators AuthValidato
 				if !strings.HasPrefix(repositoryName, codeHost) {
 					continue
 				}
-				traceLog(log.String("codeHost", codeHost))
+				trace.Log(log.String("codeHost", codeHost))
 
 				return validator(ctx, query, repositoryName)
 			}
 
 			return http.StatusUnprocessableEntity, errVerificaitonNotSupported
-
 		}()
 		if err != nil {
 			if statusCode >= 500 {

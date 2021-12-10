@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
+	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
+
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -457,4 +460,18 @@ var jobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("num_resets"),
 	sqlf.Sprintf("num_failures"),
 	sqlf.Sprintf("execution_logs"),
+}
+
+// ToQueueJob converts the query execution into a queueable job with it's relevant dependent times.
+func ToQueueJob(q *compression.QueryExecution, seriesID string, query string, cost priority.Cost, jobPriority priority.Priority) *Job {
+	return &Job{
+		SeriesID:        seriesID,
+		SearchQuery:     query,
+		RecordTime:      &q.RecordingTime,
+		Cost:            int(cost),
+		Priority:        int(jobPriority),
+		DependentFrames: q.SharedRecordings,
+		State:           "queued",
+		PersistMode:     string(store.RecordMode),
+	}
 }

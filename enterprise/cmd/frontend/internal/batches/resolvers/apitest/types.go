@@ -223,6 +223,7 @@ type BatchSpec struct {
 	StartedAt      graphqlbackend.DateTime
 	FinishedAt     graphqlbackend.DateTime
 	FailureMessage string
+	ViewerCanRetry bool
 }
 
 type BatchSpecConnection struct {

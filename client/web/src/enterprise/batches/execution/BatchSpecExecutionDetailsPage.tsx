@@ -58,6 +58,7 @@ import {
     fetchBatchSpecWorkspace,
     queryBatchSpecWorkspaces as _queryBatchSpecWorkspaces,
     queryBatchSpecWorkspaceStepFileDiffs,
+    retryBatchSpecExecution,
     retryWorkspaceExecution,
 } from './backend'
 import styles from './BatchSpecExecutionDetailsPage.module.scss'
@@ -108,6 +109,16 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
             setBatchSpecExecution(execution)
         } catch (error) {
             setIsCanceling(asError(error))
+        }
+    }, [batchSpecID])
+
+    const [isRetrying, setIsRetrying] = useState<boolean | Error>(false)
+    const retryExecution = useCallback(async () => {
+        try {
+            const execution = await retryBatchSpecExecution(batchSpecID)
+            setBatchSpecExecution(execution)
+        } catch (error) {
+            setIsRetrying(asError(error))
         }
     }, [batchSpecID])
 
@@ -200,44 +211,60 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                                 </div>
                             </>
                         )}
-                        {(batchSpec.state === BatchSpecState.QUEUED ||
-                            batchSpec.state === BatchSpecState.PROCESSING) && (
-                            <span>
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-secondary"
-                                    onClick={cancelExecution}
-                                    disabled={isCanceling === true}
-                                >
-                                    {isCanceling !== true && <>Cancel</>}
-                                    {isCanceling === true && (
-                                        <>
-                                            <LoadingSpinner className="icon-inline" /> Canceling
-                                        </>
-                                    )}
-                                </button>
-                                {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}
-                            </span>
-                        )}
-                        {batchSpec.applyURL && batchSpec.state === BatchSpecState.COMPLETED && (
-                            <span>
-                                <Link to={batchSpec.applyURL} className="btn btn-primary">
-                                    Preview
-                                </Link>
-                            </span>
-                        )}
-                        {batchSpec.applyURL && batchSpec.state === BatchSpecState.FAILED && (
-                            <span>
-                                <Link
-                                    to={batchSpec.applyURL}
-                                    className="btn btn-outline-warning"
-                                    data-tooltip="Execution didn't finish successfully in all workspaces. The batch spec might have less changeset specs than expected."
-                                >
-                                    <AlertCircleIcon className="icon-inline mb-0 mr-2 text-warning" />
-                                    Preview
-                                </Link>
-                            </span>
-                        )}
+                        <span>
+                            <div className="btn-group-vertical">
+                                {(batchSpec.state === BatchSpecState.QUEUED ||
+                                    batchSpec.state === BatchSpecState.PROCESSING) && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-secondary"
+                                        onClick={cancelExecution}
+                                        disabled={isCanceling === true}
+                                    >
+                                        {isCanceling !== true && <>Cancel</>}
+                                        {isCanceling === true && (
+                                            <>
+                                                <LoadingSpinner className="icon-inline" /> Canceling
+                                            </>
+                                        )}
+                                    </button>
+                                )}
+                                {batchSpec.applyURL && batchSpec.state === BatchSpecState.COMPLETED && (
+                                    <Link to={batchSpec.applyURL} className="btn btn-primary">
+                                        Preview
+                                    </Link>
+                                )}
+                                {batchSpec.viewerCanRetry && batchSpec.state !== BatchSpecState.COMPLETED && (
+                                    // TODO: Add a second button to allow retrying an entire batch spec,
+                                    // including completed jobs.
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-secondary"
+                                        onClick={retryExecution}
+                                        disabled={isRetrying === true}
+                                    >
+                                        {isRetrying !== true && <>Retry failed</>}
+                                        {isRetrying === true && (
+                                            <>
+                                                <LoadingSpinner className="icon-inline" /> Retrying
+                                            </>
+                                        )}
+                                    </button>
+                                )}
+                                {batchSpec.applyURL && batchSpec.state === BatchSpecState.FAILED && (
+                                    <Link
+                                        to={batchSpec.applyURL}
+                                        className="btn btn-outline-warning"
+                                        data-tooltip="Execution didn't finish successfully in all workspaces. The batch spec might have less changeset specs than expected."
+                                    >
+                                        <AlertCircleIcon className="icon-inline mb-0 mr-2 text-warning" />
+                                        Preview
+                                    </Link>
+                                )}
+                            </div>
+                            {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}
+                            {isErrorLike(isRetrying) && <ErrorAlert error={isRetrying} />}
+                        </span>
                     </div>
                 }
                 className="mb-3"

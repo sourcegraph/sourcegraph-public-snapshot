@@ -262,6 +262,7 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
                         onClick={onSelectGettingStarted}
                         className={classNames('nav-link', selectedTab === 'gettingStarted' && 'active')}
                         role="button"
+                        data-testid="test-getting-started-btn"
                     >
                         <span className="text-content" data-tab-content="Getting started">
                             Getting started
