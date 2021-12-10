@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -254,7 +255,14 @@ func (s *DBDashboardStore) AddViewsToDashboard(ctx context.Context, dashboardId 
 	} else if len(viewIds) == 0 {
 		return nil
 	}
-	q := sqlf.Sprintf(insertDashboardInsightViewConnectionsByViewIds, dashboardId, pq.Array(viewIds))
+
+	// Create rows for an inline table which is used to preserve the ordering of the viewIds.
+	orderings := make([]*sqlf.Query, 0, 1)
+	for i, viewId := range viewIds {
+		orderings = append(orderings, sqlf.Sprintf("(%s, %s)", viewId, fmt.Sprintf("%d", i)))
+	}
+
+	q := sqlf.Sprintf(insertDashboardInsightViewConnectionsByViewIds, dashboardId, sqlf.Join(orderings, ","), pq.Array(viewIds))
 	err := s.Exec(ctx, q)
 	if err != nil {
 		return err
@@ -324,7 +332,11 @@ const insertDashboardInsightViewConnectionsByViewIds = `
 INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
     SELECT %s AS dashboard_id, insight_view.id AS insight_view_id
     FROM insight_view
+		JOIN
+			( VALUES %s) as ids (id, ordering)
+		ON ids.id = insight_view.unique_id
     WHERE unique_id = ANY(%s)
+	ORDER BY ids.ordering
 );
 `
 

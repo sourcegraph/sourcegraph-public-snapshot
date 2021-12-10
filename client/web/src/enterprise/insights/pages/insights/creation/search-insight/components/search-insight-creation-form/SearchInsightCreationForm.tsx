@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import React, { FormEventHandler, RefObject, useContext } from 'react'
 
 import { Button } from '@sourcegraph/wildcard'
@@ -102,14 +101,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
     const isGqlBackend = api instanceof CodeInsightsGqlBackend
 
     return (
-        // eslint-disable-next-line react/forbid-elements
-        <form
-            noValidate={true}
-            ref={innerRef}
-            onSubmit={handleSubmit}
-            onReset={onFormReset}
-            className={classNames(className, 'd-flex flex-column')}
-        >
+        <form noValidate={true} ref={innerRef} onSubmit={handleSubmit} onReset={onFormReset} className={className}>
             <FormGroup
                 name="insight repositories"
                 title="Targeted repositories"

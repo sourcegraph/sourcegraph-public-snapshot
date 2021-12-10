@@ -8,6 +8,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -28,7 +29,13 @@ func (h *apiHandler) handleSearchInternal(ctx context.Context, args types.Search
 		log.String("excludePattern", args.ExcludePattern),
 		log.Int("first", args.First),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer func() {
+		endObservation(1, observation.Args{
+			MetricLabelValues: []string{observability.GetParseAmount(ctx)},
+			LogFields:         []log.Field{log.String("parseAmount", observability.GetParseAmount(ctx))},
+		})
+	}()
+	ctx = observability.SeedParseAmount(ctx)
 
 	ctx, cancel := context.WithTimeout(ctx, searchTimeout)
 	defer cancel()

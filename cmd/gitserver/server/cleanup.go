@@ -640,7 +640,7 @@ func getRepositoryType(dir GitDir) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(val), nil
+	return val, nil
 }
 
 // setRecloneTime sets the time a repository is cloned.
@@ -673,7 +673,7 @@ func getRecloneTime(dir GitDir) (time.Time, error) {
 		return update()
 	}
 
-	sec, err := strconv.ParseInt(strings.TrimSpace(value), 10, 0)
+	sec, err := strconv.ParseInt(value, 10, 0)
 	if err != nil {
 		// If the value is bad update it to the current time
 		now, err2 := update()
@@ -733,7 +733,7 @@ func gitConfigGet(dir GitDir, key string) (string, error) {
 		}
 		return "", errors.Wrapf(wrapCmdError(cmd, err), "failed to get git config %s", key)
 	}
-	return string(out), nil
+	return strings.TrimSpace(string(out)), nil
 }
 
 func gitConfigSet(dir GitDir, key, value string) error {

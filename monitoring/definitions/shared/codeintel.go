@@ -859,7 +859,7 @@ func (codeIntelligence) NewSymbolsAPIGroup(containerName string) monitoring.Grou
 				MetricNameRoot:        "codeintel_symbols_api",
 				MetricDescriptionRoot: "API",
 				Filters:               []string{},
-				By:                    []string{"op"},
+				By:                    []string{"op", "parseAmount"},
 			},
 		},
 		SharedObservationGroupOptions: SharedObservationGroupOptions{

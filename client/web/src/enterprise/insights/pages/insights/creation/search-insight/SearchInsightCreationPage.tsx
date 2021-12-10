@@ -105,7 +105,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
     }, [telemetryService, setLocalStorageFormValues, onCancel])
 
     return (
-        <Page className={classNames('col-10', styles.creationPage)}>
+        <Page className={classNames(styles.creationPage)}>
             <PageTitle title="Create new code insight" />
 
             {loading && (

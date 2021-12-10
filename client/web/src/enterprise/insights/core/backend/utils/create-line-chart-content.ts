@@ -71,10 +71,31 @@ export function createLineChartContentFromIndexedSeries(
     series: InsightDataSeriesData[],
     seriesDefinition: SearchBasedInsightSeries[] = []
 ): LineChartContent<SeriesDataset, 'dateTime'> {
-    const dataByXValue = new Map<string, SeriesDataset>()
     const definitionMap = Object.fromEntries<SearchBasedInsightSeries>(
         seriesDefinition.map(definition => [definition.id ?? '', definition])
     )
+
+    return {
+        chart: 'line',
+        data: getDataPoints(series),
+        series: series.map(line => ({
+            name: definitionMap[line.seriesId]?.name ?? line.label,
+            dataKey: line.seriesId,
+            stroke: definitionMap[line.seriesId]?.stroke,
+        })),
+        xAxis: {
+            dataKey: 'dateTime',
+            scale: 'time',
+            type: 'number',
+        },
+    }
+}
+
+/**
+ * Groups data series by dateTime (x axis) of each series
+ */
+export function getDataPoints(series: InsightDataSeriesData[]): SeriesDataset[] {
+    const dataByXValue = new Map<string, SeriesDataset>()
 
     for (const line of series) {
         for (const point of line.points) {
@@ -91,18 +112,5 @@ export function createLineChartContentFromIndexedSeries(
         }
     }
 
-    return {
-        chart: 'line',
-        data: [...dataByXValue.values()],
-        series: series.map(line => ({
-            name: definitionMap[line.seriesId]?.name ?? line.label,
-            dataKey: line.seriesId,
-            stroke: definitionMap[line.seriesId]?.stroke,
-        })),
-        xAxis: {
-            dataKey: 'dateTime',
-            scale: 'time',
-            type: 'number',
-        },
-    }
+    return [...dataByXValue.values()]
 }

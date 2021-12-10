@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -376,6 +377,40 @@ func (s *Syncer) syncRepo(
 	return repo, nil
 }
 
+// RepoLimitError is produced by Syncer.ExternalServiceSync when a user's sync job
+// exceeds the user added repo limits.
+type RepoLimitError struct {
+	// Number of repos added to site
+	SiteAdded uint64
+
+	// Limit of repos that can be added to one site
+	SiteLimit uint64
+
+	// Number of repos added by user
+	UserAdded uint64
+
+	// Limit of repos that can be added by one user
+	UserLimit uint64
+
+	// NamespaceUserID of an external service
+	UserID int32
+
+	// Name of user of external service
+	UserName string
+}
+
+func (e *RepoLimitError) Error() string {
+	return fmt.Sprintf(
+		"reached maximum allowed user added repos: site:%d/%d, user:%d/%d (user-id: %d, username: %q)",
+		e.SiteAdded,
+		e.SiteLimit,
+		e.UserAdded,
+		e.UserLimit,
+		e.UserID,
+		e.UserName,
+	)
+}
+
 // SyncExternalService syncs repos using the supplied external service in a streaming fashion, rather than batch.
 // This allows very large sync jobs (i.e. that source potentially millions of repos) to incrementally persist changes.
 // Deletes of repositories that were not sourced are done at the end.
@@ -459,6 +494,11 @@ func (s *Syncer) SyncExternalService(
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
 			s.log().Error("failed to sync, skipping", "repo", sourced.Name, "err", err)
 			multierror.Append(errs, err)
+
+			if errors.HasType(err, &RepoLimitError{}) {
+				break
+			}
+
 			continue
 		}
 
@@ -539,9 +579,12 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		observeDiff(d)
 		// We must commit the transaction before publishing to s.Synced
 		// so that gitserver finds the repo in the database.
-		if txerr := tx.Done(err); txerr != nil {
-			err = multierror.Append(txerr, err)
-		} else if s.Synced != nil && d.Len() > 0 {
+		err = tx.Done(err)
+		if err != nil {
+			return
+		}
+
+		if s.Synced != nil && d.Len() > 0 {
 			select {
 			case <-ctx.Done():
 			case s.Synced <- d:
@@ -614,12 +657,14 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 					username = u.Username
 				}
 
-				return Diff{}, errors.Errorf(
-					"reached maximum allowed user added repos: site:%d/%d, user:%d/%d (username: %q)",
-					siteAdded, siteLimit,
-					userAdded, userLimit,
-					username,
-				)
+				return Diff{}, &RepoLimitError{
+					SiteAdded: siteAdded,
+					SiteLimit: siteLimit,
+					UserAdded: userAdded,
+					UserLimit: userLimit,
+					UserID:    svc.NamespaceUserID,
+					UserName:  username,
+				}
 			}
 		}
 
