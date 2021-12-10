@@ -128,6 +128,37 @@ func getNotebookIDs(notebooks []*Notebook) []int64 {
 	return ids
 }
 
+func TestConvertingToPostgresTextSearchQuery(t *testing.T) {
+	tests := []struct {
+		name        string
+		query       string
+		wantTSQuery string
+	}{
+		{
+			name:        "single token",
+			query:       "asimplequery",
+			wantTSQuery: "asimplequery:*",
+		},
+		{
+			name:        "multiple tokens",
+			query:       "a simple query",
+			wantTSQuery: "a:* & simple:* & query:*",
+		},
+		{
+			name:        "special chars",
+			query:       "a & special | q:u !e (r y)",
+			wantTSQuery: "a:* & special:* & q:* & u:* & e:* & r:* & y:*",
+		},
+	}
+
+	for _, tt := range tests {
+		gotTSQuery := toPostgresTextSearchQuery(tt.query)
+		if tt.wantTSQuery != gotTSQuery {
+			t.Fatalf("wanted '%s' text search query, got '%s'", tt.wantTSQuery, gotTSQuery)
+		}
+	}
+}
+
 func TestListingAndCountingNotebooks(t *testing.T) {
 	t.Parallel()
 	db := dbtest.NewDB(t)
@@ -151,12 +182,14 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 		{ID: "4", Type: NotebookFileBlockType, FileInput: &NotebookFileBlockInput{
 			RepositoryName: "github.com/sourcegraph/sourcegraph", FilePath: "client/web/file.tsx"},
 		},
+		{ID: "5", Type: NotebookMarkdownBlockType, MarkdownInput: &NotebookMarkdownBlockInput{"Lorem ipsum dolor sit amet, consectetur adipiscing elit."}},
+		{ID: "6", Type: NotebookMarkdownBlockType, MarkdownInput: &NotebookMarkdownBlockInput{"Donec in auctor odio."}},
 	}
 
 	createdNotebooks, err := createNotebooks(internalCtx, n, []*Notebook{
-		{Title: "Notebook User1 Public", Blocks: NotebookBlocks{blocks[0]}, Public: true, CreatorUserID: user1.ID},
+		{Title: "Notebook User1 Public", Blocks: NotebookBlocks{blocks[0], blocks[4]}, Public: true, CreatorUserID: user1.ID},
 		{Title: "Notebook User1 Private", Blocks: NotebookBlocks{blocks[1]}, Public: false, CreatorUserID: user1.ID},
-		{Title: "Notebook User2 Public", Blocks: NotebookBlocks{blocks[2]}, Public: true, CreatorUserID: user2.ID},
+		{Title: "Notebook User2 Public", Blocks: NotebookBlocks{blocks[2], blocks[5]}, Public: true, CreatorUserID: user2.ID},
 		{Title: "Notebook User2 Private", Blocks: NotebookBlocks{blocks[3]}, Public: false, CreatorUserID: user2.ID},
 	})
 	if err != nil {
@@ -229,7 +262,31 @@ func TestListingAndCountingNotebooks(t *testing.T) {
 			wantCount:       1,
 		},
 		{
-			name:            "query notebooks by block contents",
+			name:            "query notebook blocks by prefix",
+			userID:          user2.ID,
+			pageOpts:        ListNotebooksPageOptions{After: 0, First: 4},
+			opts:            ListNotebooksOptions{Query: "lor"},
+			wantNotebookIDs: []int64{createdNotebooks[0].ID},
+			wantCount:       1,
+		},
+		{
+			name:            "query notebook blocks case insensitively",
+			userID:          user2.ID,
+			pageOpts:        ListNotebooksPageOptions{After: 0, First: 4},
+			opts:            ListNotebooksOptions{Query: "ADIPISC"},
+			wantNotebookIDs: []int64{createdNotebooks[0].ID},
+			wantCount:       1,
+		},
+		{
+			name:            "query notebook blocks by multiple prefixes",
+			userID:          user2.ID,
+			pageOpts:        ListNotebooksPageOptions{After: 0, First: 4},
+			opts:            ListNotebooksOptions{Query: "auc od"},
+			wantNotebookIDs: []int64{createdNotebooks[2].ID},
+			wantCount:       1,
+		},
+		{
+			name:            "query notebook blocks by file path",
 			userID:          user2.ID,
 			pageOpts:        ListNotebooksPageOptions{After: 0, First: 4},
 			opts:            ListNotebooksOptions{Query: "client/web/file.tsx"},

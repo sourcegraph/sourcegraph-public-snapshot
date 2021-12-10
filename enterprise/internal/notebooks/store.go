@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 var ErrNotebookNotFound = errors.New("notebook not found")
@@ -169,15 +171,18 @@ func scanNotebooks(rows *sql.Rows) ([]*Notebook, error) {
 	return notebooks, nil
 }
 
-const blocksQueryFmtStr = `EXISTS (SELECT 1 FROM jsonb_array_elements(notebooks.blocks) AS block WHERE %s)`
+// Special characters used by TSQUERY we need to omit to prevent syntax errors.
+// See: https://www.postgresql.org/docs/12/datatype-textsearch.html#DATATYPE-TSQUERY
+var postgresTextSearchSpecialCharsRegex = lazyregexp.New(`&|!|\||\(|\)|:`)
 
-// Extracts a string with a given path from the block object
-var blockJsonbQueryPaths = []string{
-	"block#>>'{markdownInput, text}'",
-	"block#>>'{queryInput, text}'",
-	"block#>>'{fileInput, repositoryName}'",
-	"block#>>'{fileInput, filePath}'",
-	"block#>>'{fileInput, revision}'",
+func toPostgresTextSearchQuery(query string) string {
+	tokens := strings.Fields(postgresTextSearchSpecialCharsRegex.ReplaceAllString(query, " "))
+	prefixTokens := make([]string, len(tokens))
+	for idx, token := range tokens {
+		// :* is used for prefix matching
+		prefixTokens[idx] = fmt.Sprintf("%s:*", token)
+	}
+	return strings.Join(prefixTokens, " & ")
 }
 
 func getNotebooksQueryCondition(opts ListNotebooksOptions) *sqlf.Query {
@@ -186,16 +191,10 @@ func getNotebooksQueryCondition(opts ListNotebooksOptions) *sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("notebooks.creator_user_id = %d", opts.CreatorUserID))
 	}
 	if opts.Query != "" {
-		likeQuery := "%" + strings.ToLower(opts.Query) + "%"
-		// title column has type citext which automatically performs case-insensitive comparison
-		queryConds := []*sqlf.Query{sqlf.Sprintf("notebooks.title LIKE %s", likeQuery)}
-		// Build the subquery to filter notebooks by block contents
-		blocksQueryConds := make([]*sqlf.Query, 0, len(blockJsonbQueryPaths))
-		for _, path := range blockJsonbQueryPaths {
-			blocksQueryConds = append(blocksQueryConds, sqlf.Sprintf("LOWER("+path+") LIKE %s", likeQuery))
-		}
-		queryConds = append(queryConds, sqlf.Sprintf(blocksQueryFmtStr, sqlf.Join(blocksQueryConds, " OR ")))
-		conds = append(conds, sqlf.Join(queryConds, " OR "))
+		conds = append(
+			conds,
+			sqlf.Sprintf("(notebooks.title ILIKE %s OR notebooks.blocks_tsvector @@ to_tsquery('english', %s))", "%"+opts.Query+"%", toPostgresTextSearchQuery(opts.Query)),
+		)
 	}
 	if len(conds) == 0 {
 		// If no conditions are present, append a catch-all condition to avoid a SQL syntax error
