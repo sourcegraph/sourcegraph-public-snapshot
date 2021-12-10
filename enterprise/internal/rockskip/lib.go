@@ -96,13 +96,11 @@ func Index(git Git, db DB, repo string, givenCommit string) error {
 	tipCommit := NULL
 	tipHeight := 0
 	missingCount := 0
-	fmt.Println("REVS")
 	revs, err := git.RevList(repo, givenCommit)
 	if err != nil {
 		return err
 	}
 	for _, commit := range revs {
-		fmt.Println("cmt")
 		if _, height, present, err := db.GetCommit(commit); err != nil {
 			return err
 		} else if present {
@@ -113,15 +111,11 @@ func Index(git Git, db DB, repo string, givenCommit string) error {
 		missingCount += 1
 	}
 
-	fmt.Println("log")
 	entries, err := git.LogReverse(repo, givenCommit, missingCount)
 	if err != nil {
-		fmt.Println("logerrror", err)
 		return err
 	}
-	fmt.Println("after log")
 	for _, entry := range entries {
-		fmt.Println("entry")
 		hops, err := getHops(db, tipCommit)
 		if err != nil {
 			return err
@@ -256,9 +250,7 @@ func (git SubprocessGit) LogReverse(repo string, givenCommit string, n int) (log
 		return nil, err
 	}
 	defer func() {
-		fmt.Println("Waiting", reader.Buffered(), err, returnError)
 		err = log.Wait()
-		fmt.Println("Waiting, done")
 		if err != nil {
 			returnError = err
 		}
@@ -267,7 +259,6 @@ func (git SubprocessGit) LogReverse(repo string, givenCommit string, n int) (log
 	var buf []byte
 
 	for {
-		fmt.Println("LEWG")
 		// abc... ... NULL '\n'?
 
 		// Read the commit
@@ -305,7 +296,6 @@ func (git SubprocessGit) LogReverse(repo string, givenCommit string, n int) (log
 
 			pathStatuses := []PathStatus{}
 			for {
-				fmt.Println("FL")
 				// :100644 100644 abc... def... M NULL file.txt NULL
 				// ^ 0                          ^ 97   ^ 99
 
@@ -322,12 +312,9 @@ func (git SubprocessGit) LogReverse(repo string, givenCommit string, n int) (log
 
 				// Read the status from index 97 and skip to the path at index 99
 				buf = make([]byte, 99)
-				fmt.Println("FL2", reader.Buffered())
-				read, err := reader.Read(buf)
-				fmt.Println("FL2.sdf", reader.Buffered(), err, read)
+				read, err := io.ReadFull(reader, buf)
 				if read != 99 {
 					// TODO figure out this 🐛
-					fmt.Println("FL2.sdf not read", string(buf))
 					return nil, fmt.Errorf("read %d bytes, expected 99", read)
 				} else if err != nil {
 					return nil, err
@@ -346,7 +333,6 @@ func (git SubprocessGit) LogReverse(repo string, givenCommit string, n int) (log
 				}
 
 				// Read the path
-				fmt.Println("FL3")
 				path, err := reader.ReadBytes(0)
 				if err != nil {
 					return nil, err

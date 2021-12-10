@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 )
@@ -371,12 +372,14 @@ func TestIndexReal(t *testing.T) {
 		t.Fatalf("🚨 NewPostgresDB: %s", err)
 	}
 
-	repo := "github.com/sourcegraph/sourcegraph"
-	head := "18b467b641aa5d2703f14a1aa86666cd2d8c99c1"
+	repo := "github.com/gorilla/mux"
+	head := "3cf0d013e53d62a96c096366d300c84489c26dd5"
+	start := time.Now()
 	err = Index(git, db, repo, head)
 	if err != nil {
 		t.Fatalf("🚨 Index: %s", err)
 	}
+	fmt.Println("took", time.Since(start))
 
 	blobs, err := Search(db, head)
 	if err != nil {
