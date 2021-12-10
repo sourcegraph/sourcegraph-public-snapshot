@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -83,12 +82,6 @@ func connect(dsn, appName, dbName string, observationContext *observation.Contex
 	}
 
 	return db, nil
-}
-
-func newStoreFactory(observationContext *observation.Context) func(db *sql.DB, migrationsTable string) Store {
-	return func(db *sql.DB, migrationsTable string) Store {
-		return store.NewWithDB(db, migrationsTable, store.NewOperations(observationContext))
-	}
 }
 
 func schemaNames(schemas []*schemas.Schema) []string {

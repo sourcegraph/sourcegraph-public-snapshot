@@ -22,7 +22,7 @@ cleanup() {
   docker_logs
   cd "$root_dir"
   docker rm -f "$CONTAINER"
-  docker rmi "$(docker images -q)"
+  docker rmi -f "$(docker images -q)"
 
 }
 

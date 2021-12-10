@@ -819,6 +819,13 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 				OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
 			})
 		}
+
+		if args.ResultTypes.Has(result.TypeRepo) {
+			jobs = append(jobs, &run.RepoSearch{
+				Args:  &args,
+				Limit: r.MaxResults(),
+			})
+		}
 	}
 	return &args, jobs, nil
 }
@@ -1685,13 +1692,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			})
 
 			tr.LazyPrintf("sent excluded stats %#v", excluded)
-		})
-	}
-
-	if args.ResultTypes.Has(result.TypeRepo) {
-		jobs = append(jobs, &run.RepoSearch{
-			Args:  args,
-			Limit: limit,
 		})
 	}
 
