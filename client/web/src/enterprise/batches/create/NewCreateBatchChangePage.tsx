@@ -17,9 +17,8 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
-import { Button, Container, Input, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Container, Input, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { BatchChangesIcon } from '../../../batches/icons'
 import {
     BatchChangeFields,
     EditBatchChangeFields,
@@ -31,6 +30,7 @@ import {
     CreateEmptyBatchChangeResult,
 } from '../../../graphql-operations'
 import { Settings } from '../../../schema/settings.schema'
+import { BatchChangePage } from '../BatchChangePage'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE, CREATE_EMPTY_BATCH_CHANGE } from './backend'
@@ -44,28 +44,7 @@ import { useExecuteBatchSpec } from './useExecuteBatchSpec'
 import { useNamespaces } from './useNamespaces'
 import { useBatchSpecWorkspaceResolution, WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
 
-const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
-    switch (namespace.__typename) {
-        case 'User':
-            return namespace.displayName ?? namespace.username
-        case 'Org':
-            return namespace.displayName ?? namespace.name
-    }
-}
-
-/** TODO: This duplicates the URL field from the org/user resolvers on the backend, but we
- * don't have access to that from the settings cascade presently. Can we get it included
- * in the cascade instead somehow? */
-const getNamespaceBatchChangesURL = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
-    switch (namespace.__typename) {
-        case 'User':
-            return '/users/' + namespace.username + '/batch-changes'
-        case 'Org':
-            return '/organizations/' + namespace.name + '/batch-changes'
-    }
-}
-
-export interface NewCreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
+interface NewCreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     /** The namespace the batch change should be created in, or that it already belongs to. */
     namespace?: UserAreaUserFields | OrgAreaOrganizationFields
     /** The batch change name, if it already exists. */
@@ -148,26 +127,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespace, setti
     }
 
     return (
-        <div className="d-flex flex-column p-4 w-100 h-100">
-            <div className="d-flex flex-0 justify-content-between align-items-start">
-                <PageHeader
-                    path={[
-                        { icon: BatchChangesIcon },
-                        {
-                            to: getNamespaceBatchChangesURL(selectedNamespace),
-                            text: getNamespaceDisplayName(selectedNamespace),
-                        },
-                        { text: 'Create batch change' },
-                    ]}
-                    className="flex-1 pb-2"
-                    description="Run custom code over hundreds of repositories and manage the resulting changesets."
-                />
-                <div className="d-flex flex-column flex-0 align-items-center justify-content-center">
-                    <ButtonTooltip type="button" className="btn btn-primary mb-2" disabled={true}>
-                        Run batch spec
-                    </ButtonTooltip>
-                </div>
-            </div>
+        <BatchChangePage namespace={selectedNamespace} title="Create batch change">
             <div className={styles.settingsContainer}>
                 <h4>Batch specification settings</h4>
                 <Container>
@@ -193,7 +153,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespace, setti
                     </Button>
                 </div>
             </div>
-        </div>
+        </BatchChangePage>
     )
 }
 
@@ -338,45 +298,40 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
             </div>
         ) : null
 
-    return (
-        <div className="d-flex flex-column p-4 w-100 h-100">
-            <div className="d-flex flex-0 justify-content-between align-items-start">
-                <PageHeader
-                    path={[
-                        { icon: BatchChangesIcon },
-                        {
-                            to: getNamespaceBatchChangesURL(selectedNamespace),
-                            text: getNamespaceDisplayName(selectedNamespace),
-                        },
-                        { text: batchChange.name || 'Create batch change' },
-                    ]}
-                    className="flex-1 pb-2"
-                    description="Run custom code over hundreds of repositories and manage the resulting changesets."
-                />
-                <div className="d-flex flex-column flex-0 align-items-center justify-content-center">
-                    <ButtonTooltip
-                        type="button"
-                        className="btn btn-primary mb-2"
-                        onClick={executeBatchSpec}
-                        disabled={disableExecution}
-                        tooltip={executionTooltip}
-                    >
-                        Run batch spec
-                    </ButtonTooltip>
-                    <BatchSpecDownloadLink name="new-batch-spec" originalInput={code}>
-                        or download for src-cli
-                    </BatchSpecDownloadLink>
-                    <div className="form-group">
-                        <label>
-                            <input type="checkbox" className="mr-2" checked={noCache} onChange={onChangeNoCache} />
-                            Disable cache
-                        </label>
-                    </div>
-                </div>
+    const buttons = (
+        <>
+            <ButtonTooltip
+                type="button"
+                className="btn btn-primary mb-2"
+                onClick={executeBatchSpec}
+                disabled={disableExecution}
+                tooltip={executionTooltip}
+            >
+                Run batch spec
+            </ButtonTooltip>
+            <BatchSpecDownloadLink name="new-batch-spec" originalInput={code}>
+                or download for src-cli
+            </BatchSpecDownloadLink>
+            <div className="form-group">
+                <label>
+                    <input type="checkbox" className="mr-2" checked={noCache} onChange={onChangeNoCache} />
+                    Disable cache
+                </label>
             </div>
+        </>
+    )
+
+    return (
+        <BatchChangePage
+            namespace={selectedNamespace}
+            title={batchChange.name}
+            description={batchChange.description}
+            actionButtons={buttons}
+        >
             <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1')}>
                 <LibraryPane onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
+                    <h4>Batch specification</h4>
                     <MonacoBatchSpecEditor
                         isLightTheme={isLightTheme}
                         value={code}
@@ -400,6 +355,6 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                     />
                 </div>
             </div>
-        </div>
+        </BatchChangePage>
     )
 }
