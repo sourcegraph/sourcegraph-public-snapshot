@@ -412,7 +412,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     </div>
                 )
             } else {
-                subtitle = <div className="app__error test">{subtitle}</div>
+                subtitle = <div className="app__error">{subtitle}</div>
             }
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
