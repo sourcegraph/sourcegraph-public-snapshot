@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -20,7 +21,7 @@ func buildsherrif(ctx context.Context, ghc *github.Client, builds []buildkite.Bu
 	// Scan for first build with a meaningful state
 	var firstFailedBuild int
 	for i, b := range builds {
-		if b.State != nil && *b.State == "passed" {
+		if isBuildPassed(b) {
 			fmt.Printf("most recent finished build %d passed\n", *b.Number)
 			if err := opts.Branch.Unlock(ctx); err != nil {
 				return fmt.Errorf("unlockBranch: %w", err)
@@ -59,6 +60,10 @@ func buildsherrif(ctx context.Context, ghc *github.Client, builds []buildkite.Bu
 	return nil
 }
 
+func isBuildPassed(build buildkite.Build) bool {
+	return build.State != nil && *build.State == "passed"
+}
+
 func isBuildFailed(build buildkite.Build, timeout time.Duration) bool {
 	// Has state and is failed
 	if build.State != nil && *build.State == "failed" {
@@ -71,19 +76,39 @@ func isBuildFailed(build buildkite.Build, timeout time.Duration) bool {
 	return false
 }
 
+func buildSummary(build buildkite.Build) string {
+	summary := []string{*build.Commit}
+	if build.State != nil {
+		summary = append(summary, *build.State)
+	}
+	if build.CreatedAt != nil {
+		summary = append(summary, "started: "+build.CreatedAt.String())
+	}
+	if build.FinishedAt != nil {
+		summary = append(summary, "finished: "+build.FinishedAt.String())
+	}
+	return strings.Join(summary, ", ")
+}
+
 func checkConsecutiveFailures(builds []buildkite.Build, threshold int, timeout time.Duration) (failedCommits []string, thresholdExceeded bool) {
 	failedCommits = []string{}
 
 	var consecutiveFailures int
 	for _, b := range builds {
 		if !isBuildFailed(b, timeout) {
-			fmt.Printf("build %d not failed: %+v\n", *b.Number, b)
+			fmt.Printf("build %d not failed: %+v\n", *b.Number, buildSummary(b))
+
+			if !isBuildPassed(b) {
+				// we're only safe if non-failures are actually passed, otherwise
+				// keep looking
+				continue
+			}
 			return
 		}
 
 		consecutiveFailures += 1
 		failedCommits = append(failedCommits, *b.Commit)
-		fmt.Printf("build %d is %dth consecutive failure\n", *b.Number, consecutiveFailures)
+		fmt.Printf("build %d is a failure: count %d, %s\n", *b.Number, consecutiveFailures, buildSummary(b))
 		if consecutiveFailures >= threshold {
 			return failedCommits, true
 		}

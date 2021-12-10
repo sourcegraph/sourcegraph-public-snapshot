@@ -124,6 +124,27 @@ func TestCheckConsecutiveFailures(t *testing.T) {
 		},
 		wantCommits:           []string{"a", "b", "c"},
 		wantThresholdExceeded: true,
+	}, {
+		name: "exceeded: failed, running, failed",
+		args: args{
+			builds: []buildkite.Build{{
+				Number: buildkite.Int(1),
+				Commit: buildkite.String("a"),
+				State:  buildkite.String("failed"),
+			}, {
+				Number:    buildkite.Int(2),
+				Commit:    buildkite.String("b"),
+				State:     buildkite.String("running"),
+				CreatedAt: buildkite.NewTimestamp(time.Now()),
+			}, {
+				Number: buildkite.Int(3),
+				Commit: buildkite.String("c"),
+				State:  buildkite.String("failed"),
+			}},
+			threshold: 2, timeout: time.Hour,
+		},
+		wantCommits:           []string{"a", "c"},
+		wantThresholdExceeded: true,
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
