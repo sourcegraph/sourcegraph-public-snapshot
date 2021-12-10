@@ -1375,7 +1375,7 @@ dependencies = [
 [[package]]
 name = "syntect"
 version = "4.4.0"
-source = "git+https://github.com/slimsag/syntect#4b27b5c36d78063fa5c1b9bff78efd6678e10d30"
+source = "git+https://github.com/slimsag/syntect#bbb71bc0cb5af9488f31a10de5ef409f5b347617"
 dependencies = [
  "bincode",
  "bitflags",
