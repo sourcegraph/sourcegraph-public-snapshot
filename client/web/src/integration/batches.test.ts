@@ -479,6 +479,13 @@ describe('Batches', () => {
         })
     })
 
+    describe('Create batch changes', () => {
+        it('is styled correctly', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes/create')
+            await percySnapshotWithVariants(driver.page, 'Create batch change')
+        })
+    })
+
     describe('Batch changes details', () => {
         for (const entityType of ['user', 'org'] as const) {
             it(`displays a single batch change for ${entityType}`, async () => {
