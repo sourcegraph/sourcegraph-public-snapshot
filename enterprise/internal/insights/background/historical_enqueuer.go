@@ -423,33 +423,6 @@ type buildSeriesContext struct {
 	series   itypes.InsightSeries
 }
 
-// FirstOfMonthFrames builds a set of frames with a specific number of elements, such that all of the
-// starting times of each frame < current will fall on the first of a month.
-func FirstOfMonthFrames(numPoints int, current time.Time) []itypes.Frame {
-	if numPoints < 1 {
-		return nil
-	}
-	times := make([]time.Time, 0, numPoints)
-	year, month, _ := current.Date()
-	firstOfCurrent := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
-
-	for i := 0 - numPoints + 1; i < 0; i++ {
-		times = append(times, firstOfCurrent.AddDate(0, i, 0))
-	}
-	times = append(times, firstOfCurrent)
-	times = append(times, current)
-
-	frames := make([]itypes.Frame, 0, len(times)-1)
-	for i := 1; i < len(times); i++ {
-		prev := times[i-1]
-		frames = append(frames, itypes.Frame{
-			From: prev,
-			To:   times[i],
-		})
-	}
-	return frames
-}
-
 // buildSeries is invoked to build historical data for every unique timeframe * repo * series that
 // could need backfilling. Note that this means that for a single search insight, this means this
 // function may be called e.g. (52 timeframes) * (500000 repos) * (1 series) times.
