@@ -15,16 +15,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func connectFrontendDB(dsn, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
-	return connect(dsn, appName, "frontend", schemas.Frontend, migrate, observationContext)
+func connectFrontendDB(dsn, appName string, validateOnly bool, observationContext *observation.Context) (*sql.DB, error) {
+	return connect(dsn, appName, "frontend", schemas.Frontend, validateOnly, observationContext)
 }
 
-func connectCodeIntelDB(dsn, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
-	return connect(dsn, appName, "codeintel", schemas.CodeIntel, migrate, observationContext)
+func connectCodeIntelDB(dsn, appName string, validateOnly bool, observationContext *observation.Context) (*sql.DB, error) {
+	return connect(dsn, appName, "codeintel", schemas.CodeIntel, validateOnly, observationContext)
 }
 
-func connectCodeInsightsDB(dsn, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
-	return connect(dsn, appName, "codeinsights", schemas.CodeInsights, migrate, observationContext)
+func connectCodeInsightsDB(dsn, appName string, validateOnly bool, observationContext *observation.Context) (*sql.DB, error) {
+	return connect(dsn, appName, "codeinsights", schemas.CodeInsights, validateOnly, observationContext)
 }
 
 func connect(dsn, appName, dbName string, schema *schemas.Schema, validateOnly bool, observationContext *observation.Context) (*sql.DB, error) {
