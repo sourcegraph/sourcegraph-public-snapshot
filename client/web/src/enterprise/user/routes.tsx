@@ -33,7 +33,7 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
     },
     {
         path: '/batch-changes/create',
-        render: props => <CreateBatchChangePage headingElement="h1" {...props} namespace={props.user} />,
+        render: props => <CreateBatchChangePage headingElement="h1" {...props} initialNamespaceID={props.user.id} />,
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
         fullPage: true,
     },
@@ -42,7 +42,7 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
         render: ({ match, ...props }: UserAreaRouteContext & RouteComponentProps<{ batchChangeName: string }>) => (
             <NewCreateBatchChangePage
                 {...props}
-                namespace={props.user}
+                initialNamespaceID={props.user.id}
                 batchChangeName={match.params.batchChangeName}
             />
         ),

@@ -14,8 +14,6 @@ export const GET_BATCH_CHANGE = gql`
         name
         namespace {
             id
-            namespaceName
-            url
         }
         description
 
