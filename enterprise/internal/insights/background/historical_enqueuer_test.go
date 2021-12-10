@@ -247,19 +247,3 @@ func Test_historicalEnqueuer(t *testing.T) {
 		}))
 	})
 }
-
-func TestDayOfMonthFrames(t *testing.T) {
-	now := time.Date(2020, 1, 1, 5, 0, 0, 0, time.UTC)
-	t.Run("zero points first of month frames", func(t *testing.T) {
-		got := FirstOfMonthFrames(0, now)
-		autogold.Equal(t, got, autogold.ExportedOnly())
-	})
-	t.Run("one point first of month frames", func(t *testing.T) {
-		got := FirstOfMonthFrames(1, now)
-		autogold.Equal(t, got, autogold.ExportedOnly())
-	})
-	t.Run("six points first of month frames", func(t *testing.T) {
-		got := FirstOfMonthFrames(6, now)
-		autogold.Equal(t, got, autogold.ExportedOnly())
-	})
-}
