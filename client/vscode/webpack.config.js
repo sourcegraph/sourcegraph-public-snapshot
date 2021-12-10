@@ -43,7 +43,7 @@ function getExtensionConfig(targetType) {
         path: require.resolve('path-browserify'),
         stream: require.resolve('stream-browserify'),
         assert: require.resolve('assert'),
-        os: require.resolve('os-browserify/browser'),
+        // os: require.resolve('os-browserify/browser'),
         util: require.resolve('util'),
       },
     },
@@ -113,6 +113,14 @@ const webviewConfig = {
     alias: {
       './Link': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'Link'),
       '@sourcegraph/shared/src/components/Link': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'Link'),
+      './Markdown': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'Markdown'),
+      '@sourcegraph/shared/src/components/Markdown': path.resolve(
+        __dirname,
+        'src',
+        'webview',
+        'search-panel',
+        'Markdown'
+      ),
     },
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
