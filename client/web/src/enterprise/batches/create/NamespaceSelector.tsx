@@ -3,7 +3,7 @@ import React, { useCallback } from 'react'
 
 import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
 
-import styles from './NewCreateBatchChangePage.module.scss'
+import styles from './CreateOrEditBatchChangePage.module.scss'
 
 const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
     switch (namespace.__typename) {

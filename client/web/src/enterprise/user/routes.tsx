@@ -5,7 +5,7 @@ import { userAreaRoutes } from '../../user/area/routes'
 import { UserAreaRoute, UserAreaRouteContext } from '../../user/area/UserArea'
 import { lazyComponent } from '../../util/lazyComponent'
 import { CreateBatchChangePage } from '../batches/create/CreateBatchChangePage'
-import { NewCreateBatchChangePage } from '../batches/create/NewCreateBatchChangePage'
+import { CreateOrEditBatchChangePage } from '../batches/create/CreateOrEditBatchChangePage'
 import { NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
@@ -40,7 +40,7 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
     {
         path: '/batch-changes/:batchChangeName/edit',
         render: ({ match, ...props }: UserAreaRouteContext & RouteComponentProps<{ batchChangeName: string }>) => (
-            <NewCreateBatchChangePage
+            <CreateOrEditBatchChangePage
                 {...props}
                 initialNamespaceID={props.user.id}
                 batchChangeName={match.params.batchChangeName}
