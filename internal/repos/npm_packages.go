@@ -48,10 +48,6 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 			Repo:   repo,
 		}
 	}
-	if err != nil {
-		results <- SourceResult{Err: err}
-		return
-	}
 	// TODO: [npm-package-support-database] Implement database code path here.
 }
 
