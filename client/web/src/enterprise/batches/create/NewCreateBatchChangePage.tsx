@@ -33,6 +33,7 @@ import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE, CREATE_EMPTY_BATCH_CHANGE } from './backend'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
+import helloWorldSample from './library/hello-world.batch.yaml'
 import { LibraryPane } from './library/LibraryPane'
 import { NamespaceSelector } from './NamespaceSelector'
 import styles from './NewCreateBatchChangePage.module.scss'
@@ -41,6 +42,7 @@ import { usePreviewBatchSpec } from './useBatchSpecPreview'
 import { useExecuteBatchSpec } from './useExecuteBatchSpec'
 import { useNamespaces } from './useNamespaces'
 import { useBatchSpecWorkspaceResolution, WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
+import { insertNameIntoLibraryItem, isMinimalBatchSpec } from './yaml-util'
 
 interface NewCreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     /**
@@ -193,10 +195,20 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, isLight
         [setNoCache]
     )
 
+    // Show the hello world sample code initially in the Monaco editor if the user hasn't
+    // written any batch spec code yet, otherwise show the latest spec for the batch
+    // change.
+    const initialBatchSpecCode = useMemo(
+        () =>
+            isMinimalBatchSpec(batchChange.currentSpec.originalInput)
+                ? insertNameIntoLibraryItem(helloWorldSample, batchChange.name)
+                : batchChange.currentSpec.originalInput,
+        [batchChange.currentSpec.originalInput, batchChange.name]
+    )
+
     // Manage the batch spec input YAML code that's being edited.
     const { code, debouncedCode, isValid, handleCodeChange, excludeRepo, errors: codeErrors } = useBatchSpecCode(
-        // TODO: Use hello world with the right name if the original input is empty
-        batchChange.currentSpec.originalInput
+        initialBatchSpecCode
     )
 
     // Track whenever the batch spec code that is presently in the editor gets ahead of
@@ -324,7 +336,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, isLight
             actionButtons={buttons}
         >
             <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1')}>
-                <LibraryPane onReplaceItem={clearErrorsAndHandleCodeChange} />
+                <LibraryPane name={batchChange.name} onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
                     <h4>Batch specification</h4>
                     <MonacoBatchSpecEditor

@@ -3,6 +3,9 @@ import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
 import React, { useState, useCallback } from 'react'
 import { Collapse } from 'reactstrap'
 
+import { Scalars } from '../../../../graphql-operations'
+import { insertNameIntoLibraryItem } from '../yaml-util'
+
 import combySample from './comby.batch.yaml'
 import goImportsSample from './go-imports.batch.yaml'
 import helloWorldSample from './hello-world.batch.yaml'
@@ -23,19 +26,25 @@ const LIBRARY: [LibraryItem, LibraryItem, LibraryItem, LibraryItem] = [
 ]
 
 interface LibraryPaneProps {
+    /**
+     * The name of the batch change, used for automatically filling in the name for any
+     * item selected from the library.
+     */
+    name: Scalars['String']
     onReplaceItem: (item: string) => void
 }
 
-export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ onReplaceItem }) => {
+export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, onReplaceItem }) => {
     const [collapsed, setCollapsed] = useState(false)
     const [selectedItem, setSelectedItem] = useState<LibraryItem>()
 
     const onConfirm = useCallback(() => {
         if (selectedItem) {
-            onReplaceItem(selectedItem.code)
+            const codeWithName = insertNameIntoLibraryItem(selectedItem.code, name)
+            onReplaceItem(codeWithName)
             setSelectedItem(undefined)
         }
-    }, [selectedItem, onReplaceItem])
+    }, [name, selectedItem, onReplaceItem])
 
     return (
         <>
