@@ -44,7 +44,6 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
                 {...props}
                 namespace={props.user}
                 batchChangeName={match.params.batchChangeName}
-                initiallyOpenFormType={false}
             />
         ),
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
