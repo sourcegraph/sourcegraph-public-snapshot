@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from 'react'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useMutation } from '@sourcegraph/shared/src/graphql/graphql'
-import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
 
 import {
     CreateBatchSpecFromRawResult,
@@ -44,12 +43,12 @@ interface UsePreviewBatchSpecResult {
  * YAML code to the backend to enqueue a batch spec resolution job to evaluate the
  * workspaces that a batch spec would run over.
  *
- * @param namespace The user or organization `SettingsSubject` which determines where the
- * resultant batch change would live.
+ * @param batchChangeID The id of the batch change that this batch spec should belong to.
+ * @param noCache Whether or not the batch spec should be executed with the cache disabled.
  * @param onComplete An optional (stable) callback to invoke when the mutation is complete.
  */
 export const usePreviewBatchSpec = (
-    namespace: SettingsUserSubject | SettingsOrgSubject,
+    batchChangeID: Scalars['ID'],
     noCache: boolean,
     onComplete?: () => void
 ): UsePreviewBatchSpecResult => {
@@ -97,7 +96,7 @@ export const usePreviewBatchSpec = (
                     ? replaceBatchSpecInput({ variables: { spec: code, previousSpec: batchSpecID, noCache } })
                     : // Otherwise, we're creating a new batch spec from the raw spec input YAML.
                       createBatchSpecFromRaw({
-                          variables: { spec: code, namespace: namespace.id, noCache },
+                          variables: { spec: code, batchChange: batchChangeID, noCache },
                       })
 
             return preview()
@@ -107,7 +106,7 @@ export const usePreviewBatchSpec = (
                 })
                 .catch(setError)
         },
-        [batchSpecID, namespace, noCache, createBatchSpecFromRaw, replaceBatchSpecInput, onComplete]
+        [batchSpecID, batchChangeID, noCache, createBatchSpecFromRaw, replaceBatchSpecInput, onComplete]
     )
 
     return {

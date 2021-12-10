@@ -26,12 +26,7 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
     {
         path: '/batch-changes/:batchChangeName/edit',
         render: ({ match, ...props }: OrgAreaPageProps & RouteComponentProps<{ batchChangeName: string }>) => (
-            <NewCreateBatchChangePage
-                {...props}
-                namespace={props.org}
-                batchChangeName={match.params.batchChangeName}
-                settingsInitiallyOpen={false}
-            />
+            <NewCreateBatchChangePage {...props} namespace={props.org} batchChangeName={match.params.batchChangeName} />
         ),
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,
