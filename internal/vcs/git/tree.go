@@ -14,12 +14,13 @@ import (
 	"sync"
 	"time"
 
-	"gopkg.in/src-d/go-git.v4/plumbing/format/config"
-
 	"github.com/cockroachdb/errors"
 	"github.com/golang/groupcache/lru"
+	"gopkg.in/src-d/go-git.v4/plumbing/format/config"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
@@ -91,7 +92,7 @@ func ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path s
 }
 
 // LsFiles returns the output of `git ls-files`
-func LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]string, error) {
+func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) ([]string, error) {
 	if Mocks.LsFiles != nil {
 		return Mocks.LsFiles(repo, commit)
 	}
@@ -107,7 +108,37 @@ func LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]str
 	if err != nil {
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
 	}
-	return strings.Split(string(out), "\x00"), nil
+
+	files := strings.Split(string(out), "\x00")
+	// Drop trailing empty string
+	if len(files) > 0 && files[len(files)-1] == "" {
+		files = files[:len(files)-1]
+	}
+
+	if !checker.Enabled() {
+		return files, nil
+	}
+
+	// 🚨 SECURITY: All git methods that deal with file or path access need to have
+	// sub-repo permissions applied
+	a := actor.FromContext(ctx)
+	// TODO: If filtering like this becomes common we may want to create a helper
+	//  function in the authz package.
+	filtered := make([]string, 0, len(files))
+	for _, file := range files {
+		perms, err := authz.ActorPermissions(ctx, checker, a, authz.RepoContent{
+			Repo: repo,
+			Path: file,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "checking sub-repo permissions")
+		}
+		if perms.Include(authz.Read) {
+			filtered = append(filtered, file)
+		}
+	}
+
+	return filtered, nil
 }
 
 // lStat returns a FileInfo describing the named file at commit. If the file is a symbolic link, the
