@@ -1461,6 +1461,56 @@ func TestService(t *testing.T) {
 			}
 		})
 
+		t.Run("success, with existing batch change", func(t *testing.T) {
+			// Existing batch change needs an existing batch spec
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			batchChange := &btypes.BatchChange{
+				Name:            "my-cool-change",
+				NamespaceUserID: admin.ID,
+				BatchSpecID:     spec.ID,
+			}
+
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+
+			newSpec, err := svc.ReplaceBatchSpecInput(ctx, ReplaceBatchSpecInputOpts{
+				BatchSpecRandID: spec.RandID,
+				RawSpec:         ct.TestRawBatchSpecYAML,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if newSpec.ID == spec.ID {
+				t.Fatalf("new batch spec has same ID as old one: %d", newSpec.ID)
+			}
+
+			if newSpec.RandID != spec.RandID {
+				t.Fatalf("new batch spec has different RandID. new=%s, old=%s", newSpec.RandID, spec.RandID)
+			}
+
+			// Assert that batch change was updated with new batch spec id
+			batchChange, err = s.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChange.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if batchChange.BatchSpecID != newSpec.ID {
+				t.Fatalf("batch change has wrong batch spec ID. want=%d, have=%d", newSpec.ID, batchChange.BatchSpecID)
+			}
+
+			// Assert that old batch spec is deleted
+			_, err = s.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: spec.ID})
+			if err != store.ErrNoResults {
+				t.Fatalf("unexpected error: %s", err)
+			}
+		})
+
 		t.Run("batchSpec already has changeset specs", func(t *testing.T) {
 			assertNoChangesetSpecs := func(t *testing.T, batchSpecID int64) {
 				t.Helper()
