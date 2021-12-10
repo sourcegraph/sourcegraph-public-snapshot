@@ -29,7 +29,7 @@ const CheckListItem: React.FunctionComponent<{ valid?: boolean }> = ({ children,
 
 export const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> = ({ checks }) => (
     <div className={classNames(styles.formSeriesChecks)}>
-        <ul className={classNames(['mt-4 text-muted', styles.formSeriesChecksSeriesCheck])}>
+        <ul className={classNames(['mt-4 text-muted', styles.formSeriesCheck])}>
             <li>
                 <CheckListItem valid={checks.isValidRegex}>
                     Contains a properly formatted regular expression

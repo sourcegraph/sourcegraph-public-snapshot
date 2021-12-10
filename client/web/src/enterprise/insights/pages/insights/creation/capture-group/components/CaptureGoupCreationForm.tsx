@@ -111,7 +111,6 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                         placeholder="Example: file:\.pom$ <java\.version>(.*)</java\.version>"
                         valid={query.meta.touched && query.meta.validState === 'VALID'}
                         error={query.meta.touched && query.meta.error}
-                        errorInputState={query.meta.touched && query.meta.validState === 'INVALID'}
                         className="mb-4"
                         {...query.input}
                     />
