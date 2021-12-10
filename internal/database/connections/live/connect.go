@@ -3,7 +3,10 @@ package connections
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"os"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -25,7 +28,7 @@ func NewFrontendDB(dsn, appName string, migrate bool, observationContext *observ
 		schemas = nil
 	}
 
-	return connect(dsn, appName, "frontend", observationContext, schemas...)
+	return connect(dsn, appName, "frontend", observationContext, false, schemas...)
 }
 
 // NewCodeIntelDB creates a new connection to the codeintel database. After successful connection,
@@ -41,7 +44,7 @@ func NewCodeIntelDB(dsn, appName string, migrate bool, observationContext *obser
 		schemas = nil
 	}
 
-	return connect(dsn, appName, "codeintel", observationContext, schemas...)
+	return connect(dsn, appName, "codeintel", observationContext, false, schemas...)
 }
 
 // NewCodeInsightsDB creates a new connection to the codeinsights database. After successful
@@ -57,10 +60,10 @@ func NewCodeInsightsDB(dsn, appName string, migrate bool, observationContext *ob
 		schemas = nil
 	}
 
-	return connect(dsn, appName, "codeinsight", observationContext, schemas...)
+	return connect(dsn, appName, "codeinsight", observationContext, false, schemas...)
 }
 
-func connect(dsn, appName, dbName string, observationContext *observation.Context, schemas ...*schemas.Schema) (*sql.DB, error) {
+func connect(dsn, appName, dbName string, observationContext *observation.Context, validateOnly bool, schemas ...*schemas.Schema) (*sql.DB, error) {
 	db, err := dbconn.ConnectInternal(dsn, appName, dbName)
 	if err != nil {
 		return nil, err
@@ -73,22 +76,39 @@ func connect(dsn, appName, dbName string, observationContext *observation.Contex
 		}
 	}()
 
-	options := runner.Options{
-		Up:          true,
-		SchemaNames: schemaNames(schemas),
-	}
-	if err := runnerFromDB(newStoreFactory(observationContext), db, schemas...).Run(context.Background(), options); err != nil {
-		return nil, err
+	for _, schema := range schemas {
+		if err := validateSchema(db, schema, validateOnly, observationContext); err != nil {
+			return nil, err
+		}
 	}
 
 	return db, nil
 }
 
-func schemaNames(schemas []*schemas.Schema) []string {
-	names := make([]string, 0, len(schemas))
-	for _, schema := range schemas {
-		names = append(names, schema.Name)
+func validateSchema(db *sql.DB, schema *schemas.Schema, validateOnly bool, observationContext *observation.Context) error {
+	ctx := context.Background()
+	storeFactory := newStoreFactory(observationContext)
+	migrationRunner := runnerFromDB(storeFactory, db, schema)
+
+	if err := migrationRunner.Validate(ctx, schema.Name); err != nil {
+		outOfDateError := new(runner.SchemaOutOfDateError)
+		if !errors.As(err, &outOfDateError) {
+			return err
+		}
+		if !shouldMigrate(validateOnly) {
+			return fmt.Errorf("database schema out of date")
+		}
+
+		options := runner.Options{
+			Up:          true,
+			SchemaNames: []string{schema.Name},
+		}
+		return migrationRunner.Run(ctx, options)
 	}
 
-	return names
+	return nil
+}
+
+func shouldMigrate(validateOnly bool) bool {
+	return !validateOnly || os.Getenv("SG_DEV_MIGRATE_ON_APPLICATION_STARTUP") != ""
 }
