@@ -35,6 +35,7 @@ RUN apk add --no-cache \
     # We require git>=2.30 because we use git maintenance.
     'git>=2.30' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main  \
     git-p4 \
+    && apk add --no-cache  \
     openssh-client \
     python2 \
     python3
