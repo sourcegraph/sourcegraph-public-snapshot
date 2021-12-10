@@ -41,6 +41,7 @@ RUN apk add --no-cache --verbose \
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
+    && apk add --no-cache --verbose \
     'bash=5.0.17-r0' \
     'redis=~5.0' \
     python2 \
