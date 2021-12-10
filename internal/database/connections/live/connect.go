@@ -3,10 +3,10 @@ package connections
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"os"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
