@@ -86,7 +86,8 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     // otherwise fixed), we can return to using tree shaking. Right now, esbuild's tree shaking has
     // a bug where the NavBar CSS is not loaded because the @sourcegraph/wildcard uses `export *
     // from` and has `"sideEffects": false` in its package.json.
-    treeShaking: 'ignore-annotations',
+    ignoreAnnotations: true,
+    treeShaking: false,
 }
 
 // TODO(sqs): These Monaco Web Workers could be built as part of the main build if we switch to
