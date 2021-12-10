@@ -1628,17 +1628,6 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("many external services", func(t *testing.T) {
-		user, err := Users(db).Create(ctx, NewUser{Username: "alice"})
-		if err != nil {
-			t.Fatalf("Test setup error %s", err)
-		}
-		org, err := Orgs(db).Create(ctx, "acme", nil)
-		if err != nil {
-			t.Fatalf("Test setup error %s", err)
-		}
-
-		namespacedSvcs := typestest.MakeNamespacedExternalServices(user.ID, org.ID)
-
 		tx, err := ExternalServices(db).Transact(ctx)
 		if err != nil {
 			t.Fatalf("Transact error: %s", err)
@@ -1650,8 +1639,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			}
 		}()
 
-		services := append(svcs, namespacedSvcs...)
-		want := typestest.GenerateExternalServices(11, services...)
+		want := typestest.GenerateExternalServices(7, svcs...)
 
 		if err := tx.Upsert(ctx, want...); err != nil {
 			t.Fatalf("Upsert error: %s", err)
@@ -1667,7 +1655,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		sort.Sort(want)
 
 		have, err := tx.List(ctx, ExternalServicesListOptions{
-			Kinds: services.Kinds(),
+			Kinds: svcs.Kinds(),
 		})
 		if err != nil {
 			t.Fatalf("List error: %s", err)
