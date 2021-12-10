@@ -8,9 +8,11 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/signal"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -1017,32 +1019,75 @@ func checkDevPrivateInParentOrInCurrentDirectory(context.Context) error {
 // checkPostgresConnection succeeds connecting to the default user database works, regardless
 // of if it's running locally or with docker.
 func checkPostgresConnection(ctx context.Context) error {
-	getEnv := func(key string) string {
-		// First look into process env, emulating the logic in makeEnv used
-		// in internal/run/run.go
-		val, ok := os.LookupEnv(key)
-		if ok {
-			return val
-		}
-		return "postgresql://localhost"
-	}
-
-	dns := postgresdsn.New("", "", getEnv)
-	conn, err := pgx.Connect(ctx, dns)
+	dsns, err := dsnCandidates()
 	if err != nil {
-		return errors.Wrap(err, "failed to connect to Postgres database")
+		return err
 	}
-	defer conn.Close(ctx)
+	var errs []error
+	for _, dsn := range dsns {
+		conn, err := pgx.Connect(ctx, dsn)
+		if err != nil {
+			errs = append(errs, errors.Wrapf(err, "failed to connect to Postgresql Database at %s", dsn))
+			continue
+		}
+		defer conn.Close(ctx)
+		err = conn.Ping(ctx)
+		if err == nil {
+			// if ping passed
+			return nil
+		}
+		errs = append(errs, errors.Wrapf(err, "failed to connect to Postgresql Database at %s", dsn))
+	}
 
-	var result int
-	row := conn.QueryRow(ctx, "SELECT 1;")
-	if err := row.Scan(&result); err != nil {
-		return errors.Wrap(err, "failed to read from Postgres database")
+	messages := []string{"failed all attempts to connect to Postgresql database"}
+	for _, e := range errs {
+		messages = append(messages, "\t"+e.Error())
 	}
-	if result != 1 {
-		return errors.New("failed to read a test value from Postgres database")
+	return errors.New(strings.Join(messages, "\n"))
+}
+
+func dsnCandidates() ([]string, error) {
+	env := func(key string) string { val, _ := os.LookupEnv(key); return val }
+
+	// best case scenario
+	datasource := env("PGDATASOURCE")
+	// most classic dsn
+	baseURL := url.URL{Scheme: "postgres", Host: "127.0.0.1:5432"}
+	// classic docker dsn
+	dockerURL := baseURL
+	dockerURL.User = url.UserPassword("postgres", "postgres")
+	// other classic docker dsn
+	dockerURL2 := baseURL
+	dockerURL2.User = url.UserPassword("postgres", "password")
+	// env based dsn
+	envURL := baseURL
+	username, ok := os.LookupEnv("PGUSER")
+	if !ok {
+		uinfo, err := user.Current()
+		if err != nil {
+			return nil, err
+		}
+		username = uinfo.Name
 	}
-	return nil
+	envURL.User = url.UserPassword(username, env("PGPASSWORD"))
+	if host, ok := os.LookupEnv("PGHOST"); ok {
+		if port, ok := os.LookupEnv("PGPORT"); ok {
+			envURL.Host = fmt.Sprintf("%s:%s", host, port)
+		}
+		envURL.Host = fmt.Sprintf("%s:%s", host, "5432")
+	}
+	if sslmode := env("PGSSLMODE"); sslmode != "" {
+		qry := envURL.Query()
+		qry.Set("sslmode", sslmode)
+		envURL.RawQuery = qry.Encode()
+	}
+	return []string{
+		datasource,
+		envURL.String(),
+		baseURL.String(),
+		dockerURL.String(),
+		dockerURL2.String(),
+	}, nil
 }
 
 func checkSourcegraphDatabase(ctx context.Context) error {
@@ -1068,19 +1113,10 @@ func checkSourcegraphDatabase(ctx context.Context) error {
 	dsn := postgresdsn.New("", "", getEnv)
 	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
-		return errors.Wrap(err, "failed to connect to Soucegraph Postgres database. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)")
+		return errors.Wrapf(err, "failed to connect to Soucegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
 	}
 	defer conn.Close(ctx)
-
-	var result int
-	row := conn.QueryRow(ctx, "SELECT 1;")
-	if err := row.Scan(&result); err != nil {
-		return errors.Wrap(err, "failed to read from Sourcegraph Postgres database")
-	}
-	if result != 1 {
-		return errors.New("failed to read a test value from Sourcegraph Postgres database")
-	}
-	return nil
+	return conn.Ping(ctx)
 }
 
 func checkRedisConnection(context.Context) error {
