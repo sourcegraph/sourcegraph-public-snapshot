@@ -123,7 +123,7 @@ interface CreatePageProps extends SettingsCascadeProps<Settings> {
 }
 
 const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespace, settingsCascade }) => {
-    const [createEmptyBatchChange, { loading }] = useMutation<
+    const [createEmptyBatchChange, { loading, error }] = useMutation<
         CreateEmptyBatchChangeResult,
         CreateEmptyBatchChangeVariables
     >(CREATE_EMPTY_BATCH_CHANGE)
@@ -171,6 +171,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespace, setti
             <div className={styles.settingsContainer}>
                 <h4>Batch specification settings</h4>
                 <Container>
+                    {error && <ErrorAlert error={error} />}
                     <NamespaceSelector
                         namespaces={namespaces}
                         selectedNamespace={selectedNamespace.id}
