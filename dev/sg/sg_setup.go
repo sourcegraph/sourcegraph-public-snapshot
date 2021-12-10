@@ -350,29 +350,38 @@ asdf install nodejs
 	{
 		name:               "Setup PostgreSQL database",
 		requiresRepository: true,
+		autoFixing:         true,
 		dependencies: []*dependency{
-			// TODO: We could probably split this check up into two:
-			// 1. Check whether Postgres is running
-			// 2. Check whether Sourcegraph database exists
 			{
-				name:  "Connection to 'sourcegraph' database",
-				check: checkPostgresConnection,
+				name: "Install Postgresql",
+				// In the eventuality of the user using a non standard configuration and having
+				// set it up appropriately in its configuration, we can bypass the standard postgres
+				// check and directly check for the sourcegraph database.
+				//
+				// Because only the latest error is returned, it's better to finish with the real check
+				// for error message clarity.
+				check: anyChecks(checkSourcegraphDatabase, checkPostgresConnection),
 				instructionsComment: `` +
 					`Sourcegraph requires the PostgreSQL database to be running.
 
 We recommend installing it with Homebrew and starting it as a system service.
 If you know what you're doing, you can also install PostgreSQL another way.
-For example: you can use Postgres.app by following the instructions at
-https://postgresapp.com but you also need to run the commands listed below
-that create users and databsaes: 'createdb', 'createuser', ...
+For example: you can use Postgres.app, nix...
 
-If you're not sure: use the recommended commands to install PostgreSQL, start it
-and create the 'sourcegraph' database.`,
-				instructionsCommands: `brew reinstall postgresql && brew services start postgresql 
-sleep 10
-createdb
-createuser --superuser sourcegraph || true
-psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
+If you're not sure: use the recommended commands to install PostgreSQL.`,
+				instructionsCommands: `brew reinstall postgresql && brew services start postgresql
+sleep 5
+createdb || true
+`,
+			},
+			{
+				name:  "Connection to 'sourcegraph' database",
+				check: checkSourcegraphDatabase,
+				instructionsComment: `` +
+					`Once the database engine is installed, we need to setup Sourcegraph database itself and a
+specific user.`,
+				instructionsCommands: `createuser --superuser sourcegraph || true
+psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';" 
 createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
 `,
 			},
@@ -1005,7 +1014,46 @@ func checkDevPrivateInParentOrInCurrentDirectory(context.Context) error {
 	return errors.New("could not find dev-private repository either in current directory or one above")
 }
 
+// checkPostgresConnection succeeds connecting to the default user database works, regardless
+// of if it's running locally or with docker.
 func checkPostgresConnection(ctx context.Context) error {
+	// This check runs only in the `sourcegraph/sourcegraph` repository, so
+	// we try to parse the globalConf and use its `Env` to configure the
+	// Postgres connection.
+	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
+	}
+
+	getEnv := func(key string) string {
+		// First look into process env, emulating the logic in makeEnv used
+		// in internal/run/run.go
+		val, ok := os.LookupEnv(key)
+		if ok {
+			return val
+		}
+		return "postgresql://localhost"
+	}
+
+	dns := postgresdsn.New("", "", getEnv)
+	conn, err := pgx.Connect(ctx, dns)
+	if err != nil {
+		return errors.Wrap(err, "failed to connect to Sourcegraph Postgres database")
+	}
+	defer conn.Close(ctx)
+
+	var result int
+	row := conn.QueryRow(ctx, "SELECT 1;")
+	if err := row.Scan(&result); err != nil {
+		return errors.Wrap(err, "failed to read from Sourcegraph Postgres database")
+	}
+	if result != 1 {
+		return errors.New("failed to read a test value from Sourcegraph Postgres database")
+	}
+	return nil
+}
+
+func checkSourcegraphDatabase(ctx context.Context) error {
 	// This check runs only in the `sourcegraph/sourcegraph` repository, so
 	// we try to parse the globalConf and use its `Env` to configure the
 	// Postgres connection.
@@ -1025,8 +1073,8 @@ func checkPostgresConnection(ctx context.Context) error {
 		return globalConf.Env[key]
 	}
 
-	dns := postgresdsn.New("", "", getEnv)
-	conn, err := pgx.Connect(ctx, dns)
+	dsn := postgresdsn.New("", "", getEnv)
+	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
 		return errors.Wrap(err, "failed to connect to Postgres database")
 	}
@@ -1182,6 +1230,18 @@ func getChoice(choices map[int]string) (int, error) {
 			return s, nil
 		}
 		writeFailureLine("Invalid choice")
+	}
+}
+
+func anyChecks(checks ...dependencyCheck) dependencyCheck {
+	return func(ctx context.Context) (err error) {
+		for _, chk := range checks {
+			err = chk(ctx)
+			if err == nil {
+				return nil
+			}
+		}
+		return err
 	}
 }
 
