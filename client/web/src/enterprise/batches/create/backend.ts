@@ -1,5 +1,31 @@
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
+export const GET_BATCH_CHANGE = gql`
+    query GetBatchChange($namespace: ID!, $name: String!) {
+        batchChange(namespace: $namespace, name: $name) {
+            ...EditBatchChangeFields
+        }
+    }
+
+    fragment EditBatchChangeFields on BatchChange {
+        __typename
+        id
+        url
+        name
+        namespace {
+            id
+            namespaceName
+            url
+        }
+        description
+
+        currentSpec {
+            id
+            originalInput
+        }
+    }
+`
+
 export const EXECUTE_BATCH_SPEC = gql`
     mutation ExecuteBatchSpec($batchSpec: ID!) {
         executeBatchSpec(batchSpec: $batchSpec) {
@@ -12,8 +38,8 @@ export const EXECUTE_BATCH_SPEC = gql`
 `
 
 export const CREATE_BATCH_SPEC_FROM_RAW = gql`
-    mutation CreateBatchSpecFromRaw($spec: String!, $namespace: ID!, $noCache: Boolean!) {
-        createBatchSpecFromRaw(batchSpec: $spec, namespace: $namespace, noCache: $noCache) {
+    mutation CreateBatchSpecFromRaw($spec: String!, $noCache: Boolean!, $batchChange: ID) {
+        createBatchSpecFromRaw(batchSpec: $spec, noCache: $noCache, batchChange: $batchChange) {
             id
         }
     }

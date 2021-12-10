@@ -1,5 +1,6 @@
 // TODO: Rename me to editor page
 import classNames from 'classnames'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -13,11 +14,13 @@ import {
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
+import { LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import {
     BatchChangeFields,
+    EditBatchChangeFields,
     GetBatchChangeResult,
     GetBatchChangeVariables,
     OrgAreaOrganizationFields,
@@ -59,20 +62,69 @@ const getNamespaceBatchChangesURL = (namespace: SettingsUserSubject | SettingsOr
     }
 }
 
-interface CreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
+interface NewCreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     /** The namespace the batch change should be created in, or that it already belongs to. */
     namespace?: UserAreaUserFields | OrgAreaOrganizationFields
     /** The batch change name, if it already exists. */
     batchChangeName?: BatchChangeFields['name']
-    // TODO: This affects work on another branch
-    settingsInitiallyOpen?: boolean
 }
 
-export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChangePageProps> = ({
+/**
+ * TODO: Rename me once create/update settings form is ready
+ * NewCreateBatchChangePage is the new SSBC-oriented page for creating a new batch change
+ * or editing and re-executing a new batch spec for an existing one.
+ */
+export const NewCreateBatchChangePage: React.FunctionComponent<NewCreateBatchChangePageProps> = ({
     namespace,
     batchChangeName,
-    // TODO: This affects work on another branch
-    settingsInitiallyOpen: _settingsInitiallyOpen = true,
+    ...props
+}) => {
+    const { data, loading } = useQuery<GetBatchChangeResult, GetBatchChangeVariables>(GET_BATCH_CHANGE, {
+        // If we don't have a batch change name, the user hasn't created a batch change
+        // yet, so skip the request.
+        skip: !namespace || !batchChangeName,
+        variables: {
+            namespace: namespace?.id as Scalars['ID'],
+            name: batchChangeName as BatchChangeFields['name'],
+        },
+        // Cache this data but always re-request it in the background when we revisit
+        // this page to pick up newer changes.
+        fetchPolicy: 'cache-and-network',
+    })
+
+    if (!batchChangeName) {
+        return <EditPage namespace={namespace} {...props} />
+    }
+
+    if (loading) {
+        return (
+            <div className="text-center">
+                <LoadingSpinner className="icon-inline mx-auto my-4" />
+            </div>
+        )
+    }
+
+    if (!data?.batchChange) {
+        return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
+    }
+
+    return <EditPage namespace={namespace} batchChange={data.batchChange} {...props} />
+}
+
+interface EditPageProps extends ThemeProps, SettingsCascadeProps<Settings> {
+    /**
+     * The namespace the batch change should be created in, or that it already belongs to.
+     * If none is provided, it will default to the user's own namespace.
+     */
+    namespace?: UserAreaUserFields | OrgAreaOrganizationFields
+    /** The batch change, if it already exists */
+    // TODO: Make this a required prop and otherwise show the "Create" form (exists on other branch)
+    batchChange?: EditBatchChangeFields
+}
+
+const EditPage: React.FunctionComponent<EditPageProps> = ({
+    namespace,
+    batchChange,
     isLightTheme,
     settingsCascade,
 }) => {
@@ -96,7 +148,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
 
     // Manage the batch spec input YAML code that's being edited.
     const { code, debouncedCode, isValid, handleCodeChange, excludeRepo, errors: codeErrors } = useBatchSpecCode(
-        helloWorldSample
+        batchChange?.currentSpec.originalInput || helloWorldSample
     )
 
     // Track whenever the batch spec code that is presently in the editor gets ahead of
@@ -112,7 +164,9 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
         isLoading: isLoadingPreview,
         error: previewError,
         clearError: clearPreviewError,
-    } = usePreviewBatchSpec(selectedNamespace, noCache, markUnstale)
+        // TODO: This will always be available once the "Create" form from the other
+        // branch is ready.
+    } = usePreviewBatchSpec(batchChange?.id || '', noCache, markUnstale)
 
     const clearErrorsAndHandleCodeChange = useCallback(
         (newCode: string) => {
@@ -148,7 +202,8 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
     // * the current workspaces evaluation is not complete
     const [disableExecution, executionTooltip] = useMemo(() => {
         const disableExecution = Boolean(
-            isValid !== true ||
+            batchChange === undefined ||
+                isValid !== true ||
                 previewError ||
                 isLoadingPreview ||
                 isExecuting ||
@@ -158,7 +213,9 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
         )
         // The execution tooltip only shows if the execute button is disabled, and explains why.
         const executionTooltip =
-            isValid === false || previewError
+            batchChange === undefined
+                ? "There's nothing to run yet."
+                : isValid === false || previewError
                 ? "There's a problem with your batch spec."
                 : !batchSpecID
                 ? 'Preview workspaces first before you run.'
@@ -170,6 +227,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
 
         return [disableExecution, executionTooltip]
     }, [
+        batchChange,
         batchSpecID,
         isValid,
         previewError,
@@ -200,17 +258,20 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                                 to: getNamespaceBatchChangesURL(selectedNamespace),
                                 text: getNamespaceDisplayName(selectedNamespace),
                             },
-                            { text: 'Create batch change' },
+                            { text: batchChange?.name || 'Create batch change' },
                         ]}
                         className="flex-1 pb-2"
                         description="Run custom code over hundreds of repositories and manage the resulting changesets."
                     />
 
-                    <NamespaceSelector
-                        namespaces={namespaces}
-                        selectedNamespace={selectedNamespace.id}
-                        onSelect={setSelectedNamespace}
-                    />
+                    {/* TODO: We'll be able to edit the namespace for an existing batch change from the new create/update form flow */}
+                    {batchChange ? null : (
+                        <NamespaceSelector
+                            namespaces={namespaces}
+                            selectedNamespace={selectedNamespace.id}
+                            onSelect={setSelectedNamespace}
+                        />
+                    )}
                 </div>
                 <div className="d-flex flex-column flex-0 align-items-center justify-content-center">
                     <ButtonTooltip

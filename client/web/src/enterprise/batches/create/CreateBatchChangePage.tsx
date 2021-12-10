@@ -17,26 +17,22 @@ import { OldBatchChangePageContent } from './OldCreateBatchChangeContent'
 export interface CreateBatchChangePageProps extends SettingsCascadeProps<Settings>, ThemeProps {
     // TODO: This can go away once we only have the new SSBC create page
     headingElement: 'h1' | 'h2'
-    namespace: UserAreaUserFields | OrgAreaOrganizationFields
-    // TODO: This affects work on another branch
-    settingsInitiallyOpen?: boolean
+    /** The namespace the batch change should be created in, or that it already belongs to. */
+    namespace?: UserAreaUserFields | OrgAreaOrganizationFields
 }
 
+/**
+ * CreateBatchChangePage is a wrapper around the create/edit batch change page that
+ * determines if we should display the original create page or the new SSBC page.
+ */
 export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePageProps> = ({
     settingsCascade,
     isLightTheme,
     headingElement,
     namespace,
-    // TODO: This affects work on another branch
-    settingsInitiallyOpen,
 }) =>
     isBatchChangesExecutionEnabled(settingsCascade) ? (
-        <NewCreateBatchChangePage
-            isLightTheme={isLightTheme}
-            settingsCascade={settingsCascade}
-            namespace={namespace}
-            settingsInitiallyOpen={settingsInitiallyOpen}
-        />
+        <NewCreateBatchChangePage isLightTheme={isLightTheme} settingsCascade={settingsCascade} namespace={namespace} />
     ) : (
         <Page>
             <PageTitle title="Create batch change" />
