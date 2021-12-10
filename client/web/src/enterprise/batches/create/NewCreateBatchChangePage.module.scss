@@ -1,5 +1,5 @@
 .namespace-selector {
-    max-width: 300px;
+    max-width: 180px;
 }
 
 .editor-layout-container {
@@ -18,4 +18,17 @@
     background: none;
     border: none;
     width: 30%;
+}
+
+.name-input {
+    max-width: 300px;
+}
+
+.settings-container {
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    width: 60%;
+    max-width: 1000px;
+    margin-top: 1rem;
 }
