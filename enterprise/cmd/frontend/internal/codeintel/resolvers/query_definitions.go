@@ -17,7 +17,7 @@ const DefinitionsLimit = 100
 
 // Definitions returns the list of source locations that define the symbol at the given position.
 func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_ []AdjustedLocation, err error) {
-	ctx, traceLog, endObservation := observeResolver(ctx, &err, "Definitions", r.operations.definitions, slowDefinitionsRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, "Definitions", r.operations.definitions, slowDefinitionsRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -43,7 +43,7 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	// traversal and should not require an additional moniker search in the same index.
 
 	for i := range adjustedUploads {
-		traceLog(log.Int("uploadID", adjustedUploads[i].Upload.ID))
+		trace.Log(log.Int("uploadID", adjustedUploads[i].Upload.ID))
 
 		locations, _, err := r.lsifStore.Definitions(
 			ctx,
@@ -68,7 +68,7 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	if err != nil {
 		return nil, err
 	}
-	traceLog(
+	trace.Log(
 		log.Int("numMonikers", len(orderedMonikers)),
 		log.String("monikers", monikersToString(orderedMonikers)),
 	)
@@ -80,7 +80,7 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	if err != nil {
 		return nil, err
 	}
-	traceLog(
+	trace.Log(
 		log.Int("numDefinitionUploads", len(uploads)),
 		log.String("definitionUploads", uploadIDsToString(uploads)),
 	)
@@ -90,7 +90,7 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	if err != nil {
 		return nil, err
 	}
-	traceLog(log.Int("numLocations", len(locations)))
+	trace.Log(log.Int("numLocations", len(locations)))
 
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
 	// locations within the repository the user is browsing so that it appears all definitions
@@ -100,7 +100,7 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	if err != nil {
 		return nil, err
 	}
-	traceLog(log.Int("numAdjustedLocations", len(adjustedLocations)))
+	trace.Log(log.Int("numAdjustedLocations", len(adjustedLocations)))
 
 	return adjustedLocations, nil
 }
