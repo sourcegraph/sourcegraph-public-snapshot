@@ -28,7 +28,7 @@ export type ExtensionInsight = SearchExtensionBasedInsight | LangStatsInsight
 /**
  * Backend insights - insights that have all data series points already in gql API.
  */
-export type BackendInsight = SearchBackendBasedInsight
+export type BackendInsight = SearchBackendBasedInsight | CaptureGroupInsight
 
 export function isBackendInsight(insight: Insight): insight is BackendInsight {
     return insight.type === InsightExecutionType.Backend

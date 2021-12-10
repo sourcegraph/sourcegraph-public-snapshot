@@ -6,11 +6,10 @@ import {
     CreateLangStatsInsightResult,
     CreateSearchBasedInsightResult,
     FirstStepCreateSearchBasedInsightResult,
-    LineChartSearchInsightInput,
     PieChartSearchInsightInput,
     UpdateLineChartSearchInsightResult,
     UpdateLineChartSearchInsightVariables,
-} from '../../../../../../graphql-operations'
+} from '../../../../../../../graphql-operations'
 import {
     CaptureGroupInsight,
     InsightDashboard,
@@ -18,13 +17,14 @@ import {
     InsightType,
     isVirtualDashboard,
     SearchBasedInsight,
-} from '../../../types'
-import { SearchBackendBasedInsight } from '../../../types/insight/search-insight'
-import { InsightCreateInput } from '../../code-insights-backend-types'
-import { INSIGHT_VIEW_FRAGMENT } from '../gql/GetInsights'
-import { getCaptureGroupInsightCreateInput } from '../serialization/capture-insight-to-gql-input'
-import { getSearchInsightCreateInput, getSearchInsightUpdateInput } from '../serialization/search-insight-to-gql-input'
-import { getInsightView } from '../utils/insight-transformers'
+} from '../../../../types'
+import { SearchBackendBasedInsight } from '../../../../types/insight/search-insight'
+import { InsightCreateInput } from '../../../code-insights-backend-types'
+import { createInsightView } from '../../deserialization/create-insight-view'
+import { INSIGHT_VIEW_FRAGMENT } from '../../gql/GetInsights'
+import { getSearchInsightUpdateInput } from '../update-insight/serializators'
+
+import { getInsightCreateGqlInput, getLangStatsInsightCreateInput } from './serializators'
 
 /**
  * Main handler to create insight with GQL api. It absorbs all implementation details around GQL api.
@@ -50,17 +50,7 @@ export const createInsight = (apolloClient: ApolloClient<object>, input: Insight
                             }
                         }
                     `,
-                    variables: {
-                        input: {
-                            query: '',
-                            repositoryScope: { repositories: [insight.repository] },
-                            presentationOptions: {
-                                title: insight.title,
-                                otherThreshold: insight.otherThreshold,
-                            },
-                            dashboards: [dashboard?.id ?? ''],
-                        },
-                    },
+                    variables: { input: getLangStatsInsightCreateInput(insight, dashboard) },
                 })
             )
         }
@@ -72,7 +62,7 @@ function createSearchBasedInsight(
     insight: SearchBasedInsight | CaptureGroupInsight,
     dashboard: InsightDashboard | null
 ): Observable<unknown> {
-    const input = getInsightGqlInput(insight, dashboard)
+    const input = getInsightCreateGqlInput(insight, dashboard)
 
     // In case if we want to create an insight with some predefined filters we have to
     // create the insight first and only after update this newly created insight with filter values
@@ -103,7 +93,7 @@ function createSearchBasedInsight(
                     return of()
                 }
 
-                const createdInsight = getInsightView(
+                const createdInsight = createInsightView(
                     data.createLineChartSearchInsight.view
                 ) as SearchBackendBasedInsight
 
@@ -223,17 +213,5 @@ function searchInsightCreationOptimisticUpdate(
                 views: { nodes: [...cachedDashboard.views.nodes, Insight] },
             },
         })
-    }
-}
-
-function getInsightGqlInput(
-    insight: SearchBasedInsight | CaptureGroupInsight,
-    dashbard: InsightDashboard | null
-): LineChartSearchInsightInput {
-    switch (insight.viewType) {
-        case InsightType.SearchBased:
-            return getSearchInsightCreateInput(insight, dashbard)
-        case InsightType.CaptureGroup:
-            return getCaptureGroupInsightCreateInput(insight, dashbard)
     }
 }
