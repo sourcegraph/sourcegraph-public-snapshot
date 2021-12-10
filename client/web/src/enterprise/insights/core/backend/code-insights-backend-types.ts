@@ -4,7 +4,7 @@ import { LineChartContent } from 'sourcegraph'
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 import { ExtensionInsight, Insight, InsightDashboard, CustomInsightDashboard } from '../types'
-import { SearchBasedBackendFilters, SearchBasedInsightSeries } from '../types/insight/search-insight'
+import { SearchBasedInsightSeries } from '../types/insight/search-insight'
 
 export interface DashboardCreateInput {
     name: string
@@ -44,7 +44,7 @@ export interface InsightCreateInput {
 
 export interface InsightUpdateInput {
     oldInsight: Insight
-    newInsight: Insight & { filters?: SearchBasedBackendFilters }
+    newInsight: Insight
 }
 
 export interface SearchInsightSettings {
@@ -75,7 +75,7 @@ export interface BackendInsightData {
     id: string
     view: {
         title: string
-        subtitle: string
+        subtitle?: string
         content: LineChartContent<any, string>[]
         isFetchingHistoricalData: boolean
     }
