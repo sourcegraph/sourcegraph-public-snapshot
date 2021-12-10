@@ -1997,6 +1997,8 @@ func testSyncReposWithLastErrors(s *repos.Store) func(*testing.T) {
 			t.Fatalf("should've inserted exactly 1 repo in the db for testing, got %d instead", len(dbRepos))
 		}
 
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
 		// Run the syncer, which should find the repo with non-empty last_error and delete it
 		err := syncer.SyncReposWithLastErrors(ctx, rate.NewLimiter(200, 1))
 		if err != nil {
@@ -2029,7 +2031,7 @@ func testSyncReposWithLastErrorsHitsRateLimiter(s *repos.Store) func(*testing.T)
 	return func(t *testing.T) {
 		ctx := context.Background()
 		repoNames := []api.RepoName{
-			"gitlab.com/asdf/jkl",
+			"github.com/asdf/jkl",
 			"github.com/foo/bar",
 		}
 		syncer, _ := setupSyncErroredTest(ctx, s, t, extsvc.KindGitLab, &database.RepoNotFoundErr{Name: "gitlab.com/asdf/jkl"}, repoNames...)
@@ -2050,19 +2052,36 @@ func testSyncReposWithLastErrorsHitsRateLimiter(s *repos.Store) func(*testing.T)
 func setupSyncErroredTest(ctx context.Context, s *repos.Store, t *testing.T,
 	serviceType string, externalSvcError error, repoNames ...api.RepoName) (*repos.Syncer, types.Repos) {
 	t.Helper()
-	servicesPerKind := createExternalServices(t, s, func(svc *types.ExternalService) { svc.CloudDefault = true })
-
+	now := time.Now()
 	dbRepos := types.Repos{}
+	service := types.ExternalService{
+		Kind:         extsvc.KindGitHub,
+		DisplayName:  "Github - Test",
+		Config:       `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		CreatedAt:    now,
+		UpdatedAt:    now,
+		CloudDefault: true,
+	}
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+
+	err := s.ExternalServiceStore.Create(ctx, confGet, &service)
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, repoName := range repoNames {
-		dbRepo := &types.Repo{
+		dbRepo := (&types.Repo{
 			Name:        repoName,
-			Description: "Test",
+			Description: "",
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          fmt.Sprintf("external-%s", repoName), // TODO: make this something else?
-				ServiceID:   "https://gitlab.com/",
+				ServiceID:   "https://github.com/",
 				ServiceType: serviceType,
 			},
-		}
+		}).With(typestest.Opt.RepoSources(service.URN()))
 		// Insert the repo into our database
 		if err := s.RepoStore.Create(ctx, dbRepo); err != nil {
 			t.Fatal(err)
@@ -2090,7 +2109,7 @@ func setupSyncErroredTest(ctx context.Context, s *repos.Store, t *testing.T,
 		Synced: make(chan repos.Diff, 1),
 		Sourcer: repos.NewFakeSourcer(
 			nil,
-			repos.NewFakeSource(servicesPerKind[serviceType],
+			repos.NewFakeSource(&service,
 				externalSvcError,
 				dbRepos...),
 		),
