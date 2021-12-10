@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/google/go-github/v31/github"
+	"github.com/google/go-github/v41/github"
 	"golang.org/x/oauth2"
 )
 

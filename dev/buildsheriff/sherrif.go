@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/google/go-github/v31/github"
+	"github.com/google/go-github/v41/github"
 )
 
 type sherrifOptions struct {
@@ -37,7 +37,7 @@ func buildsherrif(ctx context.Context, ghc *github.Client, builds []buildkite.Bu
 	}
 
 	// if failed, check if failures are consecutive
-	failureAuthorsEmails, exceeded := checkConsecutiveFailures(builds[firstFailedBuild:],
+	commits, exceeded := checkConsecutiveFailures(builds[firstFailedBuild:],
 		opts.FailuresThreshold, opts.BuildTimeout)
 	if !exceeded {
 		if err := opts.Branch.Unlock(ctx); err != nil {
@@ -47,7 +47,7 @@ func buildsherrif(ctx context.Context, ghc *github.Client, builds []buildkite.Bu
 	}
 
 	fmt.Println("threshold exceeded, this is a big deal!")
-	if err := opts.Branch.Lock(ctx, failureAuthorsEmails, []string{"dev-experience"}); err != nil {
+	if err := opts.Branch.Lock(ctx, commits, []string{"dev-experience"}); err != nil {
 		return fmt.Errorf("lockBranch: %w", err)
 	}
 
@@ -66,17 +66,17 @@ func isBuildFailed(build buildkite.Build, timeout time.Duration) bool {
 	return false
 }
 
-func checkConsecutiveFailures(builds []buildkite.Build, threshold int, timeout time.Duration) (authorsEmails []string, thresholdExceeded bool) {
+func checkConsecutiveFailures(builds []buildkite.Build, threshold int, timeout time.Duration) (commits []string, thresholdExceeded bool) {
 	var consecutiveFailures int
 	for _, b := range builds {
 		if b.State == nil && *b.State == "passed" {
 			fmt.Printf("build %d passed\n", *b.Number)
-			return authorsEmails, false
+			return commits, false
 		}
 
 		if isBuildFailed(b, timeout) {
 			consecutiveFailures += 1
-			authorsEmails = append(authorsEmails, b.Author.Email)
+			commits = append(commits, *b.Commit)
 			fmt.Printf("build %d is %dth consecutive failure\n", *b.Number, consecutiveFailures)
 			if consecutiveFailures > threshold {
 				break
@@ -85,5 +85,5 @@ func checkConsecutiveFailures(builds []buildkite.Build, threshold int, timeout t
 	}
 
 	// If we get this far we've found a sufficient sequence of failed builds
-	return authorsEmails, true
+	return commits, true
 }
