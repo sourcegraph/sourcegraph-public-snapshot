@@ -29,14 +29,18 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
     ...enterpriseNamespaceAreaRoutes,
     {
         path: '/batch-changes/create',
-        render: props => <CreateBatchChangePage headingElement="h1" {...props} namespace={props.org} />,
+        render: props => <CreateBatchChangePage headingElement="h1" {...props} initialNamespaceID={props.org.id} />,
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
         fullPage: true,
     },
     {
         path: '/batch-changes/:batchChangeName/edit',
         render: ({ match, ...props }: OrgAreaPageProps & RouteComponentProps<{ batchChangeName: string }>) => (
-            <NewCreateBatchChangePage {...props} namespace={props.org} batchChangeName={match.params.batchChangeName} />
+            <NewCreateBatchChangePage
+                {...props}
+                initialNamespaceID={props.org.id}
+                batchChangeName={match.params.batchChangeName}
+            />
         ),
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,

@@ -24,8 +24,6 @@ import {
     EditBatchChangeFields,
     GetBatchChangeResult,
     GetBatchChangeVariables,
-    OrgAreaOrganizationFields,
-    UserAreaUserFields,
     CreateEmptyBatchChangeVariables,
     CreateEmptyBatchChangeResult,
 } from '../../../graphql-operations'
@@ -45,8 +43,11 @@ import { useNamespaces } from './useNamespaces'
 import { useBatchSpecWorkspaceResolution, WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
 
 interface NewCreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
-    /** The namespace the batch change should be created in, or that it already belongs to. */
-    namespace?: UserAreaUserFields | OrgAreaOrganizationFields
+    /**
+     * The id for the namespace that the batch change should be created in, or that it
+     * already belongs to, if it already exists.
+     */
+    initialNamespaceID?: Scalars['ID']
     /** The batch change name, if it already exists. */
     batchChangeName?: BatchChangeFields['name']
 }
@@ -57,16 +58,16 @@ interface NewCreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps
  * or editing and re-executing a new batch spec for an existing one.
  */
 export const NewCreateBatchChangePage: React.FunctionComponent<NewCreateBatchChangePageProps> = ({
-    namespace,
+    initialNamespaceID,
     batchChangeName,
     ...props
 }) => {
     const { data, loading } = useQuery<GetBatchChangeResult, GetBatchChangeVariables>(GET_BATCH_CHANGE, {
-        // If we don't have a batch change name, the user hasn't created a batch change
-        // yet, so skip the request.
-        skip: !namespace || !batchChangeName,
+        // If we don't have the batch change name or namespace, the user hasn't created a
+        // batch change yet, so skip the request.
+        skip: !initialNamespaceID || !batchChangeName,
         variables: {
-            namespace: namespace?.id as Scalars['ID'],
+            namespace: initialNamespaceID as Scalars['ID'],
             name: batchChangeName as BatchChangeFields['name'],
         },
         // Cache this data but always re-request it in the background when we revisit
@@ -75,7 +76,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<NewCreateBatchCha
     })
 
     if (!batchChangeName) {
-        return <CreatePage namespace={namespace} {...props} />
+        return <CreatePage namespaceID={initialNamespaceID} {...props} />
     }
 
     if (loading) {
@@ -90,7 +91,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<NewCreateBatchCha
         return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
     }
 
-    return <EditPage namespace={namespace} batchChange={data.batchChange} {...props} />
+    return <EditPage batchChange={data.batchChange} {...props} />
 }
 
 interface CreatePageProps extends SettingsCascadeProps<Settings> {
@@ -98,16 +99,16 @@ interface CreatePageProps extends SettingsCascadeProps<Settings> {
      * The namespace the batch change should be created in. If none is provided, it will
      * default to the user's own namespace.
      */
-    namespace?: UserAreaUserFields | OrgAreaOrganizationFields
+    namespaceID?: Scalars['ID']
 }
 
-const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespace, settingsCascade }) => {
+const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, settingsCascade }) => {
     const [createEmptyBatchChange, { loading, error }] = useMutation<
         CreateEmptyBatchChangeResult,
         CreateEmptyBatchChangeVariables
     >(CREATE_EMPTY_BATCH_CHANGE)
 
-    const { namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade, namespace)
+    const { namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade, namespaceID)
 
     // The namespace selected for creating the new batch change under.
     const [selectedNamespace, setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
@@ -123,6 +124,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespace, setti
             variables: { namespace: selectedNamespace.id, name: nameInput },
         })
             .then(({ data }) => (data ? history.push(`${data.createEmptyBatchChange.url}/edit`) : noop()))
+            // We destructure and surface the error from `useMutation` instead.
             .catch(noop)
     }
 
@@ -158,21 +160,11 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespace, setti
 }
 
 interface EditPageProps extends ThemeProps, SettingsCascadeProps<Settings> {
-    /**
-     * The namespace the batch change should be created in, or that it already belongs to.
-     * If none is provided, it will default to the user's own namespace.
-     */
-    namespace?: UserAreaUserFields | OrgAreaOrganizationFields
     /** The batch change, if it already exists */
     batchChange: EditBatchChangeFields
 }
 
-const EditPage: React.FunctionComponent<EditPageProps> = ({
-    namespace,
-    batchChange,
-    isLightTheme,
-    settingsCascade,
-}) => {
+const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, isLightTheme, settingsCascade }) => {
     const batchSpecID = batchChange.currentSpec.id
 
     const [
@@ -180,7 +172,10 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         { data: createEmptyBatchChangeData, loading: createEmptyBatchChangeLoading },
     ] = useMutation<CreateEmptyBatchChangeResult, CreateEmptyBatchChangeVariables>(CREATE_EMPTY_BATCH_CHANGE)
 
-    const { namespaces: _namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade, namespace)
+    const { namespaces: _namespaces, defaultSelectedNamespace } = useNamespaces(
+        settingsCascade,
+        batchChange.namespace.id
+    )
 
     // The namespace selected for creating the new batch spec under.
     const [selectedNamespace, _setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(

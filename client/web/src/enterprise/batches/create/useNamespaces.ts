@@ -8,7 +8,7 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { OrgAreaOrganizationFields, UserAreaUserFields } from '../../../graphql-operations'
+import { Scalars } from '../../../graphql-operations'
 import { Settings } from '../../../schema/settings.schema'
 
 export interface UseNamespacesResult {
@@ -22,11 +22,11 @@ export interface UseNamespacesResult {
  * appropriate default namespace to select for the user.
  *
  * @param settingsCascade The current user's `Settings`.
- * @param initialNamespace The initial namespace to select.
+ * @param initialNamespaceID The id of the initial namespace to select.
  */
 export const useNamespaces = (
     settingsCascade: SettingsCascadeOrError<Settings>,
-    initialNamespace?: UserAreaUserFields | OrgAreaOrganizationFields
+    initialNamespaceID?: Scalars['ID']
 ): UseNamespacesResult => {
     // Gather all the available namespaces from the settings subjects.
     const rawNamespaces: SettingsSubject[] = useMemo(
@@ -61,11 +61,11 @@ export const useNamespaces = (
     // The default namespace selected from the dropdown should match whatever the initial
     // namespace was, or else default to the user's namespace.
     const defaultSelectedNamespace = useMemo(() => {
-        if (initialNamespace) {
-            return namespaces.find(namespace => namespace.id === initialNamespace.id) || userNamespace
+        if (initialNamespaceID) {
+            return namespaces.find(namespace => namespace.id === initialNamespaceID) || userNamespace
         }
         return userNamespace
-    }, [namespaces, initialNamespace, userNamespace])
+    }, [namespaces, initialNamespaceID, userNamespace])
 
     return {
         userNamespace,
