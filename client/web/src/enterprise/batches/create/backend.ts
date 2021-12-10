@@ -58,7 +58,7 @@ export const CREATE_EMPTY_BATCH_CHANGE = gql`
     mutation CreateEmptyBatchChange($namespace: ID!, $name: String!) {
         createEmptyBatchChange(namespace: $namespace, name: $name) {
             id
-            name
+            url
         }
     }
 `

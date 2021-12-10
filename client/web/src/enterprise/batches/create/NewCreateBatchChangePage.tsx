@@ -1,7 +1,9 @@
 // TODO: Rename me to editor page
 import classNames from 'classnames'
+import { noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useCallback, useMemo, useState } from 'react'
+import { useHistory } from 'react-router'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useMutation, useQuery } from '@sourcegraph/shared/src/graphql/apollo'
@@ -15,7 +17,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
-import { LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Container, Input, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import {
@@ -33,7 +35,6 @@ import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE, CREATE_EMPTY_BATCH_CHANGE } from './backend'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
-import helloWorldSample from './library/hello-world.batch.yaml'
 import { LibraryPane } from './library/LibraryPane'
 import { NamespaceSelector } from './NamespaceSelector'
 import styles from './NewCreateBatchChangePage.module.scss'
@@ -95,7 +96,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<NewCreateBatchCha
     })
 
     if (!batchChangeName) {
-        return <EditPage namespace={namespace} {...props} />
+        return <CreatePage namespace={namespace} {...props} />
     }
 
     if (loading) {
@@ -113,6 +114,88 @@ export const NewCreateBatchChangePage: React.FunctionComponent<NewCreateBatchCha
     return <EditPage namespace={namespace} batchChange={data.batchChange} {...props} />
 }
 
+interface CreatePageProps extends SettingsCascadeProps<Settings> {
+    /**
+     * The namespace the batch change should be created in. If none is provided, it will
+     * default to the user's own namespace.
+     */
+    namespace?: UserAreaUserFields | OrgAreaOrganizationFields
+}
+
+const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespace, settingsCascade }) => {
+    const [createEmptyBatchChange, { loading }] = useMutation<
+        CreateEmptyBatchChangeResult,
+        CreateEmptyBatchChangeVariables
+    >(CREATE_EMPTY_BATCH_CHANGE)
+
+    const { namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade, namespace)
+
+    // The namespace selected for creating the new batch change under.
+    const [selectedNamespace, setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
+        defaultSelectedNamespace
+    )
+
+    const [nameInput, setNameInput] = useState('')
+
+    const history = useHistory()
+    const handleCancel = (): void => history.goBack()
+    const handleCreate = (): void => {
+        createEmptyBatchChange({
+            variables: { namespace: selectedNamespace.id, name: nameInput },
+        })
+            .then(({ data }) => (data ? history.push(`${data.createEmptyBatchChange.url}/edit`) : noop()))
+            .catch(noop)
+    }
+
+    return (
+        <div className="d-flex flex-column p-4 w-100 h-100">
+            <div className="d-flex flex-0 justify-content-between align-items-start">
+                <PageHeader
+                    path={[
+                        { icon: BatchChangesIcon },
+                        {
+                            to: getNamespaceBatchChangesURL(selectedNamespace),
+                            text: getNamespaceDisplayName(selectedNamespace),
+                        },
+                        { text: 'Create batch change' },
+                    ]}
+                    className="flex-1 pb-2"
+                    description="Run custom code over hundreds of repositories and manage the resulting changesets."
+                />
+                <div className="d-flex flex-column flex-0 align-items-center justify-content-center">
+                    <ButtonTooltip type="button" className="btn btn-primary mb-2" disabled={true}>
+                        Run batch spec
+                    </ButtonTooltip>
+                </div>
+            </div>
+            <div className={styles.settingsContainer}>
+                <h4>Batch specification settings</h4>
+                <Container>
+                    <NamespaceSelector
+                        namespaces={namespaces}
+                        selectedNamespace={selectedNamespace.id}
+                        onSelect={setSelectedNamespace}
+                    />
+                    <Input
+                        className={styles.nameInput}
+                        label="Batch change name"
+                        value={nameInput}
+                        onChange={event => setNameInput(event.target.value)}
+                    />
+                </Container>
+                <div className="mt-3 align-self-end">
+                    <Button variant="secondary" outline={true} className="mr-2" onClick={handleCancel}>
+                        Cancel
+                    </Button>
+                    <Button variant="primary" onClick={handleCreate} disabled={loading}>
+                        Create
+                    </Button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 interface EditPageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     /**
      * The namespace the batch change should be created in, or that it already belongs to.
@@ -120,8 +203,7 @@ interface EditPageProps extends ThemeProps, SettingsCascadeProps<Settings> {
      */
     namespace?: UserAreaUserFields | OrgAreaOrganizationFields
     /** The batch change, if it already exists */
-    // TODO: Make this a required prop and otherwise show the "Create" form (exists on other branch)
-    batchChange?: EditBatchChangeFields
+    batchChange: EditBatchChangeFields
 }
 
 const EditPage: React.FunctionComponent<EditPageProps> = ({
@@ -130,19 +212,17 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
     isLightTheme,
     settingsCascade,
 }) => {
-    // TODO: This will always be available once the "Create" form from the other
-    // branch is ready.
-    const batchSpecID = batchChange?.currentSpec.id
+    const batchSpecID = batchChange.currentSpec.id
 
     const [
         createEmptyBatchChange,
         { data: createEmptyBatchChangeData, loading: createEmptyBatchChangeLoading },
     ] = useMutation<CreateEmptyBatchChangeResult, CreateEmptyBatchChangeVariables>(CREATE_EMPTY_BATCH_CHANGE)
 
-    const { namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade, namespace)
+    const { namespaces: _namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade, namespace)
 
     // The namespace selected for creating the new batch spec under.
-    const [selectedNamespace, setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
+    const [selectedNamespace, _setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
         defaultSelectedNamespace
     )
 
@@ -159,7 +239,8 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
 
     // Manage the batch spec input YAML code that's being edited.
     const { code, debouncedCode, isValid, handleCodeChange, excludeRepo, errors: codeErrors } = useBatchSpecCode(
-        batchChange?.currentSpec.originalInput || helloWorldSample
+        // TODO: Use hello world with the right name if the original input is empty
+        batchChange.currentSpec.originalInput
     )
 
     // Track whenever the batch spec code that is presently in the editor gets ahead of
@@ -174,7 +255,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         isLoading: isLoadingPreview,
         error: previewError,
         clearError: clearPreviewError,
-    } = usePreviewBatchSpec(batchSpecID || '', noCache, markUnstale)
+    } = usePreviewBatchSpec(batchSpecID, noCache, markUnstale)
 
     const clearErrorsAndHandleCodeChange = useCallback(
         (newCode: string) => {
@@ -211,8 +292,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
     // * the current workspaces evaluation is not complete
     const [disableExecution, executionTooltip] = useMemo(() => {
         const disableExecution = Boolean(
-            batchChange === undefined ||
-                batchChange.lastApplier !== null ||
+            batchChange.lastApplier !== null ||
                 isValid !== true ||
                 previewError ||
                 isLoadingPreview ||
@@ -223,9 +303,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         )
         // The execution tooltip only shows if the execute button is disabled, and explains why.
         const executionTooltip =
-            batchChange === undefined
-                ? "There's nothing to run yet."
-                : batchChange.lastApplier !== null
+            batchChange.lastApplier !== null
                 ? 'This batch change has already had a spec applied.'
                 : isValid === false || previewError
                 ? "There's a problem with your batch spec."
@@ -261,30 +339,19 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
 
     return (
         <div className="d-flex flex-column p-4 w-100 h-100">
-            <div className="d-flex flex-0 justify-content-between">
-                <div className="flex-1">
-                    <PageHeader
-                        path={[
-                            { icon: BatchChangesIcon },
-                            {
-                                to: getNamespaceBatchChangesURL(selectedNamespace),
-                                text: getNamespaceDisplayName(selectedNamespace),
-                            },
-                            { text: batchChange?.name || 'Create batch change' },
-                        ]}
-                        className="flex-1 pb-2"
-                        description="Run custom code over hundreds of repositories and manage the resulting changesets."
-                    />
-
-                    {/* TODO: We'll be able to edit the namespace for an existing batch change from the new create/update form flow */}
-                    {batchChange ? null : (
-                        <NamespaceSelector
-                            namespaces={namespaces}
-                            selectedNamespace={selectedNamespace.id}
-                            onSelect={setSelectedNamespace}
-                        />
-                    )}
-                </div>
+            <div className="d-flex flex-0 justify-content-between align-items-start">
+                <PageHeader
+                    path={[
+                        { icon: BatchChangesIcon },
+                        {
+                            to: getNamespaceBatchChangesURL(selectedNamespace),
+                            text: getNamespaceDisplayName(selectedNamespace),
+                        },
+                        { text: batchChange.name || 'Create batch change' },
+                    ]}
+                    className="flex-1 pb-2"
+                    description="Run custom code over hundreds of repositories and manage the resulting changesets."
+                />
                 <div className="d-flex flex-column flex-0 align-items-center justify-content-center">
                     <ButtonTooltip
                         type="button"
