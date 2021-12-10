@@ -28,6 +28,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Moving a changeset from draft state into published state was broken on GitLab code hosts. [#28239](https://github.com/sourcegraph/sourcegraph/pull/28239)
 - The shortcuts for toggling the History Panel and Line Wrap were not working on Mac. [#28574](https://github.com/sourcegraph/sourcegraph/pull/28574)
+- Fixed an issue where certain regexp syntax for repository searches caused the entire search, including non-repository searches, to fail with a parse error (issue affects only version 3.34). [#28826](https://github.com/sourcegraph/sourcegraph/pull/28826)
 
 ### Removed
 
