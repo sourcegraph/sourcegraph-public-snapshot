@@ -10,6 +10,7 @@ pushd dev/buildsheriff
 echo "--- Running buildsheriff"
 go run main.go \
   -buildkite.token="$BUILDKITE_TOKEN" \
-  -github.token="$GITHUB_TOKEN"
+  -github.token="$GITHUB_TOKEN" \
+  -slack.webhook="$WEBHOOK_URL"
 
 popd
