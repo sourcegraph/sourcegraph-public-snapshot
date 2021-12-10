@@ -495,6 +495,9 @@ func (s *Syncer) SyncExternalService(
 			s.log().Error("failed to sync, skipping", "repo", sourced.Name, "err", err)
 			multierror.Append(errs, err)
 
+			// Stop syncing this external service as soon as we know repository limits for user or
+			// site level has been exceeded. We want to avoid generating spurious errors here
+			// because all subsequent syncs will continue failing unless the limits are increased.
 			if errors.HasType(err, &RepoLimitError{}) {
 				break
 			}
