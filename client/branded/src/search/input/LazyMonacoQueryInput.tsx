@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React, { Suspense } from 'react'
 
-import { lazyComponent } from '../../util/lazyComponent'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import styles from './LazyMonacoQueryInput.module.scss'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
@@ -38,6 +38,6 @@ export const PlainQueryInput: React.FunctionComponent<
  */
 export const LazyMonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = props => (
     <Suspense fallback={<PlainQueryInput {...props} />}>
-        <MonacoQueryInput {...props} />
+        <MonacoQueryInput {...props} className={classNames(props.className, 'flex-grow-1 flex-shrink-past-contents')} />
     </Suspense>
 )

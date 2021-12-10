@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import React from 'react'
 
-import { SearchPatternType } from '../../../graphql-operations'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
 import { getFullQuery, Toggles } from './Toggles'
 

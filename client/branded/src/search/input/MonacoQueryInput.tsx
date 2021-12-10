@@ -2,20 +2,20 @@ import classNames from 'classnames'
 import { isPlainObject, noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
+import { Observable } from 'rxjs'
 
+import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { CaseSensitivityProps, SearchContextProps } from '@sourcegraph/shared/src/search'
+import { QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search/helpers'
 import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { useQueryIntelligence, useQueryDiagnostics } from '@sourcegraph/shared/src/search/useQueryIntelligence'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { observeResize } from '@sourcegraph/shared/src/util/dom'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
-
-import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '..'
-import { MonacoEditor } from '../../components/MonacoEditor'
-import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
-import { observeResize } from '../../util/dom'
-import { QueryChangeSource, QueryState } from '../helpers'
-import { useQueryIntelligence, useQueryDiagnostics } from '../useQueryIntelligence'
 
 import styles from './MonacoQueryInput.module.scss'
 
@@ -64,6 +64,7 @@ export interface MonacoQueryInputProps
     onFocus?: () => void
     onBlur?: () => void
     onCompletionItemSelected?: () => void
+    fetchSuggestions: (query: string) => Observable<SearchMatch[]>
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     onEditorCreated?: (editor: Monaco.editor.IStandaloneCodeEditor) => void
     autoFocus?: boolean
@@ -149,6 +150,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     onBlur,
     onChange,
     onSubmit,
+    fetchSuggestions,
     onSuggestionsInitialized,
     onCompletionItemSelected,
     autoFocus,
@@ -194,8 +196,8 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     }, [editor, container])
 
     const fetchSuggestionsWithContext = useCallback(
-        (query: string) => fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
-        [selectedSearchContextSpec]
+        (query: string) => fetchSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
+        [selectedSearchContextSpec, fetchSuggestions]
     )
 
     const sourcegraphSearchLanguageId = useQueryIntelligence(fetchSuggestionsWithContext, {

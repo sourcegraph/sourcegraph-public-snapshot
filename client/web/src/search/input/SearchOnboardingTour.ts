@@ -8,16 +8,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Shepherd from 'shepherd.js'
 import Tour from 'shepherd.js/src/types/tour'
 
+import { MonacoQueryInputProps } from '@sourcegraph/branded/src/search/input/MonacoQueryInput'
+import { QueryState } from '@sourcegraph/shared/src/search/helpers'
 import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { isMacPlatform } from '@sourcegraph/shared/src/util/platformDetection'
 
-import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
 import { eventLogger } from '../../tracking/eventLogger'
-import { isMacPlatform } from '../../util'
-import { QueryState } from '../helpers'
 
-import { MonacoQueryInputProps } from './MonacoQueryInput'
 import styles from './SearchOnboardingTour.module.scss'
 import { defaultPopperModifiers, defaultTourOptions } from './tour-options'
 

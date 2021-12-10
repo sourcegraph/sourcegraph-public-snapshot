@@ -3,20 +3,24 @@ import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import React, { useCallback, useState } from 'react'
 import { DropdownItem, DropdownMenu, DropdownToggle, ButtonDropdown } from 'reactstrap'
 
-import { eventLogger } from '../../tracking/eventLogger'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 /**
  * A dropdown button that shows a menu with reference documentation for Sourcegraph search query
  * syntax.
  */
-export const SearchHelpDropdownButton: React.FunctionComponent = () => {
+export const SearchHelpDropdownButton: React.FunctionComponent<
+    {
+        sourcegraphDotComMode: boolean
+    } & TelemetryProps
+> = ({ sourcegraphDotComMode, telemetryService }) => {
     const [isOpen, setIsOpen] = useState(false)
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
     const onQueryDocumentationLinkClicked = useCallback(() => {
-        eventLogger.log('SearchHelpDropdownQueryDocsLinkClicked')
+        telemetryService.log('SearchHelpDropdownQueryDocsLinkClicked')
         toggleIsOpen()
-    }, [toggleIsOpen])
-    const documentationUrlPrefix = window.context?.sourcegraphDotComMode ? 'https://docs.sourcegraph.com' : '/help'
+    }, [toggleIsOpen, telemetryService])
+    const documentationUrlPrefix = sourcegraphDotComMode ? 'https://docs.sourcegraph.com' : '/help'
 
     return (
         <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="search-help-dropdown-button d-flex">
@@ -65,7 +69,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                             repo:<strong>my/repo</strong>
                         </code>
                     </li>
-                    {window.context?.sourcegraphDotComMode && (
+                    {sourcegraphDotComMode && (
                         <li>
                             <code>
                                 repo:<strong>github.com/myorg/</strong>
@@ -116,7 +120,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                 >
                     <ExternalLinkIcon className="icon-inline small" /> All search keywords
                 </a>
-                {window.context?.sourcegraphDotComMode && (
+                {sourcegraphDotComMode && (
                     <div className="alert alert-info small rounded-0 mb-0 mt-1">
                         On Sourcegraph.com, use a <code>repo:</code> filter to narrow your search to &le;500
                         repositories.

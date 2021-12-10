@@ -2,14 +2,14 @@ import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
+import { SubmitSearchProps } from '@sourcegraph/shared/src/search/helpers'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-
-import { SearchContextInputProps } from '..'
-import { AuthenticatedUser } from '../../auth'
-import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
-import { SubmitSearchProps } from '../helpers'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
 import styles from './SearchContextDropdown.module.scss'
@@ -18,13 +18,15 @@ import { SearchContextMenu } from './SearchContextMenu'
 export interface SearchContextDropdownProps
     extends SearchContextInputProps,
         TelemetryProps,
-        Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
+        Partial<Pick<SubmitSearchProps, 'submitSearch'>>,
+        PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
     showSearchContextManagement: boolean
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'username' | 'tags' | 'organizations'> | null
     query: string
     className?: string
     onEscapeMenuClose?: () => void
+    isExternalServicesUserModeAll?: boolean
 }
 
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
@@ -43,6 +45,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         telemetryService,
         onEscapeMenuClose,
         showSearchContextManagement,
+        isExternalServicesUserModeAll,
     } = props
 
     const [contextCtaDismissed, setContextCtaDismissed] = useTemporarySetting('search.contexts.ctaDismissed', false)
@@ -147,6 +150,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                         authenticatedUser={authenticatedUser}
                         hasUserAddedExternalServices={hasUserAddedExternalServices}
                         onDismiss={onCtaDismissed}
+                        isExternalServicesUserModeAll={isExternalServicesUserModeAll}
                     />
                 )}
             </DropdownMenu>

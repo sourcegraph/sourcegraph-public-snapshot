@@ -4,7 +4,9 @@ import React from 'react'
 import { act } from 'react-dom/test-utils'
 import sinon from 'sinon'
 
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
+import { NOOP_PLATFORM_CONTEXT, NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
@@ -12,9 +14,7 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 
-import { AuthenticatedUser } from '../../auth'
 import { SourcegraphContext } from '../../jscontext'
-import { MockTemporarySettings } from '../../settings/temporary/testUtils'
 
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
 
@@ -34,6 +34,7 @@ describe('SearchContextDropdown', () => {
         isSourcegraphDotCom: false,
         authenticatedUser: null,
         searchContextsEnabled: true,
+        platformContext: NOOP_PLATFORM_CONTEXT,
     }
     const RealIntersectionObserver = window.IntersectionObserver
     let clock: sinon.SinonFakeTimers
