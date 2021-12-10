@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
@@ -42,10 +44,10 @@ type NPMPackage struct {
 
 func NewNPMPackage(scope string, name string) (*NPMPackage, error) {
 	if scope != "" && !npmScopeRegex.MatchString(scope) {
-		return nil, fmt.Errorf("illegal scope %s (allowed characters: 0-9, a-z, _, -)", scope)
+		return nil, errors.Errorf("illegal scope %s (allowed characters: 0-9, a-z, _, -)", scope)
 	}
 	if !npmPackageNameRegex.MatchString(name) {
-		return nil, fmt.Errorf("illegal package name %s (allowed characters: 0-9, a-z, _, -)", name)
+		return nil, errors.Errorf("illegal package name %s (allowed characters: 0-9, a-z, _, -)", name)
 	}
 	return &NPMPackage{scope, name}, nil
 }
@@ -55,7 +57,7 @@ func NewNPMPackage(scope string, name string) (*NPMPackage, error) {
 func ParseNPMPackage(urlPath string) (*NPMPackage, error) {
 	match := npmURLRegex.FindStringSubmatch(urlPath)
 	if match == nil {
-		return nil, fmt.Errorf("expected path in npm/(scope/)?name format but found %s", urlPath)
+		return nil, errors.Errorf("expected path in npm/(scope/)?name format but found %s", urlPath)
 	}
 	result := make(map[string]string)
 	for i, groupName := range npmURLRegex.SubexpNames() {
@@ -156,7 +158,7 @@ func ParseNPMDependency(dependency string) (*NPMDependency, error) {
 	// (source: https://docs.npmjs.com/cli/v8/using-npm/scope)
 	match := scopedPackageNameRegex.FindStringSubmatch(dependency)
 	if match == nil {
-		return nil, fmt.Errorf("expected dependency in (@scope/)?name@version format but found %s", dependency)
+		return nil, errors.Errorf("expected dependency in (@scope/)?name@version format but found %s", dependency)
 	}
 	result := make(map[string]string)
 	for i, groupName := range scopedPackageNameRegex.SubexpNames() {

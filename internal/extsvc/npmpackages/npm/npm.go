@@ -189,5 +189,5 @@ func parseNPMPackOutput(output string) (filename string, err error) {
 		}
 		return filename, nil
 	}
-	return "", fmt.Errorf("failed to parse npm pack's JSON output (%s): %s", errInfo, output)
+	return "", errors.Errorf("failed to parse npm pack's JSON output (%s): %s", errInfo, output)
 }

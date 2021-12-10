@@ -386,20 +386,20 @@ func decompressTgz(tgzPath, destination string) (err error) {
 				return errors.Errorf("unrecognized type of header %+v in tarball %+v", header.Typeflag, path.Base(tgzPath))
 			}
 		}
-		return fmt.Errorf("number of files in tarball %s exceeded limit (10000)", path.Base(tgzPath))
+		return errors.Errorf("number of files in tarball %s exceeded limit (10000)", path.Base(tgzPath))
 	})
 }
 
 func copyTarFileEntry(header *tar.Header, tarReader *tar.Reader, outputPath string) (err error) {
 	if header.Size < 0 {
-		return fmt.Errorf("corrupt tar header with negative size %d bytes for %s",
+		return errors.Errorf("corrupt tar header with negative size %d bytes for %s",
 			header.Size, path.Base(outputPath))
 	}
 	// For reference, "pathological" code like SQLite's amalgamation file is
 	// about 7.9 MiB. So a 15 MiB limit seems good enough.
 	const sizeLimitMiB = 15
 	if header.Size >= (sizeLimitMiB * 1024 * 1024) {
-		return fmt.Errorf("file size for %s (%d bytes) exceeded limit (%d MiB)",
+		return errors.Errorf("file size for %s (%d bytes) exceeded limit (%d MiB)",
 			path.Base(outputPath), header.Size, sizeLimitMiB)
 	}
 	if err = os.MkdirAll(path.Dir(outputPath), 0700); err != nil {
