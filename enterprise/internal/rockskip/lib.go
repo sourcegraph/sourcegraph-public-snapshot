@@ -548,6 +548,10 @@ func (db PostgresDB) Search(hops []string) ([]Blob, error) {
 	return blobs, nil
 }
 
+func (db PostgresDB) Close() error {
+	return db.db.Close()
+}
+
 func (db PostgresDB) PrintInternals() error {
 	fmt.Println("Commit ancestry:")
 	fmt.Println()

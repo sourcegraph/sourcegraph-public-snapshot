@@ -266,27 +266,37 @@ func contains(s []string, str string) bool {
 	return false
 }
 
-func withParse(f func(ParseSymbolsFunc)) error {
+type Ctags struct {
+	parser ctags.Parser
+}
+
+func NewCtags() (Ctags, error) {
 	parser, err := ctags.New(ctags.Options{
 		Bin:                "ctags",
 		PatternLengthLimit: 0,
 	})
 	if err != nil {
-		return err
+		return Ctags{}, err
 	}
-	defer parser.Close()
-	f(func(path string, bytes []byte) ([]string, error) {
-		symbols := []string{}
-		entries, err := parser.Parse(path, bytes)
-		if err != nil {
-			return nil, err
-		}
-		for _, entry := range entries {
-			symbols = append(symbols, entry.Name)
-		}
-		return symbols, nil
-	})
-	return nil
+	return Ctags{
+		parser: parser,
+	}, nil
+}
+
+func (ctags Ctags) Parse(path string, bytes []byte) (symbols []string, err error) {
+	symbols = []string{}
+	entries, err := ctags.parser.Parse(path, bytes)
+	if err != nil {
+		return nil, err
+	}
+	for _, entry := range entries {
+		symbols = append(symbols, entry.Name)
+	}
+	return symbols, nil
+}
+
+func (ctags Ctags) Close() {
+	ctags.parser.Close()
 }
 
 func (db MockDB) PrintInternals() {
@@ -346,6 +356,7 @@ func (db MockDB) PrintInternals() {
 func TestIndexMocks(t *testing.T) {
 	git := NewMockGit()
 	db := NewMockDB()
+	parse := func(path string, contents []byte) ([]string, error) { return []string{"hi"}, nil }
 
 	commits := []string{}
 	prevCommit := NULL
@@ -365,14 +376,9 @@ func TestIndexMocks(t *testing.T) {
 		prevCommit = commit
 	}
 
-	err := withParse(func(parse ParseSymbolsFunc) {
-		err := Index(git, db, parse, "github.com/foo/bar", prevCommit)
-		if err != nil {
-			t.Fatalf("🚨 Index: %s", err)
-		}
-	})
+	err := Index(git, db, parse, "github.com/foo/bar", prevCommit)
 	if err != nil {
-		t.Fatalf("🚨 withParse: %s", err)
+		t.Fatalf("🚨 Index: %s", err)
 	}
 
 	blobs, err := Search(db, prevCommit)
@@ -404,18 +410,19 @@ func TestIndexReal(t *testing.T) {
 	if err != nil {
 		t.Fatalf("🚨 NewPostgresDB: %s", err)
 	}
+	defer db.Close()
+	parser, err := NewCtags()
+	if err != nil {
+		t.Fatalf("🚨 NewCtags: %s", err)
+	}
+	defer parser.Close()
 
 	repo := "github.com/gorilla/mux"
 	head := "3cf0d013e53d62a96c096366d300c84489c26dd5"
 	start := time.Now()
-	err = withParse(func(parse ParseSymbolsFunc) {
-		err := Index(git, db, parse, repo, head)
-		if err != nil {
-			t.Fatalf("🚨 Index: %s", err)
-		}
-	})
+	err = Index(git, db, parser.Parse, repo, head)
 	if err != nil {
-		t.Fatalf("🚨 withParse: %s", err)
+		t.Fatalf("🚨 Index: %s", err)
 	}
 	fmt.Println("took", time.Since(start))
 
@@ -426,6 +433,7 @@ func TestIndexReal(t *testing.T) {
 	paths := []string{}
 	for _, blob := range blobs {
 		paths = append(paths, blob.path)
+		fmt.Println("blorb", blob)
 	}
 
 	cmd := exec.Command("git", "ls-tree", "-r", "--name-only", head)
