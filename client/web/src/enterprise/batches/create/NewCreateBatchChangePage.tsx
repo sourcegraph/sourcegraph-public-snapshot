@@ -146,6 +146,11 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
                         label="Batch change name"
                         value={nameInput}
                         onChange={event => setNameInput(event.target.value)}
+                        onKeyPress={event => {
+                            if (event.key === 'Enter') {
+                                handleCreate()
+                            }
+                        }}
                     />
                 </Container>
                 <div className="mt-3 align-self-end">
