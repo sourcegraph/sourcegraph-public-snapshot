@@ -230,12 +230,10 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	}
 	defer func() { err = tx.store.Done(err) }()
 
-	err = tx.deleteActions(ctx, monitorID, toDelete)
-	if err != nil {
+	if err = tx.deleteActions(ctx, monitorID, toDelete); err != nil {
 		return nil, err
 	}
-	err = tx.createActions(ctx, monitorID, toCreate)
-	if err != nil {
+	if err = tx.createActions(ctx, monitorID, toCreate); err != nil {
 		return nil, err
 	}
 	m, err := tx.updateCodeMonitor(ctx, args)
