@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 
 import styles from './Badge.module.scss'
-import { BADGE_SIZES, BADGE_VARIANTS } from './constants'
+import { BADGE_VARIANTS } from './constants'
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
     /**
@@ -10,9 +10,9 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
      */
     variant?: typeof BADGE_VARIANTS[number]
     /**
-     * Allows modifying the size of the badge. Supports larger or smaller variants.
+     * Allows modifying the size of the badge. Supports a smaller variant.
      */
-    size?: typeof BADGE_SIZES[number]
+    small?: boolean
     /**
      * Render the badge as a rounded pill
      */
@@ -26,6 +26,10 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
      */
     href?: string
     /**
+     * If the Badge should use branded styles. Defaults to true.
+     */
+    branded?: boolean
+    /**
      * Used to change the element that is rendered.
      */
     as?: React.ElementType
@@ -38,24 +42,21 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 export const Badge: React.FunctionComponent<BadgeProps> = ({
     children,
     variant,
-    size,
+    small,
     pill,
     tooltip,
     className,
+    branded = true,
     href,
     as: Component = 'span',
     ...otherProps
 }) => {
+    const brandedClassName =
+        branded && classNames(styles.badge, variant && styles[variant], small && styles.sm, pill && styles.pill)
+
     const commonProps = {
         'data-tooltip': tooltip,
-        className: classNames(
-            'badge',
-            styles.badge,
-            variant && `badge-${variant}`,
-            size && `badge-${size}`,
-            pill && 'badge-pill',
-            className
-        ),
+        className: classNames(brandedClassName, className),
         ...otherProps,
     }
 

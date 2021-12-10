@@ -15,7 +15,7 @@ If you are looking for general information or wish to disclose a vulnerability, 
   - [Where requests come from](#where-requests-come-from)
   - [Non-API endpoints](#non-api-endpoints)
     - [Non-API endpoints are generally static, unprivileged content only](#non-api-endpoints-are-generally-static-unprivileged-content-only)
-      - [Exclusion: window.context](#exclusion-windowcontext)
+      - [A note about window.context](#a-note-about-windowcontext)
       - [Exclusion: username/password manipulation (sign in, password reset, etc.)](#exclusion-usernamepassword-manipulation-sign-in-password-reset-etc)
     - [Risk of CSRF attacks against our non-API endpoints](#risk-of-csrf-attacks-against-our-non-api-endpoints)
     - [How we protect against CSRF in non-API endpoints](#how-we-protect-against-csrf-in-non-api-endpoints)
@@ -26,7 +26,6 @@ If you are looking for general information or wish to disclose a vulnerability, 
     - [How we protect against CSRF in API endpoints](#how-we-protect-against-csrf-in-api-endpoints)
     - [Known issue](#known-issue)
   - [Improving our CSRF threat model](#improving-our-csrf-threat-model)
-    - [Audit usages of `window.context` to exclude any sensitive information](#audit-usages-of-windowcontext-to-exclude-any-sensitive-information)
     - [Eliminate the username/password manipulation exclusion](#eliminate-the-usernamepassword-manipulation-exclusion)
     - [API endpoints should default to CORS `*` IFF access token authentication is being performed](#api-endpoints-should-default-to-cors--iff-access-token-authentication-is-being-performed)
 
@@ -117,9 +116,9 @@ The delineation of API and non-API endpoints is very important because we can al
 
 Aside from the folloowing exclusions, non-API endpoints only serve static, unprivileged content only. However, the two exclusions to this are very notable:
 
-#### Exclusion: window.context
+#### A note about window.context
 
-`window.context` is served with each request. For example, if you make a request via `curl https://sourcegraph.com/search` you'll find each GET request for a page introduces context to JavaScript. Sometimes this contains unprivileged content, such as if you are not authenticated, while other times if you provide the relevant session cookie this may contain privileged content. For example, an unprivileged request looks like:
+`window.context` is served with each request. For example, if you make a request via `curl https://sourcegraph.com/search` you'll find each GET request for a page introduces context to JavaScript. This _only contains unprivileged, public content_ - which is very important as otherwise it could be vulnerable to caching (e.g. if Cloudflare caches a GET request for user A and serves it to user B later):
 
 ```
 	<script ignore-csp>
@@ -127,12 +126,6 @@ Aside from the folloowing exclusions, non-API endpoints only serve static, unpri
 		window.pageError =  null 
 	</script>
 ```
-
-The context provided has various uses:
-
-* It contains context that is merely needed to render the page, e.g. options which are enabled on the site such as which logo image to render (customizable), etc.
-
-Importantly, this context may contain information which is specific to the user's current authentication. That is, if you are authenticated as e.g. an site admin or user, it may contain sensitive information - even though it is merely a GET request.
 
 #### Exclusion: username/password manipulation (sign in, password reset, etc.)
 
@@ -233,14 +226,6 @@ In general, people want to make API requests from other domains - and that is NO
 ## Improving our CSRF threat model
 
 I [@slimsag](https://github.com/slimsag) advise we make the following key improvements to our CSRF threat model in order to improve security, product reliability, and reduce risky behavior of both developers at Sourcegraph and customers on their own private instances:
-
-### Audit usages of `window.context` to exclude any sensitive information
-
-This may be completed at ANY time. It has NO pre-requisites.
-
-Performing this would allow us to restrict `window.context` to ONLY public content, which would alleviate a number of tricky questions around how caching Sourcegraph GET requests can sometimes be harmful. This may already be the case today, but we'd need to verify before adjusting our model to say this is true.
-
-See also: [Exclusion: window.context](#exclusion-windowcontext)
 
 ### Eliminate the username/password manipulation exclusion
 

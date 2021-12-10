@@ -56,28 +56,18 @@ var rng = rand.New(rand.NewSource(func() int64 {
 }()))
 var rngLock sync.Mutex
 
-// NewDB uses NewFromDSN to create a testing database, using the default DSN.
+// NewDB returns a connection to a clean, new temporary testing database with
+// the same schema as Sourcegraph's production Postgres database.
 func NewDB(t testing.TB) *sql.DB {
 	if os.Getenv("USE_FAST_DBTEST") != "" {
 		return NewFastDB(t)
 	}
-	return NewFromDSN(t, "")
+	return newFromDSN(t, "", "migrated")
 }
 
-// NewRawDB uses NewRawFromDSN to create a testing database, using the default DSN.
+// NewRawDB returns a connection to a clean, new temporary testing database.
 func NewRawDB(t testing.TB) *sql.DB {
-	return NewRawFromDSN(t, "")
-}
-
-// NewFromDSN returns a connection to a clean, new temporary testing database
-// with the same schema as Sourcegraph's production Postgres database.
-func NewFromDSN(t testing.TB, dsn string) *sql.DB {
-	return newFromDSN(t, dsn, "migrated")
-}
-
-// NewRawFromDSN returns a connection to a clean, new temporary testing database.
-func NewRawFromDSN(t testing.TB, dsn string) *sql.DB {
-	return newFromDSN(t, dsn, "raw")
+	return newFromDSN(t, "", "raw")
 }
 
 func newFromDSN(t testing.TB, dsn, templateNamespace string) *sql.DB {
