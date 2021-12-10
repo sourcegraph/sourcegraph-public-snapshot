@@ -366,7 +366,7 @@ asdf install nodejs
 
 We recommend installing it with Homebrew and starting it as a system service.
 If you know what you're doing, you can also install PostgreSQL another way.
-For example: you can use Postgres.app, nix...
+For example: you can use https://postgresapp.com/
 
 If you're not sure: use the recommended commands to install PostgreSQL.`,
 				instructionsCommands: `brew reinstall postgresql && brew services start postgresql
@@ -378,7 +378,7 @@ createdb || true
 				name:  "Connection to 'sourcegraph' database",
 				check: checkSourcegraphDatabase,
 				instructionsComment: `` +
-					`Once the database engine is installed, we need to setup Sourcegraph database itself and a
+					`Once PostgreSQL is installed and running, we need to setup Sourcegraph database itself and a
 specific user.`,
 				instructionsCommands: `createuser --superuser sourcegraph || true
 psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';" 
@@ -1017,14 +1017,6 @@ func checkDevPrivateInParentOrInCurrentDirectory(context.Context) error {
 // checkPostgresConnection succeeds connecting to the default user database works, regardless
 // of if it's running locally or with docker.
 func checkPostgresConnection(ctx context.Context) error {
-	// This check runs only in the `sourcegraph/sourcegraph` repository, so
-	// we try to parse the globalConf and use its `Env` to configure the
-	// Postgres connection.
-	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
-	if !ok {
-		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
-	}
-
 	getEnv := func(key string) string {
 		// First look into process env, emulating the logic in makeEnv used
 		// in internal/run/run.go
@@ -1038,17 +1030,17 @@ func checkPostgresConnection(ctx context.Context) error {
 	dns := postgresdsn.New("", "", getEnv)
 	conn, err := pgx.Connect(ctx, dns)
 	if err != nil {
-		return errors.Wrap(err, "failed to connect to Sourcegraph Postgres database")
+		return errors.Wrap(err, "failed to connect to Postgres database")
 	}
 	defer conn.Close(ctx)
 
 	var result int
 	row := conn.QueryRow(ctx, "SELECT 1;")
 	if err := row.Scan(&result); err != nil {
-		return errors.Wrap(err, "failed to read from Sourcegraph Postgres database")
+		return errors.Wrap(err, "failed to read from Postgres database")
 	}
 	if result != 1 {
-		return errors.New("failed to read a test value from Sourcegraph Postgres database")
+		return errors.New("failed to read a test value from Postgres database")
 	}
 	return nil
 }
@@ -1076,17 +1068,17 @@ func checkSourcegraphDatabase(ctx context.Context) error {
 	dsn := postgresdsn.New("", "", getEnv)
 	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
-		return errors.Wrap(err, "failed to connect to Postgres database")
+		return errors.Wrap(err, "failed to connect to Soucegraph Postgres database. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)")
 	}
 	defer conn.Close(ctx)
 
 	var result int
 	row := conn.QueryRow(ctx, "SELECT 1;")
 	if err := row.Scan(&result); err != nil {
-		return errors.Wrap(err, "failed to read from Postgres database")
+		return errors.Wrap(err, "failed to read from Sourcegraph Postgres database")
 	}
 	if result != 1 {
-		return errors.New("failed to read a test value from Postgres database")
+		return errors.New("failed to read a test value from Sourcegraph Postgres database")
 	}
 	return nil
 }
