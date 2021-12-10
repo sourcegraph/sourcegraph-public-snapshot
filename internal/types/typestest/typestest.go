@@ -177,7 +177,7 @@ func MakeExternalServices() types.ExternalServices {
 	}
 }
 
-// Maketypes.MakeNamespacedExternalServices creates one configured external service per kind, per user or org.
+// MakeNamespacedExternalServices creates one configured external service per kind, per user or org.
 func MakeNamespacedExternalServices(userID int32, orgID int32) types.ExternalServices {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()

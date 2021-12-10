@@ -1606,7 +1606,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Fatalf("Test setup error %s", err)
 		}
 
-		namespaced_svcs := typestest.MakeNamespacedExternalServices(user.ID, org.ID)
+		namespacedSvcs := typestest.MakeNamespacedExternalServices(user.ID, org.ID)
 
 		tx, err := ExternalServices(db).Transact(ctx)
 		if err != nil {
