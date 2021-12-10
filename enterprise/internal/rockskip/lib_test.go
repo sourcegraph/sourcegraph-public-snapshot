@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/go-ctags"
 )
 
 type CommitData struct {
@@ -58,6 +59,10 @@ func (git MockGit) RevList(repo string, commit string) ([]string, error) {
 		commit = git.commitToCommitData[commit].parent
 	}
 	return commits, nil
+}
+
+func (git MockGit) CatFile(repo string, commit string, path string) ([]byte, error) {
+	return []byte("func main() {}"), nil
 }
 
 func RandomCommit() string {
@@ -261,6 +266,29 @@ func contains(s []string, str string) bool {
 	return false
 }
 
+func withParse(f func(ParseSymbolsFunc)) error {
+	parser, err := ctags.New(ctags.Options{
+		Bin:                "ctags",
+		PatternLengthLimit: 0,
+	})
+	if err != nil {
+		return err
+	}
+	defer parser.Close()
+	f(func(path string, bytes []byte) ([]string, error) {
+		symbols := []string{}
+		entries, err := parser.Parse(path, bytes)
+		if err != nil {
+			return nil, err
+		}
+		for _, entry := range entries {
+			symbols = append(symbols, entry.Name)
+		}
+		return symbols, nil
+	})
+	return nil
+}
+
 func (db MockDB) PrintInternals() {
 	fmt.Println("Commit ancestry:")
 	fmt.Println()
@@ -337,9 +365,14 @@ func TestIndexMocks(t *testing.T) {
 		prevCommit = commit
 	}
 
-	err := Index(git, db, "github.com/foo/bar", prevCommit)
+	err := withParse(func(parse ParseSymbolsFunc) {
+		err := Index(git, db, parse, "github.com/foo/bar", prevCommit)
+		if err != nil {
+			t.Fatalf("🚨 Index: %s", err)
+		}
+	})
 	if err != nil {
-		t.Fatalf("🚨 Index: %s", err)
+		t.Fatalf("🚨 withParse: %s", err)
 	}
 
 	blobs, err := Search(db, prevCommit)
@@ -375,9 +408,14 @@ func TestIndexReal(t *testing.T) {
 	repo := "github.com/gorilla/mux"
 	head := "3cf0d013e53d62a96c096366d300c84489c26dd5"
 	start := time.Now()
-	err = Index(git, db, repo, head)
+	err = withParse(func(parse ParseSymbolsFunc) {
+		err := Index(git, db, parse, repo, head)
+		if err != nil {
+			t.Fatalf("🚨 Index: %s", err)
+		}
+	})
 	if err != nil {
-		t.Fatalf("🚨 Index: %s", err)
+		t.Fatalf("🚨 withParse: %s", err)
 	}
 	fmt.Println("took", time.Since(start))
 

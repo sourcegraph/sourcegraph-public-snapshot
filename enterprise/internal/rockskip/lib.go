@@ -14,6 +14,7 @@ import (
 type Git interface {
 	LogReverse(repo string, commit string, n int) ([]LogEntry, error)
 	RevList(repo string, commit string) ([]string, error)
+	CatFile(repo string, commit string, path string) ([]byte, error)
 }
 
 type DB interface {
@@ -25,6 +26,8 @@ type DB interface {
 	AppendHop(hops []string, status StatusAD, hop string) error
 	Search(hops []string) ([]Blob, error)
 }
+
+type ParseSymbolsFunc func(path string, bytes []byte) (symbols []string, err error)
 
 type LogEntry struct {
 	Commit       string
@@ -42,9 +45,11 @@ type CommitStatus struct {
 }
 
 type Blob struct {
+	commit  string
 	path    string
 	added   []string
 	deleted []string
+	symbols []string
 }
 
 type StatusAMD int
@@ -92,7 +97,7 @@ const (
 
 const NULL = "0000000000000000000000000000000000000000"
 
-func Index(git Git, db DB, repo string, givenCommit string) error {
+func Index(git Git, db DB, parse ParseSymbolsFunc, repo string, givenCommit string) error {
 	tipCommit := NULL
 	tipHeight := 0
 	missingCount := 0
@@ -135,8 +140,7 @@ func Index(git Git, db DB, repo string, givenCommit string) error {
 			return err
 		}
 
-		// Could delete redundant hops here, but skipping instead because it would make the DB interface
-		// more complex. Besides, it doesn't change the asymptotic space complexity.
+		// Could delete redundant hops here.
 
 		for _, pathStatus := range entry.PathStatuses {
 			if pathStatus.Status == DeletedAMD || pathStatus.Status == ModifiedAMD {
@@ -152,7 +156,22 @@ func Index(git Git, db DB, repo string, givenCommit string) error {
 			}
 
 			if pathStatus.Status == AddedAMD || pathStatus.Status == ModifiedAMD {
-				if err := db.InsertBlob(Blob{path: pathStatus.Path, added: []string{entry.Commit}, deleted: []string{}}); err != nil {
+				contents, err := git.CatFile(repo, entry.Commit, pathStatus.Path)
+				if err != nil {
+					return err
+				}
+				symbols, err := parse(pathStatus.Path, contents)
+				if err != nil {
+					return err
+				}
+				blob := Blob{
+					commit:  entry.Commit,
+					path:    pathStatus.Path,
+					added:   []string{entry.Commit},
+					deleted: []string{},
+					symbols: symbols,
+				}
+				if err := db.InsertBlob(blob); err != nil {
 					return err
 				}
 			}
@@ -382,6 +401,12 @@ func (git SubprocessGit) RevList(repo string, givenCommit string) (commits []str
 	return commits, nil
 }
 
+func (git SubprocessGit) CatFile(repo string, commit string, path string) ([]byte, error) {
+	cmd := exec.Command("git", "cat-file", "blob", fmt.Sprintf("%s:%s", commit, path))
+	cmd.Dir = "/Users/chrismwendt/" + repo
+	return cmd.Output()
+}
+
 type PostgresDB struct {
 	db *sql.DB
 }
@@ -415,9 +440,11 @@ func NewPostgresDB() (*PostgresDB, error) {
 	_, err = db.Exec(`
 		CREATE TABLE rockskip_blobs (
 			id      SERIAL        PRIMARY KEY,
+			commit  VARCHAR(40)   NOT NULL,
 			path    BYTEA         NOT NULL,
 			added   VARCHAR(40)[] NOT NULL,
-			deleted VARCHAR(40)[] NOT NULL
+			deleted VARCHAR(40)[] NOT NULL,
+			symbols TEXT[]		  NOT NULL
 		)`)
 	if err != nil {
 		return nil, fmt.Errorf("creating rockskip_blobs: %s", err)
@@ -478,9 +505,9 @@ func (db PostgresDB) UpdateBlobHops(id int, status StatusAD, hop string) error {
 
 func (db PostgresDB) InsertBlob(blob Blob) error {
 	_, err := db.db.Exec(`
-		INSERT INTO rockskip_blobs (path, added, deleted)
-		VALUES ($1, $2, $3)
-	`, blob.path, pg.Array(blob.added), pg.Array(blob.deleted))
+		INSERT INTO rockskip_blobs (commit, path, added, deleted, symbols)
+		VALUES ($1, $2, $3, $4, $5)
+	`, blob.commit, blob.path, pg.Array(blob.added), pg.Array(blob.deleted), pg.Array(blob.symbols))
 	return errors.Wrap(err, "InsertBlob")
 }
 
@@ -496,7 +523,7 @@ func (db PostgresDB) AppendHop(hops []string, givenStatus StatusAD, newHop strin
 
 func (db PostgresDB) Search(hops []string) ([]Blob, error) {
 	rows, err := db.db.Query(`
-		SELECT id, path, added, deleted
+		SELECT id, commit, path, added, deleted, symbols
 		FROM rockskip_blobs
 		WHERE $1 && added AND NOT $1 && deleted
 	`, pg.Array(hops))
@@ -508,13 +535,15 @@ func (db PostgresDB) Search(hops []string) ([]Blob, error) {
 	blobs := []Blob{}
 	for rows.Next() {
 		var id int
+		var commit string
 		var path string
 		var added, deleted []string
-		err = rows.Scan(&id, &path, pg.Array(&added), pg.Array(&deleted))
+		var symbols []string
+		err = rows.Scan(&id, &commit, &path, pg.Array(&added), pg.Array(&deleted), pg.Array(&symbols))
 		if err != nil {
 			return nil, errors.Wrap(err, "Search: Scan")
 		}
-		blobs = append(blobs, Blob{path: path, added: added, deleted: deleted})
+		blobs = append(blobs, Blob{commit: commit, path: path, added: added, deleted: deleted, symbols: symbols})
 	}
 	return blobs, nil
 }
