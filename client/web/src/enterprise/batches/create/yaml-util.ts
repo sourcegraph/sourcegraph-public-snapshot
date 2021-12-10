@@ -286,9 +286,9 @@ export const hasOnOrImportChangesetsStatement = (spec: string): boolean => {
 
 /**
  * Checks whether or not the provided raw batch spec YAML string is a minimal batch spec
- * (i.e. the type auto-created for a brand new draft batch change) or something more
- * complete. If the spec is not parseable, as it might be for an incomplete draft batch
- * spec, this function will return `false`.
+ * (i.e. the type auto-created for a brand new draft batch change) or something that the
+ * user has touched. If the spec is not parseable, as it might be for an in-progress draft
+ * batch spec, this function will return `false`.
  *
  * @param spec the raw batch spec YAML string to check
  */
