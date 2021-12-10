@@ -23,12 +23,12 @@ import (
 // the version. When false, we give back a handle without running any migrations and assume that
 // the database schema is up to date.
 func NewFrontendDB(dsn, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
-	schemas := []*schemas.Schema{schemas.Frontend}
+	schema := schemas.Frontend
 	if !migrate {
-		schemas = nil
+		schema = nil
 	}
 
-	return connect(dsn, appName, "frontend", observationContext, false, schemas...)
+	return connect(dsn, appName, "frontend", schema, false, observationContext)
 }
 
 // NewCodeIntelDB creates a new connection to the codeintel database. After successful connection,
@@ -39,12 +39,12 @@ func NewFrontendDB(dsn, appName string, migrate bool, observationContext *observ
 // the version. When false, we give back a handle without running any migrations and assume that
 // the database schema is up to date.
 func NewCodeIntelDB(dsn, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
-	schemas := []*schemas.Schema{schemas.CodeIntel}
+	schema := schemas.CodeIntel
 	if !migrate {
-		schemas = nil
+		schema = nil
 	}
 
-	return connect(dsn, appName, "codeintel", observationContext, false, schemas...)
+	return connect(dsn, appName, "codeintel", schema, false, observationContext)
 }
 
 // NewCodeInsightsDB creates a new connection to the codeinsights database. After successful
@@ -55,15 +55,15 @@ func NewCodeIntelDB(dsn, appName string, migrate bool, observationContext *obser
 // the version. When false, we give back a handle without running any migrations and assume that
 // the database schema is up to date.
 func NewCodeInsightsDB(dsn, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
-	schemas := []*schemas.Schema{schemas.CodeInsights}
+	schema := schemas.CodeInsights
 	if !migrate {
-		schemas = nil
+		schema = nil
 	}
 
-	return connect(dsn, appName, "codeinsight", observationContext, false, schemas...)
+	return connect(dsn, appName, "codeinsight", schema, false, observationContext)
 }
 
-func connect(dsn, appName, dbName string, observationContext *observation.Context, validateOnly bool, schemas ...*schemas.Schema) (*sql.DB, error) {
+func connect(dsn, appName, dbName string, schema *schemas.Schema, validateOnly bool, observationContext *observation.Context) (*sql.DB, error) {
 	db, err := dbconn.ConnectInternal(dsn, appName, dbName)
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func connect(dsn, appName, dbName string, observationContext *observation.Contex
 		}
 	}()
 
-	for _, schema := range schemas {
+	if schema != nil {
 		if err := validateSchema(db, schema, validateOnly, observationContext); err != nil {
 			return nil, err
 		}
