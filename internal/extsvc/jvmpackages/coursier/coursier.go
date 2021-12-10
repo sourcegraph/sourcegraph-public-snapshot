@@ -157,7 +157,7 @@ func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnectio
 	ctx, cancel := context.WithTimeout(ctx, invocTimeout)
 	defer cancel()
 
-	ctx, traceLog, endObservation := operations.runCommand.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
+	ctx, trace, endObservation := operations.runCommand.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("repositories", strings.Join(config.Maven.Repositories, "|")),
 		otlog.String("args", strings.Join(args, ", ")),
 	}})
@@ -183,7 +183,7 @@ func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnectio
 	if err := cmd.Run(); err != nil {
 		return nil, errors.Wrapf(err, "coursier command %q failed with stderr %q and stdout %q", cmd, stderr, &stdout)
 	}
-	traceLog(otlog.String("stdout", stdout.String()), otlog.String("stderr", stderr.String()))
+	trace.Log(otlog.String("stdout", stdout.String()), otlog.String("stderr", stderr.String()))
 
 	if stdout.String() == "" {
 		return []string{}, nil

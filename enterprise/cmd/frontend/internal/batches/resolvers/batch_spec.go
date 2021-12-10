@@ -61,6 +61,10 @@ type batchSpecResolver struct {
 	stateOnce sync.Once
 	state     btypes.BatchSpecState
 	stateErr  error
+
+	canAdministerOnce sync.Once
+	canAdminister     bool
+	canAdministerErr  error
 }
 
 func (r *batchSpecResolver) ID() graphql.ID {
@@ -188,7 +192,7 @@ func (r *batchSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 }
 
 func (r *batchSpecResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return checkSiteAdminOrSameUser(ctx, r.store.DB(), r.batchSpec.UserID)
+	return r.computeCanAdminister(ctx)
 }
 
 type batchChangeDescriptionResolver struct {
@@ -486,6 +490,27 @@ func (r *batchSpecResolver) WorkspaceResolution(ctx context.Context) (graphqlbac
 	return &batchSpecWorkspaceResolutionResolver{store: r.store, resolution: resolution}, nil
 }
 
+func (r *batchSpecResolver) ViewerCanRetry(ctx context.Context) (bool, error) {
+	if !r.batchSpec.CreatedFromRaw {
+		return false, nil
+	}
+
+	ok, err := r.computeCanAdminister(ctx)
+	if err != nil {
+		return false, err
+	}
+	if !ok {
+		return false, nil
+	}
+
+	state, err := r.computeState(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	return state.Finished(), nil
+}
+
 func (r *batchSpecResolver) computeNamespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
 	r.namespaceOnce.Do(func() {
 		if r.preloadedNamespace != nil {
@@ -582,4 +607,11 @@ func (r *batchSpecResolver) computeState(ctx context.Context) (btypes.BatchSpecS
 		}()
 	})
 	return r.state, r.stateErr
+}
+
+func (r *batchSpecResolver) computeCanAdminister(ctx context.Context) (bool, error) {
+	r.canAdministerOnce.Do(func() {
+		r.canAdminister, r.canAdministerErr = checkSiteAdminOrSameUser(ctx, r.store.DB(), r.batchSpec.UserID)
+	})
+	return r.canAdminister, r.canAdministerErr
 }

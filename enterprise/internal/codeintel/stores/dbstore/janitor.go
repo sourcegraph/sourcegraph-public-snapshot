@@ -62,7 +62,7 @@ func ScanSourcedCommits(rows *sql.Rows, queryErr error) (_ []SourcedCommits, err
 // paths and clean up that occupied (but useless) space. The output is of this method is
 // ordered by repository ID then by commit.
 func (s *Store) StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []SourcedCommits, err error) {
-	ctx, traceLog, endObservation := s.operations.staleSourcedCommits.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.staleSourcedCommits.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	now = now.UTC()
@@ -79,7 +79,7 @@ func (s *Store) StaleSourcedCommits(ctx context.Context, minimumTimeSinceLastChe
 	for _, commits := range sourcedCommits {
 		numCommits += len(commits.Commits)
 	}
-	traceLog(
+	trace.Log(
 		log.Int("numRepositories", len(sourcedCommits)),
 		log.Int("numCommits", numCommits),
 	)
@@ -123,7 +123,7 @@ GROUP BY repository_id, commit
 // to the given repository identifier and commit. This method returns the count of upload and index records
 // modified, respectively.
 func (s *Store) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, indexesUpdated int, err error) {
-	ctx, traceLog, endObservation := s.operations.updateSourcedCommits.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.updateSourcedCommits.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
@@ -138,7 +138,7 @@ func (s *Store) UpdateSourcedCommits(ctx context.Context, repositoryID int, comm
 	if err != nil {
 		return 0, 0, err
 	}
-	traceLog(
+	trace.Log(
 		log.Int("uploadsUpdated", uploadsUpdated),
 		log.Int("indexesUpdated", indexesUpdated),
 	)
@@ -207,7 +207,7 @@ func (s *Store) DeleteSourcedCommits(ctx context.Context, repositoryID int, comm
 	indexesDeleted int,
 	err error,
 ) {
-	ctx, traceLog, endObservation := s.operations.deleteSourcedCommits.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.deleteSourcedCommits.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
@@ -226,7 +226,7 @@ func (s *Store) DeleteSourcedCommits(ctx context.Context, repositoryID int, comm
 	if err != nil {
 		return 0, 0, 0, err
 	}
-	traceLog(
+	trace.Log(
 		log.Int("uploadsUpdated", uploadsUpdated),
 		log.Int("uploadsDeleted", uploadsDeleted),
 		log.Int("indexesDeleted", indexesDeleted),

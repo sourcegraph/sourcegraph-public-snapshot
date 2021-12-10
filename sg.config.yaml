@@ -5,7 +5,8 @@ env:
   PGPASSWORD: sourcegraph
   PGDATABASE: sourcegraph
   PGSSLMODE: disable
-
+  SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: 'true'
+  
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
   SRC_LOG_LEVEL: info
   SRC_LOG_FORMAT: condensed
