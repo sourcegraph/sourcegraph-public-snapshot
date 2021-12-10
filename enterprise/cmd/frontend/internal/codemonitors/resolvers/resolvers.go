@@ -403,22 +403,47 @@ func splitActionIDs(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorA
 	for _, id := range actionIDs {
 		aMap[id] = struct{}{}
 	}
+
 	var toUpdateActions []*graphqlbackend.EditActionArgs
 	for _, a := range args.Actions {
-		if a.Email.Id == nil {
-			toCreate = append(toCreate, &graphqlbackend.CreateActionArgs{Email: a.Email.Update})
-			continue
+		switch {
+		case a.Email != nil:
+			if a.Email.Id == nil {
+				toCreate = append(toCreate, &graphqlbackend.CreateActionArgs{Email: a.Email.Update})
+				continue
+			}
+			if _, ok := aMap[*a.Email.Id]; !ok {
+				return nil, nil, errors.Errorf("unknown ID=%s for action", *a.Email.Id)
+			}
+			toUpdateActions = append(toUpdateActions, a)
+			delete(aMap, *a.Email.Id)
+		case a.Webhook != nil:
+			if a.Webhook.Id == nil {
+				toCreate = append(toCreate, &graphqlbackend.CreateActionArgs{Webhook: a.Webhook.Update})
+				continue
+			}
+			if _, ok := aMap[*a.Webhook.Id]; !ok {
+				return nil, nil, errors.Errorf("unknown ID=%s for action", *a.Webhook.Id)
+			}
+			toUpdateActions = append(toUpdateActions, a)
+			delete(aMap, *a.Webhook.Id)
+		case a.SlackWebhook != nil:
+			if a.SlackWebhook.Id == nil {
+				toCreate = append(toCreate, &graphqlbackend.CreateActionArgs{SlackWebhook: a.SlackWebhook.Update})
+				continue
+			}
+			if _, ok := aMap[*a.SlackWebhook.Id]; !ok {
+				return nil, nil, errors.Errorf("unknown ID=%s for action", *a.SlackWebhook.Id)
+			}
+			toUpdateActions = append(toUpdateActions, a)
+			delete(aMap, *a.SlackWebhook.Id)
 		}
-		if _, ok := aMap[*a.Email.Id]; !ok {
-			return nil, nil, errors.Errorf("unknown ID=%s for action", *a.Email.Id)
-		}
-		toUpdateActions = append(toUpdateActions, a)
-		delete(aMap, *a.Email.Id)
 	}
+
+	args.Actions = toUpdateActions
 	for id := range aMap {
 		toDelete = append(toDelete, id)
 	}
-	args.Actions = toUpdateActions
 	return toCreate, toDelete, nil
 }
 
@@ -461,29 +486,17 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 			Monitor:  mo,
 		}, nil
 	}
-	for i, action := range args.Actions {
-		if action.Email == nil {
-			return nil, errors.Errorf("missing email object for action %d", i)
+	for _, action := range args.Actions {
+		switch {
+		case action.Email != nil:
+			err = r.updateEmailAction(ctx, *action.Email)
+		case action.Webhook != nil:
+			err = r.updateWebhookAction(ctx, *action.Webhook)
+		case action.SlackWebhook != nil:
+			err = r.updateSlackWebhookAction(ctx, *action.SlackWebhook)
+		default:
+			err = errors.New("action must be one of email, webhook, or slack webhook")
 		}
-		var emailID int64
-		err = relay.UnmarshalSpec(*action.Email.Id, &emailID)
-		if err != nil {
-			return nil, err
-		}
-		err = r.store.DeleteRecipients(ctx, emailID)
-		if err != nil {
-			return nil, err
-		}
-
-		e, err := r.store.UpdateEmailAction(ctx, emailID, &cm.EmailActionArgs{
-			Enabled:  action.Email.Update.Enabled,
-			Priority: action.Email.Update.Priority,
-			Header:   action.Email.Update.Header,
-		})
-		if err != nil {
-			return nil, err
-		}
-		err = r.createRecipients(ctx, e.ID, action.Email.Update.Recipients)
 		if err != nil {
 			return nil, err
 		}
@@ -492,6 +505,50 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		Resolver: r,
 		Monitor:  mo,
 	}, nil
+}
+
+func (r *Resolver) updateEmailAction(ctx context.Context, args graphqlbackend.EditActionEmailArgs) error {
+	var emailID int64
+	err := relay.UnmarshalSpec(*args.Id, &emailID)
+	if err != nil {
+		return err
+	}
+	err = r.store.DeleteRecipients(ctx, emailID)
+	if err != nil {
+		return err
+	}
+
+	e, err := r.store.UpdateEmailAction(ctx, emailID, &cm.EmailActionArgs{
+		Enabled:  args.Update.Enabled,
+		Priority: args.Update.Priority,
+		Header:   args.Update.Header,
+	})
+	if err != nil {
+		return err
+	}
+	return r.createRecipients(ctx, e.ID, args.Update.Recipients)
+}
+
+func (r *Resolver) updateWebhookAction(ctx context.Context, args graphqlbackend.EditActionWebhookArgs) error {
+	var id int64
+	err := relay.UnmarshalSpec(*args.Id, &id)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.store.UpdateWebhookAction(ctx, id, args.Update.Enabled, args.Update.URL)
+	return err
+}
+
+func (r *Resolver) updateSlackWebhookAction(ctx context.Context, args graphqlbackend.EditActionSlackWebhookArgs) error {
+	var id int64
+	err := relay.UnmarshalSpec(*args.Id, &id)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.store.UpdateSlackWebhookAction(ctx, id, args.Update.Enabled, args.Update.URL)
+	return err
 }
 
 func (r *Resolver) transact(ctx context.Context) (*Resolver, error) {
