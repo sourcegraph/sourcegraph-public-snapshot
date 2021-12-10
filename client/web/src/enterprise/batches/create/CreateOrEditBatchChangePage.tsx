@@ -43,7 +43,7 @@ import { useNamespaces } from './useNamespaces'
 import { useBatchSpecWorkspaceResolution, WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
 import { insertNameIntoLibraryItem, isMinimalBatchSpec } from './yaml-util'
 
-interface CreateOrEditBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
+export interface CreateOrEditBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     /**
      * The id for the namespace that the batch change should be created in, or that it
      * already belongs to, if it already exists.
