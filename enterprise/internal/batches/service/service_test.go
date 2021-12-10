@@ -1461,13 +1461,14 @@ func TestService(t *testing.T) {
 			}
 		})
 
-		t.Run("success, with existing batch change", func(t *testing.T) {
+		t.Run("success, with existing draft batch change", func(t *testing.T) {
 			// Existing batch change needs an existing batch spec
 			spec := testBatchSpec(admin.ID)
 			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
 
+			// Existing batch change has never been applied, i.e. it's a draft
 			batchChange := &btypes.BatchChange{
 				Name:            "my-cool-change",
 				NamespaceUserID: admin.ID,
@@ -1537,6 +1538,38 @@ func TestService(t *testing.T) {
 
 			assertNoChangesetSpecs(t, newSpec.ID)
 			assertNoChangesetSpecs(t, spec.ID)
+		})
+
+		t.Run("error for non-draft batchChange", func(t *testing.T) {
+			// Existing batch change needs an existing batch spec
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			// Existing batch change had a previous batch spec applied, i.e. it's not a draft
+			batchChange := &btypes.BatchChange{
+				Name:            "my-cool-change",
+				NamespaceUserID: admin.ID,
+				BatchSpecID:     spec.ID,
+				LastApplierID:   admin.ID,
+				LastAppliedAt:   time.Now(),
+			}
+
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+
+			_, err := svc.ReplaceBatchSpecInput(ctx, ReplaceBatchSpecInputOpts{
+				BatchSpecRandID: spec.RandID,
+				RawSpec:         ct.TestRawBatchSpecYAML,
+			})
+			if err == nil {
+				t.Fatalf("expected error but got none")
+			}
+			if have, want := err.Error(), ErrBatchChangeNotDraft.Error(); have != want {
+				t.Fatalf("wrong error. want=%q, have=%q", want, have)
+			}
 		})
 	})
 

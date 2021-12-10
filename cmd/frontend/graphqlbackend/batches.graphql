@@ -1391,9 +1391,9 @@ extend type Mutation {
     ): BatchSpec!
 
     """
-    Replaces the original input of the batch spec. All existing resolution jobs
-    and workspaces are deleted and recreated in the background as the `on` section
-    is evaluated. This mutation is used for overwriting existing resolutions, so
+    Replaces the original input of the batch spec for a draft batch change. All existing
+    resolution jobs and workspaces are deleted and recreated in the background as the `on`
+    section is evaluated. This mutation is used for overwriting existing resolutions, so
     after typing in the editor, we don't create 10s of batch specs.
     """
     replaceBatchSpecInput(

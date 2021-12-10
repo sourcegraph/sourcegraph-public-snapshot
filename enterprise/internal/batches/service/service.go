@@ -36,6 +36,10 @@ import (
 // namespace provided are already used by another batch change.
 var ErrNameNotUnique = errors.New("a batch change with this name already exists in this namespace")
 
+// ErrBatchChangeNotDraft is returned by ReplaceBatchSpecInput if it is called with a
+// batch spec that was already applied to a batch change, i.e. that is not a draft.
+var ErrBatchChangeNotDraft = errors.New("cannot replace batch spec input for a batch change that is not a draft")
+
 // New returns a Service.
 func New(store *store.Store) *Service {
 	return NewWithClock(store, store.Clock())
@@ -567,6 +571,14 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	}
 	var batchChangeID int64
 	if batchChange != nil {
+		// NOTE: For now we only support replacing the spec input on draft batch changes
+		// because updating a batch change whose spec was already applied destroys the
+		// link between the batch change and the original batch spec that produced the
+		// changesets.
+		if !batchChange.IsDraft() {
+			return nil, ErrBatchChangeNotDraft
+
+		}
 		batchChangeID = batchChange.ID
 	}
 
