@@ -576,28 +576,46 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// Delete the previous batch spec, which should delete
-	// - batch_spec_resolution_jobs
-	// - batch_spec_workspaces
-	// - changeset_specs
-	// associated with it
-	if err := tx.DeleteBatchSpec(ctx, batchSpec.ID); err != nil {
-		return nil, err
+	// Check if there's an existing batch change associated with the original batch spec.
+	batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{BatchSpecID: batchSpec.ID})
+	if err != nil && err != store.ErrNoResults {
+		return nil, errors.Wrap(err, "getting batch change")
+	}
+	var batchChangeID int64
+	if batchChange == nil {
+		batchChangeID = 0
+	} else {
+		batchChangeID = batchChange.ID
 	}
 
-	// We keep the RandID so the user-visible GraphQL ID is stable
+	// We keep the RandID so the user-visible GraphQL ID is stable.
 	newSpec.RandID = batchSpec.RandID
 
 	newSpec.NamespaceOrgID = batchSpec.NamespaceOrgID
 	newSpec.NamespaceUserID = batchSpec.NamespaceUserID
 	newSpec.UserID = batchSpec.UserID
 
-	return newSpec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
+	err = s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
 		spec:             newSpec,
 		allowUnsupported: opts.AllowUnsupported,
 		allowIgnored:     opts.AllowIgnored,
 		noCache:          opts.NoCache,
+		batchChangeID:    batchChangeID,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Delete the previous batch spec, which should delete
+	// - batch_spec_resolution_jobs
+	// - batch_spec_workspaces
+	// - changeset_specs
+	// associated with it
+	if err = tx.DeleteBatchSpec(ctx, batchSpec.ID); err != nil {
+		return nil, err
+	}
+
+	return newSpec, nil
 }
 
 // CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.
