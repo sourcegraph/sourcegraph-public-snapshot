@@ -1223,11 +1223,11 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []i
 	}
 
 	// Check that batch spec is not applied
-	_, err = tx.GetBatchChange(ctx, store.GetBatchChangeOpts{BatchSpecID: batchSpecID})
+	batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{BatchSpecID: batchSpecID})
 	if err != nil && err != store.ErrNoResults {
 		return errors.Wrap(err, "checking whether batch spec has been applied")
 	}
-	if err == nil {
+	if err == nil && !batchChange.IsDraft() {
 		return errors.New("batch spec already applied")
 	}
 
@@ -1320,11 +1320,11 @@ func (s *Service) RetryBatchSpecExecution(ctx context.Context, opts RetryBatchSp
 	}
 
 	// Check that batch spec is not applied
-	_, err = tx.GetBatchChange(ctx, store.GetBatchChangeOpts{BatchSpecID: batchSpec.ID})
+	batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{BatchSpecID: batchSpec.ID})
 	if err != nil && err != store.ErrNoResults {
 		return errors.Wrap(err, "checking whether batch spec has been applied")
 	}
-	if err == nil {
+	if err == nil && !batchChange.IsDraft() {
 		return errors.New("batch spec already applied")
 	}
 
