@@ -223,6 +223,13 @@ type BatchSpec struct {
 	StartedAt      graphqlbackend.DateTime
 	FinishedAt     graphqlbackend.DateTime
 	FailureMessage string
+	ViewerCanRetry bool
+}
+
+type BatchSpecConnection struct {
+	Nodes      []BatchSpec
+	TotalCount int
+	PageInfo   PageInfo
 }
 
 type BatchSpecWorkspaceResolution struct {

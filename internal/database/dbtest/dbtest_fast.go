@@ -8,8 +8,10 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/lib/pq"
 
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/test"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
@@ -25,28 +27,6 @@ func NewFastDB(t testing.TB) *sql.DB {
 	if err != nil {
 		t.Fatalf("error getting pool: %s", err)
 	}
-
-	return newFromPool(t, u, pool)
-}
-
-// NewFastDBWithDSN returns a clean database using the given connection string
-// that will be deleted at the end of the test
-func NewFastDBWithDSN(t testing.TB, dsn string) *sql.DB {
-	if testing.Short() {
-		t.Skip("skipping DB test since -short specified")
-	}
-	t.Helper()
-
-	u, err := getDSN(dsn)
-	if err != nil {
-		t.Fatalf("failed to parse dsn %q: %s", dsn, err)
-	}
-
-	pool, closeDB, err := newPoolFromURL(u)
-	if err != nil {
-		t.Fatalf("failed to create new pool: %s", err)
-	}
-	t.Cleanup(func() { closeDB(nil) })
 
 	return newFromPool(t, u, pool)
 }
@@ -101,7 +81,7 @@ func getDefaultPool() (*testDatabasePool, *url.URL, error) {
 			return
 		}
 
-		defaultPool, _, defaultErr = newPoolFromURL(defaultURL)
+		defaultPool, defaultErr = newPoolFromURL(defaultURL)
 		if defaultErr != nil {
 			return
 		}
@@ -189,44 +169,48 @@ func urlWithDB(u *url.URL, dbName string) *url.URL {
 	return &uCopy
 }
 
-func newPoolFromURL(u *url.URL) (_ *testDatabasePool, _ func(err error) error, err error) {
-	db, closeDB, err := newTestDB(u.String())
+func newPoolFromURL(u *url.URL) (_ *testDatabasePool, err error) {
+	db, err := connections.NewTestDB(u.String())
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	defer func() { err = closeDB(err) }()
+	defer func() {
+		if closeErr := db.Close(); closeErr != nil {
+			err = multierror.Append(err, closeErr)
+		}
+	}()
 
 	// Ignore already exists error
 	// TODO: return error if it's not an already exists error
 	_, _ = db.Exec("CREATE DATABASE dbtest_pool")
 
 	poolDBURL := urlWithDB(u, "dbtest_pool")
-	poolDB, closePoolDB, err := newTestDB(poolDBURL.String())
+	poolDB, err := connections.NewTestDB(poolDBURL.String())
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if !poolSchemaUpToDate(poolDB) {
-		if err := closePoolDB(nil); err != nil {
-			return nil, nil, err
+		if err := poolDB.Close(); err != nil {
+			return nil, err
 		}
 
 		if _, err = db.Exec("DROP DATABASE dbtest_pool"); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		if _, err = db.Exec("CREATE DATABASE dbtest_pool"); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
-		poolDB, closePoolDB, err = newTestDB(poolDBURL.String())
+		poolDB, err = connections.NewTestDB(poolDBURL.String())
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		if err := migratePoolDB(poolDB); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
-	return newTestDatabasePool(poolDB), closePoolDB, nil
+	return newTestDatabasePool(poolDB), nil
 }

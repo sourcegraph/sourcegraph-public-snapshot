@@ -1634,9 +1634,12 @@ extend type Mutation {
     """
     Requeue all workspaces in the batch spec for execution. Previous results and
     logs will be deleted and the executions are _replaced_. The workspaces must be in
-    a final state (COMPLETED, FAILED) to be retryable.
+    a final state (COMPLETED, FAILED, CANCELED) to be retryable.
+
+    If includeCompleted is set, then workspaces that successfully completed
+    execution will also be retried and their changeset specs deleted.
     """
-    retryBatchSpecExecution(batchSpec: ID!): EmptyResponse!
+    retryBatchSpecExecution(batchSpec: ID!, includeCompleted: Boolean = false): BatchSpec!
 
     """
     Enqueue the workspace for execution. The workspace must not be running, and
@@ -2766,6 +2769,12 @@ type BatchSpec implements Node {
     Null, if not created through createBatchSpecFromRaw.
     """
     allowUnsupported: Boolean
+
+    """
+    If true, viewer can retry the batch spec execution by calling
+    retryBatchSpecExecution.
+    """
+    viewerCanRetry: Boolean!
 }
 
 """

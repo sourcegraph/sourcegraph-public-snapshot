@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 
@@ -206,6 +208,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 	for _, insight := range backendInsights {
 		allDefinedInsightIds = append(allDefinedInsightIds, insight.ID)
 	}
+	logDuplicates(allDefinedInsightIds)
 
 	totalInsights := len(langStatsInsights) + len(frontendInsights) + len(backendInsights)
 	var migratedInsightsCount int
@@ -264,6 +267,17 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 	}
 
 	return nil
+}
+
+func logDuplicates(insightIds []string) {
+	set := make(map[string]struct{}, len(insightIds))
+	for _, id := range insightIds {
+		if _, ok := set[id]; ok {
+			log15.Info("insights setting oob-migration: duplicate insight ID", "uniqueId", id)
+		} else {
+			set[id] = struct{}{}
+		}
+	}
 }
 
 func specialCaseDashboardTitle(subjectName string) string {
@@ -398,9 +412,4 @@ func updateTimeSeriesReferences(handle dbutil.DB, ctx context.Context, oldId, ne
 		return errors.Wrap(err, "updateTimeSeriesReferences")
 	}
 	return nil
-}
-
-func updateSeriesId(insightStore *store.InsightStore, ctx context.Context, oldId, newId string) error {
-	q := sqlf.Sprintf("update insight_series set series_id = %s where series_id = %s", newId, oldId)
-	return insightStore.Exec(ctx, q)
 }

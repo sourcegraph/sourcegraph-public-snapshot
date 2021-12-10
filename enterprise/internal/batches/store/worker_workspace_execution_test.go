@@ -151,7 +151,10 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 		}
 
 		for _, wantKey := range cacheEntryKeys {
-			entries, err := s.ListBatchSpecExecutionCacheEntries(ctx, ListBatchSpecExecutionCacheEntriesOpts{Keys: []string{wantKey}})
+			entries, err := s.ListBatchSpecExecutionCacheEntries(ctx, ListBatchSpecExecutionCacheEntriesOpts{
+				UserID: user.ID,
+				Keys:   []string{wantKey},
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
