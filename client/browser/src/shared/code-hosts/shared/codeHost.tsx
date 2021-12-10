@@ -655,9 +655,7 @@ const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = 
  * @returns boolean indicating whether it is safe to continue initialization
  *
  * Returns
- * - "false"
- *   - If could not parse repository name
- *   - Or if detected repository is private and not cloned in sourcegraph
+ * - "false": if could not parse repository name or if detected repository is private is not cloned in Sourcegraph Cloud
  * - "true" in all other cases
  *
  * Side-effect:
@@ -674,8 +672,8 @@ const isSafeToContinueCodeIntel = async ({
     if (!isDefaultSourcegraphUrl(sourcegraphURL) || !codeHost.getContext) {
         return true
     }
+    // This is only when connected to Sourcegraph Cloud and code host either GitLab or GitHub
     try {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { privateRepository, rawRepoName } = await codeHost.getContext()
         if (!privateRepository) {
             // We can auto-clone public repos
