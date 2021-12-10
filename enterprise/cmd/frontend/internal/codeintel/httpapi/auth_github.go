@@ -51,11 +51,14 @@ func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string
 	return uncachedEnforceAuthViaGitHub(ctx, githubToken, repoName)
 }
 
+var _ AuthValidator = enforceAuthViaGitHub
+
 func uncachedEnforceAuthViaGitHub(ctx context.Context, githubToken, repoName string) (int, error) {
 	if author, err := checkGitHubPermissions(ctx, repoName, github.NewV3Client(githubURL, &auth.OAuthBearerToken{Token: githubToken}, nil)); err != nil {
-		// Change status for particular types of errors
-		if githubErr, ok := errors.Unwrap(err).(*github.APIError); ok && githubErr.Code == 429 {
-			return 429, err
+		if githubErr := new(github.APIError); errors.As(err, &githubErr) {
+			if shouldMirrorGitHubError(githubErr.Code) {
+				return githubErr.Code, errors.Wrap(errors.New(githubErr.Message), "github error")
+			}
 		}
 
 		return http.StatusInternalServerError, err
@@ -66,7 +69,15 @@ func uncachedEnforceAuthViaGitHub(ctx context.Context, githubToken, repoName str
 	return 0, nil
 }
 
-var _ AuthValidator = enforceAuthViaGitHub
+func shouldMirrorGitHubError(statusCode int) bool {
+	for _, sc := range []int{http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound} {
+		if statusCode == sc {
+			return true
+		}
+	}
+
+	return false
+}
 
 func checkGitHubPermissions(ctx context.Context, repoName string, client GitHubClient) (bool, error) {
 	nameWithOwner := strings.TrimPrefix(repoName, "github.com/")
