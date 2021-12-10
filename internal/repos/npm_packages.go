@@ -2,7 +2,8 @@ package repos
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -25,7 +26,7 @@ type NPMPackagesSource struct {
 func NewNPMPackagesSource(svc *types.ExternalService) (*NPMPackagesSource, error) {
 	var c schema.NPMPackagesConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return &NPMPackagesSource{svc: svc, config: &c}, nil
 }
