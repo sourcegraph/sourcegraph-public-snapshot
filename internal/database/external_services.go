@@ -343,6 +343,11 @@ type ValidateExternalServiceConfigOptions struct {
 	NamespaceOrgID int32
 }
 
+// IsSiteOwned returns true if the external service is owned by the site.
+func (e *ValidateExternalServiceConfigOptions) IsSiteOwned() bool {
+	return e.NamespaceUserID == 0 && e.NamespaceOrgID == 0
+}
+
 func (e *externalServiceStore) ValidateConfig(ctx context.Context, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error) {
 	ext, ok := ExternalServiceKinds[opt.Kind]
 	if !ok {
@@ -378,8 +383,8 @@ func (e *externalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 		)
 	}
 
-	// For user-added external services, we need to prevent them from using disallowed fields.
-	if opt.NamespaceUserID > 0 {
+	// For user-added and org-added external services, we need to prevent them from using disallowed fields.
+	if !opt.IsSiteOwned() {
 		// We do not allow users to add external service other than GitHub.com and GitLab.com
 		result := gjson.GetBytes(normalized, "url")
 		baseURL, err := url.Parse(result.String())
@@ -389,7 +394,7 @@ func (e *externalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 		normalizedURL := extsvc.NormalizeBaseURL(baseURL).String()
 		if normalizedURL != "https://github.com/" &&
 			normalizedURL != "https://gitlab.com/" {
-			return nil, errors.New("users are only allowed to add external service for https://github.com/ and https://gitlab.com/")
+			return nil, errors.New("external service only allowed for https://github.com/ and https://gitlab.com/")
 		}
 
 		disallowedFields := []string{"repositoryPathPattern", "nameTransformations", "rateLimit"}
@@ -400,8 +405,8 @@ func (e *externalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 			}
 		}
 
-		// A user can only create one external service per kind
-		if err := e.validateSingleKindPerUser(ctx, opt.ExternalServiceID, opt.Kind, opt.NamespaceUserID); err != nil {
+		// Allow only create one external service per kind
+		if err := e.validateSingleKindPerNamespace(ctx, opt.ExternalServiceID, opt.Kind, opt.NamespaceUserID, opt.NamespaceOrgID); err != nil {
 			return nil, err
 		}
 	}
@@ -605,14 +610,19 @@ func (e *externalServiceStore) validateDuplicateRateLimits(ctx context.Context, 
 	return nil
 }
 
-// validateSingleKindPerUser returns an error if the user attempts to add more than one external service of the same kind.
-func (e *externalServiceStore) validateSingleKindPerUser(ctx context.Context, id int64, kind string, userID int32) error {
+// validateSingleKindPerNamespace returns an error if the user/org attempts to add more than one external service of the same kind.
+func (e *externalServiceStore) validateSingleKindPerNamespace(ctx context.Context, id int64, kind string, userID int32, orgID int32) error {
+
 	opt := ExternalServicesListOptions{
 		Kinds: []string{kind},
 		LimitOffset: &LimitOffset{
 			Limit: 500, // The number is randomly chosen
 		},
-		NamespaceUserID: userID,
+	}
+	if userID > 0 {
+		opt.NamespaceUserID = userID
+	} else if orgID > 0 {
+		opt.NamespaceOrgID = orgID
 	}
 	for {
 		svcs, err := e.List(ctx, opt)
