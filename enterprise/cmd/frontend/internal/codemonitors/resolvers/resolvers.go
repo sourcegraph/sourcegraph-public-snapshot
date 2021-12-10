@@ -230,7 +230,7 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	}
 	defer func() { err = tx.store.Done(err) }()
 
-	err = tx.store.DeleteEmailActions(ctx, toDelete, monitorID)
+	err = tx.deleteActions(ctx, monitorID, toDelete)
 	if err != nil {
 		return nil, err
 	}
@@ -277,6 +277,42 @@ func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*g
 			return errors.New("exactly one of Email, Webhook, or SlackWebhook must be set")
 		}
 	}
+	return nil
+}
+
+func (r *Resolver) deleteActions(ctx context.Context, monitorID int64, ids []graphql.ID) error {
+	var email, webhook, slackWebhook []int64
+	for _, id := range ids {
+		var intID int64
+		err := relay.UnmarshalSpec(id, &intID)
+		if err != nil {
+			return err
+		}
+
+		switch relay.UnmarshalKind(id) {
+		case monitorActionEmailKind:
+			email = append(email, intID)
+		case monitorActionWebhookKind:
+			webhook = append(webhook, intID)
+		case monitorActionSlackWebhookKind:
+			slackWebhook = append(slackWebhook, intID)
+		default:
+			return errors.New("action IDs must be exactly one of email, webhook, or slack webhook")
+		}
+	}
+
+	if err := r.store.DeleteEmailActions(ctx, email, monitorID); err != nil {
+		return err
+	}
+
+	if err := r.store.DeleteWebhookActions(ctx, monitorID, webhook...); err != nil {
+		return err
+	}
+
+	if err := r.store.DeleteSlackWebhookActions(ctx, monitorID, slackWebhook...); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -364,7 +400,7 @@ func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int
 
 // splitActionIDs splits actions into three buckets: create, delete and update.
 // Note: args is mutated. After splitActionIDs, args only contains actions to be updated.
-func splitActionIDs(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs, actionIDs []graphql.ID) (toCreate []*graphqlbackend.CreateActionArgs, toDelete []int64, err error) {
+func splitActionIDs(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs, actionIDs []graphql.ID) (toCreate []*graphqlbackend.CreateActionArgs, toDelete []graphql.ID, err error) {
 	aMap := make(map[graphql.ID]struct{}, len(actionIDs))
 	for _, id := range actionIDs {
 		aMap[id] = struct{}{}
@@ -381,13 +417,8 @@ func splitActionIDs(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorA
 		toUpdateActions = append(toUpdateActions, a)
 		delete(aMap, *a.Email.Id)
 	}
-	var actionID int64
-	for k := range aMap {
-		err = relay.UnmarshalSpec(k, &actionID)
-		if err != nil {
-			return nil, nil, err
-		}
-		toDelete = append(toDelete, actionID)
+	for id := range aMap {
+		toDelete = append(toDelete, id)
 	}
 	args.Actions = toUpdateActions
 	return toCreate, toDelete, nil
