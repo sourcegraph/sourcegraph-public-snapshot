@@ -4,14 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-
+	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
 	"golang.org/x/time/rate"
 
-	"github.com/cockroachdb/errors"
-
-	"github.com/inconshreveable/log15"
-
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
