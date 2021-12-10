@@ -1598,7 +1598,13 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 	t.Run("many external services", func(t *testing.T) {
 		user, err := Users(db).Create(ctx, NewUser{Username: "alice"})
+		if err != nil {
+			t.Fatalf("Test setup error %s", err)
+		}
 		org, err := Orgs(db).Create(ctx, "acme", nil)
+		if err != nil {
+			t.Fatalf("Test setup error %s", err)
+		}
 
 		namespaced_svcs := typestest.MakeNamespacedExternalServices(user.ID, org.ID)
 
