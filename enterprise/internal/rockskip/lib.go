@@ -207,7 +207,13 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 	if err != nil {
 		return err
 	}
-	for _, entry := range entries {
+	start := time.Now()
+	last := time.Now()
+	for entryIndex, entry := range entries {
+		if time.Since(last) > time.Second {
+			fmt.Printf("Index: height %d (%d/s)\n", tipHeight+1, entryIndex/int(time.Since(start).Seconds()))
+			last = time.Now()
+		}
 		hops, err := getHops(db, tipCommit)
 		if err != nil {
 			return err
