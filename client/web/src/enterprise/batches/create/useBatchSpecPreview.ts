@@ -1,16 +1,11 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useMutation } from '@sourcegraph/shared/src/graphql/graphql'
 
-import {
-    CreateBatchSpecFromRawResult,
-    CreateBatchSpecFromRawVariables,
-    ReplaceBatchSpecInputResult,
-    ReplaceBatchSpecInputVariables,
-} from '../../../graphql-operations'
+import { ReplaceBatchSpecInputResult, ReplaceBatchSpecInputVariables } from '../../../graphql-operations'
 
-import { CREATE_BATCH_SPEC_FROM_RAW, REPLACE_BATCH_SPEC_INPUT } from './backend'
+import { REPLACE_BATCH_SPEC_INPUT } from './backend'
 
 interface UsePreviewBatchSpecResult {
     /**
@@ -18,11 +13,6 @@ interface UsePreviewBatchSpecResult {
      * YAML to the backend and request a preview of the workspaces it would affect.
      */
     previewBatchSpec: (code: string) => Promise<void>
-    /**
-     * The id of the batch spec we are editing and evaluating workspaces for, if one has
-     * been created.
-     */
-    batchSpecID?: Scalars['ID']
     /**
      * A reference to the time that we last requested a preview for the workspaces
      * evaluation as a form of unique ID so that interested components can know when the
@@ -43,41 +33,20 @@ interface UsePreviewBatchSpecResult {
  * YAML code to the backend to enqueue a batch spec resolution job to evaluate the
  * workspaces that a batch spec would run over.
  *
- * @param batchChangeID The id of the batch change that this batch spec should belong to.
+ * @param batchSpecID The id of the existing batch spec that would be replaced on a new preview.
  * @param noCache Whether or not the batch spec should be executed with the cache disabled.
  * @param onComplete An optional (stable) callback to invoke when the mutation is complete.
  */
 export const usePreviewBatchSpec = (
-    batchChangeID: Scalars['ID'],
+    batchSpecID: Scalars['ID'],
     noCache: boolean,
     onComplete?: () => void
 ): UsePreviewBatchSpecResult => {
-    // Mutation to create a new batch spec from the raw input YAML code.
-    const [
-        createBatchSpecFromRaw,
-        { data: createBatchSpecFromRawData, loading: createBatchSpecFromRawLoading },
-    ] = useMutation<CreateBatchSpecFromRawResult, CreateBatchSpecFromRawVariables>(CREATE_BATCH_SPEC_FROM_RAW)
-
-    // Mutation to replace the original batch spec input YAML and re-evaluate the workspaces.
-    const [
-        replaceBatchSpecInput,
-        { data: replaceBatchSpecInputData, loading: replaceBatchSpecInputLoading },
-    ] = useMutation<ReplaceBatchSpecInputResult, ReplaceBatchSpecInputVariables>(REPLACE_BATCH_SPEC_INPUT)
-
-    const batchSpecID = useMemo(
-        () =>
-            // The id shouldn't change, but if we have data from replacing the batch spec
-            // input already, the initial batch spec data has been superseded, so prefer
-            // the replaced batch spec id.
-            replaceBatchSpecInputData?.replaceBatchSpecInput.id ||
-            createBatchSpecFromRawData?.createBatchSpecFromRaw.id,
-        [replaceBatchSpecInputData, createBatchSpecFromRawData]
-    )
-
-    const isLoading = useMemo(() => createBatchSpecFromRawLoading || replaceBatchSpecInputLoading, [
-        createBatchSpecFromRawLoading,
-        replaceBatchSpecInputLoading,
-    ])
+    // Mutation to replace the existing batch spec input YAML and re-evaluate the workspaces.
+    const [replaceBatchSpecInput, { loading: isLoading }] = useMutation<
+        ReplaceBatchSpecInputResult,
+        ReplaceBatchSpecInputVariables
+    >(REPLACE_BATCH_SPEC_INPUT)
 
     const [error, setError] = useState<Error>()
     // We keep a reference to the time that we last requested a preview for the workspaces
@@ -89,15 +58,8 @@ export const usePreviewBatchSpec = (
         (code: string) => {
             setError(undefined)
 
-            // If we have a batch spec ID already, we're replacing the existing batch spec
-            // input YAML with a new one.
             const preview = (): Promise<unknown> =>
-                batchSpecID
-                    ? replaceBatchSpecInput({ variables: { spec: code, previousSpec: batchSpecID, noCache } })
-                    : // Otherwise, we're creating a new batch spec from the raw spec input YAML.
-                      createBatchSpecFromRaw({
-                          variables: { spec: code, batchChange: batchChangeID, noCache },
-                      })
+                replaceBatchSpecInput({ variables: { spec: code, previousSpec: batchSpecID, noCache } })
 
             return preview()
                 .then(() => {
@@ -106,12 +68,11 @@ export const usePreviewBatchSpec = (
                 })
                 .catch(setError)
         },
-        [batchSpecID, batchChangeID, noCache, createBatchSpecFromRaw, replaceBatchSpecInput, onComplete]
+        [batchSpecID, noCache, replaceBatchSpecInput, onComplete]
     )
 
     return {
         previewBatchSpec,
-        batchSpecID,
         currentPreviewRequestTime,
         isLoading,
         error,
