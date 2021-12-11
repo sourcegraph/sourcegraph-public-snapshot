@@ -60,11 +60,15 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
     // workspaces resolution failed, or if the batch spec YAML on the server is out of
     // date with the one in the editor.
     const [showPreviewPrompt, previewPromptForm] = useMemo(() => {
-        const showPreviewPrompt = !isLoading && (!batchSpecID || resolutionError || batchSpecStale)
-        const previewPromptForm: PreviewPromptForm = !batchSpecID ? 'Initial' : resolutionError ? 'Error' : 'Update'
+        const showPreviewPrompt = !isLoading && (!currentPreviewRequestTime || resolutionError || batchSpecStale)
+        const previewPromptForm: PreviewPromptForm = !currentPreviewRequestTime
+            ? 'Initial'
+            : resolutionError
+            ? 'Error'
+            : 'Update'
 
         return [showPreviewPrompt, previewPromptForm]
-    }, [isLoading, batchSpecID, batchSpecStale, resolutionError])
+    }, [isLoading, currentPreviewRequestTime, batchSpecStale, resolutionError])
 
     const clearErrorAndPreview = useCallback(() => {
         setIsLoading(true)
