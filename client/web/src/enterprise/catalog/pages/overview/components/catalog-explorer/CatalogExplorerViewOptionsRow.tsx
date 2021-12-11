@@ -1,11 +1,11 @@
 import classNames from 'classnames'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { Form } from 'reactstrap'
 
-import { useDebounce } from '@sourcegraph/wildcard'
-
+import { CatalogEntityType } from '../../../../../../graphql-operations'
 import { CatalogEntityFiltersProps } from '../../../../core/entity-filters'
 
+import { CatalogExplorerViewOptionInput } from './CatalogExplorerViewOptionInput'
 import styles from './CatalogExplorerViewOptionsRow.module.scss'
 
 interface Props extends CatalogEntityFiltersProps {
@@ -18,20 +18,16 @@ export const CatalogExplorerViewOptionsRow: React.FunctionComponent<Props> = ({
     before,
     toggle,
     filters,
+    filtersQueryParsed,
     onFiltersChange,
+    onFiltersQueryFieldChange,
     className,
 }) => {
-    const [query, setQuery] = useState(filters.query)
-
-    const debouncedQuery = useDebounce(query, 200)
-    useEffect(() => {
-        if (filters.query !== debouncedQuery) {
-            onFiltersChange({ ...filters, query: debouncedQuery })
-        }
-    }, [filters, onFiltersChange, debouncedQuery])
+    const [queryInput, setQueryInput] = useState<string>()
+    const query = queryInput ?? filters.query
 
     const onQueryChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        event => setQuery(event.currentTarget.value),
+        event => setQueryInput(event.currentTarget.value),
         []
     )
 
@@ -43,20 +39,32 @@ export const CatalogExplorerViewOptionsRow: React.FunctionComponent<Props> = ({
         [filters, onFiltersChange, query]
     )
 
+    const onQueryTypeChange = useCallback(
+        (value: CatalogEntityType | undefined): void => {
+            setQueryInput(undefined)
+            onFiltersQueryFieldChange('is', value)
+        },
+        [onFiltersQueryFieldChange]
+    )
+
     return (
-        <Form
-            className={classNames(styles.form, before ? styles.formHasBefore : styles.formNoBefore, className)}
-            onSubmit={onSubmit}
-        >
+        <Form className={classNames('form-inline', styles.form, className)} onSubmit={onSubmit}>
             {before && <div>{before}</div>}
             {toggle}
-            <div className={classNames('form-group mb-0')}>
+            <CatalogExplorerViewOptionInput<CatalogEntityType>
+                label="Type"
+                values={[CatalogEntityType.COMPONENT, CatalogEntityType.PACKAGE]}
+                selected={filtersQueryParsed.is}
+                onChange={onQueryTypeChange}
+                className={classNames('mb-0', styles.inputSelect)}
+            />
+            <div className={classNames('form-group mb-0 flex-grow-1')}>
                 <label htmlFor="entity-list-filters__query" className="sr-only">
                     Query
                 </label>
                 <input
                     id="entity-list-filters__query"
-                    className={classNames('form-control')}
+                    className={classNames('form-control flex-1')}
                     type="search"
                     onChange={onQueryChange}
                     placeholder="Search..."

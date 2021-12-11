@@ -12,7 +12,7 @@ import { CatalogExplorerViewOptionsRow } from './CatalogExplorerViewOptionsRow'
 interface Props {}
 
 export const CatalogExplorer: React.FunctionComponent<Props> = () => {
-    const { filters, onFiltersChange } = useCatalogEntityFilters()
+    const filtersProps = useCatalogEntityFilters('is:component')
 
     const match = useRouteMatch()
     const location = useLocation()
@@ -48,19 +48,18 @@ export const CatalogExplorer: React.FunctionComponent<Props> = () => {
                         </NavLink>
                     </div>
                 }
-                filters={filters}
-                onFiltersChange={onFiltersChange}
+                {...filtersProps}
                 className="pb-2"
             />
             <Switch>
                 <Route path={match.path} exact={true}>
-                    <CatalogExplorerList filters={filters} />
+                    <CatalogExplorerList filters={filtersProps.filters} />
                 </Route>
                 <Route path={`${match.path}/graph`} exact={true}>
-                    <OverviewEntityGraph filters={filters} className="border-top" />
+                    <OverviewEntityGraph filters={filtersProps.filters} className="border-top" />
                 </Route>
                 <Route path={`${match.path}/health`} exact={true}>
-                    <CatalogHealthTable filters={filters} />
+                    <CatalogHealthTable filters={filtersProps.filters} />
                 </Route>
             </Switch>
         </>

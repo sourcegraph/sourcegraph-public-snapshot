@@ -59,6 +59,10 @@ type queryMatcher struct {
 	relatedEntityNamesCached []string
 }
 
+func (q *queryMatcher) matchType(typ gql.CatalogEntityType) bool {
+	return q.isType == "" || q.isType == typ
+}
+
 func (q *queryMatcher) relatedEntityNames() []string {
 	q.once.Do(func() {
 		_, _, edges := catalog.Data()
@@ -103,7 +107,7 @@ func (q *queryMatcher) matchNode(c *catalogComponentResolver) bool {
 	}
 
 	return isLiteralMatch &&
-		(q.isType == "" || q.isType == "COMPONENT") &&
+		q.matchType("COMPONENT") &&
 		(q.relatedToEntity == nil || isRelatedToEntity(c)) &&
 		(c.ID() != q.excludeEntity) &&
 		(len(q.groups) == 0 || isInAnyGroup(c, q.groups))
@@ -118,5 +122,5 @@ func (q *queryMatcher) matchEdge(e *catalogEntityRelationEdgeResolver) bool {
 }
 
 func (q *queryMatcher) matchPackage(p catalog.Package) bool {
-	return q.isType == "PACKAGE" && strings.Contains(p.Name, q.literal)
+	return q.matchType("PACKAGE") && strings.Contains(p.Name, q.literal)
 }
