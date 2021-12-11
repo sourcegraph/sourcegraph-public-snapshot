@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"sort"
+	"time"
 
 	pg "github.com/lib/pq"
 	"github.com/pkg/errors"
@@ -97,16 +99,87 @@ const (
 
 const NULL = "0000000000000000000000000000000000000000"
 
+type Instants struct {
+	name           string
+	start          time.Time
+	nameToDuration map[string]time.Duration
+}
+
+func NewInstants() Instants {
+	return Instants{
+		name:           "<start>",
+		start:          time.Now(),
+		nameToDuration: map[string]time.Duration{"<start>": 0},
+	}
+}
+
+func (instants *Instants) Start(name string) {
+	now := time.Now()
+
+	if _, ok := instants.nameToDuration[instants.name]; !ok {
+		instants.nameToDuration[instants.name] = 0
+	}
+	instants.nameToDuration[instants.name] += now.Sub(instants.start)
+
+	instants.name = name
+	instants.start = now
+}
+
+func (instants *Instants) Reset() {
+	instants.name = "<start>"
+	instants.start = time.Now()
+	instants.nameToDuration = map[string]time.Duration{"<start>": 0}
+}
+
+func (instants Instants) Print() {
+	instants.Start(instants.name)
+
+	ms := func(d time.Duration) string {
+		return fmt.Sprintf("%dms", int(d.Seconds()*1000))
+	}
+
+	var total time.Duration = 0
+	for _, duration := range instants.nameToDuration {
+		total += duration
+	}
+	fmt.Printf("Instants (%s total):\n", ms(total))
+
+	type kv struct {
+		Key   string
+		Value time.Duration
+	}
+
+	var kvs []kv
+	for k, v := range instants.nameToDuration {
+		kvs = append(kvs, kv{k, v})
+	}
+
+	sort.Slice(kvs, func(i, j int) bool {
+		return kvs[i].Value > kvs[j].Value
+	})
+
+	for _, kv := range kvs {
+		fmt.Printf("  [%6s] %s\n", ms(kv.Value), kv.Key)
+	}
+}
+
+var INSTANTS = NewInstants()
+
 func Index(git Git, db DB, parse ParseSymbolsFunc, repo string, givenCommit string) error {
 	tipCommit := NULL
 	tipHeight := 0
 	missingCount := 0
+	INSTANTS.Start("RevList")
 	revs, err := git.RevList(repo, givenCommit)
+	INSTANTS.Start("idle")
 	if err != nil {
 		return err
 	}
 	for _, commit := range revs {
-		if _, height, present, err := db.GetCommit(commit); err != nil {
+		INSTANTS.Start("GetCommit")
+		_, height, present, err := db.GetCommit(commit)
+		INSTANTS.Start("idle")
+		if err != nil {
 			return err
 		} else if present {
 			tipCommit = commit
@@ -116,7 +189,9 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, repo string, givenCommit stri
 		missingCount += 1
 	}
 
+	INSTANTS.Start("LogReverse")
 	entries, err := git.LogReverse(repo, givenCommit, missingCount)
+	INSTANTS.Start("idle")
 	if err != nil {
 		return err
 	}
@@ -131,11 +206,15 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, repo string, givenCommit stri
 			return fmt.Errorf("ruler(%d) = %d is out of range of len(hops) = %d", tipHeight+1, r, len(hops))
 		}
 
+		INSTANTS.Start("AppendHop (added)")
 		err = db.AppendHop(hops[0:r], AddedAD, entry.Commit)
+		INSTANTS.Start("idle")
 		if err != nil {
 			return err
 		}
+		INSTANTS.Start("AppendHop (deleted)")
 		err = db.AppendHop(hops[0:r], DeletedAD, entry.Commit)
+		INSTANTS.Start("idle")
 		if err != nil {
 			return err
 		}
@@ -145,22 +224,30 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, repo string, givenCommit stri
 		for _, pathStatus := range entry.PathStatuses {
 			if pathStatus.Status == DeletedAMD || pathStatus.Status == ModifiedAMD {
 				for _, hop := range hops {
-					// TODO time this with some kind of Instants type
-					if id, found, err := db.GetBlob(hop, pathStatus.Path); err != nil {
+					INSTANTS.Start("GetBlob")
+					id, found, err := db.GetBlob(hop, pathStatus.Path)
+					INSTANTS.Start("idle")
+					if err != nil {
 						return err
 					} else if found {
+						INSTANTS.Start("UpdateBlobHops")
 						db.UpdateBlobHops(id, DeletedAD, entry.Commit)
+						INSTANTS.Start("idle")
 						break
 					}
 				}
 			}
 
 			if pathStatus.Status == AddedAMD || pathStatus.Status == ModifiedAMD {
+				INSTANTS.Start("CatFile")
 				contents, err := git.CatFile(repo, entry.Commit, pathStatus.Path)
+				INSTANTS.Start("idle")
 				if err != nil {
 					return err
 				}
+				INSTANTS.Start("parse")
 				symbols, err := parse(pathStatus.Path, contents)
+				INSTANTS.Start("idle")
 				if err != nil {
 					return err
 				}
@@ -171,7 +258,10 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, repo string, givenCommit stri
 					deleted: []string{},
 					symbols: symbols,
 				}
-				if err := db.InsertBlob(blob); err != nil {
+				INSTANTS.Start("InsertBlob")
+				err = db.InsertBlob(blob)
+				INSTANTS.Start("idle")
+				if err != nil {
 					return err
 				}
 			}
@@ -183,7 +273,9 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, repo string, givenCommit stri
 		if tipCommit == hops[r] {
 			fmt.Println(tipCommit, r, hops, tipHeight)
 		}
+		INSTANTS.Start("InsertCommit")
 		db.InsertCommit(tipCommit, tipHeight, hops[r])
+		INSTANTS.Start("idle")
 	}
 
 	return nil
@@ -194,7 +286,10 @@ func getHops(db DB, commit string) ([]string, error) {
 	spine := []string{current}
 
 	for {
-		if ancestor, _, present, err := db.GetCommit(current); err != nil {
+		INSTANTS.Start("GetCommit")
+		ancestor, _, present, err := db.GetCommit(current)
+		INSTANTS.Start("idle")
+		if err != nil {
 			return nil, err
 		} else if !present {
 			break

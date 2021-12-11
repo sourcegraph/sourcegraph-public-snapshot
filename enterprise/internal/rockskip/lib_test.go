@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-ctags"
@@ -419,12 +418,16 @@ func TestIndexReal(t *testing.T) {
 
 	repo := "github.com/gorilla/mux"
 	head := "3cf0d013e53d62a96c096366d300c84489c26dd5"
-	start := time.Now()
+	// repo := "github.com/hashicorp/raft"
+	// head := "aa1afe5d2a1e961ef54726af645ede516c18a554"
+	// repo := "github.com/crossplane/crossplane"
+	// head := "1f84012248a350b479a575214c17af5fe183138b"
+	INSTANTS.Reset()
 	err = Index(git, db, parser.Parse, repo, head)
 	if err != nil {
 		t.Fatalf("🚨 Index: %s", err)
 	}
-	fmt.Println("took", time.Since(start))
+	INSTANTS.Print()
 
 	blobs, err := Search(db, head)
 	if err != nil {
@@ -433,7 +436,6 @@ func TestIndexReal(t *testing.T) {
 	paths := []string{}
 	for _, blob := range blobs {
 		paths = append(paths, blob.path)
-		fmt.Println("blorb", blob)
 	}
 
 	cmd := exec.Command("git", "ls-tree", "-r", "--name-only", head)
