@@ -43,15 +43,6 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
             )}
             key={`${item.repository.id}_${item.branch.target.oid}_${item.path || '/'}`}
         >
-            <button
-                className="btn p-0 m-0 mr-2"
-                disabled={toBeExcluded}
-                data-tooltip={toBeExcluded ? undefined : 'Omit this repository from batch spec file'}
-                type="button"
-                onClick={handleExclude}
-            >
-                <CloseIcon className="icon-inline" />
-            </button>
             <div className={classNames(styles.statusContainer, 'mr-2')}>
                 <StatusIcon status={toBeExcluded ? 'to-exclude' : item.cachedResultFound ? 'cached' : 'none'} />
             </div>
@@ -70,6 +61,15 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
                     <small>{item.branch.displayName}</small>
                 </div>
             </div>
+            <button
+                className="btn p-0 my-0 mx-2"
+                disabled={toBeExcluded}
+                data-tooltip={toBeExcluded ? undefined : 'Omit this repository from batch spec file'}
+                type="button"
+                onClick={handleExclude}
+            >
+                <CloseIcon className="icon-inline" />
+            </button>
         </li>
     )
 }
