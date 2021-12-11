@@ -592,6 +592,7 @@ func (git SubprocessGit) RevList(givenCommit string) (commits []string, returnEr
 		} else if err != nil {
 			return nil, err
 		}
+		commit = commit[:len(commit)-1] // Drop the trailing newline
 		commits = append(commits, commit)
 	}
 
