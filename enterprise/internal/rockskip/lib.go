@@ -541,6 +541,7 @@ func (git SubprocessGit) LogReverse(givenCommit string, n int) (logEntries []Log
 					}
 
 					// Otherwise, it remained the same, so ignore the type change.
+					continue
 				case 'C':
 					// Copied
 					return nil, fmt.Errorf("unexpected status 'C' given --no-renames was specified")
