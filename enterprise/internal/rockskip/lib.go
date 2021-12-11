@@ -688,17 +688,11 @@ func NewPostgresDB() (*PostgresDB, error) {
 		return nil, fmt.Errorf("creating index rockskip_blobs_path: %s", err)
 	}
 
-	_, err = db.Exec("CREATE INDEX rockskip_blobs_added ON rockskip_blobs USING GIN (added)")
+	_, err = db.Exec("CREATE INDEX rockskip_blobs_added_deleted_symbols ON rockskip_blobs USING GIN (added, deleted, symbols)")
 	if err != nil {
-		return nil, fmt.Errorf("creating index rockskip_blobs_added: %s", err)
+		return nil, fmt.Errorf("creating index rockskip_blobs_added_deleted_symbols: %s", err)
 	}
 
-	_, err = db.Exec("CREATE INDEX rockskip_blobs_deleted ON rockskip_blobs USING GIN (deleted)")
-	if err != nil {
-		return nil, fmt.Errorf("creating index rockskip_blobs_deleted: %s", err)
-	}
-
-	fmt.Println("TODO add more indexes")
 	fmt.Println("TODO use transactions")
 
 	return &PostgresDB{db: db}, nil
