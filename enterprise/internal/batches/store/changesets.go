@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -1170,6 +1171,8 @@ func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		t.Metadata = new(github.PullRequest)
 	case extsvc.TypeBitbucketServer:
 		t.Metadata = new(bitbucketserver.PullRequest)
+	case extsvc.TypeBitbucketCloud:
+		t.Metadata = new(bitbucketcloud.PullRequest)
 	case extsvc.TypeGitLab:
 		t.Metadata = new(gitlab.MergeRequest)
 	default:

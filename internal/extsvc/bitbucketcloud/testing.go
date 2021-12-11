@@ -6,9 +6,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func GetenvTestBitbucketCloudUsername() string {
@@ -35,9 +37,18 @@ func NewTestClient(t testing.TB, name string, update bool, apiURL *url.URL) (*Cl
 		t.Fatal(err)
 	}
 
-	cli := NewClient(apiURL, hc)
-	cli.Username = GetenvTestBitbucketCloudUsername()
-	cli.AppPassword = os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD")
+	c := schema.BitbucketCloudConnection{
+		ApiURL: apiURL.String(),
+	}
+
+	cli, err := NewClient(&c, hc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cli = cli.WithAuthenticator(&auth.BasicAuth{
+		Username: GetenvTestBitbucketCloudUsername(),
+		Password: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
+	})
 
 	return cli, func() {
 		if err := rec.Stop(); err != nil {

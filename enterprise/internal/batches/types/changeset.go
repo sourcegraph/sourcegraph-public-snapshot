@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -368,6 +369,12 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 		c.ExternalBranch = git.EnsureRefPrefix(pr.HeadRefName)
 		c.ExternalUpdatedAt = pr.UpdatedAt
 	case *bitbucketserver.PullRequest:
+		c.Metadata = pr
+		c.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
+		c.ExternalServiceType = extsvc.TypeBitbucketServer
+		c.ExternalBranch = git.EnsureRefPrefix(pr.FromRef.ID)
+		c.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
+	case *bitbucketcloud.PullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
 		c.ExternalServiceType = extsvc.TypeBitbucketServer

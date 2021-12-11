@@ -23,6 +23,7 @@ type CodehostCapabilities map[CodehostCapability]bool
 var SupportedExternalServices = map[string]CodehostCapabilities{
 	extsvc.TypeGitHub:          {CodehostCapabilityLabels: true, CodehostCapabilityDraftChangesets: true},
 	extsvc.TypeBitbucketServer: {},
+	extsvc.TypeBitbucketCloud:  {},
 	extsvc.TypeGitLab:          {CodehostCapabilityLabels: true, CodehostCapabilityDraftChangesets: true},
 }
 

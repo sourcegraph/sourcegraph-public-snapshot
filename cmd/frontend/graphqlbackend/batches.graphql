@@ -857,7 +857,7 @@ type ExistingChangesetReference {
     """
     The ID that uniquely identifies the existing changeset on the code host.
 
-    For GitHub and Bitbucket Server, this is the pull request number (as a string) in the
+    For GitHub and Bitbucket, this is the pull request number (as a string) in the
     base repository. For example, "1234" for PR 1234.
     """
     externalID: String!
@@ -870,7 +870,7 @@ scalar PublishedValue
 
 """
 A description of a changeset that represents the proposal to merge one branch into another.
-This is used to describe a pull request (on GitHub and Bitbucket Server).
+This is used to describe a pull request (on GitHub and Bitbucket).
 """
 type GitBranchChangesetDescription {
     """
@@ -910,14 +910,14 @@ type GitBranchChangesetDescription {
     """
     The title of the changeset on the code host.
 
-    On Bitbucket Server or GitHub this is the title of the pull request.
+    On Bitbucket or GitHub this is the title of the pull request.
     """
     title: String!
 
     """
     The body of the changeset on the code host.
 
-    On Bitbucket Server or GitHub this is the body/description of the pull request.
+    On Bitbucket or GitHub this is the body/description of the pull request.
     """
     body: String!
 
@@ -1520,7 +1520,7 @@ extend type Mutation {
         """
         Whether to close the changesets associated with this batch change on their respective code
         hosts. "Close" means the appropriate final state on the code host (e.g., "closed" on
-        GitHub and "declined" on Bitbucket Server).
+        GitHub and "declined" on Bitbucket).
         """
         closeChangesets: Boolean = false
     ): BatchChange!

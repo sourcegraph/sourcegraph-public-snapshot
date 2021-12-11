@@ -1,6 +1,7 @@
 package bitbucketcloud
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,12 +15,16 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
+	"github.com/segmentio/fasthash/fnv1"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var requestCounter = metrics.NewRequestMeter("bitbucket_cloud_requests_count", "Total number of requests sent to the Bitbucket Cloud API.")
@@ -35,8 +40,8 @@ var requestCounter = metrics.NewRequestMeter("bitbucket_cloud_requests_count", "
 // to our repository lookup requests) to 1,000/hr.
 // See `pkg/extsvc/bitbucketserver/client.go` for the calculations behind these limits`
 const (
-	rateLimitRequestsPerSecond = 2 // 120/min or 7200/hr
-	RateLimitMaxBurstRequests  = 500
+	defaultRateLimitRequestsPerSecond = 2 // 120/min or 7200/hr
+	defaultRateLimitMaxBurstRequests  = 500
 )
 
 // Client access a Bitbucket Cloud via the REST API 2.0.
@@ -47,8 +52,7 @@ type Client struct {
 	// URL is the base URL of Bitbucket Cloud.
 	URL *url.URL
 
-	// The username and app password credentials for accessing the server.
-	Username, AppPassword string
+	Auth auth.Authenticator
 
 	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
 	// of rate limiting in HTTP response headers).
@@ -58,11 +62,28 @@ type Client struct {
 // NewClient creates a new Bitbucket Cloud API client with given apiURL. If a nil httpClient
 // is provided, http.DefaultClient will be used. Both Username and AppPassword fields are
 // required to be set before calling any APIs.
-func NewClient(apiURL *url.URL, httpClient httpcli.Doer) *Client {
+func NewClient(config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (*Client, error) {
 	if httpClient == nil {
 		httpClient = httpcli.ExternalDoer
 	}
 
+	apiURL := config.ApiURL
+	if apiURL == "" {
+		apiURL = "https://api.bitbucket.org"
+	}
+	u, err := url.Parse(apiURL)
+	if err != nil {
+		return nil, err
+	}
+	u = extsvc.NormalizeBaseURL(u)
+
+	// TODO: Why wasn't this here before?
+	requestsPerHour := rate.Limit(defaultRateLimitRequestsPerSecond)
+	if config.RateLimit != nil && config.RateLimit.RequestsPerHour != 0 {
+		requestsPerHour = rate.Limit(config.RateLimit.RequestsPerHour)
+	}
+
+	// TODO: The categorizer of bitbucket cloud is so different.
 	httpClient = requestCounter.Doer(httpClient, func(u *url.URL) string {
 		// The second component of the Path mostly maps to the type of API
 		// request we are making.
@@ -76,14 +97,66 @@ func NewClient(apiURL *url.URL, httpClient httpcli.Doer) *Client {
 	// Normally our registry will return a default infinite limiter when nothing has been
 	// synced from config. However, we always want to ensure there is at least some form of rate
 	// limiting for Bitbucket.
-	defaultLimiter := rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests)
-	l := ratelimit.DefaultRegistry.GetOrSet(apiURL.String(), defaultLimiter)
+	defaultLimiter := rate.NewLimiter(requestsPerHour, defaultRateLimitMaxBurstRequests)
+	l := ratelimit.DefaultRegistry.GetOrSet(u.String(), defaultLimiter)
 
-	return &Client{
+	c := &Client{
 		httpClient: httpClient,
-		URL:        apiURL,
+		URL:        u,
 		RateLimit:  l,
 	}
+
+	if config.Username != "" && config.AppPassword != "" {
+		c.Auth = &auth.BasicAuth{Username: config.Username, Password: config.AppPassword}
+	}
+
+	return c, nil
+}
+
+// WithAuthenticator returns a new Client that uses the same configuration,
+// HTTPClient, and RateLimiter as the current Client, except authenticated user
+// with the given authenticator instance.
+func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
+	return &Client{
+		httpClient: c.httpClient,
+		URL:        c.URL,
+		RateLimit:  c.RateLimit,
+		Auth:       a,
+	}
+}
+
+// ErrPullRequestNotFound is returned by LoadPullRequest when the pull request has
+// been deleted on upstream, or never existed. It will NOT be thrown, if it can't
+// be determined whether the pull request exists, because the credential used
+// cannot view the repository.
+var ErrPullRequestNotFound = errors.New("pull request not found")
+
+// LoadPullRequest loads the given PullRequest returning an error in case of failure.
+func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
+	if pr.ToRef.Repository.Slug == "" {
+		return errors.New("repository slug empty")
+	}
+	if pr.ToRef.Repository.Project.Key == "" {
+		return errors.New("project key empty")
+	}
+
+	path := fmt.Sprintf(
+		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d",
+		pr.ToRef.Repository.Project.Key,
+		pr.ToRef.Repository.Slug,
+		pr.ID,
+	)
+	_, err := c.send(ctx, "GET", path, nil, nil, pr)
+	if err != nil {
+		var e *httpError
+		if errors.As(err, &e) && e.NoSuchPullRequestException() {
+			return ErrPullRequestNotFound
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 // Repos returns a list of repositories that are fetched and populated based on given account
@@ -129,7 +202,7 @@ func (c *Client) reqPage(ctx context.Context, url string, results interface{}) (
 	}
 
 	var next PageToken
-	err = c.do(ctx, req, &struct {
+	_, err = c.do(ctx, req, &struct {
 		*PageToken
 		Values interface{} `json:"values"`
 	}{
@@ -144,7 +217,29 @@ func (c *Client) reqPage(ctx context.Context, url string, results interface{}) (
 	return &next, nil
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) error {
+func (c *Client) send(ctx context.Context, method, path string, qry url.Values, payload, result interface{}) (*http.Response, error) {
+	if qry == nil {
+		qry = make(url.Values)
+	}
+
+	var body io.ReadWriter
+	if payload != nil {
+		body = new(bytes.Buffer)
+		if err := json.NewEncoder(body).Encode(payload); err != nil {
+			return nil, err
+		}
+	}
+
+	u := url.URL{Path: path, RawQuery: qry.Encode()}
+	req, err := http.NewRequest(method, u.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.do(ctx, req, result)
+}
+
+func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
@@ -155,12 +250,12 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	defer ht.Finish()
 
 	if err := c.authenticate(req); err != nil {
-		return err
+		return nil, err
 	}
 
 	startWait := time.Now()
 	if err := c.RateLimit.Wait(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
 	if d := time.Since(startWait); d > 200*time.Millisecond {
@@ -169,34 +264,36 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer resp.Body.Close()
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return errors.WithStack(&httpError{
+		return nil, errors.WithStack(&httpError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
 			Body:       bs,
 		})
 	}
 
-	if result != nil {
-		return json.Unmarshal(bs, result)
+	// handle binary response
+	if s, ok := result.(*[]byte); ok {
+		*s = bs
+	} else if result != nil {
+		return resp, json.Unmarshal(bs, result)
 	}
 
-	return nil
+	return resp, nil
 }
 
 func (c *Client) authenticate(req *http.Request) error {
-	req.SetBasicAuth(c.Username, c.AppPassword)
-	return nil
+	return c.Auth.Authenticate(req)
 }
 
 type PageToken struct {
@@ -224,16 +321,42 @@ func (t *PageToken) Values() url.Values {
 	return v
 }
 
+// User account in a Bitbucket Server instance.
+type User struct {
+	Name         string `json:"name,omitempty"`
+	Password     string `json:"-"`
+	EmailAddress string `json:"emailAddress,omitempty"`
+	ID           int    `json:"id,omitempty"`
+	DisplayName  string `json:"displayName,omitempty"`
+	Active       bool   `json:"active,omitempty"`
+	Slug         string `json:"slug,omitempty"`
+	Type         string `json:"type,omitempty"`
+}
+
+type Project struct {
+	UUID   string `json:"uuid"`
+	Key    string `json:"key"`
+	Name   string `json:"name"`
+	Public bool   `json:"public"`
+	Type   string `json:"type"`
+	Links  struct {
+		Self struct {
+			Href string `json:"href"`
+		} `json:"self"`
+	} `json:"links"`
+}
+
 type Repo struct {
-	Slug        string `json:"slug"`
-	Name        string `json:"name"`
-	FullName    string `json:"full_name"`
-	UUID        string `json:"uuid"`
-	SCM         string `json:"scm"`
-	Description string `json:"description"`
-	Parent      *Repo  `json:"parent"`
-	IsPrivate   bool   `json:"is_private"`
-	Links       Links  `json:"links"`
+	UUID        string   `json:"uuid"`
+	Slug        string   `json:"slug"`
+	Name        string   `json:"name"`
+	FullName    string   `json:"full_name"`
+	SCM         string   `json:"scm"`
+	Description string   `json:"description"`
+	Parent      *Repo    `json:"parent"`
+	IsPrivate   bool     `json:"is_private"`
+	Links       Links    `json:"links"`
+	Project     *Project `json:"project"`
 }
 
 type Links struct {
@@ -250,6 +373,187 @@ type Link struct {
 	Href string `json:"href"`
 }
 
+type Ref struct {
+	ID         string `json:"id"`
+	Repository struct {
+		ID      int    `json:"id"`
+		Slug    string `json:"slug"`
+		Project struct {
+			Key string `json:"key"`
+		} `json:"project"`
+	} `json:"repository"`
+}
+
+type PullRequest struct {
+	ID           int               `json:"id"` // OK
+	Version      int               `json:"version"`
+	Title        string            `json:"title"`
+	Description  string            `json:"description"`
+	State        string            `json:"state"`
+	Open         bool              `json:"open"`
+	Closed       bool              `json:"closed"`
+	CreatedDate  int               `json:"createdDate"`
+	UpdatedDate  int               `json:"updatedDate"`
+	FromRef      Ref               `json:"fromRef"`
+	ToRef        Ref               `json:"toRef"`
+	Locked       bool              `json:"locked"`
+	Author       PullRequestAuthor `json:"author"`
+	Reviewers    []Reviewer        `json:"reviewers"`
+	Participants []Participant     `json:"participants"`
+	Links        struct {
+		Self []struct {
+			Href string `json:"href"`
+		} `json:"self"`
+	} `json:"links"`
+
+	Activities   []*Activity     `json:"activities,omitempty"`
+	Commits      []*Commit       `json:"commits,omitempty"`
+	CommitStatus []*CommitStatus `json:"commit_status,omitempty"`
+
+	// Deprecated, use CommitStatus instead. BuildStatus was not tied to individual commits
+	BuildStatuses []*BuildStatus `json:"buildstatuses,omitempty"`
+}
+
+// PullRequestAuthor is the author of a pull request.
+type PullRequestAuthor struct {
+	User     *User  `json:"user"`
+	Role     string `json:"role"`
+	Approved bool   `json:"approved"`
+	Status   string `json:"status"`
+}
+
+// Reviewer is a user that left feedback on a pull request.
+type Reviewer struct {
+	User               *User  `json:"user"`
+	LastReviewedCommit string `json:"lastReviewedCommit"`
+	Role               string `json:"role"`
+	Approved           bool   `json:"approved"`
+	Status             string `json:"status"`
+}
+
+// Participant is a user that was involved in a pull request.
+type Participant struct {
+	User     *User  `json:"user"`
+	Role     string `json:"role"`
+	Approved bool   `json:"approved"`
+	Status   string `json:"status"`
+}
+
+// Activity is a union type of all supported pull request activity items.
+type Activity struct {
+	ID          int            `json:"id"`
+	CreatedDate int            `json:"createdDate"`
+	User        User           `json:"user"`
+	Action      ActivityAction `json:"action"`
+
+	// Comment activity fields.
+	CommentAction string         `json:"commentAction,omitempty"`
+	Comment       *Comment       `json:"comment,omitempty"`
+	CommentAnchor *CommentAnchor `json:"commentAnchor,omitempty"`
+
+	// Reviewers change fields.
+	AddedReviewers   []User `json:"addedReviewers,omitempty"`
+	RemovedReviewers []User `json:"removedReviewers,omitempty"`
+
+	// Merged event fields.
+	Commit *Commit `json:"commit,omitempty"`
+}
+
+// Key is a unique key identifying this activity in the context of its pull request.
+func (a *Activity) Key() string { return strconv.Itoa(a.ID) }
+
+// BuildStatus represents the build status of a commit
+type BuildStatus struct {
+	State       string `json:"state,omitempty"`
+	Key         string `json:"key,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Url         string `json:"url,omitempty"`
+	Description string `json:"description,omitempty"`
+	DateAdded   int64  `json:"dateAdded,omitempty"`
+}
+
+// Commit status is the build status for a specific commit
+type CommitStatus struct {
+	Commit string      `json:"commit,omitempty"`
+	Status BuildStatus `json:"status,omitempty"`
+}
+
+func (s *CommitStatus) Key() string {
+	key := fmt.Sprintf("%s:%s:%s:%s", s.Commit, s.Status.Key, s.Status.Name, s.Status.Url)
+	return strconv.FormatInt(int64(fnv1.HashString64(key)), 16)
+}
+
+// ActivityAction defines the action taken in an Activity.
+type ActivityAction string
+
+// Known ActivityActions
+const (
+	ApprovedActivityAction   ActivityAction = "APPROVED"
+	UnapprovedActivityAction ActivityAction = "UNAPPROVED"
+	DeclinedActivityAction   ActivityAction = "DECLINED"
+	ReviewedActivityAction   ActivityAction = "REVIEWED"
+	OpenedActivityAction     ActivityAction = "OPENED"
+	ReopenedActivityAction   ActivityAction = "REOPENED"
+	RescopedActivityAction   ActivityAction = "RESCOPED"
+	UpdatedActivityAction    ActivityAction = "UPDATED"
+	CommentedActivityAction  ActivityAction = "COMMENTED"
+	MergedActivityAction     ActivityAction = "MERGED"
+)
+
+// A Comment in a PullRequest.
+type Comment struct {
+	ID                  int                 `json:"id"`
+	Version             int                 `json:"version"`
+	Text                string              `json:"text"`
+	Author              User                `json:"author"`
+	CreatedDate         int                 `json:"createdDate"`
+	UpdatedDate         int                 `json:"updatedDate"`
+	Comments            []Comment           `json:"comments"` // Replies to the comment
+	Tasks               []Task              `json:"tasks"`
+	PermittedOperations PermittedOperations `json:"permittedOperations"`
+}
+
+// A CommentAnchor captures the location of a code comment in a PullRequest.
+type CommentAnchor struct {
+	FromHash string `json:"fromHash"`
+	ToHash   string `json:"toHash"`
+	Line     int    `json:"line"`
+	LineType string `json:"lineType"`
+	FileType string `json:"fileType"`
+	Path     string `json:"path"`
+	DiffType string `json:"diffType"`
+	Orphaned bool   `json:"orphaned"`
+}
+
+// A Task in a PullRequest.
+type Task struct {
+	ID                  int                 `json:"id"`
+	Author              User                `json:"author"`
+	Text                string              `json:"text"`
+	State               string              `json:"state"`
+	CreatedDate         int                 `json:"createdDate"`
+	PermittedOperations PermittedOperations `json:"permittedOperations"`
+}
+
+// PermittedOperations of a Comment or Task.
+type PermittedOperations struct {
+	Editable       bool `json:"editable,omitempty"`
+	Deletable      bool `json:"deletable,omitempty"`
+	Transitionable bool `json:"transitionable,omitempty"`
+}
+
+// A Commit in a Repository.
+type Commit struct {
+	ID                 string   `json:"id,omitempty"`
+	DisplayID          string   `json:"displayId,omitempty"`
+	Author             *User    `json:"user,omitempty"`
+	AuthorTimestamp    int64    `json:"authorTimestamp,omitempty"`
+	Committer          *User    `json:"committer,omitempty"`
+	CommitterTimestamp int64    `json:"committerTimestamp,omitempty"`
+	Message            string   `json:"message,omitempty"`
+	Parents            []Commit `json:"parents,omitempty"`
+}
+
 // HTTPS returns clone link named "https", it returns an error if not found.
 func (cl CloneLinks) HTTPS() (string, error) {
 	for _, l := range cl {
@@ -259,6 +563,12 @@ func (cl CloneLinks) HTTPS() (string, error) {
 	}
 	return "", errors.New("HTTPS clone link not found")
 }
+
+const (
+	bitbucketDuplicatePRException       = "com.atlassian.bitbucket.pull.DuplicatePullRequestException"
+	bitbucketNoSuchLabelException       = "com.atlassian.bitbucket.label.NoSuchLabelException"
+	bitbucketNoSuchPullRequestException = "com.atlassian.bitbucket.pull.NoSuchPullRequestException"
+)
 
 type httpError struct {
 	StatusCode int
@@ -276,4 +586,12 @@ func (e *httpError) Unauthorized() bool {
 
 func (e *httpError) NotFound() bool {
 	return e.StatusCode == http.StatusNotFound
+}
+
+func (e *httpError) DuplicatePullRequest() bool {
+	return strings.Contains(string(e.Body), bitbucketDuplicatePRException)
+}
+
+func (e *httpError) NoSuchPullRequestException() bool {
+	return strings.Contains(string(e.Body), bitbucketNoSuchPullRequestException)
 }

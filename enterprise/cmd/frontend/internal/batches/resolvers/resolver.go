@@ -1129,7 +1129,7 @@ func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, exter
 	if err != nil {
 		return nil, err
 	}
-	if externalServiceType == extsvc.TypeBitbucketServer {
+	if externalServiceType == extsvc.TypeBitbucketServer || externalServiceType == extsvc.TypeBitbucketCloud {
 		// We need to fetch the username for the token, as just an OAuth token isn't enough for some reason..
 		username, err := svc.FetchUsernameForBitbucketServerToken(ctx, externalServiceURL, externalServiceType, credential)
 		if err != nil {
