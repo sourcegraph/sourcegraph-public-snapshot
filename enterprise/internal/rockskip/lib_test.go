@@ -202,8 +202,8 @@ func (db MockDB) UpdateBlobHops(id int, status StatusAD, hop string) error {
 	return nil
 }
 
-func (db MockDB) InsertBlob(blob Blob) error {
-	id := len(db.blobs)
+func (db MockDB) InsertBlob(blob Blob) (id int, err error) {
+	id = len(db.blobs)
 	db.blobs[id] = &blob
 	if _, ok := db.pathToHopToStatusToIds[blob.path]; !ok {
 		db.pathToHopToStatusToIds[blob.path] = map[string]map[StatusAD][]int{}
@@ -220,7 +220,7 @@ func (db MockDB) InsertBlob(blob Blob) error {
 		}
 		db.pathToHopToStatusToIds[blob.path][hop][DeletedAD] = append(db.pathToHopToStatusToIds[blob.path][hop][DeletedAD], id)
 	}
-	return nil
+	return id, nil
 }
 
 func (db MockDB) AppendHop(hops []string, givenStatus StatusAD, newHop string) error {

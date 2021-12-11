@@ -26,7 +26,7 @@ type DB interface {
 	InsertCommit(commit string, height int, ancestor string) error
 	GetBlob(hop string, path string) (id int, found bool, err error)
 	UpdateBlobHops(id int, status StatusAD, hop string) error
-	InsertBlob(blob Blob) error
+	InsertBlob(blob Blob) (id int, err error)
 	AppendHop(hops []string, status StatusAD, hop string) error
 	Search(hops []string) ([]Blob, error)
 }
@@ -199,6 +199,8 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 		missingCount += 1
 	}
 
+	pathToBlobIdCache := map[string]int{}
+
 	INSTANTS.Start("LogReverse")
 	entries, err := git.LogReverse(givenCommit, missingCount)
 	INSTANTS.Start("idle")
@@ -233,19 +235,30 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 
 		for _, pathStatus := range entry.PathStatuses {
 			if pathStatus.Status == DeletedAMD || pathStatus.Status == ModifiedAMD {
-				for _, hop := range hops {
-					INSTANTS.Start("GetBlob")
-					id, found, err := db.GetBlob(hop, pathStatus.Path)
-					INSTANTS.Start("idle")
-					if err != nil {
-						return err
-					} else if found {
-						INSTANTS.Start("UpdateBlobHops")
-						db.UpdateBlobHops(id, DeletedAD, entry.Commit)
+				id := 0
+
+				ok := false
+				if id, ok = pathToBlobIdCache[pathStatus.Path]; !ok {
+					found := false
+					for _, hop := range hops {
+						INSTANTS.Start("GetBlob")
+						id, found, err = db.GetBlob(hop, pathStatus.Path)
 						INSTANTS.Start("idle")
-						break
+						if err != nil {
+							return err
+						}
+						if found {
+							break
+						}
+					}
+					if !found {
+						return fmt.Errorf("could not find blob for path %s", pathStatus.Path)
 					}
 				}
+
+				INSTANTS.Start("UpdateBlobHops")
+				db.UpdateBlobHops(id, DeletedAD, entry.Commit)
+				INSTANTS.Start("idle")
 			}
 
 			if pathStatus.Status == AddedAMD || pathStatus.Status == ModifiedAMD {
@@ -269,11 +282,12 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 					symbols: symbols,
 				}
 				INSTANTS.Start("InsertBlob")
-				err = db.InsertBlob(blob)
+				id, err := db.InsertBlob(blob)
 				INSTANTS.Start("idle")
 				if err != nil {
 					return err
 				}
+				pathToBlobIdCache[pathStatus.Path] = id
 			}
 		}
 
@@ -729,12 +743,14 @@ func (db PostgresDB) UpdateBlobHops(id int, status StatusAD, hop string) error {
 	return errors.Wrap(err, "UpdateBlobHops")
 }
 
-func (db PostgresDB) InsertBlob(blob Blob) error {
-	_, err := db.db.Exec(`
+func (db PostgresDB) InsertBlob(blob Blob) (id int, err error) {
+	lastInsertId := 0
+	err = db.db.QueryRow(`
 		INSERT INTO rockskip_blobs (commit, path, added, deleted, symbols)
 		VALUES ($1, $2, $3, $4, $5)
-	`, blob.commit, blob.path, pg.Array(blob.added), pg.Array(blob.deleted), pg.Array(blob.symbols))
-	return errors.Wrap(err, "InsertBlob")
+		RETURNING id
+	`, blob.commit, blob.path, pg.Array(blob.added), pg.Array(blob.deleted), pg.Array(blob.symbols)).Scan(&lastInsertId)
+	return lastInsertId, errors.Wrap(err, "InsertBlob")
 }
 
 func (db PostgresDB) AppendHop(hops []string, givenStatus StatusAD, newHop string) error {
