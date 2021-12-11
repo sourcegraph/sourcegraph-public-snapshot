@@ -102,26 +102,32 @@ const (
 const NULL = "0000000000000000000000000000000000000000"
 
 type Instants struct {
-	name           string
-	start          time.Time
-	nameToDuration map[string]time.Duration
+	name       string
+	start      time.Time
+	nameToTask map[string]*Task
+}
+
+type Task struct {
+	Duration time.Duration
+	Count    int
 }
 
 func NewInstants() Instants {
 	return Instants{
-		name:           "<start>",
-		start:          time.Now(),
-		nameToDuration: map[string]time.Duration{"<start>": 0},
+		name:       "<start>",
+		start:      time.Now(),
+		nameToTask: map[string]*Task{"<start>": &Task{Duration: 0, Count: 0}},
 	}
 }
 
 func (instants *Instants) Start(name string) {
 	now := time.Now()
 
-	if _, ok := instants.nameToDuration[instants.name]; !ok {
-		instants.nameToDuration[instants.name] = 0
+	if _, ok := instants.nameToTask[instants.name]; !ok {
+		instants.nameToTask[instants.name] = &Task{Duration: 0, Count: 0}
 	}
-	instants.nameToDuration[instants.name] += now.Sub(instants.start)
+	instants.nameToTask[instants.name].Duration += now.Sub(instants.start)
+	instants.nameToTask[instants.name].Count += 1
 
 	instants.name = name
 	instants.start = now
@@ -130,7 +136,7 @@ func (instants *Instants) Start(name string) {
 func (instants *Instants) Reset() {
 	instants.name = "<start>"
 	instants.start = time.Now()
-	instants.nameToDuration = map[string]time.Duration{"<start>": 0}
+	instants.nameToTask = map[string]*Task{"<start>": &Task{Duration: 0, Count: 0}}
 }
 
 func (instants Instants) Print() {
@@ -141,27 +147,29 @@ func (instants Instants) Print() {
 	}
 
 	var total time.Duration = 0
-	for _, duration := range instants.nameToDuration {
-		total += duration
+	totalCount := 0
+	for _, task := range instants.nameToTask {
+		total += task.Duration
+		totalCount += task.Count
 	}
 	fmt.Printf("Instants (%s total):\n", ms(total))
 
 	type kv struct {
 		Key   string
-		Value time.Duration
+		Value *Task
 	}
 
 	var kvs []kv
-	for k, v := range instants.nameToDuration {
+	for k, v := range instants.nameToTask {
 		kvs = append(kvs, kv{k, v})
 	}
 
 	sort.Slice(kvs, func(i, j int) bool {
-		return kvs[i].Value > kvs[j].Value
+		return kvs[i].Value.Duration > kvs[j].Value.Duration
 	})
 
 	for _, kv := range kvs {
-		fmt.Printf("  [%6s] %s\n", ms(kv.Value), kv.Key)
+		fmt.Printf("  [%6s] x%d %s\n", ms(kv.Value.Duration), kv.Value.Count, kv.Key)
 	}
 }
 
@@ -648,7 +656,27 @@ func NewPostgresDB() (*PostgresDB, error) {
 		return nil, fmt.Errorf("creating rockskip_blobs: %s", err)
 	}
 
-	fmt.Println("TODO add indexes")
+	_, err = db.Exec("CREATE INDEX rockskip_ancestry_commit_id ON rockskip_ancestry (commit_id)")
+	if err != nil {
+		return nil, fmt.Errorf("creating index rockskip_ancestry_commit_id: %s", err)
+	}
+
+	_, err = db.Exec("CREATE INDEX rockskip_blobs_path ON rockskip_blobs(path)")
+	if err != nil {
+		return nil, fmt.Errorf("creating index rockskip_blobs_path: %s", err)
+	}
+
+	_, err = db.Exec("CREATE INDEX rockskip_blobs_added ON rockskip_blobs USING GIN (added)")
+	if err != nil {
+		return nil, fmt.Errorf("creating index rockskip_blobs_added: %s", err)
+	}
+
+	_, err = db.Exec("CREATE INDEX rockskip_blobs_deleted ON rockskip_blobs USING GIN (deleted)")
+	if err != nil {
+		return nil, fmt.Errorf("creating index rockskip_blobs_deleted: %s", err)
+	}
+
+	fmt.Println("TODO add more indexes")
 	fmt.Println("TODO use transactions")
 
 	return &PostgresDB{db: db}, nil
