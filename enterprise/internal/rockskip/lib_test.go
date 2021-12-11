@@ -404,12 +404,12 @@ func TestIndexMocks(t *testing.T) {
 }
 
 func TestIndexReal(t *testing.T) {
-	repo := "github.com/gorilla/mux"
-	head := "3cf0d013e53d62a96c096366d300c84489c26dd5"
+	// repo := "github.com/gorilla/mux"
+	// head := "3cf0d013e53d62a96c096366d300c84489c26dd5"
 	// repo := "github.com/hashicorp/raft"
 	// head := "aa1afe5d2a1e961ef54726af645ede516c18a554"
-	// repo := "github.com/crossplane/crossplane"
-	// head := "1f84012248a350b479a575214c17af5fe183138b"
+	repo := "github.com/crossplane/crossplane"
+	head := "1f84012248a350b479a575214c17af5fe183138b"
 
 	git, err := NewSubprocessGit(repo)
 	if err != nil {
@@ -443,7 +443,7 @@ func TestIndexReal(t *testing.T) {
 		paths = append(paths, blob.path)
 	}
 
-	cmd := exec.Command("git", "ls-tree", "-r", "--name-only", head)
+	cmd := exec.Command("bash", "-c", fmt.Sprintf("git ls-tree -r %s | grep -v \"^160000\" | cut -f2", head))
 	cmd.Dir = "/Users/chrismwendt/" + repo
 	out, err := cmd.Output()
 	if err != nil {
