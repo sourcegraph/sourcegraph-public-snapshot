@@ -9,16 +9,14 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { PageTitle } from '../../../../../components/PageTitle'
-import { CatalogEntityByNameResult, CatalogEntityByNameVariables } from '../../../../../graphql-operations'
-import { useTemporarySetting } from '../../../../../settings/temporary/useTemporarySetting'
-import { useCatalogEntityFilters } from '../../../core/entity-filters'
-import { EntityList } from '../../overview/components/entity-list/EntityList'
-import { Sidebar } from '../sidebar/Sidebar'
+import { PageTitle } from '../../../../components/PageTitle'
+import { CatalogPackageByNameResult, CatalogPackageByNameVariables } from '../../../../graphql-operations'
+import { useTemporarySetting } from '../../../../settings/temporary/useTemporarySetting'
+import { useCatalogPackageFilters } from '../../core/entity-filters'
 
-import { EntityDetailContent } from './EntityDetailContent'
-import styles from './EntityDetailPage.module.scss'
 import { CATALOG_ENTITY_BY_NAME } from './gql'
+import { PackageDetailContent } from './PackageDetailContent'
+import styles from './PackageDetailPage.module.scss'
 
 export interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     /** The name of the catalog entity. */
@@ -28,12 +26,12 @@ export interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeP
 /**
  * The catalog entity detail page.
  */
-export const EntityDetailPage: React.FunctionComponent<Props> = ({ entityName, telemetryService, ...props }) => {
+export const PackageDetailPage: React.FunctionComponent<Props> = ({ entityName, telemetryService, ...props }) => {
     useEffect(() => {
-        telemetryService.logViewEvent('CatalogEntityDetail')
+        telemetryService.logViewEvent('CatalogPackageDetail')
     }, [telemetryService])
 
-    const { data, error, loading } = useQuery<CatalogEntityByNameResult, CatalogEntityByNameVariables>(
+    const { data, error, loading } = useQuery<CatalogPackageByNameResult, CatalogPackageByNameVariables>(
         CATALOG_ENTITY_BY_NAME,
         {
             variables: { type: 'COMPONENT', name: entityName },
@@ -52,7 +50,7 @@ export const EntityDetailPage: React.FunctionComponent<Props> = ({ entityName, t
     const disableSidebar = true
     const [showSidebar, setShowSidebar] = useTemporarySetting('catalog.sidebar.visible', true)
 
-    const { filters, onFiltersChange } = useCatalogEntityFilters('')
+    const { filters, onFiltersChange } = useCatalogPackageFilters('')
 
     return (
         <>
@@ -98,7 +96,7 @@ export const EntityDetailPage: React.FunctionComponent<Props> = ({ entityName, t
             ) : !data || !data.catalogEntity ? (
                 <div className="m-3 alert alert-danger">Entity not found in catalog</div>
             ) : (
-                <EntityDetailContent {...props} entity={data.catalogEntity} telemetryService={telemetryService} />
+                <PackageDetailContent {...props} entity={data.catalogEntity} telemetryService={telemetryService} />
             )}
         </>
     )

@@ -259,8 +259,8 @@ export const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
 `
 
 export const CATALOG_ENTITY_BY_NAME = gql`
-    query CatalogEntityByName($name: String!) {
-        catalogEntity(name: $name) {
+    query CatalogEntityByName($type: CatalogEntityType!, $name: String!) {
+        catalogEntity(type: $type, name: $name) {
             ...CatalogEntityDetailFields
         }
     }

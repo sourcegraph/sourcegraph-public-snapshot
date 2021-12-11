@@ -25,6 +25,7 @@ type CatalogRootResolver interface {
 }
 
 type CatalogEntityArgs struct {
+	Type CatalogEntityType
 	Name string
 }
 

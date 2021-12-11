@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/catalog"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -21,12 +22,23 @@ func (r *rootResolver) Catalog(context.Context) (gql.CatalogResolver, error) {
 }
 
 func (r *rootResolver) CatalogEntity(ctx context.Context, args *gql.CatalogEntityArgs) (*gql.CatalogEntityResolver, error) {
-	components := dummyComponents(r.db)
-	for _, c := range components {
-		if c.Name() == args.Name {
-			return &gql.CatalogEntityResolver{c}, nil
+	switch args.Type {
+	case "COMPONENT":
+		components := dummyComponents(r.db)
+		for _, c := range components {
+			if c.Name() == args.Name {
+				return &gql.CatalogEntityResolver{CatalogEntity: c}, nil
+			}
+		}
+
+	case "PACKAGE":
+		for _, pkg := range catalog.AllPackages() {
+			if pkg.Name == args.Name {
+				return &gql.CatalogEntityResolver{CatalogEntity: &packageResolver{db: r.db, pkg: pkg}}, nil
+			}
 		}
 	}
+
 	return nil, nil
 }
 

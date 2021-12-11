@@ -3,7 +3,7 @@ extend type Query {
     [WIP]
     """
     catalog: Catalog!
-    catalogEntity(name: String!): CatalogEntity
+    catalogEntity(type: CatalogEntityType!, name: String!): CatalogEntity
     groups: [Group!]!
     group(name: String!): Group
 }
