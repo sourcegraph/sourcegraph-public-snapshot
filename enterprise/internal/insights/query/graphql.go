@@ -1,4 +1,4 @@
-package queryrunner
+package query
 
 import (
 	"bytes"
@@ -77,7 +77,7 @@ type gqlSearchVars struct {
 	Query string `json:"query"`
 }
 
-type gqlSearchResponse struct {
+type GqlSearchResponse struct {
 	Data struct {
 		Search struct {
 			Results struct {
@@ -98,7 +98,7 @@ type gqlSearchResponse struct {
 }
 
 // search executes the given search query.
-func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
+func Search(ctx context.Context, query string) (*GqlSearchResponse, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(graphQLQuery{
 		Query:     gqlSearchQuery,
@@ -126,7 +126,7 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 	}
 	defer resp.Body.Close()
 
-	var res *gqlSearchResponse
+	var res *GqlSearchResponse
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return nil, errors.Wrap(err, "Decode")
 	}

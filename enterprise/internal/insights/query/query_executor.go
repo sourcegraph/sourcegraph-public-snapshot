@@ -8,9 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -33,7 +36,7 @@ func NewCaptureGroupExecutor(postgres, insightsDb dbutil.DB, clock func() time.T
 	}
 }
 
-func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, repositories []string, interval TimeInterval) ([]GeneratedTimeSeries, error) {
+func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, repositories []string, interval timeseries.TimeInterval) ([]GeneratedTimeSeries, error) {
 	repoIds := make(map[string]api.RepoID)
 	for _, repository := range repositories {
 		repo, err := c.repoStore.GetByName(ctx, api.RepoName(repository))
@@ -90,12 +93,12 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 			modifiedQuery = fmt.Sprintf("%s repo:^%s$@%s", modifiedQuery, regexp.QuoteMeta(repository), commits[0].ID)
 
 			log15.Debug("executing query", "query", modifiedQuery)
-			results, err := queryrunner.ComputeSearch(ctx, modifiedQuery)
+			results, err := ComputeSearch(ctx, modifiedQuery)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to execute capture group search for repository:%s commit:%s", repository, execution.Revision)
 			}
 
-			grouped := queryrunner.GroupByCaptureMatch(results)
+			grouped := GroupByCaptureMatch(results)
 			sort.Slice(grouped, func(i, j int) bool {
 				return grouped[i].Value < grouped[j].Value
 			})
@@ -117,10 +120,10 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	var calculated []GeneratedTimeSeries
 	seriesCount := 1
 	for value, timeCounts := range pivoted {
-		var timeseries []queryrunner.TimeDataPoint
+		var timeseries []TimeDataPoint
 
 		for key, val := range timeCounts {
-			timeseries = append(timeseries, queryrunner.TimeDataPoint{
+			timeseries = append(timeseries, TimeDataPoint{
 				Time:  key,
 				Count: val,
 			})
@@ -147,7 +150,7 @@ func withCountUnlimited(s string) string {
 	return s + " count:all"
 }
 
-func BuildFrames(numPoints int, interval TimeInterval, now time.Time) []compression.Frame {
+func BuildFrames(numPoints int, interval timeseries.TimeInterval, now time.Time) []types.Frame {
 	current := now
 	times := make([]time.Time, 0, numPoints)
 	times = append(times, now)
@@ -158,42 +161,23 @@ func BuildFrames(numPoints int, interval TimeInterval, now time.Time) []compress
 		times = append(times, current)
 	}
 
-	frames := make([]compression.Frame, 0, len(times)-1)
+	frames := make([]types.Frame, 0, len(times)-1)
 	for i := 1; i < len(times); i++ {
 		prev := times[i-1]
-		frames = append(frames, compression.Frame{
-			From: prev,
-			To:   times[i],
+		frames = append(frames, types.Frame{
+			From: times[i],
+			To:   prev,
 		})
 	}
+
+	sort.Slice(frames, func(i, j int) bool {
+		return frames[i].From.Before(frames[j].From)
+	})
 	return frames
-}
-
-type TimeInterval struct {
-	Unit  string
-	Value int
-}
-
-func (t TimeInterval) StepBackwards(start time.Time) time.Time {
-	switch t.Unit {
-	case "YEAR":
-		return start.AddDate(-1*t.Value, 0, 0)
-	case "MONTH":
-		return start.AddDate(0, -1*t.Value, 0)
-	case "WEEK":
-		return start.AddDate(0, 0, -7*t.Value)
-	case "DAY":
-		return start.AddDate(0, 0, -1*t.Value)
-	case "HOUR":
-		return start.Add(time.Hour * time.Duration(t.Value) * -1)
-	default:
-		// this doesn't really make sense, so return something?
-		return start.AddDate(-1*t.Value, 0, 0)
-	}
 }
 
 type GeneratedTimeSeries struct {
 	Label    string
-	Points   []queryrunner.TimeDataPoint
+	Points   []TimeDataPoint
 	SeriesId string
 }

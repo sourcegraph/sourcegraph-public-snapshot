@@ -150,3 +150,9 @@ const (
 	Line PresentationType = "LINE"
 	Pie  PresentationType = "PIE"
 )
+
+type Frame struct {
+	From   time.Time
+	To     time.Time
+	Commit string
+}
