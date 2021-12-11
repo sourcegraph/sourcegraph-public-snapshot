@@ -169,7 +169,7 @@ func (instants Instants) Print() {
 	})
 
 	for _, kv := range kvs {
-		fmt.Printf("  [%6s] x%d %s\n", ms(kv.Value.Duration), kv.Value.Count, kv.Key)
+		fmt.Printf("  [%6s] %6dx %s\n", ms(kv.Value.Duration), kv.Value.Count, kv.Key)
 	}
 }
 
