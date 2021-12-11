@@ -333,22 +333,9 @@ func (git SubprocessGit) LogReverse(repo string, givenCommit string, n int) (log
 				buf = make([]byte, 99)
 				read, err := io.ReadFull(reader, buf)
 				if read != 99 {
-					// TODO figure out this 🐛
 					return nil, fmt.Errorf("read %d bytes, expected 99", read)
 				} else if err != nil {
 					return nil, err
-				}
-				var status StatusAMD
-				switch buf[97] {
-				case 'A':
-					status = AddedAMD
-				case 'M':
-					status = ModifiedAMD
-				case 'D':
-					status = DeletedAMD
-				default:
-					// Ignore other statuses (e.g. 'T' for type changed)
-					continue
 				}
 
 				// Read the path
@@ -357,6 +344,54 @@ func (git SubprocessGit) LogReverse(repo string, givenCommit string, n int) (log
 					return nil, err
 				}
 				path = path[:len(path)-1] // Drop the trailing NULL byte
+
+				// Inspect the status
+				var status StatusAMD
+				statusByte := buf[97]
+				switch statusByte {
+				case 'A':
+					status = AddedAMD
+				case 'M':
+					status = ModifiedAMD
+				case 'D':
+					status = DeletedAMD
+				case 'T':
+					// Type changed. Check if it changed from a file to a submodule or vice versa,
+					// treating submodules as empty.
+
+					isSubmodule := func(mode string) bool {
+						// Submodules are mode "160000". https://stackoverflow.com/questions/737673/how-to-read-the-mode-field-of-git-ls-trees-output#comment3519596_737877
+						return mode == "160000"
+					}
+
+					oldMode := string(buf[1:7])
+					newMode := string(buf[8:14])
+
+					if isSubmodule(oldMode) && !isSubmodule(newMode) {
+						// It changed from a submodule to a file, so consider it added.
+						status = AddedAMD
+						break
+					}
+
+					if !isSubmodule(oldMode) && isSubmodule(newMode) {
+						// It changed from a file to a submodule, so consider it deleted.
+						status = DeletedAMD
+						break
+					}
+
+					// Otherwise, it remained the same, so ignore the type change.
+				case 'C':
+					// Copied
+					return nil, fmt.Errorf("unexpected status 'C' given --no-renames was specified")
+				case 'R':
+					// Renamed
+					return nil, fmt.Errorf("unexpected status 'R' given --no-renames was specified")
+				case 'X':
+					return nil, fmt.Errorf("unexpected status 'X' indicates a bug in git")
+				default:
+					fmt.Printf("LogReverse repo %q commit %q path %q: unrecognized diff status %q, skipping\n", repo, commit, path, string(statusByte))
+					continue
+				}
 
 				pathStatuses = append(pathStatuses, PathStatus{Path: string(path), Status: status})
 			}
