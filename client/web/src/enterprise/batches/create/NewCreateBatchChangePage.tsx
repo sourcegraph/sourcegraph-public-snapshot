@@ -128,6 +128,10 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
     isLightTheme,
     settingsCascade,
 }) => {
+    // TODO: This will always be available once the "Create" form from the other
+    // branch is ready.
+    const batchSpecID = batchChange?.currentSpec.id
+
     const { namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade, namespace)
 
     // The namespace selected for creating the new batch spec under.
@@ -159,14 +163,11 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
     // Manage the batch spec that was last submitted to the backend for the workspaces preview.
     const {
         previewBatchSpec,
-        batchSpecID,
         currentPreviewRequestTime,
         isLoading: isLoadingPreview,
         error: previewError,
         clearError: clearPreviewError,
-        // TODO: This will always be available once the "Create" form from the other
-        // branch is ready.
-    } = usePreviewBatchSpec(batchChange?.id || '', noCache, markUnstale)
+    } = usePreviewBatchSpec(batchSpecID || '', noCache, markUnstale)
 
     const clearErrorsAndHandleCodeChange = useCallback(
         (newCode: string) => {
@@ -207,7 +208,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                 previewError ||
                 isLoadingPreview ||
                 isExecuting ||
-                !batchSpecID ||
+                !currentPreviewRequestTime ||
                 batchSpecStale ||
                 workspacesPreviewResolution?.state !== BatchSpecWorkspaceResolutionState.COMPLETED
         )
@@ -217,7 +218,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                 ? "There's nothing to run yet."
                 : isValid === false || previewError
                 ? "There's a problem with your batch spec."
-                : !batchSpecID
+                : !currentPreviewRequestTime
                 ? 'Preview workspaces first before you run.'
                 : batchSpecStale
                 ? 'Update your workspaces preview before you run.'
@@ -228,7 +229,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         return [disableExecution, executionTooltip]
     }, [
         batchChange,
-        batchSpecID,
+        currentPreviewRequestTime,
         isValid,
         previewError,
         isLoadingPreview,

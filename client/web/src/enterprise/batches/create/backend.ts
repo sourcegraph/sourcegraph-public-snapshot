@@ -37,13 +37,17 @@ export const EXECUTE_BATCH_SPEC = gql`
     }
 `
 
-export const CREATE_BATCH_SPEC_FROM_RAW = gql`
-    mutation CreateBatchSpecFromRaw($spec: String!, $noCache: Boolean!, $batchChange: ID) {
-        createBatchSpecFromRaw(batchSpec: $spec, noCache: $noCache, batchChange: $batchChange) {
-            id
-        }
-    }
-`
+// TODO: This mutation will not be used until we support creating + executing a new batch
+// spec on an existing non-draft batch change. Use `CREATE_EMPTY_BATCH_CHANGE` and
+// `REPLACE_BATCH_SPEC_INPUT` for draft batch changes.
+//
+// export const CREATE_BATCH_SPEC_FROM_RAW = gql`
+//     mutation CreateBatchSpecFromRaw($spec: String!, $noCache: Boolean!, $batchChange: ID) {
+//         createBatchSpecFromRaw(batchSpec: $spec, noCache: $noCache, batchChange: $batchChange) {
+//             id
+//         }
+//     }
+// `
 
 export const REPLACE_BATCH_SPEC_INPUT = gql`
     mutation ReplaceBatchSpecInput($previousSpec: ID!, $spec: String!, $noCache: Boolean!) {
