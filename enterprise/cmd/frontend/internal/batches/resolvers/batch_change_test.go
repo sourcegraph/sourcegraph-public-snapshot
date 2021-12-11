@@ -70,6 +70,7 @@ func TestBatchChangeResolver(t *testing.T) {
 		ID:             batchChangeAPIID,
 		Name:           batchChange.Name,
 		Description:    batchChange.Description,
+		State:          btypes.BatchChangeStateOpen,
 		Namespace:      apitest.UserOrg{ID: namespaceAPIID, Name: orgName},
 		InitialApplier: apiUser,
 		LastApplier:    apiUser,
@@ -143,7 +144,7 @@ fragment o on Org  { id, name }
 query($batchChange: ID!){
   node(id: $batchChange) {
     ... on BatchChange {
-      id, name, description
+      id, name, description, state
       initialApplier { ...u }
       lastApplier    { ...u }
       specCreator    { ...u }
@@ -166,7 +167,7 @@ fragment o on Org  { id, name }
 
 query($namespace: ID!, $name: String!){
   batchChange(namespace: $namespace, name: $name) {
-    id, name, description
+    id, name, description, state
     initialApplier { ...u }
     lastApplier    { ...u }
     specCreator    { ...u }

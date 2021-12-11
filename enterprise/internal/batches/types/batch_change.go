@@ -1,6 +1,9 @@
 package types
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 // BatchChangeState defines the possible states of a BatchChange
 type BatchChangeState string
@@ -51,3 +54,6 @@ func (c *BatchChange) IsDraft() bool {
 		c.LastApplierID == 0 &&
 		c.InitialApplierID == 0
 }
+
+// ToGraphQL returns the GraphQL representation of the state.
+func (s BatchChangeState) ToGraphQL() string { return strings.ToUpper(string(s)) }

@@ -2177,6 +2177,11 @@ type BatchChange implements Node {
     description: String
 
     """
+    The computed state of the batch change.
+    """
+    state: BatchChangeState!
+
+    """
     The user that created the initial spec. In an org, this will be different from the namespace, or null if the user was deleted.
     """
     specCreator: User
