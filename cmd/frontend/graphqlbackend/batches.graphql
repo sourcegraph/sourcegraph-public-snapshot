@@ -2149,6 +2149,7 @@ The state of the batch change.
 enum BatchChangeState {
     OPEN
     CLOSED
+    DRAFT
 }
 
 """

@@ -9,6 +9,7 @@ const (
 	BatchChangeStateAny    BatchChangeState = "ANY"
 	BatchChangeStateOpen   BatchChangeState = "OPEN"
 	BatchChangeStateClosed BatchChangeState = "CLOSED"
+	BatchChangeStateDraft  BatchChangeState = "DRAFT"
 )
 
 // A BatchChange of changesets over multiple Repos over time.
