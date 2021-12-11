@@ -73,6 +73,7 @@ func (b *repoBranchLocker) Lock(ctx context.Context, commits []commitInfo, allow
 		},
 		// This is a replace operation, so we must set all the desired rules here as well
 		RequireLinearHistory: github.Bool(true),
+		RequiredStatusChecks: protects.RequiredStatusChecks,
 		// Internally GitHub represents "require PR" as:
 		//
 		//     has_required_reviews: on
