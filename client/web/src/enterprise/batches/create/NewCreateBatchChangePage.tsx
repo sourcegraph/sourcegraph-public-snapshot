@@ -62,7 +62,7 @@ const getNamespaceBatchChangesURL = (namespace: SettingsUserSubject | SettingsOr
     }
 }
 
-interface NewCreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
+export interface NewCreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     /** The namespace the batch change should be created in, or that it already belongs to. */
     namespace?: UserAreaUserFields | OrgAreaOrganizationFields
     /** The batch change name, if it already exists. */

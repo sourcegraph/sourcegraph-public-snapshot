@@ -4,8 +4,8 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { userAreaRoutes } from '../../user/area/routes'
 import { UserAreaRoute, UserAreaRouteContext } from '../../user/area/UserArea'
 import { lazyComponent } from '../../util/lazyComponent'
-import { CreateBatchChangePage } from '../batches/create/CreateBatchChangePage'
-import { NewCreateBatchChangePage } from '../batches/create/NewCreateBatchChangePage'
+import { CreateBatchChangePageProps } from '../batches/create/CreateBatchChangePage'
+import { NewCreateBatchChangePageProps } from '../batches/create/NewCreateBatchChangePage'
 import { NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
@@ -13,6 +13,16 @@ import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
 const NamespaceBatchChangesArea = lazyComponent<NamespaceBatchChangesAreaProps, 'NamespaceBatchChangesArea'>(
     () => import('../batches/global/GlobalBatchChangesArea'),
     'NamespaceBatchChangesArea'
+)
+
+const NewCreateBatchChangePage = lazyComponent<NewCreateBatchChangePageProps, 'NewCreateBatchChangePage'>(
+    () => import('../batches/create/NewCreateBatchChangePage'),
+    'NewCreateBatchChangePage'
+)
+
+const CreateBatchChangePage = lazyComponent<CreateBatchChangePageProps, 'CreateBatchChangePage'>(
+    () => import('../batches/create/CreateBatchChangePage'),
+    'CreateBatchChangePage'
 )
 
 export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
