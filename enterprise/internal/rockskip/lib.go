@@ -566,7 +566,7 @@ func (git SubprocessGit) LogReverse(givenCommit string, n int) (logEntries []Log
 }
 
 func (git SubprocessGit) RevList(givenCommit string) (commits []string, returnError error) {
-	revList := exec.Command("git", "rev-list", givenCommit)
+	revList := exec.Command("git", "rev-list", "--first-parent", givenCommit)
 	revList.Dir = "/Users/chrismwendt/" + git.repo
 	output, err := revList.StdoutPipe()
 	if err != nil {
