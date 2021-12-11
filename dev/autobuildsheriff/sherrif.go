@@ -25,6 +25,8 @@ type sherrifResults struct {
 	FailedCommits []commitInfo
 }
 
+// buildsherrif is the main sherrifing program. It checks the given builds for relevant
+// failures and runs lock/unlock operations on the given branch.
 func buildsherrif(ctx context.Context, branch branchLocker, builds []buildkite.Build, opts sherrifOptions) (results *sherrifResults, err error) {
 	results = &sherrifResults{}
 
@@ -51,10 +53,8 @@ func buildsherrif(ctx context.Context, branch branchLocker, builds []buildkite.B
 	// if failed, check if failures are consecutive
 	var exceeded bool
 	results.FailedCommits, exceeded = checkConsecutiveFailures(
-		// Check builds after the failed one we found
-		builds[firstFailedBuild:],
-		// We already have 1 failed build, so we need to find n-1 more
-		opts.FailuresThreshold-1,
+		builds[max(firstFailedBuild-1, 0):], // Check builds starting with the one we found
+		opts.FailuresThreshold,
 		opts.BuildTimeout)
 	if !exceeded {
 		fmt.Println("threshold not exceeded")
@@ -70,6 +70,7 @@ func buildsherrif(ctx context.Context, branch branchLocker, builds []buildkite.B
 	if err != nil {
 		return nil, fmt.Errorf("lockBranch: %w", err)
 	}
+	results.Locked = true
 
 	return
 }
@@ -136,4 +137,11 @@ func checkConsecutiveFailures(builds []buildkite.Build, threshold int, timeout t
 	}
 
 	return
+}
+
+func max(x, y int) int {
+	if x < y {
+		return y
+	}
+	return x
 }
