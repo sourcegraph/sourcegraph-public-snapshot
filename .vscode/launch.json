@@ -26,7 +26,7 @@
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
         "--extensionDevelopmentKind=web",
-        "--disable-web-security"
+        "--disable-web-security",
       ],
       "outFiles": ["${workspaceRoot}/client/vscode/dist/extension.js"],
       "preLaunchTask": "build-vscode-dev-web",
@@ -38,14 +38,11 @@
       "request": "launch",
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
-        "--disable-extension=kandalatj.sourcegraph-preview"
+        "--disable-extension=kandalatj.sourcegraph-preview",
       ],
-      "skipFiles": [
-				"<node_internals>/**/*.js",
-				"**/node_modules/**/*.js"
-			],
+      "skipFiles": ["<node_internals>/**/*.js", "**/node_modules/**/*.js"],
       "smartStep": true,
-			"sourceMaps": true,
+      "sourceMaps": true,
       "outFiles": ["${workspaceRoot}/client/vscode/dist/extension.js"],
       "preLaunchTask": "watch-vscode-dev",
     },
@@ -58,14 +55,11 @@
         "--extensionDevelopmentPath=${workspaceRoot}/client/vscode",
         "--extensionDevelopmentKind=web",
         "--disable-web-security",
-        "--disable-extension=kandalatj.sourcegraph-preview"
+        "--disable-extension=kandalatj.sourcegraph-preview",
       ],
-      "skipFiles": [
-				"<node_internals>/**/*.js",
-				"**/node_modules/**/*.js"
-			],
+      "skipFiles": ["<node_internals>/**/*.js", "**/node_modules/**/*.js"],
       "smartStep": true,
-			"sourceMaps": true,
+      "sourceMaps": true,
       "outFiles": ["${workspaceRoot}/client/vscode/dist/extension.js"],
       "preLaunchTask": "watch-vscode-dev-web",
     },
