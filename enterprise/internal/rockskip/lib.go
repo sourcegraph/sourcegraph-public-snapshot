@@ -647,7 +647,7 @@ func NewPostgresDB() (*PostgresDB, error) {
 		CREATE TABLE rockskip_blobs (
 			id      SERIAL        PRIMARY KEY,
 			commit  VARCHAR(40)   NOT NULL,
-			path    BYTEA         NOT NULL,
+			path    TEXT          NOT NULL,
 			added   VARCHAR(40)[] NOT NULL,
 			deleted VARCHAR(40)[] NOT NULL,
 			symbols TEXT[]		  NOT NULL
