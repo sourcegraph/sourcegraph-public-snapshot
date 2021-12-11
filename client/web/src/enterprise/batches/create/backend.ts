@@ -23,6 +23,11 @@ export const GET_BATCH_CHANGE = gql`
             id
             originalInput
         }
+
+        # TODO: Replace me with state
+        lastApplier {
+            id
+        }
     }
 `
 

@@ -195,6 +195,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
     const { executeBatchSpec, isLoading: isExecuting, error: executeError } = useExecuteBatchSpec(batchSpecID)
 
     // Disable the execute button if any of the following are true:
+    // * a batch spec has already been applied (the batch change is not a draft)
     // * the batch spec code is invalid
     // * there was an error with the preview
     // * we're already in the middle of previewing or executing
@@ -204,6 +205,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
     const [disableExecution, executionTooltip] = useMemo(() => {
         const disableExecution = Boolean(
             batchChange === undefined ||
+                batchChange.lastApplier !== null ||
                 isValid !== true ||
                 previewError ||
                 isLoadingPreview ||
@@ -216,6 +218,8 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         const executionTooltip =
             batchChange === undefined
                 ? "There's nothing to run yet."
+                : batchChange.lastApplier !== null
+                ? 'This batch change has already had a spec applied.'
                 : isValid === false || previewError
                 ? "There's a problem with your batch spec."
                 : !currentPreviewRequestTime
