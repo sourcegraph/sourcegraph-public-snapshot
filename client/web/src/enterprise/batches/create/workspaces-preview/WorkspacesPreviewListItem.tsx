@@ -60,17 +60,15 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
                     className={classNames(styles.link, styles.overflow, (toBeExcluded || isStale) && styles.linkStale)}
                     to={item.branch.url}
                 >
-                    {item.repository.name}:{item.branch.abbrevName}
+                    {item.repository.name}
                 </Link>
                 {item.path !== '' && item.path !== '/' ? (
                     <span className={classNames(styles.overflow, 'd-block text-muted')}>{item.path}</span>
                 ) : null}
-                {item.branch.id !== item.repository.defaultBranch?.id ? (
-                    <div className="d-flex align-items-center text-muted">
-                        <SourceBranchIcon className="icon-inline mr-1" />
-                        {item.branch.displayName}
-                    </div>
-                ) : null}
+                <div className="d-flex align-items-center text-muted text-monospace mt-1">
+                    <SourceBranchIcon className="icon-inline mr-1" />
+                    <small>{item.branch.displayName}</small>
+                </div>
             </div>
         </li>
     )
