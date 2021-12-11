@@ -225,8 +225,13 @@ func TestCheckConsecutiveFailures(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotCommits, gotThresholdExceeded := checkConsecutiveFailures(tt.args.builds, tt.args.threshold, tt.args.timeout)
-			assert.Equal(t, tt.wantCommits, gotCommits, "commits")
 			assert.Equal(t, tt.wantThresholdExceeded, gotThresholdExceeded, "thresholdExceeded")
+
+			wantCommits := []commitInfo{}
+			for _, c := range tt.wantCommits {
+				wantCommits = append(wantCommits, commitInfo{Commit: c})
+			}
+			assert.Equal(t, wantCommits, gotCommits, "commits")
 		})
 	}
 }
