@@ -28,7 +28,7 @@ func NewMockGit() MockGit {
 	}
 }
 
-func (git MockGit) LogReverse(repo string, commit string, n int) ([]LogEntry, error) {
+func (git MockGit) LogReverse(commit string, n int) ([]LogEntry, error) {
 	logEntries := []LogEntry{}
 	for commit != "" && n > 0 {
 		data, ok := git.commitToCommitData[commit]
@@ -51,7 +51,7 @@ func (git MockGit) LogReverse(repo string, commit string, n int) ([]LogEntry, er
 	return logEntries, nil
 }
 
-func (git MockGit) RevList(repo string, commit string) ([]string, error) {
+func (git MockGit) RevList(commit string) ([]string, error) {
 	commits := []string{}
 	for commit != "" {
 		commits = append(commits, commit)
@@ -60,7 +60,7 @@ func (git MockGit) RevList(repo string, commit string) ([]string, error) {
 	return commits, nil
 }
 
-func (git MockGit) CatFile(repo string, commit string, path string) ([]byte, error) {
+func (git MockGit) CatFile(commit string, path string) ([]byte, error) {
 	return []byte("func main() {}"), nil
 }
 
@@ -375,7 +375,7 @@ func TestIndexMocks(t *testing.T) {
 		prevCommit = commit
 	}
 
-	err := Index(git, db, parse, "github.com/foo/bar", prevCommit)
+	err := Index(git, db, parse, prevCommit)
 	if err != nil {
 		t.Fatalf("🚨 Index: %s", err)
 	}
@@ -404,7 +404,18 @@ func TestIndexMocks(t *testing.T) {
 }
 
 func TestIndexReal(t *testing.T) {
-	git := NewSubprocessGit()
+	repo := "github.com/gorilla/mux"
+	head := "3cf0d013e53d62a96c096366d300c84489c26dd5"
+	// repo := "github.com/hashicorp/raft"
+	// head := "aa1afe5d2a1e961ef54726af645ede516c18a554"
+	// repo := "github.com/crossplane/crossplane"
+	// head := "1f84012248a350b479a575214c17af5fe183138b"
+
+	git, err := NewSubprocessGit(repo)
+	if err != nil {
+		t.Fatalf("🚨 NewSubprocessGit: %s", err)
+	}
+	defer git.Close()
 	db, err := NewPostgresDB()
 	if err != nil {
 		t.Fatalf("🚨 NewPostgresDB: %s", err)
@@ -416,14 +427,8 @@ func TestIndexReal(t *testing.T) {
 	}
 	defer parser.Close()
 
-	repo := "github.com/gorilla/mux"
-	head := "3cf0d013e53d62a96c096366d300c84489c26dd5"
-	// repo := "github.com/hashicorp/raft"
-	// head := "aa1afe5d2a1e961ef54726af645ede516c18a554"
-	// repo := "github.com/crossplane/crossplane"
-	// head := "1f84012248a350b479a575214c17af5fe183138b"
 	INSTANTS.Reset()
-	err = Index(git, db, parser.Parse, repo, head)
+	err = Index(git, db, parser.Parse, head)
 	if err != nil {
 		t.Fatalf("🚨 Index: %s", err)
 	}

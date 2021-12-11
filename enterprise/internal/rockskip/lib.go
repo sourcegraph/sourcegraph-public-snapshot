@@ -7,6 +7,8 @@ import (
 	"io"
 	"os/exec"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	pg "github.com/lib/pq"
@@ -14,9 +16,9 @@ import (
 )
 
 type Git interface {
-	LogReverse(repo string, commit string, n int) ([]LogEntry, error)
-	RevList(repo string, commit string) ([]string, error)
-	CatFile(repo string, commit string, path string) ([]byte, error)
+	LogReverse(commit string, n int) ([]LogEntry, error)
+	RevList(commit string) ([]string, error)
+	CatFile(commit string, path string) ([]byte, error)
 }
 
 type DB interface {
@@ -165,12 +167,12 @@ func (instants Instants) Print() {
 
 var INSTANTS = NewInstants()
 
-func Index(git Git, db DB, parse ParseSymbolsFunc, repo string, givenCommit string) error {
+func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 	tipCommit := NULL
 	tipHeight := 0
 	missingCount := 0
 	INSTANTS.Start("RevList")
-	revs, err := git.RevList(repo, givenCommit)
+	revs, err := git.RevList(givenCommit)
 	INSTANTS.Start("idle")
 	if err != nil {
 		return err
@@ -190,7 +192,7 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, repo string, givenCommit stri
 	}
 
 	INSTANTS.Start("LogReverse")
-	entries, err := git.LogReverse(repo, givenCommit, missingCount)
+	entries, err := git.LogReverse(givenCommit, missingCount)
 	INSTANTS.Start("idle")
 	if err != nil {
 		return err
@@ -240,7 +242,7 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, repo string, givenCommit stri
 
 			if pathStatus.Status == AddedAMD || pathStatus.Status == ModifiedAMD {
 				INSTANTS.Start("CatFile")
-				contents, err := git.CatFile(repo, entry.Commit, pathStatus.Path)
+				contents, err := git.CatFile(entry.Commit, pathStatus.Path)
 				INSTANTS.Start("idle")
 				if err != nil {
 					return err
@@ -330,13 +332,49 @@ func Search(db DB, commit string) ([]Blob, error) {
 	return db.Search(hops)
 }
 
-type SubprocessGit struct{}
-
-func NewSubprocessGit() SubprocessGit {
-	return SubprocessGit{}
+type SubprocessGit struct {
+	repo          string
+	catFileCmd    *exec.Cmd
+	catFileStdin  io.WriteCloser
+	catFileStdout bufio.Reader
 }
 
-func (git SubprocessGit) LogReverse(repo string, givenCommit string, n int) (logEntries []LogEntry, returnError error) {
+func NewSubprocessGit(repo string) (*SubprocessGit, error) {
+	cmd := exec.Command("git", "cat-file", "--batch")
+	cmd.Dir = "/Users/chrismwendt/" + repo
+
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+
+	err = cmd.Start()
+	if err != nil {
+		return nil, err
+	}
+
+	return &SubprocessGit{
+		repo:          repo,
+		catFileCmd:    cmd,
+		catFileStdin:  stdin,
+		catFileStdout: *bufio.NewReader(stdout),
+	}, nil
+}
+
+func (git SubprocessGit) Close() error {
+	err := git.catFileStdin.Close()
+	if err != nil {
+		return err
+	}
+	return git.catFileCmd.Wait()
+}
+
+func (git SubprocessGit) LogReverse(givenCommit string, n int) (logEntries []LogEntry, returnError error) {
 	log := exec.Command("git",
 		"log",
 		"--pretty=%H %P",
@@ -352,7 +390,7 @@ func (git SubprocessGit) LogReverse(repo string, givenCommit string, n int) (log
 		fmt.Sprintf("-%d", n),
 		givenCommit,
 	)
-	log.Dir = "/Users/chrismwendt/" + repo
+	log.Dir = "/Users/chrismwendt/" + git.repo
 	output, err := log.StdoutPipe()
 	if err != nil {
 		return nil, err
@@ -484,7 +522,7 @@ func (git SubprocessGit) LogReverse(repo string, givenCommit string, n int) (log
 				case 'X':
 					return nil, fmt.Errorf("unexpected status 'X' indicates a bug in git")
 				default:
-					fmt.Printf("LogReverse repo %q commit %q path %q: unrecognized diff status %q, skipping\n", repo, commit, path, string(statusByte))
+					fmt.Printf("LogReverse repo %q commit %q path %q: unrecognized diff status %q, skipping\n", git.repo, commit, path, string(statusByte))
 					continue
 				}
 
@@ -498,9 +536,9 @@ func (git SubprocessGit) LogReverse(repo string, givenCommit string, n int) (log
 	return logEntries, nil
 }
 
-func (git SubprocessGit) RevList(repo string, givenCommit string) (commits []string, returnError error) {
+func (git SubprocessGit) RevList(givenCommit string) (commits []string, returnError error) {
 	revList := exec.Command("git", "rev-list", givenCommit)
-	revList.Dir = "/Users/chrismwendt/" + repo
+	revList.Dir = "/Users/chrismwendt/" + git.repo
 	output, err := revList.StdoutPipe()
 	if err != nil {
 		return nil, err
@@ -531,10 +569,40 @@ func (git SubprocessGit) RevList(repo string, givenCommit string) (commits []str
 	return commits, nil
 }
 
-func (git SubprocessGit) CatFile(repo string, commit string, path string) ([]byte, error) {
-	cmd := exec.Command("git", "cat-file", "blob", fmt.Sprintf("%s:%s", commit, path))
-	cmd.Dir = "/Users/chrismwendt/" + repo
-	return cmd.Output()
+func (git SubprocessGit) CatFile(commit string, path string) ([]byte, error) {
+	_, err := git.catFileStdin.Write([]byte(fmt.Sprintf("%s:%s\n", commit, path)))
+	if err != nil {
+		return nil, err
+	}
+
+	line, err := git.catFileStdout.ReadString('\n')
+	if err != nil {
+		return nil, err
+	}
+	line = line[:len(line)-1] // Drop the trailing newline
+	parts := strings.Split(line, " ")
+	if len(parts) != 3 {
+		return nil, fmt.Errorf("unexpected cat-file output: %q", line)
+	}
+	size, err := strconv.ParseInt(parts[2], 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	fileContents, err := io.ReadAll(io.LimitReader(&git.catFileStdout, size))
+	if err != nil {
+		return nil, err
+	}
+
+	discarded, err := git.catFileStdout.Discard(1) // Discard the trailing newline
+	if err != nil {
+		return nil, err
+	}
+	if discarded != 1 {
+		return nil, fmt.Errorf("expected to discard 1 byte, but discarded %d", discarded)
+	}
+
+	return fileContents, nil
 }
 
 type PostgresDB struct {
