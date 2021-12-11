@@ -8,16 +8,15 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-func GetPackages(ctx context.Context) ([]Package, error) {
-	allPkgs, err := getAllPackages(ctx)
+func GetPackages(ctx context.Context) (pkgs []Package, _ error) {
+	goMods, err := getAllGoModules(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	pkgs := make([]Package, len(allPkgs))
-	for i, pkg := range allPkgs {
-		pkgs[i] = Package{Name: pkg.ID}
+	for _, m := range goMods {
+		pkgs = append(pkgs, Package{Name: m.Path})
 	}
+
 	return pkgs, nil
 }
 
@@ -29,15 +28,20 @@ func AllPackages() []Package {
 	return pkgs
 }
 
-func getAllPackages(ctx context.Context) ([]*packages.Package, error) {
-	const cacheFile = "/tmp/sqs-wip-cache/allPackages.json"
+type goModuleInfo struct {
+	*packages.Module
+	Packages []*packages.Package
+}
+
+func getAllGoModules(ctx context.Context) ([]*goModuleInfo, error) {
+	const cacheFile = "/tmp/sqs-wip-cache/all-goModuleInfo.json"
 	f, err := os.Open(cacheFile)
 	if err != nil && !os.IsNotExist(err) {
 		return nil, err
 	}
 	if err == nil {
 		defer f.Close()
-		var data []*packages.Package
+		var data []*goModuleInfo
 		if err := json.NewDecoder(f).Decode(&data); err != nil {
 			return nil, err
 		}
@@ -47,7 +51,7 @@ func getAllPackages(ctx context.Context) ([]*packages.Package, error) {
 	const dir = "/home/sqs/src/github.com/sourcegraph/sourcegraph.tmp" // TODO(sqs)
 
 	cfg := &packages.Config{
-		Mode:    packages.NeedName | packages.NeedFiles | packages.NeedImports,
+		Mode:    packages.NeedName | packages.NeedFiles | packages.NeedImports | packages.NeedModule,
 		Context: ctx,
 		Dir:     dir,
 	}
@@ -62,13 +66,32 @@ func getAllPackages(ctx context.Context) ([]*packages.Package, error) {
 		return true
 	}, nil)
 
+	modulesByPath := map[string]*goModuleInfo{}
+	for _, pkg := range allPkgs {
+		if pkg.Module == nil {
+			continue
+		}
+		// TODO(sqs): handle (*packages.Module).Replace, etc.
+		key := pkg.Module.Path
+		info := modulesByPath[key]
+		if info == nil {
+			info = &goModuleInfo{Module: pkg.Module}
+			modulesByPath[key] = info
+		}
+		info.Packages = append(info.Packages, pkg)
+	}
+	allModules := make([]*goModuleInfo, 0, len(modulesByPath))
+	for _, mod := range modulesByPath {
+		allModules = append(allModules, mod)
+	}
+
 	f, err = os.Create(cacheFile)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
-	if err := json.NewEncoder(f).Encode(allPkgs); err != nil {
+	if err := json.NewEncoder(f).Encode(allModules); err != nil {
 		return nil, err
 	}
-	return allPkgs, nil
+	return allModules, nil
 }

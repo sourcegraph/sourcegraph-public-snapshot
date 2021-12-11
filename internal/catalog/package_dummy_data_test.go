@@ -16,7 +16,7 @@ func TestGetPackages(t *testing.T) {
 
 	sort.Slice(pkgs, func(i, j int) bool { return pkgs[i].Name < pkgs[j].Name })
 
-	if len, want := len(pkgs), 1710; len != want {
+	if len, want := len(pkgs), 278; len != want {
 		t.Errorf("got len %d, want %d", len, want)
 	}
 
@@ -25,9 +25,9 @@ func TestGetPackages(t *testing.T) {
 	}
 	got3 := sample(pkgs)
 	want3 := []Package{
-		{Name: "archive/tar"},
-		{Name: "cloud.google.com/go/internal/optional"},
-		{Name: "encoding/base32"},
+		{Name: "cloud.google.com/go"},
+		{Name: "github.com/NYTimes/gziphandler"},
+		{Name: "github.com/facebookgo/clock"},
 	}
 	if !reflect.DeepEqual(got3, want3) {
 		t.Errorf("got first 3 %v, want %v", got3, want3)
