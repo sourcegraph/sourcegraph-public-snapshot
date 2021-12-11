@@ -172,11 +172,6 @@ interface EditPageProps extends ThemeProps, SettingsCascadeProps<Settings> {
 const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, isLightTheme, settingsCascade }) => {
     const batchSpecID = batchChange.currentSpec.id
 
-    const [
-        createEmptyBatchChange,
-        { data: createEmptyBatchChangeData, loading: createEmptyBatchChangeLoading },
-    ] = useMutation<CreateEmptyBatchChangeResult, CreateEmptyBatchChangeVariables>(CREATE_EMPTY_BATCH_CHANGE)
-
     const { namespaces: _namespaces, defaultSelectedNamespace } = useNamespaces(
         settingsCascade,
         batchChange.namespace.id
