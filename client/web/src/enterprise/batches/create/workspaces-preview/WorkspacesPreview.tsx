@@ -70,9 +70,9 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
     }, [preview])
 
     return (
-        <>
+        <div className="d-flex flex-column align-items-center w-100">
             <h3 className={styles.header}>Workspaces preview</h3>
-            {resolutionError && <ErrorAlert error={resolutionError} className="mb-3" />}
+            {resolutionError && <ErrorAlert error={resolutionError} className="w-100 mb-3" />}
             {showPreviewPrompt && (
                 <PreviewPrompt disabled={previewDisabled} preview={clearErrorAndPreview} form={previewPromptForm} />
             )}
@@ -85,7 +85,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
                     currentPreviewRequestTime={currentPreviewRequestTime}
                 />
             )}
-        </>
+        </div>
     )
 }
 
