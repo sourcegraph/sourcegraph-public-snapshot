@@ -260,7 +260,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	now := timeutil.Now().Truncate(time.Second)
 	minAgo := func(min int) time.Time { return now.Add(time.Duration(-min) * time.Minute) }
