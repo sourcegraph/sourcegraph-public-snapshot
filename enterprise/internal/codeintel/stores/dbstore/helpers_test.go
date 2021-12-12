@@ -408,7 +408,7 @@ func getUploadStates(db database.DB, ids ...int) (map[int]string, error) {
 	return scanStates(db.QueryContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...))
 }
 
-func getIndexStates(db dbutil.DB, ids ...int) (map[int]string, error) {
+func getIndexStates(db database.DB, ids ...int) (map[int]string, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
