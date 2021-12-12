@@ -379,7 +379,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 			t.Fatal(err)
 		}
 		q := sqlf.Sprintf(`UPDATE changeset_specs SET spec = %s WHERE id = %s`, spec, newFx.specPublished.ID)
-		if _, err := db.Exec(q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+		if _, err := db.ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
 

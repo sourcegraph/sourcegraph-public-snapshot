@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -394,7 +395,7 @@ func normalizeVisibleUploads(uploadMetas map[string][]commitgraph.UploadMeta) ma
 	return uploadMetas
 }
 
-func getUploadStates(db dbutil.DB, ids ...int) (map[int]string, error) {
+func getUploadStates(db database.DB, ids ...int) (map[int]string, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
