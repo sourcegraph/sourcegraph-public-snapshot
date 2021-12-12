@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -570,7 +569,7 @@ func setupRepoMocks(t testing.TB) {
 	}
 }
 
-func insertTestUser(t *testing.T, db dbutil.DB, name string, isAdmin bool) (userID int32) {
+func insertTestUser(t *testing.T, db database.DB, name string, isAdmin bool) (userID int32) {
 	t.Helper()
 
 	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)

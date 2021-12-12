@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -76,7 +75,7 @@ func authMiddleware(next http.Handler, db database.DB, authValidators AuthValida
 	})
 }
 
-func isSiteAdmin(ctx context.Context, db dbutil.DB) bool {
+func isSiteAdmin(ctx context.Context, db database.DB) bool {
 	user, err := database.Users(db).GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
