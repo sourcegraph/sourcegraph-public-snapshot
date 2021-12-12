@@ -74,7 +74,7 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 	}
 
 	NewUploadHandler(
-		nil,
+		database.NewDB(nil),
 		mockDBStore,
 		mockUploadStore,
 		true,
@@ -165,7 +165,7 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 	}
 
 	NewUploadHandler(
-		nil,
+		database.NewDB(nil),
 		mockDBStore,
 		mockUploadStore,
 		true,
@@ -226,7 +226,7 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 	}
 
 	NewUploadHandler(
-		nil,
+		database.NewDB(nil),
 		mockDBStore,
 		mockUploadStore,
 		true,
@@ -297,7 +297,7 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 	}
 
 	NewUploadHandler(
-		nil,
+		database.NewDB(nil),
 		mockDBStore,
 		mockUploadStore,
 		true,
@@ -371,7 +371,7 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 	}
 
 	NewUploadHandler(
-		nil,
+		database.NewDB(nil),
 		mockDBStore,
 		mockUploadStore,
 		true,
