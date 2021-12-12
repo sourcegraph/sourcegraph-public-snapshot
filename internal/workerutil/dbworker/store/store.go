@@ -419,7 +419,7 @@ var columnsUpdatedByDequeue = []string{
 //
 // The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
 func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (_ workerutil.Record, _ bool, err error) {
-	ctx, traceLog, endObservation := s.operations.dequeue.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.dequeue.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if s.InTransaction() {
@@ -469,7 +469,7 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 	if !exists {
 		return nil, false, nil
 	}
-	traceLog(log.Int("recordID", record.RecordID()))
+	trace.Log(log.Int("recordID", record.RecordID()))
 
 	return record, true, nil
 }
@@ -851,7 +851,7 @@ const defaultResetFailureMessage = "job processor died while handling this messa
 // identifiers the age of the record's last heartbeat timestamp for each record reset to queued and failed states,
 // respectively.
 func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Duration, err error) {
-	ctx, traceLog, endObservation := s.operations.resetStalled.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.resetStalled.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	now := s.now()
@@ -871,7 +871,7 @@ func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, fai
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
-	traceLog(log.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
+	trace.Log(log.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
 
 	resetFailureMessage := s.options.ResetFailureMessage
 	if resetFailureMessage == "" {
@@ -893,7 +893,7 @@ func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, fai
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
-	traceLog(log.Int("numErroredIDs", len(failedLastHeartbeatsByIDs)))
+	trace.Log(log.Int("numErroredIDs", len(failedLastHeartbeatsByIDs)))
 
 	return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, nil
 }

@@ -16,6 +16,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Individual batch changes can publish multiple changesets to the same repository by specifying multiple target branches using the [`on.branches`](https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#on-repository) attribute. [#25228](https://github.com/sourcegraph/sourcegraph/issues/25228)
+- Low resource overlay added. NOTE: this is designed for internal-use only. Customers can use the `minikube` overlay to achieve similar results.[#4012](https://github.com/sourcegraph/deploy-sourcegraph/pull/4012)
 
 ### Changed
 
@@ -28,6 +29,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Moving a changeset from draft state into published state was broken on GitLab code hosts. [#28239](https://github.com/sourcegraph/sourcegraph/pull/28239)
 - The shortcuts for toggling the History Panel and Line Wrap were not working on Mac. [#28574](https://github.com/sourcegraph/sourcegraph/pull/28574)
 - Suppresses docker-on-mac warning for Kubernetes, Docker Compose, and Pure Docker deployments. [#28405](https://github.com/sourcegraph/sourcegraph/pull/28821)
+- Fixed an issue where certain regexp syntax for repository searches caused the entire search, including non-repository searches, to fail with a parse error (issue affects only version 3.34). [#28826](https://github.com/sourcegraph/sourcegraph/pull/28826)
 
 ### Removed
 

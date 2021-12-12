@@ -91,6 +91,9 @@ func TestParseIncludePattern(t *testing.T) {
 				sqlf.Sprintf(`(name = ANY (%s) OR lower(name) LIKE %s)`, "%!s(*pq.StringArray=&[github.com/foo/bar])", "%sourcegraph%"),
 			},
 		},
+
+		// Recognize perl character class shorthand syntax.
+		`\s`: {regexp: `\s`},
 	}
 	for pattern, want := range tests {
 		exact, like, regexp, err := parseIncludePattern(pattern)

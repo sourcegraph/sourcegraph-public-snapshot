@@ -932,8 +932,13 @@ func TestPermissionLevels(t *testing.T) {
 					return fmt.Sprintf(`mutation { retryBatchSpecWorkspaceExecution(batchSpecWorkspaces: [%q]) { alwaysNil } }`, workspaceID)
 				},
 			},
+			{
+				name: "retryBatchSpecExecution",
+				mutationFunc: func(batchSpecID, _ string) string {
+					return fmt.Sprintf(`mutation { retryBatchSpecExecution(batchSpec: %q) { id } }`, batchSpecID)
+				},
+			},
 			// TODO: Once implemented, add test for CancelBatchSpecWorkspaceExecution
-			// TODO: Once implemented, add test for RetryBatchSpecExecution
 			// TODO: Once implemented, add test for EnqueueBatchSpecWorkspaceExecution
 			// TODO: Once implemented, add test for ToggleBatchSpecAutoApply
 			// TODO: Once implemented, add test for DeleteBatchSpec

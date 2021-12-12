@@ -7,6 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
+
+	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 
 	"github.com/hexops/autogold"
@@ -114,6 +118,28 @@ func TestJobQueueDependencies(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+}
+
+func TestQueryExecution_ToQueueJob(t *testing.T) {
+	bTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	t.Run("test to job with dependents", func(t *testing.T) {
+		var exec compression.QueryExecution
+		exec.RecordingTime = bTime
+		exec.Revision = "asdf1234"
+		exec.SharedRecordings = append(exec.SharedRecordings, bTime.Add(time.Hour*24))
+
+		got := ToQueueJob(&exec, "series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test to job without dependents", func(t *testing.T) {
+		var exec compression.QueryExecution
+		exec.RecordingTime = bTime
+		exec.Revision = "asdf1234"
+
+		got := ToQueueJob(&exec, "series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 }

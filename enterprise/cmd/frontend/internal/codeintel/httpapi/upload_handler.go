@@ -77,7 +77,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	// easily. The remainder of the function simply serializes the result to the
 	// HTTP response writer.
 	payload, statusCode, err := func() (_ interface{}, statusCode int, err error) {
-		ctx, traceLog, endObservation := h.operations.handleEnqueue.WithAndLogger(r.Context(), &err, observation.Args{})
+		ctx, trace, endObservation := h.operations.handleEnqueue.WithAndLogger(r.Context(), &err, observation.Args{})
 		defer func() {
 			endObservation(1, observation.Args{LogFields: []log.Field{
 				log.Int("statusCode", statusCode),
@@ -88,7 +88,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return nil, statusCode, err
 		}
-		traceLog(
+		trace.Log(
 			log.Int("repositoryID", uploadState.repositoryID),
 			log.Int("uploadID", uploadState.uploadID),
 			log.String("commit", uploadState.commit),

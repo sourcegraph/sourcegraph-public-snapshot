@@ -61,7 +61,7 @@ func (f *repositoryFetcher) FetchRepositoryArchive(ctx context.Context, args typ
 }
 
 func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args types.SearchArgs, paths []string, callback func(request ParseRequest)) (err error) {
-	ctx, traceLog, endObservation := f.operations.fetchRepositoryArchive.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := f.operations.fetchRepositoryArchive.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(args.Repo)),
 		log.String("commitID", string(args.CommitID)),
 		log.Int("paths", len(paths)),
@@ -74,7 +74,7 @@ func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args typ
 		return err
 	}
 	defer onDefer()
-	traceLog(log.Event("acquired fetch semaphore"))
+	trace.Log(log.Event("acquired fetch semaphore"))
 
 	f.operations.fetching.Inc()
 	defer f.operations.fetching.Dec()
@@ -85,7 +85,7 @@ func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args typ
 	}
 	defer rc.Close()
 
-	return readTar(ctx, tar.NewReader(rc), callback, traceLog)
+	return readTar(ctx, tar.NewReader(rc), callback, trace)
 }
 
 func (f *repositoryFetcher) limitConcurrentFetches(ctx context.Context) (func(), error) {
@@ -120,7 +120,7 @@ func readTar(ctx context.Context, tarReader *tar.Reader, callback func(request P
 	}
 }
 
-func readTarHeader(tarReader *tar.Reader, tarHeader *tar.Header, callback func(request ParseRequest), traceLog observation.TraceLogger) error {
+func readTarHeader(tarReader *tar.Reader, tarHeader *tar.Header, callback func(request ParseRequest), trace observation.TraceLogger) error {
 	if !shouldParse(tarHeader) {
 		return nil
 	}
@@ -128,14 +128,14 @@ func readTarHeader(tarReader *tar.Reader, tarHeader *tar.Header, callback func(r
 	// 32MB is the same size used by io.Copy
 	buffer := make([]byte, 32*1024)
 
-	traceLog(log.Event("reading tar header prefix"))
+	trace.Log(log.Event("reading tar header prefix"))
 
 	// Read first chunk of tar header contents
 	n, err := tarReader.Read(buffer)
 	if err != nil && err != io.EOF {
 		return err
 	}
-	traceLog(log.Int("n", n))
+	trace.Log(log.Int("n", n))
 
 	if n == 0 {
 		// Empty file, nothing to parse
@@ -159,13 +159,13 @@ func readTarHeader(tarReader *tar.Reader, tarHeader *tar.Header, callback func(r
 	copy(data, buffer[:n])
 
 	if n < int(tarHeader.Size) {
-		traceLog(log.Event("reading remaining tar header content"))
+		trace.Log(log.Event("reading remaining tar header content"))
 
 		// Read the remaining contents
 		if _, err := io.ReadFull(tarReader, data[n:]); err != nil {
 			return err
 		}
-		traceLog(log.Int("n", int(tarHeader.Size)-n))
+		trace.Log(log.Int("n", int(tarHeader.Size)-n))
 	}
 
 	request := ParseRequest{Path: tarHeader.Name, Data: data}

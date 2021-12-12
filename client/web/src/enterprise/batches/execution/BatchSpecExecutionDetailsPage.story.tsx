@@ -33,6 +33,7 @@ const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
     finishedAt,
     failureMessage: null,
     applyURL: '/users/mrnugget/batch-changes/apply/QmF0Y2hTcGVjOiI5NzZxcXAydzBwYyI=',
+    viewerCanRetry: true,
     creator: {
         id: 'VXNlcjox',
         url: '/users/mrnugget',
@@ -73,6 +74,7 @@ const batchSpecExecutionFailed = (): BatchSpecExecutionFields => ({
         url: '/users/mrnugget',
         displayName: null,
     },
+    viewerCanRetry: true,
     applyURL: null,
     namespace: {
         id: 'VXNlcjox',

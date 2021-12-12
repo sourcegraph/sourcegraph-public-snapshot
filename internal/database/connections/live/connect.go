@@ -3,7 +3,10 @@ package connections
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"os"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -20,12 +23,12 @@ import (
 // the version. When false, we give back a handle without running any migrations and assume that
 // the database schema is up to date.
 func NewFrontendDB(dsn, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
-	schemas := []*schemas.Schema{schemas.Frontend}
+	schema := schemas.Frontend
 	if !migrate {
-		schemas = nil
+		schema = nil
 	}
 
-	return connect(dsn, appName, "frontend", observationContext, schemas...)
+	return connect(dsn, appName, "frontend", schema, false, observationContext)
 }
 
 // NewCodeIntelDB creates a new connection to the codeintel database. After successful connection,
@@ -36,12 +39,12 @@ func NewFrontendDB(dsn, appName string, migrate bool, observationContext *observ
 // the version. When false, we give back a handle without running any migrations and assume that
 // the database schema is up to date.
 func NewCodeIntelDB(dsn, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
-	schemas := []*schemas.Schema{schemas.CodeIntel}
+	schema := schemas.CodeIntel
 	if !migrate {
-		schemas = nil
+		schema = nil
 	}
 
-	return connect(dsn, appName, "codeintel", observationContext, schemas...)
+	return connect(dsn, appName, "codeintel", schema, false, observationContext)
 }
 
 // NewCodeInsightsDB creates a new connection to the codeinsights database. After successful
@@ -52,15 +55,15 @@ func NewCodeIntelDB(dsn, appName string, migrate bool, observationContext *obser
 // the version. When false, we give back a handle without running any migrations and assume that
 // the database schema is up to date.
 func NewCodeInsightsDB(dsn, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
-	schemas := []*schemas.Schema{schemas.CodeInsights}
+	schema := schemas.CodeInsights
 	if !migrate {
-		schemas = nil
+		schema = nil
 	}
 
-	return connect(dsn, appName, "codeinsight", observationContext, schemas...)
+	return connect(dsn, appName, "codeinsight", schema, false, observationContext)
 }
 
-func connect(dsn, appName, dbName string, observationContext *observation.Context, schemas ...*schemas.Schema) (*sql.DB, error) {
+func connect(dsn, appName, dbName string, schema *schemas.Schema, validateOnly bool, observationContext *observation.Context) (*sql.DB, error) {
 	db, err := dbconn.ConnectInternal(dsn, appName, dbName)
 	if err != nil {
 		return nil, err
@@ -73,22 +76,39 @@ func connect(dsn, appName, dbName string, observationContext *observation.Contex
 		}
 	}()
 
-	options := runner.Options{
-		Up:          true,
-		SchemaNames: schemaNames(schemas),
-	}
-	if err := runnerFromDB(newStoreFactory(observationContext), db, schemas...).Run(context.Background(), options); err != nil {
-		return nil, err
+	if schema != nil {
+		if err := validateSchema(db, schema, validateOnly, observationContext); err != nil {
+			return nil, err
+		}
 	}
 
 	return db, nil
 }
 
-func schemaNames(schemas []*schemas.Schema) []string {
-	names := make([]string, 0, len(schemas))
-	for _, schema := range schemas {
-		names = append(names, schema.Name)
+func validateSchema(db *sql.DB, schema *schemas.Schema, validateOnly bool, observationContext *observation.Context) error {
+	ctx := context.Background()
+	storeFactory := newStoreFactory(observationContext)
+	migrationRunner := runnerFromDB(storeFactory, db, schema)
+
+	if err := migrationRunner.Validate(ctx, schema.Name); err != nil {
+		outOfDateError := new(runner.SchemaOutOfDateError)
+		if !errors.As(err, &outOfDateError) {
+			return err
+		}
+		if !shouldMigrate(validateOnly) {
+			return fmt.Errorf("database schema out of date")
+		}
+
+		options := runner.Options{
+			Up:          true,
+			SchemaNames: []string{schema.Name},
+		}
+		return migrationRunner.Run(ctx, options)
 	}
 
-	return names
+	return nil
+}
+
+func shouldMigrate(validateOnly bool) bool {
+	return !validateOnly || os.Getenv("SG_DEV_MIGRATE_ON_APPLICATION_STARTUP") != ""
 }

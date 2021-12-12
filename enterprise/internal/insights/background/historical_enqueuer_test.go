@@ -52,20 +52,24 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 	dataSeriesStore := store.NewMockDataSeriesStore()
 	dataSeriesStore.GetDataSeriesFunc.SetDefaultReturn([]itypes.InsightSeries{
 		{
-			ID:                 1,
-			SeriesID:           "series1",
-			Query:              "query1",
-			NextRecordingAfter: clock().Add(-1 * time.Hour),
-			CreatedAt:          clock(),
-			OldestHistoricalAt: clock().Add(-time.Hour * 24 * 365),
+			ID:                  1,
+			SeriesID:            "series1",
+			Query:               "query1",
+			NextRecordingAfter:  clock().Add(-1 * time.Hour),
+			CreatedAt:           clock(),
+			OldestHistoricalAt:  clock().Add(-time.Hour * 24 * 365),
+			SampleIntervalUnit:  string(itypes.Month),
+			SampleIntervalValue: 1,
 		},
 		{
-			ID:                 2,
-			SeriesID:           "series2",
-			Query:              "query2",
-			NextRecordingAfter: clock().Add(1 * time.Hour),
-			CreatedAt:          clock(),
-			OldestHistoricalAt: clock().Add(-time.Hour * 24 * 365),
+			ID:                  2,
+			SeriesID:            "series2",
+			Query:               "query2",
+			NextRecordingAfter:  clock().Add(1 * time.Hour),
+			CreatedAt:           clock(),
+			OldestHistoricalAt:  clock().Add(-time.Hour * 24 * 365),
+			SampleIntervalUnit:  string(itypes.Month),
+			SampleIntervalValue: 1,
 		},
 	}, nil)
 
@@ -166,18 +170,6 @@ func Test_historicalEnqueuer(t *testing.T) {
 		}))
 	})
 
-	// Test that when there is no work to perform (because all insights have historical data) that
-	// no work is performed.
-	t.Run("no_work", func(t *testing.T) {
-		want := autogold.Want("no_work", &testResults{allReposIteratorCalls: 1, reposGetByName: 2})
-		want.Equal(t, testHistoricalEnqueuer(t, &testParams{
-			settings:              testRealGlobalSettings,
-			numRepos:              2,
-			frames:                2,
-			recordSleepOperations: true,
-			haveData:              true,
-		}))
-	})
 	// Test that when insights AND repos exist:
 	//
 	// * We enqueue a job for every timeframe*repo*series
@@ -245,21 +237,5 @@ func Test_historicalEnqueuer(t *testing.T) {
 			frames:                2,
 			recordSleepOperations: true,
 		}))
-	})
-}
-
-func TestDayOfMonthFrames(t *testing.T) {
-	now := time.Date(2020, 1, 1, 5, 0, 0, 0, time.UTC)
-	t.Run("zero points first of month frames", func(t *testing.T) {
-		got := FirstOfMonthFrames(0, now)
-		autogold.Equal(t, got, autogold.ExportedOnly())
-	})
-	t.Run("one point first of month frames", func(t *testing.T) {
-		got := FirstOfMonthFrames(1, now)
-		autogold.Equal(t, got, autogold.ExportedOnly())
-	})
-	t.Run("six points first of month frames", func(t *testing.T) {
-		got := FirstOfMonthFrames(6, now)
-		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 }

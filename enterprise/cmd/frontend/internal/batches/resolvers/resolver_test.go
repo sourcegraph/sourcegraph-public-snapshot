@@ -57,6 +57,7 @@ func TestNullIDResilience(t *testing.T) {
 		marshalBatchChangesCredentialID(0, false),
 		marshalBatchChangesCredentialID(0, true),
 		marshalBulkOperationID(""),
+		marshalBatchSpecWorkspaceID(0),
 	}
 
 	for _, id := range ids {
@@ -97,6 +98,7 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { cancelBatchSpecExecution(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 		fmt.Sprintf(`mutation { replaceBatchSpecInput(previousSpec: %q, batchSpec: "name: testing") { id } }`, marshalBatchSpecRandID("")),
 		fmt.Sprintf(`mutation { retryBatchSpecWorkspaceExecution(batchSpecWorkspaces: [%q]) { alwaysNil } }`, marshalBatchSpecWorkspaceID(0)),
+		fmt.Sprintf(`mutation { retryBatchSpecExecution(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 	}
 
 	for _, m := range mutations {

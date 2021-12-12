@@ -11,7 +11,7 @@ export interface GettingStartedProps {
 }
 
 export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ footer, className }) => (
-    <div className={className}>
+    <div className={className} data-testid="test-getting-started">
         <Container className="mb-4">
             <div className={classNames(styles.videoRow, 'row')}>
                 <div className="col-12 col-md-7">
