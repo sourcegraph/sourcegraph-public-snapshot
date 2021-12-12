@@ -37,7 +37,7 @@ func TestServicePermissionLevels(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	s := store.New(db, &observation.TestContext, nil)
 	svc := New(s)

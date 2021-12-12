@@ -17,6 +17,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"

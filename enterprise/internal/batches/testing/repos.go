@@ -2,7 +2,6 @@ package testing
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
@@ -66,7 +65,7 @@ func TestRepoWithService(t *testing.T, store database.ExternalServiceStore, name
 	}
 }
 
-func CreateTestRepo(t *testing.T, ctx context.Context, db dbutil.DB) (*types.Repo, *types.ExternalService) {
+func CreateTestRepo(t *testing.T, ctx context.Context, db database.DB) (*types.Repo, *types.ExternalService) {
 	repos, extSvc := CreateTestRepos(t, ctx, db, 1)
 	return repos[0], extSvc
 }
@@ -257,7 +256,7 @@ func createBbsRepos(t *testing.T, ctx context.Context, db dbutil.DB, ext *types.
 	return rs, ext
 }
 
-func CreateAWSCodeCommitTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
+func CreateAWSCodeCommitTestRepos(t *testing.T, ctx context.Context, db database.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
 	repoStore := database.Repos(db)

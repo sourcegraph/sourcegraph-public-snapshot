@@ -1362,7 +1362,7 @@ func TestCreateChangesetComments(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1462,7 +1462,7 @@ func TestReenqueueChangesets(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1569,7 +1569,7 @@ func TestMergeChangesets(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1679,7 +1679,7 @@ func TestCloseChangesets(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1789,7 +1789,7 @@ func TestPublishChangesets(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID

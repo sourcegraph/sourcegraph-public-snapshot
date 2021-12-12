@@ -2158,7 +2158,7 @@ func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
 	// integration/store tests all execute in a single transaction.
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	s := New(db, &observation.TestContext, nil)
 
@@ -2292,7 +2292,7 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 	// integration/store tests all execute in a single transaction.
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	s := New(db, &observation.TestContext, nil)
 
