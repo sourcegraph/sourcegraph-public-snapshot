@@ -352,7 +352,7 @@ func TestUserEmails_SetVerified(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := databse.NewDB(dbtest.NewDB(t))
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	const email = "a@example.com"
