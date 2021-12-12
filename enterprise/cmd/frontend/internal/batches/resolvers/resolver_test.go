@@ -119,7 +119,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
@@ -301,7 +301,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
@@ -374,7 +374,7 @@ func TestApplyBatchChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	// Ensure our site configuration doesn't have rollout windows so we get a
 	// consistent initial state.
@@ -626,7 +626,7 @@ func TestCreateBatchChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
@@ -690,7 +690,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	// Ensure our site configuration doesn't have rollout windows so we get a
 	// consistent initial state.
