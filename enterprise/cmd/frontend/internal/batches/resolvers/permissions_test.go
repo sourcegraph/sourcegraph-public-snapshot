@@ -1158,7 +1158,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	cstore := store.New(db, &observation.TestContext, nil)
 	sr := &Resolver{store: cstore}

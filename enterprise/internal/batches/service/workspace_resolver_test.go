@@ -50,7 +50,7 @@ func TestSetDefaultQueryCount(t *testing.T) {
 func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 	ctx := context.Background()
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	s := store.New(db, &observation.TestContext, nil)
 
 	u := ct.CreateTestUser(t, db, false)
