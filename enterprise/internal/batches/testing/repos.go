@@ -116,7 +116,7 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, count int)
 	return rs, ext
 }
 
-func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
+func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db database.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
 	repoStore := database.Repos(db)
@@ -154,7 +154,7 @@ func CreateGitlabTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count 
 	return rs, ext
 }
 
-func CreateBbsTestRepos(t *testing.T, ctx context.Context, db *sql.DB, count int) ([]*types.Repo, *types.ExternalService) {
+func CreateBbsTestRepos(t *testing.T, ctx context.Context, db database.DB, count int) ([]*types.Repo, *types.ExternalService) {
 	t.Helper()
 
 	ext := &types.ExternalService{

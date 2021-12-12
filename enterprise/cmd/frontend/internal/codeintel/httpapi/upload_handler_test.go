@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -454,7 +455,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 func TestHandleEnqueueAuth(t *testing.T) {
 	setupRepoMocks(t)
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 

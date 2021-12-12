@@ -39,7 +39,7 @@ func TestPermissionLevels(t *testing.T) {
 
 	ct.MockRSAKeygen(t)
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	key := et.TestKey{}
 
 	cstore := store.New(db, &observation.TestContext, key)

@@ -1143,7 +1143,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	pruneUserCredentials(t, db, nil)
 
@@ -1273,7 +1273,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	pruneUserCredentials(t, db, nil)
 

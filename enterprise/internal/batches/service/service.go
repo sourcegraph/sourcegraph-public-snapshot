@@ -909,7 +909,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 // access to the namespace org.
 // If both values are zero, an error is returned.
 func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, namespaceOrgID int32) (err error) {
-	return s.checkNamespaceAccessWithDB(ctx, s.store.DB(), namespaceUserID, namespaceOrgID)
+	return s.checkNamespaceAccessWithDB(ctx, s.store.DatabaseDB(), namespaceUserID, namespaceOrgID)
 }
 
 func (s *Service) checkNamespaceAccessWithDB(ctx context.Context, db dbutil.DB, namespaceUserID, namespaceOrgID int32) (err error) {
@@ -1217,7 +1217,7 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []i
 	}
 
 	// Check whether the current user has access to either one of the namespaces.
-	err = s.checkNamespaceAccessWithDB(ctx, tx.DB(), batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
+	err = s.checkNamespaceAccessWithDB(ctx, tx.DatabaseDB(), batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
 	if err != nil {
 		return errors.Wrap(err, "checking whether user has access")
 	}
@@ -1304,7 +1304,7 @@ func (s *Service) RetryBatchSpecExecution(ctx context.Context, opts RetryBatchSp
 	}
 
 	// Check whether the current user has access to either one of the namespaces.
-	err = s.checkNamespaceAccessWithDB(ctx, tx.DB(), batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
+	err = s.checkNamespaceAccessWithDB(ctx, tx.DatabaseDB(), batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
 	if err != nil {
 		return errors.Wrap(err, "checking whether user has access")
 	}

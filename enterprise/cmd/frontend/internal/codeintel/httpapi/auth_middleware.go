@@ -35,7 +35,7 @@ var errVerificaitonNotSupported = errors.New("verification not supported for cod
 // request contains sufficient evidence of authorship for the target repository.
 //
 // When LSIF auth is not enforced on the instance, this middleware no-ops.
-func authMiddleware(next http.Handler, db dbutil.DB, authValidators AuthValidatorMap, operation *observation.Operation) http.Handler {
+func authMiddleware(next http.Handler, db database.DB, authValidators AuthValidatorMap, operation *observation.Operation) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		statusCode, err := func() (_ int, err error) {
 			ctx, trace, endObservation := operation.WithAndLogger(r.Context(), &err, observation.Args{})
