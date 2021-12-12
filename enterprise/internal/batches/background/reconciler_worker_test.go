@@ -14,7 +14,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -26,7 +25,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -146,7 +145,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 	})
 }
 
-func assertReturnedChangesetIDs(t *testing.T, ctx context.Context, db dbutil.DB, want []int) {
+func assertReturnedChangesetIDs(t *testing.T, ctx context.Context, db database.DB, want []int) {
 	t.Helper()
 
 	have := make([]int, 0)

@@ -541,7 +541,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	cstore := store.New(db, &observation.TestContext, nil)
 
@@ -877,7 +877,7 @@ func TestMoveBatchChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID

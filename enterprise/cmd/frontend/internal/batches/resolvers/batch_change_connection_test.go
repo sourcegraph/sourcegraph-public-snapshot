@@ -177,7 +177,7 @@ func TestBatchChangesListing(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	userID := ct.CreateTestUser(t, db, false).ID
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))

@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -912,7 +911,7 @@ func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, nam
 	return s.checkNamespaceAccessWithDB(ctx, s.store.DatabaseDB(), namespaceUserID, namespaceOrgID)
 }
 
-func (s *Service) checkNamespaceAccessWithDB(ctx context.Context, db dbutil.DB, namespaceUserID, namespaceOrgID int32) (err error) {
+func (s *Service) checkNamespaceAccessWithDB(ctx context.Context, db database.DB, namespaceUserID, namespaceOrgID int32) (err error) {
 	if namespaceOrgID != 0 {
 		return backend.CheckOrgAccessOrSiteAdmin(ctx, database.NewDB(db), namespaceOrgID)
 	} else if namespaceUserID != 0 {
