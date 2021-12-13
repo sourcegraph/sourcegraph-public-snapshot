@@ -26,8 +26,10 @@ cleanup() {
     # shellcheck disable=SC2046
     docker rm -f $(docker ps -aq)
   fi
-  # shellcheck disable=SC2046
-  docker rmi -f $(docker images -q)
+  if [[ $(docker images -q | wc -l) -gt 0 ]]; then
+    # shellcheck disable=SC2046
+    docker rmi -f $(docker images -q)
+  fi
 }
 
 # Run and initialize an old Sourcegraph release
