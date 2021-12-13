@@ -48,23 +48,37 @@ const ColorSchemeToMonacoEditorClassName: Record<ColorScheme, string> = {
  * <img /> with base64 data would be visible on Percy snapshot
  */
 export const convertImgSourceHttpToBase64 = async (page: Page): Promise<void> => {
-    await page.evaluate(() => {
+    await page.evaluate(async () => {
         const imgs = document.querySelectorAll('img')
 
-        for (const img of imgs) {
-            if (img.src.startsWith('data:image')) {
-                continue
-            }
+        await Promise.all(
+            [...imgs].map(
+                image =>
+                    new Promise<void>(resolve => {
+                        image.addEventListener('load', () => {
+                            try {
+                                if (image.src.startsWith('data:image')) {
+                                    resolve()
+                                    return
+                                }
 
-            const canvas = document.createElement('canvas')
-            canvas.width = img.width
-            canvas.height = img.height
+                                const canvas = document.createElement('canvas')
+                                canvas.width = image.width
+                                canvas.height = image.height
 
-            const context = canvas.getContext('2d')
-            context?.drawImage(img, 0, 0)
+                                const context = canvas.getContext('2d')
+                                context?.drawImage(image, 0, 0)
 
-            img.src = canvas.toDataURL('image/png')
-        }
+                                image.src = canvas.toDataURL('image/png')
+
+                                resolve()
+                            } catch {
+                                resolve()
+                            }
+                        })
+                    })
+            )
+        )
     })
 }
 
