@@ -48,7 +48,7 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
-	createTestData := func(t *testing.T, s *store.Store, svc *Service, author int32) (*btypes.BatchChange, *btypes.Changeset, *btypes.BatchSpec) {
+	createTestData := func(t *testing.T, s *store.Store, author int32) (*btypes.BatchChange, *btypes.Changeset, *btypes.BatchSpec) {
 		spec := testBatchSpec(author)
 		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
@@ -96,7 +96,7 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			batchChange, changeset, batchSpec := createTestData(t, s, svc, tc.batchChangeAuthor)
+			batchChange, changeset, batchSpec := createTestData(t, s, tc.batchChangeAuthor)
 			// Fresh context.Background() because the previous one is wrapped in AuthzBypas
 			currentUserCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 
@@ -315,7 +315,7 @@ func TestService(t *testing.T) {
 		}
 
 		called := false
-		repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
+		repoupdater.MockEnqueueChangesetSync = func(_ context.Context, ids []int64) error {
 			if len(ids) != 1 && ids[0] != changeset.ID {
 				t.Fatalf("MockEnqueueChangesetSync received wrong ids: %+v", ids)
 			}
