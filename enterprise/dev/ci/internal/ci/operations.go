@@ -270,6 +270,7 @@ var slowGoTestPackages = []string{
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Test",
+		bk.Env("GOPROXY", "http://athens-athens-proxy"),
 		bk.Cmd("./dev/ci/go-test.sh exclude "+strings.Join(slowGoTestPackages, " ")),
 		bk.Cmd("dev/ci/codecov.sh -c -F go"))
 
@@ -285,6 +286,7 @@ func addGoTests(pipeline *bk.Pipeline) {
 // Builds the OSS and Enterprise Go commands.
 func addGoBuild(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Build",
+		bk.Env("GOPROXY", "http://athens-athens-proxy"),
 		bk.Cmd("./dev/ci/go-build.sh"),
 	)
 }
