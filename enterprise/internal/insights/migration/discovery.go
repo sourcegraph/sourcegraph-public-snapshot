@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 )
 
@@ -215,7 +216,7 @@ func (m *migrator) migrateInsights(ctx context.Context, toMigrate []insights.Sea
 			count++
 			continue
 		}
-		err = migrateSeries(ctx, m.insightStore, d, batch)
+		err = migrateSeries(ctx, m.insightStore, m.workerBaseStore, d, batch)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 			continue
@@ -302,7 +303,7 @@ func migrateLangStatSeries(ctx context.Context, insightStore *store.InsightStore
 	return nil
 }
 
-func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from insights.SearchInsight, batch migrationBatch) (err error) {
+func migrateSeries(ctx context.Context, insightStore *store.InsightStore, workerStore *basestore.Store, from insights.SearchInsight, batch migrationBatch) (err error) {
 	tx, err := insightStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -364,15 +365,25 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 
 				// Also match/replace old series_points ids with the new series id
 				oldId := discovery.Encode(timeSeries)
-				silentErr := updateTimeSeriesReferences(tx.Handle().DB(), ctx, oldId, temp.SeriesID)
+				countUpdated, silentErr := updateTimeSeriesReferences(tx.Handle().DB(), ctx, oldId, temp.SeriesID)
 				if silentErr != nil {
 					// If the find-replace fails, it's not a big deal. It will just need to be calcuated again.
-					log15.Error("error updating series_id", "series_id", temp.SeriesID, "err", silentErr)
+					log15.Error("error updating series_id for series_points", "series_id", temp.SeriesID, "err", silentErr)
+				} else if countUpdated == 0 {
+					// If find-replace doesn't match any records, we still need to backfill, so just continue
 				} else {
-					// If the find-replace succeeded, we can stamp the backfill_queued_at on the new series.
-					series, err = tx.StampBackfill(ctx, series)
-					if err != nil {
-						return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
+					// If the find-replace succeeded, we can do a similar find-replace on the jobs in the queue,
+					// and then stamp the backfill_queued_at on the new series.
+					silentErr = updateTimeSeriesJobReferences(workerStore, ctx, oldId, temp.SeriesID)
+					if silentErr != nil {
+						// If the find-replace fails, it's not a big deal. It will just need to be calcuated again.
+						log15.Error("error updating series_id for jobs", "series_id", temp.SeriesID, "err", silentErr)
+					} else {
+						series, silentErr = tx.StampBackfill(ctx, series)
+						if silentErr != nil {
+							// If the stamp fails, skip it. It will just need to be calcuated again.
+							log15.Error("error updating backfill_queued_at", "series_id", temp.SeriesID, "err", silentErr)
+						}
 					}
 				}
 			}

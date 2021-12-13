@@ -18,7 +18,7 @@ const defaultReferencesPageSize = 100
 // DocumentationReferences returns the list of source locations that reference the symbol found at
 // the given documentation path ID, if any.
 func (r *queryResolver) DocumentationReferences(ctx context.Context, pathID string, limit int, rawCursor string) (_ []AdjustedLocation, _ string, err error) {
-	ctx, traceLog, endObservation := observeResolver(ctx, &err, "DocumentationReferences", r.operations.documentationReferences, slowReferencesRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, "DocumentationReferences", r.operations.documentationReferences, slowReferencesRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -37,7 +37,7 @@ func (r *queryResolver) DocumentationReferences(ctx context.Context, pathID stri
 	// What we do here is first resolve the local definitions, then execute a standard references
 	// request on the first location we find.
 	for _, upload := range r.uploads {
-		traceLog(log.Int("uploadID", upload.ID))
+		trace.Log(log.Int("uploadID", upload.ID))
 
 		// Effectively replicate what we do in r.DocumentationDefinition in order to lookup the definition
 		// locations.

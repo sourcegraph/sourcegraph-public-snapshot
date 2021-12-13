@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -22,9 +23,9 @@ func TestExtensionsUsageStatistics(t *testing.T) {
 	now := time.Date(2021, 1, 28, 0, 0, 0, 0, time.UTC)
 	mockTimeNow(now)
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
-	_, err := db.Exec(`
+	_, err := db.ExecContext(context.Background(), `
 		INSERT INTO event_logs
 			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
 		VALUES

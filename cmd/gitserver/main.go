@@ -4,6 +4,7 @@ package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 import (
 	"container/list"
 	"context"
+	"database/sql"
 	"log"
 	"net"
 	"net/http"
@@ -27,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -83,10 +83,11 @@ func main() {
 		log.Fatalf("SRC_REPOS_DESIRED_PERCENT_FREE is out of range: %v", err)
 	}
 
-	db, err := getDB()
+	sqlDB, err := getDB()
 	if err != nil {
 		log.Fatalf("failed to initialize database stores: %v", err)
 	}
+	db := database.NewDB(sqlDB)
 
 	repoStore := database.Repos(db)
 	codeintelDB := codeinteldbstore.NewWithDB(db, &observation.Context{
@@ -260,7 +261,7 @@ func getPercent(p int) (int, error) {
 }
 
 // getDB initializes a connection to the database and returns a dbutil.DB
-func getDB() (dbutil.DB, error) {
+func getDB() (*sql.DB, error) {
 	// Gitserver is an internal actor. We rely on the frontend to do authz checks for
 	// user requests.
 	//

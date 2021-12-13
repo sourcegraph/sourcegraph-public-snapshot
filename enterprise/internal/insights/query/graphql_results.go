@@ -1,4 +1,4 @@
-package queryrunner
+package query
 
 import (
 	"encoding/json"
@@ -71,13 +71,13 @@ import (
 // matches, about the extremely poor usage of the terms "matches" and "results" in our codebase - just know
 // that so am I and this is some of the oldest "tech debt" in all of Sourcegraph :)
 
-type result interface {
-	repoID() string
-	matchCount() int
-	repoName() string
+type Result interface {
+	RepoID() string
+	MatchCount() int
+	RepoName() string
 }
 
-func decodeResult(result json.RawMessage) (result, error) {
+func DecodeResult(result json.RawMessage) (Result, error) {
 	typeName := struct {
 		TypeName string `json:"__typeName"`
 	}{}
@@ -86,7 +86,7 @@ func decodeResult(result json.RawMessage) (result, error) {
 	}
 	switch typeName.TypeName {
 	case "FileMatch":
-		var v fileMatch
+		var v FileMatch
 		if err := json.Unmarshal(result, &v); err != nil {
 			return nil, err
 		}
@@ -108,7 +108,7 @@ func decodeResult(result json.RawMessage) (result, error) {
 	}
 }
 
-type fileMatch struct {
+type FileMatch struct {
 	Repository struct {
 		ID   string
 		Name string
@@ -121,11 +121,11 @@ type fileMatch struct {
 	}
 }
 
-func (r *fileMatch) repoName() string {
+func (r *FileMatch) RepoName() string {
 	return r.Repository.Name
 }
 
-func (r *fileMatch) matchCount() int {
+func (r *FileMatch) MatchCount() int {
 	matches := len(r.Symbols)
 	for _, lineMatch := range r.LineMatches {
 		matches += len(lineMatch.OffsetAndLengths)
@@ -136,7 +136,7 @@ func (r *fileMatch) matchCount() int {
 	return matches
 }
 
-func (r *fileMatch) repoID() string {
+func (r *FileMatch) RepoID() string {
 	return r.Repository.ID
 }
 
@@ -154,15 +154,15 @@ type commitSearchResult struct {
 	}
 }
 
-func (r *commitSearchResult) repoName() string {
+func (r *commitSearchResult) RepoName() string {
 	return r.Commit.Repository.Name
 }
 
-func (r *commitSearchResult) repoID() string {
+func (r *commitSearchResult) RepoID() string {
 	return r.Commit.Repository.ID
 }
 
-func (r *commitSearchResult) matchCount() int {
+func (r *commitSearchResult) MatchCount() int {
 	sum := 0
 	for _, match := range r.Matches {
 		matchSum := 1
@@ -182,14 +182,14 @@ type repository struct {
 	Name string
 }
 
-func (r *repository) repoName() string {
+func (r *repository) RepoName() string {
 	return r.Name
 }
 
-func (r *repository) repoID() string {
+func (r *repository) RepoID() string {
 	return r.ID
 }
 
-func (r *repository) matchCount() int {
+func (r *repository) MatchCount() int {
 	return 1
 }

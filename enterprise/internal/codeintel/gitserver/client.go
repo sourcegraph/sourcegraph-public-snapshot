@@ -1,7 +1,6 @@
 package gitserver
 
 import (
-	"bytes"
 	"context"
 	"os"
 	"regexp"
@@ -16,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
 )
 
 type Client struct {
@@ -273,13 +271,30 @@ func (c *Client) DirectoryChildren(ctx context.Context, repositoryID int, commit
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return pathexistence.GitGetChildren(
-		func(args ...string) (string, error) {
-			return c.execResolveRevGitCommand(ctx, repositoryID, commit, args...)
-		},
-		commit,
-		dirnames,
-	)
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	children, err := git.ListDirectoryChildren(ctx, repo, api.CommitID(commit), dirnames)
+	if err == nil {
+		return children, err
+	}
+
+	// If the repo doesn't exist don't bother trying to resolve the commit.
+	// Otherwise, if we're returning an error, try to resolve revision that was the
+	// target of the command. If the revision fails to resolve, we return an instance
+	// of a RevisionNotFoundError error instead of an "exit 128".
+	if !gitdomain.IsRepoNotExist(err) {
+		if _, err := git.ResolveRevision(ctx, repo, commit, git.ResolveRevisionOptions{}); err != nil {
+			return nil, errors.Wrap(err, "git.ResolveRevision")
+		}
+	}
+
+	// If we didn't expect a particular revision to exist, or we did but it
+	// resolved without error, return the original error as the command had
+	// failed for another reason.
+	return nil, errors.Wrap(err, "git.ListDirectoryChildren")
 }
 
 // FileExists determines whether a file exists in a particular commit of a repository.
@@ -366,38 +381,6 @@ func (c *Client) ResolveRevision(ctx context.Context, repositoryID int, versionS
 	}
 
 	return commitID, nil
-}
-
-// execResolveRevGitCommand executes a git command for the given repository by identifier if the
-// given revision is resolvable prior to running the command.
-func (c *Client) execResolveRevGitCommand(ctx context.Context, repositoryID int, revision string, args ...string) (string, error) {
-	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
-	if err != nil {
-		return "", err
-	}
-
-	cmd := gitserver.DefaultClient.Command("git", args...)
-	cmd.Repo = repo
-
-	out, err := cmd.Output(ctx)
-	if err == nil {
-		return string(bytes.TrimSpace(out)), nil
-	}
-
-	// If the repo doesn't exist don't bother trying to resolve the commit. Otherwise,
-	// if we're returning an error, try to resolve revision that was the target of the
-	// command (if any). If the revision fails to resolve, we return an instance of a
-	// RevisionNotFoundError error instead of an "exit 128".
-	if revision != "" && !gitdomain.IsRepoNotExist(err) {
-		if _, err := git.ResolveRevision(ctx, repo, revision, git.ResolveRevisionOptions{}); err != nil {
-			return "", errors.Wrap(err, "git.ResolveRevision")
-		}
-	}
-
-	// If we didn't expect a particular revision to exist, or we did but it
-	// resolved without error, return the original error as the command had
-	// failed for another reason.
-	return "", errors.Wrap(err, "gitserver.Command")
 }
 
 // repositoryIDToRepo creates a api.RepoName from a repository identifier.

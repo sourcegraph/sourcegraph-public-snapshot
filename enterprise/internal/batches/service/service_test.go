@@ -37,7 +37,7 @@ func TestServicePermissionLevels(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	s := store.New(db, &observation.TestContext, nil)
 	svc := New(s)
@@ -48,7 +48,7 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
-	createTestData := func(t *testing.T, s *store.Store, svc *Service, author int32) (*btypes.BatchChange, *btypes.Changeset, *btypes.BatchSpec) {
+	createTestData := func(t *testing.T, s *store.Store, author int32) (*btypes.BatchChange, *btypes.Changeset, *btypes.BatchSpec) {
 		spec := testBatchSpec(author)
 		if err := s.CreateBatchSpec(ctx, spec); err != nil {
 			t.Fatal(err)
@@ -96,7 +96,7 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			batchChange, changeset, batchSpec := createTestData(t, s, svc, tc.batchChangeAuthor)
+			batchChange, changeset, batchSpec := createTestData(t, s, tc.batchChangeAuthor)
 			// Fresh context.Background() because the previous one is wrapped in AuthzBypas
 			currentUserCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
 
@@ -187,7 +187,7 @@ func TestService(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)
@@ -315,7 +315,7 @@ func TestService(t *testing.T) {
 		}
 
 		called := false
-		repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
+		repoupdater.MockEnqueueChangesetSync = func(_ context.Context, ids []int64) error {
 			if len(ids) != 1 && ids[0] != changeset.ID {
 				t.Fatalf("MockEnqueueChangesetSync received wrong ids: %+v", ids)
 			}
@@ -1728,6 +1728,49 @@ func TestService(t *testing.T) {
 			}
 		})
 
+		t.Run("batch spec associated with draft batch change", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			// Associate with draft batch change
+			batchChange := testDraftBatchChange(spec.UserID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+
+			ws := &btypes.BatchSpecWorkspace{
+				BatchSpecID: spec.ID,
+				RepoID:      rs[0].ID,
+				Steps: []batcheslib.Step{
+					{Run: "echo hello", Container: "alpine:3"},
+				},
+			}
+
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			failedJob := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: ws.ID,
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateFailed,
+				StartedAt:            time.Now(),
+				FinishedAt:           time.Now(),
+				FailureMessage:       &failureMessage,
+			}
+			createJob(t, s, failedJob)
+
+			// RETRY
+			err := svc.RetryBatchSpecWorkspaces(ctx, []int64{ws.ID})
+			if err != nil {
+				t.Fatal("unexpected error")
+			}
+
+			assertJobsDeleted(t, s, []*btypes.BatchSpecWorkspaceExecutionJob{failedJob})
+			assertJobsCreatedFor(t, s, []int64{ws.ID})
+		})
+
 		t.Run("job not retryable", func(t *testing.T) {
 			spec := testBatchSpec(admin.ID)
 			if err := s.CreateBatchSpec(ctx, spec); err != nil {
@@ -1989,6 +2032,52 @@ func TestService(t *testing.T) {
 			}
 		})
 
+		t.Run("batch spec associated with draft batch change", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			// Associate with draft batch change
+			batchChange := testDraftBatchChange(spec.UserID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+
+			ws := &btypes.BatchSpecWorkspace{
+				BatchSpecID: spec.ID,
+				RepoID:      rs[0].ID,
+				Steps: []batcheslib.Step{
+					{Run: "echo hello", Container: "alpine:3"},
+				},
+			}
+
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			failedJob := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: ws.ID,
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateFailed,
+				StartedAt:            time.Now(),
+				FinishedAt:           time.Now(),
+				FailureMessage:       &failureMessage,
+			}
+			createJob(t, s, failedJob)
+
+			// RETRY
+			opts := RetryBatchSpecExecutionOpts{BatchSpecRandID: spec.RandID, IncludeCompleted: true}
+			if err := svc.RetryBatchSpecExecution(ctx, opts); err != nil {
+				t.Fatal(err)
+			}
+
+			// Queued job should not be deleted
+			assertJobsDeleted(t, s, []*btypes.BatchSpecWorkspaceExecutionJob{
+				failedJob,
+			})
+			assertJobsCreatedFor(t, s, []int64{ws.ID})
+		})
+
 		t.Run("user is not namespace user and not admin", func(t *testing.T) {
 			// admin owns batch spec
 			spec := createSpec(t)
@@ -2155,6 +2244,14 @@ func testBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {
 	}
 
 	return c
+}
+
+func testDraftBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {
+	bc := testBatchChange(user, spec)
+	bc.LastAppliedAt = time.Time{}
+	bc.InitialApplierID = 0
+	bc.LastApplierID = 0
+	return bc
 }
 
 func testBatchSpec(user int32) *btypes.BatchSpec {

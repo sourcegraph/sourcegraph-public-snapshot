@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -40,12 +39,12 @@ type DBStore interface {
 	GetIndexesByIDs(ctx context.Context, ids ...int) ([]dbstore.Index, error)
 	GetIndexes(ctx context.Context, opts dbstore.GetIndexesOptions) ([]dbstore.Index, int, error)
 	DeleteIndexByID(ctx context.Context, id int) (bool, error)
-	GetConfigurationPolicies(ctx context.Context, opts store.GetConfigurationPoliciesOptions) ([]store.ConfigurationPolicy, int, error)
-	GetConfigurationPolicyByID(ctx context.Context, id int) (store.ConfigurationPolicy, bool, error)
-	CreateConfigurationPolicy(ctx context.Context, configurationPolicy store.ConfigurationPolicy) (store.ConfigurationPolicy, error)
-	UpdateConfigurationPolicy(ctx context.Context, policy store.ConfigurationPolicy) (err error)
+	GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
+	GetConfigurationPolicyByID(ctx context.Context, id int) (dbstore.ConfigurationPolicy, bool, error)
+	CreateConfigurationPolicy(ctx context.Context, configurationPolicy dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error)
+	UpdateConfigurationPolicy(ctx context.Context, policy dbstore.ConfigurationPolicy) (err error)
 	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
-	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (store.IndexConfiguration, bool, error)
+	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (dbstore.IndexConfiguration, bool, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error
 	RepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) ([]int, int, error)
 }
@@ -74,6 +73,8 @@ type IndexEnqueuer interface {
 	InferIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, error)
 }
 
-type RepoUpdaterClient = enqueuer.RepoUpdaterClient
-type EnqueuerDBStore = enqueuer.DBStore
-type EnqueuerGitserverClient = enqueuer.GitserverClient
+type (
+	RepoUpdaterClient       = enqueuer.RepoUpdaterClient
+	EnqueuerDBStore         = enqueuer.DBStore
+	EnqueuerGitserverClient = enqueuer.GitserverClient
+)

@@ -1,5 +1,6 @@
 import classNames from 'classnames'
-import React from 'react'
+import { noop } from 'lodash'
+import React, { useCallback } from 'react'
 
 import styles from '../../../../../components/creation-ui-kit/CreationUiKit.module.scss'
 import { useAsyncInsightTitleValidator } from '../../../../../components/form/hooks/use-async-insight-title-validator'
@@ -11,6 +12,7 @@ import {
     repositoriesFieldValidator,
     requiredStepValueField,
 } from '../../search-insight/components/search-insight-creation-content/validators'
+import { searchQueryValidator } from '../search-query-validator'
 import { CaptureGroupFormFields } from '../types'
 
 import { CaptureGroupCreationForm } from './CaptureGoupCreationForm'
@@ -33,12 +35,27 @@ interface CaptureGroupCreationContentProps {
     className?: string
 
     onSubmit: (values: CaptureGroupFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
-    onChange: (event: FormChangeEvent<CaptureGroupFormFields>) => void
+    onChange?: (event: FormChangeEvent<CaptureGroupFormFields>) => void
     onCancel: () => void
 }
 
 export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCreationContentProps> = props => {
-    const { mode, className, initialValues = {}, onSubmit, onChange, onCancel } = props
+    const { mode, className, initialValues = {}, onSubmit, onChange = noop, onCancel } = props
+
+    // Search query validators
+    const validateChecks = useCallback((value: string | undefined) => {
+        if (!value) {
+            return queryRequiredValidator(value)
+        }
+        const validatedChecks = searchQueryValidator(value)
+        const allChecksPassed = Object.values(validatedChecks).every(Boolean)
+
+        if (!allChecksPassed) {
+            return 'Query is not valid'
+        }
+
+        return queryRequiredValidator(value)
+    }, [])
 
     const form = useForm<CaptureGroupFormFields>({
         initialValues: { ...INITIAL_VALUES, ...initialValues },
@@ -70,7 +87,7 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
     const query = useField({
         name: 'groupSearchQuery',
         formApi: form.formAPI,
-        validators: { sync: queryRequiredValidator },
+        validators: { sync: validateChecks },
     })
 
     const step = useField({
@@ -83,6 +100,20 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
         formApi: form.formAPI,
         validators: { sync: requiredStepValueField },
     })
+
+    const handleFormReset = (): void => {
+        title.input.onChange('')
+        repositories.input.onChange('')
+        query.input.onChange('')
+        step.input.onChange('months')
+        stepValue.input.onChange('1')
+
+        // Focus first element of the form
+        repositories.input.ref.current?.focus()
+    }
+
+    const hasFilledValue =
+        form.values.title !== '' || form.values.repositories !== '' || form.values.groupSearchQuery !== ''
 
     const areAllFieldsForPreviewValid =
         repositories.meta.validState === 'VALID' &&
@@ -99,9 +130,9 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
                 step={step}
                 stepValue={stepValue}
                 query={query}
-                isFormClearActive={false}
+                isFormClearActive={hasFilledValue}
                 onCancel={onCancel}
-                onFormReset={() => {}}
+                onFormReset={handleFormReset}
                 className={styles.contentForm}
             />
 

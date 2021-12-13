@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -504,7 +503,7 @@ func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
 	store := ExternalServices(db)
-	BeforeCreateExternalService = func(ctx context.Context, db dbutil.DB) error {
+	BeforeCreateExternalService = func(ctx context.Context, _ DB) error {
 		return errcode.NewPresentationError("test plan limit exceeded")
 	}
 	t.Cleanup(func() { BeforeCreateExternalService = nil })
@@ -1628,6 +1627,17 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("many external services", func(t *testing.T) {
+		user, err := Users(db).Create(ctx, NewUser{Username: "alice"})
+		if err != nil {
+			t.Fatalf("Test setup error %s", err)
+		}
+		org, err := Orgs(db).Create(ctx, "acme", nil)
+		if err != nil {
+			t.Fatalf("Test setup error %s", err)
+		}
+
+		namespacedSvcs := typestest.MakeNamespacedExternalServices(user.ID, org.ID)
+
 		tx, err := ExternalServices(db).Transact(ctx)
 		if err != nil {
 			t.Fatalf("Transact error: %s", err)
@@ -1639,7 +1649,8 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			}
 		}()
 
-		want := typestest.GenerateExternalServices(7, svcs...)
+		services := append(svcs, namespacedSvcs...)
+		want := typestest.GenerateExternalServices(11, services...)
 
 		if err := tx.Upsert(ctx, want...); err != nil {
 			t.Fatalf("Upsert error: %s", err)
@@ -1655,7 +1666,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		sort.Sort(want)
 
 		have, err := tx.List(ctx, ExternalServicesListOptions{
-			Kinds: svcs.Kinds(),
+			Kinds: services.Kinds(),
 		})
 		if err != nil {
 			t.Fatalf("List error: %s", err)

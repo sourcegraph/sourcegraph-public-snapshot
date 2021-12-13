@@ -9,7 +9,7 @@ import (
 )
 
 func TestProductLicenses_Create(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	u, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
@@ -62,7 +62,7 @@ func TestProductLicenses_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	u1, err := database.Users(db).Create(ctx, database.NewUser{Username: "u1"})

@@ -75,7 +75,7 @@ func scanDumps(rows *sql.Rows, queryErr error) (_ []Dump, err error) {
 
 // GetDumpsByIDs returns a set of dumps by identifiers.
 func (s *Store) GetDumpsByIDs(ctx context.Context, ids []int) (_ []Dump, err error) {
-	ctx, traceLog, endObservation := s.operations.getDumpsByIDs.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.getDumpsByIDs.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numIDs", len(ids)),
 		log.String("ids", intsToString(ids)),
 	}})
@@ -94,7 +94,7 @@ func (s *Store) GetDumpsByIDs(ctx context.Context, ids []int) (_ []Dump, err err
 	if err != nil {
 		return nil, err
 	}
-	traceLog(log.Int("numDumps", len(dumps)))
+	trace.Log(log.Int("numDumps", len(dumps)))
 
 	return dumps, nil
 }
@@ -143,7 +143,7 @@ FROM lsif_dumps_with_repository_name u WHERE u.id IN (%s)
 // splits the repository into multiple dumps. For this reason, the returned dumps are always sorted in most-recently-finished order to
 // prevent returning data from stale dumps.
 func (s *Store) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []Dump, err error) {
-	ctx, traceLog, endObservation := s.operations.findClosestDumps.WithAndLogger(ctx, &err, observation.Args{
+	ctx, trace, endObservation := s.operations.findClosestDumps.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
 			log.String("commit", commit),
@@ -161,7 +161,7 @@ func (s *Store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 	if err != nil {
 		return nil, err
 	}
-	traceLog(log.Int("numDumps", len(dumps)))
+	trace.Log(log.Int("numDumps", len(dumps)))
 
 	return dumps, nil
 }
@@ -196,7 +196,7 @@ ORDER BY u.finished_at DESC
 // FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
 // path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestDumps for additional details.
 func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []Dump, err error) {
-	ctx, traceLog, endObservation := s.operations.findClosestDumpsFromGraphFragment.WithAndLogger(ctx, &err, observation.Args{
+	ctx, trace, endObservation := s.operations.findClosestDumpsFromGraphFragment.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
 			log.String("commit", commit),
@@ -224,7 +224,7 @@ func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 	if err != nil {
 		return nil, err
 	}
-	traceLog(
+	trace.Log(
 		log.Int("numCommitGraphViewMetaKeys", len(commitGraphView.Meta)),
 		log.Int("numCommitGraphViewTokenKeys", len(commitGraphView.Tokens)),
 	)
@@ -244,7 +244,7 @@ func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 	if err != nil {
 		return nil, err
 	}
-	traceLog(log.Int("numDumps", len(dumps)))
+	trace.Log(log.Int("numDumps", len(dumps)))
 
 	return dumps, nil
 }
@@ -367,7 +367,7 @@ func makeFindClosestDumpConditions(path string, rootMustEnclosePath bool, indexe
 // commit, root, and indexer. This is necessary to perform during conversions before changing
 // the state of a processing upload to completed as there is a unique index on these four columns.
 func (s *Store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
-	ctx, traceLog, endObservation := s.operations.deleteOverlappingDumps.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.deleteOverlappingDumps.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 		log.String("root", root),
@@ -379,7 +379,7 @@ func (s *Store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, co
 	if err != nil {
 		return err
 	}
-	traceLog(log.Int("count", count))
+	trace.Log(log.Int("count", count))
 
 	return nil
 }

@@ -38,7 +38,7 @@ func (s *Store) WriteMeta(ctx context.Context, bundleID int, meta precise.MetaDa
 
 // WriteDocuments is called (transactionally) from the precise-code-intel-worker.
 func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan precise.KeyedDocumentData) (count uint32, err error) {
-	ctx, traceLog, endObservation := s.operations.writeDocuments.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.writeDocuments.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -98,7 +98,7 @@ func (s *Store) WriteDocuments(ctx context.Context, bundleID int, documents chan
 	); err != nil {
 		return 0, err
 	}
-	traceLog(log.Int("numDocumentRecords", int(count)))
+	trace.Log(log.Int("numDocumentRecords", int(count)))
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id and schema version here since it is the same for all rows
@@ -128,7 +128,7 @@ FROM t_lsif_data_documents source
 
 // WriteResultChunks is called (transactionally) from the precise-code-intel-worker.
 func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan precise.IndexedResultChunkData) (count uint32, err error) {
-	ctx, traceLog, endObservation := s.operations.writeResultChunks.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.writeResultChunks.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -171,7 +171,7 @@ func (s *Store) WriteResultChunks(ctx context.Context, bundleID int, resultChunk
 	); err != nil {
 		return 0, err
 	}
-	traceLog(log.Int("numResultChunkRecords", int(count)))
+	trace.Log(log.Int("numResultChunkRecords", int(count)))
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id here since it is the same for all rows in this operation.
@@ -195,35 +195,35 @@ FROM t_lsif_data_result_chunks source
 
 // WriteDefinitions is called (transactionally) from the precise-code-intel-worker.
 func (s *Store) WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error) {
-	ctx, traceLog, endObservation := s.operations.writeDefinitions.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.writeDefinitions.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.writeMonikers(ctx, bundleID, "lsif_data_definitions", CurrentDefinitionsSchemaVersion, monikerLocations, traceLog)
+	return s.writeMonikers(ctx, bundleID, "lsif_data_definitions", CurrentDefinitionsSchemaVersion, monikerLocations, trace)
 }
 
 // WriteReferences is called (transactionally) from the precise-code-intel-worker.
 func (s *Store) WriteReferences(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error) {
-	ctx, traceLog, endObservation := s.operations.writeReferences.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.writeReferences.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.writeMonikers(ctx, bundleID, "lsif_data_references", CurrentReferencesSchemaVersion, monikerLocations, traceLog)
+	return s.writeMonikers(ctx, bundleID, "lsif_data_references", CurrentReferencesSchemaVersion, monikerLocations, trace)
 }
 
 // WriteImplementations is called (transactionally) from the precise-code-intel-worker.
 func (s *Store) WriteImplementations(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error) {
-	ctx, traceLog, endObservation := s.operations.writeImplementations.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.writeImplementations.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.writeMonikers(ctx, bundleID, "lsif_data_implementations", CurrentImplementationsSchemaVersion, monikerLocations, traceLog)
+	return s.writeMonikers(ctx, bundleID, "lsif_data_implementations", CurrentImplementationsSchemaVersion, monikerLocations, trace)
 }
 
-func (s *Store) writeMonikers(ctx context.Context, bundleID int, tableName string, version int, monikerLocations chan precise.MonikerLocations, traceLog observation.TraceLogger) (count uint32, err error) {
+func (s *Store) writeMonikers(ctx context.Context, bundleID int, tableName string, version int, monikerLocations chan precise.MonikerLocations, trace observation.TraceLogger) (count uint32, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return 0, err
@@ -262,7 +262,7 @@ func (s *Store) writeMonikers(ctx context.Context, bundleID int, tableName strin
 	); err != nil {
 		return 0, err
 	}
-	traceLog(log.Int("numRecords", int(count)))
+	trace.Log(log.Int("numRecords", int(count)))
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id and schema version here since it is the same for all rows

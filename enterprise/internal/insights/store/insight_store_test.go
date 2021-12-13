@@ -1212,15 +1212,16 @@ func TestInsightStore_StampRecording(t *testing.T) {
 
 	t.Run("test create and update stamp", func(t *testing.T) {
 		series := types.InsightSeries{
-			SeriesID:           "unique-1",
-			Query:              "query-1",
-			OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
-			LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
-			NextRecordingAfter: now,
-			LastSnapshotAt:     now,
-			NextSnapshotAfter:  now,
-			Enabled:            true,
-			SampleIntervalUnit: string(types.Month),
+			SeriesID:            "unique-1",
+			Query:               "query-1",
+			OldestHistoricalAt:  now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:      now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter:  now,
+			LastSnapshotAt:      now,
+			NextSnapshotAfter:   now,
+			Enabled:             true,
+			SampleIntervalUnit:  string(types.Month),
+			SampleIntervalValue: 1,
 		}
 		created, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -1229,7 +1230,7 @@ func TestInsightStore_StampRecording(t *testing.T) {
 
 		want := created
 		want.LastRecordedAt = now
-		want.NextRecordingAfter = time.Date(2020, 2, 1, 0, 0, 0, 0, time.UTC)
+		want.NextRecordingAfter = time.Date(2020, 2, 5, 0, 0, 0, 0, time.UTC)
 
 		got, err := store.StampRecording(ctx, created)
 		if err != nil {

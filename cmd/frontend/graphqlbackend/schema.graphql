@@ -218,6 +218,10 @@ type Mutation {
     """
     createPassword(newPassword: String!): EmptyResponse
     """
+    Sets the current user to accept the site's Terms of Service and Privacy Policy.
+    """
+    setTosAccepted: EmptyResponse!
+    """
     Creates an access token that grants the privileges of the specified user (referred to as the access token's
     "subject" user after token creation). The result is the access token value, which the caller is responsible
     for storing (it is not accessible by Sourcegraph after creation).
@@ -4559,6 +4563,10 @@ type User implements Node & SettingsSubject & Namespace {
     Only the user and site admins can access this field.
     """
     tags: [String!]!
+    """
+    Whether the user has already accepted the terms of service or not.
+    """
+    tosAccepted: Boolean!
     """
     The user's usage statistics on Sourcegraph.
     """
