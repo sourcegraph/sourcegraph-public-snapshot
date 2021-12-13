@@ -39,7 +39,11 @@ RUN wget https://github.com/salesforce/p4-fusion/archive/refs/tags/v1.2.zip && \
     unzip /usr/local/bin/v1.2.zip -d /usr/local/bin
 
 # We need a specific version of OpenSSL
-RUN curl https://www.openssl.org/source/openssl-1.0.2t.tar.gz | tar xz && cd openssl-1.0.2t && ./config && make && make install
+RUN wget https://www.openssl.org/source/openssl-1.0.2t.tar.gz && tar -xzvf openssl-1.0.2t.tar.gz
+
+WORKDIR /openssl-1.0.2t
+
+RUN ./config && make && make install
 
 # We also need Helix Core C++ API to build p4-fusion
 RUN wget https://www.perforce.com/downloads/perforce/r21.1/bin.linux26x86_64/p4api.tgz && \
