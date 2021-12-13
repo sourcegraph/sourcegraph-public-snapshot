@@ -11,6 +11,7 @@ import (
 )
 
 type flagContextKey struct{}
+type flagSetFetcher func(ctx context.Context) FlagSet
 
 type Store interface {
 	GetUserFlags(context.Context, int32) (map[string]bool, error)
@@ -28,56 +29,59 @@ func Middleware(ffs Store, next http.Handler) http.Handler {
 }
 
 func contextWithFeatureFlags(ffs Store, r *http.Request) context.Context {
-	fetcher := &flagSetFetcher{ffs: ffs, r: r}
+	var (
+		once    sync.Once
+		flagSet FlagSet
+	)
+	// fetcher is a lazy fetcher for a FlagSet, given an *http.Request. It
+	// will fetch the flags as required, once they're loaded from the
+	// context. This pattern prevents us from loading feature flags on every
+	// request, even when we don't end up using them.
+	fetcher := func(ctx context.Context) FlagSet {
+		once.Do(func() {
+			if a := actor.FromContext(ctx); a.IsAuthenticated() {
+				flags, err := ffs.GetUserFlags(ctx, a.UID)
+				if err == nil {
+					flagSet = FlagSet(flags)
+					return
+				}
+				// Continue if err != nil
+			}
+
+			if uid, ok := cookie.AnonymousUID(r); ok {
+				flags, err := ffs.GetAnonymousUserFlags(ctx, uid)
+				if err == nil {
+					flagSet = FlagSet(flags)
+					return
+				}
+				// Continue if err != nil
+			}
+
+			flags, err := ffs.GetGlobalFeatureFlags(ctx)
+			if err == nil {
+				flagSet = FlagSet(flags)
+			}
+		})
+
+		return flagSet
+	}
 	return context.WithValue(r.Context(), flagContextKey{}, fetcher)
-}
-
-// flagSetFetcher is a lazy fetcher for a FlagSet, given an *http.Request. It
-// will fetch the flags as required, once they're loaded from the context. This
-// pattern prevents us from loading feature flags on every request, even when
-// we don't end up using them.
-type flagSetFetcher struct {
-	r   *http.Request
-	ffs Store
-
-	once    sync.Once
-	flagSet FlagSet
-}
-
-func (f *flagSetFetcher) Fetch(ctx context.Context) FlagSet {
-	f.once.Do(func() {
-		if a := actor.FromContext(ctx); a.IsAuthenticated() {
-			flags, err := f.ffs.GetUserFlags(ctx, a.UID)
-			if err == nil {
-				f.flagSet = FlagSet(flags)
-				return
-			}
-			// Continue if err != nil
-		}
-
-		if uid, ok := cookie.AnonymousUID(f.r); ok {
-			flags, err := f.ffs.GetAnonymousUserFlags(ctx, uid)
-			if err == nil {
-				f.flagSet = FlagSet(flags)
-				return
-			}
-			// Continue if err != nil
-		}
-
-		flags, err := f.ffs.GetGlobalFeatureFlags(ctx)
-		if err == nil {
-			f.flagSet = FlagSet(flags)
-		}
-	})
-
-	return f.flagSet
 }
 
 // FromContext retrieves the current set of flags from the current
 // request's context.
 func FromContext(ctx context.Context) FlagSet {
 	if flags := ctx.Value(flagContextKey{}); flags != nil {
-		return flags.(*flagSetFetcher).Fetch(ctx)
+		return flags.(flagSetFetcher)(ctx)
 	}
 	return nil
+}
+
+// TestSetFlagsOnContext sets the flags on ctx. This should only be used by
+// tests. In non-test code you should rely on the store and middleware.
+func TestSetFlagsOnContext(ctx context.Context, flags FlagSet) context.Context {
+	fetcher := func(ctx context.Context) FlagSet {
+		return flags
+	}
+	return context.WithValue(ctx, flagContextKey{}, fetcher)
 }
