@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -504,7 +503,7 @@ func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
 	store := ExternalServices(db)
-	BeforeCreateExternalService = func(ctx context.Context, db dbutil.DB) error {
+	BeforeCreateExternalService = func(ctx context.Context, _ DB) error {
 		return errcode.NewPresentationError("test plan limit exceeded")
 	}
 	t.Cleanup(func() { BeforeCreateExternalService = nil })

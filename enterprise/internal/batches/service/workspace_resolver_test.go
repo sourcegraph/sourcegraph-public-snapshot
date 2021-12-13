@@ -17,6 +17,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
@@ -50,7 +51,7 @@ func TestSetDefaultQueryCount(t *testing.T) {
 func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 	ctx := context.Background()
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	s := store.New(db, &observation.TestContext, nil)
 
 	u := ct.CreateTestUser(t, db, false)

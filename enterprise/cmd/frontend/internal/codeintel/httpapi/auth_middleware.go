@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -35,7 +34,7 @@ var errVerificaitonNotSupported = errors.New("verification not supported for cod
 // request contains sufficient evidence of authorship for the target repository.
 //
 // When LSIF auth is not enforced on the instance, this middleware no-ops.
-func authMiddleware(next http.Handler, db dbutil.DB, authValidators AuthValidatorMap, operation *observation.Operation) http.Handler {
+func authMiddleware(next http.Handler, db database.DB, authValidators AuthValidatorMap, operation *observation.Operation) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		statusCode, err := func() (_ int, err error) {
 			ctx, trace, endObservation := operation.WithAndLogger(r.Context(), &err, observation.Args{})
@@ -76,7 +75,7 @@ func authMiddleware(next http.Handler, db dbutil.DB, authValidators AuthValidato
 	})
 }
 
-func isSiteAdmin(ctx context.Context, db dbutil.DB) bool {
+func isSiteAdmin(ctx context.Context, db database.DB) bool {
 	user, err := database.Users(db).GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {

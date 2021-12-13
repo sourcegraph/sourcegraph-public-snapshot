@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -1767,10 +1766,10 @@ func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
 	}
 }
 
-func checkSiteAdminOrSameUser(ctx context.Context, db dbutil.DB, userID int32) (bool, error) {
+func checkSiteAdminOrSameUser(ctx context.Context, db database.DB, userID int32) (bool, error) {
 	// 🚨 SECURITY: Only site admins or the authors of a batch change have batch change
 	// admin rights.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(db), userID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
 		if errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
 			return false, nil
 		}

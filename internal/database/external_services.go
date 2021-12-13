@@ -35,7 +35,7 @@ import (
 
 // BeforeCreateExternalService (if set) is invoked as a hook prior to creating a
 // new external service in the database.
-var BeforeCreateExternalService func(context.Context, dbutil.DB) error
+var BeforeCreateExternalService func(context.Context, DB) error
 
 type ExternalServiceStore interface {
 	// Count counts all external services that satisfy the options (ignoring limit and offset).
@@ -699,7 +699,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 	// Prior to saving the record, run a validation hook.
 	if BeforeCreateExternalService != nil {
-		if err := BeforeCreateExternalService(ctx, e.Store.Handle().DB()); err != nil {
+		if err := BeforeCreateExternalService(ctx, NewDB(e.Store.Handle().DB())); err != nil {
 			return err
 		}
 	}
