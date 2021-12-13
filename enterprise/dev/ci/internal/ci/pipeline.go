@@ -216,6 +216,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			codeIntelQA(c.candidateImageTag()),
 			serverE2E(c.candidateImageTag()),
 			serverQA(c.candidateImageTag()),
+			clusterQA(c.candidateImageTag()),
 			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion))
 
 		// All operations before this point are required
