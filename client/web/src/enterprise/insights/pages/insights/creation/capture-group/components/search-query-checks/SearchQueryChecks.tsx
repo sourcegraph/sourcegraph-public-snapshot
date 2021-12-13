@@ -10,7 +10,7 @@ interface SearchQueryChecksProps {
         isValidRegex: boolean
         isValidOperator: boolean
         isValidPatternType: boolean
-        isNotRepoOrFile: boolean
+        isNotRepo: boolean
         isNotCommitOrDiff: boolean
     }
 }
@@ -46,8 +46,8 @@ export const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> 
                 </CheckListItem>
             </li>
             <li>
-                <CheckListItem valid={checks.isNotRepoOrFile}>
-                    The capture group matches file contents (not <code>repo</code> or <code>file</code>)
+                <CheckListItem valid={checks.isNotRepo}>
+                    Do not contain <code>repo:</code> filter
                 </CheckListItem>
             </li>
             <li>
