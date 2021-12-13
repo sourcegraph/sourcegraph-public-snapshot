@@ -776,7 +776,6 @@ commandsets:
       - zoekt-webserver-1
 
   dotcom:
-    requiresDevPrivate: false
     <<: *enterprise_set
     env:
       SOURCEGRAPHDOTCOM_MODE: true

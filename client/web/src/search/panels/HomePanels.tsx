@@ -21,7 +21,7 @@ interface Props extends Pick<PatternTypeProps, 'patternType'>, TelemetryProps, H
 
 export const HomePanels: React.FunctionComponent<Props> = (props: Props) => (
     <div className={classNames('container', styles.homePanels)} data-testid="home-panels">
-        <VulnerabilityAnnouncement />
+        {props.isSourcegraphDotCom && <VulnerabilityAnnouncement />}
         <div className="row">
             <RepositoriesPanel {...props} className={classNames('col-lg-4', styles.panel)} />
             <RecentSearchesPanel {...props} className={classNames('col-lg-8', styles.panel)} />
