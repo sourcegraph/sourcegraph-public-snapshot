@@ -94,14 +94,21 @@ export const ExtensionInsightsCard: React.FunctionComponent<CardProps> = props =
             <img
                 className={styles.image}
                 src={`${window.context?.assetsRoot || ''}/img/codecov.png`}
+                data-skip-percy={true}
                 alt="Codecov logo"
             />
             <img
                 className={styles.image}
                 src={`${window.context?.assetsRoot || ''}/img/eslint.png`}
+                data-skip-percy={true}
                 alt="Eslint logo"
             />
-            <img className={styles.image} src={`${window.context?.assetsRoot || ''}/img/snyk.png`} alt="Snyk logo" />
+            <img
+                className={styles.image}
+                src={`${window.context?.assetsRoot || ''}/img/snyk.png`}
+                data-skip-percy={true}
+                alt="Snyk logo"
+            />
         </div>
 
         <CardBody title="Based on Sourcegraph extensions">
