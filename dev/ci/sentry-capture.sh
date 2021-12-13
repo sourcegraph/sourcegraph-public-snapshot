@@ -2,6 +2,7 @@
 
 function capture {
   (
+    
     set +x
     # Run the command and capture the output
     # shellcheck disable=SC2124
@@ -11,6 +12,12 @@ function capture {
 
     # Capture the exit code
     local exit_code=$?
+
+    # No Sentry DSN given, behave normally
+    if [[ -z "$CI_SENTRY_DSN" ]]; then
+      printf "%s" "$trace"
+      return $exit_code
+    fi
 
     # Report to sentry if it failed
     if [ $exit_code -ne 0 ]; then  
