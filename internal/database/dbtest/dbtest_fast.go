@@ -76,7 +76,7 @@ var (
 // us from opening a ton of parallel database connections per process.
 func getDefaultPool() (*testDatabasePool, *url.URL, error) {
 	defaultOnce.Do(func() {
-		defaultURL, defaultErr = getDSN("")
+		defaultURL, defaultErr = getDSN()
 		if defaultErr != nil {
 			return
 		}

@@ -1,9 +1,14 @@
-name: LSIF-Ts
+name: lsif-ts
 on:
   push:
+    branches:
+      - main
+      - '[0-9]+.[0-9]+' # release branches
+  pull_request:
     paths:
       - '**.ts'
       - '**.js'
+
 jobs:
   lsif-tsc-eslint:
     # Skip running on forks
