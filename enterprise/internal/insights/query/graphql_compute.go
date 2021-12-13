@@ -1,4 +1,4 @@
-package queryrunner
+package query
 
 import (
 	"bytes"

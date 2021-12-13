@@ -7,23 +7,25 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestStaleSourcedCommits(t *testing.T) {
-	db := dbtest.NewDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	store := testStore(db)
 
 	now := time.Unix(1587396557, 0).UTC()
 
-	insertUploads(t, db,
+	insertUploads(t, sqlDB,
 		Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
 		Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), Root: "sub/"},
 		Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
 		Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5)},
 		Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
 	)
-	insertIndexes(t, db,
+	insertIndexes(t, sqlDB,
 		Index{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
 		Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
 		Index{ID: 3, RepositoryID: 50, Commit: makeCommit(3)},
@@ -67,12 +69,13 @@ func TestStaleSourcedCommits(t *testing.T) {
 }
 
 func TestUpdateSourcedCommits(t *testing.T) {
-	db := dbtest.NewDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	store := testStore(db)
 
 	now := time.Unix(1587396557, 0).UTC()
 
-	insertUploads(t, db,
+	insertUploads(t, sqlDB,
 		Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
 		Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), Root: "sub/"},
 		Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
@@ -80,7 +83,7 @@ func TestUpdateSourcedCommits(t *testing.T) {
 		Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7)},
 		Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(7), State: "uploading"},
 	)
-	insertIndexes(t, db,
+	insertIndexes(t, sqlDB,
 		Index{ID: 1, RepositoryID: 50, Commit: makeCommit(3)},
 		Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
 		Index{ID: 3, RepositoryID: 52, Commit: makeCommit(7)},
@@ -132,12 +135,13 @@ func TestUpdateSourcedCommits(t *testing.T) {
 }
 
 func TestDeleteSourcedCommits(t *testing.T) {
-	db := dbtest.NewDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	store := testStore(db)
 
 	now := time.Unix(1587396557, 0).UTC()
 
-	insertUploads(t, db,
+	insertUploads(t, sqlDB,
 		Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1)},
 		Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), Root: "sub/"},
 		Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4)},
@@ -146,7 +150,7 @@ func TestDeleteSourcedCommits(t *testing.T) {
 		Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(7), State: "uploading", UploadedAt: now.Add(-time.Minute * 90)},
 		Upload{ID: 7, RepositoryID: 52, Commit: makeCommit(7), State: "queued", UploadedAt: now.Add(-time.Minute * 30)},
 	)
-	insertIndexes(t, db,
+	insertIndexes(t, sqlDB,
 		Index{ID: 1, RepositoryID: 50, Commit: makeCommit(3)},
 		Index{ID: 2, RepositoryID: 50, Commit: makeCommit(2)},
 		Index{ID: 3, RepositoryID: 52, Commit: makeCommit(7)},

@@ -10,7 +10,6 @@ import (
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
-	dbutil "github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // MockSyncStore is a mock implementation of the SyncStore interface (from
@@ -21,9 +20,9 @@ type MockSyncStore struct {
 	// ClockFunc is an instance of a mock function object controlling the
 	// behavior of the method Clock.
 	ClockFunc *SyncStoreClockFunc
-	// DBFunc is an instance of a mock function object controlling the
-	// behavior of the method DB.
-	DBFunc *SyncStoreDBFunc
+	// DatabaseDBFunc is an instance of a mock function object controlling
+	// the behavior of the method DatabaseDB.
+	DatabaseDBFunc *SyncStoreDatabaseDBFunc
 	// ExternalServicesFunc is an instance of a mock function object
 	// controlling the behavior of the method ExternalServices.
 	ExternalServicesFunc *SyncStoreExternalServicesFunc
@@ -69,8 +68,8 @@ func NewMockSyncStore() *MockSyncStore {
 				return nil
 			},
 		},
-		DBFunc: &SyncStoreDBFunc{
-			defaultHook: func() dbutil.DB {
+		DatabaseDBFunc: &SyncStoreDatabaseDBFunc{
+			defaultHook: func() database.DB {
 				return nil
 			},
 		},
@@ -141,9 +140,9 @@ func NewStrictMockSyncStore() *MockSyncStore {
 				panic("unexpected invocation of MockSyncStore.Clock")
 			},
 		},
-		DBFunc: &SyncStoreDBFunc{
-			defaultHook: func() dbutil.DB {
-				panic("unexpected invocation of MockSyncStore.DB")
+		DatabaseDBFunc: &SyncStoreDatabaseDBFunc{
+			defaultHook: func() database.DB {
+				panic("unexpected invocation of MockSyncStore.DatabaseDB")
 			},
 		},
 		ExternalServicesFunc: &SyncStoreExternalServicesFunc{
@@ -211,8 +210,8 @@ func NewMockSyncStoreFrom(i SyncStore) *MockSyncStore {
 		ClockFunc: &SyncStoreClockFunc{
 			defaultHook: i.Clock,
 		},
-		DBFunc: &SyncStoreDBFunc{
-			defaultHook: i.DB,
+		DatabaseDBFunc: &SyncStoreDatabaseDBFunc{
+			defaultHook: i.DatabaseDB,
 		},
 		ExternalServicesFunc: &SyncStoreExternalServicesFunc{
 			defaultHook: i.ExternalServices,
@@ -349,34 +348,34 @@ func (c SyncStoreClockFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// SyncStoreDBFunc describes the behavior when the DB method of the parent
-// MockSyncStore instance is invoked.
-type SyncStoreDBFunc struct {
-	defaultHook func() dbutil.DB
-	hooks       []func() dbutil.DB
-	history     []SyncStoreDBFuncCall
+// SyncStoreDatabaseDBFunc describes the behavior when the DatabaseDB method
+// of the parent MockSyncStore instance is invoked.
+type SyncStoreDatabaseDBFunc struct {
+	defaultHook func() database.DB
+	hooks       []func() database.DB
+	history     []SyncStoreDatabaseDBFuncCall
 	mutex       sync.Mutex
 }
 
-// DB delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockSyncStore) DB() dbutil.DB {
-	r0 := m.DBFunc.nextHook()()
-	m.DBFunc.appendCall(SyncStoreDBFuncCall{r0})
+// DatabaseDB delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockSyncStore) DatabaseDB() database.DB {
+	r0 := m.DatabaseDBFunc.nextHook()()
+	m.DatabaseDBFunc.appendCall(SyncStoreDatabaseDBFuncCall{r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the DB method of the
-// parent MockSyncStore instance is invoked and the hook queue is empty.
-func (f *SyncStoreDBFunc) SetDefaultHook(hook func() dbutil.DB) {
+// SetDefaultHook sets function that is called when the DatabaseDB method of
+// the parent MockSyncStore instance is invoked and the hook queue is empty.
+func (f *SyncStoreDatabaseDBFunc) SetDefaultHook(hook func() database.DB) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// DB method of the parent MockSyncStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *SyncStoreDBFunc) PushHook(hook func() dbutil.DB) {
+// DatabaseDB method of the parent MockSyncStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *SyncStoreDatabaseDBFunc) PushHook(hook func() database.DB) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -384,21 +383,21 @@ func (f *SyncStoreDBFunc) PushHook(hook func() dbutil.DB) {
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *SyncStoreDBFunc) SetDefaultReturn(r0 dbutil.DB) {
-	f.SetDefaultHook(func() dbutil.DB {
+func (f *SyncStoreDatabaseDBFunc) SetDefaultReturn(r0 database.DB) {
+	f.SetDefaultHook(func() database.DB {
 		return r0
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *SyncStoreDBFunc) PushReturn(r0 dbutil.DB) {
-	f.PushHook(func() dbutil.DB {
+func (f *SyncStoreDatabaseDBFunc) PushReturn(r0 database.DB) {
+	f.PushHook(func() database.DB {
 		return r0
 	})
 }
 
-func (f *SyncStoreDBFunc) nextHook() func() dbutil.DB {
+func (f *SyncStoreDatabaseDBFunc) nextHook() func() database.DB {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -411,40 +410,40 @@ func (f *SyncStoreDBFunc) nextHook() func() dbutil.DB {
 	return hook
 }
 
-func (f *SyncStoreDBFunc) appendCall(r0 SyncStoreDBFuncCall) {
+func (f *SyncStoreDatabaseDBFunc) appendCall(r0 SyncStoreDatabaseDBFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of SyncStoreDBFuncCall objects describing the
-// invocations of this function.
-func (f *SyncStoreDBFunc) History() []SyncStoreDBFuncCall {
+// History returns a sequence of SyncStoreDatabaseDBFuncCall objects
+// describing the invocations of this function.
+func (f *SyncStoreDatabaseDBFunc) History() []SyncStoreDatabaseDBFuncCall {
 	f.mutex.Lock()
-	history := make([]SyncStoreDBFuncCall, len(f.history))
+	history := make([]SyncStoreDatabaseDBFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// SyncStoreDBFuncCall is an object that describes an invocation of method
-// DB on an instance of MockSyncStore.
-type SyncStoreDBFuncCall struct {
+// SyncStoreDatabaseDBFuncCall is an object that describes an invocation of
+// method DatabaseDB on an instance of MockSyncStore.
+type SyncStoreDatabaseDBFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 dbutil.DB
+	Result0 database.DB
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c SyncStoreDBFuncCall) Args() []interface{} {
+func (c SyncStoreDatabaseDBFuncCall) Args() []interface{} {
 	return []interface{}{}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c SyncStoreDBFuncCall) Results() []interface{} {
+func (c SyncStoreDatabaseDBFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import React from 'react'
+import React, { useCallback } from 'react'
 
 import styles from '../../../../../components/creation-ui-kit/CreationUiKit.module.scss'
 import { useAsyncInsightTitleValidator } from '../../../../../components/form/hooks/use-async-insight-title-validator'
@@ -12,6 +12,7 @@ import {
     repositoriesFieldValidator,
     requiredStepValueField,
 } from '../../search-insight/components/search-insight-creation-content/validators'
+import { searchQueryValidator } from '../search-query-validator'
 import { CaptureGroupFormFields } from '../types'
 
 import { CaptureGroupCreationForm } from './CaptureGoupCreationForm'
@@ -40,6 +41,21 @@ interface CaptureGroupCreationContentProps {
 
 export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCreationContentProps> = props => {
     const { mode, className, initialValues = {}, onSubmit, onChange = noop, onCancel } = props
+
+    // Search query validators
+    const validateChecks = useCallback((value: string | undefined) => {
+        if (!value) {
+            return queryRequiredValidator(value)
+        }
+        const validatedChecks = searchQueryValidator(value)
+        const allChecksPassed = Object.values(validatedChecks).every(Boolean)
+
+        if (!allChecksPassed) {
+            return 'Query is not valid'
+        }
+
+        return queryRequiredValidator(value)
+    }, [])
 
     const form = useForm<CaptureGroupFormFields>({
         initialValues: { ...INITIAL_VALUES, ...initialValues },
@@ -71,7 +87,7 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
     const query = useField({
         name: 'groupSearchQuery',
         formApi: form.formAPI,
-        validators: { sync: queryRequiredValidator },
+        validators: { sync: validateChecks },
     })
 
     const step = useField({

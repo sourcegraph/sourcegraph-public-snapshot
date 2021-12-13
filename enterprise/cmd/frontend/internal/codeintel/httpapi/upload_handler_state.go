@@ -62,7 +62,7 @@ func (h *UploadHandler) constructUploadState(ctx context.Context, r *http.Reques
 		// of a multi-part upload. Ensure that the repository and commit given in the
 		// request are resolvable. Subsequent multi-part requests will use the new
 		// upload identifier returned in this response.
-		repositoryID, statusCode, err := ensureRepoAndCommitExist(ctx, database.NewDB(h.db), uploadState.repositoryName, uploadState.commit)
+		repositoryID, statusCode, err := ensureRepoAndCommitExist(ctx, h.db, uploadState.repositoryName, uploadState.commit)
 		if err != nil {
 			return uploadState, statusCode, err
 		}

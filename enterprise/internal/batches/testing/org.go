@@ -6,10 +6,10 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func InsertTestOrg(t *testing.T, db dbutil.DB, name string) (orgID int32) {
+func InsertTestOrg(t *testing.T, db database.DB, name string) (orgID int32) {
 	t.Helper()
 
 	q := sqlf.Sprintf("INSERT INTO orgs (name) VALUES (%s) RETURNING id", name)

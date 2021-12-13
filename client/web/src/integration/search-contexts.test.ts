@@ -14,6 +14,7 @@ import { WebIntegrationTestContext, createWebIntegrationTestContext } from './co
 import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
+import { percySnapshotWithVariants } from './utils'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
@@ -231,6 +232,9 @@ describe('Search contexts', () => {
         await driver.page.waitForSelector(
             '[data-testid="repositories-config-button"] [data-testid="repositories-config-success"]'
         )
+
+        // Take Snapshot
+        await percySnapshotWithVariants(driver.page, 'Create search context page')
 
         // Click create
         await driver.page.click('[data-testid="search-context-submit-button"]')
@@ -497,6 +501,8 @@ describe('Search contexts', () => {
             {},
             searchContextsCount
         )
+
+        await percySnapshotWithVariants(driver.page, 'Search contexts list page')
     })
 
     test('Switching contexts with empty query', async () => {
