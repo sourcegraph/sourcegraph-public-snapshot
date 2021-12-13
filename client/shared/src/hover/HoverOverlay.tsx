@@ -9,7 +9,6 @@ import { ThemeProps } from '../theme'
 import { isErrorLike } from '../util/errors'
 import { sanitizeClass } from '../util/strings'
 
-import { toNativeEvent } from './helpers'
 import hoverOverlayStyle from './HoverOverlay.module.scss'
 import type { HoverContext, HoverOverlayBaseProps, GetAlertClassName } from './HoverOverlay.types'
 import { HoverOverlayAlerts, HoverOverlayAlertsProps } from './HoverOverlayAlerts'
@@ -19,9 +18,6 @@ import { HoverOverlayLogo } from './HoverOverlayLogo'
 import { useLogTelemetryEvent } from './useLogTelemetryEvent'
 
 const LOADING = 'loading' as const
-
-const transformMouseEvent = (handler: (event: MouseEvent) => void) => (event: React.MouseEvent<HTMLElement>) =>
-    handler(toNativeEvent(event))
 
 export type { HoverContext }
 
