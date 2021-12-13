@@ -14,6 +14,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -25,7 +26,7 @@ import (
 )
 
 func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 4)
 
@@ -172,7 +173,7 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 }
 
 func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
 
@@ -370,7 +371,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 }
 
 func TestBatchSpecWorkspaceCreatorProcess_Importing(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
 

@@ -142,7 +142,40 @@ type Operation struct {
 
 // TraceLogger is returned from WithAndLogger and can be used to add timestamped key and
 // value pairs into a related opentracing span.
-type TraceLogger func(fields ...log.Field)
+type TraceLogger interface {
+	Log(fields ...log.Field)
+	Tag(fields ...log.Field)
+}
+
+var TestTraceLogger = &traceLogger{}
+
+type traceLogger struct {
+	opName string
+	event  honey.Event
+	trace  *trace.Trace
+}
+
+func (t traceLogger) Log(fields ...log.Field) {
+	if honey.Enabled() {
+		for _, field := range fields {
+			t.event.AddField(t.opName+"."+toSnakeCase(field.Key()), field.Value())
+		}
+	}
+	if t.trace != nil {
+		t.trace.LogFields(fields...)
+	}
+}
+
+func (t traceLogger) Tag(fields ...log.Field) {
+	if honey.Enabled() {
+		for _, field := range fields {
+			t.event.AddField(t.opName+"."+toSnakeCase(field.Key()), field.Value())
+		}
+	}
+	if t.trace != nil {
+		t.trace.TagFields(fields...)
+	}
+}
 
 // FinishFunc is the shape of the function returned by With and should be invoked within
 // a defer directly before the observed function returns.
@@ -203,20 +236,10 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 		})
 	}
 
-	var logFields TraceLogger
-	if tr != nil {
-		logFields = func(fields ...log.Field) {
-			for _, field := range fields {
-				event.AddField(snakecaseOpName+"."+toSnakeCase(field.Key()), field.Value())
-			}
-			tr.LogFields(fields...)
-		}
-	} else {
-		logFields = func(fields ...log.Field) {
-			for _, field := range fields {
-				event.AddField(snakecaseOpName+"."+toSnakeCase(field.Key()), field.Value())
-			}
-		}
+	logFields := traceLogger{
+		opName: snakecaseOpName,
+		event:  event,
+		trace:  tr,
 	}
 
 	if traceID := trace.ID(ctx); traceID != "" {

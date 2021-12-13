@@ -18,7 +18,7 @@ import (
 const searchTimeout = 60 * time.Second
 
 func (h *apiHandler) handleSearchInternal(ctx context.Context, args types.SearchArgs) (_ *result.Symbols, err error) {
-	ctx, traceLog, endObservation := h.operations.search.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := h.operations.search.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(args.Repo)),
 		log.String("commitID", string(args.CommitID)),
 		log.String("query", args.Query),
@@ -44,7 +44,7 @@ func (h *apiHandler) handleSearchInternal(ctx context.Context, args types.Search
 	if err != nil {
 		return nil, errors.Wrap(err, "databaseWriter.GetOrCreateDatabaseFile")
 	}
-	traceLog(log.String("dbFile", dbFile))
+	trace.Log(log.String("dbFile", dbFile))
 
 	var results result.Symbols
 	err = store.WithSQLiteStore(dbFile, func(db store.Store) (err error) {

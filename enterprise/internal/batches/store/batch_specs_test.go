@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -448,7 +449,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 	c := &ct.TestClock{Time: timeutil.Now()}
 	minAgo := func(m int) time.Time { return c.Now().Add(-time.Duration(m) * time.Minute) }
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
 
 	repo, _ := ct.CreateTestRepo(t, ctx, db)

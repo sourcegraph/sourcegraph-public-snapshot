@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
@@ -271,9 +270,8 @@ func TestIgnoredIDs(t *testing.T) {
 			ignoreIDs,
 			10,
 			0,
-			func(fields ...log.Field) {},
+			observation.TestTraceLogger,
 		)
-
 		if err != nil {
 			t.Fatalf("uploadIDsWithReferences: %s", err)
 		}

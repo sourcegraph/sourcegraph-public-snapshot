@@ -613,7 +613,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 	})
 
 	t.Run("GetBatchChangeDiffStat", func(t *testing.T) {
-		userID := ct.CreateTestUser(t, s.DB(), false).ID
+		userID := ct.CreateTestUser(t, s.DatabaseDB(), false).ID
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 		repoStore := database.ReposWith(s)
 		esStore := database.ExternalServicesWith(s)
@@ -651,7 +651,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		}
 
 		// Now revoke repo access, and check that we don't see it in the diff stat anymore.
-		ct.MockRepoPermissions(t, s.DB(), 0, repo.ID)
+		ct.MockRepoPermissions(t, s.DatabaseDB(), 0, repo.ID)
 		{
 			want := &diff.Stat{
 				Added:   0,
@@ -671,7 +671,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 	})
 
 	t.Run("GetRepoDiffStat", func(t *testing.T) {
-		userID := ct.CreateTestUser(t, s.DB(), false).ID
+		userID := ct.CreateTestUser(t, s.DatabaseDB(), false).ID
 		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 		repoStore := database.ReposWith(s)
 		esStore := database.ExternalServicesWith(s)
@@ -760,7 +760,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		}
 
 		// Now revoke repo1 access, and check that we don't get a diff stat for it anymore.
-		ct.MockRepoPermissions(t, s.DB(), 0, repo1.ID)
+		ct.MockRepoPermissions(t, s.DatabaseDB(), 0, repo1.ID)
 		{
 			want := &diff.Stat{
 				Added:   0,
@@ -798,8 +798,8 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 }
 
 func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	orgID := ct.InsertTestOrg(t, s.DB(), "user-delete-cascades")
-	user := ct.CreateTestUser(t, s.DB(), false)
+	orgID := ct.InsertTestOrg(t, s.DatabaseDB(), "user-delete-cascades")
+	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 
 	t.Run("User delete", func(t *testing.T) {
 		// Set up two batch changes and specs: one in the user's namespace (which

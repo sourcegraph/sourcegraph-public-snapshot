@@ -611,7 +611,7 @@ func (r *batchSpecResolver) computeState(ctx context.Context) (btypes.BatchSpecS
 
 func (r *batchSpecResolver) computeCanAdminister(ctx context.Context) (bool, error) {
 	r.canAdministerOnce.Do(func() {
-		r.canAdminister, r.canAdministerErr = checkSiteAdminOrSameUser(ctx, r.store.DB(), r.batchSpec.UserID)
+		r.canAdminister, r.canAdministerErr = checkSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), r.batchSpec.UserID)
 	})
 	return r.canAdminister, r.canAdministerErr
 }
