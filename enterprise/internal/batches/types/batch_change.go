@@ -40,3 +40,13 @@ func (c *BatchChange) Clone() *BatchChange {
 
 // Closed returns true when the ClosedAt timestamp has been set.
 func (c *BatchChange) Closed() bool { return !c.ClosedAt.IsZero() }
+
+// IsDraft returns true when the BatchChange is a draft ("shallow") Batch
+// Change, i.e. it's associated with a BatchSpec but it hasn't been applied
+// yet.
+func (c *BatchChange) IsDraft() bool {
+	return c.BatchSpecID != 0 &&
+		c.LastAppliedAt.IsZero() &&
+		c.LastApplierID == 0 &&
+		c.InitialApplierID == 0
+}

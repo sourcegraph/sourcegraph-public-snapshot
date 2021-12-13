@@ -67,7 +67,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         repositories.input.ref.current?.focus()
         visibility.input.onChange('personal')
         series.input.onChange([createDefaultEditSeries({ edit: true })])
-        stepValue.input.onChange('2')
+        stepValue.input.onChange('1')
         step.input.onChange('months')
     }
 

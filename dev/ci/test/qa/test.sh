@@ -22,7 +22,10 @@ cleanup() {
   docker_logs
   cd "$root_dir"
   docker rm -f "$CONTAINER"
-  docker rmi -f "$(docker images -q)"
+  if [[ $(docker images -q | wc -l) -gt 0 ]]; then
+    # shellcheck disable=SC2046
+    docker rmi -f $(docker images -q)
+  fi
 
 }
 

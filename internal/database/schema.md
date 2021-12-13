@@ -1561,17 +1561,20 @@ Foreign-key constraints:
 
 # Table "public.notebooks"
 ```
-     Column      |           Type           | Collation | Nullable |                Default                
------------------+--------------------------+-----------+----------+---------------------------------------
+     Column      |           Type           | Collation | Nullable |                                              Default                                              
+-----------------+--------------------------+-----------+----------+---------------------------------------------------------------------------------------------------
  id              | bigint                   |           | not null | nextval('notebooks_id_seq'::regclass)
- title           | citext                   |           | not null | 
+ title           | text                     |           | not null | 
  blocks          | jsonb                    |           | not null | '[]'::jsonb
  public          | boolean                  |           | not null | 
  creator_user_id | integer                  |           |          | 
  created_at      | timestamp with time zone |           | not null | now()
  updated_at      | timestamp with time zone |           | not null | now()
+ blocks_tsvector | tsvector                 |           |          | generated always as (jsonb_to_tsvector('english'::regconfig, blocks, '["string"]'::jsonb)) stored
 Indexes:
     "notebooks_pkey" PRIMARY KEY, btree (id)
+    "notebooks_blocks_tsvector_idx" gin (blocks_tsvector)
+    "notebooks_title_trgm_idx" gin (title gin_trgm_ops)
 Check constraints:
     "blocks_is_array" CHECK (jsonb_typeof(blocks) = 'array'::text)
 Foreign-key constraints:

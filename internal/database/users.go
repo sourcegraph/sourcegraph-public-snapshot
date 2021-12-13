@@ -38,11 +38,11 @@ import (
 var (
 	// BeforeCreateUser (if set) is a hook called before creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
-	BeforeCreateUser func(ctx context.Context, db dbutil.DB) error
+	BeforeCreateUser func(ctx context.Context, db DB) error
 	// AfterCreateUser (if set) is a hook called after creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
 	// Whatever this hook mutates in database should be reflected on the `user` argument as well.
-	AfterCreateUser func(ctx context.Context, db dbutil.DB, user *types.User) error
+	AfterCreateUser func(ctx context.Context, db DB, user *types.User) error
 	// BeforeSetUserIsSiteAdmin (if set) is a hook called before promoting/revoking a user to be a
 	// site admin.
 	BeforeSetUserIsSiteAdmin func(isSiteAdmin bool) error
@@ -303,7 +303,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 
 	// Run BeforeCreateUser hook.
 	if BeforeCreateUser != nil {
-		if err := BeforeCreateUser(ctx, u.Store.Handle().DB()); err != nil {
+		if err := BeforeCreateUser(ctx, NewDB(u.Store.Handle().DB())); err != nil {
 			return nil, errors.Wrap(err, "pre create user hook")
 		}
 	}
@@ -389,7 +389,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 
 		// Run AfterCreateUser hook
 		if AfterCreateUser != nil {
-			if err := AfterCreateUser(ctx, u.Store.Handle().DB(), user); err != nil {
+			if err := AfterCreateUser(ctx, NewDB(u.Store.Handle().DB()), user); err != nil {
 				return nil, errors.Wrap(err, "after create user hook")
 			}
 		}

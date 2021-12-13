@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
@@ -26,7 +27,7 @@ func TestBatchChangeResolver(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	userID := ct.CreateTestUser(t, db, true).ID
 	orgName := "test-batch-change-resolver-org"
@@ -136,6 +137,109 @@ func TestBatchChangeResolver(t *testing.T) {
 	}
 }
 
+func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+
+	userID := ct.CreateTestUser(t, db, false).ID
+	userCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	now := timeutil.Now()
+	clock := func() time.Time { return now }
+	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Non-created-from-raw, attached to batch change
+	batchSpec1, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	batchSpec1.UserID = userID
+	batchSpec1.NamespaceUserID = userID
+
+	// Non-created-from-raw, not attached to batch change
+	batchSpec2, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	batchSpec2.UserID = userID
+	batchSpec2.NamespaceUserID = userID
+
+	// created-from-raw, not attached to batch change
+	batchSpec3, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	batchSpec3.UserID = userID
+	batchSpec3.NamespaceUserID = userID
+	batchSpec3.CreatedFromRaw = true
+
+	for _, bs := range []*btypes.BatchSpec{batchSpec1, batchSpec2, batchSpec3} {
+		if err := cstore.CreateBatchSpec(ctx, bs); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	batchChange := &btypes.BatchChange{
+		// They all have the same name/description
+		Name:        batchSpec1.Spec.Name,
+		Description: batchSpec1.Spec.Description,
+
+		NamespaceUserID:  userID,
+		InitialApplierID: userID,
+		LastApplierID:    userID,
+		LastAppliedAt:    now,
+		BatchSpecID:      batchSpec1.ID,
+	}
+
+	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
+		t.Fatal(err)
+	}
+
+	assertBatchSpecsInResponse(t, userCtx, s, batchChange.ID, batchSpec1, batchSpec2, batchSpec3)
+
+	// When viewed as another user we don't want the created-from-raw batch spec to be returned
+	otherUserID := ct.CreateTestUser(t, db, false).ID
+	otherUserCtx := actor.WithActor(ctx, actor.FromUser(otherUserID))
+	assertBatchSpecsInResponse(t, otherUserCtx, s, batchChange.ID, batchSpec1, batchSpec2)
+}
+
+func assertBatchSpecsInResponse(t *testing.T, ctx context.Context, s *graphql.Schema, batchChangeID int64, wantBatchSpecs ...*btypes.BatchSpec) {
+	t.Helper()
+
+	batchChangeAPIID := string(marshalBatchChangeID(batchChangeID))
+
+	input := map[string]interface{}{"batchChange": batchChangeAPIID}
+
+	var res struct{ Node apitest.BatchChange }
+	apitest.MustExec(ctx, t, s, input, &res, queryBatchChangeBatchSpecs)
+
+	expectedIDs := make(map[string]struct{}, len(wantBatchSpecs))
+	for _, bs := range wantBatchSpecs {
+		expectedIDs[string(marshalBatchSpecRandID(bs.RandID))] = struct{}{}
+	}
+
+	if have, want := res.Node.BatchSpecs.TotalCount, len(wantBatchSpecs); have != want {
+		t.Fatalf("wrong count of batch changes returned, want=%d have=%d", want, have)
+	}
+	if have, want := res.Node.BatchSpecs.TotalCount, len(res.Node.BatchSpecs.Nodes); have != want {
+		t.Fatalf("totalCount and nodes length don't match, want=%d have=%d", want, have)
+	}
+	for _, node := range res.Node.BatchSpecs.Nodes {
+		if _, ok := expectedIDs[node.ID]; !ok {
+			t.Fatalf("received wrong batch change with id %q", node.ID)
+		}
+	}
+}
+
 const queryBatchChange = `
 fragment u on User { databaseID, siteAdmin }
 fragment o on Org  { id, name }
@@ -179,6 +283,17 @@ query($namespace: ID!, $name: String!){
       ... on Org  { ...o }
     }
     url
+  }
+}
+`
+
+const queryBatchChangeBatchSpecs = `
+query($batchChange: ID!){
+  node(id: $batchChange) {
+    ... on BatchChange {
+      id
+      batchSpecs { totalCount nodes { id } }
+    }
   }
 }
 `

@@ -181,7 +181,7 @@ func findIgnoredRepositories(ctx context.Context, repos []*RepoRevision) (map[*t
 			defer wg.Done()
 			for repo := range in {
 				hasBatchIgnore, err := hasBatchIgnoreFile(ctx, repo)
-				results <- result{repo, hasBatchIgnore, err}
+				out <- result{repo, hasBatchIgnore, err}
 			}
 		}(input, results)
 	}
@@ -652,8 +652,8 @@ func findWorkspaces(
 	for _, workspace := range workspacesByRepoRev {
 		steps, err := stepsForRepo(
 			spec,
-			string(workspace.RepoRevision.Repo.Name),
-			workspace.RepoRevision.FileMatches,
+			string(workspace.Repo.Name),
+			workspace.FileMatches,
 		)
 		if err != nil {
 			return nil, err

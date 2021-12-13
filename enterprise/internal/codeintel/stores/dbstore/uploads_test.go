@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -677,10 +678,11 @@ func TestAddUploadPart(t *testing.T) {
 }
 
 func TestDeleteUploadByID(t *testing.T) {
-	db := dbtest.NewDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	store := testStore(db)
 
-	insertUploads(t, db,
+	insertUploads(t, sqlDB,
 		Upload{ID: 1, RepositoryID: 50},
 	)
 
@@ -714,10 +716,11 @@ func TestDeleteUploadByID(t *testing.T) {
 }
 
 func TestDeleteUploadByIDNotCompleted(t *testing.T) {
-	db := dbtest.NewDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	store := testStore(db)
 
-	insertUploads(t, db,
+	insertUploads(t, sqlDB,
 		Upload{ID: 1, RepositoryID: 50, State: "uploading"},
 	)
 
@@ -762,7 +765,8 @@ func TestDeleteUploadByIDMissingRow(t *testing.T) {
 }
 
 func TestDeleteUploadsWithoutRepository(t *testing.T) {
-	db := dbtest.NewDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	store := testStore(db)
 
 	var uploads []Upload
@@ -771,7 +775,7 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 			uploads = append(uploads, Upload{ID: len(uploads) + 1, RepositoryID: 50 + i})
 		}
 	}
-	insertUploads(t, db, uploads...)
+	insertUploads(t, sqlDB, uploads...)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-DeletedRepositoryGracePeriod + time.Minute)
@@ -785,7 +789,7 @@ func TestDeleteUploadsWithoutRepository(t *testing.T) {
 	for repositoryID, deletedAt := range deletions {
 		query := sqlf.Sprintf(`UPDATE repo SET deleted_at=%s WHERE id=%s`, deletedAt, repositoryID)
 
-		if _, err := db.Query(query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		if _, err := db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("Failed to update repository: %s", err)
 		}
 	}
@@ -1333,10 +1337,11 @@ func TestUpdateReferenceCounts(t *testing.T) {
 }
 
 func TestSoftDeleteExpiredUploads(t *testing.T) {
-	db := dbtest.NewDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	store := testStore(db)
 
-	insertUploads(t, db,
+	insertUploads(t, sqlDB,
 		Upload{ID: 50, State: "completed"},
 		Upload{ID: 51, State: "completed"},
 		Upload{ID: 52, State: "completed"},

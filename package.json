@@ -240,6 +240,7 @@
     "cross-env": "^7.0.2",
     "css-loader": "^5.2.6",
     "css-minimizer-webpack-plugin": "^3.0.2",
+    "esbuild": "^0.14.2",
     "eslint": "^7.17.0",
     "eslint-formatter-lsif": "^1.0.3",
     "eslint-plugin-monorepo": "^0.3.2",

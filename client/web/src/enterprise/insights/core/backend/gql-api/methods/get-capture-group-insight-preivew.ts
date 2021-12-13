@@ -9,7 +9,7 @@ import {
 } from '../../../../../../graphql-operations'
 import { CaptureInsightSettings } from '../../code-insights-backend-types'
 import { getDataPoints, InsightDataSeriesData } from '../../utils/create-line-chart-content'
-import { getStepInterval } from '../utils/insight-transformers'
+import { getStepInterval } from '../utils/get-step-interval'
 
 const SERIES_COLORS = Object.keys(openColor)
     .filter(name => name !== 'white' && name !== 'black' && name !== 'gray')
