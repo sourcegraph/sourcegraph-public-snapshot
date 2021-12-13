@@ -4,7 +4,7 @@ This page outlines how to accept a contribution to the [Sourcegraph repository](
 
 ## CLA-bot
 
-1. Check if a contributor signed the CLA [here](https://docs.google.com/spreadsheets/d/1_iBZh9PJi-05vTnlQ3GVeeRe8H3Wq1_FZ49aYrsHGLQ/edit?usp=sharing). All fields should be filled with valid data to proceed with the pull request. (This does not apply for Sourcegraph teammates.)
+1. For external contributors only: ensure that that contributor signed the [CLA](https://docs.google.com/spreadsheets/d/1_iBZh9PJi-05vTnlQ3GVeeRe8H3Wq1_FZ49aYrsHGLQ/edit?usp=sharing). All fields should be filled with valid data to proceed with the pull request. (This does not apply for Sourcegraph teammates.)
 2. If the CLA is signed — update the CLA-bot configuration [here](https://github.com/sourcegraph/clabot-config/edit/main/.clabot) by adding a contributor name to the `contributors` field, preserving the alphabetical order.
 3. Comment on the pull request: `@cla-bot check`.
 4. The `verification/cla-signed` workflow should become green. 🎉
