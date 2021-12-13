@@ -64,16 +64,25 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
             />
 
             <div className={styles.sectionContent}>
-                <SearchInsightCard to="/insights/create/lang-stats" onClick={logCreateSearchBasedInsightClick} />
+                <SearchInsightCard
+                    data-testid="create-search-insights"
+                    to="/insights/create/lang-stats"
+                    onClick={logCreateSearchBasedInsightClick}
+                />
 
                 {isGqlApi && (
                     <CaptureGroupInsightCard
+                        data-testid="create-capture-group-insight"
                         to="/insights/create/capture-group"
                         onClick={logCaptureGroupInsightClick}
                     />
                 )}
 
-                <LangStatsInsightCard to="/insights/create/lang-stats" onClick={logCreateCodeStatsInsightClick} />
+                <LangStatsInsightCard
+                    data-testid="create-lang-usage-insight"
+                    to="/insights/create/lang-stats"
+                    onClick={logCreateCodeStatsInsightClick}
+                />
 
                 <ExtensionInsightsCard
                     to="/extensions?query=category:Insights&experimental=true"
