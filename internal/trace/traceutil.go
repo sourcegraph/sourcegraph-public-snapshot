@@ -142,6 +142,15 @@ func (t *Trace) LogFields(fields ...log.Field) {
 	t.trace.LazyLog(fieldsStringer(fields), false)
 }
 
+// TagFields adds fields to the opentracing.Span as tags
+// as well as as logs to the nettrace.Trace.
+func (t *Trace) TagFields(fields ...log.Field) {
+	for _, field := range fields {
+		t.span.SetTag(field.Key(), field.Value())
+	}
+	t.trace.LazyLog(fieldsStringer(fields), false)
+}
+
 // SetError declares that this trace and span resulted in an error.
 func (t *Trace) SetError(err error) {
 	if err == nil {

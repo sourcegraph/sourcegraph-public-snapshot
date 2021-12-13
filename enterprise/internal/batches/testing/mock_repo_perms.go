@@ -7,18 +7,18 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // MockRepoPermissions mocks repository permissions to include
 // repositories by IDs for the given user.
-func MockRepoPermissions(t *testing.T, db dbutil.DB, userID int32, repoIDs ...api.RepoID) {
+func MockRepoPermissions(t *testing.T, db database.DB, userID int32, repoIDs ...api.RepoID) {
 	t.Helper()
 
-	permsStore := database.Perms(db, time.Now)
+	permsStore := edb.Perms(db, time.Now)
 
 	userIDs := roaring.New()
 	userIDs.Add(uint32(userID))

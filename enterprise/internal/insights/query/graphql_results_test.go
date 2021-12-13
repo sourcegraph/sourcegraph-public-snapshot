@@ -1,4 +1,4 @@
-package queryrunner
+package query
 
 import (
 	"encoding/json"
@@ -17,7 +17,7 @@ func TestCommitSearchResultMatchCount(t *testing.T) {
 			},
 		}
 		want := 3
-		got := results.matchCount()
+		got := results.MatchCount()
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected CommitSearchMatchCount (want/got): %v", diff)
 		}
@@ -25,7 +25,7 @@ func TestCommitSearchResultMatchCount(t *testing.T) {
 	t.Run("with no matches", func(t *testing.T) {
 		results := commitSearchResult{}
 		want := 0
-		got := results.matchCount()
+		got := results.MatchCount()
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected CommitSearchMatchCount (want/got): %v", diff)
 		}
@@ -33,7 +33,7 @@ func TestCommitSearchResultMatchCount(t *testing.T) {
 }
 
 func TestCommitSearchResultFromJson(t *testing.T) {
-	var res *gqlSearchResponse
+	var res *GqlSearchResponse
 	if err := json.NewDecoder(strings.NewReader(realCommitSearch)).Decode(&res); err != nil {
 		t.Error(err)
 	}
@@ -42,7 +42,7 @@ func TestCommitSearchResultFromJson(t *testing.T) {
 		if err := json.Unmarshal(raw, &commitSearchResult); err != nil {
 			t.Error(err)
 		}
-		got := commitSearchResult.matchCount()
+		got := commitSearchResult.MatchCount()
 		want := 1
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("mismatch (want/got): %v", diff)

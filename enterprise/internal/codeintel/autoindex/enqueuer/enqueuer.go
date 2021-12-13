@@ -48,7 +48,7 @@ func NewIndexEnqueuer(
 // InferIndexConfiguration looks at the repository contents at the lastest commit on the default branch of the given
 // repository and determines an index configuration that is likely to succeed.
 func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryID int) (_ *config.IndexConfiguration, err error) {
-	ctx, traceLog, endObservation := s.operations.InferIndexConfiguration.WithAndLogger(ctx, &err, observation.Args{
+	ctx, trace, endObservation := s.operations.InferIndexConfiguration.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
 		},
@@ -59,7 +59,7 @@ func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryI
 	if err != nil || !ok {
 		return nil, errors.Wrap(err, "gitserver.Head")
 	}
-	traceLog(log.String("commit", commit))
+	trace.Log(log.String("commit", commit))
 
 	indexJobs, err := s.inferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit)
 	if err != nil || len(indexJobs) == 0 {
@@ -82,7 +82,7 @@ func (s *IndexEnqueuer) InferIndexConfiguration(ctx context.Context, repositoryI
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
 func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force bool) (_ []store.Index, err error) {
-	ctx, traceLog, endObservation := s.operations.QueueIndex.WithAndLogger(ctx, &err, observation.Args{
+	ctx, trace, endObservation := s.operations.QueueIndex.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
 		},
@@ -94,15 +94,15 @@ func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev,
 		return nil, errors.Wrap(err, "gitserver.ResolveRevision")
 	}
 	commit := string(commitID)
-	traceLog(log.String("commit", commit))
+	trace.Log(log.String("commit", commit))
 
-	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, configuration, force, traceLog)
+	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, configuration, force, trace)
 }
 
 // QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
 // intelligence index.
 func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
-	ctx, traceLog, endObservation := s.operations.QueueIndexForPackage.WithAndLogger(ctx, &err, observation.Args{
+	ctx, trace, endObservation := s.operations.QueueIndexForPackage.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("scheme", pkg.Scheme),
 			log.String("name", pkg.Name),
@@ -115,8 +115,8 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 	if !ok {
 		return nil
 	}
-	traceLog(log.String("repoName", repoName))
-	traceLog(log.String("revision", revision))
+	trace.Log(log.String("repoName", repoName))
+	trace.Log(log.String("revision", revision))
 
 	if err := s.repoUpdaterLimiter.Wait(ctx); err != nil {
 		return err
@@ -140,7 +140,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 		return errors.Wrap(err, "gitserverClient.ResolveRevision")
 	}
 
-	_, err = s.queueIndexForRepositoryAndCommit(ctx, int(resp.ID), string(commit), "", false, traceLog)
+	_, err = s.queueIndexForRepositoryAndCommit(ctx, int(resp.ID), string(commit), "", false, trace)
 	return err
 }
 
@@ -149,7 +149,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
-func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force bool, traceLog observation.TraceLogger) ([]store.Index, error) {
+func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force bool, trace observation.TraceLogger) ([]store.Index, error) {
 	if !force {
 		isQueued, err := s.dbStore.IsQueued(ctx, repositoryID, commit)
 		if err != nil {
@@ -167,7 +167,7 @@ func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, re
 	if len(indexes) == 0 {
 		return nil, nil
 	}
-	traceLog(log.Int("numIndexes", len(indexes)))
+	trace.Log(log.Int("numIndexes", len(indexes)))
 
 	return s.dbStore.InsertIndexes(ctx, indexes)
 }
