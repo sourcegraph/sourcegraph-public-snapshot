@@ -4,6 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -36,7 +40,18 @@ func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend
 
 	if args.From == nil {
 		// Default to last 12mo of data
-		args.From = &graphqlbackend.DateTime{Time: time.Now().AddDate(-1, 0, 0)}
+		frames := query.BuildFrames(12, timeseries.TimeInterval{
+			Unit:  types.IntervalUnit(r.series.SampleIntervalUnit),
+			Value: r.series.SampleIntervalValue,
+		}, time.Now())
+		oldest := time.Now().AddDate(-1, 0, 0)
+		if len(frames) != 0 {
+			possibleOldest := frames[0].From
+			if possibleOldest.Before(oldest) {
+				oldest = possibleOldest
+			}
+		}
+		args.From = &graphqlbackend.DateTime{Time: oldest}
 	}
 	if args.From != nil {
 		opts.From = &args.From.Time

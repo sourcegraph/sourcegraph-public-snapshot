@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/slack"
 )
@@ -23,7 +22,7 @@ const lastLicenseExpirationCheckKey = "last_license_expiration_check"
 var licenseExpirationCheckers uint32
 
 // StartCheckForUpcomingLicenseExpirations checks for upcoming license expirations once per day.
-func StartCheckForUpcomingLicenseExpirations(db dbutil.DB) {
+func StartCheckForUpcomingLicenseExpirations(db database.DB) {
 	if atomic.AddUint32(&licenseExpirationCheckers, 1) != 1 {
 		panic("StartCheckForUpcomingLicenseExpirations called more than once")
 	}
@@ -45,7 +44,7 @@ type slackClient interface {
 }
 
 // checkLicensesIfNeeded checks whether a day has passed since the last license check, and if so, initiates one.
-func checkLicensesIfNeeded(db dbutil.DB, client slackClient) {
+func checkLicensesIfNeeded(db database.DB, client slackClient) {
 	c := redispool.Store.Get()
 	defer func() { _ = c.Close() }()
 
@@ -69,7 +68,7 @@ func checkLicensesIfNeeded(db dbutil.DB, client slackClient) {
 	}
 }
 
-func checkForUpcomingLicenseExpirations(db dbutil.DB, clock glock.Clock, client slackClient) {
+func checkForUpcomingLicenseExpirations(db database.DB, clock glock.Clock, client slackClient) {
 	if conf.Get().Dotcom == nil || conf.Get().Dotcom.SlackLicenseExpirationWebhook == "" {
 		return
 	}
@@ -89,7 +88,7 @@ func checkForUpcomingLicenseExpirations(db dbutil.DB, clock glock.Clock, client 
 	}
 }
 
-func checkLastSubscriptionLicense(ctx context.Context, db dbutil.DB, s *dbSubscription, clock glock.Clock, client slackClient) {
+func checkLastSubscriptionLicense(ctx context.Context, db database.DB, s *dbSubscription, clock glock.Clock, client slackClient) {
 	// Get the active (i.e., latest created) license.
 	licenses, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: s.ID, LimitOffset: &database.LimitOffset{Limit: 1}})
 	if err != nil {

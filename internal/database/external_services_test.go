@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -133,6 +132,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 		kind            string
 		config          string
 		namespaceUserID int32
+		namespaceOrgID  int32
 		setup           func(t *testing.T)
 		wantErr         string
 	}{
@@ -206,7 +206,14 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			kind:            extsvc.KindGitHub,
 			config:          `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
 			namespaceUserID: 1,
-			wantErr:         `users are only allowed to add external service for https://github.com/ and https://gitlab.com/`,
+			wantErr:         `external service only allowed for https://github.com/ and https://gitlab.com/`,
+		},
+		{
+			name:           "prevent code hosts that are not allowed for organizations",
+			kind:           extsvc.KindGitHub,
+			config:         `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			namespaceOrgID: 1,
+			wantErr:        `external service only allowed for https://github.com/ and https://gitlab.com/`,
 		},
 		{
 			name:            "gjson handles comments",
@@ -259,6 +266,28 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			wantErr: `existing external service, "GITHUB 1", of same kind already added`,
 		},
 		{
+			name:           "duplicate kinds not allowed for org owned services",
+			kind:           extsvc.KindGitHub,
+			config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			namespaceOrgID: 1,
+			setup: func(t *testing.T) {
+				t.Cleanup(func() {
+					Mocks.ExternalServices.List = nil
+				})
+				Mocks.ExternalServices.List = func(opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+					return []*types.ExternalService{
+						{
+							ID:          1,
+							Kind:        extsvc.KindGitHub,
+							DisplayName: "GITHUB 1",
+							Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+						},
+					}, nil
+				}
+			},
+			wantErr: `existing external service, "GITHUB 1", of same kind already added`,
+		},
+		{
 			name:    "1 errors - GitHub.com",
 			kind:    extsvc.KindGitHub,
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "` + types.RedactedSecret + `"}`,
@@ -281,6 +310,7 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 				Kind:            test.kind,
 				Config:          test.config,
 				NamespaceUserID: test.namespaceUserID,
+				NamespaceOrgID:  test.namespaceOrgID,
 			})
 			gotErr := fmt.Sprintf("%v", err)
 			if gotErr != test.wantErr {
@@ -473,7 +503,7 @@ func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
 		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
 	}
 	store := ExternalServices(db)
-	BeforeCreateExternalService = func(ctx context.Context, db dbutil.DB) error {
+	BeforeCreateExternalService = func(ctx context.Context, _ DB) error {
 		return errcode.NewPresentationError("test plan limit exceeded")
 	}
 	t.Cleanup(func() { BeforeCreateExternalService = nil })

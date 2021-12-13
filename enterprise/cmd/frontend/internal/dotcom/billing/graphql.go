@@ -1,8 +1,8 @@
 package billing
 
-import "github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+import "github.com/sourcegraph/sourcegraph/internal/database"
 
 // BillingResolver implements the GraphQL Query and Mutation fields related to billing.
 type BillingResolver struct {
-	DB dbutil.DB
+	DB database.DB
 }

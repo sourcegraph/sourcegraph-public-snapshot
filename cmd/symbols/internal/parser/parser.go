@@ -125,7 +125,7 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 }
 
 func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- SymbolOrError, parseRequest fetcher.ParseRequest, totalSymbols *uint32) (err error) {
-	ctx, traceLog, endObservation := p.operations.handleParseRequest.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := p.operations.handleParseRequest.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("fileSize", len(parseRequest.Data)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -134,7 +134,7 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	if err != nil {
 		return err
 	}
-	traceLog(log.Event("acquired parser from pool"))
+	trace.Log(log.Event("acquired parser from pool"))
 
 	defer func() {
 		if err == nil {
@@ -161,7 +161,7 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	if err != nil {
 		return errors.Wrap(err, "parser.Parse")
 	}
-	traceLog(log.Int("numEntries", len(entries)))
+	trace.Log(log.Int("numEntries", len(entries)))
 
 	for _, e := range entries {
 		if !shouldPersistEntry(e) {

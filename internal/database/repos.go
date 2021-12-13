@@ -1648,7 +1648,7 @@ func parseCursorConds(cs types.MultiCursor) (cond *sqlf.Query, err error) {
 // will be fast (even if there are many repos) because the query can be constrained
 // efficiently to only the repos in the group.
 func parseIncludePattern(pattern string) (exact, like []string, regexp string, err error) {
-	re, err := regexpsyntax.Parse(pattern, regexpsyntax.OneLine)
+	re, err := regexpsyntax.Parse(pattern, regexpsyntax.Perl)
 	if err != nil {
 		return nil, nil, "", err
 	}

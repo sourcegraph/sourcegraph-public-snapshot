@@ -2,13 +2,13 @@ package background
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func StartBackgroundJobs(ctx context.Context, db *sql.DB) {
+func StartBackgroundJobs(ctx context.Context, db database.DB) {
 	codeMonitorsStore := codemonitors.NewStore(db)
 
 	triggerMetrics := newMetricsForTriggerQueries()

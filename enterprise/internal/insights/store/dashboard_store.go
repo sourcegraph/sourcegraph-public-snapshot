@@ -337,9 +337,9 @@ INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
 		ON ids.id = insight_view.unique_id
     WHERE unique_id = ANY(%s)
 	ORDER BY ids.ordering
-);
-`
+) ON CONFLICT DO NOTHING;
 
+`
 const updateDashboardSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:UpdateDashboard
 UPDATE dashboard SET title = %s WHERE id = %s;

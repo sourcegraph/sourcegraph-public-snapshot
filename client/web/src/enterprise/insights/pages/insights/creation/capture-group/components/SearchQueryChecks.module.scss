@@ -1,0 +1,25 @@
+.form-series-checks {
+    line-height: 1.6;
+    font-size: 0.75rem;
+}
+
+.form-series-check {
+    list-style: none;
+    margin-left: 1.5rem;
+    padding-left: 0;
+
+    li {
+        position: relative;
+    }
+
+    svg {
+        position: absolute;
+        left: -24px;
+    }
+}
+
+code {
+    background-color: #d6eaf1;
+    border-radius: 4px;
+    font-weight: 600;
+}

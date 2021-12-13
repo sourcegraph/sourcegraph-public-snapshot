@@ -6,12 +6,12 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // GetBatchChangesUsageStatistics returns the current site's batch changes usage.
-func GetBatchChangesUsageStatistics(ctx context.Context, db dbutil.DB) (*types.BatchChangesUsageStatistics, error) {
+func GetBatchChangesUsageStatistics(ctx context.Context, db database.DB) (*types.BatchChangesUsageStatistics, error) {
 	stats := types.BatchChangesUsageStatistics{}
 
 	const batchChangesCountsQuery = `

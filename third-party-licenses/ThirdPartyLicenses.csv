@@ -163,7 +163,7 @@ Yarn,chalk,2.4.2,MIT,Unknown,Approved
 Yarn,chrome-trace-event,1.0.2,MIT,Unknown,Approved
 Yarn,classnames,2.3.1,MIT,Unknown,Approved
 Yarn,clone-response,1.0.2,MIT,https://github.com/lukechilds/clone-response,Approved
-Go,cloud.google.com/go,v0.97.0,"Apache 2.0,New BSD","",Approved
+Go,cloud.google.com/go,v0.98.0,"Apache 2.0,New BSD","",Approved
 Go,cloud.google.com/go/kms,v1.1.0,Apache 2.0,"",Approved
 Go,cloud.google.com/go/monitoring,v1.1.0,Apache 2.0,"",Approved
 Go,cloud.google.com/go/profiler,v0.1.1,Apache 2.0,"",Approved
@@ -275,7 +275,7 @@ Yarn,get-nonce,1.0.1,MIT,https://github.com/theKashey/get-nonce,Approved
 Yarn,get-stream,5.1.0,MIT,sindresorhus.com,Approved
 Go,github.com/Masterminds/semver,v1.5.0,MIT,"",Approved
 Go,github.com/NYTimes/gziphandler,v1.1.1,Apache 2.0,"",Approved
-Go,github.com/ProtonMail/go-crypto,v0.0.0-20210707164159-52430bf6b52c,New BSD,"",Approved
+Go,github.com/ProtonMail/go-crypto,v0.0.0-20211112122917-428f8eabeeb3,New BSD,"",Approved
 Go,github.com/PuerkitoBio/purell,v1.1.1,New BSD,"",Approved
 Go,github.com/PuerkitoBio/rehttp,v1.1.0,New BSD,"",Approved
 Go,github.com/PuerkitoBio/urlesc,v0.0.0-20170810143723-de5bf2ad4578,New BSD,"",Approved
@@ -283,36 +283,36 @@ Go,github.com/RoaringBitmap/roaring,v0.9.4,Apache 2.0,"",Approved
 Go,github.com/andres-erbsen/clock,v0.0.0-20160526145045-9e14626cd129,MIT,"",Approved
 Go,github.com/asaskevich/govalidator,v0.0.0-20210307081110-f21760c49a8d,MIT,"",Approved
 Go,github.com/avelino/slugify,v0.0.0-20180501145920-855f152bd774,MIT,"",Approved
-Go,github.com/aws/aws-sdk-go,v1.40.45,"Apache 2.0,New BSD","",Approved
-Go,github.com/aws/aws-sdk-go-v2,v1.11.0,"Apache 2.0,New BSD","",Approved
+Go,github.com/aws/aws-sdk-go,v1.42.19,"Apache 2.0,New BSD","",Approved
+Go,github.com/aws/aws-sdk-go-v2,v1.11.2,"Apache 2.0,New BSD","",Approved
 Go,github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream,v1.0.0,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/config,v1.10.0,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/credentials,v1.6.0,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/feature/ec2/imds,v1.8.0,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/feature/s3/manager,v1.7.0,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/internal/configsources,v1.1.0,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/internal/endpoints/v2,v2.0.0,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/internal/ini,v1.3.0,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/service/cloudwatch,v1.10.0,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/service/codecommit,v1.7.0,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/config,v1.11.0,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/credentials,v1.6.4,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/feature/ec2/imds,v1.8.2,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/feature/s3/manager,v1.7.4,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/internal/configsources,v1.1.2,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/internal/endpoints/v2,v2.0.2,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/internal/ini,v1.3.2,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/service/cloudwatch,v1.12.1,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/service/codecommit,v1.8.2,Apache 2.0,"",Approved
 Go,github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding,v1.5.0,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/service/internal/presigned-url,v1.5.0,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/service/internal/s3shared,v1.9.0,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/service/kms,v1.9.0,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/service/s3,v1.18.0,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/service/sso,v1.6.0,Apache 2.0,"",Approved
-Go,github.com/aws/aws-sdk-go-v2/service/sts,v1.9.0,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/service/internal/presigned-url,v1.5.2,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/service/internal/s3shared,v1.9.2,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/service/kms,v1.11.1,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/service/s3,v1.21.0,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/service/sso,v1.6.2,Apache 2.0,"",Approved
+Go,github.com/aws/aws-sdk-go-v2/service/sts,v1.11.1,Apache 2.0,"",Approved
 Go,github.com/aws/smithy-go,v1.9.0,Apache 2.0,"",Approved
 Go,github.com/aymerick/douceur,v0.2.0,MIT,"",Approved
 Go,github.com/beevik/etree,v1.1.0,New BSD,"",Approved
 Go,github.com/beorn7/perks,v1.0.1,MIT,"",Approved
 Go,github.com/boj/redistore,v0.0.0-20180917114910-cd5dcc76aeff,MIT,"",Approved
 Go,github.com/buildkite/go-buildkite/v3,v3.0.1,Simplified BSD,"",Approved
-Go,github.com/cenkalti/backoff,v1.1.1-0.20171020064038-309aa717adbf,MIT,"",Approved
+Go,github.com/cenkalti/backoff,v2.2.1,MIT,"",Approved
 Go,github.com/certifi/gocertifi,v0.0.0-20210507211836-431795d63e8d,Mozilla Public License 2.0,"",Approved
 Go,github.com/cespare/xxhash/v2,v2.1.2,MIT,"",Approved
 Go,github.com/cockroachdb/errors,v1.8.6,Apache 2.0,"",Approved
-Go,github.com/cockroachdb/logtags,v0.0.0-20190617123548-eb05cc24525f,Apache 2.0,"",Approved
+Go,github.com/cockroachdb/logtags,v0.0.0-20211118104740-dabe8e521a4f,Apache 2.0,"",Approved
 Go,github.com/cockroachdb/redact,v1.1.3,Apache 2.0,"",Approved
 Go,github.com/cockroachdb/sentry-go,v0.6.1-cockroachdb.2,Simplified BSD,"",Approved
 Go,github.com/coreos/go-oidc,v2.2.1,Apache 2.0,"",Approved
@@ -333,16 +333,16 @@ Go,github.com/fatih/structs,v1.1.0,MIT,"",Approved
 Go,github.com/felixge/fgprof,v0.9.1,MIT,"",Approved
 Go,github.com/felixge/httpsnoop,v1.0.2,MIT,"",Approved
 Go,github.com/fsnotify/fsnotify,v1.5.1,New BSD,"",Approved
-Go,github.com/garyburd/redigo,v1.1.1-0.20170914051019-70e1b1943d4f,Apache 2.0,"",Approved
+Go,github.com/garyburd/redigo,v1.6.3,Apache 2.0,"",Approved
 Go,github.com/gen2brain/beeep,v0.0.0-20210529141713-5586760f0cc1,Simplified BSD,"",Approved
 Go,github.com/getsentry/raven-go,v0.2.0,New BSD,"",Approved
-Go,github.com/go-enry/go-enry/v2,v2.7.2,Apache 2.0,"",Approved
+Go,github.com/go-enry/go-enry/v2,v2.8.0,Apache 2.0,"",Approved
 Go,github.com/go-git/gcfg,v1.5.0,New BSD,"",Approved
 Go,github.com/go-git/go-billy/v5,v5.3.1,Apache 2.0,"",Approved
 Go,github.com/go-git/go-git/v5,v5.4.2,Apache 2.0,"",Approved
 Go,github.com/go-kit/log,v0.2.0,MIT,"",Approved
 Go,github.com/go-logfmt/logfmt,v0.5.1,MIT,"",Approved
-Go,github.com/go-logr/logr,v1.2.0,Apache 2.0,"",Approved
+Go,github.com/go-logr/logr,v1.2.1,Apache 2.0,"",Approved
 Go,github.com/go-openapi/analysis,v0.21.1,Apache 2.0,"",Approved
 Go,github.com/go-openapi/errors,v0.20.1,Apache 2.0,"",Approved
 Go,github.com/go-openapi/jsonpointer,v0.19.5,Apache 2.0,"",Approved
@@ -350,20 +350,19 @@ Go,github.com/go-openapi/jsonreference,v0.19.6,Apache 2.0,"",Approved
 Go,github.com/go-openapi/loads,v0.21.0,Apache 2.0,"",Approved
 Go,github.com/go-openapi/runtime,v0.21.0,"Apache 2.0,MIT","",Approved
 Go,github.com/go-openapi/spec,v0.20.4,Apache 2.0,"",Approved
-Go,github.com/go-openapi/strfmt,v0.21.0,Apache 2.0,"",Approved
+Go,github.com/go-openapi/strfmt,v0.21.1,Apache 2.0,"",Approved
 Go,github.com/go-openapi/swag,v0.19.15,Apache 2.0,"",Approved
 Go,github.com/go-openapi/validate,v0.20.3,Apache 2.0,"",Approved
 Go,github.com/go-redsync/redsync,v1.4.2,New BSD,"",Approved
 Go,github.com/go-stack/stack,v1.8.1,MIT,"",Approved
 Go,github.com/gobwas/glob,v0.2.3,MIT,"",Approved
-Go,github.com/godbus/dbus/v5,v5.0.4,Simplified BSD,"",Approved
+Go,github.com/godbus/dbus/v5,v5.0.6,Simplified BSD,"",Approved
 Go,github.com/gogo/protobuf,v1.3.2,New BSD,"",Approved
-Go,github.com/golang-migrate/migrate/v4,v4.15.1,MIT,"",Approved
 Go,github.com/golang/gddo,v0.0.0-20210115222349-20d68f94ee1f,New BSD,"",Approved
 Go,github.com/golang/glog,v1.0.0,Apache 2.0,"",Approved
 Go,github.com/golang/groupcache,v0.0.0-20210331224755-41bb18bfe9da,Apache 2.0,"",Approved
 Go,github.com/golang/protobuf,v1.5.2,New BSD,"",Approved
-Go,github.com/gomodule/oauth1,v0.0.0-20181215000758-9a59ed3b0a84,Apache 2.0,"",Approved
+Go,github.com/gomodule/oauth1,v0.2.0,Apache 2.0,"",Approved
 Go,github.com/gomodule/redigo,v2.0.0,Apache 2.0,"",Approved
 Go,github.com/google/go-cmp,v0.5.6,New BSD,"",Approved
 Go,github.com/google/go-github,v17.0.0,New BSD,"",Approved
@@ -371,7 +370,7 @@ Go,github.com/google/go-github/v28,v28.1.1,New BSD,"",Approved
 Go,github.com/google/go-github/v31,v31.0.0,New BSD,"",Approved
 Go,github.com/google/go-querystring,v1.1.0,New BSD,"",Approved
 Go,github.com/google/gofuzz,v1.2.0,Apache 2.0,"",Approved
-Go,github.com/google/pprof,v0.0.0-20211108044417-e9b028704de0,Apache 2.0,"",Approved
+Go,github.com/google/pprof,v0.0.0-20211204230040-2007db6d4f53,Apache 2.0,"",Approved
 Go,github.com/google/uuid,v1.3.0,New BSD,"",Approved
 Go,github.com/googleapis/gax-go/v2,v2.1.1,New BSD,"",Approved
 Go,github.com/googleapis/gnostic,v0.5.5,Apache 2.0,"",Approved
@@ -387,7 +386,7 @@ Go,github.com/gorilla/websocket,v1.4.2,Simplified BSD,"",Approved
 Go,github.com/gosimple/slug,v1.11.2,Mozilla Public License 2.0,"",Approved
 Go,github.com/gosimple/unidecode,v1.0.1,Apache 2.0,"",Approved
 Go,github.com/goware/urlx,v0.3.1,MIT,"",Approved
-Go,github.com/grafana-tools/sdk,v0.0.0-20211015115518-56cdea6a09d6,Apache 2.0,"",Approved
+Go,github.com/grafana-tools/sdk,v0.0.0-20211118073920-e7b85bb25aa9,Apache 2.0,"",Approved
 Go,github.com/graph-gophers/graphql-go,v1.2.0,Simplified BSD,"",Approved
 Go,github.com/graphql-go/graphql,v0.8.0,MIT,"",Approved
 Go,github.com/gregjones/httpcache,v0.0.0-20190611155906-901d90724c79,MIT,"",Approved
@@ -398,13 +397,13 @@ Go,github.com/honeycombio/libhoney-go,v1.15.6,Apache 2.0,"",Approved
 Go,github.com/imdario/mergo,v0.3.12,New BSD,"",Approved
 Go,github.com/inconshreveable/log15,v0.0.0-20201112154412-8562bdadbbac,MIT,"",Approved
 Go,github.com/jackc/chunkreader/v2,v2.0.1,MIT,"",Approved
-Go,github.com/jackc/pgconn,v1.10.0,MIT,"",Approved
+Go,github.com/jackc/pgconn,v1.10.1,MIT,"",Approved
 Go,github.com/jackc/pgio,v1.0.0,MIT,"",Approved
 Go,github.com/jackc/pgpassfile,v1.0.0,MIT,"",Approved
-Go,github.com/jackc/pgproto3/v2,v2.1.1,MIT,"",Approved
+Go,github.com/jackc/pgproto3/v2,v2.2.0,MIT,"",Approved
 Go,github.com/jackc/pgservicefile,v0.0.0-20200714003250-2b9c44734f2b,MIT,"",Approved
-Go,github.com/jackc/pgtype,v1.8.1,MIT,"",Approved
-Go,github.com/jackc/pgx/v4,v4.13.0,MIT,"",Approved
+Go,github.com/jackc/pgtype,v1.9.1,MIT,"",Approved
+Go,github.com/jackc/pgx/v4,v4.14.1,MIT,"",Approved
 Go,github.com/jbenet/go-context,v0.0.0-20150711004518-d14ea06fba99,MIT,"",Approved
 Go,github.com/jmespath/go-jmespath,v0.4.0,Apache 2.0,"",Approved
 Go,github.com/jmoiron/sqlx,v1.3.4,MIT,"",Approved
@@ -427,7 +426,7 @@ Go,github.com/lib/pq,v1.10.4,MIT,"",Approved
 Go,github.com/machinebox/graphql,v0.2.2,Apache 2.0,"",Approved
 Go,github.com/mailru/easyjson,v0.7.7,MIT,"",Approved
 Go,github.com/mattermost/xml-roundtrip-validator,v0.1.0,Apache 2.0,"",Approved
-Go,github.com/mattn/go-colorable,v0.1.11,MIT,"",Approved
+Go,github.com/mattn/go-colorable,v0.1.12,MIT,"",Approved
 Go,github.com/mattn/go-isatty,v0.0.14,MIT,"",Approved
 Go,github.com/mattn/go-runewidth,v0.0.13,MIT,"",Approved
 Go,github.com/mattn/go-sqlite3,v1.14.9,MIT,"",Approved
@@ -437,7 +436,7 @@ Go,github.com/microcosm-cc/bluemonday,v1.0.16,New BSD,"",Approved
 Go,github.com/mitchellh/colorstring,v0.0.0-20190213212951-d06e56a500db,MIT,"",Approved
 Go,github.com/mitchellh/go-homedir,v1.1.0,MIT,"",Approved
 Go,github.com/mitchellh/hashstructure,v1.1.0,MIT,"",Approved
-Go,github.com/mitchellh/mapstructure,v1.4.2,MIT,"",Approved
+Go,github.com/mitchellh/mapstructure,v1.4.3,MIT,"",Approved
 Go,github.com/moby/term,v0.0.0-20210619224110-3f7ff695adc6,Apache 2.0,"",Approved
 Go,github.com/modern-go/concurrent,v0.0.0-20180306012644-bacd9c7ef1dd,Apache 2.0,"",Approved
 Go,github.com/modern-go/reflect2,v1.0.2,Apache 2.0,"",Approved
@@ -462,7 +461,7 @@ Go,github.com/qustavo/sqlhooks/v2,v2.1.0,MIT,"",Approved
 Go,github.com/rainycape/unidecode,v0.0.0-20150907023854-cb7f23ec59be,Apache 2.0,"",Approved
 Go,github.com/rivo/uniseg,v0.2.0,MIT,"",Approved
 Go,github.com/rjeczalik/notify,v0.9.2,MIT,"",Approved
-Go,github.com/rogpeppe/go-internal,v1.8.0,New BSD,"",Approved
+Go,github.com/rogpeppe/go-internal,v1.8.1-0.20211023094830-115ce09fd6b4,New BSD,"",Approved
 Go,github.com/rs/xid,v1.3.0,MIT,"",Approved
 Go,github.com/russellhaering/goxmldsig,v1.1.1,Apache 2.0,"",Approved
 Go,github.com/russross/blackfriday,v1.5.2,Simplified BSD,"",Approved
@@ -495,12 +494,12 @@ Go,github.com/sourcegraph/jsonx,v0.0.0-20200629203448-1a936bd500cf,MIT,"",Approv
 Go,github.com/sourcegraph/oauth2,v0.0.0-20210825125341-77c1d99ece3c,New BSD,"",Approved
 Go,github.com/sourcegraph/syntaxhighlight,v0.0.0-20170531221838-bd320f5d308e,New BSD,"",Approved
 Go,github.com/sourcegraph/yaml,v1.0.1-0.20200714132230-56936252f152,MIT,"",Approved
-Go,github.com/sourcegraph/zoekt,v0.0.0-20211202173641-f40c58ef8631,Apache 2.0,"",Approved
+Go,github.com/sourcegraph/zoekt,v0.0.0-20211208200749-d86fb30b50ba,Apache 2.0,"",Approved
 Go,github.com/src-d/gcfg,v1.4.0,New BSD,"",Approved
 Go,github.com/stretchr/testify,v1.7.0,MIT,"",Approved
 Go,github.com/stripe/stripe-go,v70.15.0,MIT,"",Approved
 Go,github.com/throttled/throttled/v2,v2.9.0,New BSD,"",Approved
-Go,github.com/tidwall/gjson,v1.11.0,MIT,"",Approved
+Go,github.com/tidwall/gjson,v1.12.1,MIT,"",Approved
 Go,github.com/tidwall/match,v1.1.1,MIT,"",Approved
 Go,github.com/tidwall/pretty,v1.2.0,MIT,"",Approved
 Go,github.com/tj/go-naturaldate,v1.3.0,MIT,"",Approved
@@ -510,7 +509,7 @@ Go,github.com/uber/jaeger-client-go,v2.29.1,Apache 2.0,"",Approved
 Go,github.com/uber/jaeger-lib,v2.4.1,Apache 2.0,"",Approved
 Go,github.com/vmihailenco/msgpack/v5,v5.3.5,Simplified BSD,"",Approved
 Go,github.com/vmihailenco/tagparser/v2,v2.0.0,Simplified BSD,"",Approved
-Go,github.com/xanzy/ssh-agent,v0.3.0,Apache 2.0,"",Approved
+Go,github.com/xanzy/ssh-agent,v0.3.1,Apache 2.0,"",Approved
 Go,github.com/xeipuuv/gojsonpointer,v0.0.0-20190905194746-02993c407bfb,Apache 2.0,"",Approved
 Go,github.com/xeipuuv/gojsonreference,v0.0.0-20180127040603-bd5ef7bd5415,Apache 2.0,"",Approved
 Go,github.com/xeipuuv/gojsonschema,v1.2.0,Apache 2.0,"",Approved
@@ -518,23 +517,23 @@ Go,github.com/xeonx/timeago,v1.0.0-rc4,MIT,"",Approved
 Go,github.com/xhit/go-str2duration/v2,v2.0.0,New BSD,"",Approved
 Yarn,glob-to-regexp,0.4.1,Simplified BSD,Unknown,Approved
 Go,go.etcd.io/bbolt,v1.3.6,MIT,"",Approved
-Go,go.mongodb.org/mongo-driver,v1.7.4,Apache 2.0,"",Approved
+Go,go.mongodb.org/mongo-driver,v1.8.0,Apache 2.0,"",Approved
 Go,go.opencensus.io,v0.23.0,Apache 2.0,"",Approved
 Go,go.uber.org/atomic,v1.9.0,MIT,"",Approved
 Go,go.uber.org/automaxprocs,v1.4.0,MIT,"",Approved
 Go,go.uber.org/ratelimit,v0.2.0,MIT,"",Approved
-Go,golang.org/x/crypto,v0.0.0-20211108221036-ceb1ce70b4fa,New BSD,"",Approved
+Go,golang.org/x/crypto,v0.0.0-20211202192323-5770296d904e,New BSD,"",Approved
 Go,golang.org/x/mod,v0.5.1,New BSD,"",Approved
-Go,golang.org/x/net,v0.0.0-20211108170745-6635138e15ea,New BSD,"",Approved
+Go,golang.org/x/net,v0.0.0-20211205041911-012df41ee64c,New BSD,"",Approved
 Go,golang.org/x/sync,v0.0.0-20210220032951-036812b2e83c,New BSD,"",Approved
-Go,golang.org/x/sys,v0.0.0-20211109065445-02f5c0300f6e,New BSD,"",Approved
+Go,golang.org/x/sys,v0.0.0-20211205182925-97ca703d548d,New BSD,"",Approved
 Go,golang.org/x/term,v0.0.0-20210927222741-03fcf44c2211,New BSD,"",Approved
 Go,golang.org/x/text,v0.3.7,New BSD,"",Approved
-Go,golang.org/x/time,v0.0.0-20210723032227-1f47c861a9ac,New BSD,"",Approved
-Go,golang.org/x/tools,v0.1.7,New BSD,"",Approved
+Go,golang.org/x/time,v0.0.0-20211116232009-f0f3c7e86c11,New BSD,"",Approved
+Go,golang.org/x/tools,v0.1.8,New BSD,"",Approved
 Go,golang.org/x/xerrors,v0.0.0-20200804184101-5ec99f83aff1,New BSD,"",Approved
-Go,google.golang.org/api,v0.60.0,New BSD,"",Approved
-Go,google.golang.org/genproto,v0.0.0-20211104193956-4c6863e31247,Apache 2.0,"",Approved
+Go,google.golang.org/api,v0.61.0,New BSD,"",Approved
+Go,google.golang.org/genproto,v0.0.0-20211203200212-54befc351ae9,Apache 2.0,"",Approved
 Go,google.golang.org/grpc,v1.42.0,Apache 2.0,"",Approved
 Go,google.golang.org/protobuf,v1.27.1,New BSD,"",Approved
 Go,gopkg.in/alexcesaro/statsd.v2,v2.0.0,MIT,"",Approved
@@ -607,11 +606,11 @@ Yarn,json-buffer,3.0.1,MIT,https://github.com/dominictarr/json-buffer,Approved
 Yarn,json-parse-better-errors,1.0.2,MIT,Unknown,Approved
 Yarn,json-schema-traverse,0.4.1,MIT,https://github.com/epoberezkin/json-schema-traverse#readme,Approved
 Yarn,json-schema-traverse,1.0.0,MIT,https://github.com/epoberezkin/json-schema-traverse#readme,Approved
-Go,k8s.io/api,v0.22.3,Apache 2.0,"",Approved
-Go,k8s.io/apimachinery,v0.22.3,"Apache 2.0,New BSD","",Approved
-Go,k8s.io/client-go,v0.22.3,"Apache 2.0,New BSD","",Approved
+Go,k8s.io/api,v0.22.4,Apache 2.0,"",Approved
+Go,k8s.io/apimachinery,v0.22.4,"Apache 2.0,New BSD","",Approved
+Go,k8s.io/client-go,v0.22.4,"Apache 2.0,New BSD","",Approved
 Go,k8s.io/klog/v2,v2.30.0,Apache 2.0,"",Approved
-Go,k8s.io/utils,v0.0.0-20210930125809-cb0fa318a74b,"Apache 2.0,New BSD","",Approved
+Go,k8s.io/utils,v0.0.0-20211203121628-587287796c64,"Apache 2.0,New BSD","",Approved
 Yarn,keyv,4.0.0,MIT,https://github.com/lukechilds/keyv,Approved
 Yarn,klona,2.0.4,MIT,https://lukeed.com,Approved
 Yarn,linguist-languages,7.14.0,MIT,https://github.com/ikatyang/linguist-languages#readme,Approved

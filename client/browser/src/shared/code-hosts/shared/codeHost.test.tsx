@@ -158,7 +158,7 @@ describe('codeHost', () => {
         test('renders the hover overlay mount', async () => {
             const { extensionHostAPI } = await integrationTestContext()
             subscriptions.add(
-                handleCodeHost({
+                await handleCodeHost({
                     ...commonArguments(),
                     codeHost: {
                         type: 'github',
@@ -181,7 +181,7 @@ describe('codeHost', () => {
             const { extensionHostAPI } = await integrationTestContext()
             const commandPaletteMount = createTestElement()
             subscriptions.add(
-                handleCodeHost({
+                await handleCodeHost({
                     ...commonArguments(),
                     codeHost: {
                         type: 'github',
@@ -201,7 +201,7 @@ describe('codeHost', () => {
         test('creates a data-global-debug element and renders the debug menu if showGlobalDebug is true', async () => {
             const { extensionHostAPI } = await integrationTestContext()
             subscriptions.add(
-                handleCodeHost({
+                await handleCodeHost({
                     ...commonArguments(),
                     codeHost: {
                         type: 'github',
@@ -237,7 +237,7 @@ describe('codeHost', () => {
                 },
             }
             subscriptions.add(
-                handleCodeHost({
+                await handleCodeHost({
                     ...commonArguments(),
                     codeHost: {
                         type: 'github',
@@ -315,7 +315,7 @@ describe('codeHost', () => {
                 const line = document.createElement('div')
                 codeView.append(line)
                 subscriptions.add(
-                    handleCodeHost({
+                    await handleCodeHost({
                         ...commonArguments(),
                         codeHost: {
                             type: 'github',
@@ -436,7 +436,7 @@ describe('codeHost', () => {
                         parseInt(codeElement.parentElement!.getAttribute('line')!, 10),
                 }
                 subscriptions.add(
-                    handleCodeHost({
+                    await handleCodeHost({
                         ...commonArguments(),
                         codeHost: {
                             type: 'github',
@@ -595,7 +595,7 @@ describe('codeHost', () => {
                 { addedNodes: [document.body], removedNodes: [] },
             ])
             subscriptions.add(
-                handleCodeHost({
+                await handleCodeHost({
                     ...commonArguments(),
                     mutations,
                     codeHost: {
@@ -685,7 +685,7 @@ describe('codeHost', () => {
                 getLineNumberFromCodeElement: sinon.spy(() => 1),
             }
             subscriptions.add(
-                handleCodeHost({
+                await handleCodeHost({
                     ...commonArguments(),
                     codeHost: {
                         type: 'github',
@@ -734,7 +734,7 @@ describe('codeHost', () => {
                 getLineNumberFromCodeElement: sinon.spy(() => 1),
             }
             subscriptions.add(
-                handleCodeHost({
+                await handleCodeHost({
                     ...commonArguments(),
                     codeHost: {
                         type: 'github',
@@ -798,7 +798,7 @@ describe('codeHost', () => {
                 getLineNumberFromCodeElement: sinon.spy(() => 1),
             }
             subscriptions.add(
-                handleCodeHost({
+                await handleCodeHost({
                     ...commonArguments(),
                     codeHost: {
                         type: 'github',
