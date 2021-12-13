@@ -518,6 +518,8 @@ function initCodeIntelligence({
                                         return
                                     }
 
+                                    const actionType = action === definitionAction ? 'definition' : 'reference'
+                                    telemetryService.log(`${actionType}CodeHost.click`)
                                     window.location.href = def
                                 }),
                                 finalize(() => (token.style.cursor = oldCursor))

@@ -89,6 +89,8 @@ export const WebHoverOverlay: React.FunctionComponent<
                         return
                     }
 
+                    const actionType = action === definitionAction ? 'definition' : 'reference'
+                    props.telemetryService.log(`${actionType}HoverOverlay.click`)
                     nav(url)
                 }),
                 finalize(() => (token.style.cursor = oldCursor))
@@ -96,7 +98,7 @@ export const WebHoverOverlay: React.FunctionComponent<
             .subscribe()
 
         return () => subscription.unsubscribe()
-    }, [props.actionsOrError, props.hoveredTokenElement, props.location.hash, props.nav])
+    }, [props.actionsOrError, props.hoveredTokenElement, props.location.hash, props.nav, props.telemetryService])
 
     return (
         <HoverOverlay
