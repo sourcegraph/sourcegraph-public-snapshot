@@ -113,6 +113,10 @@ func serveGraphQL(schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInt
 		traceData.execStart = time.Now()
 		response := schema.Exec(r.Context(), params.Query, params.OperationName, params.Variables)
 		traceData.queryErrors = response.Errors
+		if len(response.Errors) > 0 {
+			w.WriteHeader(456)
+		}
+
 		responseJSON, err := json.Marshal(response)
 		if err != nil {
 			return err
