@@ -76,7 +76,7 @@ export const BatchSpecMeta: React.FunctionComponent<BatchSpecMetaProps> = ({
 }) => (
     <p className="mb-2">
         {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'}{' '}
-        {createdAt === lastAppliedAt ? 'created' : 'updated'} this batch change <Timestamp date={lastAppliedAt} /> by
-        applying the following batch spec:
+        {createdAt === lastAppliedAt ? 'created' : 'updated'} this batch change{' '}
+        <Timestamp date={lastAppliedAt ?? createdAt} /> by applying the following batch spec:
     </p>
 )

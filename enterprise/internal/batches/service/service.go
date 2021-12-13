@@ -177,12 +177,17 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 	}
 
 	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("no authenticated actor in context")
+	}
+
 	batchSpec := &btypes.BatchSpec{
 		RawSpec:         string(rawSpec),
 		Spec:            spec,
 		NamespaceUserID: opts.NamespaceUserID,
 		NamespaceOrgID:  opts.NamespaceOrgID,
 		UserID:          actor.UID,
+		CreatedFromRaw:  true,
 	}
 
 	// The combination of name + namespace must be unique
@@ -205,10 +210,11 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 	}
 
 	batchChange = &btypes.BatchChange{
-		Name:            opts.Name,
-		NamespaceUserID: opts.NamespaceUserID,
-		NamespaceOrgID:  opts.NamespaceOrgID,
-		BatchSpecID:     batchSpec.ID,
+		Name:             opts.Name,
+		NamespaceUserID:  opts.NamespaceUserID,
+		NamespaceOrgID:   opts.NamespaceOrgID,
+		BatchSpecID:      batchSpec.ID,
+		InitialApplierID: actor.UID,
 	}
 	if err := tx.CreateBatchChange(ctx, batchChange); err != nil {
 		return nil, err

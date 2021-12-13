@@ -2179,11 +2179,22 @@ type BatchChange implements Node {
     The user that created the initial spec. In an org, this will be different from the namespace, or null if the user was deleted.
     """
     specCreator: User
+        @deprecated(
+            reason: "Unused. This always incorrectly returned the current batch specs creator, not the intial one. This field is deprecated and will be removed in a future release."
+        )
 
     """
     The user who created the batch change initially by applying the spec for the first time, or null if the user was deleted.
+
+    This is an alias of BatchChange.creator.
     """
     initialApplier: User
+        @deprecated(reason: "Use creator instead. This field is deprecated and will be removed in a future release.")
+
+    """
+    The user who created the batch change, or null if the user was deleted.
+    """
+    creator: User
 
     """
     The user who last updated the batch change by applying a spec to this batch change.
@@ -2213,9 +2224,10 @@ type BatchChange implements Node {
     updatedAt: DateTime!
 
     """
-    The date and time when the batch change was last updated with a new spec.
+    The date and time when the batch change was last updated with a new spec. Null, if a batch spec has never been
+    applied yet.
     """
-    lastAppliedAt: DateTime!
+    lastAppliedAt: DateTime
 
     """
     The date and time when the batch change was closed. If set, applying a spec for this batch change will fail with an error.
