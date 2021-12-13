@@ -429,7 +429,7 @@ func (e *RepoLimitError) Error() string {
 			e.OrgName,
 		)
 	} else {
-		return fmt.Sprintf("expected either userID or orgID to be defined")
+		return "expected either userID or orgID to be defined"
 	}
 }
 
