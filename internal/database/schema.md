@@ -2347,6 +2347,7 @@ Foreign-key constraints:
  billing_customer_id     | text                     |           |          | 
  invalidated_sessions_at | timestamp with time zone |           | not null | now()
  tos_accepted            | boolean                  |           | not null | false
+ email_consent           | boolean                  |           | not null | false
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL
