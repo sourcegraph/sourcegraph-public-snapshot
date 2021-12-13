@@ -315,8 +315,8 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 	var siteAdmin bool
 	err = u.QueryRow(
 		ctx,
-		sqlf.Sprintf("INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, site_admin, tos_accepted) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
-			info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, invalidatedSessionsAt, !alreadyInitialized, info.TosAccepted)).Scan(&id, &siteAdmin)
+		sqlf.Sprintf("INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, tos_accepted, site_admin) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
+			info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, invalidatedSessionsAt, info.TosAccepted, !alreadyInitialized)).Scan(&id, &siteAdmin)
 	if err != nil {
 		var e *pgconn.PgError
 		if errors.As(err, &e) {
