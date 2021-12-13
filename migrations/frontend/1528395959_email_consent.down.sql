@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE IF EXISTS users DROP COLUMN IF EXISTS email_consent;
+
+COMMIT;
