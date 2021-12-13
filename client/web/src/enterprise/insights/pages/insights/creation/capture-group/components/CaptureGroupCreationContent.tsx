@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import { noop } from 'lodash'
 import React, { useCallback } from 'react'
 
 import styles from '../../../../../components/creation-ui-kit/CreationUiKit.module.scss'
@@ -34,12 +35,12 @@ interface CaptureGroupCreationContentProps {
     className?: string
 
     onSubmit: (values: CaptureGroupFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
-    onChange: (event: FormChangeEvent<CaptureGroupFormFields>) => void
+    onChange?: (event: FormChangeEvent<CaptureGroupFormFields>) => void
     onCancel: () => void
 }
 
 export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCreationContentProps> = props => {
-    const { mode, className, initialValues = {}, onSubmit, onChange, onCancel } = props
+    const { mode, className, initialValues = {}, onSubmit, onChange = noop, onCancel } = props
 
     // Search query validators
     const validateChecks = useCallback((value: string | undefined) => {
