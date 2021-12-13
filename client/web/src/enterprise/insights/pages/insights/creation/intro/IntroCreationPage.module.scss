@@ -1,32 +1,14 @@
-.create-intro-page {
-    &__insights {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-        grid-gap: 1rem;
-    }
+.container {
+    height: min-content;
+}
 
-    &__insight-card {
-        display: flex;
-        flex-direction: column;
-    }
+.header {
+    margin-bottom: 2rem;
+}
 
-    &__insight-button {
-        margin-top: auto;
-        align-self: flex-start;
-    }
-
-    &__chart-container {
-        height: 17rem;
-        width: 100%;
-        position: relative;
-    }
-
-    &__chart {
-        // stretch chart over all parent block
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-    }
+.section-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    row-gap: 0.5rem;
+    column-gap: 0.5rem;
 }

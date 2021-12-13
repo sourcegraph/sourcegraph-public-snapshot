@@ -1,0 +1,84 @@
+// Card component common styles
+.card {
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--box-shadow);
+    font-size: 0.75rem;
+    text-align: start;
+
+    &:hover {
+        background-color: var(--secondary-2);
+    }
+
+    &:focus {
+        background-color: var(--secondary-2);
+        box-shadow: var(--focus-box-shadow);
+        outline: none;
+    }
+
+    &--extension-card {
+        background-color: transparent;
+    }
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+    background-color: transparent;
+    margin-top: 1rem;
+    padding: 0;
+
+    b {
+        display: contents;
+
+        // A bootstrap CSS class .card brings custom color styles that we should change
+        // for b elements within a card accroding to our designs for this card.
+        // Since bootstrap classes works with !important we should override this also
+        // with !important statement.
+        color: var(--body-color) !important;
+    }
+}
+
+// chart specific styles
+.chart {
+    overflow: hidden;
+    height: 10rem;
+    width: 100%;
+    object-fit: contain;
+    background-color: transparent;
+}
+
+.images {
+    display: flex;
+    height: 10rem;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    width: 6rem;
+    margin: auto;
+}
+
+.image {
+    object-fit: contain;
+    width: 3rem;
+}
+
+.capture-chart-wrapper {
+    position: relative;
+}
+
+.capture-chart-icon {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+.capture-group-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--color-bg-3);
+    width: 2rem;
+    height: 2rem;
+}

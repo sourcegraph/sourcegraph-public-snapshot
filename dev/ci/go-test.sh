@@ -34,7 +34,7 @@ echo "--- comby install"
 # For code insights test
 ./dev/codeinsights-db.sh &
 export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
-export DB_STARTUP_TIMEOUT=120s # codeinsights-db needs more time to start in some instances.
+export DB_STARTUP_TIMEOUT=360s # codeinsights-db needs more time to start in some instances.
 
 # We have multiple go.mod files and go list doesn't recurse into them.
 find . -name go.mod -exec dirname '{}' \; | while read -r d; do
