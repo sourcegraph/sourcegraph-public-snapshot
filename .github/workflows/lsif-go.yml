@@ -1,4 +1,4 @@
-name: lsif-ts
+name: lsif-go
 on:
   push:
     branches:
