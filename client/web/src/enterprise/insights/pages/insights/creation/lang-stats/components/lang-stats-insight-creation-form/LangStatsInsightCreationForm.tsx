@@ -64,7 +64,6 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
     const isGqlBackend = api instanceof CodeInsightsGqlBackend
 
     return (
-        // eslint-disable-next-line react/forbid-elements
         <form
             ref={innerRef}
             noValidate={true}

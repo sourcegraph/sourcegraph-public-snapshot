@@ -4,7 +4,7 @@ import { uniq } from 'lodash'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { InsightViewNode, TimeIntervalStepInput, TimeIntervalStepUnit } from '../../../../../../graphql-operations'
-import { Insight, InsightExecutionType, InsightType, SearchBasedInsight } from '../../../types'
+import { Insight, InsightExecutionType, InsightType } from '../../../types'
 
 function getDurationFromStep(step: TimeIntervalStepInput): Duration {
     switch (step.unit) {
@@ -25,14 +25,6 @@ function getDurationFromStep(step: TimeIntervalStepInput): Duration {
  * Returns tuple with gql model time interval unit and value. Used to convert FE model
  * insight data series time step to GQL time interval model.
  */
-export function getSearchInsightStepInterval(insight: SearchBasedInsight): [TimeIntervalStepUnit, number] {
-    if (insight.type === InsightExecutionType.Backend) {
-        return [TimeIntervalStepUnit.WEEK, 2]
-    }
-
-    return getStepInterval(insight.step)
-}
-
 export function getStepInterval(step: Duration): [TimeIntervalStepUnit, number] {
     const castUnits = (Object.keys(step) as (keyof Duration)[])
         .map<[TimeIntervalStepUnit, number] | null>(key => {
@@ -69,11 +61,12 @@ export function getStepInterval(step: Duration): [TimeIntervalStepUnit, number] 
  *
  * @param insight - gql insight model
  */
-export const getInsightView = (insight: InsightViewNode): Insight | undefined => {
+export const getInsightView = (insight: InsightViewNode): Insight => {
     switch (insight.presentation.__typename) {
         case 'LineChartInsightViewPresentation': {
             const isBackendInsight = insight.dataSeriesDefinitions.every(series => series.isCalculated)
 
+            const step = getDurationFromStep(insight.dataSeriesDefinitions[0].timeScope)
             const series = insight.presentation.seriesPresentation.map(series => ({
                 id: series.seriesId,
                 name: series.label,
@@ -95,6 +88,7 @@ export const getInsightView = (insight: InsightViewNode): Insight | undefined =>
                     viewType: InsightType.SearchBased,
                     title: insight.presentation.title,
                     series,
+                    step,
 
                     // In gql api we don't have this concept as visibility on FE.
                     // Insights have special system about visibility on BE only.
@@ -109,8 +103,6 @@ export const getInsightView = (insight: InsightViewNode): Insight | undefined =>
             const repositories = uniq(
                 insight.dataSeriesDefinitions.flatMap(series => series.repositoryScope.repositories)
             )
-
-            const step = getDurationFromStep(insight.dataSeriesDefinitions[0].timeScope)
 
             return {
                 id: insight.id,

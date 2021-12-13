@@ -4,11 +4,11 @@ import { ChartContent, LineChartContent } from 'sourcegraph'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useDebounce } from '@sourcegraph/wildcard/src'
 
-import { LivePreviewContainer } from '../../../../../components/live-preview-container/LivePreviewContainer'
+import { LivePreviewContainer } from '../../../../../components/creation-ui-kit/live-preview-container/LivePreviewContainer'
+import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit/sanitizers/repositories'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import { useDistinctValue } from '../../../../../hooks/use-distinct-value'
 import { InsightStep } from '../../search-insight/types'
-import { getSanitizedRepositories } from '../../search-insight/utils/insight-sanitizer'
 
 export const DEFAULT_MOCK_CHART_CONTENT: LineChartContent<any, string> = {
     chart: 'line' as const,

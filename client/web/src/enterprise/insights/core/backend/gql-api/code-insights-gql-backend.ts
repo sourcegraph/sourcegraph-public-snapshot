@@ -22,7 +22,6 @@ import {
 } from 'src/graphql-operations'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { UpdateLineChartSearchInsightInput } from '@sourcegraph/shared/src/graphql-operations'
 import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/apollo'
 
 import { Insight, InsightDashboard, InsightsDashboardScope, InsightsDashboardType, InsightType } from '../../types'
@@ -53,16 +52,19 @@ import { createLineChartContentFromIndexedSeries } from '../utils/create-line-ch
 import { InsightInProcessError } from '../utils/errors'
 import { parseDashboardScope } from '../utils/parse-dashboard-scope'
 
-import { createInsight } from './gql-handlers/create-insight'
-import { getCaptureGroupInsightsPreview } from './gql-handlers/get-capture-group-insight-preivew'
 import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
-import { GET_INSIGHTS_GQL, INSIGHT_VIEW_FRAGMENT } from './gql/GetInsights'
+import { GET_INSIGHTS_GQL } from './gql/GetInsights'
 import { GET_INSIGHTS_DASHBOARDS_GQL } from './gql/GetInsightsDashboards'
 import { GET_INSIGHTS_SUBJECTS_GQL } from './gql/GetInsightSubjects'
 import { GET_INSIGHT_VIEW_GQL } from './gql/GetInsightView'
+import { UPDATE_LANG_STATS_INSIGHT_GQL } from './gql/UpdateLangStatsInsight'
+import { UPDATE_LINE_CHART_SEARCH_INSIGHT_GQL } from './gql/UpdateLineChartSearchInsight'
+import { createInsight } from './methods/create-insight'
+import { getCaptureGroupInsightsPreview } from './methods/get-capture-group-insight-preivew'
+import { getCaptureGroupInsightUpdateInput } from './serialization/capture-insight-to-gql-input'
+import { getSearchInsightUpdateInput } from './serialization/search-insight-to-gql-input'
 import { createDashboardGrants } from './utils/get-dashboard-grants'
 import { getInsightView } from './utils/insight-transformers'
-import { prepareSearchInsightUpdateInput } from './utils/search-insight-to-gql-input'
 
 export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     constructor(private apolloClient: ApolloClient<object>) {}
@@ -87,13 +89,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 query: GET_DASHBOARD_INSIGHTS_GQL,
                 variables: { id: dashboardId },
             })
-        ).pipe(
-            map(
-                ({ data }) =>
-                    (data.insightsDashboards.nodes[0].views?.nodes.map(getInsightView).filter(Boolean) as Insight[]) ??
-                    []
-            )
-        )
+        ).pipe(map(({ data }) => data.insightsDashboards.nodes[0].views?.nodes.map(getInsightView) ?? []))
     }
 
     public getInsightById = (id: string): Observable<Insight | null> =>
@@ -181,45 +177,37 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     public createInsight = (input: InsightCreateInput): Observable<unknown> => createInsight(this.apolloClient, input)
 
-    public updateInsight = (input: InsightUpdateInput): Observable<void[]> => {
+    public updateInsight = (input: InsightUpdateInput): Observable<unknown> => {
         const insight = input.newInsight
         const oldInsight = input.oldInsight
 
         switch (insight.viewType) {
             case InsightType.SearchBased: {
-                const updateLineChartSearchInsightMutation = gql`
-                    mutation UpdateLineChartSearchInsight($input: UpdateLineChartSearchInsightInput!, $id: ID!) {
-                        updateLineChartSearchInsight(input: $input, id: $id) {
-                            view {
-                                ...InsightViewNode
-                            }
-                        }
-                    }
-                    ${INSIGHT_VIEW_FRAGMENT}
-                `
-
-                const input: UpdateLineChartSearchInsightInput = prepareSearchInsightUpdateInput(insight)
+                const input = getSearchInsightUpdateInput(insight)
 
                 return from(
                     this.apolloClient.mutate<UpdateLineChartSearchInsightResult>({
-                        mutation: updateLineChartSearchInsightMutation,
+                        mutation: UPDATE_LINE_CHART_SEARCH_INSIGHT_GQL,
                         variables: { input, id: oldInsight.id },
                     })
-                ).pipe(mapTo([]))
+                )
             }
+
+            case InsightType.CaptureGroup: {
+                const input = getCaptureGroupInsightUpdateInput(insight)
+
+                return from(
+                    this.apolloClient.mutate<UpdateLineChartSearchInsightResult>({
+                        mutation: UPDATE_LINE_CHART_SEARCH_INSIGHT_GQL,
+                        variables: { input, id: oldInsight.id },
+                    })
+                )
+            }
+
             case InsightType.LangStats: {
                 return from(
                     this.apolloClient.mutate<UpdateLangStatsInsightResult, UpdateLangStatsInsightVariables>({
-                        mutation: gql`
-                            mutation UpdateLangStatsInsight($id: ID!, $input: UpdatePieChartSearchInsightInput!) {
-                                updatePieChartSearchInsight(id: $id, input: $input) {
-                                    view {
-                                        ...InsightViewNode
-                                    }
-                                }
-                            }
-                            ${INSIGHT_VIEW_FRAGMENT}
-                        `,
+                        mutation: UPDATE_LANG_STATS_INSIGHT_GQL,
                         variables: {
                             id: oldInsight.id,
                             input: {
@@ -232,7 +220,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                             },
                         },
                     })
-                ).pipe(mapTo([]))
+                )
             }
         }
     }

@@ -27,6 +27,7 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
     type: InsightExecutionType.Backend,
     viewType: InsightType.SearchBased,
     id: 'searchInsights.insight.mock_backend_insight_id',
+    step: { weeks: 2 },
 }
 
 const mockInsightAPI = ({
