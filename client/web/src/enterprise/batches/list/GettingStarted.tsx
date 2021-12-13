@@ -16,7 +16,7 @@ export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ f
             <div className={classNames(styles.videoRow, 'row')}>
                 <div className="col-12 col-md-7">
                     <video
-                        className="w-100 h-auto shadow"
+                        className="w-100 h-auto shadow percy-hide"
                         width={1280}
                         height={720}
                         autoPlay={true}
