@@ -221,7 +221,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 		return batchSpec
 	}
 
-	createCacheEntry := func(t *testing.T, batchSpec *btypes.BatchSpec, workspace *service.RepoWorkspace) *btypes.BatchSpecExecutionCacheEntry {
+	createCacheEntry := func(t *testing.T, batchSpec *btypes.BatchSpec, workspace *service.RepoWorkspace, result *execution.Result) *btypes.BatchSpecExecutionCacheEntry {
 		t.Helper()
 
 		key := cache.KeyForWorkspace(
@@ -244,7 +244,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		entry, err := btypes.NewCacheEntryFromResult(rawKey, executionResult)
+		entry, err := btypes.NewCacheEntryFromResult(rawKey, result)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -259,7 +259,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 		workspace := buildWorkspace("caching-enabled")
 
 		batchSpec := createBatchSpec(t, false)
-		entry := createCacheEntry(t, batchSpec, workspace)
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult)
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
@@ -321,11 +321,53 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 		}
 	})
 
+	t.Run("caching enabled but no diff in cache entry", func(t *testing.T) {
+		workspace := buildWorkspace("caching-enabled-no-diff")
+
+		batchSpec := createBatchSpec(t, false)
+
+		resultWithoutDiff := *executionResult
+		resultWithoutDiff.Diff = ""
+
+		entry := createCacheEntry(t, batchSpec, workspace, &resultWithoutDiff)
+
+		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
+		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+		if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
+			t.Fatalf("proces failed: %s", err)
+		}
+
+		have, _, err := s.ListBatchSpecWorkspaces(context.Background(), store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
+		if err != nil {
+			t.Fatalf("listing workspaces failed: %s", err)
+		}
+
+		changesetSpecIDs := have[0].ChangesetSpecIDs
+		if len(changesetSpecIDs) != 0 {
+			t.Fatal("BatchSpecWorkspace has changeset specs, even though diff was empty")
+		}
+
+		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
+			UserID: batchSpec.UserID,
+			Keys:   []string{entry.Key},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(reloadedEntries) != 1 {
+			t.Fatal("cache entry not found")
+		}
+		reloadedEntry := reloadedEntries[0]
+		if !reloadedEntry.LastUsedAt.Equal(now) {
+			t.Fatalf("cache entry LastUsedAt not updated. want=%s, have=%s", now, reloadedEntry.LastUsedAt)
+		}
+	})
+
 	t.Run("caching disabled", func(t *testing.T) {
 		workspace := buildWorkspace("caching-disabled")
 
 		batchSpec := createBatchSpec(t, true)
-		entry := createCacheEntry(t, batchSpec, workspace)
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult)
 
 		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
@@ -371,6 +413,65 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 }
 
 func TestBatchSpecWorkspaceCreatorProcess_Importing(t *testing.T) {
+	db := database.NewDB(dbtest.NewDB(t))
+
+	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
+
+	user := ct.CreateTestUser(t, db, true)
+
+	now := timeutil.Now()
+	clock := func() time.Time { return now }
+	s := store.NewWithClock(db, &observation.TestContext, nil, clock)
+
+	var testSpecYAML = `
+name: my-unique-name
+importChangesets:
+  - repository: ` + string(repos[0].Name) + `
+    externalIDs:
+      - 123
+`
+
+	batchSpec := &btypes.BatchSpec{UserID: user.ID, NamespaceUserID: user.ID, RawSpec: testSpecYAML}
+	if err := s.CreateBatchSpec(context.Background(), batchSpec); err != nil {
+		t.Fatal(err)
+	}
+
+	job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+
+	resolver := &dummyWorkspaceResolver{}
+
+	creator := &batchSpecWorkspaceCreator{store: s}
+	if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
+		t.Fatalf("proces failed: %s", err)
+	}
+
+	have, _, err := s.ListChangesetSpecs(context.Background(), store.ListChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
+	if err != nil {
+		t.Fatalf("listing specs failed: %s", err)
+	}
+
+	want := btypes.ChangesetSpecs{
+		{
+			ID:          have[0].ID,
+			RandID:      have[0].RandID,
+			UserID:      user.ID,
+			RepoID:      repos[0].ID,
+			BatchSpecID: batchSpec.ID,
+			Spec: &batcheslib.ChangesetSpec{
+				BaseRepository: string(graphqlbackend.MarshalRepositoryID(repos[0].ID)),
+				ExternalID:     "123",
+			},
+			CreatedAt: now,
+			UpdatedAt: now,
+		},
+	}
+
+	if diff := cmp.Diff(want, have); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestBatchSpecWorkspaceCreatorProcess_NoDiff(t *testing.T) {
 	db := database.NewDB(dbtest.NewDB(t))
 
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
