@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
@@ -673,10 +674,11 @@ func testPresence(needle int, haystack []int) bool {
 }
 
 func TestDeleteOverlappingDumps(t *testing.T) {
-	db := dbtest.NewDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	store := testStore(db)
 
-	insertUploads(t, db, Upload{
+	insertUploads(t, sqlDB, Upload{
 		ID:      1,
 		Commit:  makeCommit(1),
 		Root:    "cmd/",
@@ -697,10 +699,11 @@ func TestDeleteOverlappingDumps(t *testing.T) {
 }
 
 func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
-	db := dbtest.NewDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	store := testStore(db)
 
-	insertUploads(t, db, Upload{
+	insertUploads(t, sqlDB, Upload{
 		ID:      1,
 		Commit:  makeCommit(1),
 		Root:    "cmd/",
@@ -733,10 +736,11 @@ func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
 }
 
 func TestDeleteOverlappingDumpsIgnoresIncompleteUploads(t *testing.T) {
-	db := dbtest.NewDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	store := testStore(db)
 
-	insertUploads(t, db, Upload{
+	insertUploads(t, sqlDB, Upload{
 		ID:      1,
 		Commit:  makeCommit(1),
 		Root:    "cmd/",

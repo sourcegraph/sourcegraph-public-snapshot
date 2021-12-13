@@ -81,6 +81,7 @@ export function parseInsightFromSubject(
             id: insightId,
             visibility: subject.subject.id,
             type: InsightExecutionType.Backend,
+            step: { months: 1 },
             viewType: type,
             ...insightConfiguration,
             series: insightConfiguration.series?.map((line, index) => ({

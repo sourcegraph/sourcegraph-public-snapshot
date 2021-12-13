@@ -25,7 +25,7 @@ import (
 
 func TestCreateCodeMonitor(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	r := newTestResolver(t, db)
 
 	userID := insertTestUser(t, db, "cm-user1", true)
@@ -77,7 +77,7 @@ func TestCreateCodeMonitor(t *testing.T) {
 
 func TestListCodeMonitors(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	r := newTestResolver(t, db)
 
 	userID := insertTestUser(t, db, "cm-user1", true)
@@ -150,7 +150,7 @@ func requireHasNextPage(t *testing.T, r graphqlbackend.MonitorConnectionResolver
 }
 
 func TestIsAllowedToEdit(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	// Setup users and org
 	owner := insertTestUser(t, db, "cm-user1", false)
@@ -212,7 +212,7 @@ func TestIsAllowedToEdit(t *testing.T) {
 }
 
 func TestIsAllowedToCreate(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	// Setup users and org
 	member := insertTestUser(t, db, "cm-user1", false)
@@ -285,7 +285,7 @@ func (u *testUser) id() graphql.ID {
 
 func TestQueryMonitor(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.
@@ -553,7 +553,7 @@ query($userName: String!, $actionCursor: String!){
 
 func TestEditCodeMonitor(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.

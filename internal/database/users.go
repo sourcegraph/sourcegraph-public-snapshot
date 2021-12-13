@@ -38,11 +38,11 @@ import (
 var (
 	// BeforeCreateUser (if set) is a hook called before creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
-	BeforeCreateUser func(ctx context.Context, db dbutil.DB) error
+	BeforeCreateUser func(ctx context.Context, db DB) error
 	// AfterCreateUser (if set) is a hook called after creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
 	// Whatever this hook mutates in database should be reflected on the `user` argument as well.
-	AfterCreateUser func(ctx context.Context, db dbutil.DB, user *types.User) error
+	AfterCreateUser func(ctx context.Context, db DB, user *types.User) error
 	// BeforeSetUserIsSiteAdmin (if set) is a hook called before promoting/revoking a user to be a
 	// site admin.
 	BeforeSetUserIsSiteAdmin func(isSiteAdmin bool) error
@@ -303,7 +303,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 
 	// Run BeforeCreateUser hook.
 	if BeforeCreateUser != nil {
-		if err := BeforeCreateUser(ctx, u.Store.Handle().DB()); err != nil {
+		if err := BeforeCreateUser(ctx, NewDB(u.Store.Handle().DB())); err != nil {
 			return nil, errors.Wrap(err, "pre create user hook")
 		}
 	}
@@ -389,7 +389,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 
 		// Run AfterCreateUser hook
 		if AfterCreateUser != nil {
-			if err := AfterCreateUser(ctx, u.Store.Handle().DB(), user); err != nil {
+			if err := AfterCreateUser(ctx, NewDB(u.Store.Handle().DB()), user); err != nil {
 				return nil, errors.Wrap(err, "after create user hook")
 			}
 		}
@@ -448,6 +448,7 @@ type UserUpdate struct {
 	// - If pointer to "" (empty string), the value in the DB is set to null.
 	// - If pointer to a non-empty string, the value in the DB is set to the string.
 	DisplayName, AvatarURL *string
+	TosAccepted            *bool
 }
 
 // Update updates a user's profile information.
@@ -488,6 +489,9 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 	}
 	if update.AvatarURL != nil {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("avatar_url=%s", strOrNil(*update.AvatarURL)))
+	}
+	if update.TosAccepted != nil {
+		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("tos_accepted=%s", *update.TosAccepted))
 	}
 	query := sqlf.Sprintf("UPDATE users SET %s WHERE id=%d", sqlf.Join(fieldUpdates, ", "), id)
 	res, err := tx.ExecResult(ctx, query)
@@ -654,7 +658,7 @@ func logUserDeletionEvent(ctx context.Context, db dbutil.DB, id int32, name Secu
 	SecurityEventLogs(db).LogEvent(ctx, event)
 }
 
-// SetIsSiteAdmin sets the the user with given ID to be or not to be the site admin.
+// SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin.
 func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
 	if Mocks.Users.SetIsSiteAdmin != nil {
 		return Mocks.Users.SetIsSiteAdmin(id, isSiteAdmin)
@@ -907,7 +911,7 @@ func (u *userStore) getOneBySQL(ctx context.Context, q *sqlf.Query) (*types.User
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.User, error) {
-	q := sqlf.Sprintf("SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags, u.invalidated_sessions_at FROM users u %s", query)
+	q := sqlf.Sprintf("SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags, u.invalidated_sessions_at, u.tos_accepted FROM users u %s", query)
 	rows, err := u.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -918,7 +922,7 @@ func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.U
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt)
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted)
 		if err != nil {
 			return nil, err
 		}

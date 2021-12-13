@@ -4,12 +4,13 @@ import type { LineChartContent } from 'sourcegraph'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useDebounce } from '@sourcegraph/wildcard/src'
 
-import { LivePreviewContainer } from '../../../../../../components/live-preview-container/LivePreviewContainer'
+import { LivePreviewContainer } from '../../../../../../components/creation-ui-kit/live-preview-container/LivePreviewContainer'
+import { getSanitizedRepositories } from '../../../../../../components/creation-ui-kit/sanitizers/repositories'
 import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
 import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
 import { useDistinctValue } from '../../../../../../hooks/use-distinct-value'
 import { EditableDataSeries, InsightStep } from '../../types'
-import { getSanitizedLine, getSanitizedRepositories } from '../../utils/insight-sanitizer'
+import { getSanitizedLine } from '../../utils/insight-sanitizer'
 
 import { DEFAULT_MOCK_CHART_CONTENT } from './live-preview-mock-data'
 

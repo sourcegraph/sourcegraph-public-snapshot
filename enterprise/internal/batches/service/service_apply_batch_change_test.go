@@ -26,7 +26,8 @@ func TestServiceApplyBatchChange(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 
 	admin := ct.CreateTestUser(t, db, true)
 	adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
@@ -43,7 +44,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 	t.Run("BatchSpec without changesetSpecs", func(t *testing.T) {
 		t.Run("new batch change", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 			batchSpec := ct.CreateBatchSpec(t, ctx, store, "batchchange1", admin.ID)
 			batchChange, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
 				BatchSpecRandID: batchSpec.RandID,
@@ -77,7 +78,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		})
 
 		t.Run("existing batch change", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 			batchSpec := ct.CreateBatchSpec(t, ctx, store, "batchchange2", admin.ID)
 			batchChange := ct.CreateBatchChange(t, ctx, store, "batchchange2", admin.ID, batchSpec.ID)
 
@@ -205,7 +206,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 	// covered in the tests above.
 	t.Run("batchSpec with changesetSpecs", func(t *testing.T) {
 		t.Run("new batch change", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 			batchSpec := ct.CreateBatchSpec(t, ctx, store, "batchchange3", admin.ID)
 
 			spec1 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
@@ -250,7 +251,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		})
 
 		t.Run("batch change with changesets", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 			// First we create a batchSpec and apply it, so that we have
 			// changesets and changesetSpecs in the database, wired up
 			// correctly.
@@ -427,7 +428,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		})
 
 		t.Run("batch change tracking changesets owned by another batch change", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 			batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "owner-batch-change", admin.ID)
 
 			oldSpec1 := ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
@@ -503,7 +504,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		})
 
 		t.Run("batch change with changeset that is unpublished", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 			batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "unpublished-changesets", admin.ID)
 
 			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
@@ -526,7 +527,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		})
 
 		t.Run("batch change with changeset that wasn't processed before reapply", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 			batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "queued-changesets", admin.ID)
 
 			specOpts := ct.TestSpecOpts{
@@ -680,7 +681,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		})
 
 		t.Run("missing repository permissions", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 			ct.MockRepoPermissions(t, db, user.ID, repos[0].ID, repos[2].ID, repos[3].ID)
 
 			// NOTE: We cannot use a context with an internal actor.
@@ -716,7 +717,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		})
 
 		t.Run("batch change with errored changeset", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 			batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "errored-changeset-batch-change", admin.ID)
 
 			spec1Opts := ct.TestSpecOpts{
@@ -799,7 +800,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		})
 
 		t.Run("closed and archived changeset not re-enqueued for close", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 			batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "archived-closed-changeset", admin.ID)
 
 			specOpts := ct.TestSpecOpts{
@@ -868,7 +869,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 		t.Run("batch change with changeset that is archived and reattached", func(t *testing.T) {
 			t.Run("changeset has been closed before re-attaching", func(t *testing.T) {
-				ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+				ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 				batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset", admin.ID)
 
 				specOpts := ct.TestSpecOpts{
@@ -950,7 +951,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			t.Run("changeset has failed closing before re-attaching", func(t *testing.T) {
-				ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+				ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 				batchSpec1 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID)
 
 				specOpts := ct.TestSpecOpts{
@@ -1041,7 +1042,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			t.Run("changeset has not been closed before re-attaching", func(t *testing.T) {
-				ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+				ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 				// The difference to the previous test: we DON'T update the
 				// changeset to make it look closed. We want to make sure that
 				// we also pick up enqueued-to-be-closed changesets.
@@ -1118,7 +1119,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		})
 
 		t.Run("invalid changeset specs", func(t *testing.T) {
-			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 			batchSpec := ct.CreateBatchSpec(t, ctx, store, "batchchange-invalid-specs", admin.ID)
 
 			// Both specs here have the same HeadRef in the same repository
@@ -1150,7 +1151,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 	})
 
 	t.Run("applying to closed batch change", func(t *testing.T) {
-		ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+		ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 		batchSpec := ct.CreateBatchSpec(t, ctx, store, "closed-batch-change", admin.ID)
 		batchChange := ct.CreateBatchChange(t, ctx, store, "closed-batch-change", admin.ID, batchSpec.ID)
 

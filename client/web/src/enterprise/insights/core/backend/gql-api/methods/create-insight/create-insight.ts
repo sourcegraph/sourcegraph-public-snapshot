@@ -6,23 +6,25 @@ import {
     CreateLangStatsInsightResult,
     CreateSearchBasedInsightResult,
     FirstStepCreateSearchBasedInsightResult,
-    LineChartSearchInsightInput,
     PieChartSearchInsightInput,
     UpdateLineChartSearchInsightResult,
     UpdateLineChartSearchInsightVariables,
-} from '../../../../../../graphql-operations'
+} from '../../../../../../../graphql-operations'
 import {
+    CaptureGroupInsight,
     InsightDashboard,
     InsightExecutionType,
     InsightType,
     isVirtualDashboard,
     SearchBasedInsight,
-} from '../../../types'
-import { SearchBackendBasedInsight } from '../../../types/insight/search-insight'
-import { InsightCreateInput } from '../../code-insights-backend-types'
-import { INSIGHT_VIEW_FRAGMENT } from '../gql/GetInsights'
-import { getInsightView } from '../utils/insight-transformers'
-import { prepareSearchInsightCreateInput, prepareSearchInsightUpdateInput } from '../utils/search-insight-to-gql-input'
+} from '../../../../types'
+import { SearchBackendBasedInsight } from '../../../../types/insight/search-insight'
+import { InsightCreateInput } from '../../../code-insights-backend-types'
+import { createInsightView } from '../../deserialization/create-insight-view'
+import { INSIGHT_VIEW_FRAGMENT } from '../../gql/GetInsights'
+import { getSearchInsightUpdateInput } from '../update-insight/serializators'
+
+import { getInsightCreateGqlInput, getLangStatsInsightCreateInput } from './serializators'
 
 /**
  * Main handler to create insight with GQL api. It absorbs all implementation details around GQL api.
@@ -31,6 +33,7 @@ export const createInsight = (apolloClient: ApolloClient<object>, input: Insight
     const { insight, dashboard } = input
 
     switch (insight.viewType) {
+        case InsightType.CaptureGroup:
         case InsightType.SearchBased: {
             return createSearchBasedInsight(apolloClient, insight, dashboard)
         }
@@ -47,17 +50,7 @@ export const createInsight = (apolloClient: ApolloClient<object>, input: Insight
                             }
                         }
                     `,
-                    variables: {
-                        input: {
-                            query: '',
-                            repositoryScope: { repositories: [insight.repository] },
-                            presentationOptions: {
-                                title: insight.title,
-                                otherThreshold: insight.otherThreshold,
-                            },
-                            dashboards: [dashboard?.id ?? ''],
-                        },
-                    },
+                    variables: { input: getLangStatsInsightCreateInput(insight, dashboard) },
                 })
             )
         }
@@ -66,15 +59,16 @@ export const createInsight = (apolloClient: ApolloClient<object>, input: Insight
 
 function createSearchBasedInsight(
     apolloClient: ApolloClient<object>,
-    insight: SearchBasedInsight,
+    insight: SearchBasedInsight | CaptureGroupInsight,
     dashboard: InsightDashboard | null
 ): Observable<unknown> {
-    const input: LineChartSearchInsightInput = prepareSearchInsightCreateInput(insight, dashboard)
+    const input = getInsightCreateGqlInput(insight, dashboard)
 
-    // In case if we want to create insight with some predefined filters we have to
-    // crate insight first and only then update this insight with filters value
-    // This is lack of our API flexibility and should be fixed as soon as BE gql API
-    // support filters in create insight mutation.
+    // In case if we want to create an insight with some predefined filters we have to
+    // create the insight first and only after update this newly created insight with filter values
+    // This is due to lack of gql API flexibility and should be fixed as soon as BE gql API
+    // supports filters in the create insight mutation.
+    // TODO: Remove this imperative logic as soon as be supports filters
     if (insight.type === InsightExecutionType.Backend && insight.filters) {
         const filters = insight.filters
         return from(
@@ -99,11 +93,11 @@ function createSearchBasedInsight(
                     return of()
                 }
 
-                const createdInsight = getInsightView(
+                const createdInsight = createInsightView(
                     data.createLineChartSearchInsight.view
                 ) as SearchBackendBasedInsight
 
-                const input = prepareSearchInsightUpdateInput({ ...createdInsight, filters })
+                const input = getSearchInsightUpdateInput({ ...createdInsight, filters })
 
                 return apolloClient.mutate<UpdateLineChartSearchInsightResult, UpdateLineChartSearchInsightVariables>({
                     mutation: gql`

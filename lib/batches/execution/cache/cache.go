@@ -185,6 +185,10 @@ func KeyForWorkspace(batchChangeAttributes *template.BatchChangeAttributes, r ba
 }
 
 func ChangesetSpecsFromCache(spec *batches.BatchSpec, r batches.Repository, result execution.Result) ([]*batches.ChangesetSpec, error) {
+	if result.Diff == "" {
+		return []*batches.ChangesetSpec{}, nil
+	}
+
 	sort.Strings(r.FileMatches)
 
 	input := &batches.ChangesetSpecInput{
