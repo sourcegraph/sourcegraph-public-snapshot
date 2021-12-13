@@ -314,7 +314,7 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 
 	perms, err := s.Permissions(ctx, a.UID, content)
 	if err != nil {
-		return None, errors.Wrapf(err, "getting actor permissions for actor", a.UID)
+		return None, errors.Wrapf(err, "getting actor permissions for actor: %d", a.UID)
 	}
 	return perms, nil
 }
