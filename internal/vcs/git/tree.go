@@ -123,22 +123,10 @@ func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo a
 	// 🚨 SECURITY: All git methods that deal with file or path access need to have
 	// sub-repo permissions applied
 	a := actor.FromContext(ctx)
-	// TODO: If filtering like this becomes common we may want to create a helper
-	//  function in the authz package.
-	filtered := make([]string, 0, len(files))
-	for _, file := range files {
-		perms, err := authz.ActorPermissions(ctx, checker, a, authz.RepoContent{
-			Repo: repo,
-			Path: file,
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "checking sub-repo permissions")
-		}
-		if perms.Include(authz.Read) {
-			filtered = append(filtered, file)
-		}
+	filtered, err := authz.FilterActorPaths(ctx, checker, a, repo, files)
+	if err != nil {
+		return nil, errors.Wrap(err, "filtering paths")
 	}
-
 	return filtered, nil
 }
 

@@ -287,12 +287,6 @@ func (s *SubRepoPermsClient) Enabled() bool {
 	return false
 }
 
-// CurrentUserPermissions returns the level of access the authenticated user within
-// the provided context has for the requested content by calling ActorPermissions.
-func CurrentUserPermissions(ctx context.Context, s SubRepoPermissionChecker, content RepoContent) (Perms, error) {
-	return ActorPermissions(ctx, s, actor.FromContext(ctx), content)
-}
-
 // ActorPermissions returns the level of access the given actor has for the requested
 // content.
 //
@@ -317,4 +311,23 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 		return None, errors.Wrapf(err, "getting actor permissions for actor: %d", a.UID)
 	}
 	return perms, nil
+}
+
+// FilterActorPaths will filter the given list of paths for the given actor
+// returning on paths they are allowed to read.
+func FilterActorPaths(ctx context.Context, s SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, paths []string) ([]string, error) {
+	filtered := make([]string, 0, len(paths))
+	for _, p := range paths {
+		perms, err := ActorPermissions(ctx, s, a, RepoContent{
+			Repo: repo,
+			Path: p,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "checking sub-repo permissions")
+		}
+		if perms.Include(Read) {
+			filtered = append(filtered, p)
+		}
+	}
+	return filtered, nil
 }
