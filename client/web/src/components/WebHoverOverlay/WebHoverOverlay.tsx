@@ -58,15 +58,21 @@ export const WebHoverOverlay: React.FunctionComponent<
     useEffect(() => {
         const token = props.hoveredTokenElement
 
-        const action =
+        const definitionAction =
             Array.isArray(props.actionsOrError) &&
-            props.actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded')
+            props.actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded' && !a.disabledWhen)
+
+        const referenceAction =
+            Array.isArray(props.actionsOrError) &&
+            props.actionsOrError.find(a => a.action.id === 'findReferences' && !a.disabledWhen)
+
+        const action = definitionAction || referenceAction
         if (!action) {
             return undefined
         }
-        const def = urlForClientCommandOpen(action.action, props.location.hash)
+        const url = urlForClientCommandOpen(action.action, props.location.hash)
 
-        if (!token || !def || !props.nav) {
+        if (!token || !url || !props.nav) {
             return
         }
 
@@ -83,7 +89,7 @@ export const WebHoverOverlay: React.FunctionComponent<
                         return
                     }
 
-                    nav(def)
+                    nav(url)
                 }),
                 finalize(() => (token.style.cursor = oldCursor))
             )

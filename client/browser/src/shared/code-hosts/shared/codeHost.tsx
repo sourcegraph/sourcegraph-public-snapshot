@@ -490,9 +490,15 @@ function initCodeIntelligence({
                             }
 
                             const { actionsOrError } = hoverOverlayProps
-                            const action =
+                            const definitionAction =
                                 Array.isArray(actionsOrError) &&
-                                actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded')
+                                actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded' && !a.disabledWhen)
+
+                            const referenceAction =
+                                Array.isArray(actionsOrError) &&
+                                actionsOrError.find(a => a.action.id === 'findReferences' && !a.disabledWhen)
+
+                            const action = definitionAction || referenceAction
                             if (!action) {
                                 return EMPTY
                             }
