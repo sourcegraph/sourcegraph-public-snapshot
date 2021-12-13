@@ -57,6 +57,7 @@ func TestNullIDResilience(t *testing.T) {
 		marshalBatchChangesCredentialID(0, false),
 		marshalBatchChangesCredentialID(0, true),
 		marshalBulkOperationID(""),
+		marshalBatchSpecWorkspaceID(0),
 	}
 
 	for _, id := range ids {
@@ -97,6 +98,7 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { cancelBatchSpecExecution(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 		fmt.Sprintf(`mutation { replaceBatchSpecInput(previousSpec: %q, batchSpec: "name: testing") { id } }`, marshalBatchSpecRandID("")),
 		fmt.Sprintf(`mutation { retryBatchSpecWorkspaceExecution(batchSpecWorkspaces: [%q]) { alwaysNil } }`, marshalBatchSpecWorkspaceID(0)),
+		fmt.Sprintf(`mutation { retryBatchSpecExecution(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 	}
 
 	for _, m := range mutations {
@@ -117,7 +119,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
@@ -299,7 +301,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
@@ -372,7 +374,7 @@ func TestApplyBatchChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	// Ensure our site configuration doesn't have rollout windows so we get a
 	// consistent initial state.
@@ -539,7 +541,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	cstore := store.New(db, &observation.TestContext, nil)
 
@@ -624,7 +626,7 @@ func TestCreateBatchChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
@@ -688,7 +690,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	// Ensure our site configuration doesn't have rollout windows so we get a
 	// consistent initial state.
@@ -875,7 +877,7 @@ func TestMoveBatchChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
@@ -1141,7 +1143,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	pruneUserCredentials(t, db, nil)
 
@@ -1271,7 +1273,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	pruneUserCredentials(t, db, nil)
 
@@ -1360,7 +1362,7 @@ func TestCreateChangesetComments(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1460,7 +1462,7 @@ func TestReenqueueChangesets(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1567,7 +1569,7 @@ func TestMergeChangesets(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1677,7 +1679,7 @@ func TestCloseChangesets(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1787,7 +1789,7 @@ func TestPublishChangesets(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID

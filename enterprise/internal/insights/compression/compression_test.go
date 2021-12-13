@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/hexops/autogold"
 
@@ -23,12 +23,12 @@ func TestFilterFrames(t *testing.T) {
 	}
 
 	t.Run("test empty frames", func(t *testing.T) {
-		got := commitFilter.FilterFrames(ctx, []Frame{}, 1)
+		got := commitFilter.FilterFrames(ctx, []types.Frame{}, 1)
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 
 	t.Run("test one frame", func(t *testing.T) {
-		input := []Frame{{
+		input := []types.Frame{{
 			maxHistorical, maxHistorical.Add(time.Second * 500), "abcdef",
 		}}
 		got := commitFilter.FilterFrames(ctx, input, 1)
@@ -38,7 +38,7 @@ func TestFilterFrames(t *testing.T) {
 	t.Run("test unable to fetch metadata", func(t *testing.T) {
 		commitStore := NewMockCommitStore()
 		commitFilter.store = commitStore
-		input := []Frame{{
+		input := []types.Frame{{
 			maxHistorical, maxHistorical.Add(time.Second * 500), "abcdef",
 		}, {
 			maxHistorical.Add(time.Second * 500), maxHistorical.Add(time.Second * 1000), "fedcba",
@@ -52,7 +52,7 @@ func TestFilterFrames(t *testing.T) {
 	t.Run("test no commits two frames", func(t *testing.T) {
 		commitStore := NewMockCommitStore()
 		commitFilter.store = commitStore
-		input := []Frame{{
+		input := []types.Frame{{
 			maxHistorical, maxHistorical.Add(time.Second * 500), "abcdef",
 		}, {
 			maxHistorical.Add(time.Second * 500), maxHistorical.Add(time.Second * 1000), "fedcba",
@@ -65,7 +65,7 @@ func TestFilterFrames(t *testing.T) {
 	t.Run("test three frames middle has no commits", func(t *testing.T) {
 		commitStore := NewMockCommitStore()
 		commitFilter.store = commitStore
-		input := []Frame{{
+		input := []types.Frame{{
 			toTime("2020-05-01"), toTime("2020-06-01"), "abcdef",
 		}, {
 			toTime("2020-06-01"), toTime("2020-07-01"), "fedcba",
@@ -100,7 +100,7 @@ func TestFilterFrames(t *testing.T) {
 		// This test is a scenario from a bug discovered on a real insight. In this scenario there are 2 commits, each
 		// in the middle of a frame. The goal of this test is to ensure that we use the correct frames to determine
 		// if any changes have been made to query for the 'from' time point.
-		input := []Frame{
+		input := []types.Frame{
 			{
 				toTime("2021-01-01"), toTime("2021-02-01"), "jan",
 			},
@@ -165,7 +165,7 @@ func TestFilterFrames(t *testing.T) {
 	t.Run("test three frames middle has no commits but index is behind", func(t *testing.T) {
 		commitStore := NewMockCommitStore()
 		commitFilter.store = commitStore
-		input := []Frame{{
+		input := []types.Frame{{
 			toTime("2020-05-01"), toTime("2020-06-01"), "abcdef",
 		}, {
 			toTime("2020-06-01"), toTime("2020-07-01"), "fedcba",
@@ -209,28 +209,6 @@ func TestQueryExecution_ToRecording(t *testing.T) {
 		exec.Revision = "asdf1234"
 
 		got := exec.ToRecording("series1", "repoName1", 1, 5.0)
-		autogold.Equal(t, got, autogold.ExportedOnly())
-	})
-}
-
-func TestQueryExecution_ToQueueJob(t *testing.T) {
-	bTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
-
-	t.Run("test to job with dependents", func(t *testing.T) {
-		var exec QueryExecution
-		exec.RecordingTime = bTime
-		exec.Revision = "asdf1234"
-		exec.SharedRecordings = append(exec.SharedRecordings, bTime.Add(time.Hour*24))
-
-		got := exec.ToQueueJob("series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
-		autogold.Equal(t, got, autogold.ExportedOnly())
-	})
-	t.Run("test to job without dependents", func(t *testing.T) {
-		var exec QueryExecution
-		exec.RecordingTime = bTime
-		exec.Revision = "asdf1234"
-
-		got := exec.ToQueueJob("series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 }

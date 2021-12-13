@@ -1,9 +1,14 @@
-name: LSIF-Ts
+name: lsif-ts
 on:
   push:
+    branches:
+      - main
+      - '[0-9]+.[0-9]+' # release branches
+  pull_request:
     paths:
       - '**.ts'
       - '**.js'
+
 jobs:
   lsif-tsc-eslint:
     # Skip running on forks
@@ -46,11 +51,11 @@ jobs:
         run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/
-      # - name: Upload lsif-tsc dump to Demo
-      #   working-directory: ${{ matrix.root }}
-      #   run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
-      #   env:
-      #     SRC_ENDPOINT: https://demo.sourcegraph.com/
+      - name: Upload lsif-tsc dump to Demo
+        working-directory: ${{ matrix.root }}
+        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
+        env:
+          SRC_ENDPOINT: https://demo.sourcegraph.com/
 
       # Run lsif-eslint
       - name: Build TypeScript

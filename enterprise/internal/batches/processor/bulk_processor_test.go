@@ -10,6 +10,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -21,8 +22,9 @@ func TestBulkProcessor(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
-	tx := dbtest.NewTx(t, db)
+	sqlDB := dbtest.NewDB(t)
+	tx := dbtest.NewTx(t, sqlDB)
+	db := database.NewDB(sqlDB)
 	bstore := store.New(tx, &observation.TestContext, nil)
 	user := ct.CreateTestUser(t, db, true)
 	repo, _ := ct.CreateTestRepo(t, ctx, db)

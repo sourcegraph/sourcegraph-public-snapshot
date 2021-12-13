@@ -36,7 +36,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -584,7 +585,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		})
 
 		// After each test: clean up database.
-		ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+		ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 	}
 }
 
@@ -594,7 +595,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 
@@ -635,7 +636,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 
 func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
@@ -678,7 +679,8 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 
 func TestLoadChangesetSource(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	sqlDB := dbtest.NewDB(t)
+	db := database.NewDB(sqlDB)
 	token := &auth.OAuthBearerToken{Token: "abcdef"}
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
@@ -714,7 +716,7 @@ func TestLoadChangesetSource(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Cleanup(func() {
-			ct.TruncateTables(t, db, "batch_changes_site_credentials")
+			ct.TruncateTables(t, sqlDB, "batch_changes_site_credentials")
 		})
 		fakeSource := &sources.FakeChangesetSource{}
 		sourcer := sources.NewFakeSourcer(nil, fakeSource)
@@ -795,7 +797,7 @@ func TestLoadChangesetSource(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Cleanup(func() {
-			ct.TruncateTables(t, db, "user_credentials")
+			ct.TruncateTables(t, sqlDB, "user_credentials")
 		})
 
 		fakeSource := &sources.FakeChangesetSource{}
@@ -819,7 +821,7 @@ func TestLoadChangesetSource(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Cleanup(func() {
-			ct.TruncateTables(t, db, "batch_changes_site_credentials")
+			ct.TruncateTables(t, sqlDB, "batch_changes_site_credentials")
 		})
 
 		fakeSource := &sources.FakeChangesetSource{}
@@ -838,7 +840,7 @@ func TestLoadChangesetSource(t *testing.T) {
 
 func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 

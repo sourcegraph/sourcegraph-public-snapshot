@@ -127,7 +127,7 @@ type GetConfigurationPoliciesOptions struct {
 // If a repository identifier is supplied (is non-zero), then only the configuration policies that apply
 // to repository are returned. If repository is not supplied, then all policies may be returned.
 func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurationPoliciesOptions) (_ []ConfigurationPolicy, totalCount int, err error) {
-	ctx, traceLog, endObservation := s.operations.getConfigurationPolicies.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.getConfigurationPolicies.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
 		log.String("term", opts.Term),
 		log.Bool("forDataRetention", opts.ForDataRetention),
@@ -175,7 +175,7 @@ func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurat
 	if err != nil {
 		return nil, 0, err
 	}
-	traceLog(log.Int("totalCount", totalCount))
+	trace.Log(log.Int("totalCount", totalCount))
 
 	configurationPolicies, err := scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(
 		getConfigurationPoliciesLimitedQuery,
@@ -186,7 +186,7 @@ func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurat
 	if err != nil {
 		return nil, 0, err
 	}
-	traceLog(log.Int("numConfigurationPolicies", len(configurationPolicies)))
+	trace.Log(log.Int("numConfigurationPolicies", len(configurationPolicies)))
 
 	return configurationPolicies, totalCount, nil
 }
@@ -353,9 +353,11 @@ RETURNING
 	index_intermediate_commits
 `
 
-var errUnknownConfigurationPolicy = errors.New("unknown configuration policy")
-var errIllegalConfigurationPolicyUpdate = errors.New("protected configuration policies must keep the same names, types, patterns, and retention values (except duration)")
-var errIllegalConfigurationPolicyDelete = errors.New("protected configuration policies cannot be deleted")
+var (
+	errUnknownConfigurationPolicy       = errors.New("unknown configuration policy")
+	errIllegalConfigurationPolicyUpdate = errors.New("protected configuration policies must keep the same names, types, patterns, and retention values (except duration)")
+	errIllegalConfigurationPolicyDelete = errors.New("protected configuration policies cannot be deleted")
+)
 
 // UpdateConfigurationPolicy updates the fields of the configuration policy record with the given identifier.
 func (s *Store) UpdateConfigurationPolicy(ctx context.Context, policy ConfigurationPolicy) (err error) {
@@ -495,14 +497,14 @@ SELECT protected FROM candidate
 // SelectPoliciesForRepositoryMembershipUpdate returns a slice of configuration policies that should be considered
 // for repository membership updates. Configuration policies are returned in the order of least recently updated.
 func (s *Store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []ConfigurationPolicy, err error) {
-	ctx, traceLog, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.WithAndLogger(ctx, &err, observation.Args{})
+	ctx, trace, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	configurationPolicies, err = scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(selectPoliciesForRepositoryMembershipUpdate, batchSize, timeutil.Now())))
 	if err != nil {
 		return nil, err
 	}
-	traceLog(log.Int("numConfigurationPolicies", len(configurationPolicies)))
+	trace.Log(log.Int("numConfigurationPolicies", len(configurationPolicies)))
 
 	return configurationPolicies, nil
 }

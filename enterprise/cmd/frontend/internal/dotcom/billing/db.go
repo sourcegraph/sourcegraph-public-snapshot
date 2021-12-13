@@ -7,12 +7,11 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // dbBilling provides billing-related database operations.
 type dbBilling struct {
-	db dbutil.DB
+	db database.DB
 }
 
 // getUserBillingCustomerID gets the billing customer ID (if any) for a user.

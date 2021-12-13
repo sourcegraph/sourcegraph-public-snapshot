@@ -5,13 +5,12 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // GetAggregatedSearchStats queries the database for search usage and returns
 // the aggregates statistics in the format of our BigQuery schema.
-func GetAggregatedSearchStats(ctx context.Context, db dbutil.DB) (*types.SearchUsageStatistics, error) {
+func GetAggregatedSearchStats(ctx context.Context, db database.DB) (*types.SearchUsageStatistics, error) {
 	events, err := database.EventLogs(db).AggregatedSearchEvents(ctx, time.Now().UTC())
 	if err != nil {
 		return nil, err

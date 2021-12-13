@@ -103,7 +103,7 @@ func (u *Updater) tryUpdate(ctx context.Context, repositoryID, dirtyToken int) (
 // the repository can be unmarked as long as the repository is not marked as dirty again before
 // the update completes.
 func (u *Updater) update(ctx context.Context, repositoryID, dirtyToken int) (err error) {
-	ctx, traceLog, endObservation := u.operations.commitUpdate.WithAndLogger(ctx, &err, observation.Args{
+	ctx, trace, endObservation := u.operations.commitUpdate.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", repositoryID),
 			log.Int("dirtyToken", dirtyToken),
@@ -116,13 +116,13 @@ func (u *Updater) update(ctx context.Context, repositoryID, dirtyToken int) (err
 	if err != nil {
 		return err
 	}
-	traceLog(log.Int("numCommitGraphKeys", len(commitGraph.Order())))
+	trace.Log(log.Int("numCommitGraphKeys", len(commitGraph.Order())))
 
 	refDescriptions, err := u.gitserverClient.RefDescriptions(ctx, repositoryID)
 	if err != nil {
 		return errors.Wrap(err, "gitserver.RefDescriptions")
 	}
-	traceLog(log.Int("numRefDescriptions", len(refDescriptions)))
+	trace.Log(log.Int("numRefDescriptions", len(refDescriptions)))
 
 	// Decorate the commit graph with the set of processed uploads are visible from each commit,
 	// then bulk update the denormalized view in Postgres. We call this with an empty graph as well

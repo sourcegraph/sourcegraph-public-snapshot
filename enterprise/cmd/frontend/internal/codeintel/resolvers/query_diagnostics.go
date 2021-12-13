@@ -16,7 +16,7 @@ const slowDiagnosticsRequestThreshold = time.Second
 
 // Diagnostics returns the diagnostics for documents with the given path prefix.
 func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (adjustedDiagnostics []AdjustedDiagnostic, _ int, err error) {
-	ctx, traceLog, endObservation := observeResolver(ctx, &err, "Diagnostics", r.operations.diagnostics, slowDiagnosticsRequestThreshold, observation.Args{
+	ctx, trace, endObservation := observeResolver(ctx, &err, "Diagnostics", r.operations.diagnostics, slowDiagnosticsRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -36,7 +36,7 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (adjustedDia
 	totalCount := 0
 
 	for i := range adjustedUploads {
-		traceLog(log.Int("uploadID", adjustedUploads[i].Upload.ID))
+		trace.Log(log.Int("uploadID", adjustedUploads[i].Upload.ID))
 
 		diagnostics, count, err := r.lsifStore.Diagnostics(
 			ctx,
@@ -64,7 +64,7 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (adjustedDia
 	if len(adjustedDiagnostics) > limit {
 		adjustedDiagnostics = adjustedDiagnostics[:limit]
 	}
-	traceLog(
+	trace.Log(
 		log.Int("totalCount", totalCount),
 		log.Int("numDiagnostics", len(adjustedDiagnostics)),
 	)
