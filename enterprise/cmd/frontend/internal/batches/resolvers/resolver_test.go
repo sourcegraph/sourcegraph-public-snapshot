@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 
@@ -55,6 +57,7 @@ func TestNullIDResilience(t *testing.T) {
 		marshalBatchChangesCredentialID(0, false),
 		marshalBatchChangesCredentialID(0, true),
 		marshalBulkOperationID(""),
+		marshalBatchSpecWorkspaceID(0),
 	}
 
 	for _, id := range ids {
@@ -92,6 +95,10 @@ func TestNullIDResilience(t *testing.T) {
 		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: []) { id } }`, marshalBatchChangeID(0)),
 		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: [%q]) { id } }`, marshalBatchChangeID(1), marshalChangesetID(0)),
 		fmt.Sprintf(`mutation { executeBatchSpec(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
+		fmt.Sprintf(`mutation { cancelBatchSpecExecution(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
+		fmt.Sprintf(`mutation { replaceBatchSpecInput(previousSpec: %q, batchSpec: "name: testing") { id } }`, marshalBatchSpecRandID("")),
+		fmt.Sprintf(`mutation { retryBatchSpecWorkspaceExecution(batchSpecWorkspaces: [%q]) { alwaysNil } }`, marshalBatchSpecWorkspaceID(0)),
+		fmt.Sprintf(`mutation { retryBatchSpecExecution(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
 	}
 
 	for _, m := range mutations {
@@ -112,7 +119,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
@@ -294,7 +301,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
@@ -367,7 +374,7 @@ func TestApplyBatchChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	// Ensure our site configuration doesn't have rollout windows so we get a
 	// consistent initial state.
@@ -528,13 +535,98 @@ mutation($batchSpec: ID!, $ensureBatchChange: ID, $publicationStates: [Changeset
 }
 ` + fragmentBatchChange
 
+func TestCreateEmptyBatchChange(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+
+	cstore := store.New(db, &observation.TestContext, nil)
+
+	r := &Resolver{store: cstore}
+	s, err := newSchema(database.NewDB(db), r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	userID := ct.CreateTestUser(t, db, true).ID
+	namespaceID := relay.MarshalID("User", userID)
+
+	input := map[string]interface{}{
+		"namespace": namespaceID,
+		"name":      "my-batch-change",
+	}
+
+	var response struct{ CreateEmptyBatchChange apitest.BatchChange }
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	// First time should work because no batch change exists
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateEmptyBatchChange)
+
+	if response.CreateEmptyBatchChange.ID == "" {
+		t.Fatalf("expected batch change to be created, but was not")
+	}
+
+	// Second time should fail because namespace + name are not unique
+	errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateEmptyBatchChange)
+
+	if len(errors) != 1 {
+		t.Fatalf("expected single errors, but got none")
+	}
+	if have, want := errors[0].Message, service.ErrNameNotUnique.Error(); have != want {
+		t.Fatalf("wrong error. want=%q, have=%q", want, have)
+	}
+
+	// But third time should work because a different namespace + the same name is okay
+	orgID := ct.InsertTestOrg(t, db, "my-org")
+	namespaceID2 := relay.MarshalID("Org", orgID)
+
+	input2 := map[string]interface{}{
+		"namespace": namespaceID2,
+		"name":      "my-batch-change",
+	}
+
+	apitest.MustExec(actorCtx, t, s, input2, &response, mutationCreateEmptyBatchChange)
+
+	if response.CreateEmptyBatchChange.ID == "" {
+		t.Fatalf("expected batch change to be created, but was not")
+	}
+
+	// This case should fail because the name fails validation
+	input3 := map[string]interface{}{
+		"namespace": namespaceID,
+		"name":      "not: valid:\nname",
+	}
+
+	errors = apitest.Exec(actorCtx, t, s, input3, &response, mutationCreateEmptyBatchChange)
+
+	if len(errors) != 1 {
+		t.Fatalf("expected single errors, but got none")
+	}
+
+	expError := "The batch change name can only contain word characters, dots and dashes."
+	if have, want := errors[0].Message, expError; !strings.Contains(have, "The batch change name can only contain word characters, dots and dashes.") {
+		t.Fatalf("wrong error. want to contain=%q, have=%q", want, have)
+	}
+}
+
+const mutationCreateEmptyBatchChange = `
+mutation($namespace: ID!, $name: String!){
+	createEmptyBatchChange(namespace: $namespace, name: $name) {
+		...batchChange
+	}
+}
+` + fragmentBatchChange
+
 func TestCreateBatchChange(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
@@ -598,7 +690,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	// Ensure our site configuration doesn't have rollout windows so we get a
 	// consistent initial state.
@@ -785,7 +877,7 @@ func TestMoveBatchChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
@@ -1051,7 +1143,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	pruneUserCredentials(t, db, nil)
 
@@ -1181,7 +1273,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	pruneUserCredentials(t, db, nil)
 
@@ -1270,7 +1362,7 @@ func TestCreateChangesetComments(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1370,7 +1462,7 @@ func TestReenqueueChangesets(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1477,7 +1569,7 @@ func TestMergeChangesets(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1587,7 +1679,7 @@ func TestCloseChangesets(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1697,7 +1789,7 @@ func TestPublishChangesets(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID

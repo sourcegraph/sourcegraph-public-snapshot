@@ -2,16 +2,14 @@ package runner
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"io/fs"
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner/testdata"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -22,13 +20,12 @@ var testSchemas = []*schemas.Schema{
 	makeTestSchema("query-error"),
 }
 
-func TestRunner(t *testing.T) {
+func TestRunnerRun(t *testing.T) {
 	overrideSchemas(t)
-	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	t.Run("upgrade", func(t *testing.T) {
-		store := testStore(db)
+		store := testStoreWithVersion(10000)
 
 		if err := testRunner(store).Run(ctx, Options{
 			Up:            true,
@@ -43,7 +40,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("downgrade", func(t *testing.T) {
-		store := testStoreWithVersion(db, 10004)
+		store := testStoreWithVersion(10003)
 
 		if err := testRunner(store).Run(ctx, Options{
 			Up:            false,
@@ -58,7 +55,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("upgrade error", func(t *testing.T) {
-		store := testStore(db)
+		store := testStoreWithVersion(10000)
 		store.UpFunc.PushReturn(fmt.Errorf("uh-oh"))
 
 		if err := testRunner(store).Run(ctx, Options{
@@ -74,7 +71,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("downgrade error", func(t *testing.T) {
-		store := testStoreWithVersion(db, 10002)
+		store := testStoreWithVersion(10001)
 		store.DownFunc.PushReturn(fmt.Errorf("uh-oh"))
 
 		if err := testRunner(store).Run(ctx, Options{
@@ -90,7 +87,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("unknown schema", func(t *testing.T) {
-		if err := testRunner(testStore(db)).Run(ctx, Options{
+		if err := testRunner(testStoreWithVersion(10000)).Run(ctx, Options{
 			Up:            true,
 			NumMigrations: 1,
 			SchemaNames:   []string{"unknown"},
@@ -100,7 +97,7 @@ func TestRunner(t *testing.T) {
 	})
 
 	t.Run("checks dirty database on startup", func(t *testing.T) {
-		store := testStore(db)
+		store := testStoreWithVersion(10000)
 		store.VersionFunc.SetDefaultReturn(10002, true, true, nil)
 
 		if err := testRunner(store).Run(ctx, Options{
@@ -109,6 +106,53 @@ func TestRunner(t *testing.T) {
 			SchemaNames:   []string{"well-formed"},
 		}); err == nil || !strings.Contains(err.Error(), "dirty database") {
 			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "dirty database", err)
+		}
+	})
+}
+
+func TestRunnerValidate(t *testing.T) {
+	overrideSchemas(t)
+	ctx := context.Background()
+
+	t.Run("very old schema", func(t *testing.T) {
+		store := testStoreWithVersion(250)
+
+		outOfDateError := new(SchemaOutOfDateError)
+		if err := testRunner(store).Validate(ctx, "well-formed"); !errors.As(err, &outOfDateError) || outOfDateError.expectedVersion != 10003 || outOfDateError.currentVersion != 250 {
+			t.Fatalf("unexpected error running validation. want=(unexpected version; expected 10003, currently 250) have=%s", err)
+		}
+	})
+
+	t.Run("old schema", func(t *testing.T) {
+		store := testStoreWithVersion(10001)
+
+		outOfDateError := new(SchemaOutOfDateError)
+		if err := testRunner(store).Validate(ctx, "well-formed"); !errors.As(err, &outOfDateError) || outOfDateError.expectedVersion != 10003 || outOfDateError.currentVersion != 10001 {
+			t.Fatalf("unexpected error running validation. want=(unexpected version; expected 10003, currently 10001) have=%s", err)
+		}
+	})
+
+	t.Run("correct version", func(t *testing.T) {
+		store := testStoreWithVersion(10003)
+
+		if err := testRunner(store).Validate(ctx, "well-formed"); err != nil {
+			t.Fatalf("unexpected error running validation: %s", err)
+		}
+	})
+
+	t.Run("future schema", func(t *testing.T) {
+		store := testStoreWithVersion(10004)
+
+		if err := testRunner(store).Validate(ctx, "well-formed"); err != nil {
+			t.Fatalf("unexpected error running validation: %s", err)
+		}
+	})
+
+	t.Run("distant future schema", func(t *testing.T) {
+		store := testStoreWithVersion(50010)
+
+		if err := testRunner(store).Validate(ctx, "well-formed"); err != nil {
+			t.Fatalf("unexpected error running validation: %s", err)
 		}
 	})
 }
@@ -138,18 +182,14 @@ func overrideSchemas(t *testing.T) {
 	t.Cleanup(func() { schemas.Schemas = liveSchemas })
 }
 
-func testStore(db *sql.DB) *MockStore {
-	return testStoreWithVersion(db, 10000)
-}
-
-func testStoreWithVersion(db *sql.DB, version int) *MockStore {
+func testStoreWithVersion(version int) *MockStore {
 	migrationHook := func(ctx context.Context, definition definition.Definition) error {
 		version = definition.ID
 		return nil
 	}
 
 	store := NewMockStore()
-	store.HandleFunc.SetDefaultReturn(basestore.NewHandleWithDB(db, sql.TxOptions{}))
+	store.LockFunc.SetDefaultReturn(true, func(err error) error { return err }, nil)
 	store.UpFunc.SetDefaultHook(migrationHook)
 	store.DownFunc.SetDefaultHook(migrationHook)
 	store.VersionFunc.SetDefaultHook(func(ctx context.Context) (int, bool, bool, error) {
@@ -163,7 +203,7 @@ func testRunner(store Store) *Runner {
 	storeFactories := make(map[string]StoreFactory, len(testSchemas))
 
 	for _, testSchema := range testSchemas {
-		storeFactories[testSchema.Name] = func() (Store, error) {
+		storeFactories[testSchema.Name] = func(ctx context.Context) (Store, error) {
 			return store, nil
 		}
 	}

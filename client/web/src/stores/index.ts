@@ -9,5 +9,7 @@
  * everything that should be in here is already in here.
  */
 
-export { useNavbarQueryState } from './navbarSearchQueryState'
+export { useNavbarQueryState, setQueryStateFromURL, setQueryStateFromSettings } from './navbarSearchQueryState'
 export { useThemeState } from './themeState'
+export { useExperimentalFeatures, setExperimentalFeaturesFromSettings } from './experimentalFeatures'
+export { useSearchStackState, useSearchStack } from './searchStack'

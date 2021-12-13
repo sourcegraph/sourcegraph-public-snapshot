@@ -186,6 +186,9 @@ describe('Backend insight drill down filters', () => {
                             stroke: 'var(--primary)',
                         },
                     ],
+                    step: {
+                        months: 1,
+                    },
                     filters: {
                         includeRepoRegexp: '',
                         excludeRepoRegexp: 'github.com/sourcegraph/sourcegraph',

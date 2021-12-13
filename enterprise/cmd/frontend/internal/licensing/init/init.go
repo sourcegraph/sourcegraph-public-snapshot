@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -118,7 +117,7 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 }
 
 type usersStore struct {
-	db dbutil.DB
+	db database.DB
 }
 
 func (u *usersStore) Count(ctx context.Context) (int, error) {

@@ -5,6 +5,7 @@ import React, { useCallback } from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Badge } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
@@ -118,7 +119,9 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                 <div className="d-flex justify-content-center">
                     <div className={classNames('card', styles.ctaCard)}>
                         <div className="d-flex align-items-center">
-                            <span className="badge badge-merged text-uppercase mr-2">Beta</span>
+                            <Badge variant="merged" className="text-uppercase mr-2">
+                                Beta
+                            </Badge>
                         </div>
                         <span>
                             Search your public and private code.{' '}

@@ -13,7 +13,7 @@ import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
 import { ErrorAlert } from '../../../../components/alerts'
 
-import { ChartViewContent } from './chart-view-content/ChartViewContent'
+import { ChartViewContent, ChartViewContentLayout } from './chart-view-content/ChartViewContent'
 import styles from './ViewContent.module.scss'
 
 const isMarkupContent = (input: unknown): input is MarkupContent =>
@@ -28,6 +28,8 @@ export interface ViewContentProps extends TelemetryProps {
 
     /** Optionally display an alert overlay */
     alert?: React.ReactNode
+    layout?: ChartViewContentLayout
+    className?: string
 }
 
 /**
@@ -38,7 +40,7 @@ export interface ViewContentProps extends TelemetryProps {
  * without notice.
  */
 export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
-    const { content, viewID, containerClassName, alert, telemetryService } = props
+    const { content, viewID, containerClassName, alert, layout, className, telemetryService } = props
 
     // Track user intent to interact with extension-contributed views
     const viewContentReference = useRef<HTMLDivElement>(null)
@@ -85,7 +87,7 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
     }, [viewID, containerClassName, telemetryService])
 
     return (
-        <div className={styles.viewContent} ref={viewContentReference}>
+        <div className={classNames(styles.viewContent, className)} ref={viewContentReference}>
             {content.map((content, index) =>
                 isMarkupContent(content) ? (
                     <React.Fragment key={index}>
@@ -104,8 +106,9 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
                         <ChartViewContent
                             content={content}
                             viewID={viewID}
+                            layout={layout}
                             telemetryService={props.telemetryService}
-                            className={styles.chart}
+                            className="flex-grow-1"
                         />
                     </React.Fragment>
                 ) : null
@@ -137,10 +140,14 @@ export const ViewLoadingContent: React.FunctionComponent<ViewLoadingContentProps
     const { text } = props
 
     return (
-        <div className="h-100 w-100 d-flex flex-column">
+        <div className="h-100 w-100 d-flex flex-column flex-grow-1">
             <span className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
                 <LoadingSpinner /> {text}
             </span>
         </div>
     )
 }
+
+export const ViewBannerContent: React.FunctionComponent = ({ children }) => (
+    <div className="h-100 w-100 d-flex flex-column justify-content-center align-items-center">{children}</div>
+)

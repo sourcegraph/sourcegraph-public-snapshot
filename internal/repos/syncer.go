@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -249,8 +250,9 @@ func (d Diff) Len() int {
 // SyncRepo syncs a single repository by name. It's only currently used on sourcegraph.com
 // because we don't sync our "cloud_default" code hosts in the background
 // since there are too many repos. Instead we use an incremental approach where we check for
-// changes everytime a user browses a repo.
-func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName) (repo *types.Repo, err error) {
+// changes everytime a user browses a repo. The "background" boolean flag indicates that we should run this
+// sync in the background vs block and call s.syncRepo synchronously.
+func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background bool) (repo *types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", string(name))
 	defer tr.Finish()
 
@@ -264,25 +266,18 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName) (repo *types.R
 		return nil, err
 	}
 
-	if repo == nil {
-		// We don't have this repo yet so we need to try and sync it now and we will block
-		// until syncing is complete.
-		repo, err, _ := s.syncGroup.Do(string(name), func() (interface{}, error) {
-			return s.syncRepo(ctx, codehost, name, nil)
-		})
-		if err != nil {
-			return nil, err
+	if repo != nil {
+		// Only public repos can be individually synced on sourcegraph.com
+		if repo.Private {
+			return nil, &database.RepoNotFoundErr{Name: name}
 		}
-		return repo.(*types.Repo), nil
+		// Don't sync the repo if it's been updated in the past 1 minute.
+		if s.Now().Sub(repo.UpdatedAt) < time.Minute {
+			return repo, nil
+		}
 	}
 
-	// Only public repos can be individually synced on sourcegraph.com
-	if repo.Private {
-		return nil, &database.RepoNotFoundErr{Name: name}
-	}
-
-	// Sync the repo in the background if it wasn't updated in 1 minute.
-	if s.Now().Sub(repo.UpdatedAt) >= time.Minute {
+	if background && repo != nil {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			defer cancel()
@@ -290,16 +285,23 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName) (repo *types.R
 			// We don't care about the return value here, but we still want to ensure that
 			// only one is in flight at a time.
 			_, _, _ = s.syncGroup.Do(string(name), func() (interface{}, error) {
-				repo, err := s.syncRepo(ctx, codehost, name, repo)
+				updatedRepo, err := s.syncRepo(ctx, codehost, name, repo)
 				if err != nil {
 					log15.Error("Error syncing repo in the background", "name", name, "error", err)
 				}
-				return repo, err
+				return updatedRepo, nil
 			})
 		}()
+		return repo, nil
 	}
 
-	return repo, nil
+	updatedRepo, err, _ := s.syncGroup.Do(string(name), func() (interface{}, error) {
+		return s.syncRepo(ctx, codehost, name, repo)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return updatedRepo.(*types.Repo), nil
 }
 
 func (s *Syncer) syncRepo(
@@ -374,6 +376,40 @@ func (s *Syncer) syncRepo(
 	}
 
 	return repo, nil
+}
+
+// RepoLimitError is produced by Syncer.ExternalServiceSync when a user's sync job
+// exceeds the user added repo limits.
+type RepoLimitError struct {
+	// Number of repos added to site
+	SiteAdded uint64
+
+	// Limit of repos that can be added to one site
+	SiteLimit uint64
+
+	// Number of repos added by user
+	UserAdded uint64
+
+	// Limit of repos that can be added by one user
+	UserLimit uint64
+
+	// NamespaceUserID of an external service
+	UserID int32
+
+	// Name of user of external service
+	UserName string
+}
+
+func (e *RepoLimitError) Error() string {
+	return fmt.Sprintf(
+		"reached maximum allowed user added repos: site:%d/%d, user:%d/%d (user-id: %d, username: %q)",
+		e.SiteAdded,
+		e.SiteLimit,
+		e.UserAdded,
+		e.UserLimit,
+		e.UserID,
+		e.UserName,
+	)
 }
 
 // SyncExternalService syncs repos using the supplied external service in a streaming fashion, rather than batch.
@@ -459,6 +495,14 @@ func (s *Syncer) SyncExternalService(
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
 			s.log().Error("failed to sync, skipping", "repo", sourced.Name, "err", err)
 			multierror.Append(errs, err)
+
+			// Stop syncing this external service as soon as we know repository limits for user or
+			// site level has been exceeded. We want to avoid generating spurious errors here
+			// because all subsequent syncs will continue failing unless the limits are increased.
+			if errors.HasType(err, &RepoLimitError{}) {
+				break
+			}
+
 			continue
 		}
 
@@ -539,9 +583,12 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		observeDiff(d)
 		// We must commit the transaction before publishing to s.Synced
 		// so that gitserver finds the repo in the database.
-		if txerr := tx.Done(err); txerr != nil {
-			err = multierror.Append(txerr, err)
-		} else if s.Synced != nil && d.Len() > 0 {
+		err = tx.Done(err)
+		if err != nil {
+			return
+		}
+
+		if s.Synced != nil && d.Len() > 0 {
 			select {
 			case <-ctx.Done():
 			case s.Synced <- d:
@@ -614,12 +661,14 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 					username = u.Username
 				}
 
-				return Diff{}, errors.Errorf(
-					"reached maximum allowed user added repos: site:%d/%d, user:%d/%d (username: %q)",
-					siteAdded, siteLimit,
-					userAdded, userLimit,
-					username,
-				)
+				return Diff{}, &RepoLimitError{
+					SiteAdded: siteAdded,
+					SiteLimit: siteLimit,
+					UserAdded: userAdded,
+					UserLimit: userLimit,
+					UserID:    svc.NamespaceUserID,
+					UserName:  username,
+				}
 			}
 		}
 

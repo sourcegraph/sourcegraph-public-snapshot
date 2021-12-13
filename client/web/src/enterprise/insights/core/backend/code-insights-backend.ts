@@ -3,12 +3,12 @@ import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { ViewContexts, ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
-import { Insight, InsightDashboard } from '../types'
-import { SearchBackendBasedInsight } from '../types/insight/search-insight'
+import { BackendInsight, Insight, InsightDashboard } from '../types'
 import { SupportedInsightSubject } from '../types/subjects'
 
 import {
     BackendInsightData,
+    CaptureInsightSettings,
     DashboardCreateInput,
     DashboardCreateResult,
     DashboardDeleteInput,
@@ -82,7 +82,7 @@ export interface CodeInsightsBackend {
 
     createInsight: (input: InsightCreateInput) => Observable<unknown>
 
-    updateInsight: (event: InsightUpdateInput) => Observable<void[]>
+    updateInsight: (event: InsightUpdateInput) => Observable<unknown>
 
     deleteInsight: (insightId: string) => Observable<unknown>
 
@@ -95,7 +95,7 @@ export interface CodeInsightsBackend {
     /**
      * Returns backend insight (via gql API handler)
      */
-    getBackendInsightData: (insight: SearchBackendBasedInsight) => Observable<BackendInsightData>
+    getBackendInsightData: (insight: BackendInsight) => Observable<BackendInsightData>
 
     /**
      * Returns extension like built-in insight that is fetched via frontend
@@ -118,6 +118,8 @@ export interface CodeInsightsBackend {
     getLangStatsInsightContent: <D extends keyof ViewContexts>(
         input: GetLangStatsInsightContentInput<D>
     ) => Promise<PieChartContent<any>>
+
+    getCaptureInsightContent: (input: CaptureInsightSettings) => Promise<LineChartContent<any, string>>
 
     /**
      * Returns a list of suggestions for the repositories field in the insight creation UI.

@@ -427,7 +427,7 @@ func serverE2E(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd(".buildkite/vagrant-run.sh sourcegraph-e2e"),
+			bk.Cmd("./dev/ci/test/e2e/test.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -453,7 +453,7 @@ func serverQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd(".buildkite/vagrant-run.sh sourcegraph-qa-test"),
+			bk.Cmd("./dev/ci/test/qa/test.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -478,31 +478,27 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd(".buildkite/vagrant-run.sh sourcegraph-upgrade"),
+			bk.Cmd("./dev/ci/test/upgrade/test.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
 
-// Flaky deployment. See https://github.com/sourcegraph/sourcegraph/issues/25977
-// func clusterQA(candidateTag string) operations.Operation {
-// 	return func(p *bk.Pipeline) {
-// 		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
-// 			bk.Agent("queue", "baremetal"),
-// 			bk.Env("CANDIDATE_VERSION", candidateTag),
-// 			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
-//
-// 			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
-// 			bk.Env("VAGRANT_RUN_ENV", "CI"),
-//
-// 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
-// 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
-// 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
-// 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-// 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-// 			bk.Cmd(".buildkite/vagrant-run.sh sourcegraph-qa-test"),
-// 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
-// 	}
-// }
+func clusterQA(candidateTag string) operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep(":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA",
+			bk.DependsOn(candidateImageStepKey("frontend")),
+			bk.Env("CANDIDATE_VERSION", candidateTag),
+			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
+			bk.Env("NO_CLEANUP", "false"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
+			bk.Cmd("./dev/ci/test/cluster/cluster-test.sh"),
+			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
+	}
+}
 
 // candidateImageStepKey is the key for the given app (see the `images` package). Useful for
 // adding dependencies on a step.

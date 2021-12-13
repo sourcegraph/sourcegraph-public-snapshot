@@ -683,7 +683,7 @@ type GitHubAuthProvider struct {
 	Url string `json:"url,omitempty"`
 }
 
-// GitHubAuthorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the `auth.providers` field of type "github" with the same `url` field as specified in this `GitHubConnection`.
+// GitHubAuthorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "github" with the same `url` field as specified in this `GitHubConnection`.
 type GitHubAuthorization struct {
 	// GroupsCacheTTL description: Experimental: If set, configures hours cached permissions from teams and organizations should be kept for. Setting a negative value disables syncing from teams and organizations, and falls back to the default behaviour of syncing all permisisons directly from user-repository affiliations instead. [Learn more](https://docs.sourcegraph.com/admin/repo/permissions#teams-and-organizations-permissions-caching).
 	GroupsCacheTTL float64 `json:"groupsCacheTTL,omitempty"`
@@ -691,7 +691,7 @@ type GitHubAuthorization struct {
 
 // GitHubConnection description: Configuration for a connection to GitHub or GitHub Enterprise.
 type GitHubConnection struct {
-	// Authorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the `auth.providers` field of type "github" with the same `url` field as specified in this `GitHubConnection`.
+	// Authorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "github" with the same `url` field as specified in this `GitHubConnection`.
 	Authorization *GitHubAuthorization `json:"authorization,omitempty"`
 	// Certificate description: TLS certificate of the GitHub Enterprise instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	Certificate string `json:"certificate,omitempty"`
@@ -1142,8 +1142,10 @@ type OnQuery struct {
 
 // OnRepository description: A specific repository (and branch) that is added to the list of repositories that the batch change will be run on.
 type OnRepository struct {
-	// Branch description: The branch on the repository to propose changes to. If unset, the repository's default branch is used.
+	// Branch description: The repository branch to propose changes to. If unset, the repository's default branch is used. If this field is defined, branches cannot be.
 	Branch string `json:"branch,omitempty"`
+	// Branches description: The repository branches to propose changes to. If unset, the repository's default branch is used. If this field is defined, branch cannot be.
+	Branches []string `json:"branches,omitempty"`
 	// Repository description: The name of the repository (as it is known to Sourcegraph).
 	Repository string `json:"repository"`
 }
@@ -1498,7 +1500,7 @@ type SettingsExperimentalFeatures struct {
 	CodeInsights *bool `json:"codeInsights,omitempty"`
 	// CodeInsightsAllRepos description: DEPRECATED: Enables the experimental ability to run an insight over all repositories on the instance.
 	CodeInsightsAllRepos *bool `json:"codeInsightsAllRepos,omitempty"`
-	// CodeInsightsGqlApi description: Enables gql api instead of using setting cascade as a main storage fro code insights entities
+	// CodeInsightsGqlApi description: DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities
 	CodeInsightsGqlApi *bool `json:"codeInsightsGqlApi,omitempty"`
 	// CodeMonitoring description: Enables code monitoring.
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
@@ -1506,6 +1508,8 @@ type SettingsExperimentalFeatures struct {
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
 	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
+	// EnableSearchStack description: Enables search stack
+	EnableSearchStack *bool `json:"enableSearchStack,omitempty"`
 	// EnableSmartQuery description: REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
 	// FuzzyFinder description: Enables fuzzy finder with keyboard shortcut `t`.

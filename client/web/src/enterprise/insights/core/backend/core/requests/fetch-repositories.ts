@@ -7,13 +7,8 @@ import { requestGraphQL } from '../../../../../../backend/graphql'
 import { BulkSearchRepositories } from '../../../../../../graphql-operations'
 
 const bulkSearchRepositoriesFragment = gql`
-    fragment BulkSearchRepositories on RepositoryRedirect {
-        ... on Repository {
-            name
-        }
-        ... on Redirect {
-            url
-        }
+    fragment BulkSearchRepositories on Repository {
+        name
     }
 `
 
@@ -50,7 +45,7 @@ export function fetchRepositories(repositories: string[]): Observable<BulkSearch
             Object.keys(search).reduce<BulkSearchRepositories[]>((result, key) => {
                 const index = +key.slice('repoSearch'.length)
 
-                result[index] = search[key]
+                result[index] = search[key] ?? {}
 
                 return result
             }, [])

@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -93,7 +94,7 @@ func (r *batchChangeResolver) SpecCreator(ctx context.Context) (*graphqlbackend.
 }
 
 func (r *batchChangeResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return checkSiteAdminOrSameUser(ctx, r.store.DB(), r.batchChange.InitialApplierID)
+	return checkSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), r.batchChange.InitialApplierID)
 }
 
 func (r *batchChangeResolver) URL(ctx context.Context) (string, error) {
@@ -285,11 +286,6 @@ func (r *batchChangeResolver) BatchSpecs(
 	ctx context.Context,
 	args *graphqlbackend.ListBatchSpecArgs,
 ) (graphqlbackend.BatchSpecConnectionResolver, error) {
-	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
-		return nil, err
-	}
-
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
@@ -299,6 +295,11 @@ func (r *batchChangeResolver) BatchSpecs(
 			Limit: int(args.First),
 		},
 	}
+
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		opts.ExcludeCreatedFromRawNotOwnedByUser = actor.FromContext(ctx).UID
+	}
+
 	if args.After != nil {
 		id, err := strconv.Atoi(*args.After)
 		if err != nil {

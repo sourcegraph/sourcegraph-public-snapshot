@@ -11,8 +11,8 @@ import * as View from '../../../../../../views'
 import { LineChartSettingsContext } from '../../../../../../views'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
-import { InsightTypePrefix } from '../../../../core/types'
-import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
+import { BackendInsight, InsightTypePrefix } from '../../../../core/types'
+import { SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
@@ -29,16 +29,17 @@ import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/u
 interface BackendInsightProps
     extends TelemetryProps,
         React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
-    insight: SearchBackendBasedInsight
+    insight: BackendInsight
 
     innerRef: Ref<HTMLElement>
+    resizing?: boolean
 }
 
 /**
  * Renders BE search based insight. Fetches insight data by gql api handler.
  */
-export const BackendInsight: React.FunctionComponent<BackendInsightProps> = props => {
-    const { telemetryService, insight, innerRef, ...otherProps } = props
+export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = props => {
+    const { telemetryService, insight, innerRef, resizing, ...otherProps } = props
 
     const { dashboard } = useContext(DashboardInsightsContext)
     const { getBackendInsightData, createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
@@ -82,7 +83,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
 
     const handleFilterSave = async (filters: SearchBasedBackendFilters): Promise<SubmissionErrors> => {
         try {
-            const insightWithNewFilters: SearchBackendBasedInsight = { ...insight, filters }
+            const insightWithNewFilters = { ...insight, filters }
 
             await updateInsight({ oldInsight: insight, newInsight: insightWithNewFilters }).toPromise()
 
@@ -107,7 +108,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         }
 
         try {
-            const newInsight: SearchBackendBasedInsight = {
+            const newInsight = {
                 ...insight,
                 id: `${InsightTypePrefix.search}.${camelCase(insightName)}`,
                 title: insightName,
@@ -161,7 +162,9 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                 [styles.cardWithFilters]: isFiltersOpen,
             })}
         >
-            {loading || isDeleting ? (
+            {resizing ? (
+                <View.Banner>Resizing</View.Banner>
+            ) : loading || isDeleting ? (
                 <View.LoadingContent text={isDeleting ? 'Deleting code insight' : 'Loading code insight'} />
             ) : isErrorLike(error) ? (
                 <View.ErrorContent error={error} title={insight.id}>

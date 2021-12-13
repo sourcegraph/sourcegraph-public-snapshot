@@ -5,7 +5,7 @@ import { first } from 'rxjs/operators'
 
 import { setLinkComponent, AnchorLink } from '@sourcegraph/shared/src/components/Link'
 
-import { CodeHost, determineCodeHost } from '../../shared/code-hosts/shared/codeHost'
+import { determineCodeHost } from '../../shared/code-hosts/shared/codeHost'
 import { injectCodeIntelligence } from '../../shared/code-hosts/shared/inject'
 import {
     checkIsSourcegraph,
@@ -109,15 +109,7 @@ async function main(): Promise<void> {
                 previousSubscription = await injectCodeIntelligence(
                     { sourcegraphURL, assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL) },
                     IS_EXTENSION,
-                    async function onCodeHostFound(codeHost: CodeHost) {
-                        if (sourcegraphURL === DEFAULT_SOURCEGRAPH_URL && codeHost.getContext) {
-                            const { privateRepository } = await codeHost.getContext()
-                            if (privateRepository) {
-                                throw new Error(
-                                    `Code intelligence for private repository is not supported when using Sourcegraph URL ${DEFAULT_SOURCEGRAPH_URL}`
-                                )
-                            }
-                        }
+                    async function onCodeHostFound() {
                         const styleSheets = [
                             {
                                 id: 'ext-style-sheet',
@@ -134,7 +126,7 @@ async function main(): Promise<void> {
                 )
                 console.log('Sourcegraph attached code intelligence')
             } catch (error) {
-                console.log('Sourcegraph code host integration stopped initialization. Reason:', error?.message)
+                console.log('Sourcegraph code host integration stopped initialization. Reason:', error)
             }
         })
     )

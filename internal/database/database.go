@@ -28,6 +28,7 @@ type DB interface {
 	OrgInvitations() OrgInvitationStore
 	OrgMembers() OrgMemberStore
 	Orgs() OrgStore
+	OrgStats() OrgStatsStore
 	Phabricator() PhabricatorStore
 	Repos() RepoStore
 	SavedSearches() SavedSearchStore
@@ -134,6 +135,10 @@ func (d *db) OrgMembers() OrgMemberStore {
 
 func (d *db) Orgs() OrgStore {
 	return OrgsWith(d.Store)
+}
+
+func (d *db) OrgStats() OrgStatsStore {
+	return OrgStatsWith(d.Store)
 }
 
 func (d *db) Phabricator() PhabricatorStore {

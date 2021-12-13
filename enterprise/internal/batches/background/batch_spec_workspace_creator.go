@@ -163,9 +163,9 @@ func (r *batchSpecWorkspaceCreator) process(
 	}
 	entriesByCacheKey := make(map[string]*btypes.BatchSpecExecutionCacheEntry)
 	if len(cacheKeys) > 0 {
-		// TODO: Once implemented, enforce ownership of cache entries here.
 		entries, err := tx.ListBatchSpecExecutionCacheEntries(ctx, store.ListBatchSpecExecutionCacheEntriesOpts{
-			Keys: cacheKeys,
+			UserID: spec.UserID,
+			Keys:   cacheKeys,
 		})
 		if err != nil {
 			return err
@@ -176,9 +176,9 @@ func (r *batchSpecWorkspaceCreator) process(
 	}
 	stepEntriesByCacheKey := make(map[string]*btypes.BatchSpecExecutionCacheEntry)
 	if len(stepCacheKeys) > 0 {
-		// TODO: Once implemented, enforce ownership of cache entries here.
 		entries, err := tx.ListBatchSpecExecutionCacheEntries(ctx, store.ListBatchSpecExecutionCacheEntriesOpts{
-			Keys: stepCacheKeys,
+			UserID: spec.UserID,
+			Keys:   stepCacheKeys,
 		})
 		if err != nil {
 			return err
@@ -217,6 +217,9 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		workspace.dbWorkspace.CachedResultFound = true
 
+		// Mark the cache entries as used.
+		usedCacheEntries = append(usedCacheEntries, entry.ID)
+
 		// Build the changeset specs from the cache entry.
 		var executionResult execution.Result
 		if err := json.Unmarshal([]byte(entry.Value), &executionResult); err != nil {
@@ -243,9 +246,6 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		cs = append(cs, specs...)
 		changesetsByWorkspace[workspace.dbWorkspace] = specs
-
-		// And mark the cache entries as used.
-		usedCacheEntries = append(usedCacheEntries, entry.ID)
 	}
 
 	// Mark all used cache entries as recently used for cache eviction purposes.

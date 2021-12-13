@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -41,12 +40,12 @@ func TestActionRunner(t *testing.T) {
 			testQuery := "test patternType:literal"
 
 			// Mocks.
-			got := email.TemplateDataNewSearchResults{}
-			email.MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *email.TemplateDataNewSearchResults) error {
+			got := TemplateDataNewSearchResults{}
+			MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *TemplateDataNewSearchResults) error {
 				got = *data
 				return nil
 			}
-			email.MockExternalURL = func() *url.URL {
+			MockExternalURL = func() *url.URL {
 				externalURL, _ := url.Parse("https://www.sourcegraph.com")
 				return externalURL
 			}
@@ -81,7 +80,7 @@ func TestActionRunner(t *testing.T) {
 			err = a.Handle(ctx, record)
 			require.NoError(t, err)
 
-			want := email.TemplateDataNewSearchResults{
+			want := TemplateDataNewSearchResults{
 				Priority:       "New",
 				SearchURL:      externalURL + "/search?q=test+patternType%3Aliteral&utm_source=code-monitoring-email",
 				Description:    "test description",

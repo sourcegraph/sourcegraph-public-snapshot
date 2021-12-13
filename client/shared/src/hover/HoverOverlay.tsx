@@ -50,7 +50,12 @@ export interface HoverOverlayProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
     /** A ref callback to get the root overlay element. Use this to calculate the position. */
     hoverRef?: React.Ref<HTMLDivElement>
-    isBranded?: boolean
+
+    /** Show Sourcegraph logo alongside prompt */
+    useBrandedLogo?: boolean
+
+    /** Show Sourcegraph branded badges */
+    useBrandedBadge?: boolean
 }
 
 const getOverlayStyle = (overlayPosition: HoverOverlayProps['overlayPosition']): CSSProperties =>
@@ -87,7 +92,8 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
         getAlertClassName,
         onAlertDismissed,
 
-        isBranded,
+        useBrandedLogo,
+        useBrandedBadge,
     } = props
 
     useLogTelemetryEvent(props)
@@ -115,6 +121,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                 <HoverOverlayContents
                     hoverOrError={hoverOrError}
                     iconClassName={iconClassName}
+                    useBrandedBadge={useBrandedBadge}
                     badgeClassName={badgeClassName}
                     errorAlertClassName={getAlertClassName?.(NotificationType.Error)}
                     contentClassName={contentClassName}
@@ -162,7 +169,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                             ))}
                         </div>
 
-                        {isBranded && <HoverOverlayLogo className={hoverOverlayStyle.overlayLogo} />}
+                        {useBrandedLogo && <HoverOverlayLogo className={hoverOverlayStyle.overlayLogo} />}
                     </div>
                 )}
         </div>

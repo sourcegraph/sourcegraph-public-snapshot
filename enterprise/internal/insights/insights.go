@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/connections"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -73,7 +73,7 @@ func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeInsightsTimescaleDSN
 	})
-	db, err := connections.NewCodeInsightsDB(dsn, app, true)
+	db, err := connections.NewCodeInsightsDB(dsn, app, true, &observation.TestContext)
 	if err != nil {
 		return nil, errors.Errorf("Failed to connect to codeinsights database: %s", err)
 	}

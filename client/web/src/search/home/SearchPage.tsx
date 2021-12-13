@@ -11,7 +11,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import {
     PatternTypeProps,
-    CaseSensitivityProps,
     OnboardingTourProps,
     HomePanelsProps,
     ParsedSearchQueryProps,
@@ -38,7 +37,6 @@ export interface SearchPageProps
         ActivationProps,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PatternTypeProps,
-        CaseSensitivityProps,
         KeyboardShortcutsProps,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,

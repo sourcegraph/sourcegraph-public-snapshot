@@ -35,7 +35,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -684,6 +683,33 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 					Db:          r.db,
 				})
 			}
+
+			if args.ResultTypes.Has(result.TypeSymbol) {
+				typ := search.SymbolRequest
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+				if err != nil {
+					return nil, nil, err
+				}
+				globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
+
+				zoektArgs := &search.ZoektParameters{
+					Query:          nil,
+					Typ:            typ,
+					FileMatchLimit: args.PatternInfo.FileMatchLimit,
+					Select:         args.PatternInfo.Select,
+					Zoekt:          args.Zoekt,
+				}
+
+				jobs = append(jobs, &symbol.RepoUniverseSymbolSearch{
+					GlobalZoektQuery: globalZoektQuery,
+					ZoektArgs:        zoektArgs,
+					PatternInfo:      args.PatternInfo,
+					Limit:            r.MaxResults(),
+
+					RepoOptions: repoOptions,
+					Db:          r.db,
+				})
+			}
 		}
 
 		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
@@ -791,6 +817,13 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 				UseIndex:          args.PatternInfo.Index,
 				ContainsRefGlobs:  query.ContainsRefGlobs(q),
 				OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
+			})
+		}
+
+		if args.ResultTypes.Has(result.TypeRepo) {
+			jobs = append(jobs, &run.RepoSearch{
+				Args:  &args,
+				Limit: r.MaxResults(),
 			})
 		}
 	}
@@ -1638,35 +1671,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	args.RepoOptions = r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
 
-	// globalSearch controls whether we run a global zoekt search.
-	globalSearch := args.Mode == search.ZoektGlobalSearch
-
-	// performance optimization: call zoekt early, resolve repos concurrently, filter
-	// search results with resolved repos.
-	if globalSearch {
-		if args.ResultTypes.Has(result.TypeSymbol) {
-			argsIndexed := *args
-
-			userID := int32(0)
-
-			if envvar.SourcegraphDotComMode() {
-				if a := actor.FromContext(ctx); a != nil {
-					userID = a.UID
-				}
-			}
-
-			argsIndexed.UserPrivateRepos = repos.PrivateReposForUser(ctx, r.db, userID, args.RepoOptions)
-
-			wg := waitGroup(true)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-				// This code path implies not-only-searcher is run (3rd arg is true) and global-search is run (4rd arg is true)
-				_ = agg.DoSymbolSearch(ctx, &argsIndexed, true, true, limit)
-			})
-		}
-	}
-
 	{
 		wg := waitGroup(true)
 		wg.Add(1)
@@ -1691,13 +1695,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		})
 	}
 
-	if args.ResultTypes.Has(result.TypeRepo) {
-		jobs = append(jobs, &run.RepoSearch{
-			Args:  args,
-			Limit: limit,
-		})
-	}
-
 	wgForJob := func(job run.Job) *sync.WaitGroup {
 		switch job.Name() {
 		case "Diff":
@@ -1706,6 +1703,8 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			return waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
 		case "RepoSubsetSymbol":
 			return waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
+		case "RepoUniverseSymbol":
+			return waitGroup(true)
 		case "Repo":
 			return waitGroup(true)
 		case "RepoSubsetText", "RepoUniverseText":

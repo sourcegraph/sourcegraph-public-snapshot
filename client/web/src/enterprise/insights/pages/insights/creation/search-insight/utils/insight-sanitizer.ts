@@ -1,16 +1,10 @@
 import { camelCase } from 'lodash'
 
+import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit/sanitizers/repositories'
 import { InsightExecutionType, InsightType, InsightTypePrefix, SearchBasedInsight } from '../../../../../core/types'
 import { SearchBasedInsightSeries } from '../../../../../core/types/insight/search-insight'
 import { EDIT_SERIES_PREFIX } from '../components/search-insight-creation-content/hooks/use-editable-series'
 import { CreateInsightFormFields, EditableDataSeries } from '../types'
-
-export function getSanitizedRepositories(rawRepositories: string): string[] {
-    return rawRepositories
-        .trim()
-        .split(/\s*,\s*/)
-        .filter(repo => repo)
-}
 
 export function getSanitizedLine(line: EditableDataSeries): SearchBasedInsightSeries {
     return {
@@ -43,6 +37,7 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
             title: rawInsight.title,
             series: getSanitizedSeries(rawInsight.series),
             visibility: rawInsight.visibility,
+            step: { [rawInsight.step]: +rawInsight.stepValue },
         }
     }
 

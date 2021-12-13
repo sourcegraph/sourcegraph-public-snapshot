@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/zoekt/query"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
@@ -46,7 +47,10 @@ func GetRepositories(ctx context.Context) (*Repositories, error) {
 		total.GitDirBytes += uint64(stat.GitDirBytes)
 	}
 
-	if search.Indexed() == nil {
+	// XXX(tsenart): We temporarily disable the zoekt List call below because
+	// it's causing OOMs in the frontends in production.
+	// Issue: https://github.com/sourcegraph/sourcegraph/issues/28799
+	if search.Indexed() == nil || envvar.SourcegraphDotComMode() {
 		return &total, nil
 	}
 

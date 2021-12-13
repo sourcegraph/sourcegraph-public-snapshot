@@ -16,7 +16,7 @@ import (
 	batchesApitest "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors/resolvers/apitest"
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -25,7 +25,7 @@ import (
 
 func TestCreateCodeMonitor(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	r := newTestResolver(t, db)
 
 	userID := insertTestUser(t, db, "cm-user1", true)
@@ -77,7 +77,7 @@ func TestCreateCodeMonitor(t *testing.T) {
 
 func TestListCodeMonitors(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	r := newTestResolver(t, db)
 
 	userID := insertTestUser(t, db, "cm-user1", true)
@@ -117,11 +117,7 @@ func TestListCodeMonitors(t *testing.T) {
 	requireHasNextPage(t, r2, true)
 
 	// The returned cursor should be usable to return the remaining monitors
-	pi, err := r2.PageInfo(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	pi := r2.PageInfo()
 	args = &graphqlbackend.ListMonitorsArgs{
 		First: 10,
 		After: pi.EndCursor(),
@@ -138,11 +134,7 @@ func TestListCodeMonitors(t *testing.T) {
 func requireNodeCount(t *testing.T, r graphqlbackend.MonitorConnectionResolver, c int) {
 	t.Helper()
 
-	nodes, err := r.Nodes(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	nodes := r.Nodes()
 	if len(nodes) != c {
 		t.Fatalf("got %d nodes but expected %d", len(nodes), c)
 	}
@@ -151,18 +143,14 @@ func requireNodeCount(t *testing.T, r graphqlbackend.MonitorConnectionResolver, 
 func requireHasNextPage(t *testing.T, r graphqlbackend.MonitorConnectionResolver, hasNextPage bool) {
 	t.Helper()
 
-	pageInfo, err := r.PageInfo(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	pageInfo := r.PageInfo()
 	if pageInfo.HasNextPage() != hasNextPage {
 		t.Fatalf("unexpected value for HasNextPage")
 	}
 }
 
 func TestIsAllowedToEdit(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	// Setup users and org
 	owner := insertTestUser(t, db, "cm-user1", false)
@@ -224,7 +212,7 @@ func TestIsAllowedToEdit(t *testing.T) {
 }
 
 func TestIsAllowedToCreate(t *testing.T) {
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	// Setup users and org
 	member := insertTestUser(t, db, "cm-user1", false)
@@ -297,7 +285,7 @@ func (u *testUser) id() graphql.ID {
 
 func TestQueryMonitor(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.
@@ -565,7 +553,7 @@ query($userName: String!, $actionCursor: String!){
 
 func TestEditCodeMonitor(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.
@@ -1137,8 +1125,8 @@ func TestTriggerTestEmailAction(t *testing.T) {
 		t.Skip()
 	}
 
-	got := email.TemplateDataNewSearchResults{}
-	email.MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *email.TemplateDataNewSearchResults) error {
+	got := background.TemplateDataNewSearchResults{}
+	background.MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *background.TemplateDataNewSearchResults) error {
 		got = *data
 		return nil
 	}
@@ -1169,7 +1157,7 @@ func TestTriggerTestEmailAction(t *testing.T) {
 }
 
 func TestMonitorKindEqualsResolvers(t *testing.T) {
-	got := email.MonitorKind
+	got := background.MonitorKind
 	want := MonitorKind
 
 	if got != want {

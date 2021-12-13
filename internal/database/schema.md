@@ -89,9 +89,12 @@ Indexes:
  version      | integer                  |           | not null | 
  last_used_at | timestamp with time zone |           |          | 
  created_at   | timestamp with time zone |           | not null | now()
+ user_id      | integer                  |           | not null | 
 Indexes:
     "batch_spec_execution_cache_entries_pkey" PRIMARY KEY, btree (id)
-    "batch_spec_execution_cache_entries_key_unique" UNIQUE CONSTRAINT, btree (key)
+    "batch_spec_execution_cache_entries_user_id_key_unique" UNIQUE CONSTRAINT, btree (user_id, key)
+Foreign-key constraints:
+    "batch_spec_execution_cache_entries_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -1556,6 +1559,29 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.notebooks"
+```
+     Column      |           Type           | Collation | Nullable |                                              Default                                              
+-----------------+--------------------------+-----------+----------+---------------------------------------------------------------------------------------------------
+ id              | bigint                   |           | not null | nextval('notebooks_id_seq'::regclass)
+ title           | text                     |           | not null | 
+ blocks          | jsonb                    |           | not null | '[]'::jsonb
+ public          | boolean                  |           | not null | 
+ creator_user_id | integer                  |           |          | 
+ created_at      | timestamp with time zone |           | not null | now()
+ updated_at      | timestamp with time zone |           | not null | now()
+ blocks_tsvector | tsvector                 |           |          | generated always as (jsonb_to_tsvector('english'::regconfig, blocks, '["string"]'::jsonb)) stored
+Indexes:
+    "notebooks_pkey" PRIMARY KEY, btree (id)
+    "notebooks_blocks_tsvector_idx" gin (blocks_tsvector)
+    "notebooks_title_trgm_idx" gin (title gin_trgm_ops)
+Check constraints:
+    "blocks_is_array" CHECK (jsonb_typeof(blocks) = 'array'::text)
+Foreign-key constraints:
+    "notebooks_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+
+```
+
 # Table "public.org_invitations"
 ```
       Column       |           Type           | Collation | Nullable |                   Default                   
@@ -1616,6 +1642,26 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.org_stats"
+```
+        Column        |           Type           | Collation | Nullable | Default 
+----------------------+--------------------------+-----------+----------+---------
+ org_id               | integer                  |           | not null | 
+ code_host_repo_count | integer                  |           |          | 0
+ updated_at           | timestamp with time zone |           | not null | now()
+Indexes:
+    "org_stats_pkey" PRIMARY KEY, btree (org_id)
+Foreign-key constraints:
+    "org_stats_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+Business statistics for organizations
+
+**code_host_repo_count**: Count of repositories accessible on all code hosts for this organization.
+
+**org_id**: Org ID that the stats relate to.
+
 # Table "public.orgs"
 ```
       Column       |           Type           | Collation | Nullable |             Default              
@@ -1644,6 +1690,7 @@ Referenced by:
     TABLE "names" CONSTRAINT "names_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "org_invitations" CONSTRAINT "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
+    TABLE "org_stats" CONSTRAINT "org_stats_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "registry_extensions" CONSTRAINT "registry_extensions_publisher_org_id_fkey" FOREIGN KEY (publisher_org_id) REFERENCES orgs(id)
     TABLE "saved_searches" CONSTRAINT "saved_searches_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "search_contexts" CONSTRAINT "search_contexts_namespace_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
@@ -1883,6 +1930,7 @@ Indexes:
     "repo_blocked_idx" btree ((blocked IS NOT NULL))
     "repo_created_at" btree (created_at)
     "repo_fork" btree (fork)
+    "repo_hashed_name_idx" btree (sha256(lower(name::text)::bytea)) WHERE deleted_at IS NULL
     "repo_is_not_blocked_idx" btree ((blocked IS NULL))
     "repo_metadata_gin_idx" gin (metadata)
     "repo_name_case_sensitive_trgm_idx" gin ((name::text) gin_trgm_ops)
@@ -2298,6 +2346,7 @@ Foreign-key constraints:
  tags                    | text[]                   |           |          | '{}'::text[]
  billing_customer_id     | text                     |           |          | 
  invalidated_sessions_at | timestamp with time zone |           | not null | now()
+ tos_accepted            | boolean                  |           | not null | false
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL
@@ -2313,6 +2362,7 @@ Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_initial_applier_id_fkey" FOREIGN KEY (initial_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "batch_spec_execution_cache_entries" CONSTRAINT "batch_spec_execution_cache_entries_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "batch_specs" CONSTRAINT "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
@@ -2335,6 +2385,7 @@ Referenced by:
     TABLE "external_services" CONSTRAINT "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "notebooks" CONSTRAINT "notebooks_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
     TABLE "org_invitations" CONSTRAINT "org_invitations_sender_user_id_fkey" FOREIGN KEY (sender_user_id) REFERENCES users(id)
     TABLE "org_members" CONSTRAINT "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT

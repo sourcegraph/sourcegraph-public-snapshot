@@ -44,26 +44,23 @@ function cluster_setup() {
   sleep 15 #wait for namespace to come up
   kubectl get -n "$NAMESPACE" pods
 
-  pushd "$DIR/deploy-sourcegraph/"
+  pushd "$DIR/deploy-sourcegraph"
   set +e
   set +o pipefail
-  pushd base
-  # Remove cAdvisor, it deploys on all Buildkite nodes as a daemonset and is non-critical.
-  rm -rf ./cadvisor
   # See $DOCKER_CLUSTER_IMAGES_TXT in pipeline-steps.go for env var
   # replace all docker image tags with previously built candidate images
   while IFS= read -r line; do
     echo "$line"
-    grep -lr '.' -e "index.docker.io/sourcegraph/$line" --include \*.yaml | xargs sed -i -E "s#index.docker.io/sourcegraph/$line:.*#us.gcr.io/sourcegraph-dev/$line:$CANDIDATE_VERSION#g"
+    grep -lr './base/' -e "index.docker.io/sourcegraph/$line" --include \*.yaml | xargs sed -i -E "s#index.docker.io/sourcegraph/$line:.*#us.gcr.io/sourcegraph-dev/$line:$CANDIDATE_VERSION#g"
   done < <(printf '%s\n' "$DOCKER_CLUSTER_IMAGES_TXT")
-  popd
-  echo "--- create cluster"
-  ./create-new-cluster.sh
-  popd
 
+  echo "--- create cluster"
+  ./overlay-generate-cluster.sh low-resource generated-cluster
+  kubectl apply -n "$NAMESPACE" --recursive --validate -f generated-cluster
+  popd
   echo "--- wait for ready"
-  kubectl get pods
-  time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=20m
+  kubectl get pods -n "$NAMESPACE"
+  time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=20m -n "$NAMESPACE"
   set -e
   set -o pipefail
 }
@@ -114,6 +111,5 @@ function e2e() {
 # main
 cluster_setup
 test_setup
-# TODO: Failing tests do not fail the build
 set +o pipefail
-e2e || true
+e2e

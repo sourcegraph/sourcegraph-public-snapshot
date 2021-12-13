@@ -5,6 +5,15 @@ import { parseBrowserRepoURL } from '../../util/url'
 
 import { Block, BlockInput, FileBlockInput } from '.'
 
+export function serializeBlocks(blocks: BlockInput[], sourcegraphURL: string): string {
+    return blocks
+        .map(
+            block =>
+                `${encodeURIComponent(block.type)}:${encodeURIComponent(serializeBlockInput(block, sourcegraphURL))}`
+        )
+        .join(',')
+}
+
 export function serializeBlockInput(block: BlockInput, sourcegraphURL: string): string {
     switch (block.type) {
         case 'md':

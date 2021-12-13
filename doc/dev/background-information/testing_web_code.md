@@ -25,36 +25,49 @@ These categories may be more or less important depending on the piece of UI.
 A visual regression is a bug where the component behaves correctly, but no longer looks as intended.
 We use Percy screenshot tests and Chromatic Storybook tests to catch these.
 Percy can take screenshots in end-to-end tests and client integration tests. Chromatic can take screenshots in Storybook tests.
-Storybook tests can be seen as a form of unit test for a component.
+Storybook tests can be seen as a form of unit test for a component's UI.
 Any story that is added to our codebase is automatically screenshotted on every CI build (but only in its initial state).
 
 ### Render output
 
 Depending on the component, it can be important to test the _render output_ of the component.
 This encompasses the DOM structure and that the correct props are passed to other components.
-For example, when a component renders a link, we want to make sure right destination is passed.
-
-This is accomplished by Jest snapshot tests, using a test renderer for React like `enzyme`.
-While this will inevitably also test parts that would be considered internal implementation details of the component, it generally has a better cost-benefit ratio than the alternative of plucking out specific elements and writing manual assertions.
-
-Testing internal implementation details is generally bad because it is at odds with goal (4).
-Since snapshots are updated automatically though, this concern is not a problem in practice.
-Manual assertions on the other hand can cause that issue: Finding the right element often depends on targeting it with a CSS selector, which means the test can fail and require manual updates from changing the styling or DOM structure in unrelated ways.
-
-In addition, it is often important not just to test what is rendered, but also _what is not rendered_.
-For example, after changing a condition in JSX, an additional element may be rendered that should not be there (or an undesired prop).
-This is only possible by taking the whole output into account, not by only making assertions on specific parts of it.
+This can be useful for tests where we **only** care about the DOM output.
+For example, a component that renders a `<span>` or an `<a>` element depending on the props passed to it.
 
 Snapshot diffs should be reviewed in pull request reviews the same way any other code or test diff should is reviewed and can be useful to highlight changes in render output to reviewers.
 
+**Please note:** Snapshot testing should only be used for the simplest of components and should be avoided for most tests. There are some major caveats to this type of testing:
+
+- Snapshots ultimately test the implementation details of a component. This is problematic as it is at odds with goal (4). We cannot refactor our component internals and rely on these tests to catch regressions effectively.
+- Snapshots can often be very large and easily missed in code review. As they change so often, it can be quite common for developers to fall into the trap of ignoring the diffs and assuming that the snapshot is correct.
+- Snapshots fall into a grey area between our typical behavior tests and our visual regression tests. It should usually be beneficial to chose the relevant alternative of those options that suits your use case instead of adding another snapshot.
+
+[Learn how to write and debug these tests](../how-to/testing.md#react-component-snapshot-tests)
+
 ### Behavior
 
-Interactive components can require tests of behavior.
-Enzyme allows [simulating events on elements](https://enzymejs.github.io/enzyme/docs/api/ReactWrapper/simulate.html), for example a click.
-[Sinon](https://sinonjs.org/) can be used to assert a callback prop is called in response to that, or Jest snapshots to assert the render output changes accordingly.
+The most effective way we can test our React components is through our behavior tests. These tests should all follow the same core guiding principle:
+> The more our tests resemble the way our software is used, the more confidence they will give us.
 
-Behaviors involving many components can be tested well in integration tests with Puppeteer to make sure they are wired up correctly.
-Documentation for integration tests in our main repository can be found in the [repository's developer documentation](https://docs.sourcegraph.com/dev/background-information/testing#browser-based-tests).
+This means that our behavior tests should be designed to simulate a typical user journey **as closely as possible**.
+
+Our tests should deal with the DOM directly, rather than component abstractions. For example, for an `<Input />` component, we should simulate actual keyboard events rather than calling an `onInput` prop with mock data.
+
+Our tests should render as much of a single user journey as possible. Although it might be simpler to test a specific `<PageHeader />` component on its own, it is much closer to a typical user journey to test the entire `<Page />` component at once. The one exception here should be for components that are **intended** to be reusable, it is preferable to test these in isolation as they could be used in many different user journeys.
+
+We use two different libraries for writing our behavior tests:
+
+#### Testing-library
+These tests run in a simulated, pure-JavaScript implementation of a browser called [JSDOM](https://github.com/jsdom/jsdom). They are fast and accurate, but cannot fully replicate a browser. Most of our behavior tests should be written in this way.
+
+[Learn how to write and debug these tests](../how-to/testing.md#behavior-tests)
+
+#### Puppeteer
+These tests run in an actual browser, meaning they can fully replicate almost everything a user might be able to do. However, they are quite slow and can be very brittle. We should only write these tests for functionality that cannot be tested through testing-library.
+
+[Learn how to write and debug these tests](../how-to/testing.md#browser-based-tests)
+
 
 ## Writing testable code
 

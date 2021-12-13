@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"strings"
 	"testing"
 	"time"
@@ -13,15 +12,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID int32) {
+func insertTestUser(t *testing.T, db database.DB, name string, isAdmin bool) (userID int32) {
 	t.Helper()
 
 	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
 
-	err := db.QueryRow(q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
+	err := db.QueryRowContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,12 +28,12 @@ func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID
 	return userID
 }
 
-func addUserToOrg(t *testing.T, db *sql.DB, userID int32, orgID int32) {
+func addUserToOrg(t *testing.T, db database.DB, userID int32, orgID int32) {
 	t.Helper()
 
 	q := sqlf.Sprintf("INSERT INTO org_members (org_id, user_id) VALUES (%s, %s)", orgID, userID)
 
-	_, err := db.Exec(q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := db.ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +132,7 @@ func (r *Resolver) insertTestMonitorWithOpts(ctx context.Context, t *testing.T, 
 
 // newTestResolver returns a Resolver with stopped clock, which is useful to
 // compare input and outputs in tests.
-func newTestResolver(t *testing.T, db dbutil.DB) *Resolver {
+func newTestResolver(t *testing.T, db database.DB) *Resolver {
 	t.Helper()
 
 	now := time.Now().UTC().Truncate(time.Microsecond)

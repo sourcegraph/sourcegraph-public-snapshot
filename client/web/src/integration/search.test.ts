@@ -73,7 +73,23 @@ describe('Search', () => {
             currentTest: this.currentTest!,
             directory: __dirname,
         })
-        testContext.overrideGraphQL(commonSearchGraphQLResults)
+        testContext.overrideGraphQL({
+            ...commonSearchGraphQLResults,
+            UserAreaUserProfile: () => ({
+                user: {
+                    __typename: 'User',
+                    id: 'user123',
+                    username: 'alice',
+                    displayName: 'alice',
+                    url: '/users/test',
+                    settingsURL: '/users/test/settings',
+                    avatarURL: '',
+                    viewerCanAdminister: true,
+                    builtinAuth: true,
+                    tags: [],
+                },
+            }),
+        })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
@@ -511,6 +527,37 @@ describe('Search', () => {
             await resetCreateCodeMonitorFeatureTour(false)
             await driver.page.waitForSelector('.test-search-result-label', { visible: true })
             expect(await isCreateCodeMonitorFeatureTourVisible()).toBeFalsy()
+        })
+    })
+
+    describe('Saved searches', () => {
+        test('is styled correctly, with saved searches', async () => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+                savedSearches: () => ({
+                    savedSearches: [
+                        {
+                            description: 'Demo',
+                            id: 'U2F2ZWRTZWFyY2g6NQ==',
+                            namespace: { __typename: 'User', id: 'user123', namespaceName: 'test' },
+                            notify: false,
+                            notifySlack: false,
+                            query: 'context:global Batch Change patternType:literal',
+                            slackWebhookURL: null,
+                        },
+                    ],
+                }),
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/searches')
+            await driver.page.waitForSelector('[data-testid="saved-searches-list-page"]')
+            await percySnapshotWithVariants(driver.page, 'Saved searches list')
+        })
+
+        test('is styled correctly, with saved search form', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/searches/add')
+            await driver.page.waitForSelector('[data-testid="saved-search-form"]')
+            await percySnapshotWithVariants(driver.page, 'Saved search - Form')
         })
     })
 })

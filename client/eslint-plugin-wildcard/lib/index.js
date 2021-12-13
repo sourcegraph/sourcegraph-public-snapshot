@@ -27,7 +27,7 @@ module.exports = {
           },
         ],
         '@sourcegraph/wildcard/forbid-class-name': [
-          'off', // Current disabled until first `<Badge />` component is migrated: https://github.com/sourcegraph/sourcegraph/issues/27622
+          'error',
           {
             forbid: [
               {
