@@ -31,6 +31,11 @@
 
     b {
         display: contents;
+
+        // A bootstrap CSS class .card brings custom color styles that we should change
+        // for b elements within a card accroding to our designs for this card.
+        // Since bootstrap classes works with !important we should override this also
+        // with !important statement.
         color: var(--body-color) !important;
     }
 }
