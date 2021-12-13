@@ -53,6 +53,10 @@ export const getCaptureGroupInsightsPreview = (
 
             const { searchInsightLivePreview: series } = data
 
+            if (series.length === 0) {
+                throw new Error('Found no matches')
+            }
+
             // Extend series with synthetic index based series id
             const indexedSeries = series.map<InsightDataSeriesData>((series, index) => ({
                 seriesId: `${index}`,
