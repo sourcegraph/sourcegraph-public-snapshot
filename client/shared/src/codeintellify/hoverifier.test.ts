@@ -5,7 +5,6 @@ import { TestScheduler } from 'rxjs/testing'
 
 import { Range } from '@sourcegraph/extension-api-types'
 
-import { ErrorLike } from './errors'
 import { isDefined, propertyIsDefined } from './helpers'
 import {
     AdjustmentDirection,
@@ -16,17 +15,14 @@ import {
     PositionJump,
     TOOLTIP_DISPLAY_DELAY,
 } from './hoverifier'
-import { LOADING } from './loading'
 import { findPositionsFromEvents, SupportedMouseEvent } from './positions'
 import { CodeViewProps, DOM } from './testutils/dom'
 import {
-    createHoverAttachment,
     createStubActionsProvider,
     createStubHoverProvider,
     createStubDocumentHighlightProvider,
 } from './testutils/fixtures'
 import { dispatchMouseEventAtPositionImpure } from './testutils/mouse'
-import { HoverAttachment } from './types'
 
 describe('Hoverifier', () => {
     const dom = new DOM()
@@ -260,80 +256,6 @@ describe('Hoverifier', () => {
             .toPromise()
         gitHubCodeView.getCodeElementFromLineNumber(gitHubCodeView.codeView, 2)!.scrollIntoView({ behavior: 'smooth' })
         await hoverIsHidden
-    })
-
-    it('emits loading and then state on click events', () => {
-        for (const codeView of testcases) {
-            const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
-
-            const hoverDelayTime = 100
-            const actionsDelayTime = 150
-            const hover = {}
-            const actions = ['foo', 'bar']
-
-            scheduler.run(({ cold, expectObservable }) => {
-                const hoverifier = createHoverifier({
-                    hoverOverlayElements: of(null),
-                    hoverOverlayRerenders: EMPTY,
-                    getHover: createStubHoverProvider(hover, LOADER_DELAY + hoverDelayTime),
-                    getDocumentHighlights: createStubDocumentHighlightProvider(),
-                    getActions: createStubActionsProvider(actions, LOADER_DELAY + actionsDelayTime),
-                })
-
-                const positionJumps = new Subject<PositionJump>()
-
-                const positionEvents = of(codeView.codeView).pipe(findPositionsFromEvents({ domFunctions: codeView }))
-
-                const subscriptions = new Subscription()
-
-                subscriptions.add(hoverifier)
-                subscriptions.add(
-                    hoverifier.hoverify({
-                        dom: codeView,
-                        positionEvents,
-                        positionJumps,
-                        resolveContext: () => codeView.revSpec,
-                    })
-                )
-
-                const hoverAndActionsUpdates = hoverifier.hoverStateUpdates.pipe(
-                    filter(propertyIsDefined('hoverOverlayProps')),
-                    map(({ hoverOverlayProps: { actionsOrError, hoverOrError } }) => ({
-                        actionsOrError,
-                        hoverOrError,
-                    })),
-                    distinctUntilChanged((a, b) => isEqual(a, b))
-                )
-
-                const inputDiagram = 'a'
-
-                // Subtract 1ms before "b" because "a" takes up 1ms.
-                const outputDiagram = `${LOADER_DELAY}ms ${hoverDelayTime}ms a ${
-                    actionsDelayTime - hoverDelayTime - 1
-                }ms b`
-
-                const outputValues: {
-                    [key: string]: {
-                        hoverOrError: typeof LOADING | HoverAttachment | null | ErrorLike
-                        actionsOrError: typeof LOADING | string[] | null | ErrorLike
-                    }
-                } = {
-                    // No hover is shown if it would just consist of LOADING.
-                    a: { hoverOrError: createHoverAttachment(hover), actionsOrError: LOADING },
-                    b: { hoverOrError: createHoverAttachment(hover), actionsOrError: actions },
-                }
-
-                // Click https://sourcegraph.sgdev.org/github.com/gorilla/mux@cb4698366aa625048f3b815af6a0dea8aef9280a/-/blob/mux.go#L24:6
-                cold(inputDiagram).subscribe(() =>
-                    dispatchMouseEventAtPositionImpure('click', codeView, {
-                        line: 24,
-                        character: 6,
-                    })
-                )
-
-                expectObservable(hoverAndActionsUpdates).toBe(outputDiagram, outputValues)
-            })
-        }
     })
 
     it('debounces mousemove events before showing overlay', () => {
