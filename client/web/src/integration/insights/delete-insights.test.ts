@@ -14,9 +14,7 @@ describe('Code insights page', () => {
     let testContext: WebIntegrationTestContext
 
     before(async () => {
-        driver = await createDriverForTest({
-            devtools: true,
-        })
+        driver = await createDriverForTest()
     })
 
     after(() => driver?.close())
