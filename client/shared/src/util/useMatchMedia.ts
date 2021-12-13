@@ -17,11 +17,7 @@ export function useMatchMedia(query: string, observe = true): boolean {
         if (observe) {
             window.matchMedia(query).addEventListener('change', handler)
         }
-        return () => {
-            if (observe) {
-                window.matchMedia(query).removeEventListener('change', handler)
-            }
-        }
+        return () => window.matchMedia(query).removeEventListener('change', handler)
     }, [query, observe])
 
     return isMatch

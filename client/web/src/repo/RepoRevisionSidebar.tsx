@@ -43,9 +43,8 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
         settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
     )
 
-    // ToDo: this media query should be extracted into some share place for better reuse
-    const isTouchScreen = useMatchMedia('(pointer: coarse), (hover: none)', false)
-    const [isVisible, setIsVisible] = useState(persistedIsVisible && !isTouchScreen)
+    const isWideScreen = useMatchMedia('(min-width: 768px)', false)
+    const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
 
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
     const handleSidebarToggle = useCallback(
