@@ -927,7 +927,7 @@ func TestIsGlobalSearch(t *testing.T) {
 				},
 			}
 
-			p, _, _ := resolver.toSearchInputs(resolver.Query)
+			p, _, _ := resolver.toSearchInputs(context.Background(), resolver.Query)
 			if p.Mode != tt.mode {
 				t.Fatalf("got %+v, want %+v", p.Mode, tt.mode)
 			}

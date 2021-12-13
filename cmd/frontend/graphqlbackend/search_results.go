@@ -583,7 +583,7 @@ func withMode(args search.TextParameters, st query.SearchType) search.TextParame
 // where each job contains its separate state for that kind of search and
 // backend. To complete the migration to jobs in phases, `args` is kept
 // backwards compatibility and represents a generic search.
-func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []run.Job, error) {
+func (r *searchResolver) toSearchInputs(ctx context.Context, q query.Q) (*search.TextParameters, []run.Job, error) {
 	b, err := query.ToBasicQuery(q)
 	if err != nil {
 		return nil, nil, err
@@ -654,7 +654,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 
 			if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
 				typ := search.TextRequest
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+				zoektQuery, err := search.QueryToZoektQuery(ctx, args.PatternInfo, typ)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -686,7 +686,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 
 			if args.ResultTypes.Has(result.TypeSymbol) {
 				typ := search.SymbolRequest
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+				zoektQuery, err := search.QueryToZoektQuery(ctx, args.PatternInfo, typ)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -718,7 +718,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 				// TODO(rvantonder): we don't always have to run
 				// this converter. It depends on whether we run
 				// a zoekt search at all.
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+				zoektQuery, err := search.QueryToZoektQuery(ctx, args.PatternInfo, typ)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -751,7 +751,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 		if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
 			if !skipUnindexed {
 				typ := search.SymbolRequest
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+				zoektQuery, err := search.QueryToZoektQuery(ctx, args.PatternInfo, typ)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -791,7 +791,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 
 		if r.PatternType == query.SearchTypeStructural && p.Pattern != "" {
 			typ := search.TextRequest
-			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+			zoektQuery, err := search.QueryToZoektQuery(ctx, args.PatternInfo, typ)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -1034,7 +1034,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 			return r.evaluateOr(ctx, q)
 		case query.Concat:
 			r.invalidateCache()
-			args, jobs, err := r.toSearchInputs(q.ToParseTree())
+			args, jobs, err := r.toSearchInputs(ctx, q.ToParseTree())
 			if err != nil {
 				return &SearchResults{}, err
 			}
@@ -1042,7 +1042,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 		}
 	case query.Pattern:
 		r.invalidateCache()
-		args, jobs, err := r.toSearchInputs(q.ToParseTree())
+		args, jobs, err := r.toSearchInputs(ctx, q.ToParseTree())
 		if err != nil {
 			return &SearchResults{}, err
 		}
@@ -1059,7 +1059,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	if q.Pattern == nil {
 		r.invalidateCache()
-		args, jobs, err := r.toSearchInputs(query.ToNodes(q.Parameters))
+		args, jobs, err := r.toSearchInputs(ctx, query.ToNodes(q.Parameters))
 		if err != nil {
 			return &SearchResults{}, err
 		}
@@ -1517,7 +1517,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	for {
 		// Query search results.
 		var err error
-		args, jobs, err := r.toSearchInputs(r.Query)
+		args, jobs, err := r.toSearchInputs(ctx, r.Query)
 		if err != nil {
 			return nil, err
 		}

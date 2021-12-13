@@ -1,6 +1,7 @@
 package search
 
 import (
+	"context"
 	"encoding/json"
 	"sort"
 	"testing"
@@ -184,7 +185,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to parse %q: %v", tt.Query, err)
 			}
-			got, err := QueryToZoektQuery(tt.Pattern, tt.Type)
+			got, err := QueryToZoektQuery(context.Background(), tt.Pattern, tt.Type)
 			if err != nil {
 				t.Fatal("queryToZoektQuery failed:", err)
 			}

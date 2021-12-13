@@ -1,6 +1,7 @@
 package search
 
 import (
+	"context"
 	"regexp"
 	"regexp/syntax"
 	"strconv"
@@ -229,7 +230,7 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}, nil
 }
 
-func QueryToZoektQuery(p *TextPatternInfo, typ IndexedRequestType) (zoekt.Q, error) {
+func QueryToZoektQuery(ctx context.Context, p *TextPatternInfo, typ IndexedRequestType) (zoekt.Q, error) {
 	var and []zoekt.Q
 
 	var q zoekt.Q

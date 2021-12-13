@@ -362,7 +362,7 @@ func (r *searchResolver) showSymbolMatches(ctx context.Context) ([]SearchSuggest
 		return nil, nil
 	}
 
-	args, jobs, err := r.toSearchInputs(r.Query)
+	args, jobs, err := r.toSearchInputs(ctx, r.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -447,7 +447,7 @@ func (r *searchResolver) showFilesWithTextMatches(first int32) suggester {
 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 		defer cancel()
 		if len(r.Query.Values(query.FieldDefault)) > 0 {
-			searchArgs, jobs, err := r.toSearchInputs(r.Query)
+			searchArgs, jobs, err := r.toSearchInputs(ctx, r.Query)
 			if err != nil {
 				return nil, err
 			}
