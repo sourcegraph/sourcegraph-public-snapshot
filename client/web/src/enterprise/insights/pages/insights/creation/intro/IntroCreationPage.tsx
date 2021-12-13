@@ -85,6 +85,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                 />
 
                 <ExtensionInsightsCard
+                    data-testid="explore-extensions"
                     to="/extensions?query=category:Insights&experimental=true"
                     onClick={logExploreExtensionsClick}
                 />
