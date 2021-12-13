@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
 
 /**
  * Returns provided media query match and, by default, subscribes to its updates.
@@ -10,19 +10,19 @@ import { useEffect, useState } from 'react';
  * @returns `boolean`
  */
 export function useMatchMedia(query: string, observe = true): boolean {
-  const [isMatch, setIsMatch] = useState(window.matchMedia(query).matches)
+    const [isMatch, setIsMatch] = useState(window.matchMedia(query).matches)
 
-  useEffect(() => {
-    const handler = (event: MediaQueryListEvent): void => setIsMatch(event.matches)
-    if (observe) {
-      window.matchMedia(query).addEventListener('change', handler)
-    }
-    return () => {
-      if (observe) {
-        window.matchMedia(query).removeEventListener('change', handler)
-      }
-    }
-  }, [query, observe])
+    useEffect(() => {
+        const handler = (event: MediaQueryListEvent): void => setIsMatch(event.matches)
+        if (observe) {
+            window.matchMedia(query).addEventListener('change', handler)
+        }
+        return () => {
+            if (observe) {
+                window.matchMedia(query).removeEventListener('change', handler)
+            }
+        }
+    }, [query, observe])
 
-  return isMatch
+    return isMatch
 }

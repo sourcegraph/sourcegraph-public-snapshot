@@ -45,17 +45,20 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
 
     // ToDo: this media query should be extracted into some share place for better reuse
     const isTouchScreen = useMatchMedia('(pointer: coarse), (hover: none)', false)
-    const [isVisible, setIsVisible] = useState(persistedIsVisible && !isTouchScreen);
+    const [isVisible, setIsVisible] = useState(persistedIsVisible && !isTouchScreen)
 
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
-    const handleSidebarToggle = useCallback((value: boolean) => {
-        props.telemetryService.log('FileTreeViewClicked', {
-            action: 'click',
-            label: 'expand / collapse file tree view',
-        })
-        setPersistedIsVisible(value)
-        setIsVisible(value)
-    }, [setPersistedIsVisible, props.telemetryService])
+    const handleSidebarToggle = useCallback(
+        (value: boolean) => {
+            props.telemetryService.log('FileTreeViewClicked', {
+                action: 'click',
+                label: 'expand / collapse file tree view',
+            })
+            setPersistedIsVisible(value)
+            setIsVisible(value)
+        },
+        [setPersistedIsVisible, props.telemetryService]
+    )
     const handleSymbolClick = useCallback(() => props.telemetryService.log('SymbolTreeViewClicked'), [
         props.telemetryService,
     ])
