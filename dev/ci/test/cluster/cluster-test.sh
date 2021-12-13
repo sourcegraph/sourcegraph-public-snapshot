@@ -111,6 +111,5 @@ function e2e() {
 # main
 cluster_setup
 test_setup
-# TODO: Failing tests do not fail the build
 set +o pipefail
-e2e || true
+e2e
