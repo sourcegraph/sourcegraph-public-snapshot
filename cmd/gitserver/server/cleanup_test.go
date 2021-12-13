@@ -191,6 +191,7 @@ func TestCleanupExpired(t *testing.T) {
 	repoGCOld := path.Join(root, "repo-gc-old", ".git")
 	repoBoom := path.Join(root, "repo-boom", ".git")
 	repoCorrupt := path.Join(root, "repo-corrupt", ".git")
+	repoNonBare := path.Join(root, "repo-non-bare", ".git")
 	repoPerforce := path.Join(root, "repo-perforce", ".git")
 	repoPerforceGCOld := path.Join(root, "repo-perforce-gc-old", ".git")
 	repoRemoteURLScrub := path.Join(root, "repo-remote-url-scrub", ".git")
@@ -207,6 +208,10 @@ func TestCleanupExpired(t *testing.T) {
 		if err := cmd.Run(); err != nil {
 			t.Fatal(err)
 		}
+	}
+
+	if err := exec.Command("git", "init", filepath.Dir(repoNonBare)).Run(); err != nil {
+		t.Fatal(err)
 	}
 
 	getRemoteURL := func(ctx context.Context, name api.RepoName) (string, error) {
@@ -276,6 +281,10 @@ func TestCleanupExpired(t *testing.T) {
 	repoBoomTime := modTime(repoBoom)
 	repoBoomRecloneTime := recloneTime(repoBoom)
 
+	if _, err := os.Stat(repoNonBare); err != nil {
+		t.Fatal(err)
+	}
+
 	s := &Server{
 		ReposDir:         root,
 		GetRemoteURLFunc: getRemoteURL,
@@ -327,6 +336,10 @@ func TestCleanupExpired(t *testing.T) {
 		t.Fatalf("expected no output from git remote after URL scrubbing, got: %s", out)
 	} else if err != nil {
 		t.Fatal(err)
+	}
+
+	if _, err := os.Stat(repoNonBare); err == nil {
+		t.Fatal("non-bare repo was not removed")
 	}
 }
 

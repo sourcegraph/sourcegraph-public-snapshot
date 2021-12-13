@@ -110,6 +110,16 @@ func (s *Server) cleanupRepos() {
 			return false, err
 		}
 
+		// We have seen repository corruption fail in such a way that the git
+		// config is missing the bare repo option but everything else looks
+		// like it works. This leads to failing fetches, so treat non-bare
+		// repos as corrupt. Since we often fetch with ensureRevision, this
+		// leads to most commands failing against the repository. It is safer
+		// to remove now than try a safe reclone.
+		if reason == "" && gitIsNonBareBestEffort(dir) {
+			reason = "non-bare"
+		}
+
 		if reason == "" {
 			return false, nil
 		}
@@ -713,6 +723,20 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 	if err != nil {
 		log15.Error("failed to set maybeCorruptRepo config", repo, "repo", "error", err)
 	}
+}
+
+// gitIsNonBareBestEffort returns true if the repository is not a bare
+// repo. If we fail to check or the repository is bare we return false.
+//
+// Note: it is not always possible to check if a repository is bare since a
+// lock file may prevent the check from succeeding. We only want bare
+// repositories and want to avoid transient false positives.
+func gitIsNonBareBestEffort(dir GitDir) bool {
+	cmd := exec.Command("git", "-C", dir.Path(), "rev-parse", "--is-bare-repository")
+	dir.Set(cmd)
+	b, _ := cmd.Output()
+	b = bytes.TrimSpace(b)
+	return bytes.Equal(b, []byte("false"))
 }
 
 // gitGC will invoke `git-gc` to clean up any garbage in the repo. It will
