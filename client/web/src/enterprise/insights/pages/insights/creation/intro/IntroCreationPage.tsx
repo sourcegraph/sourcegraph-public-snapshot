@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useEffect } from 'react'
+import React, { useContext, useEffect } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader } from '@sourcegraph/wildcard'
@@ -7,6 +7,8 @@ import { PageHeader } from '@sourcegraph/wildcard'
 import { Page } from '../../../../../../components/Page'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
 import { BetaFeedbackPanel } from '../../../../components/beta-feedback-panel/BetaFeedbackPanel'
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
+import { CodeInsightsGqlBackend } from '../../../../core/backend/gql-api/code-insights-gql-backend'
 
 import {
     CaptureGroupInsightCard,
@@ -21,6 +23,7 @@ interface IntroCreationPageProps extends TelemetryProps {}
 /** Displays intro page for insights creation UI. */
 export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> = props => {
     const { telemetryService } = props
+    const api = useContext(CodeInsightsBackendContext)
 
     const logCreateSearchBasedInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateSearchBasedInsightClick')
@@ -42,6 +45,8 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
         telemetryService.logViewEvent('CodeInsightsCreationPage')
     }, [telemetryService])
 
+    const isGqlApi = api instanceof CodeInsightsGqlBackend
+
     return (
         <Page className={classNames('container pb-5', styles.container)}>
             <PageHeader
@@ -61,7 +66,12 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
             <div className={styles.sectionContent}>
                 <SearchInsightCard to="/insights/create/lang-stats" onClick={logCreateSearchBasedInsightClick} />
 
-                <CaptureGroupInsightCard to="/insights/create/capture-group" onClick={logCaptureGroupInsightClick} />
+                {isGqlApi && (
+                    <CaptureGroupInsightCard
+                        to="/insights/create/capture-group"
+                        onClick={logCaptureGroupInsightClick}
+                    />
+                )}
 
                 <LangStatsInsightCard to="/insights/create/lang-stats" onClick={logCreateCodeStatsInsightClick} />
 
