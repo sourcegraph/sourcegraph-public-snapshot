@@ -42,6 +42,18 @@ func TestNew(t *testing.T) {
 		},
 		dsn: "postgres://postgres@127.0.0.1/sourcegraph?sslmode=disable",
 	}, {
+		name: "dbtest",
+		env: map[string]string{
+			"PGHOST":     "127.0.0.1",
+			"PGPORT":     "5432",
+			"PGUSER":     "sourcegraph",
+			"PGPASSWORD": "sourcegraph",
+			"PGDATABASE": "sourcegraph",
+			"PGSSLMODE":  "disable",
+			"PGTZ":       "UTC",
+		},
+		dsn: "postgres://sourcegraph:sourcegraph@127.0.0.1:5432/sourcegraph?sslmode=disable&timezone=UTC",
+	}, {
 		name: "datasource",
 		env: map[string]string{
 			"PGDATASOURCE": "postgres://foo@bar/bam",

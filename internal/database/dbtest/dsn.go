@@ -3,49 +3,34 @@ package dbtest
 import (
 	"net/url"
 	"os"
+	"os/user"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 )
 
 func getDSN() (*url.URL, error) {
-	if dsn, ok := os.LookupEnv("PGDATASOURCE"); ok {
-		return url.Parse(dsn)
+	defaults := map[string]string{
+		"PGHOST":     "127.0.0.1",
+		"PGPORT":     "5432",
+		"PGUSER":     "sourcegraph",
+		"PGPASSWORD": "sourcegraph",
+		"PGDATABASE": "sourcegraph",
+		"PGSSLMODE":  "disable",
+		"PGTZ":       "UTC",
 	}
 
-	dsn := `postgres://sourcegraph:sourcegraph@127.0.0.1:5432/sourcegraph?sslmode=disable&timezone=UTC`
-	u, err := url.Parse(dsn)
-	if err != nil {
-		return nil, err
-	}
-	updateDSNFromEnv(u)
-
-	return u, nil
-}
-
-// updateDSNFromEnv updates dsn based on PGXXX environment variables set on
-// the frontend.
-func updateDSNFromEnv(dsn *url.URL) {
-	if host := os.Getenv("PGHOST"); host != "" {
-		dsn.Host = host
-	}
-
-	if port := os.Getenv("PGPORT"); port != "" {
-		dsn.Host += ":" + port
-	}
-
-	if user := os.Getenv("PGUSER"); user != "" {
-		if password := os.Getenv("PGPASSWORD"); password != "" {
-			dsn.User = url.UserPassword(user, password)
-		} else {
-			dsn.User = url.User(user)
+	getenv := func(k string) string {
+		if v := os.Getenv(k); v != "" {
+			return v
 		}
+		return defaults[k]
 	}
 
-	if db := os.Getenv("PGDATABASE"); db != "" {
-		dsn.Path = db
+	username := ""
+	if user, err := user.Current(); err == nil {
+		username = user.Username
 	}
 
-	if sslmode := os.Getenv("PGSSLMODE"); sslmode != "" {
-		qry := dsn.Query()
-		qry.Set("sslmode", sslmode)
-		dsn.RawQuery = qry.Encode()
-	}
+	dsn := postgresdsn.New("", username, getenv)
+	return url.Parse(dsn)
 }
