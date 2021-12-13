@@ -1,5 +1,7 @@
 import classNames from 'classnames'
 import React, { useContext, useEffect } from 'react'
+import { useHistory } from 'react-router'
+import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader } from '@sourcegraph/wildcard'
@@ -23,22 +25,29 @@ interface IntroCreationPageProps extends TelemetryProps {}
 /** Displays intro page for insights creation UI. */
 export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> = props => {
     const { telemetryService } = props
+
+    const history = useHistory()
+    const { search } = useLocation()
     const api = useContext(CodeInsightsBackendContext)
 
-    const logCreateSearchBasedInsightClick = (): void => {
+    const handleCreateSearchBasedInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateSearchBasedInsightClick')
+        history.push(`/insights/create/search${search}`)
     }
 
-    const logCaptureGroupInsightClick = (): void => {
+    const handleCaptureGroupInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateCaptureGroupInsightClick')
+        history.push(`/insights/create/capture-group${search}`)
     }
 
-    const logCreateCodeStatsInsightClick = (): void => {
+    const handleCreateCodeStatsInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateCodeStatsInsightClick')
+        history.push(`/insights/create/lang-stats${search}`)
     }
 
-    const logExploreExtensionsClick = (): void => {
+    const handleExploreExtensionsClick = (): void => {
         telemetryService.log('CodeInsightsExploreInsightExtensionsClick')
+        history.push('/extensions?query=category:Insights&experimental=true')
     }
 
     useEffect(() => {
@@ -64,31 +73,21 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
             />
 
             <div className={styles.sectionContent}>
-                <SearchInsightCard
-                    data-testid="create-search-insights"
-                    to="/insights/create/lang-stats"
-                    onClick={logCreateSearchBasedInsightClick}
-                />
+                <SearchInsightCard data-testid="create-search-insights" onClick={handleCreateSearchBasedInsightClick} />
 
                 {isGqlApi && (
                     <CaptureGroupInsightCard
                         data-testid="create-capture-group-insight"
-                        to="/insights/create/capture-group"
-                        onClick={logCaptureGroupInsightClick}
+                        onClick={handleCaptureGroupInsightClick}
                     />
                 )}
 
                 <LangStatsInsightCard
                     data-testid="create-lang-usage-insight"
-                    to="/insights/create/lang-stats"
-                    onClick={logCreateCodeStatsInsightClick}
+                    onClick={handleCreateCodeStatsInsightClick}
                 />
 
-                <ExtensionInsightsCard
-                    data-testid="explore-extensions"
-                    to="/extensions?query=category:Insights&experimental=true"
-                    onClick={logExploreExtensionsClick}
-                />
+                <ExtensionInsightsCard data-testid="explore-extensions" onClick={handleExploreExtensionsClick} />
             </div>
 
             <footer className="mt-3">

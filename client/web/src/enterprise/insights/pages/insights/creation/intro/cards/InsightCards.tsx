@@ -2,12 +2,11 @@ import classNames from 'classnames'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-import { LinkWithQuery, LinkWithQueryProps } from '../../../../../components/link-with-query'
 import { CaptureGroupInsight, PieChart, ThreeLineChart } from '../../../../../modals/components/MediaCharts'
 
 import styles from './InsightCards.module.scss'
 
-interface CardProps extends LinkWithQueryProps {
+interface CardProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     footerText?: string
 }
 
@@ -19,7 +18,7 @@ const Card: React.FunctionComponent<CardProps> = props => {
     const { children, footerText, ...otherProps } = props
 
     return (
-        <LinkWithQuery {...otherProps} className={classNames(styles.card, 'card p-3', otherProps.className)}>
+        <button {...otherProps} type="button" className={classNames(styles.card, 'card p-3', otherProps.className)}>
             {children}
 
             {footerText && (
@@ -28,7 +27,7 @@ const Card: React.FunctionComponent<CardProps> = props => {
                     <span>{footerText}</span>
                 </footer>
             )}
-        </LinkWithQuery>
+        </button>
     )
 }
 
@@ -107,10 +106,7 @@ export const ExtensionInsightsCard: React.FunctionComponent<CardProps> = props =
 
         <CardBody title="Based on Sourcegraph extensions">
             Enable the extension and go to the README.md to learn how to set up code insights for selected Sourcegraph
-            extensions.{' '}
-            <Link to="/extensions?query=category:Insights&experimental=true" onClick={props.onClick}>
-                Explore the extensions
-            </Link>
+            extensions. <Link to="/extensions?query=category:Insights&experimental=true">Explore the extensions</Link>
         </CardBody>
     </Card>
 )
