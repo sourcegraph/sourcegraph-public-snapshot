@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useEffect } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -7,7 +8,12 @@ import { Page } from '../../../../../../components/Page'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
 import { BetaFeedbackPanel } from '../../../../components/beta-feedback-panel/BetaFeedbackPanel'
 
-import { ExtensionInsightsCard, LangStatsInsightCard, SearchInsightCard } from './cards/InsightCards'
+import {
+    CaptureGroupInsightCard,
+    ExtensionInsightsCard,
+    LangStatsInsightCard,
+    SearchInsightCard,
+} from './cards/InsightCards'
 import styles from './IntroCreationPage.module.scss'
 
 interface IntroCreationPageProps extends TelemetryProps {}
@@ -18,6 +24,10 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
 
     const logCreateSearchBasedInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateSearchBasedInsightClick')
+    }
+
+    const logCaptureGroupInsightClick = (): void => {
+        telemetryService.log('CodeInsightsCreateCaptureGroupInsightClick')
     }
 
     const logCreateCodeStatsInsightClick = (): void => {
@@ -33,7 +43,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
     }, [telemetryService])
 
     return (
-        <Page className="container pb-5">
+        <Page className={classNames('container pb-5', styles.container)}>
             <PageHeader
                 annotation={<BetaFeedbackPanel />}
                 path={[{ icon: CodeInsightsIcon }, { text: 'Create new code insight' }]}
@@ -50,6 +60,8 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
 
             <div className={styles.sectionContent}>
                 <SearchInsightCard to="/insights/create/lang-stats" onClick={logCreateSearchBasedInsightClick} />
+
+                <CaptureGroupInsightCard to="/insights/create/capture-group" onClick={logCaptureGroupInsightClick} />
 
                 <LangStatsInsightCard to="/insights/create/lang-stats" onClick={logCreateCodeStatsInsightClick} />
 
@@ -68,7 +80,6 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                 >
                     use cases
                 </a>
-                .
             </footer>
         </Page>
     )

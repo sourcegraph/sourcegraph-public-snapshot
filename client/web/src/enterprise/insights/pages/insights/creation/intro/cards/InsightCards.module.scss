@@ -5,6 +5,7 @@
     box-shadow: var(--box-shadow);
     text-decoration: none;
     color: unset;
+    font-size: 0.75rem;
 
     &:hover {
         text-decoration: none;
@@ -37,7 +38,7 @@
 // chart specific styles
 .chart {
     overflow: hidden;
-    height: 150px;
+    height: 10rem;
     width: 100%;
     object-fit: contain;
     background-color: transparent;
@@ -45,7 +46,7 @@
 
 .images {
     display: flex;
-    height: 150px;
+    height: 10rem;
     justify-content: center;
     align-items: center;
     gap: 1rem;
@@ -74,6 +75,6 @@
     justify-content: center;
     border-radius: 50%;
     background-color: var(--color-bg-3);
-    width: 34px;
-    height: 34px;
+    width: 2rem;
+    height: 2rem;
 }

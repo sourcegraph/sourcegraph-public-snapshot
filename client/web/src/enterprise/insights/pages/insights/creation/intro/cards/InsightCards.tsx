@@ -22,7 +22,12 @@ const Card: React.FunctionComponent<CardProps> = props => {
         <LinkWithQuery {...otherProps} className={classNames(styles.card, 'card p-3', otherProps.className)}>
             {children}
 
-            {footerText && <small className="text-muted mt-3">{footerText}</small>}
+            {footerText && (
+                <footer className="d-flex flex-column mt-3">
+                    <small className="text-muted">Example use</small>
+                    <span>{footerText}</span>
+                </footer>
+            )}
         </LinkWithQuery>
     )
 }
@@ -40,10 +45,10 @@ const CardBody: React.FunctionComponent<{ title: string }> = props => {
 }
 
 export const SearchInsightCard: React.FunctionComponent<CardProps> = props => (
-    <Card {...props} footerText="Example use: Redis, PostgreSQL and SQLite database usage.">
+    <Card {...props} footerText="Redis, PostgreSQL and SQLite database usage.">
         <ThreeLineChart viewBox="0 0 169 148" className={styles.chart} />
-        <CardBody title="Define values manually">
-            Insight <b>based on a custom Sourcegraph search query</b> that creates visualisation of the data series you
+        <CardBody title="Track">
+            Insight <b>based on a custom Sourcegraph search query</b> that creates visualization of the data series you
             will define <b>manually.</b>
         </CardBody>
     </Card>
@@ -59,15 +64,15 @@ export const LangStatsInsightCard: React.FunctionComponent<CardProps> = props =>
 )
 
 export const CaptureGroupInsightCard: React.FunctionComponent<CardProps> = props => (
-    <Card {...props} footerText="Example use: detecting and tracking language or package versions.">
+    <Card {...props} footerText="Detecting and tracking language or package versions.">
         <div className={styles.captureChartWrapper}>
             <CaptureGroupInsight className={styles.chart} />
             <CaptureGroupIcon className={styles.captureChartIcon} />
         </div>
 
-        <CardBody title="Generate from regex capture groups">
-            Data series will be generated dynamically for each unique value from the{' '}
-            <b>regular expression capture group</b> included in the search query. Chart will be updated as new values
+        <CardBody title="Detect and track">
+            Data series will be generated dynamically for each unique value from the
+            <b> regular expression capture group </b> included in the search query. Chart will be updated as new values
             appear in the code base.
         </CardBody>
     </Card>

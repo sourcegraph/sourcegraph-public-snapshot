@@ -38,4 +38,3 @@ export const BetaFeedbackPanel: React.FunctionComponent = () => {
         </div>
     )
 }
-

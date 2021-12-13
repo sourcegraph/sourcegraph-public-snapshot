@@ -1,10 +1,14 @@
+.container {
+    height: min-content;
+}
+
 .header {
     margin-bottom: 2rem;
 }
 
 .section-content {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
-    row-gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+    row-gap: 0.5rem;
     column-gap: 0.5rem;
 }
