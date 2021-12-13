@@ -9,15 +9,15 @@ import (
 	stdlibpath "path"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"gopkg.in/src-d/go-git.v4/plumbing/format/config"
-
 	"github.com/cockroachdb/errors"
 	"github.com/golang/groupcache/lru"
+	"gopkg.in/src-d/go-git.v4/plumbing/format/config"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -349,4 +349,80 @@ func ListFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, patt
 	}
 
 	return matching, nil
+}
+
+// ListDirectoryChildren fetches the list of children under the given directory
+// names. The result is a map keyed by the directory names with the list of files
+// under each.
+func ListDirectoryChildren(ctx context.Context, repo api.RepoName, commit api.CommitID, dirnames []string) (map[string][]string, error) {
+	args := []string{"ls-tree", "--name-only", string(commit), "--"}
+	args = append(args, cleanDirectoriesForLsTree(dirnames)...)
+	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd.Repo = repo
+
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseDirectoryChildren(dirnames, strings.Split(string(out), "\n")), nil
+}
+
+// cleanDirectoriesForLsTree sanitizes the input dirnames to a git ls-tree command. There are a
+// few peculiarities handled here:
+//
+//   1. The root of the tree must be indicated with `.`, and
+//   2. In order for git ls-tree to return a directory's contents, the name must end in a slash.
+func cleanDirectoriesForLsTree(dirnames []string) []string {
+	var args []string
+	for _, dir := range dirnames {
+		if dir == "" {
+			args = append(args, ".")
+		} else {
+			if !strings.HasSuffix(dir, "/") {
+				dir += "/"
+			}
+			args = append(args, dir)
+		}
+	}
+
+	return args
+}
+
+// parseDirectoryChildren converts the flat list of files from git ls-tree into a map. The keys of the
+// resulting map are the input (unsanitized) dirnames, and the value of that key are the files nested
+// under that directory. If dirnames contains a directory that encloses another, then the paths will
+// be placed into the key sharing the longest path prefix.
+func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
+	childrenMap := map[string][]string{}
+
+	// Ensure each directory has an entry, even if it has no children
+	// listed in the gitserver output.
+	for _, dirname := range dirnames {
+		childrenMap[dirname] = nil
+	}
+
+	// Order directory names by length (biggest first) so that we assign
+	// paths to the most specific enclosing directory in the following loop.
+	sort.Slice(dirnames, func(i, j int) bool {
+		return len(dirnames[i]) > len(dirnames[j])
+	})
+
+	for _, path := range paths {
+		if strings.Contains(path, "/") {
+			for _, dirname := range dirnames {
+				if strings.HasPrefix(path, dirname) {
+					childrenMap[dirname] = append(childrenMap[dirname], path)
+					break
+				}
+			}
+		} else if len(dirnames) > 0 && dirnames[len(dirnames)-1] == "" {
+			// No need to loop here. If we have a root input directory it
+			// will necessarily be the last element due to the previous
+			// sorting step.
+			childrenMap[""] = append(childrenMap[""], path)
+		}
+	}
+
+	return childrenMap
 }
