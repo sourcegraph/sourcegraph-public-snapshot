@@ -20,8 +20,6 @@ export interface CaptureGroupInsight extends SyntheticInsightFields {
      * List of repositories that are used to collect data by query regexp field
      */
     repositories: string[]
-
     step: Duration
-
     filters?: InsightFilters
 }
