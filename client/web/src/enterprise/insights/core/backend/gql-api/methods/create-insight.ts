@@ -76,7 +76,7 @@ function createSearchBasedInsight(
 
     // In case if we want to create an insight with some predefined filters we have to
     // create the insight first and only after update this newly created insight with filter values
-    // This is doe to lack of gql API flexibility and should be fixed as soon as BE gql API
+    // This is due to lack of gql API flexibility and should be fixed as soon as BE gql API
     // supports filters in the create insight mutation.
     // TODO: Remove this imperative logic as soon as be supports filters
     if (insight.type === InsightExecutionType.Backend && insight.filters) {
