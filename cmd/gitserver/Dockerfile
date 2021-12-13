@@ -19,6 +19,40 @@ RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/downl
     mv cs-musl /usr/local/bin/coursier && \
     chmod +x /usr/local/bin/coursier
 
+FROM sourcegraph/alpine-3.12:107969_2021-09-10_80f5edc@sha256:ce1ba2f16ec56e5e8007da53e0e6449bc0fa1fe1f972bffbc33dea1ae410b86d as p4-fusion
+
+# hadolint ignore=DL3018
+RUN apk add --no-cache \
+	# Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
+	'git>=2.18' \
+	make \
+	cmake \
+	g++ \
+	gcc \
+	perl \
+	libarchive && \
+    apk update
+
+# Fetching p4 sources archive
+RUN wget https://github.com/salesforce/p4-fusion/archive/refs/tags/v1.2.zip && \
+    mv v1.2.zip /usr/local/bin && \
+    unzip /usr/local/bin/v1.2.zip -d /usr/local/bin
+
+# We need a specific version of OpenSSL
+RUN curl https://www.openssl.org/source/openssl-1.0.2t.tar.gz | tar xz && cd openssl-1.0.2t && ./config && make && make install
+
+# We also need Helix Core C++ API to build p4-fusion
+RUN wget https://www.perforce.com/downloads/perforce/r21.1/bin.linux26x86_64/p4api.tgz && \
+    mkdir -p /usr/local/bin/p4-fusion-1.2/vendor/helix-core-api/linux && \
+    mv p4api.tgz /usr/local/bin/p4-fusion-1.2/vendor/helix-core-api/linux && \
+    tar -C /usr/local/bin/p4-fusion-1.2/vendor/helix-core-api/linux -xzvf /usr/local/bin/p4-fusion-1.2/vendor/helix-core-api/linux/p4api.tgz --strip 1
+
+WORKDIR /usr/local/bin/p4-fusion-1.2
+
+# Build p4-fusion
+RUN ./generate_cache.sh Release
+RUN ./build.sh
+
 FROM sourcegraph/alpine-3.12:120059_2021-12-09_b34c7b2@sha256:9a1fde12f56fea02027cf4caeebdddfedb7b73bf8db6c16f7907a6e04a29134c
 
 ARG COMMIT_SHA="unknown"
@@ -43,6 +77,8 @@ RUN apk add --no-cache \
 COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
 
 COPY --from=coursier /usr/local/bin/coursier /usr/local/bin/coursier
+
+COPY --from=p4-fusion /usr/local/bin/p4-fusion-1.2/build/p4-fusion/p4-fusion /usr/local/bin/p4-fusion
 
 # This is a trick to include libraries required by p4,
 # please refer to https://blog.tilander.org/docker-perforce/
