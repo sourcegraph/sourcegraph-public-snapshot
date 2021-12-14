@@ -1,17 +1,17 @@
 import { of } from 'rxjs'
 
 import { findPositionsFromEvents } from './positions'
-import { CodeViewProps, DOM } from './testutils/dom'
+import { DOM } from './testutils/dom'
 import { createMouseEvent } from './testutils/mouse'
 
 describe('positions', () => {
     const dom = new DOM()
+    const testcases = dom.createCodeViews()
+
     afterAll(dom.cleanup)
 
-    let testcases: CodeViewProps[] = []
-    beforeAll(() => {
-        testcases = dom.createCodeViews()
-    })
+    // Without this placeholder, jest throws an error saying there are no tests.
+    it('placeholder', () => {})
 
     for (const tokenize of [false, true]) {
         for (const codeView of testcases) {
