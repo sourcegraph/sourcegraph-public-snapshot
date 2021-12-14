@@ -375,7 +375,7 @@ func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *R
 						TotalCount: 2,
 						Nodes: []apitest.Action{
 							{
-								ActionEmail: apitest.ActionEmail{
+								Email: &apitest.ActionEmail{
 									Id:       string(relay.MarshalID(monitorActionEmailKind, 2)),
 									Enabled:  true,
 									Priority: "CRITICAL",
@@ -440,6 +440,7 @@ query($userName: String!, $actionCursor: String!){
 				createdAt
 				trigger {
 					... on MonitorQuery {
+						__typename
 						id
 						query
 						events(first:1) {
@@ -461,6 +462,7 @@ query($userName: String!, $actionCursor: String!){
 					totalCount
 					nodes{
 						... on MonitorEmail{
+							__typename
 							id
 							priority
 							header
@@ -561,7 +563,7 @@ func TestEditCodeMonitor(t *testing.T) {
 			},
 			Actions: apitest.ActionConnection{
 				Nodes: []apitest.Action{{
-					ActionEmail: apitest.ActionEmail{
+					Email: &apitest.ActionEmail{
 						Id:       string(relay.MarshalID(monitorActionEmailKind, 1)),
 						Enabled:  false,
 						Priority: "CRITICAL",
@@ -573,9 +575,8 @@ func TestEditCodeMonitor(t *testing.T) {
 							},
 						},
 						Header: "updated header action 1",
-					},
-				}, {
-					ActionEmail: apitest.ActionEmail{
+					}}, {
+					Email: &apitest.ActionEmail{
 						Id:       string(relay.MarshalID(monitorActionEmailKind, 3)),
 						Enabled:  true,
 						Priority: "NORMAL",
@@ -637,6 +638,7 @@ mutation ($monitorID: ID!, $triggerID: ID!, $actionID: ID!, $user1ID: ID!, $user
 	createdAt
 	trigger {
 	  ... on MonitorQuery {
+		  __typename
 		id
 		query
 	  }
@@ -644,6 +646,7 @@ mutation ($monitorID: ID!, $triggerID: ID!, $actionID: ID!, $user1ID: ID!, $user
 	actions {
 	  nodes {
 		... on MonitorEmail {
+			__typename
 		  id
 		  enabled
 		  priority
@@ -680,7 +683,7 @@ func recipientPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, 
 				Nodes: []apitest.Monitor{{
 					Actions: apitest.ActionConnection{
 						Nodes: []apitest.Action{{
-							ActionEmail: apitest.ActionEmail{
+							Email: &apitest.ActionEmail{
 								Recipients: apitest.RecipientsConnection{
 									TotalCount: 2,
 									Nodes: []apitest.UserOrg{{
@@ -710,6 +713,7 @@ query($userName: String!, $recipientCursor: String!){
 				actions(first:1){
 					nodes{
 						... on MonitorEmail{
+							__typename
 							recipients(first:1, after:$recipientCursor){
 								totalCount
 								nodes {
@@ -749,7 +753,7 @@ func queryByID(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Res
 				TotalCount: 2,
 				Nodes: []apitest.Action{
 					{
-						ActionEmail: apitest.ActionEmail{
+						Email: &apitest.ActionEmail{
 							Id:       string(relay.MarshalID(monitorActionEmailKind, 1)),
 							Enabled:  false,
 							Priority: "NORMAL",
@@ -768,7 +772,7 @@ func queryByID(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Res
 						},
 					},
 					{
-						ActionEmail: apitest.ActionEmail{
+						Email: &apitest.ActionEmail{
 							Id:       string(relay.MarshalID(monitorActionEmailKind, 2)),
 							Enabled:  true,
 							Priority: "CRITICAL",
@@ -801,6 +805,7 @@ fragment o on Org { id, name }
 query ($id: ID!) {
   node(id: $id) {
     ... on Monitor {
+		__typename
       id
       description
       enabled
@@ -818,6 +823,7 @@ query ($id: ID!) {
       createdAt
       trigger {
         ... on MonitorQuery {
+			__typename
           id
           query
         }
@@ -826,6 +832,7 @@ query ($id: ID!) {
         totalCount
         nodes {
           ... on MonitorEmail {
+			  __typename
             id
             priority
             header
@@ -900,7 +907,7 @@ func actionPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, use
 						TotalCount: 2,
 						Nodes: []apitest.Action{
 							{
-								ActionEmail: apitest.ActionEmail{
+								Email: &apitest.ActionEmail{
 									Id: string(relay.MarshalID(monitorActionEmailKind, 2)),
 								},
 							},
@@ -923,6 +930,7 @@ query($userName: String!, $actionCursor:String!){
 					totalCount
 					nodes {
 						... on MonitorEmail {
+							__typename
 							id
 						}
 					}
@@ -970,6 +978,7 @@ query($userName: String!, $triggerEventCursor: String!){
 			nodes{
 				trigger {
 					... on MonitorQuery {
+						__typename
 						events(first:1, after:$triggerEventCursor) {
 							totalCount
 							nodes {
@@ -1001,7 +1010,7 @@ func actionEventPaging(ctx context.Context, t *testing.T, schema *graphql.Schema
 						TotalCount: 2,
 						Nodes: []apitest.Action{
 							{
-								ActionEmail: apitest.ActionEmail{
+								Email: &apitest.ActionEmail{
 									Id: string(relay.MarshalID(monitorActionEmailKind, 2)),
 									Events: apitest.ActionEventConnection{
 										TotalCount: 2,
@@ -1032,6 +1041,7 @@ query($userName: String!, $actionCursor:String!, $actionEventCursor:String!){
 					totalCount
 					nodes {
 						... on MonitorEmail {
+							__typename
 							id
 							events(first:1, after:$actionEventCursor) {
 								totalCount
