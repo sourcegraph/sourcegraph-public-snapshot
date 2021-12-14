@@ -315,10 +315,10 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 
 // FilterActorPaths will filter the given list of paths for the given actor
 // returning on paths they are allowed to read.
-func FilterActorPaths(ctx context.Context, s SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, paths []string) ([]string, error) {
+func FilterActorPaths(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, paths []string) ([]string, error) {
 	filtered := make([]string, 0, len(paths))
 	for _, p := range paths {
-		perms, err := ActorPermissions(ctx, s, a, RepoContent{
+		perms, err := ActorPermissions(ctx, checker, a, RepoContent{
 			Repo: repo,
 			Path: p,
 		})
