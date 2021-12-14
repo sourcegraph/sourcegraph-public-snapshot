@@ -1067,7 +1067,7 @@ describe('Blob viewer', () => {
             const HOVER_THRESHOLD = 5
             const HOVER_COUNT_KEY = 'hover-count'
 
-            it(`shows a popover about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers and clicks "View on [code host]" button`, async () => {
+            it.skip(`shows a popover about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers and clicks "View on [code host]" button`, async () => {
                 testContext.server.get('https://github.com/*').intercept((request, response) => {
                     response.sendStatus(200)
                 })
@@ -1113,7 +1113,7 @@ describe('Blob viewer', () => {
                 )
             })
 
-            it(`shows an alert about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers`, async () => {
+            it.skip(`shows an alert about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers`, async () => {
                 await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
                 await driver.page.evaluate(HOVER_COUNT_KEY => localStorage.removeItem(HOVER_COUNT_KEY), HOVER_COUNT_KEY)
                 await driver.page.reload()
@@ -1124,10 +1124,10 @@ describe('Blob viewer', () => {
                     'Expected "Install browser extension" alert to not be displayed before user reaches hover threshold'
                 )
 
-                // Click 'console' and 'log' $HOVER_THRESHOLD times combined
+                // Hover over 'console' and 'log' $HOVER_THRESHOLD times combined
                 await driver.page.waitForSelector('.test-log-token', { visible: true })
                 for (let index = 0; index < HOVER_THRESHOLD; index++) {
-                    await driver.page.click(index % 2 === 0 ? '.test-log-token' : '.test-console-token')
+                    await driver.page.hover(index % 2 === 0 ? '.test-log-token' : '.test-console-token')
                     await driver.page.waitForSelector('[data-testid="hover-overlay"]', { visible: true })
                 }
                 await driver.page.reload()
