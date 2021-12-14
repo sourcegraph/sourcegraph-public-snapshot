@@ -209,7 +209,7 @@ describe('[VISUAL] Code insights page', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/add-dashboard')
             await driver.page.waitForSelector('input[name="name"]')
 
-            await percySnapshotWithVariants(driver.page, 'Add new dashboard page')
+            await percySnapshotWithVariants(driver.page, 'Code insights add new dashboard page')
         })
     })
 })
