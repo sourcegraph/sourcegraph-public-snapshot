@@ -890,6 +890,8 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 		}
 		pending.Destroy()
 
+		fmt.Println("drop me")
+
 		printCategoryHeaderAndDependencies(categoryIdx, category)
 	}
 
