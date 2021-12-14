@@ -31,6 +31,8 @@ jobs:
       # Setup
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Install build dependencies
         run: apk --no-cache add python g++ make git
       - name: Install dependencies

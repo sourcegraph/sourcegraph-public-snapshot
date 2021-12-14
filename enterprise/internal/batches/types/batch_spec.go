@@ -64,6 +64,11 @@ func (cs *BatchSpec) ExpiresAt() time.Time {
 	return cs.CreatedAt.Add(BatchSpecTTL)
 }
 
+// Just a change to test precise code intel
+func (cs *BatchSpec) TestingStuff() bool{
+	return cs.CreatedAt.IsZero()
+}
+
 type BatchSpecStats struct {
 	ResolutionDone bool
 
