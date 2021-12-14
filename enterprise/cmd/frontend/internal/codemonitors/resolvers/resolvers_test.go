@@ -3,11 +3,9 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/require"
@@ -44,35 +42,26 @@ func TestCreateCodeMonitor(t *testing.T) {
 	// Create a monitor.
 	ctx = actor.WithActor(ctx, actor.FromUser(userID))
 	got, err := r.insertTestMonitorWithOpts(ctx, t)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(want, got.(*monitor).Monitor); diff != "" {
-		t.Error(diff)
-	}
+	require.NoError(t, err)
+	castGot := got.(*monitor).Monitor
+	require.True(t, castGot.CreatedAt.Equal(want.CreatedAt))
+	require.True(t, castGot.ChangedAt.Equal(want.ChangedAt))
+	castGot.CreatedAt, castGot.ChangedAt = want.CreatedAt, want.ChangedAt // overwrite after comparing with time equality
+	require.EqualValues(t, want, castGot)
 
 	// Toggle field enabled from true to false.
 	got, err = r.ToggleCodeMonitor(ctx, &graphqlbackend.ToggleCodeMonitorArgs{
 		Id:      relay.MarshalID(MonitorKind, got.(*monitor).Monitor.ID),
 		Enabled: false,
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got.(*monitor).Monitor.Enabled {
-		t.Fatalf("got enabled=%T, want enabled=%T", got.(*monitor).Monitor.Enabled, false)
-	}
+	require.NoError(t, err)
+	require.False(t, got.(*monitor).Monitor.Enabled)
 
 	// Delete code monitor.
 	_, err = r.DeleteCodeMonitor(ctx, &graphqlbackend.DeleteCodeMonitorArgs{Id: got.ID()})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	_, err = r.store.GetMonitor(ctx, got.(*monitor).Monitor.ID)
-	if err == nil {
-		t.Fatalf("monitor should have been deleted")
-	}
+	require.Error(t, err, "monitor should have been deleted")
 }
 
 func TestListCodeMonitors(t *testing.T) {
@@ -85,36 +74,28 @@ func TestListCodeMonitors(t *testing.T) {
 
 	// Create a monitor.
 	_, err := r.insertTestMonitorWithOpts(ctx, t)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	args := &graphqlbackend.ListMonitorsArgs{
 		First: 5,
 	}
 	r1, err := r.Monitors(ctx, userID, args)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	requireNodeCount(t, r1, 1)
-	requireHasNextPage(t, r1, false)
+	require.Len(t, r1.Nodes(), 1, "unexpected node count")
+	require.False(t, r1.PageInfo().HasNextPage())
 
 	// Create enough monitors to necessitate paging
 	for i := 0; i < 10; i++ {
 		_, err := r.insertTestMonitorWithOpts(ctx, t)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 	}
 
 	r2, err := r.Monitors(ctx, userID, args)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	requireNodeCount(t, r2, 5)
-	requireHasNextPage(t, r2, true)
+	require.Len(t, r2.Nodes(), 5, "unexpected node count")
+	require.True(t, r2.PageInfo().HasNextPage())
 
 	// The returned cursor should be usable to return the remaining monitors
 	pi := r2.PageInfo()
@@ -123,30 +104,10 @@ func TestListCodeMonitors(t *testing.T) {
 		After: pi.EndCursor(),
 	}
 	r3, err := r.Monitors(ctx, userID, args)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	requireNodeCount(t, r3, 6)
-	requireHasNextPage(t, r3, false)
-}
-
-func requireNodeCount(t *testing.T, r graphqlbackend.MonitorConnectionResolver, c int) {
-	t.Helper()
-
-	nodes := r.Nodes()
-	if len(nodes) != c {
-		t.Fatalf("got %d nodes but expected %d", len(nodes), c)
-	}
-}
-
-func requireHasNextPage(t *testing.T, r graphqlbackend.MonitorConnectionResolver, hasNextPage bool) {
-	t.Helper()
-
-	pageInfo := r.PageInfo()
-	if pageInfo.HasNextPage() != hasNextPage {
-		t.Fatalf("unexpected value for HasNextPage")
-	}
+	require.Len(t, r3.Nodes(), 6, "unexpected node count")
+	require.False(t, r3.PageInfo().HasNextPage())
 }
 
 func TestIsAllowedToEdit(t *testing.T) {
@@ -163,9 +124,7 @@ func TestIsAllowedToEdit(t *testing.T) {
 	ownerOpt := WithOwner(relay.MarshalID("User", owner))
 	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
 	m, err := r.insertTestMonitorWithOpts(admContext, t, ownerOpt)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	tests := []struct {
 		user    int32
@@ -221,9 +180,7 @@ func TestIsAllowedToCreate(t *testing.T) {
 
 	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
 	org, err := database.Orgs(db).Create(admContext, "cm-test-org", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	addUserToOrg(t, db, member, org.ID)
 
 	r := newTestResolver(t, db)
@@ -314,12 +271,9 @@ func TestQueryMonitor(t *testing.T) {
 			},
 		},
 	})
-	var err error
-	var m graphqlbackend.MonitorResolver
-	m, err = r.insertTestMonitorWithOpts(ctx, t, actionOpt)
-	if err != nil {
-		t.Fatal(err)
-	}
+	m, err := r.insertTestMonitorWithOpts(ctx, t, actionOpt)
+	require.NoError(t, err)
+
 	// The hooks allows us to test more complex queries by creating a realistic state
 	// in the database. After we create the monitor they fill the job tables and
 	// update the job status.
@@ -355,14 +309,10 @@ func TestQueryMonitor(t *testing.T) {
 		func() error { return r.store.UpdateTriggerJobWithResults(ctx, 1, "", 1) },
 	})
 	_, err = r.insertTestMonitorWithOpts(ctx, t, actionOpt, postHookOpt)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	schema, err := graphqlbackend.NewSchema(database.NewDB(db), nil, nil, nil, nil, r, nil, nil, nil, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	t.Run("query by user", func(t *testing.T) {
 		queryByUser(ctx, t, schema, r, user1, user2)
@@ -472,9 +422,8 @@ func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *R
 			},
 		},
 	}
-	if diff := cmp.Diff(response, want); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
+
+	require.Equal(t, want, response)
 }
 
 const queryByUserFmtStr = `
@@ -586,16 +535,12 @@ func TestEditCodeMonitor(t *testing.T) {
 		},
 	})
 	_, err := r.insertTestMonitorWithOpts(ctx, t, actionOpt)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// Update the code monitor.
 	// We update all fields, delete one action, and add a new action.
 	schema, err := graphqlbackend.NewSchema(database.NewDB(db), nil, nil, nil, nil, r, nil, nil, nil, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	updateInput := map[string]interface{}{
 		"monitorID": string(relay.MarshalID(MonitorKind, 1)),
 		"triggerID": string(relay.MarshalID(monitorTriggerQueryKind, 1)),
@@ -661,9 +606,7 @@ func TestEditCodeMonitor(t *testing.T) {
 		},
 	}
 
-	if !reflect.DeepEqual(&got, &want) {
-		t.Fatalf("\ngot:\t%+v\nwant:\t%+v\n", got, want)
-	}
+	require.Equal(t, want, got)
 }
 
 const editMonitor = `
@@ -761,9 +704,8 @@ func recipientPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, 
 			},
 		},
 	}
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
+
+	require.Equal(t, want, got)
 }
 
 const recipientsPagingFmtStr = `
@@ -858,9 +800,8 @@ func queryByID(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Res
 			},
 		},
 	}
-	if diff := cmp.Diff(response, want); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
+
+	require.Equal(t, want, response)
 }
 
 const queryMonitorByIDFmtStr = `
@@ -937,9 +878,7 @@ func monitorPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, us
 		},
 	}
 
-	if diff := cmp.Diff(&got, &want); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
+	require.Equal(t, want, got)
 }
 
 const monitorPagingFmtStr = `
@@ -982,9 +921,7 @@ func actionPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, use
 		},
 	}
 
-	if diff := cmp.Diff(&got, &want); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
+	require.Equal(t, want, got)
 }
 
 const actionPagingFmtStr = `
@@ -1033,9 +970,7 @@ func triggerEventPaging(ctx context.Context, t *testing.T, schema *graphql.Schem
 		},
 	}
 
-	if diff := cmp.Diff(&got, &want); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
+	require.Equal(t, want, got)
 }
 
 const triggerEventPagingFmtStr = `
@@ -1095,9 +1030,7 @@ func actionEventPaging(ctx context.Context, t *testing.T, schema *graphql.Schema
 		},
 	}
 
-	if diff := cmp.Diff(&got, &want); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
+	require.Equal(t, want, got)
 }
 
 const actionEventPagingFmtStr = `
@@ -1151,13 +1084,8 @@ func TestTriggerTestEmailAction(t *testing.T) {
 			Header:     "test header 1",
 		},
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !got.IsTest {
-		t.Fatalf("Template data for testing email actions should have with .IsTest=true")
-	}
+	require.NoError(t, err)
+	require.True(t, got.IsTest, "Template data for testing email actions should have with .IsTest=true")
 }
 
 func TestMonitorKindEqualsResolvers(t *testing.T) {
