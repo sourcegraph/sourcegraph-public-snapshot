@@ -1775,7 +1775,7 @@ func testAbortSyncWhenThereIsRepoLimitError(store *repos.Store) func(*testing.T)
 			},
 			{
 				Kind:           extsvc.KindGitHub,
-				DisplayName:    "Github - Test1",
+				DisplayName:    "Github - Test2",
 				Config:         `{"url": "https://github.com"}`,
 				CreatedAt:      now,
 				UpdatedAt:      now,
@@ -1835,12 +1835,12 @@ func testAbortSyncWhenThereIsRepoLimitError(store *repos.Store) func(*testing.T)
 				}
 
 				expectedErr := &repos.RepoLimitError{
-					SiteAdded: 1,
-					SiteLimit: 1,
-					UserAdded: 1,
-					UserLimit: 1,
-					UserID:    1,
-					UserName:  "Username",
+					SiteAdded:  1,
+					SiteLimit:  1,
+					ReposCount: 1,
+					ReposLimit: 1,
+					UserID:     svc.NamespaceUserID,
+					OrgID:      svc.NamespaceOrgID,
 				}
 				if diff := cmp.Diff(expectedErr, actualErr); diff != "" {
 					t.Fatalf("Unexpected error occurred. Expected: %v, actual: %v", expectedErr, actualErr)

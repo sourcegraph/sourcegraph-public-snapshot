@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -105,6 +106,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 			Query:         plan.ToParseTree(),
 			OriginalQuery: args.Query,
 			UserSettings:  settings,
+			Features:      featureflag.FromContext(ctx),
 			PatternType:   searchType,
 			DefaultLimit:  defaultLimit,
 		},

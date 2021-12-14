@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -140,6 +143,37 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				t.Fatalf("have %v, want %v", have, tc.want)
 			}
 		})
+	}
+}
+
+func TestFilterActorPaths(t *testing.T) {
+	testPaths := []string{"file1", "file2", "file3"}
+	checker := NewMockSubRepoPermissionChecker()
+	ctx := context.Background()
+	a := &actor.Actor{
+		UID: 1,
+	}
+	ctx = actor.WithActor(ctx, a)
+	repo := api.RepoName("foo")
+
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content RepoContent) (Perms, error) {
+		if content.Path == "file1" {
+			return Read, nil
+		}
+		return None, nil
+	})
+
+	filtered, err := FilterActorPaths(ctx, checker, a, repo, testPaths)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{"file1"}
+	if diff := cmp.Diff(want, filtered); diff != "" {
+		t.Fatal(diff)
 	}
 }
 

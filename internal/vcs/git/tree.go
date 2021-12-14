@@ -19,7 +19,9 @@ import (
 	"github.com/golang/groupcache/lru"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/config"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
@@ -91,7 +93,7 @@ func ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path s
 }
 
 // LsFiles returns the output of `git ls-files`
-func LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]string, error) {
+func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) ([]string, error) {
 	if Mocks.LsFiles != nil {
 		return Mocks.LsFiles(repo, commit)
 	}
@@ -107,7 +109,24 @@ func LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]str
 	if err != nil {
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
 	}
-	return strings.Split(string(out), "\x00"), nil
+
+	files := strings.Split(string(out), "\x00")
+	// Drop trailing empty string
+	if len(files) > 0 && files[len(files)-1] == "" {
+		files = files[:len(files)-1]
+	}
+
+	// 🚨 SECURITY: All git methods that deal with file or path access need to have
+	// sub-repo permissions applied
+	if !checker.Enabled() {
+		return files, nil
+	}
+	a := actor.FromContext(ctx)
+	filtered, err := authz.FilterActorPaths(ctx, checker, a, repo, files)
+	if err != nil {
+		return nil, errors.Wrap(err, "filtering paths")
+	}
+	return filtered, nil
 }
 
 // lStat returns a FileInfo describing the named file at commit. If the file is a symbolic link, the
