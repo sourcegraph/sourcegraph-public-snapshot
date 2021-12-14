@@ -4,6 +4,8 @@ import React from 'react'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
+import { CodeInsightsGqlBackend } from '../../../../core/backend/gql-api/code-insights-gql-backend'
 
 import { IntroCreationPage } from './IntroCreationPage'
 
@@ -17,4 +19,10 @@ export default {
     },
 } as Meta
 
-export const InsightIntroPageExample = () => <IntroCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+const API = new CodeInsightsGqlBackend({} as any)
+
+export const InsightIntroPageExample = () => (
+    <CodeInsightsBackendContext.Provider value={API}>
+        <IntroCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+    </CodeInsightsBackendContext.Provider>
+)
