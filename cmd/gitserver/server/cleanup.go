@@ -52,9 +52,9 @@ const (
 // likely evolve into some form of site config value in the future.
 var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "true", "Use git-gc during janitorial cleanup phases"))
 
-// git maintenance and git gc must not be enabled at the same time. However, both
+// sg maintenance and git gc must not be enabled at the same time. However, both
 // might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
-// SRC_ENABLE_GIT_MAINTENANCE.
+// SRC_ENABLE_SG_MAINTENANCE.
 var enableSGMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "false", "Use sg maintenance during janitorial cleanup phases"))
 
 var (
@@ -92,6 +92,7 @@ const reposStatsName = "repos-stats.json"
 // 6. Perform garbage collection
 // 7. Re-clone repos after a while. (simulate git gc)
 // 8. Remove repos based on disk pressure.
+// 9. Perform sg-maintenance
 func (s *Server) cleanupRepos() {
 	janitorRunning.Set(1)
 	defer janitorRunning.Set(0)
@@ -284,8 +285,8 @@ func (s *Server) cleanupRepos() {
 
 	if enableSGMaintenance && !enableGCAuto {
 		// Run tasks to optimize Git repository data, speeding up other Git commands and
-		// reducing storage requirements for the repository. Note: performGC and
-		// performSGMaintenance must not be enabled at the same time.
+		// reducing storage requirements for the repository. Note: "garbage collect" and
+		// "sg maintenance" must not be enabled at the same time.
 		cleanups = append(cleanups, cleanupFn{"sg maintenance", performSGMaintenance})
 	}
 
