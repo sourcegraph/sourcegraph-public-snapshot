@@ -1,30 +1,31 @@
-import classNames from 'classnames'
 import React, { useEffect } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { FormatListBulletedIcon } from '@sourcegraph/shared/src/components/icons'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { PageTitle } from '../../../../components/PageTitle'
 import { CatalogPackageByNameResult, CatalogPackageByNameVariables } from '../../../../graphql-operations'
-import { useTemporarySetting } from '../../../../settings/temporary/useTemporarySetting'
-import { useCatalogPackageFilters } from '../../core/entity-filters'
 
-import { CATALOG_ENTITY_BY_NAME } from './gql'
+import { PACKAGE_BY_NAME } from './gql'
 import { PackageDetailContent } from './PackageDetailContent'
-import styles from './PackageDetailPage.module.scss'
 
-export interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
-    /** The name of the catalog entity. */
+export interface Props
+    extends TelemetryProps,
+        ExtensionsControllerProps,
+        ThemeProps,
+        SettingsCascadeProps,
+        PlatformContextProps {
+    /** The name of the catalog package. */
     entityName: string
 }
 
 /**
- * The catalog entity detail page.
+ * The catalog package detail page.
  */
 export const PackageDetailPage: React.FunctionComponent<Props> = ({ entityName, telemetryService, ...props }) => {
     useEffect(() => {
@@ -32,9 +33,9 @@ export const PackageDetailPage: React.FunctionComponent<Props> = ({ entityName, 
     }, [telemetryService])
 
     const { data, error, loading } = useQuery<CatalogPackageByNameResult, CatalogPackageByNameVariables>(
-        CATALOG_ENTITY_BY_NAME,
+        PACKAGE_BY_NAME,
         {
-            variables: { type: 'COMPONENT', name: entityName },
+            variables: { name: entityName },
 
             // Cache this data but always re-request it in the background when we revisit
             // this page to pick up newer changes.
@@ -47,54 +48,25 @@ export const PackageDetailPage: React.FunctionComponent<Props> = ({ entityName, 
         }
     )
 
-    const disableSidebar = true
-    const [showSidebar, setShowSidebar] = useTemporarySetting('catalog.sidebar.visible', true)
-
-    const { filters, onFiltersChange } = useCatalogPackageFilters('')
-
     return (
         <>
             <PageTitle
                 title={
                     error
-                        ? 'Error loading entity'
+                        ? 'Error loading package'
                         : loading && !data
-                        ? 'Loading entity...'
-                        : !data || !data.catalogEntity
-                        ? 'Entity not found'
+                        ? 'Loading package...'
+                        : !data || !data.catalogEntity || data.catalogEntity.__typename !== 'Package'
+                        ? 'Package not found'
                         : data.catalogEntity.name
                 }
             />
-            {!disableSidebar &&
-                (showSidebar ? (
-                    <Sidebar>
-                        <EntityList
-                            selectedEntityName={entityName}
-                            filters={filters}
-                            onFiltersChange={onFiltersChange}
-                            className="flex-1"
-                        />
-                        <div className="flex-1" />
-                        <button type="button" className="btn btn-link btn-sm" onClick={() => setShowSidebar(false)}>
-                            Hide sidebar
-                        </button>
-                    </Sidebar>
-                ) : (
-                    <button
-                        type="button"
-                        className={classNames('btn btn-secondary btn-sm', styles.showSidebarBtn)}
-                        onClick={() => setShowSidebar(true)}
-                        title="Show sidebar"
-                    >
-                        <FormatListBulletedIcon className="icon-inline" />
-                    </button>
-                ))}
             {loading && !data ? (
                 <LoadingSpinner className="m-3 icon-inline" />
             ) : error && !data ? (
                 <div className="m-3 alert alert-danger">Error: {error.message}</div>
-            ) : !data || !data.catalogEntity ? (
-                <div className="m-3 alert alert-danger">Entity not found in catalog</div>
+            ) : !data || !data.catalogEntity || data.catalogEntity.__typename !== 'Package' ? (
+                <div className="m-3 alert alert-danger">Package not found in catalog</div>
             ) : (
                 <PackageDetailContent {...props} entity={data.catalogEntity} telemetryService={telemetryService} />
             )}

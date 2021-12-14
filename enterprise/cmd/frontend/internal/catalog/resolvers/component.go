@@ -42,7 +42,7 @@ func (r *catalogComponentResolver) Lifecycle() gql.CatalogEntityLifecycle {
 }
 
 func (r *catalogComponentResolver) URL() string {
-	return "/catalog/entities/components/" + string(r.Name())
+	return "/catalog/components/" + string(r.Name())
 }
 
 func (r *catalogComponentResolver) Kind() gql.CatalogComponentKind {

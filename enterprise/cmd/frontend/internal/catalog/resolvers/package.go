@@ -38,7 +38,7 @@ func (r *packageResolver) Owner(ctx context.Context) (*gql.EntityOwnerResolver, 
 }
 
 func (r *packageResolver) URL() string {
-	return "/catalog/entities/packages/" + string(r.Name())
+	return "/catalog/packages/" + string(r.Name())
 }
 
 func (r *packageResolver) Status(context.Context) (gql.CatalogEntityStatusResolver, error) {

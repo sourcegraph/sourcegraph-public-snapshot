@@ -19,7 +19,7 @@ interface Props {
 }
 
 export const EntityCatalogExplorer: React.FunctionComponent<Props> = ({ entity, className }) => {
-    const { filters, onFiltersChange } = useCatalogEntityFilters()
+    const filtersProps = useCatalogEntityFilters('')
 
     const [viewMode, setViewMode] = useViewModeTemporarySettings()
 
@@ -30,14 +30,13 @@ export const EntityCatalogExplorer: React.FunctionComponent<Props> = ({ entity, 
             <CatalogExplorerViewOptionsRow
                 before={<h4 className="mb-0 mr-2 font-weight-bold">Relations</h4>}
                 toggle={<ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} />}
-                filters={filters}
-                onFiltersChange={onFiltersChange}
+                {...filtersProps}
                 className="pl-3 pr-2 py-2 border-bottom"
             />
             {viewMode === 'list' ? (
                 <CatalogExplorerRelationList
                     entity={entity}
-                    filters={filters}
+                    filters={filtersProps.filters}
                     queryScope={queryScope}
                     noBottomBorder={true}
                     itemStartClassName="pl-3"
@@ -45,7 +44,7 @@ export const EntityCatalogExplorer: React.FunctionComponent<Props> = ({ entity, 
                 />
             ) : (
                 <OverviewEntityGraph
-                    filters={filters}
+                    filters={filtersProps.filters}
                     queryScope={queryScope}
                     highlightID={entity}
                     errorClassName="p-3"

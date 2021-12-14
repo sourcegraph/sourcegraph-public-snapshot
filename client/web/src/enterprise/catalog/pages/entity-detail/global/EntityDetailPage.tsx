@@ -1,26 +1,25 @@
-import classNames from 'classnames'
 import React, { useEffect } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { FormatListBulletedIcon } from '@sourcegraph/shared/src/components/icons'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CatalogEntityByNameResult, CatalogEntityByNameVariables } from '../../../../../graphql-operations'
-import { useTemporarySetting } from '../../../../../settings/temporary/useTemporarySetting'
-import { useCatalogEntityFilters } from '../../../core/entity-filters'
-import { EntityList } from '../../overview/components/entity-list/EntityList'
-import { Sidebar } from '../sidebar/Sidebar'
 
 import { EntityDetailContent } from './EntityDetailContent'
-import styles from './EntityDetailPage.module.scss'
 import { CATALOG_ENTITY_BY_NAME } from './gql'
 
-export interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
+export interface Props
+    extends TelemetryProps,
+        ExtensionsControllerProps,
+        ThemeProps,
+        SettingsCascadeProps,
+        PlatformContextProps {
     /** The name of the catalog entity. */
     entityName: string
 }
@@ -49,11 +48,6 @@ export const EntityDetailPage: React.FunctionComponent<Props> = ({ entityName, t
         }
     )
 
-    const disableSidebar = true
-    const [showSidebar, setShowSidebar] = useTemporarySetting('catalog.sidebar.visible', true)
-
-    const { filters, onFiltersChange } = useCatalogEntityFilters('')
-
     return (
         <>
             <PageTitle
@@ -67,30 +61,6 @@ export const EntityDetailPage: React.FunctionComponent<Props> = ({ entityName, t
                         : data.catalogEntity.name
                 }
             />
-            {!disableSidebar &&
-                (showSidebar ? (
-                    <Sidebar>
-                        <EntityList
-                            selectedEntityName={entityName}
-                            filters={filters}
-                            onFiltersChange={onFiltersChange}
-                            className="flex-1"
-                        />
-                        <div className="flex-1" />
-                        <button type="button" className="btn btn-link btn-sm" onClick={() => setShowSidebar(false)}>
-                            Hide sidebar
-                        </button>
-                    </Sidebar>
-                ) : (
-                    <button
-                        type="button"
-                        className={classNames('btn btn-secondary btn-sm', styles.showSidebarBtn)}
-                        onClick={() => setShowSidebar(true)}
-                        title="Show sidebar"
-                    >
-                        <FormatListBulletedIcon className="icon-inline" />
-                    </button>
-                ))}
             {loading && !data ? (
                 <LoadingSpinner className="m-3 icon-inline" />
             ) : error && !data ? (

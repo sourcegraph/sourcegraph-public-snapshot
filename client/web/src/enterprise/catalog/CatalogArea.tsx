@@ -12,6 +12,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { EntityDetailPage } from './pages/entity-detail/global/EntityDetailPage'
 import { GroupDetailPage } from './pages/group-detail/GroupDetailPage'
 import { ExplorePage } from './pages/overview/global/ExplorePage'
+import { PackageDetailPage } from './pages/package-detail/PackageDetailPage'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {}
 
@@ -23,9 +24,19 @@ export const CatalogArea: React.FunctionComponent<Props> = ({ telemetryService, 
 
     return (
         <Switch>
-            <Route path={`${match.url}/entities/components/11:name`}>
+            <Route path={`${match.url}/components/:name`}>
                 {(matchProps: RouteComponentProps<{ name: string }>) => (
                     <EntityDetailPage
+                        key={1}
+                        {...props}
+                        entityName={matchProps.match.params.name}
+                        telemetryService={telemetryService}
+                    />
+                )}
+            </Route>
+            <Route path={`${match.url}/packages/:name*`}>
+                {(matchProps: RouteComponentProps<{ name: string }>) => (
+                    <PackageDetailPage
                         key={1}
                         {...props}
                         entityName={matchProps.match.params.name}

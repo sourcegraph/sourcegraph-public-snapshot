@@ -264,6 +264,5 @@ export const CATALOG_ENTITY_BY_NAME = gql`
             ...CatalogEntityDetailFields
         }
     }
-
     ${CATALOG_ENTITY_DETAIL_FRAGMENT}
 `
