@@ -1,20 +1,14 @@
-import assert from 'assert'
-
 import expect from 'expect'
-import got from 'got'
-import { random, sortBy } from 'lodash'
-import { describe, test, before, beforeEach, after, afterEach } from 'mocha'
+import { sortBy } from 'lodash'
+import { describe, test, before, beforeEach, after } from 'mocha'
 import MockDate from 'mockdate'
 
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { afterEachRecordCoverage } from '@sourcegraph/shared/src/testing/coverage'
 import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
-
-import { Settings } from '../schema/settings.schema'
 
 const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 
