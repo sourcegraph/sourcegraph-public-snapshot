@@ -7,7 +7,7 @@ import { ForwardReferenceComponent } from '../../types'
 export type MenuListProps = ReachMenuListProps
 
 export const MenuList = React.forwardRef(({ children, className, ...props }, reference) => (
-    <ReachMenuList ref={reference} {...props} className={classNames('dropdown-menu show', className)}>
+    <ReachMenuList ref={reference} {...props} className={classNames('dropdown-menu', className)}>
         {children}
     </ReachMenuList>
 )) as ForwardReferenceComponent<'div', MenuListProps>
