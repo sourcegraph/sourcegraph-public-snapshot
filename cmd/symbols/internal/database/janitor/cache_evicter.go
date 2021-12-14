@@ -24,8 +24,10 @@ type cacheEvicter struct {
 	metrics *Metrics
 }
 
-var _ goroutine.Handler = &cacheEvicter{}
-var _ goroutine.ErrorHandler = &cacheEvicter{}
+var (
+	_ goroutine.Handler      = &cacheEvicter{}
+	_ goroutine.ErrorHandler = &cacheEvicter{}
+)
 
 func NewCacheEvicter(interval time.Duration, cache diskcache.Store, maxCacheSizeBytes int64, metrics *Metrics) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &cacheEvicter{

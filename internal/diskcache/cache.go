@@ -27,7 +27,7 @@ type Store interface {
 	// will fill the cache first. Open also performs single-flighting for fetcher.
 	Open(ctx context.Context, key []string, fetcher Fetcher) (file *File, err error)
 	// OpenWithPath will open a file from the local cache with key. If missing, fetcher
-	// will fill the cache first. Open also performs single-flighting for fetcher.
+	// will fill the cache first. OpenWithPath also performs single-flighting for fetcher.
 	OpenWithPath(ctx context.Context, key []string, fetcher FetcherWithPath) (file *File, err error)
 	// Evict will remove files from store.Dir until it is smaller than
 	// maxCacheSizeBytes. It evicts files with the oldest modification time first.

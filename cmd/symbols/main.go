@@ -15,7 +15,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	sqlite "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
@@ -27,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -61,7 +61,7 @@ func main() {
 
 	// Ensure we register our database driver before calling
 	// anything that tries to open a SQLite database.
-	database.Init()
+	sqlite.Init()
 
 	if config.sanityCheck {
 		fmt.Print("Running sanity check...")
@@ -79,6 +79,9 @@ func main() {
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
+		HoneyDataset: &honey.Dataset{
+			Name: "codeintel-symbols",
+		},
 	}
 
 	// Start debug server
