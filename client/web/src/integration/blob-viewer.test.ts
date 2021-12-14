@@ -145,15 +145,6 @@ describe('Blob viewer', () => {
 
     // Describes the ways the blob viewer can be extended through Sourcegraph extensions.
     describe('extensibility', () => {
-        const getHoverContents = async (): Promise<string[]> => {
-            // Search for any child of e2e-tooltip-content: as e2e-tooltip-content has display: contents,
-            // it will never be detected as visible by waitForSelector(), but its children will.
-            await driver.page.waitForSelector('.test-tooltip-content *', { visible: true })
-            return driver.page.evaluate(() =>
-                [...document.querySelectorAll('.test-tooltip-content')].map(content => content.textContent ?? '')
-            )
-        }
-
         beforeEach(() => {
             const userSettings: Settings = {
                 extensions: {
