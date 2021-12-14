@@ -8,11 +8,10 @@ import (
 	"github.com/inconshreveable/log15"
 	"golang.org/x/time/rate"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-const syncInterval = 2 * time.Minute // TODO: decide on appropriate interval. Currently set low for ease of testing
+const syncInterval = 5 * time.Minute
 
 func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, rateLimiter *rate.Limiter) {
 	for {
@@ -38,8 +37,8 @@ func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *rate.
 			return errors.Errorf("error waiting for rate limiter: %s", err)
 		}
 		_, err = s.SyncRepo(ctx, repo.Name, false)
-		if err != nil && !database.IsRepoNotFoundErr(err) {
-			return err
+		if err != nil {
+			log15.Error("error syncing repo", "repo", repo.Name, "err", err)
 		}
 		return nil
 	})

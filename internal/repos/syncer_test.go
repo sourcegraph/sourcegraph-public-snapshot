@@ -1997,8 +1997,6 @@ func testSyncReposWithLastErrors(s *repos.Store) func(*testing.T) {
 			t.Fatalf("should've inserted exactly 1 repo in the db for testing, got %d instead", len(dbRepos))
 		}
 
-		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
 		// Run the syncer, which should find the repo with non-empty last_error and delete it
 		err := syncer.SyncReposWithLastErrors(ctx, rate.NewLimiter(200, 1))
 		if err != nil {
@@ -2018,7 +2016,7 @@ func testSyncReposWithLastErrors(s *repos.Store) func(*testing.T) {
 		if err == nil {
 			t.Fatalf("repo should've been deleted. expected a repo not found error")
 		}
-		if !database.IsRepoNotFoundErr(err) {
+		if !errors.Is(err, &database.RepoNotFoundErr{Name: repoName}) {
 			t.Fatalf("expected a RepoNotFound error, got %s", err)
 		}
 		if myRepo != nil {
