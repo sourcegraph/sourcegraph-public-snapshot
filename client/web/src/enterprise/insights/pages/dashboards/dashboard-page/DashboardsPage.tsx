@@ -1,21 +1,18 @@
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect } from 'react'
 import { useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../components/Page'
-import { FeedbackPromptContent } from '../../../../../nav/Feedback/FeedbackPrompt'
 import { CodeInsightsIcon } from '../../../components'
-import { flipRightPosition } from '../../../components/context-menu/utils'
-import { Popover } from '../../../components/popover/Popover'
+import { BetaFeedbackPanel } from '../../../components/beta-feedback-panel/BetaFeedbackPanel'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../../../core/types/dashboard/virtual-dashboard'
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
-import styles from './DashboardPage.module.scss'
 
 export interface DashboardsPageProps extends TelemetryProps {
     /**
@@ -52,8 +49,8 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
         <div className="w-100">
             <Page>
                 <PageHeader
-                    annotation={<PageAnnotation />}
-                    path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
+                    annotation={<BetaFeedbackPanel />}
+                    path={[{ icon: CodeInsightsIcon }, { text: 'Insights' }]}
                     actions={
                         <>
                             <Link to="/insights/add-dashboard" className="btn btn-outline-secondary mr-2">
@@ -73,37 +70,6 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
 
                 <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} />
             </Page>
-        </div>
-    )
-}
-
-const PageAnnotation: React.FunctionComponent = () => {
-    const buttonReference = useRef<HTMLButtonElement>(null)
-    const [isVisible, setVisibility] = useState(false)
-
-    return (
-        <div className="d-flex align-items-center">
-            <a href="https://docs.sourcegraph.com/code_insights#code-insights-beta" target="_blank" rel="noopener">
-                <ProductStatusBadge status="beta" className="text-uppercase" />
-            </a>
-
-            <Button ref={buttonReference} variant="link" size="sm">
-                Share feedback
-            </Button>
-
-            <Popover
-                isOpen={isVisible}
-                target={buttonReference}
-                position={flipRightPosition}
-                onVisibilityChange={setVisibility}
-                className={styles.feedbackPrompt}
-            >
-                <FeedbackPromptContent
-                    closePrompt={() => setVisibility(false)}
-                    textPrefix="Code Insights: "
-                    routeMatch="/insights/dashboards"
-                />
-            </Popover>
         </div>
     )
 }
