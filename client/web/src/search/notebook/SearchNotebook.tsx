@@ -2,16 +2,17 @@ import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { StreamingSearchResultsListProps } from '@sourcegraph/branded/src/search/results/StreamingSearchResultsList'
+import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { useQueryIntelligence } from '@sourcegraph/shared/src/search/useQueryIntelligence'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SearchStreamingProps } from '..'
-import { AuthenticatedUser } from '../../auth'
-import { StreamingSearchResultsListProps } from '../results/StreamingSearchResultsList'
-import { useQueryIntelligence } from '../useQueryIntelligence'
 
 import { SearchNotebookFileBlock } from './fileBlock/SearchNotebookFileBlock'
 import { FileBlockValidationFunctions } from './fileBlock/useFileBlockInputValidation'
@@ -29,7 +30,8 @@ export interface SearchNotebookProps
         TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'>,
         ExtensionsControllerProps<'extHostAPI'>,
-        FileBlockValidationFunctions {
+        FileBlockValidationFunctions,
+        PlatformContextProps<'requestGraphQL'> {
     globbing: boolean
     isMacPlatform: boolean
     isReadOnly?: boolean
@@ -42,6 +44,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     onSerializeBlocks,
     isReadOnly = false,
     extensionsController,
+    platformContext,
     ...props
 }) => {
     const notebook = useMemo(
@@ -256,6 +259,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
                             {...block}
                             {...blockProps}
                             sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
+                            platformContext={platformContext}
                         />
                     )
             }
@@ -272,6 +276,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
             props,
             selectedBlockId,
             sourcegraphSearchLanguageId,
+            platformContext,
         ]
     )
 

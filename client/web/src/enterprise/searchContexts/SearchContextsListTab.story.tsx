@@ -3,6 +3,8 @@ import { subDays } from 'date-fns'
 import React from 'react'
 import { Observable, of } from 'rxjs'
 
+import { ListSearchContextsResult } from '@sourcegraph/shared/src/graphql-operations'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
@@ -10,7 +12,6 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 
 import { WebStory } from '../../components/WebStory'
-import { ListSearchContextsResult } from '../../graphql-operations'
 
 import { SearchContextsListTab, SearchContextsListTabProps } from './SearchContextsListTab'
 
@@ -30,6 +31,7 @@ const defaultProps: SearchContextsListTabProps = {
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    platformContext: NOOP_PLATFORM_CONTEXT,
 }
 
 const propsWithContexts: SearchContextsListTabProps = {

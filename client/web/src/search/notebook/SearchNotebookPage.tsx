@@ -2,7 +2,9 @@ import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
+import { StreamingSearchResultsListProps } from '@sourcegraph/branded/src/search/results/StreamingSearchResultsList'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Page } from '@sourcegraph/web/src/components/Page'
@@ -11,7 +13,6 @@ import { FeedbackBadge, PageHeader } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { fetchRepository, resolveRevision } from '../../repo/backend'
-import { StreamingSearchResultsListProps } from '../results/StreamingSearchResultsList'
 
 import { SearchNotebook } from './SearchNotebook'
 import styles from './SearchNotebookPage.module.scss'
@@ -24,7 +25,8 @@ interface SearchNotebookPageProps
         ThemeProps,
         TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'allExpanded'>,
-        ExtensionsControllerProps<'extHostAPI'> {
+        ExtensionsControllerProps<'extHostAPI'>,
+        PlatformContextProps<'requestGraphQL'> {
     globbing: boolean
     isMacPlatform: boolean
 }

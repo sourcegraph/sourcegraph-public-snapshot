@@ -34,6 +34,8 @@ export interface SearchQueryState {
         parameters: Omit<SubmitSearchParameters, 'query' | 'caseSensitive' | 'patternType'>,
         updates?: QueryUpdate[]
     ) => void
+
+    setSearchCaseSensitivity: (caseSensitive: boolean) => void
 }
 
 type QueryStateUpdate = QueryState | ((queryState: QueryState) => QueryState)

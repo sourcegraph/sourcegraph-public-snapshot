@@ -43,13 +43,16 @@ export async function createExtensionHostClientConnection(
     initData: Omit<InitData, 'initialSettings'>,
     platformContext: Pick<
         PlatformContext,
-        | 'settings'
         | 'updateSettings'
+        | 'settings'
         | 'getGraphQLClient'
         | 'requestGraphQL'
-        | 'telemetryService'
+        | 'showMessage'
+        | 'showInputBox'
         | 'sideloadedExtensionURL'
         | 'getScriptURLForExtension'
+        | 'getStaticExtensions'
+        | 'telemetryService'
         | 'clientApplication'
     >
 ): Promise<{
@@ -87,6 +90,9 @@ export async function createExtensionHostClientConnection(
     }
 
     comlink.expose(clientAPI, endpoints.expose)
+    proxy.mainThreadAPIInitialized().catch(() => {
+        console.error('Error notifying extension host of main thread API init.')
+    })
 
     // TODO(tj): return MainThreadAPI and add to Controller interface
     // to allow app to interact with APIs whose state lives in the main thread

@@ -1,6 +1,6 @@
 import * as comlink from 'comlink'
 import { isMatch } from 'lodash'
-import { Subscription, Unsubscribable } from 'rxjs'
+import { ReplaySubject, Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 
 import { EndpointPair } from '../../platform/context'
@@ -42,6 +42,7 @@ export interface InitData {
 export function startExtensionHost(
     endpoints: EndpointPair
 ): Unsubscribable & { extensionAPI: Promise<typeof sourcegraph> } {
+    console.log('in start ext host')
     const subscription = new Subscription()
 
     // Wait for "initialize" message from client application before proceeding to create the
@@ -49,6 +50,7 @@ export function startExtensionHost(
     let initialized = false
     const extensionAPI = new Promise<typeof sourcegraph>(resolve => {
         const factory: ExtensionHostAPIFactory = initData => {
+            console.log('ext host factory called')
             if (initialized) {
                 throw new Error('extension host is already initialized')
             }
@@ -113,18 +115,29 @@ function createExtensionAndExtensionHostAPIs(
 
     registerComlinkTransferHandlers()
 
+    /**
+     * Used to wait until the main thread API has been initialized. Ensures
+     * that message of main thread API calls during extension host initialization
+     * are not dropped.
+     *
+     * TODO ensure that this doesn't break web... in case main thread is made first on web...
+     * could just pass param in initdata on whether or not to wait
+     * for init (which could be behaviorsubject init val)
+     */
+    const mainThreadAPIInitializations = new ReplaySubject<boolean>(1)
+
     /** Proxy to main thread */
     const proxy = comlink.wrap<ClientAPI>(endpoints.proxy)
 
     // Create extension host state
-    const extensionHostState = createExtensionHostState(initData, proxy)
+    const extensionHostState = createExtensionHostState(initData, proxy, mainThreadAPIInitializations)
     // Create extension host API
     const extensionHostAPINew = createExtensionHostAPI(extensionHostState)
     // Create extension API factory
     const createExtensionAPI = createExtensionAPIFactory(extensionHostState, proxy, initData)
 
     // Activate extensions. Create extension APIs on extension activation.
-    subscription.add(activateExtensions(extensionHostState, proxy, createExtensionAPI))
+    subscription.add(activateExtensions(extensionHostState, proxy, createExtensionAPI, mainThreadAPIInitializations))
 
     // Observe settings and update active loggers state
     subscription.add(setActiveLoggers(extensionHostState))
@@ -134,6 +147,9 @@ function createExtensionAndExtensionHostAPIs(
         [comlink.proxyMarker]: true,
 
         ping: () => 'pong',
+        mainThreadAPIInitialized: () => {
+            mainThreadAPIInitializations.next(true)
+        },
         ...extensionHostAPINew,
     }
 

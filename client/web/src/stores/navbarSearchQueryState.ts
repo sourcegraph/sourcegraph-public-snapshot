@@ -6,7 +6,6 @@
 import create from 'zustand'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
-import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import {
     BuildSearchQueryURLParameters,
     SearchQueryState,
@@ -18,36 +17,6 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { parseSearchURL } from '../search'
 import { submitSearch, canSubmitSearch } from '../search/helpers'
 import { defaultCaseSensitiveFromSettings, defaultPatternTypeFromSettings } from '../util/settings'
-
-export type QueryUpdate =
-    | /**
-     * Appends a filter to the current search query. If the filter is unique and
-     * already exists in the query, the update is ignored.
-     */
-    {
-          type: 'appendFilter'
-          field: FilterType
-          value: string
-          /**
-           * If true, the filter will only be appended a filter with the same name
-           * doesn't already exist in the query.
-           */
-          unique?: true
-      }
-    /**
-     * Appends or updates a filter to/in the query.
-     */
-    | {
-          type: 'updateOrAppendFilter'
-          field: FilterType
-          value: string
-      }
-    // Only exists for the filters from the search sidebar since they come in
-    // filter:value form. Should not be used elsewhere.
-    | {
-          type: 'toggleSubquery'
-          value: string
-      }
 
 export interface NavbarQueryState extends SearchQueryState {}
 
@@ -74,6 +43,9 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
         if (canSubmitSearch(query, parameters.selectedSearchContextSpec)) {
             submitSearch({ ...parameters, query: updatedQuery, caseSensitive, patternType })
         }
+    },
+    setSearchCaseSensitivity: searchCaseSensitivity => {
+        set({ searchCaseSensitivity })
     },
 }))
 

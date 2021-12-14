@@ -14,7 +14,7 @@ import { siteGQLID, siteID } from './jscontext'
 import { highlightFileResult, mixedSearchStreamEvents } from './streaming-search-mocks'
 import { percySnapshotWithVariants } from './utils'
 
-const viewerSettings: Partial<WebGraphQlOperations> = {
+const viewerSettings: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ViewerSettings: () => ({
         viewerSettings: {
             __typename: 'SettingsCascade',

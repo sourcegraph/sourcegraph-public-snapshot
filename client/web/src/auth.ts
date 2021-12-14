@@ -15,7 +15,6 @@ import { requestGraphQL } from './backend/graphql'
  */
 export const authenticatedUser = new ReplaySubject<AuthenticatedUser | null>(1)
 
-// TODO(tj): don't re-export, just update imports to use shared.
 export type AuthenticatedUser = SharedAuthenticatedUser
 
 /**

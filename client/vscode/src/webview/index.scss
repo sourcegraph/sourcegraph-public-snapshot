@@ -1,0 +1,56 @@
+@import '../../../branded/src/global-styles/index.scss';
+@import '../../../shared/src/index.scss';
+
+:root {
+    --border-color: rgba(0, 0, 0, 0.125);
+    --mark-bg: #{$mark-bg-light};
+    // TODO for v1: redefine our CSS variables using VS Code's CSS variables
+    // instead of hackily overriding used class properties.
+}
+
+// stylelint-disable-next-line selector-max-id
+html,
+body,
+#root {
+    height: 100%;
+}
+
+.selection-highlight,
+.selection-highlight-sticky {
+    background-color: var(--mark-bg);
+}
+
+// Used for <MonacoQueryInput/>
+.flex-shrink-past-contents {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+// Adapt to VS Code appearance.
+body {
+    background-color: transparent;
+    color: var(--vscode-textPreformat-foreground);
+    font-family: var(--vscode-font-family);
+    font-weight: var(--vscode-font-weight);
+    font-size: var(--vscode-font-size);
+}
+
+code {
+    font-family: var(--vscode-editor-font-family) !important;
+    font-weight: var(--vscode-editor-font-weight) !important;
+    font-size: var(--vscode-editor-font-size) !important;
+}
+
+a {
+    color: var(--vscode-textLink-foreground) !important;
+}
+
+.btn-primary {
+    background-color: var(--vscode-button-background) !important;
+    color: var(--vscode-button-foreground) !important;
+    border-color: var(--vscode-button-border) !important;
+
+    &:hover {
+        background-color: var(--vscode-button-hoverBackground) !important;
+    }
+}

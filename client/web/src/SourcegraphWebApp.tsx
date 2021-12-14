@@ -7,7 +7,7 @@ import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Route, Router } from 'react-router'
 import { ScrollManager } from 'react-scroll-manager'
-import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
+import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
@@ -15,21 +15,46 @@ import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabled
 import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
+import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import {
     Controller as ExtensionsController,
     createController as createExtensionsController,
 } from '@sourcegraph/shared/src/extensions/controller'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { GraphQLClient } from '@sourcegraph/shared/src/graphql/graphql'
+import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import {
+    getAvailableSearchContextSpecOrDefault,
+    isSearchContextSpecAvailable,
+    SearchContextProps,
+} from '@sourcegraph/shared/src/search'
+import {
+    EventLogResult,
+    fetchRecentSearches,
+    fetchRecentFileViews,
+    fetchAutoDefinedSearchContexts,
+    fetchSearchContexts,
+    fetchSearchContext,
+    createSearchContext,
+    updateSearchContext,
+    deleteSearchContext,
+    getUserSearchContextNamespaces,
+    fetchSearchContextBySpec,
+} from '@sourcegraph/shared/src/search/backend'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 // This is the root Tooltip usage
 // eslint-disable-next-line no-restricted-imports
+import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
+import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
+import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { Tooltip, FeedbackText } from '@sourcegraph/wildcard'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
@@ -47,41 +72,20 @@ import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHea
 import { FeatureFlagName, fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
 import { FeatureFlagsAgent } from './featureFlags/FeatureFlagsAgent'
 import { CodeInsightsProps } from './insights/types'
-import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { Layout, LayoutProps } from './Layout'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { createPlatformContext } from './platform/context'
-import { fetchHighlightedFileLineRanges } from './repo/backend'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
-import {
-    parseSearchURL,
-    getAvailableSearchContextSpecOrDefault,
-    isSearchContextSpecAvailable,
-    SearchContextProps,
-} from './search'
-import {
-    fetchSavedSearches,
-    fetchRecentSearches,
-    fetchRecentFileViews,
-    fetchAutoDefinedSearchContexts,
-    fetchSearchContexts,
-    fetchSearchContext,
-    createSearchContext,
-    updateSearchContext,
-    deleteSearchContext,
-    getUserSearchContextNamespaces,
-    fetchSearchContextBySpec,
-} from './search/backend'
+import { parseSearchURL } from './search'
+import { fetchSavedSearches } from './search/backend'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { SearchStack } from './search/SearchStack'
-import { TemporarySettingsProvider } from './settings/temporary/TemporarySettingsProvider'
-import { TemporarySettingsStorage } from './settings/temporary/TemporarySettingsStorage'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -100,7 +104,6 @@ import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { UserSessionStores } from './UserSessionStores'
-import { globbingEnabledFromSettings } from './util/globbing'
 import { observeLocation } from './util/location'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
@@ -407,7 +410,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                             window.context.batchChangesWebhookLogsEnabled
                                                         }
                                                         // Search query
-                                                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                                        fetchHighlightedFileLineRanges={
+                                                            this.fetchHighlightedFileLineRanges
+                                                        }
                                                         // Extensions
                                                         platformContext={this.platformContext}
                                                         extensionsController={this.extensionsController}
@@ -435,8 +440,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                             window.context.codeInsightsGqlApiEnabled
                                                         }
                                                         fetchSavedSearches={fetchSavedSearches}
-                                                        fetchRecentSearches={fetchRecentSearches}
-                                                        fetchRecentFileViews={fetchRecentFileViews}
+                                                        fetchRecentSearches={this.fetchRecentSearches}
+                                                        fetchRecentFileViews={this.fetchRecentFileViews}
                                                         streamSearch={aggregateStreamingSearch}
                                                         onUserExternalServicesOrRepositoriesUpdate={
                                                             this.onUserExternalServicesOrRepositoriesUpdate
@@ -496,16 +501,18 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
         const { defaultSearchContextSpec } = this.state
         this.subscriptions.add(
-            getAvailableSearchContextSpecOrDefault({ spec, defaultSpec: defaultSearchContextSpec }).subscribe(
-                availableSearchContextSpecOrDefault => {
-                    this.setState({ selectedSearchContextSpec: availableSearchContextSpecOrDefault })
-                    localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
+            getAvailableSearchContextSpecOrDefault({
+                spec,
+                defaultSpec: defaultSearchContextSpec,
+                platformContext: this.platformContext,
+            }).subscribe(availableSearchContextSpecOrDefault => {
+                this.setState({ selectedSearchContextSpec: availableSearchContextSpecOrDefault })
+                localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
 
-                    this.setWorkspaceSearchContext(availableSearchContextSpecOrDefault).catch(error => {
-                        console.error('Error sending search context to extensions', error)
-                    })
-                }
-            )
+                this.setWorkspaceSearchContext(availableSearchContextSpecOrDefault).catch(error => {
+                    console.error('Error sending search context to extensions', error)
+                })
+            })
         )
     }
 
@@ -513,4 +520,16 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         const extensionHostAPI = await this.extensionsController.extHostAPI
         await extensionHostAPI.setSearchContext(spec)
     }
+
+    private fetchHighlightedFileLineRanges = (
+        parameters: FetchFileParameters,
+        force?: boolean | undefined
+    ): Observable<string[][]> =>
+        fetchHighlightedFileLineRanges({ ...parameters, platformContext: this.platformContext }, force)
+
+    private fetchRecentSearches = (userId: Scalars['ID'], first: number): Observable<EventLogResult | null> =>
+        fetchRecentSearches(userId, first, this.platformContext)
+
+    private fetchRecentFileViews = (userId: Scalars['ID'], first: number): Observable<EventLogResult | null> =>
+        fetchRecentFileViews(userId, first, this.platformContext)
 }

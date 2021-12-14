@@ -15,7 +15,7 @@ vendor/
 out/
 dist/
 client/shared/src/graphqlschema.ts
-client/web/src/schema/
+client/shared/src/schema/
 ts-node-*
 testdata
 .github/*

@@ -11,6 +11,8 @@ import {
     SearchContextRepositoryRevisionsInput,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -20,7 +22,6 @@ import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import { SearchContextProps } from '../../search'
 
 import { SearchContextForm } from './SearchContextForm'
 
@@ -28,7 +29,8 @@ export interface EditSearchContextPageProps
     extends RouteComponentProps<{ spec: Scalars['ID'] }>,
         ThemeProps,
         TelemetryProps,
-        Pick<SearchContextProps, 'updateSearchContext' | 'fetchSearchContextBySpec' | 'deleteSearchContext'> {
+        Pick<SearchContextProps, 'updateSearchContext' | 'fetchSearchContextBySpec' | 'deleteSearchContext'>,
+        PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
 }
@@ -46,15 +48,15 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSea
             if (!id) {
                 return throwError(new Error('Cannot update search context with undefined ID'))
             }
-            return updateSearchContext({ id, searchContext, repositories })
+            return updateSearchContext({ id, searchContext, repositories }, props.platformContext)
         },
-        [updateSearchContext]
+        [updateSearchContext, props.platformContext]
     )
 
     const searchContextOrError = useObservable(
         useMemo(
             () =>
-                fetchSearchContextBySpec(match.params.spec).pipe(
+                fetchSearchContextBySpec(match.params.spec, props.platformContext).pipe(
                     switchMap(searchContext => {
                         if (!searchContext.viewerCanManage) {
                             return throwError(new Error('You do not have sufficient permissions to edit this context.'))
@@ -64,7 +66,7 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSea
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
-            [match.params.spec, fetchSearchContextBySpec]
+            [match.params.spec, fetchSearchContextBySpec, props.platformContext]
         )
     )
 

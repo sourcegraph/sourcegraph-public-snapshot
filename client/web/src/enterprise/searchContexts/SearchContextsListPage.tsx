@@ -5,19 +5,21 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { SearchContextProps } from '../../search'
 
 import { SearchContextsListTab } from './SearchContextsListTab'
 
 export interface SearchContextsListPageProps
     extends Pick<
-        SearchContextProps,
-        'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
-    > {
+            SearchContextProps,
+            'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
+        >,
+        PlatformContextProps<'requestGraphQL'> {
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
