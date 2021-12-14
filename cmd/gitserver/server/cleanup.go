@@ -247,16 +247,10 @@ func (s *Server) cleanupRepos() {
 	}
 
 	performGC := func(dir GitDir) (done bool, err error) {
-		if enableSGMaintenance || !enableGCAuto {
-			return false, nil
-		}
 		return false, gitGC(dir)
 	}
 
 	performSGMaintenance := func(dir GitDir) (done bool, err error) {
-		if enableGCAuto || !enableSGMaintenance {
-			return false, nil
-		}
 		return false, sgMaintenance(dir)
 	}
 
@@ -277,16 +271,22 @@ func (s *Server) cleanupRepos() {
 		// 2021-03-01 (tomas,keegan) we used to store an authenticated remote URL on
 		// disk. We no longer need it so we can scrub it.
 		{"scrub remote URL", scrubRemoteURL},
+	}
+
+	if enableGCAuto && !enableSGMaintenance {
 		// Runs a number of housekeeping tasks within the current repository, such as
 		// compressing file revisions (to reduce disk space and increase performance),
 		// removing unreachable objects which may have been created from prior
 		// invocations of git add, packing refs, pruning reflog, rerere metadata or stale
 		// working trees. May also update ancillary indexes such as the commit-graph.
-		{"garbage collect", performGC},
+		cleanups = append(cleanups, cleanupFn{"garbage collect", performGC})
+	}
+
+	if enableSGMaintenance && !enableGCAuto {
 		// Run tasks to optimize Git repository data, speeding up other Git commands and
 		// reducing storage requirements for the repository. Note: performGC and
 		// performSGMaintenance must not be enabled at the same time.
-		{"sg maintenance", performSGMaintenance},
+		cleanups = append(cleanups, cleanupFn{"sg maintenance", performSGMaintenance})
 	}
 
 	if !conf.Get().DisableAutoGitUpdates {
