@@ -1840,11 +1840,9 @@ func testAbortSyncWhenThereIsRepoLimitError(store *repos.Store) func(*testing.T)
 					ReposCount: 1,
 					ReposLimit: 1,
 					UserID:     svc.NamespaceUserID,
-					UserName:   "Username",
 					OrgID:      svc.NamespaceOrgID,
-					OrgName:    "sample-org101",
 				}
-				if diff := cmp.Diff(expectedErr.Error(), actualErr.Error()); diff != "" {
+				if diff := cmp.Diff(expectedErr, actualErr); diff != "" {
 					t.Fatalf("Unexpected error occurred. Expected: %v, actual: %v", expectedErr, actualErr)
 				}
 			}

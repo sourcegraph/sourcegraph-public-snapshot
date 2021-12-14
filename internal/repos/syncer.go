@@ -397,36 +397,28 @@ type RepoLimitError struct {
 	// NamespaceUserID of an external service
 	UserID int32
 
-	// Name of user owning the external service
-	UserName string
-
 	// NamespaceUserID of an external service
 	OrgID int32
-
-	// Name of org owning the external service
-	OrgName string
 }
 
 func (e *RepoLimitError) Error() string {
 	if e.UserID > 0 {
 		return fmt.Sprintf(
-			"reached maximum allowed user added repos: site:%d/%d, user:%d/%d (user-id: %d, username: %q)",
+			"reached maximum allowed user added repos: site:%d/%d, user:%d/%d (user-id: %d)",
 			e.SiteAdded,
 			e.SiteLimit,
 			e.ReposCount,
 			e.ReposLimit,
 			e.UserID,
-			e.UserName,
 		)
 	} else if e.OrgID > 0 {
 		return fmt.Sprintf(
-			"reached maximum allowed organization added repos: site:%d/%d, organization:%d/%d (org-id: %d, organization name: %q)",
+			"reached maximum allowed organization added repos: site:%d/%d, organization:%d/%d (org-id: %d)",
 			e.SiteAdded,
 			e.SiteLimit,
 			e.ReposCount,
 			e.ReposLimit,
 			e.OrgID,
-			e.OrgName,
 		)
 	} else {
 		return "expected either userID or orgID to be defined"
@@ -682,32 +674,13 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 			// TODO: For now we are using the same limit for users as for organizations
 			userLimit, siteLimit := s.userReposMaxPerUser(), s.userReposMaxPerSite()
 			if siteAdded >= siteLimit || userAdded >= userLimit {
-				var username string
-				var orgName string
-
-				if svc.NamespaceUserID != 0 {
-					userStore := database.Users(tx.Handle().DB())
-					// We can ignore the error here as it's not fatal
-					if u, _ := userStore.GetByID(ctx, svc.NamespaceUserID); u != nil {
-						username = u.Username
-					}
-				} else if svc.NamespaceOrgID != 0 {
-					orgStore := database.Orgs(tx.Handle().DB())
-					// We can ignore the error here as it's not fatal
-					if o, _ := orgStore.GetByID(ctx, svc.NamespaceOrgID); o != nil {
-						orgName = o.Name
-					}
-				}
-
 				return Diff{}, &RepoLimitError{
 					SiteAdded:  siteAdded,
 					SiteLimit:  siteLimit,
 					ReposCount: userAdded,
 					ReposLimit: userLimit,
 					UserID:     svc.NamespaceUserID,
-					UserName:   username,
 					OrgID:      svc.NamespaceOrgID,
-					OrgName:    orgName,
 				}
 			}
 		}
