@@ -4,9 +4,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -66,6 +66,9 @@ Run sg check --help for a list of all checks.
 `,
 		FlagSet: checkFlagSet,
 		Exec: func(ctx context.Context, args []string) error {
+			if len(args) > 0 {
+				return errors.New("unrecognized topic, please run sg check --help to list topics")
+			}
 			var fns []checkScriptFn
 			for _, scriptFns := range scriptChecks {
 				fns = append(fns, scriptFns...)
@@ -124,7 +127,14 @@ func runCheckScriptsAndReport(fns ...checkScriptFn) func(context.Context, []stri
 			return err
 		}
 
-		// swawn a go routine for each check and increment count to report completion
+		// We need the Verbose flag to print above the pending indicator.
+		out := output.NewOutput(os.Stdout, output.OutputOpts{
+			ForceColor: true,
+			ForceTTY:   true,
+			Verbose:    true,
+		})
+
+		// Spawn a goroutine for each check and increment count to report completion.
 		var count int64
 		total := len(fns)
 		pending := out.Pending(output.Linef("", output.StylePending, "Running checks (done: 0/%d)", total))
@@ -133,9 +143,7 @@ func runCheckScriptsAndReport(fns ...checkScriptFn) func(context.Context, []stri
 		wg.Add(total)
 		for _, fn := range fns {
 			go func(fn func(context.Context) *checkReport) {
-				report := fn(ctx)
-				atomic.AddInt64(&count, 1)
-				reportsCh <- report
+				reportsCh <- fn(ctx)
 				wg.Done()
 			}(fn)
 		}
@@ -148,16 +156,16 @@ func runCheckScriptsAndReport(fns ...checkScriptFn) func(context.Context, []stri
 		var hasErr bool
 		var messages []string
 		for report := range reportsCh {
-			pending.Destroy()
-			printCheckReport(report)
-			if count != int64(total) {
-				pending = out.Pending(output.Linef("", output.StylePending, "Running checks (done: %d/%d)", count, total))
-			}
+			count++
+			printCheckReport(pending, report)
+			pending.Updatef("Running checks (done: %d/%d)", count, total)
 			if report.err != nil {
 				messages = append(messages, report.err.Error())
 				hasErr = true
 			}
 		}
+		pending.Complete(output.Linef("", output.StyleBold, "Done running checks."))
+
 		// return the final error, if any
 		if hasErr {
 			return errors.Newf("failed checks: %s", strings.Join(messages, ", "))
@@ -173,14 +181,14 @@ type checkReport struct {
 	err      error
 }
 
-func printCheckReport(report *checkReport) {
-	timing := fmt.Sprintf(" (%ds)", report.duration/time.Second)
+func printCheckReport(pending output.Pending, report *checkReport) {
+	msg := fmt.Sprintf(" (%ds)", report.duration/time.Second)
 	if report.err != nil {
-		writeFailureLine(report.header + timing)
-		out.Write(report.output)
+		pending.VerboseLine(output.Linef(output.EmojiFailure, output.StyleWarning, "%s %s", report.header, msg))
+		pending.Verbose(report.output)
 		return
 	}
-	writeSuccessLine(report.header + timing)
+	pending.VerboseLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "%s %s", report.header, msg))
 }
 
 func runCheckScript(header string, script string) checkScriptFn {
