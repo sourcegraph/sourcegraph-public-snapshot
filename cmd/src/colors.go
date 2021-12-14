@@ -31,6 +31,7 @@ var ansiColors = map[string]string{
 	"search-border":         fg256Color(239),
 	"search-link":           fg256Color(237),
 	"search-repository":     fg256Color(23),
+	"search-branch":         fg256Color(0) + bg256Color(7),
 	"search-filename":       fg256Color(69),
 	"search-match":          fg256Color(0) + bg256Color(11),
 	"search-line-numbers":   fg256Color(69),
