@@ -4,7 +4,6 @@
 package shared
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -252,13 +251,12 @@ func startProcesses(group *errgroup.Group, name string, procfile []string, optio
 func runMigrator() {
 	log.Println("Starting migrator")
 
-	var output bytes.Buffer
-	e := execer{Out: &output}
-
 	for _, schemaName := range []string{"frontend", "codeintel"} {
+		e := execer{}
 		e.Command("migrator", "up", "-db", schemaName)
+
 		if err := e.Error(); err != nil {
-			pgPrintf("Migrating %s schema failed:\n%s", schemaName, output.String())
+			pgPrintf("Migrating %s schema failed%s", schemaName)
 			log.Fatal(err.Error())
 		}
 	}
