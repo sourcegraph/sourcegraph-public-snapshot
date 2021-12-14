@@ -5,16 +5,15 @@ import { RouteComponentProps, Switch, Route, useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
 import { CodeInsightsContextProps } from '../../insights/types'
-import { Settings } from '../../schema/settings.schema'
-import { lazyComponent } from '../../util/lazyComponent'
-
 import { CodeInsightsBackendContext } from './core/backend/code-insights-backend-context'
 import { CodeInsightsGqlBackend } from './core/backend/gql-api/code-insights-gql-backend'
 import { CodeInsightsSettingsCascadeBackend } from './core/backend/setting-based-api/code-insights-setting-cascade-backend'

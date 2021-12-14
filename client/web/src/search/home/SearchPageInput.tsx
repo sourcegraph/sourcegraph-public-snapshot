@@ -6,7 +6,9 @@ import shallow from 'zustand/shallow'
 
 import { SearchBox } from '@sourcegraph/branded/src/search/input/SearchBox'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { CaseSensitivityProps, SearchContextInputProps, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { SubmitSearchParameters } from '@sourcegraph/shared/src/search/helpers'
 import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
@@ -16,8 +18,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ParsedSearchQueryProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
-import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
-import { Settings } from '../../schema/settings.schema'
 import {
     useExperimentalFeatures,
     useNavbarQueryState,
@@ -38,8 +38,8 @@ interface Props
         ActivationProps,
         KeyboardShortcutsProps,
         TelemetryProps,
-        ParsedSearchQueryProps,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
+        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         Pick<SubmitSearchParameters, 'source'>,
         SearchContextInputProps {
     authenticatedUser: AuthenticatedUser | null
@@ -156,6 +156,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         onChange={setUserQueryState}
                         onSubmit={onSubmit}
                         autoFocus={showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
+                        isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                     />
                 </div>
                 <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />
