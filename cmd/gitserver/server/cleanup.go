@@ -778,9 +778,7 @@ func sgMaintenance(dir GitDir) error {
 	cmd := exec.Command("sh")
 	dir.Set(cmd)
 
-	buf := new(bytes.Buffer)
-	buf.WriteString(sgMaintenanceScript)
-	cmd.Stdin = buf
+	cmd.Stdin = strings.NewReader(sgMaintenanceScript)
 
 	b, err := cmd.CombinedOutput()
 	if err != nil {
