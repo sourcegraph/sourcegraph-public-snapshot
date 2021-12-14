@@ -6,6 +6,7 @@ import { ReactStripeElements } from 'react-stripe-elements'
 import { from, of, throwError, Observable } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -14,7 +15,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../components/alerts'
 import { StripeWrapper } from '../../dotcom/billing/StripeWrapper'
 import { ProductPlanFormControl } from '../../dotcom/productPlans/ProductPlanFormControl'
 import {

@@ -2,6 +2,7 @@ import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { ProductStatusBadge, Button } from '@sourcegraph/wildcard'
 import type { ProductStatusType } from '@sourcegraph/wildcard/src/components/Badge'
 
@@ -10,7 +11,6 @@ import { BatchChangesProps } from '../../batches'
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
 import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
-import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
 import { useExperimentalFeatures } from '../../stores'
 import { NavItemDescriptor } from '../../util/contributions'
 

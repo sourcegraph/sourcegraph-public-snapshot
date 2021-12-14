@@ -1,8 +1,8 @@
 import { ApolloError, WatchQueryFetchPolicy } from '@apollo/client'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
-import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 
 import {
     BatchSpecWorkspaceResolutionState,

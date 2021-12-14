@@ -7,24 +7,25 @@ import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon
 import React, { useEffect, useMemo } from 'react'
 import { catchError, startWith } from 'rxjs/operators'
 
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded/src/components/SyntaxHighlightedSearchQuery'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextInputProps, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/web/src/components/SyntaxHighlightedSearchQuery'
 import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
-import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { ParsedSearchQueryProps, SearchContextInputProps, SearchContextProps } from '../search'
+import { ParsedSearchQueryProps } from '../search'
 import { submitSearch } from '../search/helpers'
 import { SearchPageInput } from '../search/home/SearchPageInput'
 import { useNavbarQueryState } from '../stores'
@@ -43,7 +44,7 @@ export interface CommunitySearchContextPageProps
         ParsedSearchQueryProps,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         SearchContextInputProps,
         Pick<SearchContextProps, 'fetchSearchContextBySpec'> {
     authenticatedUser: AuthenticatedUser | null
@@ -76,11 +77,11 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
     const searchContextOrError = useObservable(
         useMemo(
             () =>
-                fetchSearchContextBySpec(props.communitySearchContextMetadata.spec).pipe(
+                fetchSearchContextBySpec(props.communitySearchContextMetadata.spec, props.platformContext).pipe(
                     startWith(LOADING),
                     catchError(error => [asError(error)])
                 ),
-            [props.communitySearchContextMetadata.spec, fetchSearchContextBySpec]
+            [props.communitySearchContextMetadata.spec, fetchSearchContextBySpec, props.platformContext]
         )
     )
 

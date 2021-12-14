@@ -5,10 +5,10 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 import { useHistory } from 'react-router-dom'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { Button } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import { CustomInsightDashboard } from '../../../../../core/types'
 

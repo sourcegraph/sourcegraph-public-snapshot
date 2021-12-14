@@ -5,12 +5,12 @@ import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../components/alerts'
 import { PageTitle } from '../components/PageTitle'
 
 import { fetchSiteUpdateCheck } from './backend'

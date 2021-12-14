@@ -1,7 +1,6 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Badge } from '@sourcegraph/branded/src/components/Badge'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

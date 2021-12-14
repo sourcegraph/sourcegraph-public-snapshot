@@ -2,6 +2,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
+import { PatternTypeProps } from '@sourcegraph/shared/src/search'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'

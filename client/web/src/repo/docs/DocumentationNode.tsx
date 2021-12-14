@@ -7,6 +7,7 @@ import React, { RefObject, useEffect, useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
+import { Badge } from '@sourcegraph/branded/src/components/Badge'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { AnchorLink } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'

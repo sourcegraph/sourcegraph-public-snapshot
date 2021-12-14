@@ -1,8 +1,8 @@
 import { upperFirst } from 'lodash'
 import React, { FunctionComponent } from 'react'
 
-import { ErrorMessage } from '../../../../components/alerts'
 import { LSIFIndexState, LSIFUploadState } from '../../../../graphql-operations'
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 
 export interface CodeIntelStateDescriptionProps {
     typeName: string
