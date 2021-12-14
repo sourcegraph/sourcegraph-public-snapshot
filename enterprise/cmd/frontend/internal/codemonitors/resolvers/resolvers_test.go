@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestCreateCodeMonitor(t *testing.T) {
@@ -26,21 +27,21 @@ func TestCreateCodeMonitor(t *testing.T) {
 	db := database.NewDB(dbtest.NewDB(t))
 	r := newTestResolver(t, db)
 
-	userID := insertTestUser(t, db, "cm-user1", true)
+	user := insertTestUser(t, db, "cm-user1", true)
 
 	want := &cm.Monitor{
 		ID:          1,
-		CreatedBy:   userID,
+		CreatedBy:   user.ID,
 		CreatedAt:   r.Now(),
-		ChangedBy:   userID,
+		ChangedBy:   user.ID,
 		ChangedAt:   r.Now(),
 		Description: "test monitor",
 		Enabled:     true,
-		UserID:      userID,
+		UserID:      user.ID,
 	}
 
 	// Create a monitor.
-	ctx = actor.WithActor(ctx, actor.FromUser(userID))
+	ctx = actor.WithActor(ctx, actor.FromUser(user.ID))
 	got, err := r.insertTestMonitorWithOpts(ctx, t)
 	require.NoError(t, err)
 	castGot := got.(*monitor).Monitor
@@ -69,8 +70,8 @@ func TestListCodeMonitors(t *testing.T) {
 	db := database.NewDB(dbtest.NewDB(t))
 	r := newTestResolver(t, db)
 
-	userID := insertTestUser(t, db, "cm-user1", true)
-	ctx = actor.WithActor(ctx, actor.FromUser(userID))
+	user := insertTestUser(t, db, "cm-user1", true)
+	ctx = actor.WithActor(ctx, actor.FromUser(user.ID))
 
 	// Create a monitor.
 	_, err := r.insertTestMonitorWithOpts(ctx, t)
@@ -79,7 +80,7 @@ func TestListCodeMonitors(t *testing.T) {
 	args := &graphqlbackend.ListMonitorsArgs{
 		First: 5,
 	}
-	r1, err := r.Monitors(ctx, userID, args)
+	r1, err := r.Monitors(ctx, user.ID, args)
 	require.NoError(t, err)
 
 	require.Len(t, r1.Nodes(), 1, "unexpected node count")
@@ -91,7 +92,7 @@ func TestListCodeMonitors(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	r2, err := r.Monitors(ctx, userID, args)
+	r2, err := r.Monitors(ctx, user.ID, args)
 	require.NoError(t, err)
 
 	require.Len(t, r2.Nodes(), 5, "unexpected node count")
@@ -103,7 +104,7 @@ func TestListCodeMonitors(t *testing.T) {
 		First: 10,
 		After: pi.EndCursor(),
 	}
-	r3, err := r.Monitors(ctx, userID, args)
+	r3, err := r.Monitors(ctx, user.ID, args)
 	require.NoError(t, err)
 
 	require.Len(t, r3.Nodes(), 6, "unexpected node count")
@@ -121,8 +122,8 @@ func TestIsAllowedToEdit(t *testing.T) {
 	r := newTestResolver(t, db)
 
 	// Create a monitor and set org as owner.
-	ownerOpt := WithOwner(relay.MarshalID("User", owner))
-	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
+	ownerOpt := WithOwner(relay.MarshalID("User", owner.ID))
+	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin.ID))
 	m, err := r.insertTestMonitorWithOpts(admContext, t, ownerOpt)
 	require.NoError(t, err)
 
@@ -131,15 +132,15 @@ func TestIsAllowedToEdit(t *testing.T) {
 		allowed bool
 	}{
 		{
-			user:    owner,
+			user:    owner.ID,
 			allowed: true,
 		},
 		{
-			user:    notOwner,
+			user:    notOwner.ID,
 			allowed: false,
 		},
 		{
-			user:    siteAdmin,
+			user:    siteAdmin.ID,
 			allowed: true,
 		},
 	}
@@ -153,8 +154,8 @@ func TestIsAllowedToEdit(t *testing.T) {
 	}
 
 	t.Run("cannot change namespace to one not editable by caller", func(t *testing.T) {
-		ctx := actor.WithActor(context.Background(), actor.FromUser(owner))
-		notMemberNamespace := relay.MarshalID("User", notOwner)
+		ctx := actor.WithActor(context.Background(), actor.FromUser(owner.ID))
+		notMemberNamespace := relay.MarshalID("User", notOwner.ID)
 		args := &graphqlbackend.UpdateCodeMonitorArgs{
 			Monitor: &graphqlbackend.EditMonitorArgs{
 				Id: m.ID(),
@@ -178,10 +179,10 @@ func TestIsAllowedToCreate(t *testing.T) {
 	notMember := insertTestUser(t, db, "cm-user2", false)
 	siteAdmin := insertTestUser(t, db, "cm-user3", true)
 
-	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
+	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin.ID))
 	org, err := database.Orgs(db).Create(admContext, "cm-test-org", nil)
 	require.NoError(t, err)
-	addUserToOrg(t, db, member, org.ID)
+	addUserToOrg(t, db, member.ID, org.ID)
 
 	r := newTestResolver(t, db)
 
@@ -191,33 +192,33 @@ func TestIsAllowedToCreate(t *testing.T) {
 		allowed bool
 	}{
 		{
-			user:    member,
+			user:    member.ID,
 			owner:   relay.MarshalID("Org", org.ID),
 			allowed: false,
 		},
 		{
-			user:    member,
-			owner:   relay.MarshalID("User", notMember),
+			user:    member.ID,
+			owner:   relay.MarshalID("User", notMember.ID),
 			allowed: false,
 		},
 		{
-			user:    notMember,
+			user:    notMember.ID,
 			owner:   relay.MarshalID("Org", org.ID),
 			allowed: false,
 		},
 		{
-			user:    siteAdmin,
+			user:    siteAdmin.ID,
 			owner:   relay.MarshalID("Org", org.ID),
 			allowed: false, // Error creating org owner
 		},
 		{
-			user:    siteAdmin,
-			owner:   relay.MarshalID("User", member),
+			user:    siteAdmin.ID,
+			owner:   relay.MarshalID("User", member.ID),
 			allowed: true,
 		},
 		{
-			user:    siteAdmin,
-			owner:   relay.MarshalID("User", notMember),
+			user:    siteAdmin.ID,
+			owner:   relay.MarshalID("User", notMember.ID),
 			allowed: true,
 		},
 	}
@@ -231,13 +232,8 @@ func TestIsAllowedToCreate(t *testing.T) {
 	}
 }
 
-type testUser struct {
-	name    string
-	idInt32 int32
-}
-
-func (u *testUser) id() graphql.ID {
-	return relay.MarshalID("User", u.idInt32)
+func graphqlUserID(id int32) graphql.ID {
+	return relay.MarshalID("User", id)
 }
 
 func TestQueryMonitor(t *testing.T) {
@@ -246,19 +242,17 @@ func TestQueryMonitor(t *testing.T) {
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.
-	user1 := &testUser{name: "cm-user1"}
-	user1.idInt32 = insertTestUser(t, db, user1.name, true)
-	user2 := &testUser{name: "cm-user2"}
-	user2.idInt32 = insertTestUser(t, db, user2.name, true)
+	user1 := insertTestUser(t, db, "cm-user1", true)
+	user2 := insertTestUser(t, db, "cm-user2", true)
 
 	// Create 2 code monitors, each with 1 trigger, 2 actions and two recipients per action.
-	ctx = actor.WithActor(ctx, actor.FromUser(user1.idInt32))
+	ctx = actor.WithActor(ctx, actor.FromUser(user1.ID))
 	actionOpt := WithActions([]*graphqlbackend.CreateActionArgs{
 		{
 			Email: &graphqlbackend.CreateActionEmailArgs{
 				Enabled:    false,
 				Priority:   "NORMAL",
-				Recipients: []graphql.ID{user1.id(), user2.id()},
+				Recipients: []graphql.ID{graphqlUserID(user1.ID), graphqlUserID(user2.ID)},
 				Header:     "test header 1",
 			},
 		},
@@ -266,7 +260,7 @@ func TestQueryMonitor(t *testing.T) {
 			Email: &graphqlbackend.CreateActionEmailArgs{
 				Enabled:    true,
 				Priority:   "CRITICAL",
-				Recipients: []graphql.ID{user1.id(), user2.id()},
+				Recipients: []graphql.ID{graphqlUserID(user1.ID), graphqlUserID(user2.ID)},
 				Header:     "test header 2",
 			},
 		},
@@ -311,7 +305,7 @@ func TestQueryMonitor(t *testing.T) {
 	_, err = r.insertTestMonitorWithOpts(ctx, t, actionOpt, postHookOpt)
 	require.NoError(t, err)
 
-	schema, err := graphqlbackend.NewSchema(database.NewDB(db), nil, nil, nil, nil, r, nil, nil, nil, nil, nil)
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, r, nil, nil, nil, nil, nil)
 	require.NoError(t, err)
 
 	t.Run("query by user", func(t *testing.T) {
@@ -337,9 +331,9 @@ func TestQueryMonitor(t *testing.T) {
 	})
 }
 
-func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Resolver, user1 *testUser, user2 *testUser) {
+func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Resolver, user1 *types.User, user2 *types.User) {
 	input := map[string]interface{}{
-		"userName":     user1.name,
+		"userName":     user1.Username,
 		"actionCursor": relay.MarshalID(monitorActionEmailKind, 1),
 	}
 	response := apitest.Response{}
@@ -355,8 +349,8 @@ func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *R
 					Id:          string(relay.MarshalID(MonitorKind, 1)),
 					Description: "test monitor",
 					Enabled:     true,
-					Owner:       apitest.UserOrg{Name: user1.name},
-					CreatedBy:   apitest.UserOrg{Name: user1.name},
+					Owner:       apitest.UserOrg{Name: user1.Username},
+					CreatedBy:   apitest.UserOrg{Name: user1.Username},
 					CreatedAt:   marshalDateTime(t, r.Now()),
 					Trigger: apitest.Trigger{
 						Id:    string(relay.MarshalID(monitorTriggerQueryKind, 1)),
@@ -388,8 +382,8 @@ func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *R
 									Recipients: apitest.RecipientsConnection{
 										TotalCount: 2,
 										Nodes: []apitest.UserOrg{
-											{Name: user1.name},
-											{Name: user2.name},
+											{Name: user1.Username},
+											{Name: user2.Username},
 										},
 									},
 									Header: "test header 2",
@@ -506,16 +500,14 @@ func TestEditCodeMonitor(t *testing.T) {
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.
-	user1Name := "cm-user1"
-	user1ID := insertTestUser(t, db, user1Name, true)
-	ns1 := relay.MarshalID("User", user1ID)
+	user1 := insertTestUser(t, db, "cm-user1", true)
+	ns1 := relay.MarshalID("User", user1.ID)
 
-	user2Name := "cm-user2"
-	user2ID := insertTestUser(t, db, user2Name, true)
-	ns2 := relay.MarshalID("User", user2ID)
+	user2 := insertTestUser(t, db, "cm-user2", true)
+	ns2 := relay.MarshalID("User", user2.ID)
 
 	// Create a code monitor with 1 trigger and 2 actions.
-	ctx = actor.WithActor(ctx, actor.FromUser(user1ID))
+	ctx = actor.WithActor(ctx, actor.FromUser(user1.ID))
 	actionOpt := WithActions([]*graphqlbackend.CreateActionArgs{
 		{
 			Email: &graphqlbackend.CreateActionEmailArgs{
@@ -557,10 +549,10 @@ func TestEditCodeMonitor(t *testing.T) {
 			Description: "updated test monitor",
 			Enabled:     false,
 			Owner: apitest.UserOrg{
-				Name: user1Name,
+				Name: user1.Username,
 			},
 			CreatedBy: apitest.UserOrg{
-				Name: user1Name,
+				Name: user1.Username,
 			},
 			CreatedAt: marshalDateTime(t, r.store.Now()),
 			Trigger: apitest.Trigger{
@@ -568,40 +560,38 @@ func TestEditCodeMonitor(t *testing.T) {
 				Query: "repo:bar",
 			},
 			Actions: apitest.ActionConnection{
-				Nodes: []apitest.Action{
-					{
-						ActionEmail: apitest.ActionEmail{
-							Id:       string(relay.MarshalID(monitorActionEmailKind, 1)),
-							Enabled:  false,
-							Priority: "CRITICAL",
-							Recipients: apitest.RecipientsConnection{
-								Nodes: []apitest.UserOrg{
-									{
-										Name: user2Name,
-									},
+				Nodes: []apitest.Action{{
+					ActionEmail: apitest.ActionEmail{
+						Id:       string(relay.MarshalID(monitorActionEmailKind, 1)),
+						Enabled:  false,
+						Priority: "CRITICAL",
+						Recipients: apitest.RecipientsConnection{
+							Nodes: []apitest.UserOrg{
+								{
+									Name: user2.Username,
 								},
 							},
-							Header: "updated header action 1",
 						},
-					}, {
-						ActionEmail: apitest.ActionEmail{
-							Id:       string(relay.MarshalID(monitorActionEmailKind, 3)),
-							Enabled:  true,
-							Priority: "NORMAL",
-							Recipients: apitest.RecipientsConnection{
-								Nodes: []apitest.UserOrg{
-									{
-										Name: user1Name,
-									},
-									{
-										Name: user2Name,
-									},
-								},
-							},
-							Header: "header action 3",
-						},
+						Header: "updated header action 1",
 					},
-				},
+				}, {
+					ActionEmail: apitest.ActionEmail{
+						Id:       string(relay.MarshalID(monitorActionEmailKind, 3)),
+						Enabled:  true,
+						Priority: "NORMAL",
+						Recipients: apitest.RecipientsConnection{
+							Nodes: []apitest.UserOrg{
+								{
+									Name: user1.Username,
+								},
+								{
+									Name: user2.Username,
+								},
+							},
+						},
+						Header: "header action 3",
+					},
+				}},
 			},
 		},
 	}
@@ -675,9 +665,9 @@ mutation ($monitorID: ID!, $triggerID: ID!, $actionID: ID!, $user1ID: ID!, $user
 }
 `
 
-func recipientPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, user1 *testUser, user2 *testUser) {
+func recipientPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, user1 *types.User, user2 *types.User) {
 	queryInput := map[string]interface{}{
-		"userName":        user1.name,
+		"userName":        user1.Username,
 		"recipientCursor": string(relay.MarshalID(monitorActionEmailRecipientKind, 1)),
 	}
 	got := apitest.Response{}
@@ -694,7 +684,7 @@ func recipientPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, 
 								Recipients: apitest.RecipientsConnection{
 									TotalCount: 2,
 									Nodes: []apitest.UserOrg{{
-										Name: user2.name,
+										Name: user2.Username,
 									}},
 								},
 							},
@@ -736,7 +726,7 @@ query($userName: String!, $recipientCursor: String!){
 }
 `
 
-func queryByID(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Resolver, m *monitor, user1 *testUser, user2 *testUser) {
+func queryByID(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Resolver, m *monitor, user1 *types.User, user2 *types.User) {
 	input := map[string]interface{}{
 		"id": m.ID(),
 	}
@@ -748,8 +738,8 @@ func queryByID(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Res
 			Id:          string(relay.MarshalID(MonitorKind, 1)),
 			Description: "test monitor",
 			Enabled:     true,
-			Owner:       apitest.UserOrg{Name: user1.name},
-			CreatedBy:   apitest.UserOrg{Name: user1.name},
+			Owner:       apitest.UserOrg{Name: user1.Username},
+			CreatedBy:   apitest.UserOrg{Name: user1.Username},
 			CreatedAt:   marshalDateTime(t, r.Now()),
 			Trigger: apitest.Trigger{
 				Id:    string(relay.MarshalID(monitorTriggerQueryKind, 1)),
@@ -767,10 +757,10 @@ func queryByID(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Res
 								TotalCount: 2,
 								Nodes: []apitest.UserOrg{
 									{
-										Name: user1.name,
+										Name: user1.Username,
 									},
 									{
-										Name: user2.name,
+										Name: user2.Username,
 									},
 								},
 							},
@@ -786,10 +776,10 @@ func queryByID(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Res
 								TotalCount: 2,
 								Nodes: []apitest.UserOrg{
 									{
-										Name: user1.name,
+										Name: user1.Username,
 									},
 									{
-										Name: user2.name,
+										Name: user2.Username,
 									},
 								},
 							},
@@ -859,9 +849,9 @@ query ($id: ID!) {
 }
 `
 
-func monitorPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, user1 *testUser) {
+func monitorPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, user1 *types.User) {
 	queryInput := map[string]interface{}{
-		"userName":      user1.name,
+		"userName":      user1.Username,
 		"monitorCursor": string(relay.MarshalID(MonitorKind, 1)),
 	}
 	got := apitest.Response{}
@@ -894,9 +884,9 @@ query($userName: String!, $monitorCursor: String!){
 }
 `
 
-func actionPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, user1 *testUser) {
+func actionPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, user1 *types.User) {
 	queryInput := map[string]interface{}{
-		"userName":     user1.name,
+		"userName":     user1.Username,
 		"actionCursor": string(relay.MarshalID(monitorActionEmailKind, 1)),
 	}
 	got := apitest.Response{}
@@ -943,9 +933,9 @@ query($userName: String!, $actionCursor:String!){
 }
 `
 
-func triggerEventPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, user1 *testUser) {
+func triggerEventPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, user1 *types.User) {
 	queryInput := map[string]interface{}{
-		"userName":           user1.name,
+		"userName":           user1.Username,
 		"triggerEventCursor": relay.MarshalID(monitorTriggerEventKind, 1),
 	}
 	got := apitest.Response{}
@@ -994,9 +984,9 @@ query($userName: String!, $triggerEventCursor: String!){
 }
 `
 
-func actionEventPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, user1 *testUser) {
+func actionEventPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, user1 *types.User) {
 	queryInput := map[string]interface{}{
-		"userName":          user1.name,
+		"userName":          user1.Username,
 		"actionCursor":      string(relay.MarshalID(monitorActionEmailKind, 1)),
 		"actionEventCursor": relay.MarshalID(monitorActionEmailEventKind, 1),
 	}
