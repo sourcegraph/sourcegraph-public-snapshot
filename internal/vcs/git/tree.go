@@ -116,12 +116,11 @@ func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo a
 		files = files[:len(files)-1]
 	}
 
+	// 🚨 SECURITY: All git methods that deal with file or path access need to have
+	// sub-repo permissions applied
 	if !checker.Enabled() {
 		return files, nil
 	}
-
-	// 🚨 SECURITY: All git methods that deal with file or path access need to have
-	// sub-repo permissions applied
 	a := actor.FromContext(ctx)
 	filtered, err := authz.FilterActorPaths(ctx, checker, a, repo, files)
 	if err != nil {
