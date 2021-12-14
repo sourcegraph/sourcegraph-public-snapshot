@@ -26,8 +26,8 @@
     "onView:sourcegraph.extensionHost",
     "onView:sourcegraph.searchSidebar"
   ],
-  "main": "./dist/extension.js",
-  "browser": "./dist/extension.js",
+  "main": "./dist/node/extension.js",
+  "browser": "./dist/webworker/extension.js",
   "contributes": {
     "commands": [
       {
