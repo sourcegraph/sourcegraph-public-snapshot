@@ -182,13 +182,13 @@ type checkReport struct {
 }
 
 func printCheckReport(pending output.Pending, report *checkReport) {
-	msg := fmt.Sprintf(" (%ds)", report.duration/time.Second)
+	msg := fmt.Sprintf("%s (%ds)", report.header, report.duration/time.Second)
 	if report.err != nil {
-		pending.VerboseLine(output.Linef(output.EmojiFailure, output.StyleWarning, "%s %s", report.header, msg))
+		pending.VerboseLine(output.Linef(output.EmojiFailure, output.StyleWarning, msg))
 		pending.Verbose(report.output)
 		return
 	}
-	pending.VerboseLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "%s %s", report.header, msg))
+	pending.VerboseLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, msg))
 }
 
 func runCheckScript(header string, script string) checkScriptFn {
