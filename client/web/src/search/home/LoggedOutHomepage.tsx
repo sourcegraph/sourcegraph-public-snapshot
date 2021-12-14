@@ -5,7 +5,6 @@ import React, { useCallback } from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Badge } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
@@ -115,31 +114,6 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                                 )
                             }
                         />
-                    </div>
-                </div>
-
-                <div className="d-flex justify-content-center">
-                    <div className={classNames('card', styles.ctaCard)}>
-                        <div className="d-flex align-items-center">
-                            <Badge variant="merged" className="text-uppercase mr-2">
-                                Beta
-                            </Badge>
-                        </div>
-                        <span>
-                            Search your public and private code.{' '}
-                            <Link to="/sign-up?src=HomepageCTA" onClick={onSignUpClick}>
-                                Sign up
-                            </Link>{' '}
-                            to get started, or{' '}
-                            <a
-                                href="https://about.sourcegraph.com/blog/why-index-the-oss-universe/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                read our blog post
-                            </a>{' '}
-                            to learn more.
-                        </span>
                     </div>
                 </div>
 
