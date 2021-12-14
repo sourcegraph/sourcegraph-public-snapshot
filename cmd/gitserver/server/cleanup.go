@@ -367,20 +367,20 @@ func (s *Server) howManyBytesToFree() (int64, error) {
 type StatDiskSizer struct{}
 
 func (s *StatDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
-	var fs syscall.Statfs_t
-	if err := syscall.Statfs(mountPoint, &fs); err != nil {
+	var statFS syscall.Statfs_t
+	if err := syscall.Statfs(mountPoint, &statFS); err != nil {
 		return 0, errors.Wrap(err, "statting")
 	}
-	free := fs.Bavail * uint64(fs.Bsize)
+	free := statFS.Bavail * uint64(statFS.Bsize)
 	return free, nil
 }
 
 func (s *StatDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
-	var fs syscall.Statfs_t
-	if err := syscall.Statfs(mountPoint, &fs); err != nil {
+	var statFS syscall.Statfs_t
+	if err := syscall.Statfs(mountPoint, &statFS); err != nil {
 		return 0, errors.Wrap(err, "statting")
 	}
-	free := fs.Blocks * uint64(fs.Bsize)
+	free := statFS.Blocks * uint64(statFS.Bsize)
 	return free, nil
 }
 
@@ -500,7 +500,7 @@ func dirSize(d string) int64 {
 // partial state in the event of server restart or concurrent modifications to
 // the directory.
 //
-// Additionally it removes parent empty directories up until s.ReposDir.
+// Additionally, it removes parent empty directories up until s.ReposDir.
 func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 	ctx := context.Background()
 	dir := string(gitDir)
@@ -740,7 +740,7 @@ func gitIsNonBareBestEffort(dir GitDir) bool {
 }
 
 // gitGC will invoke `git-gc` to clean up any garbage in the repo. It will
-// operate synchronously and be aggressive with its internal heurisitcs when
+// operate synchronously and be aggressive with its internal heuristics when
 // deciding to act (meaning it will act now at lower thresholds).
 func gitGC(dir GitDir) error {
 	cmd := exec.Command("git", "-c", "gc.auto=1", "-c", "gc.autoDetach=false", "gc", "--auto")
