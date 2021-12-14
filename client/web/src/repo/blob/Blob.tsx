@@ -44,6 +44,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { observeResize } from '@sourcegraph/shared/src/util/dom'
 import { property } from '@sourcegraph/shared/src/util/types'
 import {
     AbsoluteRepoFile,
@@ -66,7 +67,6 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
-import { observeResize } from '../../util/dom'
 import { HoverThresholdProps } from '../RepoContainer'
 
 import styles from './Blob.module.scss'

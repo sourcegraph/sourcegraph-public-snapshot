@@ -1,6 +1,7 @@
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+
 import { siteAdminAreaRoutes } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
-import { lazyComponent } from '../../util/lazyComponent'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 import type { ExecutorsListPageProps } from '../executors/ExecutorsListPage'
 
