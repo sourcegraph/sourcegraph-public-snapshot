@@ -47,11 +47,9 @@ func (ctags Ctags) Close() {
 
 func TestIndex(t *testing.T) {
 	// repo := "github.com/gorilla/mux"
-	// head := "3cf0d013e53d62a96c096366d300c84489c26dd5"
 	// repo := "github.com/hashicorp/raft"
-	// head := "aa1afe5d2a1e961ef54726af645ede516c18a554"
 	repo := "github.com/crossplane/crossplane"
-	head := "1f84012248a350b479a575214c17af5fe183138b"
+	// repo := "github.com/kubernetes/kubernetes"
 
 	git, err := NewSubprocessGit(repo)
 	if err != nil {
@@ -68,6 +66,14 @@ func TestIndex(t *testing.T) {
 		t.Fatalf("🚨 NewCtags: %s", err)
 	}
 	defer parser.Close()
+
+	revParse := exec.Command("git", "rev-parse", "HEAD")
+	revParse.Dir = "/Users/chrismwendt/" + repo
+	output, err := revParse.Output()
+	if err != nil {
+		t.Fatalf("🚨 rev-parse: %s", err)
+	}
+	head := strings.TrimSpace(string(output))
 
 	INSTANTS.Reset()
 	err = Index(git, db, parser.Parse, head)
