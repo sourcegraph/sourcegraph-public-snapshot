@@ -15,19 +15,34 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func connectFrontendDB(dsn, appName string, validateOnly bool, observationContext *observation.Context) (*sql.DB, error) {
-	return connect(dsn, appName, "frontend", schemas.Frontend, validateOnly, observationContext)
+func connectFrontendDB(dsn, appName string, validate, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
+	schema := schemas.Frontend
+	if !validate {
+		schema = nil
+	}
+
+	return connect(dsn, appName, "frontend", schema, migrate, observationContext)
 }
 
-func connectCodeIntelDB(dsn, appName string, validateOnly bool, observationContext *observation.Context) (*sql.DB, error) {
-	return connect(dsn, appName, "codeintel", schemas.CodeIntel, validateOnly, observationContext)
+func connectCodeIntelDB(dsn, appName string, validate, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
+	schema := schemas.CodeIntel
+	if !validate {
+		schema = nil
+	}
+
+	return connect(dsn, appName, "codeintel", schema, migrate, observationContext)
 }
 
-func connectCodeInsightsDB(dsn, appName string, validateOnly bool, observationContext *observation.Context) (*sql.DB, error) {
-	return connect(dsn, appName, "codeinsights", schemas.CodeInsights, validateOnly, observationContext)
+func connectCodeInsightsDB(dsn, appName string, validate, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
+	schema := schemas.CodeInsights
+	if !validate {
+		schema = nil
+	}
+
+	return connect(dsn, appName, "codeinsights", schema, migrate, observationContext)
 }
 
-func connect(dsn, appName, dbName string, schema *schemas.Schema, validateOnly bool, observationContext *observation.Context) (*sql.DB, error) {
+func connect(dsn, appName, dbName string, schema *schemas.Schema, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
 	db, err := dbconn.ConnectInternal(dsn, appName, dbName)
 	if err != nil {
 		return nil, err
@@ -41,7 +56,7 @@ func connect(dsn, appName, dbName string, schema *schemas.Schema, validateOnly b
 	}()
 
 	if schema != nil {
-		if err := validateSchema(db, schema, validateOnly, observationContext); err != nil {
+		if err := validateSchema(db, schema, !migrate, observationContext); err != nil {
 			return nil, err
 		}
 	}
