@@ -75,6 +75,11 @@ RUN apk add --no-cache \
     git-p4 \
     && apk add --no-cache  \
     openssh-client \
+    # We require g++, gcc, perl and make to install openssl
+    g++ \
+    gcc \
+	perl \
+    make \
     python2 \
     python3
 
@@ -88,6 +93,13 @@ COPY --from=p4-fusion /usr/local/bin/p4-fusion-1.2/build/p4-fusion/p4-fusion /us
 # please refer to https://blog.tilander.org/docker-perforce/
 ADD https://github.com/jtilander/p4d/raw/4600d741720f85d77852dcca7c182e96ad613358/lib/lib-x64.tgz /
 RUN tar zxf /lib-x64.tgz --directory /
+
+# We need a specific version of OpenSSL to run p4-fusion
+RUN wget https://www.openssl.org/source/openssl-1.0.2t.tar.gz && tar -xzvf openssl-1.0.2t.tar.gz
+
+WORKDIR /openssl-1.0.2t
+
+RUN ./config && make && make install
 
 RUN mkdir -p /data/repos && chown -R sourcegraph:sourcegraph /data/repos
 USER sourcegraph
