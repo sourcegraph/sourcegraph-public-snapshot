@@ -630,13 +630,17 @@ func TestEditCodeMonitor(t *testing.T) {
 				Recipients: []graphql.ID{ns1},
 				Header:     "header action 1",
 			},
-		},
-		{
+		}, {
 			Email: &graphqlbackend.CreateActionEmailArgs{
 				Enabled:    true,
 				Priority:   "NORMAL",
 				Recipients: []graphql.ID{ns1, ns2},
 				Header:     "header action 2",
+			},
+		}, {
+			Webhook: &graphqlbackend.CreateActionWebhookArgs{
+				Enabled: true,
+				URL:     "https://generic.webhook.com",
 			},
 		},
 	})
@@ -651,6 +655,7 @@ func TestEditCodeMonitor(t *testing.T) {
 		"monitorID": string(relay.MarshalID(MonitorKind, 1)),
 		"triggerID": string(relay.MarshalID(monitorTriggerQueryKind, 1)),
 		"actionID":  string(relay.MarshalID(monitorActionEmailKind, 1)),
+		"webhookID": string(relay.MarshalID(monitorActionWebhookKind, 1)),
 		"user1ID":   ns1,
 		"user2ID":   ns2,
 	}
@@ -687,22 +692,16 @@ func TestEditCodeMonitor(t *testing.T) {
 							},
 						},
 						Header: "updated header action 1",
-					}}, {
-					Email: &apitest.ActionEmail{
-						Id:       string(relay.MarshalID(monitorActionEmailKind, 3)),
-						Enabled:  true,
-						Priority: "NORMAL",
-						Recipients: apitest.RecipientsConnection{
-							Nodes: []apitest.UserOrg{
-								{
-									Name: user1.Username,
-								},
-								{
-									Name: user2.Username,
-								},
-							},
-						},
-						Header: "header action 3",
+					},
+				}, {
+					Webhook: &apitest.ActionWebhook{
+						Enabled: true,
+						URL:     "https://generic.webhook.com",
+					},
+				}, {
+					SlackWebhook: &apitest.ActionSlackWebhook{
+						Enabled: true,
+						URL:     "https://slack.webhook.com",
 					},
 				}},
 			},
@@ -723,13 +722,14 @@ fragment o on Org {
   name
 }
 
-mutation ($monitorID: ID!, $triggerID: ID!, $actionID: ID!, $user1ID: ID!, $user2ID: ID!) {
+mutation ($monitorID: ID!, $triggerID: ID!, $actionID: ID!, $user1ID: ID!, $user2ID: ID!, $webhookID: ID!) {
   updateCodeMonitor(
     monitor: {id: $monitorID, update: {description: "updated test monitor", enabled: false, namespace: $user1ID}},
 	trigger: {id: $triggerID, update: {query: "repo:bar"}},
 	actions: [
 	  {email: {id: $actionID, update: {enabled: false, priority: CRITICAL, recipients: [$user2ID], header: "updated header action 1"}}}
-	  {email: {update: {enabled: true, priority: NORMAL, recipients: [$user1ID, $user2ID], header: "header action 3"}}}
+	  {webhook: {id: $webhookID, update: {enabled: true, url: "https://generic.webhook.com"}}}
+	  {slackWebhook: {update: {enabled: true, url: "https://slack.webhook.com"}}}
     ]
   )
   {
@@ -773,6 +773,16 @@ mutation ($monitorID: ID!, $triggerID: ID!, $actionID: ID!, $user1ID: ID!, $user
 			  }
 			}
 		  }
+		}
+		... on MonitorWebhook {
+			__typename
+		  enabled
+		  url
+		}
+		... on MonitorSlackWebhook {
+			__typename
+		  enabled
+		  url
 		}
 	  }
 	}

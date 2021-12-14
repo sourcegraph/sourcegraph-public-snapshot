@@ -383,15 +383,28 @@ func sendTestEmail(ctx context.Context, recipient graphql.ID, description string
 }
 
 func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) ([]graphql.ID, error) {
-	emailActions, err := r.store.ListEmailActions(ctx, cm.ListActionsOpts{
-		MonitorID: &monitorID,
-	})
+	opts := cm.ListActionsOpts{MonitorID: &monitorID}
+	emailActions, err := r.store.ListEmailActions(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
-	ids := make([]graphql.ID, len(emailActions))
-	for i, emailAction := range emailActions {
-		ids[i] = (&monitorEmail{EmailAction: emailAction}).ID()
+	webhookActions, err := r.store.ListWebhookActions(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	slackWebhookActions, err := r.store.ListSlackWebhookActions(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]graphql.ID, 0, len(emailActions)+len(webhookActions)+len(slackWebhookActions))
+	for _, emailAction := range emailActions {
+		ids = append(ids, (&monitorEmail{EmailAction: emailAction}).ID())
+	}
+	for _, webhookAction := range webhookActions {
+		ids = append(ids, (&monitorWebhook{WebhookAction: webhookAction}).ID())
+	}
+	for _, slackWebhookAction := range slackWebhookActions {
+		ids = append(ids, (&monitorSlackWebhook{SlackWebhookAction: slackWebhookAction}).ID())
 	}
 	return ids, nil
 }
