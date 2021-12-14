@@ -92,11 +92,10 @@ func main() {
 		config.ctagsDebugLogs,
 	)
 
-	cache := &diskcache.Store{
-		Dir:               config.cacheDir,
-		Component:         "symbols",
-		BackgroundTimeout: 20 * time.Minute,
-	}
+	cache := diskcache.NewStore(config.cacheDir, "symbols",
+		diskcache.WithBackgroundTimeout(20*time.Minute),
+		diskcache.WithObservationContext(observationContext),
+	)
 
 	parserPool, err := parser.NewParserPool(ctagsParserFactory, config.numCtagsProcesses)
 	if err != nil {

@@ -17,10 +17,10 @@ type CachedDatabaseWriter interface {
 
 type cachedDatabaseWriter struct {
 	databaseWriter DatabaseWriter
-	cache          *diskcache.Store
+	cache          diskcache.Store
 }
 
-func NewCachedDatabaseWriter(databaseWriter DatabaseWriter, cache *diskcache.Store) CachedDatabaseWriter {
+func NewCachedDatabaseWriter(databaseWriter DatabaseWriter, cache diskcache.Store) CachedDatabaseWriter {
 	return &cachedDatabaseWriter{
 		databaseWriter: databaseWriter,
 		cache:          cache,

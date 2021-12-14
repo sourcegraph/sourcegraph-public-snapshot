@@ -13,7 +13,7 @@ import (
 
 type cacheEvicter struct {
 	// cache is the disk backed cache.
-	cache *diskcache.Store
+	cache diskcache.Store
 
 	// maxCacheSizeBytes is the maximum size of the cache in bytes. Note that we can
 	// be larger than maxCacheSizeBytes temporarily between runs of this handler.
@@ -27,7 +27,7 @@ type cacheEvicter struct {
 var _ goroutine.Handler = &cacheEvicter{}
 var _ goroutine.ErrorHandler = &cacheEvicter{}
 
-func NewCacheEvicter(interval time.Duration, cache *diskcache.Store, maxCacheSizeBytes int64, metrics *Metrics) goroutine.BackgroundRoutine {
+func NewCacheEvicter(interval time.Duration, cache diskcache.Store, maxCacheSizeBytes int64, metrics *Metrics) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &cacheEvicter{
 		cache:             cache,
 		maxCacheSizeBytes: maxCacheSizeBytes,
