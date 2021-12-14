@@ -1,0 +1,65 @@
+type MarkdownBlock {
+    id: String!
+    markdownInput: String!
+}
+
+type QueryBlock {
+    id: String!
+    queryInput: String!
+}
+
+# A line range inside a file. The start line is inclusive, and the end line is exclusive.
+type FileBlockLineRange {
+    startLine: Int!
+    endLine: Int!
+}
+
+type FileBlockInput {
+    repositoryName: String!
+    filePath: String!
+    revision: String
+    lineRange: FileBlockLineRange
+}
+
+type FileBlock {
+    id: String!
+    fileInput: FileBlockInput!
+}
+
+union NotebookBlock = MarkdownBlock | QueryBlock | FileBlock
+
+type Notebook implements Node {
+    """
+    The unique id of the notebook.
+    """
+    id: ID!
+    """
+    The title of the notebook.
+    """
+    title: String!
+    """
+    Array of notebook blocks.
+    """
+    blocks: [NotebookBlock!]!
+    """
+    User that created the notebook or null if the user was removed.
+    """
+    creator: User
+    """
+    Public property controls the visibility of the notebook. A public notebook is available to
+    any user on the instance. Private notebooks are only available to their creators.
+    """
+    public: Boolean!
+    """
+    Date and time the notebook was last updated.
+    """
+    updatedAt: DateTime!
+    """
+    Date and time the notebook was created.
+    """
+    createdAt: DateTime!
+    """
+    If current viewer can manage (edit, delete) the notebook.
+    """
+    viewerCanManage: Boolean!
+}
