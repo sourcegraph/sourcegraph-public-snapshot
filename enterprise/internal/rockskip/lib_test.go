@@ -255,6 +255,43 @@ func (db MockDB) Search(hops []string) ([]Blob, error) {
 	return blobs, nil
 }
 
+func (db MockDB) DeleteRedundant(hop string) error {
+	// noop
+	return nil
+
+	// // Find blobs that were both added and deleted in the same hop
+	// for _, hopToStatusToIds := range db.pathToHopToStatusToIds {
+	// 	added := map[int]struct{}{}
+	// 	deleted := map[int]struct{}{}
+	// 	redundant := map[StatusAD]int{}
+	// 	for status, ids := range hopToStatusToIds[hop] {
+	// 		if status == AddedAD {
+	// 			for _, id := range ids {
+	// 				added[id] = struct{}{}
+	// 				if _, ok := deleted[id]; ok {
+	// 					redundant[status] = append(redundant, id)
+	// 				}
+	// 			}
+	// 		}
+	// 		if status == DeletedAD {
+	// 			for _, id := range ids {
+	// 				deleted[id] = struct{}{}
+	// 				if _, ok := added[id]; ok {
+	// 					redundant = append(redundant, id)
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
+
+	// // Remove redundant blobs
+	// for _, id := range hits {
+	// 	delete(db.blobs, id)
+	// }
+
+	// return nil
+}
+
 func contains(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {

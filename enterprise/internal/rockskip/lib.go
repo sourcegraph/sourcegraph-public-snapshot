@@ -29,6 +29,7 @@ type DB interface {
 	InsertBlob(blob Blob) (id int, err error)
 	AppendHop(hops []string, status StatusAD, hop string) error
 	Search(hops []string) ([]Blob, error)
+	DeleteRedundant(hop string) error
 }
 
 type ParseSymbolsFunc func(path string, bytes []byte) (symbols []string, err error)
@@ -237,8 +238,6 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 			return err
 		}
 
-		// Could delete redundant hops here.
-
 		for _, pathStatus := range entry.PathStatuses {
 			if pathStatus.Status == DeletedAMD || pathStatus.Status == ModifiedAMD {
 				id := 0
@@ -295,6 +294,13 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 				}
 				pathToBlobIdCache[pathStatus.Path] = id
 			}
+		}
+
+		INSTANTS.Start("DeleteRedundant")
+		err = db.DeleteRedundant(entry.Commit)
+		INSTANTS.Start("idle")
+		if err != nil {
+			return err
 		}
 
 		tipCommit = entry.Commit
@@ -790,6 +796,15 @@ func (db PostgresDB) Search(hops []string) ([]Blob, error) {
 		blobs = append(blobs, Blob{commit: commit, path: path, added: added, deleted: deleted, symbols: symbols})
 	}
 	return blobs, nil
+}
+
+func (db PostgresDB) DeleteRedundant(hop string) error {
+	_, err := db.db.Exec(`
+		UPDATE rockskip_blobs
+		SET added = array_remove(added, $1), deleted = array_remove(deleted, $1)
+		WHERE $2 && added AND $2 && deleted
+	`, hop, pg.Array([]string{hop}))
+	return errors.Wrap(err, "DeleteRedundant")
 }
 
 func (db PostgresDB) Close() error {
