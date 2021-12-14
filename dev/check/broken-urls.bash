@@ -5,10 +5,10 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 # When running on the CI, skip on non-default branches to avoid preventing us from building historical commits (eg when
 # backporting fixes).
-if [[ ! -z "$BUILDKITE_BRANCH" ]]; then 
-  if [[ ! "$BUILDKITE_BRANCH" =~ ^main$ ]]; then
-    exit 0
-  fi
+if [[ -n "$BUILDKITE_BRANCH" ]]; then
+    if [[ ! "$BUILDKITE_BRANCH" =~ ^main$ ]]; then
+        exit 0
+    fi
 fi
 
 URL_MATCHES=$(git grep -h -e https://about.sourcegraph.com --and --not -e '^\s*//' --and --not -e 'CI\:URL_OK' -- '*.go' '*.js' '*.jsx' '*.ts' '*.tsx' '*.json' ':(exclude)vendor' | grep -Eo 'https://about.sourcegraph.com[^'"'"'`)>" ]+' | sed 's/\.$//' | sort -u)
@@ -34,4 +34,3 @@ EOF
 
     exit 1
 fi
-
