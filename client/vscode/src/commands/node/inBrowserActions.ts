@@ -40,12 +40,18 @@ export async function inBrowserActions(action: string): Promise<void> {
 
     // Open in browser or Copy file link
     if (action === 'open' && sourcegraphUrl) {
-        await vscode.env.openExternal(vscode.Uri.parse(sourcegraphUrl))
+        await openLinkInBrowser(sourcegraphUrl)
     } else if (action === 'copy' && sourcegraphUrl) {
-        await env.clipboard
-            .writeText(decodeURIComponent(sourcegraphUrl))
-            .then(() => vscode.window.showInformationMessage('Copied!'))
+        await copyToClipboard(decodeURIComponent(sourcegraphUrl))
     } else {
         throw new Error(`Failed to ${action} file link: invalid URL`)
     }
+}
+
+export async function openLinkInBrowser(uri: string): Promise<void> {
+    await vscode.env.openExternal(vscode.Uri.parse(uri))
+}
+
+export async function copyToClipboard(data: string): Promise<void> {
+    await env.clipboard.writeText(data).then(() => vscode.window.showInformationMessage('Copied!'))
 }

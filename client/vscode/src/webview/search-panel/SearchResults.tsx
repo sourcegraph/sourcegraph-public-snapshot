@@ -140,7 +140,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
                     onSelect={onSelect}
                     // TODO "no results" video thumbnail assets
                     // In build, copy ui/assets/img folder to dist/
-                    assetsRoot={undefined}
+                    assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
                 />
 
                 {searchResults.search?.results.limitHit && (

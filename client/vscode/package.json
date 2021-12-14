@@ -38,7 +38,7 @@
       {
         "command": "extension.openFile",
         "category": "Sourcegraph",
-        "title": "Open File"
+        "title": "Sourcegraph: Open Sourcegraph Remote File"
       },
       {
         "command": "sourcegraph.copyFileLink",
@@ -48,7 +48,7 @@
       {
         "command": "sourcegraph.openInBrowser",
         "category": "Sourcegraph",
-        "title": "Sourcegraph: Open file in browser"
+        "title": "Sourcegraph: Open File in Browser"
       }
     ],
     "viewsContainers": {
@@ -123,12 +123,12 @@
         {
           "when": "shellExecutionSupported || !isWeb || !virtualWorkspace",
           "command": "sourcegraph.openInBrowser",
-          "group": "navigation"
+          "group": "sourcegraph"
         },
         {
           "when": "shellExecutionSupported || !isWeb || !virtualWorkspace",
           "command": "sourcegraph.copyFileLink",
-          "group": "9_cutcopypaste"
+          "group": "sourcegraph"
         }
       ]
     }

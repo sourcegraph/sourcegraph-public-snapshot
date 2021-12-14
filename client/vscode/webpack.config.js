@@ -43,7 +43,6 @@ function getExtensionConfig(targetType) {
         path: require.resolve('path-browserify'),
         stream: require.resolve('stream-browserify'),
         assert: require.resolve('assert'),
-        // os: require.resolve('os-browserify/browser'),
         util: require.resolve('util'),
       },
     },
@@ -111,15 +110,32 @@ const webviewConfig = {
   },
   resolve: {
     alias: {
-      './Link': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'Link'),
-      '@sourcegraph/shared/src/components/Link': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'Link'),
-      './Markdown': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'Markdown'),
+      './Link': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'Link'),
+      '@sourcegraph/shared/src/components/Link': path.resolve(
+        __dirname,
+        'src',
+        'webview',
+        'search-panel',
+        'alias',
+        'Link'
+      ),
+      './Markdown': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'Markdown'),
       '@sourcegraph/shared/src/components/Markdown': path.resolve(
         __dirname,
         'src',
         'webview',
         'search-panel',
+        'alias',
         'Markdown'
+      ),
+      '../documentation/ModalVideo': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'ModalVideo'),
+      '@sourcegraph/branded/src/search/documentation/ModalVideo': path.resolve(
+        __dirname,
+        'src',
+        'webview',
+        'search-panel',
+        'alias',
+        'ModalVideo'
       ),
     },
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader

@@ -12,7 +12,7 @@ import { toSourcegraphLanguage } from './code-intel/languages'
 import { SourcegraphDefinitionProvider } from './code-intel/SourcegraphDefinitionProvider'
 import { SourcegraphHoverProvider } from './code-intel/SourcegraphHoverProvider'
 import { SourcegraphReferenceProvider } from './code-intel/SourcegraphReferenceProvider'
-import { inBrowserActions } from './commands/node/inBrowserActions'
+import { inBrowserActions, openLinkInBrowser } from './commands/node/inBrowserActions'
 import { openSourcegraphUriCommand } from './commands/openSourcegraphUriCommand'
 import { FilesTreeDataProvider } from './file-system/FilesTreeDataProvider'
 import { SourcegraphFileSystemProvider } from './file-system/SourcegraphFileSystemProvider'
@@ -128,7 +128,7 @@ export function activate(context: vscode.ExtensionContext): void {
         panelInitialized: panelId => initializedPanelIDs.next(panelId),
         // Call from webview's search results
         openFile: (uri: string) => openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri)),
-
+        openLink: (uri: string) => openLinkInBrowser(uri),
         openSearchPanel: () => vscode.commands.executeCommand('sourcegraph.search'),
     }
 

@@ -31,6 +31,7 @@ export async function initializeSearchPanelWebview({
     const panel = vscode.window.createWebviewPanel('sourcegraphSearch', 'Sourcegraph Search', vscode.ViewColumn.One, {
         enableScripts: true,
         retainContextWhenHidden: true, // TODO document. For UX
+        // localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist', 'webview')],
     })
 
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webview')
@@ -65,9 +66,9 @@ export async function initializeSearchPanelWebview({
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: vscode-resource: vscode-webview: https:; script-src 'nonce-${nonce}'; style-src data: ${
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: vscode-resource: vscode-webview: https:; script-src 'nonce-${nonce}' vscode-webview:; style-src data: ${
         panel.webview.cspSource
-    } vscode-resource: 'unsafe-inline' http: https: data:; connect-src 'self' http: https:;">
+    } vscode-resource: vscode-webview: 'unsafe-inline' http: https: data:; connect-src 'self' vscode-webview: http: https:; frame-src https:; font-src: https: vscode-resource: vscode-webview:;">
         <title>Sourcegraph Search</title>
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />
@@ -125,9 +126,9 @@ export function initializeSearchSidebarWebview({
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:  vscode-resource: https:; script-src 'nonce-${nonce}'; style-src data: ${
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: vscode-webview: vscode-resource: https:; script-src 'nonce-${nonce}' vscode-webview:; style-src data: ${
         webviewView.webview.cspSource
-    } vscode-resource: http: https: data:; connect-src 'self' http: https:;">
+    } vscode-resource: http: https: data:; connect-src 'self' http: https:; font-src: https: vscode-resource: vscode-webview:;">
         <title>Sourcegraph Search Sidebar</title>
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />
@@ -180,9 +181,9 @@ export function initializeExtensionHostWebview({
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; font-src vscode-resource:; font-src https:; img-src vscode-resource: data: https:; script-src blob: 'nonce-${nonce}'; style-src data: vscode-resource: ${
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src vscode-resource: vscode-webview: data: https:; script-src blob: vscode-webview: 'nonce-${nonce}'; style-src data: vscode-resource: ${
         webviewView.webview.cspSource
-    } http: https: data:; connect-src 'self' http: https:;">
+    } http: https: data:; connect-src 'self' http: https:; font-src vscode-resource: vscode-webview: https:;">
         <title>Sourcegraph Extension Host</title>
         <link rel="stylesheet" href="${styleSource.toString()}" />
 

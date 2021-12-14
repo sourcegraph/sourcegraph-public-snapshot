@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import styles from '@sourcegraph/shared/src/components//Markdown.module.scss'
+import styles from '@sourcegraph/shared/src/components/Markdown.module.scss'
 
 interface Props {
     wrapper?: 'div' | 'span'

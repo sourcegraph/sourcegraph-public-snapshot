@@ -26,7 +26,11 @@ export type LinkProps = { to: string | H.LocationDescriptor<any>; ref?: React.Re
  * @see setLinkComponent
  */
 export let Link: React.FunctionComponent<LinkProps> = ({ to, children, ...props }) => (
-    <a href={emptyLink} id={to && typeof to !== 'string' ? H.createPath(to) : to} {...props}>
+    <a
+        href={checkLink(to && typeof to !== 'string' ? H.createPath(to) : to)}
+        id={to && typeof to !== 'string' ? H.createPath(to) : to}
+        {...props}
+    >
         {children}
     </a>
 )
@@ -55,9 +59,20 @@ export function setLinkComponent(component: typeof Link): void {
  * @see setLinkComponent
  */
 export const AnchorLink: React.FunctionComponent<LinkProps> = ({ to, children, ...props }) => (
-    <a href={emptyLink} id={to && typeof to !== 'string' ? H.createPath(to) : to} {...props}>
+    <a
+        href={checkLink(to && typeof to !== 'string' ? H.createPath(to) : to)}
+        id={to && typeof to !== 'string' ? H.createPath(to) : to}
+        {...props}
+    >
         {children}
     </a>
 )
 
-export const emptyLink = '#'
+/**
+ * Check if link is valid
+ * Set invalid links to '#' because VS Code Web opens invalid links in new tabs
+ * Invalid links includes links that start with 'sourcegraph://'
+ */
+export function checkLink(uri: string): string {
+    return uri.startsWith('https') ? uri : '#'
+}

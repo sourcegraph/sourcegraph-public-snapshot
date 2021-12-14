@@ -83,7 +83,7 @@ const { proxy, expose } = createEndpointsForWebToNode(vsCodeApi)
 
 Comlink.expose(webviewAPI, expose)
 
-const sourcegraphVSCodeExtensionAPI: Comlink.Remote<SourcegraphVSCodeExtensionAPI> = Comlink.wrap(proxy)
+export const sourcegraphVSCodeExtensionAPI: Comlink.Remote<SourcegraphVSCodeExtensionAPI> = Comlink.wrap(proxy)
 
 sourcegraphVSCodeExtensionAPI.panelInitialized(document.documentElement.dataset.panelId!).catch(() => {
     // TODO

@@ -36,7 +36,8 @@ export interface SourcegraphVSCodeExtensionAPI
     getInstanceHostname: () => string
     /** TODO document. sourcegraph://${host}/${uri} */
     openFile: (sourcegraphUri: string) => void
-
+    // Open links in browser
+    openLink: (uri: string) => void
     // For search sidebar
     openSearchPanel: () => void
 
