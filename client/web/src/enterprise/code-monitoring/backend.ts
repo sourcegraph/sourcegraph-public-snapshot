@@ -57,12 +57,12 @@ const CodeMonitorFragment = gql`
                 ... on MonitorWebhook {
                     id
                     enabled
-					url
+                    url
                 }
                 ... on MonitorSlackWebhook {
                     id
                     enabled
-					url
+                    url
                 }
             }
         }
@@ -198,13 +198,13 @@ export const fetchCodeMonitor = (id: string): Observable<FetchCodeMonitorResult>
                             }
                             ... on MonitorWebhook {
                                 id
-								enabled
-								url
+                                enabled
+                                url
                             }
                             ... on MonitorSlackWebhook {
                                 id
-								enabled
-								url
+                                enabled
+                                url
                             }
                         }
                     }
