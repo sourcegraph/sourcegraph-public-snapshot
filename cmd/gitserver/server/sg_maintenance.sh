@@ -49,6 +49,7 @@ git reflog expire --all
 # With multi-pack-index and geometric packing, repacking should take time
 # proportional to the number of new objects. Inspired by
 # https://github.blog/2021-04-29-scaling-monorepo-maintenance/
+# --write-midx reqiures git>=2.34.1.
 git repack --write-midx --write-bitmap-index -d --geometric=2
 
 # Usually run by git gc. Prune all unreachable objects form the object database.
