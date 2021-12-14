@@ -6,12 +6,16 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { requestGraphQL } from '../../../../../../backend/graphql'
 import { InsightFields, InsightsResult } from '../../../../../../graphql-operations'
-import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../types/insight/search-insight'
+import { BackendInsight, isCaptureGroupInsight } from '../../../types'
+import { SearchBasedBackendFilters } from '../../../types/insight/search-insight'
 import { BackendInsightData } from '../../code-insights-backend-types'
 import { createLineChartContent } from '../../utils/create-line-chart-content'
 import { InsightInProcessError } from '../../utils/errors'
 
-export function getBackendInsight(insight: SearchBackendBasedInsight): Observable<BackendInsightData> {
+export function getBackendInsight(insight: BackendInsight): Observable<BackendInsightData> {
+    if (isCaptureGroupInsight(insight)) {
+        throw new Error("Setting based API doesn't support capture group insights")
+    }
     const { id, filters, series } = insight
 
     return fetchBackendInsights([id], filters).pipe(

@@ -224,7 +224,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 // to the active trace, and a function to be deferred until the end of the operation.
 func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (context.Context, TraceLogger, FinishFunc) {
 	start := time.Now()
-	tr, ctx := op.trace(ctx, args)
+	tr, ctx := op.startTrace(ctx, args)
 
 	event := honey.NoopEvent()
 	snakecaseOpName := toSnakeCase(op.name)
@@ -240,6 +240,10 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 		opName: snakecaseOpName,
 		event:  event,
 		trace:  tr,
+	}
+
+	if mergedFields := mergeLogFields(op.logFields, args.LogFields); len(mergedFields) > 0 {
+		logFields.Tag(mergedFields...)
 	}
 
 	if traceID := trace.ID(ctx); traceID != "" {
@@ -267,18 +271,14 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 	}
 }
 
-// trace creates a new Trace object and returns the wrapped context. If any log fields are
-// attached to the operation or to the args to With, they are emitted immediately. This returns
-// an unmodified context and a nil trace if no tracer was supplied on the observation context.
-func (op *Operation) trace(ctx context.Context, args Args) (*trace.Trace, context.Context) {
+// startTrace creates a new Trace object and returns the wrapped context. This returns
+// an unmodified context and a nil startTrace if no tracer was supplied on the observation context.
+func (op *Operation) startTrace(ctx context.Context, args Args) (*trace.Trace, context.Context) {
 	if op.context.Tracer == nil {
 		return nil, ctx
 	}
 
 	tr, ctx := op.context.Tracer.New(ctx, op.kebabName, "")
-	if mergedFields := mergeLogFields(op.logFields, args.LogFields); len(mergedFields) > 0 {
-		tr.LogFields(mergedFields...)
-	}
 	return tr, ctx
 }
 

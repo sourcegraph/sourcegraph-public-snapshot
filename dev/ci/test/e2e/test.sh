@@ -15,9 +15,13 @@ cleanup() {
   cd "$root_dir"
   dev/ci/test/cleanup-display.sh
   if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
-    docker rm -f "$(docker ps -aq)"
+    # shellcheck disable=SC2046
+    docker rm -f $(docker ps -aq)
   fi
-  docker rmi -f "$(docker images -q)"
+  if [[ $(docker images -q | wc -l) -gt 0 ]]; then
+    # shellcheck disable=SC2046
+    docker rmi -f $(docker images -q)
+  fi
 }
 trap cleanup EXIT
 

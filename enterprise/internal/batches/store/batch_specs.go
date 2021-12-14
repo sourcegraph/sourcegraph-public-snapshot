@@ -196,7 +196,7 @@ func (s *Store) CountBatchSpecs(ctx context.Context, opts CountBatchSpecsOpts) (
 
 var countBatchSpecsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:CountBatchSpecs
-SELECT COUNT(id)
+SELECT COUNT(batch_specs.id)
 FROM batch_specs
 -- Joins go here:
 %s
@@ -407,7 +407,7 @@ SELECT %s FROM batch_specs
 -- Joins go here:
 %s
 WHERE %s
-ORDER BY id ASC
+ORDER BY batch_specs.id ASC
 `
 
 func listBatchSpecsQuery(opts *ListBatchSpecsOpts) *sqlf.Query {

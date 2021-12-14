@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import { noop } from 'lodash'
 import React, { useCallback } from 'react'
 
 import styles from '../../../../../components/creation-ui-kit/CreationUiKit.module.scss'
@@ -34,12 +35,12 @@ interface CaptureGroupCreationContentProps {
     className?: string
 
     onSubmit: (values: CaptureGroupFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
-    onChange: (event: FormChangeEvent<CaptureGroupFormFields>) => void
+    onChange?: (event: FormChangeEvent<CaptureGroupFormFields>) => void
     onCancel: () => void
 }
 
 export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCreationContentProps> = props => {
-    const { mode, className, initialValues = {}, onSubmit, onChange, onCancel } = props
+    const { mode, className, initialValues = {}, onSubmit, onChange = noop, onCancel } = props
 
     // Search query validators
     const validateChecks = useCallback((value: string | undefined) => {
@@ -100,6 +101,20 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
         validators: { sync: requiredStepValueField },
     })
 
+    const handleFormReset = (): void => {
+        title.input.onChange('')
+        repositories.input.onChange('')
+        query.input.onChange('')
+        step.input.onChange('months')
+        stepValue.input.onChange('1')
+
+        // Focus first element of the form
+        repositories.input.ref.current?.focus()
+    }
+
+    const hasFilledValue =
+        form.values.title !== '' || form.values.repositories !== '' || form.values.groupSearchQuery !== ''
+
     const areAllFieldsForPreviewValid =
         repositories.meta.validState === 'VALID' &&
         stepValue.meta.validState === 'VALID' &&
@@ -115,9 +130,9 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
                 step={step}
                 stepValue={stepValue}
                 query={query}
-                isFormClearActive={false}
+                isFormClearActive={hasFilledValue}
                 onCancel={onCancel}
-                onFormReset={() => {}}
+                onFormReset={handleFormReset}
                 className={styles.contentForm}
             />
 
