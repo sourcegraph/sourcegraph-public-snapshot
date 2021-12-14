@@ -8,11 +8,12 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle, Tooltip } from 'reactstrap'
 
+import { useObservable } from '@sourcegraph/shared/out/src/util/useObservable'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
 
-import { AuthenticatedUser } from '../auth'
+import { authenticatedUser, AuthenticatedUser } from '../auth'
 import { KEYBOARD_SHORTCUT_SHOW_HELP } from '../keyboardShortcuts/keyboardShortcuts'
 import { ThemePreference } from '../stores/themeState'
 import { ThemePreferenceProps } from '../theme'
@@ -41,7 +42,7 @@ export interface ExtensionAlertAnimationProps {
  * React hook to manage the animation that occurs after the user dismisses
  * `InstallBrowserExtensionAlert`.
  *
- * This hook is called from the the LCA of `UserNavItem` and the component that triggers
+ * This hook is called from the LCA of `UserNavItem` and the component that triggers
  * the animation.
  */
 export function useExtensionAlertAnimation(): ExtensionAlertAnimationProps & {
@@ -101,6 +102,8 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
 
     const [isOpen, setIsOpen] = useState(() => !!testIsOpen)
     const toggleIsOpen = useCallback(() => setIsOpen(open => !open), [])
+
+    const user = useObservable(authenticatedUser)
 
     useEffect(() => {
         // Close dropdown after clicking on a dropdown item.
@@ -207,11 +210,11 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         <Shortcut key={index} {...keybinding} onMatch={onThemeCycle} />
                     ))}
                 </div>
-                {props.authenticatedUser.organizations.nodes.length > 0 && (
+                {user && user.organizations.nodes.length > 0 && (
                     <>
                         <DropdownItem divider={true} />
                         <DropdownItem header={true}>Your organizations</DropdownItem>
-                        {props.authenticatedUser.organizations.nodes.map(org => (
+                        {user.organizations.nodes.map(org => (
                             <Link key={org.id} to={org.settingsURL || org.url} className="dropdown-item">
                                 {org.displayName || org.name}
                             </Link>
