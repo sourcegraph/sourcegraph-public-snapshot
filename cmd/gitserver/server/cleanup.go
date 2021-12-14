@@ -778,7 +778,7 @@ func sgMaintenance(dir GitDir) error {
 	cmd := exec.Command("sh")
 	dir.Set(cmd)
 
-	var buf = new(bytes.Buffer)
+	buf := new(bytes.Buffer)
 	buf.WriteString(sgMaintenanceScript)
 	cmd.Stdin = buf
 
