@@ -181,7 +181,7 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 						StargazerCount: 0,
 						ForkCount:      0,
 						IsPrivate:      true,
-						Visibility:     github.Visibility("internal"),
+						Visibility:     github.VisibilityInternal,
 					},
 				}
 
