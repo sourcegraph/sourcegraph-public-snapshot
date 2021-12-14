@@ -6,7 +6,7 @@ import { ForwardReferenceComponent } from '../../types'
 export type MenuPopoverProps = ReachMenuPopoverProps
 
 export const MenuPopover = React.forwardRef(({ children, className, ...props }, reference) => (
-    <ReachMenuPopover ref={reference} {...props}>
+    <ReachMenuPopover ref={reference} {...props} className={className}>
         {children}
     </ReachMenuPopover>
 )) as ForwardReferenceComponent<'div', MenuPopoverProps>
