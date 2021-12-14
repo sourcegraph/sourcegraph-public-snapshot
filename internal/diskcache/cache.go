@@ -170,12 +170,19 @@ func (s *store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherW
 	}
 	ch := make(chan result, 1)
 	go func(ctx context.Context) {
+		var err error
+		var f *File
+		ctx, trace, endObservation := s.observe.backgroundFetch.WithAndLogger(ctx, &err, observation.Args{LogFields: []otelog.Field{
+			otelog.Bool("withBackgroundTimeout", s.backgroundTimeout != 0),
+		}})
+		defer endObservation(1, observation.Args{})
+
 		if s.backgroundTimeout != 0 {
 			var cancel context.CancelFunc
 			ctx, cancel = withIsolatedTimeout(ctx, s.backgroundTimeout)
 			defer cancel()
 		}
-		f, err := doFetch(ctx, path, fetcher, trace)
+		f, err = doFetch(ctx, path, fetcher, trace)
 		ch <- result{f, err}
 	}(ctx)
 
