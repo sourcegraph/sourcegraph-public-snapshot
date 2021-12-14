@@ -457,7 +457,7 @@ func (s *Syncer) SyncExternalService(
 	// Unless our site config explicitly allows private code or the user has the
 	// "AllowUserExternalServicePrivate" tag, user added external services should
 	// only sync public code.
-	// Organization owned external services are always considered allowed
+	// Organization owned external services are always considered allowed.
 	allowed := func(*types.Repo) bool { return true }
 	if svc.NamespaceUserID != 0 {
 		if mode, err := database.UsersWith(s.Store).UserAllowedExternalServices(ctx, svc.NamespaceUserID); err != nil {
