@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/require"
@@ -264,6 +265,18 @@ func TestQueryMonitor(t *testing.T) {
 				Header:     "test header 2",
 			},
 		},
+		{
+			Webhook: &graphqlbackend.CreateActionWebhookArgs{
+				Enabled: true,
+				URL:     "https://generic.webhook.com",
+			},
+		},
+		{
+			SlackWebhook: &graphqlbackend.CreateActionSlackWebhookArgs{
+				Enabled: true,
+				URL:     "https://slack.webhook.com",
+			},
+		},
 	})
 	m, err := r.insertTestMonitorWithOpts(ctx, t, actionOpt)
 	require.NoError(t, err)
@@ -275,7 +288,15 @@ func TestQueryMonitor(t *testing.T) {
 		func() error { _, err := r.store.EnqueueQueryTriggerJobs(ctx); return err },
 		func() error { _, err := r.store.EnqueueActionJobsForMonitor(ctx, 1, 1); return err },
 		func() error {
-			return (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 1)
+			err := (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 1)
+			if err != nil {
+				return err
+			}
+			err = (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 2)
+			if err != nil {
+				return err
+			}
+			return (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 3)
 		},
 		func() error { _, err := r.store.EnqueueActionJobsForMonitor(ctx, 1, 1); return err },
 		// Set the job status of trigger job with id = 1 to "completed". Since we already
@@ -340,7 +361,6 @@ func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *R
 	batchesApitest.MustExec(ctx, t, schema, input, &response, queryByUserFmtStr)
 
 	triggerEventEndCursor := string(relay.MarshalID(monitorTriggerEventKind, 1))
-	actionEventEndCursor := string(relay.MarshalID(monitorActionEmailEventKind, 2))
 	want := apitest.Response{
 		User: apitest.User{
 			Monitors: apitest.MonitorConnection{
@@ -372,52 +392,106 @@ func queryByUser(ctx context.Context, t *testing.T, schema *graphql.Schema, r *R
 						},
 					},
 					Actions: apitest.ActionConnection{
-						TotalCount: 2,
-						Nodes: []apitest.Action{
-							{
-								Email: &apitest.ActionEmail{
-									Id:       string(relay.MarshalID(monitorActionEmailKind, 2)),
-									Enabled:  true,
-									Priority: "CRITICAL",
-									Recipients: apitest.RecipientsConnection{
-										TotalCount: 2,
-										Nodes: []apitest.UserOrg{
-											{Name: user1.Username},
-											{Name: user2.Username},
+						TotalCount: 4,
+						Nodes: []apitest.Action{{
+							Email: &apitest.ActionEmail{
+								Id:       string(relay.MarshalID(monitorActionEmailKind, 2)),
+								Enabled:  true,
+								Priority: "CRITICAL",
+								Recipients: apitest.RecipientsConnection{
+									TotalCount: 2,
+									Nodes: []apitest.UserOrg{
+										{Name: user1.Username},
+										{Name: user2.Username},
+									},
+								},
+								Header: "test header 2",
+								Events: apitest.ActionEventConnection{
+									Nodes: []apitest.ActionEvent{
+										{
+											Id:        string(relay.MarshalID(monitorActionEmailEventKind, 1)),
+											Status:    "SUCCESS",
+											Timestamp: r.Now().UTC().Format(time.RFC3339),
+											Message:   nil,
+										},
+										{
+											Id:        string(relay.MarshalID(monitorActionEmailEventKind, 4)),
+											Status:    "PENDING",
+											Timestamp: r.Now().UTC().Format(time.RFC3339),
+											Message:   nil,
 										},
 									},
-									Header: "test header 2",
-									Events: apitest.ActionEventConnection{
-										Nodes: []apitest.ActionEvent{
-											{
-												Id:        string(relay.MarshalID(monitorActionEmailEventKind, 1)),
-												Status:    "SUCCESS",
-												Timestamp: r.Now().UTC().Format(time.RFC3339),
-												Message:   nil,
-											},
-											{
-												Id:        string(relay.MarshalID(monitorActionEmailEventKind, 2)),
-												Status:    "PENDING",
-												Timestamp: r.Now().UTC().Format(time.RFC3339),
-												Message:   nil,
-											},
-										},
-										TotalCount: 2,
-										PageInfo: apitest.PageInfo{
-											HasNextPage: true,
-											EndCursor:   &actionEventEndCursor,
-										},
+									TotalCount: 2,
+									PageInfo: apitest.PageInfo{
+										HasNextPage: true,
+										EndCursor:   func() *string { s := string(relay.MarshalID(monitorActionEmailEventKind, 4)); return &s }(),
 									},
 								},
 							},
-						},
+						}, {
+							Webhook: &apitest.ActionWebhook{
+								Id:      string(relay.MarshalID(monitorActionWebhookKind, 1)),
+								Enabled: true,
+								URL:     "https://generic.webhook.com",
+								Events: apitest.ActionEventConnection{
+									Nodes: []apitest.ActionEvent{
+										{
+											Id:        string(relay.MarshalID(monitorActionEmailEventKind, 2)),
+											Status:    "SUCCESS",
+											Timestamp: r.Now().UTC().Format(time.RFC3339),
+											Message:   nil,
+										},
+										{
+											Id:        string(relay.MarshalID(monitorActionEmailEventKind, 5)),
+											Status:    "PENDING",
+											Timestamp: r.Now().UTC().Format(time.RFC3339),
+											Message:   nil,
+										},
+									},
+									TotalCount: 2,
+									PageInfo: apitest.PageInfo{
+										HasNextPage: true,
+										EndCursor:   func() *string { s := string(relay.MarshalID(monitorActionEmailEventKind, 5)); return &s }(),
+									},
+								},
+							},
+						}, {
+							SlackWebhook: &apitest.ActionSlackWebhook{
+								Id:      string(relay.MarshalID(monitorActionSlackWebhookKind, 1)),
+								Enabled: true,
+								URL:     "https://slack.webhook.com",
+								Events: apitest.ActionEventConnection{
+									Nodes: []apitest.ActionEvent{
+										{
+											Id:        string(relay.MarshalID(monitorActionEmailEventKind, 3)),
+											Status:    "SUCCESS",
+											Timestamp: r.Now().UTC().Format(time.RFC3339),
+											Message:   nil,
+										},
+										{
+											Id:        string(relay.MarshalID(monitorActionEmailEventKind, 6)),
+											Status:    "PENDING",
+											Timestamp: r.Now().UTC().Format(time.RFC3339),
+											Message:   nil,
+										},
+									},
+									TotalCount: 2,
+									PageInfo: apitest.PageInfo{
+										HasNextPage: true,
+										EndCursor:   func() *string { s := string(relay.MarshalID(monitorActionEmailEventKind, 6)); return &s }(),
+									},
+								},
+							},
+						}},
 					},
 				}},
 			},
 		},
 	}
 
-	require.Equal(t, want, response)
+	if diff := cmp.Diff(want, response); diff != "" {
+		t.Fatalf(diff)
+	}
 }
 
 const queryByUserFmtStr = `
@@ -458,7 +532,7 @@ query($userName: String!, $actionCursor: String!){
 						}
 					}
 				}
-				actions(first:1, after:$actionCursor){
+				actions(first:3, after:$actionCursor){
 					totalCount
 					nodes{
 						... on MonitorEmail{
@@ -474,6 +548,44 @@ query($userName: String!, $actionCursor: String!){
 									... on Org { ...o }
 								}
 							}
+							events {
+								totalCount
+								nodes {
+									id
+									status
+									timestamp
+									message
+								}
+								pageInfo {
+									hasNextPage
+									endCursor
+								}
+							}
+						}
+						... on MonitorWebhook{
+							__typename
+							id
+							enabled
+							url
+							events {
+								totalCount
+								nodes {
+									id
+									status
+									timestamp
+									message
+								}
+								pageInfo {
+									hasNextPage
+									endCursor
+								}
+							}
+						}
+						... on MonitorSlackWebhook{
+							__typename
+							id
+							enabled
+							url
 							events {
 								totalCount
 								nodes {
@@ -750,7 +862,7 @@ func queryByID(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Res
 				Query: "repo:foo",
 			},
 			Actions: apitest.ActionConnection{
-				TotalCount: 2,
+				TotalCount: 4,
 				Nodes: []apitest.Action{
 					{
 						Email: &apitest.ActionEmail{
@@ -788,6 +900,20 @@ func queryByID(ctx context.Context, t *testing.T, schema *graphql.Schema, r *Res
 								},
 							},
 							Header: "test header 2",
+						},
+					},
+					{
+						Webhook: &apitest.ActionWebhook{
+							Id:      string(relay.MarshalID(monitorActionWebhookKind, 1)),
+							Enabled: true,
+							URL:     "https://generic.webhook.com",
+						},
+					},
+					{
+						SlackWebhook: &apitest.ActionSlackWebhook{
+							Id:      string(relay.MarshalID(monitorActionSlackWebhookKind, 1)),
+							Enabled: true,
+							URL:     "https://slack.webhook.com",
 						},
 					},
 				},
@@ -849,6 +975,18 @@ query ($id: ID!) {
               }
             }
           }
+		  ... on MonitorWebhook {
+			  __typename
+			  id
+			  enabled
+			  url
+		  }
+		  ... on MonitorSlackWebhook {
+			  __typename
+			  id
+			  enabled
+			  url
+		  }
         }
       }
     }
@@ -904,7 +1042,7 @@ func actionPaging(ctx context.Context, t *testing.T, schema *graphql.Schema, use
 			Monitors: apitest.MonitorConnection{
 				Nodes: []apitest.Monitor{{
 					Actions: apitest.ActionConnection{
-						TotalCount: 2,
+						TotalCount: 4,
 						Nodes: []apitest.Action{
 							{
 								Email: &apitest.ActionEmail{
@@ -1007,7 +1145,7 @@ func actionEventPaging(ctx context.Context, t *testing.T, schema *graphql.Schema
 			Monitors: apitest.MonitorConnection{
 				Nodes: []apitest.Monitor{{
 					Actions: apitest.ActionConnection{
-						TotalCount: 2,
+						TotalCount: 4,
 						Nodes: []apitest.Action{
 							{
 								Email: &apitest.ActionEmail{
@@ -1016,7 +1154,7 @@ func actionEventPaging(ctx context.Context, t *testing.T, schema *graphql.Schema
 										TotalCount: 2,
 										Nodes: []apitest.ActionEvent{
 											{
-												Id: string(relay.MarshalID(monitorActionEmailEventKind, 2)),
+												Id: string(relay.MarshalID(monitorActionEmailEventKind, 4)),
 											},
 										},
 									},
@@ -1029,7 +1167,9 @@ func actionEventPaging(ctx context.Context, t *testing.T, schema *graphql.Schema
 		},
 	}
 
-	require.Equal(t, want, got)
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatal(diff)
+	}
 }
 
 const actionEventPagingFmtStr = `

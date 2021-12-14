@@ -272,7 +272,7 @@ type MonitorActionConnection {
 """
 Supported actions for code monitors.
 """
-union MonitorAction = MonitorEmail
+union MonitorAction = MonitorEmail | MonitorWebhook | MonitorSlackWebhook
 
 """
 Email is one of the supported actions of code monitors.
@@ -328,6 +328,68 @@ The priority of an email action.
 enum MonitorEmailPriority {
     NORMAL
     CRITICAL
+}
+
+"""
+Webhook is one of the supported actions of code monitors.
+"""
+type MonitorWebhook implements Node {
+    """
+    The unique id of an email action.
+    """
+    id: ID!
+    """
+    Whether the email action is enabled or not.
+    """
+    enabled: Boolean!
+	"""
+	The endpoint the webhook event will be sent to
+	"""
+	url: String!
+    """
+    A list of events.
+    """
+    events(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionEventConnection!
+}
+
+"""
+SlackWebhook is one of the supported actions of code monitors.
+"""
+type MonitorSlackWebhook implements Node {
+    """
+    The unique id of an email action.
+    """
+    id: ID!
+    """
+    Whether the email action is enabled or not.
+    """
+    enabled: Boolean!
+	"""
+	The endpoint the Slack webhook event will be sent to
+	"""
+	url: String!
+    """
+    A list of events.
+    """
+    events(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionEventConnection!
 }
 
 """

@@ -81,7 +81,7 @@ func (a *Action) UnmarshalJSON(b []byte) error {
 		a.SlackWebhook = &ActionSlackWebhook{}
 		return json.Unmarshal(b, &a.SlackWebhook)
 	default:
-		return errors.Errorf("unexpected typename %s", t.TypeName)
+		return errors.Errorf("unexpected typename %q", t.TypeName)
 	}
 }
 
@@ -98,12 +98,14 @@ type ActionWebhook struct {
 	Id      string
 	Enabled bool
 	URL     string
+	Events  ActionEventConnection
 }
 
 type ActionSlackWebhook struct {
 	Id      string
 	Enabled bool
 	URL     string
+	Events  ActionEventConnection
 }
 
 type RecipientsConnection struct {

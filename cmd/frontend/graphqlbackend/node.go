@@ -67,6 +67,16 @@ func (r *NodeResolver) ToMonitorEmail() (MonitorEmailResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToMonitorWebhook() (MonitorWebhookResolver, bool) {
+	n, ok := r.Node.(MonitorWebhookResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorSlackWebhook() (MonitorSlackWebhookResolver, bool) {
+	n, ok := r.Node.(MonitorSlackWebhookResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToMonitorActionEvent() (MonitorActionEventResolver, bool) {
 	n, ok := r.Node.(MonitorActionEventResolver)
 	return n, ok
