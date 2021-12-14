@@ -101,12 +101,6 @@ func (r *Resolver) insertTestMonitorWithOpts(ctx context.Context, t *testing.T, 
 			Priority:   "NORMAL",
 			Recipients: []graphql.ID{defaultOwner},
 			Header:     "test header"}},
-		{Webhook: &graphqlbackend.CreateActionWebhookArgs{
-			Enabled: true,
-			URL:     "https://webhook.mcwebhook.face"}},
-		{SlackWebhook: &graphqlbackend.CreateActionSlackWebhookArgs{
-			Enabled: true,
-			URL:     "https://slackwebhook.mcslackwebhook.face"}},
 	}
 
 	options := options{
