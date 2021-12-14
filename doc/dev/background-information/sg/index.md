@@ -272,7 +272,7 @@ sg check
 sg check go
 
 # Run only shell related checks
-sg check go
+sg check shell
 
 # Run only client related checks
 sg check client 
