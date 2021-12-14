@@ -26,9 +26,9 @@ func RunnerFromDSNs(dsns map[string]string, appName string, newStore StoreFactor
 	}
 
 	storeFactoryMap := map[string]runner.StoreFactory{
-		"frontend":     makeFactory("frontend", schemas.Frontend, EnsureNewFrontendDB),
-		"codeintel":    makeFactory("codeintel", schemas.CodeIntel, EnsureNewCodeIntelDB),
-		"codeinsights": makeFactory("codeinsights", schemas.CodeInsights, EnsureNewCodeInsightsDB),
+		"frontend":     makeFactory("frontend", schemas.Frontend, RawNewFrontendDB),
+		"codeintel":    makeFactory("codeintel", schemas.CodeIntel, RawNewCodeIntelDB),
+		"codeinsights": makeFactory("codeinsights", schemas.CodeInsights, RawNewCodeInsightsDB),
 	}
 
 	return runner.NewRunner(storeFactoryMap)
