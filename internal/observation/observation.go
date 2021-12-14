@@ -265,16 +265,21 @@ func (op *Operation) WithErrors(ctx context.Context, root *error, args Args) (co
 func (op *Operation) WithErrorsAndLogger(ctx context.Context, root *error, args Args) (context.Context, *ErrCollector, TraceLogger, FinishFunc) {
 	errTracer := NewErrorCollector()
 	err := error(errTracer)
+
 	ctx, traceLogger, endObservation := op.WithAndLogger(ctx, &err, args)
+
+	// to avoid recursion stack overflow, we need a new binding
+	endFunc := endObservation
+
 	if root != nil {
-		endObservation = func(count float64, args Args) {
+		endFunc = func(count float64, args Args) {
 			if *root != nil {
 				errTracer.multi.Errors = append(errTracer.multi.Errors, *root)
 			}
 			endObservation(count, args)
 		}
 	}
-	return ctx, errTracer, traceLogger, endObservation
+	return ctx, errTracer, traceLogger, endFunc
 }
 
 // With prepares the necessary timers, loggers, and metrics to observe the invocation of an
