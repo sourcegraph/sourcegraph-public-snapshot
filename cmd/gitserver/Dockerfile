@@ -103,5 +103,8 @@ RUN ./config && make && make install
 
 RUN mkdir -p /data/repos && chown -R sourcegraph:sourcegraph /data/repos
 USER sourcegraph
+
+WORKDIR /
+
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/gitserver"]
 COPY gitserver /usr/local/bin/
