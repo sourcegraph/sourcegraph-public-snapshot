@@ -61,6 +61,7 @@ const helpTexts: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.BITBUCKETCLOUD]: <span>Unsupported</span>,
     [ExternalServiceKind.GITOLITE]: <span>Unsupported</span>,
     [ExternalServiceKind.JVMPACKAGES]: <span>Unsupported</span>,
+    [ExternalServiceKind.NPMPACKAGES]: <span>Unsupported</span>,
     [ExternalServiceKind.PERFORCE]: <span>Unsupported</span>,
     [ExternalServiceKind.PHABRICATOR]: <span>Unsupported</span>,
     [ExternalServiceKind.AWSCODECOMMIT]: <span>Unsupported</span>,

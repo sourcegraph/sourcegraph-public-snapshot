@@ -259,6 +259,26 @@ sg secret list
 
 # Remove the secrets associated with buildkite (sg ci build)
 sg secret reset buildkite
+
+```
+
+### `sg check` - Run checks against local code 
+
+```bash
+# Run all possible checks 
+sg check
+
+# Run only go related checks
+sg check go
+
+# Run only shell related checks
+sg check go
+
+# Run only client related checks
+sg check client 
+
+# List all available check groups 
+sg check --help
 ```
 
 ## Configuration

@@ -138,6 +138,7 @@ type SearcherParameters struct {
 type TextParameters struct {
 	PatternInfo *TextPatternInfo
 	RepoOptions RepoOptions
+	Features    Features
 	ResultTypes result.Types
 	Timeout     time.Duration
 
@@ -245,6 +246,24 @@ func (p *TextPatternInfo) String() string {
 	}
 
 	return fmt.Sprintf("TextPatternInfo{%s}", strings.Join(args, ","))
+}
+
+// Features describe feature flags for a request. This is state that differs
+// across users and time. It is created based on user feature flags and
+// configuration.
+//
+// The Feature struct should be initialized once per search request early on.
+//
+// The default value for a Feature should be the go zero value, such that
+// creating an empty Feature struct represents the usual search
+// experience. This is to avoid needing to update a large number of tests when
+// a new feature flag is introduced, and instead changes are localized to this
+// struct and read sites of a flag.
+type Features struct {
+	// ContentBasedLangFilters when true will use the language detected from
+	// the content of the file, rather than just file name patterns. This is
+	// currently just supported by Zoekt.
+	ContentBasedLangFilters bool
 }
 
 type RepoOptions struct {

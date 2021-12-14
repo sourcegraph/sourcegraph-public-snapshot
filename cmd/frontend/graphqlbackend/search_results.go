@@ -563,6 +563,18 @@ func withMode(args search.TextParameters, st query.SearchType) search.TextParame
 	return args
 }
 
+func toFeatures(flags featureflag.FlagSet) search.Features {
+	if flags == nil {
+		flags = featureflag.FlagSet{}
+		metricFeatureFlagUnavailable.Inc()
+		log15.Warn("search feature flags are not available")
+	}
+
+	return search.Features{
+		ContentBasedLangFilters: flags.GetBoolOr("search-content-based-lang-detection", false),
+	}
+}
+
 // toSearchInputs converts a query parse tree to the _internal_ representation
 // needed to run a search. To understand why this conversion matters, think
 // about the fact that the query parse tree doesn't know anything about our
@@ -606,6 +618,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 	args := search.TextParameters{
 		PatternInfo: p,
 		Query:       q,
+		Features:    toFeatures(r.SearchInputs.Features),
 		Timeout:     search.TimeoutDuration(b),
 
 		// UseFullDeadline if timeout: set or we are streaming.
@@ -654,7 +667,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 
 			if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
 				typ := search.TextRequest
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -686,7 +699,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 
 			if args.ResultTypes.Has(result.TypeSymbol) {
 				typ := search.SymbolRequest
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -718,7 +731,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 				// TODO(rvantonder): we don't always have to run
 				// this converter. It depends on whether we run
 				// a zoekt search at all.
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -751,7 +764,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 		if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
 			if !skipUnindexed {
 				typ := search.SymbolRequest
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -791,7 +804,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 
 		if r.PatternType == query.SearchTypeStructural && p.Pattern != "" {
 			typ := search.TextRequest
-			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -1891,3 +1904,8 @@ func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
 		})
 	return m
 }
+
+var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_search_featureflag_unavailable",
+	Help: "temporary counter to check if we have feature flag available in practice.",
+})
