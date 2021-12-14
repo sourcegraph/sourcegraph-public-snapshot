@@ -204,7 +204,7 @@ describe('Code insight create insight page', () => {
         })
 
         // Pick first series color
-        await driver.page.click('[data-testid="series-form"]:nth-child(1) label[title="Cyan"]')
+        await driver.page.click('[data-testid="series-form"]:nth-child(1) label span[title="Cyan"]')
 
         // Add second series
         await driver.page.click('[data-testid="form-series"] [data-testid="add-series-button"]')

@@ -212,7 +212,7 @@ describe('Code insight edit insight page', () => {
             selectMethod: 'keyboard',
         })
 
-        await driver.page.click('[data-testid="series-form"]:nth-child(1) label[title="Cyan"]')
+        await driver.page.click('[data-testid="series-form"]:nth-child(1) label span[title="Cyan"]')
 
         // Remove second insight series
         await driver.page.click(
