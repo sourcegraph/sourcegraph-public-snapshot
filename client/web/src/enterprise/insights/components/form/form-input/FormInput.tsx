@@ -3,10 +3,9 @@ import React, { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react
 import { useMergeRefs } from 'use-callback-ref'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
-import { useAutoFocus } from '@sourcegraph/wildcard'
+import { useAutoFocus, ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import styles from './FormInput.module.scss'
-import { ForwardReferenceComponent } from './types'
 
 interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'title'> {
     /** Title of input. */
