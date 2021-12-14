@@ -22,6 +22,7 @@
     "onCommand:sourcegraph.openInBrowser",
     "onCommand:sourcegraph.search",
     "onCommand:sourcegraph.copyFileLink",
+    "onCommand:sourcegraph.searchOnSourcegraph",
     "onCommand:extension.openFile",
     "onView:sourcegraph.extensionHost",
     "onView:sourcegraph.searchSidebar"
@@ -49,6 +50,11 @@
         "command": "sourcegraph.openInBrowser",
         "category": "Sourcegraph",
         "title": "Sourcegraph: Open File in Browser"
+      },
+      {
+        "command": "sourcegraph.searchOnSourcegraph",
+        "category": "Sourcegraph",
+        "title": "Sourcegraph: Search on Sourcegraph"
       }
     ],
     "viewsContainers": {
@@ -121,13 +127,15 @@
     "menus": {
       "editor/context": [
         {
-          "when": "shellExecutionSupported || !isWeb || !virtualWorkspace",
           "command": "sourcegraph.openInBrowser",
           "group": "sourcegraph"
         },
         {
-          "when": "shellExecutionSupported || !isWeb || !virtualWorkspace",
           "command": "sourcegraph.copyFileLink",
+          "group": "sourcegraph"
+        },
+        {
+          "command": "sourcegraph.searchOnSourcegraph",
           "group": "sourcegraph"
         }
       ]

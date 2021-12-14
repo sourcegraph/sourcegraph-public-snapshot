@@ -14,6 +14,7 @@ import { SourcegraphHoverProvider } from './code-intel/SourcegraphHoverProvider'
 import { SourcegraphReferenceProvider } from './code-intel/SourcegraphReferenceProvider'
 import { inBrowserActions, openLinkInBrowser } from './commands/node/inBrowserActions'
 import { openSourcegraphUriCommand } from './commands/openSourcegraphUriCommand'
+import { searchSelection } from './commands/searchSelection'
 import { FilesTreeDataProvider } from './file-system/FilesTreeDataProvider'
 import { SourcegraphFileSystemProvider } from './file-system/SourcegraphFileSystemProvider'
 import { SourcegraphUri } from './file-system/SourcegraphUri'
@@ -103,6 +104,13 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.copyFileLink', async () => {
             await inBrowserActions('copy')
+        })
+    )
+
+    // Search Selected on Sourcegraph
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.searchOnSourcegraph', async () => {
+            await searchSelection()
         })
     )
 
