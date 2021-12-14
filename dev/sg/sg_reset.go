@@ -4,27 +4,32 @@ import (
 	"context"
 	"database/sql"
 	"flag"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/jackc/pgx/v4"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var (
-	resetFlagSet = flag.NewFlagSet("sg reset", flag.ExitOnError)
-	resetCommand = &ffcli.Command{
+	resetFlagSet          = flag.NewFlagSet("sg reset", flag.ExitOnError)
+	resetDatabaseNameFlag = resetFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance.")
+	resetCommand          = &ffcli.Command{
 		Name:       "reset",
-		ShortUsage: "sg reset",
-		ShortHelp:  "Drops, recreates and migrates the Sourcegraph 'sourcegraph' database.",
-		LongHelp:   `Run 'sg reset' to drop the 'sourcegraph' database (what's set as PGDATABASE in env or the sg.config.yaml) and recreate it`,
+		ShortUsage: fmt.Sprintf("sg reset [-db=%s]", db.DefaultDatabase.Name),
+		ShortHelp:  "Drops, recreates and migrates the specified Sourcegraph database.",
+		LongHelp:   `Run 'sg reset' to drop and recreate Sourcegraph databases. If -db is not set, then the "frontend" database is used (what's set as PGDATABASE in env or the sg.config.yaml). If -db is set to "all" then all databases are reset and recreated.`,
 		FlagSet:    resetFlagSet,
 		Exec:       resetExec,
 	}
@@ -43,17 +48,33 @@ func resetExec(ctx context.Context, args []string) error {
 		if ok {
 			return val
 		}
-		// Otherwise check in globalConf.Env
-		return globalConf.Env[key]
+		// Otherwise check in globalConf.Env and *expand* the key, because a value might refer to another env var.
+		return os.Expand(globalConf.Env[key], func(lookup string) string {
+			if lookup == key {
+				return os.Getenv(lookup)
+			}
+
+			if e, ok := globalConf.Env[lookup]; ok {
+				return e
+			}
+			return os.Getenv(lookup)
+		})
 	}
 
 	dsnMap := map[string]string{}
-	for _, name := range schemas.SchemaNames {
+	schemaNames := []string{}
+	if *resetDatabaseNameFlag == "all" {
+		schemaNames = schemas.SchemaNames
+	} else {
+		schemaNames = strings.Split(*resetDatabaseNameFlag, ",")
+	}
+
+	for _, name := range schemaNames {
 		if name == "frontend" {
 			dsnMap[name] = postgresdsn.New("", "", getEnv)
-		} //  else {
-		// 	dsnMap[name] = postgresdsn.New(strings.ToUpper(name), "", getEnv)
-		// }
+		} else {
+			dsnMap[name] = postgresdsn.New(strings.ToUpper(name), "", getEnv)
+		}
 
 	}
 
@@ -68,7 +89,7 @@ func resetExec(ctx context.Context, args []string) error {
 			return errors.Wrap(err, "failed to connect to Postgres database")
 		}
 
-		writeFingerPointingLine("This will reset database %s. Are you okay with this?", name)
+		writeFingerPointingLine("This will reset database %s%s%s. Are you okay with this?", output.StyleOrange, name, output.StyleReset)
 		ok := getBool()
 		if !ok {
 			return nil
@@ -92,7 +113,7 @@ func resetExec(ctx context.Context, args []string) error {
 	options := runner.Options{
 		Up:            true,
 		NumMigrations: 0,
-		SchemaNames:   []string{"frontend"},
+		SchemaNames:   schemaNames,
 	}
 
 	return connections.RunnerFromDSNs(dsnMap, "sg", storeFactory).Run(ctx, options)
