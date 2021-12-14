@@ -279,19 +279,6 @@ describe('Blob viewer', () => {
             // TODO
         })
 
-        it('shows a hover overlay from a hover provider and updates the URL when a token is clicked', async () => {
-            await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
-
-            // Click on "log" in "console.log()" in line 2
-            await driver.page.waitForSelector('.test-log-token', { visible: true })
-            await driver.page.click('.test-log-token')
-
-            await driver.assertWindowLocation('/github.com/sourcegraph/test/-/blob/test.ts?L2:9')
-            assert.deepStrictEqual(await getHoverContents(), ['Test hover content\n'])
-            // Uncomment this snapshot once https://github.com/sourcegraph/sourcegraph/issues/15126 is resolved
-            // await percySnapshot(driver.page, this.test!.fullTitle())
-        })
-
         interface MockExtension {
             id: string
             extensionID: string
