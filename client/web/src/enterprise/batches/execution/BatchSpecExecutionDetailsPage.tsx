@@ -1,3 +1,4 @@
+import Dialog from '@reach/dialog'
 import classNames from 'classnames'
 import { parseISO } from 'date-fns/esm'
 import { isArray, isEqual } from 'lodash'
@@ -132,7 +133,11 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
         }
     }, [batchSpecID])
 
-    const [selectedIndex, setSelectedIndex] = useState<number>()
+    const [selectedIndex, setSelectedIndex] = useState<number>(1)
+
+    const gotoPreview = useCallback(() => {
+        setSelectedIndex(2)
+    }, [])
 
     // Is loading.
     if (batchSpec === undefined) {
@@ -162,6 +167,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
                         text: batchSpec.namespace.namespaceName,
                     },
                     {
+                        to: batchSpec.appliesToBatchChange?.url ?? undefined,
                         text: batchSpec.description.name,
                     },
                 ]}
@@ -195,36 +201,20 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
                                     </h3>
                                     Errors
                                 </div>
-                            </>
-                        )}
-                        {batchSpec.workspaceResolution?.workspaces.stats && (
-                            <>
                                 <div className="mx-2 text-center text-muted">
                                     <h3 className="text-success">
                                         {batchSpec.workspaceResolution.workspaces.stats.completed}
                                     </h3>
                                     Complete
                                 </div>
-                            </>
-                        )}
-                        {batchSpec.workspaceResolution?.workspaces.stats && (
-                            <>
                                 <div className="mx-2 text-center text-muted">
                                     <h3>{batchSpec.workspaceResolution.workspaces.stats.processing}</h3>
                                     Working
                                 </div>
-                            </>
-                        )}
-                        {batchSpec.workspaceResolution?.workspaces.stats && (
-                            <>
                                 <div className="mx-2 text-center text-muted">
                                     <h3>{batchSpec.workspaceResolution.workspaces.stats.queued}</h3>
                                     Queued
                                 </div>
-                            </>
-                        )}
-                        {batchSpec.workspaceResolution?.workspaces.stats && (
-                            <>
                                 <div className="mx-2 text-center text-muted">
                                     <h3>{batchSpec.workspaceResolution.workspaces.stats.ignored}</h3>
                                     Ignored
@@ -252,9 +242,9 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
                                 {selectedIndex !== 2 &&
                                     batchSpec.applyURL &&
                                     batchSpec.state === BatchSpecState.COMPLETED && (
-                                        <Link to={batchSpec.applyURL} className="btn btn-primary">
+                                        <button type="button" className="btn btn-primary" onClick={gotoPreview}>
                                             Preview
-                                        </Link>
+                                        </button>
                                     )}
                                 {batchSpec.viewerCanRetry && batchSpec.state !== BatchSpecState.COMPLETED && (
                                     // TODO: Add a second button to allow retrying an entire batch spec,
@@ -264,8 +254,9 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
                                         className="btn btn-outline-secondary"
                                         onClick={retryExecution}
                                         disabled={isRetrying === true}
+                                        data-tooltip={isRetrying !== true ? 'Retry all failed workspaces' : undefined}
                                     >
-                                        {isRetrying !== true && <>Retry failed</>}
+                                        {isRetrying !== true && <>Retry</>}
                                         {isRetrying === true && (
                                             <>
                                                 <LoadingSpinner className="icon-inline" /> Retrying
@@ -276,14 +267,15 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
                                 {selectedIndex !== 2 &&
                                     batchSpec.applyURL &&
                                     batchSpec.state === BatchSpecState.FAILED && (
-                                        <Link
-                                            to={batchSpec.applyURL}
+                                        <button
+                                            type="button"
                                             className="btn btn-outline-warning"
+                                            onClick={gotoPreview}
                                             data-tooltip="Execution didn't finish successfully in all workspaces. The batch spec might have less changeset specs than expected."
                                         >
                                             <AlertCircleIcon className="icon-inline mb-0 mr-2 text-warning" />
                                             Preview
-                                        </Link>
+                                        </button>
                                     )}
                             </div>
                             {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}
@@ -294,9 +286,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
                 className="mb-3"
             />
 
-            {batchSpec.failureMessage && <ErrorAlert error={batchSpec.failureMessage} />}
-
-            <Tabs size="medium" defaultIndex={1} className="mb-3" onChange={setSelectedIndex}>
+            <Tabs size="medium" className="mb-3" onChange={setSelectedIndex} index={selectedIndex}>
                 <TabList>
                     <Tab key="batch-spec">1. Batch spec</Tab>
                     <Tab key="execution">2. Execution</Tab>
@@ -315,17 +305,22 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
                         </div>
                     </TabPanel>
                     <TabPanel key="execution">
-                        <div className="d-flex mt-3">
-                            <div className={styles.workspacesListContainer}>
+                        {batchSpec.failureMessage && <ErrorAlert error={batchSpec.failureMessage} className="mt-3" />}
+                        <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1 mt-3')}>
+                            <div className={classNames(styles.workspacesListContainer, 'd-flex flex-column')}>
                                 <h3 className="mb-2">Workspaces</h3>
-                                <WorkspacesList
-                                    batchSpecID={batchSpec.id}
-                                    selectedNode={selectedWorkspace ?? undefined}
-                                    queryBatchSpecWorkspaces={queryBatchSpecWorkspaces}
-                                />
+                                <div className="overflow-auto">
+                                    <WorkspacesList
+                                        batchSpecID={batchSpec.id}
+                                        selectedNode={selectedWorkspace ?? undefined}
+                                        queryBatchSpecWorkspaces={queryBatchSpecWorkspaces}
+                                    />
+                                </div>
                             </div>
-                            <div className="flex-grow-1">
-                                <SelectedWorkspace workspace={selectedWorkspace} isLightTheme={isLightTheme} />
+                            <div className="d-flex flex-grow-1">
+                                <div className="d-flex overflow-auto">
+                                    <SelectedWorkspace workspace={selectedWorkspace} isLightTheme={isLightTheme} />
+                                </div>
                             </div>
                         </div>
                     </TabPanel>
@@ -405,10 +400,7 @@ const WorkspaceNode: React.FunctionComponent<WorkspaceNodeProps> = ({ node, sele
                 <strong className={classNames(styles.workspaceName, 'flex-grow-1')}>{node.repository.name}</strong>
                 {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
             </div>
-            {/* Only display the branch if it's not the default branch. */}
-            {node.repository.defaultBranch?.abbrevName !== node.branch.abbrevName && (
-                <Badge variant="secondary">{node.branch.abbrevName}</Badge>
-            )}
+            <Badge variant="secondary">{node.branch.abbrevName}</Badge>
         </Link>
     </li>
 )
@@ -419,7 +411,7 @@ const SelectedWorkspace: React.FunctionComponent<{ workspace: Scalars['ID'] | nu
 }) => {
     if (workspace === null) {
         return (
-            <div className="card">
+            <div className="card w-100">
                 <div className="card-body">
                     <h3 className="text-center mb-0">Select a workspace to view details.</h3>
                 </div>
@@ -427,7 +419,7 @@ const SelectedWorkspace: React.FunctionComponent<{ workspace: Scalars['ID'] | nu
         )
     }
     return (
-        <div className="card">
+        <div className="card w-100">
             <div className="card-body">
                 <WorkspaceDetails id={workspace} isLightTheme={isLightTheme} />
             </div>
@@ -463,6 +455,14 @@ const WorkspaceDetails: React.FunctionComponent<
         }
     }, [id])
 
+    const [showTimeline, setShowTimeline] = useState<boolean>(false)
+    const toggleShowTimeline = useCallback(() => {
+        setShowTimeline(true)
+    }, [])
+    const onDismissTimeline = useCallback(() => {
+        setShowTimeline(false)
+    }, [])
+
     if (workspace === undefined) {
         return <LoadingSpinner />
     }
@@ -476,6 +476,7 @@ const WorkspaceDetails: React.FunctionComponent<
     }
     return (
         <>
+            {showTimeline && <TimelineModal node={workspace} onCancel={onDismissTimeline} />}
             <div className="d-flex justify-content-between">
                 <h3>
                     <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />{' '}
@@ -500,66 +501,117 @@ const WorkspaceDetails: React.FunctionComponent<
                 {typeof workspace.placeInQueue === 'number' && (
                     <>
                         {' '}
+                        | <SyncIcon className="icon-inline" />{' '}
+                        <strong>
+                            <NumberInQueue number={workspace.placeInQueue} />
+                        </strong>{' '}
+                        in queue
+                    </>
+                )}
+                {!workspace.cachedResultFound && workspace.state !== BatchSpecWorkspaceState.SKIPPED && (
+                    <>
+                        {' '}
                         |{' '}
-                        <p className="mb-0">
-                            <SyncIcon className="icon-inline" /> #{workspace.placeInQueue} in queue
-                        </p>
+                        <button type="button" className="text-muted btn btn-link m-0 p-0" onClick={toggleShowTimeline}>
+                            Timeline
+                        </button>
                     </>
                 )}
             </div>
+            <hr />
             {workspace.failureMessage && (
                 <>
-                    <ErrorAlert error={workspace.failureMessage} className="mb-2" />
-                    <button
-                        type="button"
-                        className="btn btn-outline-danger mb-3"
-                        onClick={onRetry}
-                        disabled={retrying === true}
-                    >
-                        <SyncIcon className="icon-inline" /> Retry
-                    </button>
+                    <div className="d-flex my-3 w-100">
+                        <ErrorAlert error={workspace.failureMessage} className="flex-grow-1 mb-0" />
+                        <button
+                            type="button"
+                            className="btn btn-outline-danger ml-2"
+                            onClick={onRetry}
+                            disabled={retrying === true}
+                        >
+                            <SyncIcon className="icon-inline" /> Retry
+                        </button>
+                    </div>
                     {isErrorLike(retrying) && <ErrorAlert error={retrying} />}
                 </>
             )}
-            <hr />
             {workspace.state === BatchSpecWorkspaceState.COMPLETED && (
-                <>
+                <div className="my-3">
                     {workspace.changesetSpecs?.length === 0 && (
-                        <p className="mb-2 text-muted">This workspace generated no changeset specs.</p>
+                        <p className="mb-0 text-muted">This workspace generated no changeset specs.</p>
                     )}
-                    {workspace.changesetSpecs?.map(changesetSpec => (
-                        <ChangesetSpecNode key={changesetSpec.id} node={changesetSpec} isLightTheme={isLightTheme} />
+                    {workspace.changesetSpecs?.map((changesetSpec, index) => (
+                        <>
+                            <ChangesetSpecNode
+                                key={changesetSpec.id}
+                                node={changesetSpec}
+                                index={index}
+                                isLightTheme={isLightTheme}
+                            />
+                            {index !== workspace.changesetSpecs!.length - 1 && <hr className="m-0" />}
+                        </>
                     ))}
-                </>
+                </div>
             )}
             {workspace.steps.map((step, index) => (
-                <WorkspaceStep
-                    step={step}
-                    cachedResultFound={workspace.cachedResultFound}
-                    stepIndex={index}
-                    workspaceID={workspace.id}
-                    key={index}
-                    isLightTheme={isLightTheme}
-                />
+                <>
+                    <WorkspaceStep
+                        step={step}
+                        cachedResultFound={workspace.cachedResultFound}
+                        stepIndex={index}
+                        workspaceID={workspace.id}
+                        key={index}
+                        isLightTheme={isLightTheme}
+                    />
+                    {index !== workspace.steps.length - 1 && <hr className="m-0" />}
+                </>
             ))}
-            {!workspace.cachedResultFound && workspace.state !== BatchSpecWorkspaceState.SKIPPED && (
-                <Collapsible
-                    title={<h4 className="mb-0">Timeline</h4>}
-                    titleClassName="flex-grow-1"
-                    defaultExpanded={false}
-                    className="mt-2"
-                >
-                    <ExecutionTimeline node={workspace} />
-                </Collapsible>
-            )}
         </>
     )
 }
 
-const ChangesetSpecNode: React.FunctionComponent<{ node: BatchSpecWorkspaceChangesetSpecFields } & ThemeProps> = ({
+const TimelineModal: React.FunctionComponent<{ node: BatchSpecWorkspaceFields; onCancel: () => void }> = ({
     node,
-    isLightTheme,
-}) => {
+    onCancel,
+}) => (
+    <Dialog
+        className="modal-body modal-body--top-third p-4 rounded border"
+        onDismiss={onCancel}
+        aria-label="Execution timeline"
+    >
+        <div className="d-flex justify-content-between">
+            <h3 className="mb-0">Execution timeline</h3>
+            <button type="button" className="btn btn-link btn-sm p-0 m-0" onClick={onCancel}>
+                <CloseIcon className="icon-inline" />
+            </button>
+        </div>
+        <ExecutionTimeline node={node} />
+    </Dialog>
+)
+
+const NumberInQueue: React.FunctionComponent<{ number: number }> = ({ number }) => {
+    let suffix: string
+    switch (number % 10) {
+        case 1:
+            suffix = 'st'
+        case 2:
+            suffix = 'nd'
+        case 3:
+            suffix = 'rd'
+        default:
+            suffix = 'th'
+    }
+    return (
+        <>
+            {number}
+            <sup>{suffix}</sup>
+        </>
+    )
+}
+
+const ChangesetSpecNode: React.FunctionComponent<
+    { node: BatchSpecWorkspaceChangesetSpecFields; index: number } & ThemeProps
+> = ({ node, index, isLightTheme }) => {
     const history = useHistory()
     // TODO: This should not happen. When the workspace is visibile, the changeset spec should be visible as well.
     if (node.__typename === 'HiddenChangesetSpec') {
@@ -577,11 +629,19 @@ const ChangesetSpecNode: React.FunctionComponent<{ node: BatchSpecWorkspaceChang
     }
     return (
         <Collapsible
+            className="py-2"
             title={
-                <h4 className="mb-0">
-                    <strong>RESULT 1</strong> <Badge>WILL PUBLISH</Badge> <SourceBranchIcon className="icon-inline" />{' '}
-                    changeset branch: <strong>{node.description.headRef}</strong>
-                </h4>
+                <div className="d-flex justify-content-between">
+                    <h4 className="mb-0">
+                        <strong>RESULT {index + 1}</strong>{' '}
+                        {node.description.published !== null && (
+                            <Badge className="text-uppercase">{publishBadgeLabel(node.description.published)}</Badge>
+                        )}{' '}
+                        <SourceBranchIcon className="icon-inline" /> changeset branch:{' '}
+                        <strong>{node.description.headRef}</strong>
+                    </h4>
+                    <DiffStat {...node.description.diffStat} expandedCounts={true} />
+                </div>
             }
             titleClassName="flex-grow-1"
             defaultExpanded={1 === 1}
@@ -589,10 +649,8 @@ const ChangesetSpecNode: React.FunctionComponent<{ node: BatchSpecWorkspaceChang
             <div className={classNames('card mt-2', styles.resultCard)}>
                 <div className="card-body">
                     <h3>Changeset template</h3>
-                    <div className="d-flex justify-content-between">
-                        <h4>{node.description.title}</h4>
-                        <DiffStat {...node.description.diffStat} expandedCounts={true} />
-                    </div>
+                    <h4>{node.description.title}</h4>
+                    <p className="mb-0">{node.description.body}</p>
                     <p>
                         <strong>Published:</strong> <PublishedValue published={node.description.published} />
                     </p>
@@ -613,6 +671,17 @@ const ChangesetSpecNode: React.FunctionComponent<{ node: BatchSpecWorkspaceChang
             </div>
         </Collapsible>
     )
+}
+
+function publishBadgeLabel(state: Scalars['PublishedValue']): string {
+    switch (state) {
+        case 'draft':
+            return 'will publish as draft'
+        case false:
+            return 'will not publish'
+        case true:
+            return 'will publish'
+    }
 }
 
 const PublishedValue: React.FunctionComponent<{ published: Scalars['PublishedValue'] | null }> = ({ published }) => {
@@ -662,12 +731,12 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
 
     return (
         <Collapsible
-            className="mb-2"
+            className="py-2"
             titleClassName="w-100"
             title={
                 <div className="d-flex justify-content-between">
                     <div className="flex-grow-1">
-                        <StepStateIcon step={step} /> Step {stepIndex + 1}{' '}
+                        <StepStateIcon step={step} /> <strong>Step {stepIndex + 1}</strong>{' '}
                         <span className="text-monospace text-ellipsis text-muted">{step.run}</span>
                     </div>
                     <div>{step.diffStat && <DiffStat {...step.diffStat} expandedCounts={true} />}</div>

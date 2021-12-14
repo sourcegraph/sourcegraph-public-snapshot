@@ -159,11 +159,12 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     />
                     <BatchSpecDownloadButton
                         name={batchChange.name}
+                        isLightTheme={isLightTheme}
                         originalInput={batchChange.currentSpec.originalInput}
                     />
                 </div>
                 <Container>
-                    <BatchSpec originalInput={batchChange.currentSpec.originalInput} />
+                    <BatchSpec originalInput={batchChange.currentSpec.originalInput} isLightTheme={isLightTheme} />
                 </Container>
             </BatchChangeTabPanel>
             <BatchChangeTabPanel index={3}>

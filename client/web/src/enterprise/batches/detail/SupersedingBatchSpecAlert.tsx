@@ -29,7 +29,7 @@ export const SupersedingBatchSpecAlert: React.FunctionComponent<SupersedingBatch
         >
             <div className="d-flex align-items-center">
                 <div className="flex-grow-1">
-                    A <Link to={applyURL}>modified batch spec</Link> was uploaded but not applied{' '}
+                    A <Link to={applyURL}>modified batch spec</Link> is ready but not applied since{' '}
                     <Timestamp date={createdAt} />.
                 </div>
             </div>

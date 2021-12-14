@@ -160,6 +160,9 @@ const batchSpecExecutionFieldsFragment = gql`
             url
             namespaceName
         }
+        appliesToBatchChange {
+            url
+        }
         viewerCanRetry
         workspaceResolution {
             workspaces {
@@ -346,9 +349,6 @@ export const queryBatchSpecWorkspaces = ({
                 repository {
                     name
                     url
-                    defaultBranch {
-                        abbrevName
-                    }
                 }
                 branch {
                     abbrevName
