@@ -263,6 +263,7 @@ sg secret reset buildkite
 ```
 
 ### `sg check` - Run checks against local code 
+
 ```bash
 # Run all possible checks 
 sg check
