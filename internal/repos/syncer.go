@@ -676,7 +676,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 			// so this naive addition should work
 			userAdded, err := tx.CountNamespacedRepos(ctx, svc.NamespaceUserID, svc.NamespaceOrgID)
 			if err != nil {
-				return Diff{}, errors.Wrap(err, "counting user added repos")
+				return Diff{}, errors.Wrap(err, "counting repos added by user or organization")
 			}
 
 			// TODO: For now we are using the same limit for users as for organizations

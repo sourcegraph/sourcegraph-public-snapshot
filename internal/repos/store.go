@@ -138,8 +138,9 @@ func (s *Store) trace(ctx context.Context, family string) (*trace.Trace, context
 }
 
 // CountNamespacedRepos counts the total number of repos that have been added
-// by user owned external services. If userIDs are specified, only repos owned by the given
-// users are counted.
+// by user or organization owned external services.
+// If userID is specified, only repos owned by that user are counted.
+// If orgID is specified, only repos owned by that organization are counted.
 func (s *Store) CountNamespacedRepos(ctx context.Context, userID, orgID int32) (count uint64, err error) {
 	tr, ctx := s.trace(ctx, "Store.CountNamespacedRepos")
 	defer func(began time.Time) {
