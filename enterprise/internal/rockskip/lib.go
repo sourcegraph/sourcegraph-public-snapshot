@@ -65,34 +65,6 @@ const (
 	DeletedAMD  StatusAMD = 2
 )
 
-func invertAMD(status StatusAMD) StatusAMD {
-	switch status {
-	case AddedAMD:
-		return DeletedAMD
-	case ModifiedAMD:
-		return DeletedAMD
-	case DeletedAMD:
-		return AddedAMD
-	default:
-		fmt.Println("invertAMD: invalid status", status)
-		return DeletedAMD
-	}
-}
-
-func statusAMDToString(status StatusAMD) string {
-	switch status {
-	case AddedAMD:
-		return "A"
-	case ModifiedAMD:
-		return "M"
-	case DeletedAMD:
-		return "D"
-	default:
-		fmt.Println("statusAMDToString: invalid status", status)
-		return "?"
-	}
-}
-
 type StatusAD int
 
 const (
