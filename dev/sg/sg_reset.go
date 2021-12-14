@@ -23,14 +23,19 @@ var (
 	resetCommand = &ffcli.Command{
 		Name:       "reset",
 		ShortUsage: "sg reset",
-		ShortHelp:  "Resets stuff.",
-		LongHelp:   `Resets stuff`,
+		ShortHelp:  "Drops, recreates and migrates the Sourcegraph 'sourcegraph' database.",
+		LongHelp:   `Run 'sg reset' to drop the 'sourcegraph' database (what's set as PGDATABASE in env or the sg.config.yaml) and recreate it`,
 		FlagSet:    resetFlagSet,
 		Exec:       resetExec,
 	}
 )
 
 func resetExec(ctx context.Context, args []string) error {
+	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
+	}
+
 	getEnv := func(key string) string {
 		// First look into process env, emulating the logic in makeEnv used
 		// in internal/run/run.go
