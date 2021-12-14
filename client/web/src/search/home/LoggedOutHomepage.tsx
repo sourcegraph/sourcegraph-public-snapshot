@@ -18,6 +18,7 @@ import { HeroSection } from './HeroSection'
 import { SearchExample, exampleNotebooks, exampleQueries, fonts } from './LoggedOutHomepage.constants'
 import styles from './LoggedOutHomepage.module.scss'
 import { SelfHostInstructions } from './SelfHostInstructions'
+import { VulnerabilityAnnouncement } from './VulnerabilityAnnouncement'
 
 export interface LoggedOutHomepageProps extends TelemetryProps, ThemeProps, FeatureFlagProps {}
 
@@ -79,6 +80,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
     return (
         <DynamicWebFonts fonts={fonts}>
             <div className={styles.loggedOutHomepage}>
+                <VulnerabilityAnnouncement />
                 <div className={styles.helpContent}>
                     {props.featureFlags.get('search-notebook-onboarding') ? (
                         <SearchExamples

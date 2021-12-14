@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 import { Button } from 'reactstrap'
 
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
@@ -13,6 +13,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { useMatchMedia } from '@sourcegraph/shared/src/util/useMatchMedia'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { Tree } from '../tree/Tree'
@@ -37,24 +38,31 @@ const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
  */
 export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     const [tabIndex, setTabIndex] = useLocalStorage(TABS_KEY, 0)
-    const [toggleSidebar, setToggleSidebar] = useLocalStorage(
+    const [persistedIsVisible, setPersistedIsVisible] = useLocalStorage(
         SIDEBAR_KEY,
         settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
     )
 
+    const isWideScreen = useMatchMedia('(min-width: 768px)', false)
+    const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
+
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
-    const handleSidebarToggle = useCallback(() => {
-        props.telemetryService.log('FileTreeViewClicked', {
-            action: 'click',
-            label: 'expand / collapse file tree view',
-        })
-        setToggleSidebar(!toggleSidebar)
-    }, [setToggleSidebar, toggleSidebar, props.telemetryService])
+    const handleSidebarToggle = useCallback(
+        (value: boolean) => {
+            props.telemetryService.log('FileTreeViewClicked', {
+                action: 'click',
+                label: 'expand / collapse file tree view',
+            })
+            setPersistedIsVisible(value)
+            setIsVisible(value)
+        },
+        [setPersistedIsVisible, props.telemetryService]
+    )
     const handleSymbolClick = useCallback(() => props.telemetryService.log('SymbolTreeViewClicked'), [
         props.telemetryService,
     ])
 
-    if (!toggleSidebar) {
+    if (!isVisible) {
         return (
             <button
                 type="button"
@@ -62,7 +70,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                     'position-absolute btn btn-icon border-top border-bottom border-right mt-4',
                     styles.toggle
                 )}
-                onClick={handleSidebarToggle}
+                onClick={() => handleSidebarToggle(true)}
                 data-tooltip="Show sidebar"
             >
                 <ChevronDoubleRightIcon className="icon-inline" />
@@ -92,10 +100,10 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                 </Tab>
                             </TabList>
                             <Button
-                                onClick={handleSidebarToggle}
+                                onClick={() => handleSidebarToggle(false)}
                                 className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
-                                title="Close panel"
-                                data-tooltip="Collapse panel"
+                                title="Hide sidebar"
+                                data-tooltip="Hide sidebar"
                                 data-placement="right"
                             >
                                 <ChevronDoubleLeftIcon className={classNames('icon-inline', styles.closeIcon)} />

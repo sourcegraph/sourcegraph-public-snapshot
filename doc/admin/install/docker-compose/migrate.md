@@ -53,7 +53,7 @@ CONTAINER ID        IMAGE
 
 ```bash
 # Use the CONTAINER_ID found in the previous step
-docker exec -it "$CONTAINER_ID" sh -c 'pg_dump -C --username=postgres sourcegraph' > /tmp/sourcegaph_db.out
+docker exec -it "$CONTAINER_ID" sh -c 'pg_dump -C --username=postgres sourcegraph' > /tmp/sourcegraph_db.out
 
 docker exec -it "$CONTAINER_ID" sh -c 'pg_dump -C --username=postgres sourcegraph-codeintel' > /tmp/codeintel_db.out
 ```
@@ -75,7 +75,7 @@ docker cp "$CONTAINER_ID":/tmp/*_db.out /tmp/
 scp example_user@example_docker_host.com:/tmp/*.out <local_dir>
 ```
 
-* Run `less "/tmp/sorucegraph_db.out"` and `less "/tmp/codeintel_db.out"` and verify that the database dump has contents that you expect (e.g. that some of your repository names appear)
+* Run `less "/tmp/sourcegraph_db.out"` and `less "/tmp/codeintel_db.out"` and verify that the database dump has contents that you expect (e.g. that some of your repository names appear)
 
 ### Create the new Docker Compose instance
 

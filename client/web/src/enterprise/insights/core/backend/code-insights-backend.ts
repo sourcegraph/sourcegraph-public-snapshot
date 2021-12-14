@@ -3,8 +3,7 @@ import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { ViewContexts, ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
-import { Insight, InsightDashboard } from '../types'
-import { SearchBackendBasedInsight } from '../types/insight/search-insight'
+import { BackendInsight, Insight, InsightDashboard } from '../types'
 import { SupportedInsightSubject } from '../types/subjects'
 
 import {
@@ -83,7 +82,7 @@ export interface CodeInsightsBackend {
 
     createInsight: (input: InsightCreateInput) => Observable<unknown>
 
-    updateInsight: (event: InsightUpdateInput) => Observable<void[]>
+    updateInsight: (event: InsightUpdateInput) => Observable<unknown>
 
     deleteInsight: (insightId: string) => Observable<unknown>
 
@@ -96,7 +95,7 @@ export interface CodeInsightsBackend {
     /**
      * Returns backend insight (via gql API handler)
      */
-    getBackendInsightData: (insight: SearchBackendBasedInsight) => Observable<BackendInsightData>
+    getBackendInsightData: (insight: BackendInsight) => Observable<BackendInsightData>
 
     /**
      * Returns extension like built-in insight that is fetched via frontend

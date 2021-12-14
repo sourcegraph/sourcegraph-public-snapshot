@@ -15,6 +15,9 @@ jobs:
     if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
+    env:
+      # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+      NODE_OPTIONS: --max_old_space_size=5120
     strategy:
       matrix:
         root:

@@ -1764,18 +1764,27 @@ func testAbortSyncWhenThereIsRepoLimitError(store *repos.Store) func(*testing.T)
 		}
 
 		// create fake source
-		svc := &types.ExternalService{
-			Kind:            extsvc.KindGitHub,
-			DisplayName:     "Github - Test1",
-			Config:          `{"url": "https://github.com"}`,
-			CreatedAt:       now,
-			UpdatedAt:       now,
-			NamespaceUserID: user.ID,
-			NamespaceOrgID:  org.ID,
+		svcs := []*types.ExternalService{
+			{
+				Kind:            extsvc.KindGitHub,
+				DisplayName:     "Github - Test1",
+				Config:          `{"url": "https://github.com"}`,
+				CreatedAt:       now,
+				UpdatedAt:       now,
+				NamespaceUserID: user.ID,
+			},
+			{
+				Kind:           extsvc.KindGitHub,
+				DisplayName:    "Github - Test1",
+				Config:         `{"url": "https://github.com"}`,
+				CreatedAt:      now,
+				UpdatedAt:      now,
+				NamespaceOrgID: org.ID,
+			},
 		}
 
 		// setup services
-		if err := store.ExternalServiceStore.Upsert(ctx, svc); err != nil {
+		if err := store.ExternalServiceStore.Upsert(ctx, svcs...); err != nil {
 			t.Fatal(err)
 		}
 
@@ -1799,41 +1808,43 @@ func testAbortSyncWhenThereIsRepoLimitError(store *repos.Store) func(*testing.T)
 			},
 		}
 
-		// Sync first service
-		syncer := &repos.Syncer{
-			Sourcer: func(service *types.ExternalService) (repos.Source, error) {
-				s := repos.NewFakeSource(svc, nil, githubRepo, githubRepo2)
-				return s, nil
-			},
-			Store:               store,
-			Now:                 time.Now,
-			UserReposMaxPerSite: 1,
-			UserReposMaxPerUser: 1,
-		}
-
-		if err := syncer.SyncExternalService(ctx, svc.ID, 10*time.Second); err != nil {
-			me, ok := err.(*multierror.Error)
-			if !ok {
-				t.Fatalf("Expected multierror.Error, got: %T", err)
-			}
-			actualErr := me.Errors[0]
-
-			var r *repos.RepoLimitError
-
-			if !errors.As(err, &r) {
-				t.Fatalf("Expected RepoLimitError.Error, got: %T", err)
+		for _, svc := range svcs {
+			// Sync first service
+			syncer := &repos.Syncer{
+				Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+					s := repos.NewFakeSource(svc, nil, githubRepo, githubRepo2)
+					return s, nil
+				},
+				Store:               store,
+				Now:                 time.Now,
+				UserReposMaxPerSite: 1,
+				UserReposMaxPerUser: 1,
 			}
 
-			expectedErr := &repos.RepoLimitError{
-				SiteAdded: 1,
-				SiteLimit: 1,
-				UserAdded: 1,
-				UserLimit: 1,
-				UserID:    1,
-				UserName:  "Username",
-			}
-			if diff := cmp.Diff(expectedErr, actualErr); diff != "" {
-				t.Fatalf("Unexpected error occurred. Expected: %v, actual: %v", expectedErr, actualErr)
+			if err := syncer.SyncExternalService(ctx, svc.ID, 10*time.Second); err != nil {
+				me, ok := err.(*multierror.Error)
+				if !ok {
+					t.Fatalf("Expected multierror.Error, got: %T", err)
+				}
+				actualErr := me.Errors[0]
+
+				var r *repos.RepoLimitError
+
+				if !errors.As(err, &r) {
+					t.Fatalf("Expected RepoLimitError.Error, got: %T", err)
+				}
+
+				expectedErr := &repos.RepoLimitError{
+					SiteAdded: 1,
+					SiteLimit: 1,
+					UserAdded: 1,
+					UserLimit: 1,
+					UserID:    1,
+					UserName:  "Username",
+				}
+				if diff := cmp.Diff(expectedErr, actualErr); diff != "" {
+					t.Fatalf("Unexpected error occurred. Expected: %v, actual: %v", expectedErr, actualErr)
+				}
 			}
 		}
 	}
