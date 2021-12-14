@@ -1,6 +1,6 @@
 import ReachPopover, { Position, positionDefault } from '@reach/popover'
 import classNames from 'classnames'
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import FocusLock from 'react-focus-lock'
 
 import { useKeyboard } from './hooks/use-keyboard'
@@ -45,6 +45,21 @@ export const Popover: React.FunctionComponent<PopoverProps> = props => {
         },
         [onVisibilityChange]
     )
+
+    useEffect(() => {
+        if (!target.current) {
+            return
+        }
+
+        const targetElement = target.current
+        const handleTargetClick = (): void => {
+            setPopoverVisibility(!isPopoverVisible)
+        }
+
+        targetElement.addEventListener('click', handleTargetClick)
+
+        return () => targetElement.removeEventListener('click', handleTargetClick)
+    }, [isPopoverVisible, target, setPopoverVisibility])
 
     const handleEscapePress = useCallback(() => {
         setPopoverVisibility(false)
