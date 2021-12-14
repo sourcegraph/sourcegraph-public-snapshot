@@ -1,4 +1,4 @@
-#!/usr/bin/env /bin/sh
+#!/usr/bin/env sh
 # This script runs several git commands with the goal to optimize the
 # performance of git for large repositories.  With the exception of "repack" and
 # "commit-graph write", the commands and their order follow the default
