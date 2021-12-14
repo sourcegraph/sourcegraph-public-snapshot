@@ -166,14 +166,6 @@
             "pointer": true
           }
         },
-        "fuzzyFinder": {
-          "description": "Enables fuzzy finder with keyboard shortcut `t`.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "fuzzyFinderCaseInsensitiveFileCountThreshold": {
           "description": "The maximum number of files a repo can have to use case-insensitive fuzzy finding",
           "type": "number",

@@ -11,9 +11,9 @@ describe('experimentalFeatures store', () => {
     it('returns experimental feature flags', () => {
         setExperimentalFeaturesFromSettings({
             subjects: null,
-            final: { experimentalFeatures: { fuzzyFinder: true, showSearchContext: false } },
+            final: { experimentalFeatures: { showSearchContext: false } },
         })
 
-        expect(useExperimentalFeatures.getState()).toStrictEqual({ fuzzyFinder: true, showSearchContext: false })
+        expect(useExperimentalFeatures.getState()).toStrictEqual({ showSearchContext: false })
     })
 })
