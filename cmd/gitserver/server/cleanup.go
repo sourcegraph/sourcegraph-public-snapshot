@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
@@ -31,6 +32,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+//go:embed sg_maintenance.sh
+var sgMaintenanceScript string
+
 const (
 	// repoTTL is how often we should re-clone a repository.
 	repoTTL = time.Hour * 24 * 45
@@ -51,7 +55,7 @@ var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "true", "U
 // git maintenance and git gc must not be enabled at the same time. However, both
 // might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
 // SRC_ENABLE_GIT_MAINTENANCE.
-var enableGitMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GIT_MAINTENANCE", "false", "Use git maintenance during janitorial cleanup phases"))
+var enableSGMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "false", "Use sg maintenance during janitorial cleanup phases"))
 
 var (
 	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -243,17 +247,17 @@ func (s *Server) cleanupRepos() {
 	}
 
 	performGC := func(dir GitDir) (done bool, err error) {
-		if enableGitMaintenance || !enableGCAuto {
+		if enableSGMaintenance || !enableGCAuto {
 			return false, nil
 		}
 		return false, gitGC(dir)
 	}
 
-	performGitMaintenance := func(dir GitDir) (done bool, err error) {
-		if enableGCAuto || !enableGitMaintenance {
+	performSGMaintenance := func(dir GitDir) (done bool, err error) {
+		if enableGCAuto || !enableSGMaintenance {
 			return false, nil
 		}
-		return false, gitMaintenance(dir)
+		return false, sgMaintenance(dir)
 	}
 
 	type cleanupFn struct {
@@ -281,8 +285,8 @@ func (s *Server) cleanupRepos() {
 		{"garbage collect", performGC},
 		// Run tasks to optimize Git repository data, speeding up other Git commands and
 		// reducing storage requirements for the repository. Note: performGC and
-		// performGitMaintenance must not be enabled at the same time.
-		{"git maintenance", performGitMaintenance},
+		// performSGMaintenance must not be enabled at the same time.
+		{"sg maintenance", performSGMaintenance},
 	}
 
 	if !conf.Get().DisableAutoGitUpdates {
@@ -768,57 +772,20 @@ func gitGC(dir GitDir) error {
 	return nil
 }
 
-// gitMaintenance runs git maintenance on dir. The tasks are run in "auto" mode,
-// which means that git decides which of the tasks are run based on certain
-// thresholds.
-//
-// See https://sourcegraph.com/github.com/git/git@v2.34.0/-/blob/Documentation/config/gc.txt and
-// https://sourcegraph.com/github.com/git/git@v2.34.0/-/blob/Documentation/config/maintenance.txt
-// for more information about the thresholds.
-func gitMaintenance(dir GitDir) error {
-	cmd := exec.Command(
-		"git",
-		// The number of loose objects that have to be present before gc runs.
-		"-c",
-		"gc.auto=1",
-		"-c",
-		"gc.autoDetach=false",
-		// commit-graph runs when the number of reachable commits that are not in the
-		// commit-graph file is at least maintenance.commit-graph.auto.
-		"-c",
-		"maintenance.commit-graph.auto=100",
-		// loose-objects runs when the number of loose objects is at least
-		// maintenance.loose-objects.auto.
-		"-c",
-		"maintenance.loose-objects.auto=100",
-		// incremental-repack runs when the number of pack-files not in the
-		// multi-pack-index is at least maintenance.incremental-repack.
-		"-c",
-		"maintenance.incremental-repack.auto=10",
-		"maintenance",
-		"run",
-		"--task",
-		"commit-graph",
-		"--task",
-		"prefetch",
-		"--task",
-		"loose-objects",
-		"--task",
-		"incremental-repack",
-		"--task",
-		"gc",
-		// Initially it seemed appealing to use --schedule instead of --auto. However,
-		// --schedule=<schedule-frequency> merely runs tasks with task-frequency >=
-		// schedule-frequency and is not based on the last time the task ran. This means
-		// we would still need a separate janitor job running at a different frequency.
-		//
-		// We control the aggressiveness of --auto with config parameters.
-		"--auto",
-	)
+// sgMaintenance runs a set of git cleanup tasks in dir. This must not be run
+// concurrently with git gc.
+func sgMaintenance(dir GitDir) error {
+	cmd := exec.Command("sh")
 	dir.Set(cmd)
-	err := cmd.Run()
+
+	var buf = new(bytes.Buffer)
+	buf.WriteString(sgMaintenanceScript)
+	cmd.Stdin = buf
+
+	b, err := cmd.CombinedOutput()
 	if err != nil {
-		return errors.Wrapf(wrapCmdError(cmd, err), "failed to run git-maintenance")
+		log15.Debug("sg maintenance", "dir", dir, "out", string(b))
+		return errors.Wrapf(wrapCmdError(cmd, err), "failed to run sg maintenance")
 	}
 	return nil
 }
