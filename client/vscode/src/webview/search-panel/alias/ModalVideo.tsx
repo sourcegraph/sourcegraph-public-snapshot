@@ -8,6 +8,9 @@ import styles from '@sourcegraph/branded/src/search/documentation/ModalVideo.mod
 import { sourcegraphVSCodeExtensionAPI } from '..'
 import { WebviewPageProps } from '../../platform/context'
 
+// Video formats are not supported within VS Code Desktop because MSFT does not ship ffmpeg in their electron build
+// We will open the YouTube links instead of playing the videos
+
 interface ModalVideoProps extends WebviewPageProps {
     id: string
     title: string
