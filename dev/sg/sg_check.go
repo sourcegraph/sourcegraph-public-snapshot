@@ -67,7 +67,7 @@ Run sg check --help for a list of all checks.
 		FlagSet: checkFlagSet,
 		Exec: func(ctx context.Context, args []string) error {
 			if len(args) > 0 {
-				return errors.New("unrecognized topic, please run sg check --help to list topics")
+				return errors.New("unrecognized command, please run sg check --help to list available checks")
 			}
 			var fns []checkScriptFn
 			for _, scriptFns := range scriptChecks {
