@@ -160,7 +160,7 @@ func runCheckScriptsAndReport(fns ...checkScriptFn) func(context.Context, []stri
 			printCheckReport(pending, report)
 			pending.Updatef("Running checks (done: %d/%d)", count, total)
 			if report.err != nil {
-				messages = append(messages, report.err.Error())
+				messages = append(messages, report.header)
 				hasErr = true
 			}
 		}
