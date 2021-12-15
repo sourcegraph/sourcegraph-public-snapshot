@@ -339,13 +339,16 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 		firstHEADCommit, err := h.gitFirstEverCommit(ctx, api.RepoName(repoName))
 		if err != nil {
 			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
+				log15.Info("insights backfill repository skipped - missing rev/repo", "repo_id", id, "repo_name", repoName)
 				return nil // no error - repo may not be cloned yet (or not even pushed to code host yet)
 			}
 			if strings.Contains(err.Error(), `failed (output: "usage: git rev-list [OPTION] <commit-id>...`) {
+				log15.Info("insights backfill repository skipped - empty repo", "repo_id", id, "repo_name", repoName)
 				return nil // repository is empty
 			}
 			// soft error, repo may be in a bad state but others might be OK.
 			softErr = multierror.Append(softErr, errors.Wrap(err, "FirstEverCommit "+repoName))
+			log15.Error("insights backfill repository skipped", "repo_id", id, "repo_name", repoName, "error", err)
 			return nil
 		}
 
