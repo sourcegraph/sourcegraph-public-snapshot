@@ -67,9 +67,7 @@ export const ScrollBox: React.FunctionComponent<ScrollBoxProps> = props => {
             <div className={classNames(styles.fader, styles.faderTop)} />
             <div className={classNames(styles.fader, styles.faderBottom)} />
 
-            <div className={styles.scrollbox}>
-                { children }
-            </div>
+            <div className={styles.scrollbox}>{children}</div>
         </div>
     )
 }
