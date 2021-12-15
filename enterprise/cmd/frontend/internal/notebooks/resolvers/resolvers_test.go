@@ -72,7 +72,6 @@ mutation CreateNotebook($notebook: NotebookInput!) {
 `, notebookFields)
 
 func TestGetNotebook(t *testing.T) {
-	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
@@ -137,7 +136,6 @@ func TestGetNotebook(t *testing.T) {
 }
 
 func TestCreateNotebook(t *testing.T) {
-	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)

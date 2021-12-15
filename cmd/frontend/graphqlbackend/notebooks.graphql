@@ -170,6 +170,9 @@ input CreateFileBlockInput {
     lineRange: CreateFileBlockLineRangeInput
 }
 
+"""
+Enum of possible block types.
+"""
 enum NotebookBlockType {
     MARKDOWN
     QUERY
