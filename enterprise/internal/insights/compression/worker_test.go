@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestCommitIndexer_indexAll(t *testing.T) {
@@ -197,12 +196,5 @@ func commit(ref string, commitTime string) *gitdomain.Commit {
 func mockCommits(commits map[string][]*gitdomain.Commit) func(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
 	return func(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
 		return commits[(string(name))], nil
-	}
-}
-
-func mockIds(ids map[string]int) func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-	return func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-		id := ids[string(name)]
-		return &types.Repo{ID: api.RepoID(id)}, nil
 	}
 }

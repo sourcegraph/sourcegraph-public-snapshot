@@ -47,8 +47,6 @@ type AllReposIterator struct {
 	counter *prometheus.CounterVec
 
 	// Internal fields below.
-	cachedRepoNamesAge time.Time
-	cachedRepoNames    []string
 	cachedPageRequests map[database.LimitOffset]cachedPageRequest
 }
 
