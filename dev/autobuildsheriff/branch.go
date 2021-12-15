@@ -73,7 +73,12 @@ func (b *repoBranchLocker) Lock(ctx context.Context, commits []commitInfo, fallb
 		allowPushFromActors = append(allowPushFromActors, *team.NodeID)
 	}
 
-	if err := b.setProtections(ctx, allowPushFromActors); err != nil {
+	// Update protections with workaround
+	var requiredStatusChecks []string
+	if protects.GetRequiredStatusChecks() != nil {
+		requiredStatusChecks = protects.GetRequiredStatusChecks().Contexts
+	}
+	if err := b.setProtectionsWorkaround(ctx, allowPushFromActors, requiredStatusChecks); err != nil {
 		return false, err
 	}
 	return true, nil
@@ -91,8 +96,12 @@ func (b *repoBranchLocker) Lock(ctx context.Context, commits []commitInfo, fallb
 //     }
 //
 // Which we need to get "require pull request BUT do not require review".
-func (b *repoBranchLocker) setProtections(ctx context.Context, allowActors []string) error {
-	// Query all protection
+func (b *repoBranchLocker) setProtectionsWorkaround(
+	ctx context.Context,
+	allowActors []string,
+	requiredStatusChecks []string,
+) error {
+	// Get protections GraphQL IDs (not provided by REST endpoint)
 	getProtections, err := b.ghc.NewRequest(http.MethodPost, "https://api.github.com/graphql",
 		map[string]string{
 			"query": fmt.Sprintf(`query {
@@ -109,7 +118,10 @@ func (b *repoBranchLocker) setProtections(ctx context.Context, allowActors []str
 	if err != nil {
 		return fmt.Errorf("getProtections.Setup: %w", err)
 	}
-	type protectionsResp struct {
+	type ErrorsResp struct {
+		Errors []interface{} `json:"errors"`
+	}
+	type ProtectionsResp struct {
 		Data struct {
 			Repository struct {
 				BranchProtectionRules struct {
@@ -120,11 +132,16 @@ func (b *repoBranchLocker) setProtections(ctx context.Context, allowActors []str
 				} `json:"branchProtectionRules"`
 			} `json:"repository"`
 		} `json:"data"`
+		ErrorsResp
 	}
-	var protections *protectionsResp
+	var protections *ProtectionsResp
 	_, err = b.ghc.Do(ctx, getProtections, &protections)
 	if err != nil {
 		return fmt.Errorf("getProtections.Do: %w", err)
+	}
+	if len(protections.Errors) > 0 {
+		errs, _ := json.Marshal(protections.Errors)
+		return fmt.Errorf("getProtections.Do: %s", errs)
 	}
 
 	// Find relevant protection
@@ -140,32 +157,58 @@ func (b *repoBranchLocker) setProtections(ctx context.Context, allowActors []str
 			b.branch, protections)
 	}
 
-	// Update protections
-	actors, err := json.Marshal(allowActors)
-	if err != nil {
-		return fmt.Errorf("updateProtections.Setup: %w", err)
+	// Set up args
+	pushActors := "[]"
+	if len(allowActors) > 0 {
+		data, err := json.Marshal(allowActors)
+		if err != nil {
+			return fmt.Errorf("updateProtections.Setup.actors: %w", err)
+		}
+		pushActors = string(data)
 	}
+	// Not JSON, build manually
+	requiredChecks := "["
+	for _, check := range requiredStatusChecks {
+		requiredChecks += fmt.Sprintf("{context:%q}", check)
+	}
+	requiredChecks += "]"
+
+	// Update protections
+	mutation := fmt.Sprintf(`mutation {
+		updateBranchProtectionRule(input: {
+		  branchProtectionRuleId: "%s",
+
+		  restrictsPushes: true,
+		  pushActorIds: %s,
+
+		  requiresApprovingReviews: true,
+		  requiredApprovingReviewCount: 0,
+		  requiresLinearHistory: true,
+
+		  requiresStatusChecks: true,
+		  requiredStatusChecks: %s,
+		  requiresStrictStatusChecks: false
+		}) {
+		  clientMutationId
+		}
+	  }`, protectionID, pushActors, requiredChecks)
+	fmt.Printf("updating protections:\n%s\n", mutation)
 	updateProtections, err := b.ghc.NewRequest(http.MethodPost, "https://api.github.com/graphql",
 		map[string]string{
-			"query": fmt.Sprintf(`mutation {
-			updateBranchProtectionRule(input: {
-			  branchProtectionRuleId: "%s",
-			  restrictsPushes: true,
-			  pushActorIds: %s,
-			  requiresApprovingReviews: true,
-			  requiredApprovingReviewCount: 0,
-			  requiresLinearHistory: false,
-			}) {
-			  clientMutationId
-			}
-		  }`, protectionID, actors),
+			"query": mutation,
 		})
 	if err != nil {
 		return fmt.Errorf("updateProtections.Setup: %w", err)
 	}
-	_, err = b.ghc.Do(ctx, updateProtections, nil)
+
+	var updateResp *ErrorsResp
+	_, err = b.ghc.Do(ctx, updateProtections, &updateResp)
 	if err != nil {
 		return fmt.Errorf("updateProtections.Do: %w", err)
+	}
+	if len(updateResp.Errors) > 0 {
+		errs, _ := json.Marshal(updateResp.Errors)
+		return fmt.Errorf("updateProtections.Do: %s", errs)
 	}
 
 	return nil

@@ -42,6 +42,19 @@ func TestRepoBranchLocker(t *testing.T) {
 
 	const testBranch = "test-buildsherrif-branch"
 
+	validateDefaultProtections := func(t *testing.T, protects *github.Protection) {
+		// Require a pull request before merging
+		assert.NotNil(t, protects.RequiredPullRequestReviews)
+		assert.Zero(t, protects.RequiredPullRequestReviews.RequiredApprovingReviewCount)
+		// Require status checks to pass before merging
+		assert.NotNil(t, protects.RequiredStatusChecks)
+		assert.Contains(t, protects.RequiredStatusChecks.Contexts, "buildkite/sourcegraph")
+		assert.False(t, protects.RequiredStatusChecks.Strict)
+		// Require linear history
+		assert.NotNil(t, protects.RequireLinearHistory)
+		assert.True(t, protects.RequireLinearHistory.Enabled)
+	}
+
 	t.Run("lock", func(t *testing.T) {
 		ghc, stop := newTestGitHubClient(ctx, t)
 		defer stop()
@@ -65,10 +78,9 @@ func TestRepoBranchLocker(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.NotNil(t, protects.Restrictions)
-			assert.NotNil(t, protects.RequiredPullRequestReviews)
-			assert.Zero(t, protects.RequiredPullRequestReviews.RequiredApprovingReviewCount)
+			validateDefaultProtections(t, protects)
 
+			assert.NotNil(t, protects.Restrictions, "want push access restricted and granted")
 			users := []string{}
 			for _, u := range protects.Restrictions.Users {
 				users = append(users, *u.Login)
@@ -111,6 +123,7 @@ func TestRepoBranchLocker(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		validateDefaultProtections(t, protects)
 		assert.Nil(t, protects.Restrictions)
 
 		// Repeat unlock
