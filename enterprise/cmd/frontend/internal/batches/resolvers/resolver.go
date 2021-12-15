@@ -703,7 +703,7 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	if !isSiteAdmin {
 		actor := actor.FromContext(ctx)
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
-			opts.InitialApplierID = actor.UID
+			opts.CreatorID = actor.UID
 		}
 
 		// 🚨 SECURITY: If the user is not an admin, we don't want to include

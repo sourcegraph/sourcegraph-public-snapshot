@@ -76,7 +76,7 @@ type BatchChange struct {
 	Name                    string
 	Description             string
 	SpecCreator             *User
-	InitialApplier          *User
+	Creator                 *User
 	LastApplier             *User
 	LastAppliedAt           string
 	ViewerCanAdminister     bool

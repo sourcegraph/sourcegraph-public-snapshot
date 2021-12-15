@@ -47,13 +47,13 @@ func TestBatchChangeResolver(t *testing.T) {
 	}
 
 	batchChange := &btypes.BatchChange{
-		Name:             "my-unique-name",
-		Description:      "The batch change description",
-		NamespaceOrgID:   orgID,
-		InitialApplierID: userID,
-		LastApplierID:    userID,
-		LastAppliedAt:    now,
-		BatchSpecID:      batchSpec.ID,
+		Name:           "my-unique-name",
+		Description:    "The batch change description",
+		NamespaceOrgID: orgID,
+		CreatorID:      userID,
+		LastApplierID:  userID,
+		LastAppliedAt:  now,
+		BatchSpecID:    batchSpec.ID,
 	}
 	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
@@ -68,17 +68,17 @@ func TestBatchChangeResolver(t *testing.T) {
 	namespaceAPIID := string(graphqlbackend.MarshalOrgID(orgID))
 	apiUser := &apitest.User{DatabaseID: userID, SiteAdmin: true}
 	wantBatchChange := apitest.BatchChange{
-		ID:             batchChangeAPIID,
-		Name:           batchChange.Name,
-		Description:    batchChange.Description,
-		Namespace:      apitest.UserOrg{ID: namespaceAPIID, Name: orgName},
-		InitialApplier: apiUser,
-		LastApplier:    apiUser,
-		SpecCreator:    apiUser,
-		LastAppliedAt:  marshalDateTime(t, now),
-		URL:            fmt.Sprintf("/organizations/%s/batch-changes/%s", orgName, batchChange.Name),
-		CreatedAt:      marshalDateTime(t, now),
-		UpdatedAt:      marshalDateTime(t, now),
+		ID:            batchChangeAPIID,
+		Name:          batchChange.Name,
+		Description:   batchChange.Description,
+		Namespace:     apitest.UserOrg{ID: namespaceAPIID, Name: orgName},
+		Creator:       apiUser,
+		LastApplier:   apiUser,
+		SpecCreator:   apiUser,
+		LastAppliedAt: marshalDateTime(t, now),
+		URL:           fmt.Sprintf("/organizations/%s/batch-changes/%s", orgName, batchChange.Name),
+		CreatedAt:     marshalDateTime(t, now),
+		UpdatedAt:     marshalDateTime(t, now),
 		// Not closed.
 		ClosedAt: "",
 	}
@@ -109,7 +109,7 @@ func TestBatchChangeResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	wantBatchChange.InitialApplier = nil
+	wantBatchChange.Creator = nil
 	wantBatchChange.LastApplier = nil
 	wantBatchChange.SpecCreator = nil
 
@@ -193,11 +193,11 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 		Name:        batchSpec1.Spec.Name,
 		Description: batchSpec1.Spec.Description,
 
-		NamespaceUserID:  userID,
-		InitialApplierID: userID,
-		LastApplierID:    userID,
-		LastAppliedAt:    now,
-		BatchSpecID:      batchSpec1.ID,
+		NamespaceUserID: userID,
+		CreatorID:       userID,
+		LastApplierID:   userID,
+		LastAppliedAt:   now,
+		BatchSpecID:     batchSpec1.ID,
 	}
 
 	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
@@ -248,7 +248,7 @@ query($batchChange: ID!){
   node(id: $batchChange) {
     ... on BatchChange {
       id, name, description
-      initialApplier { ...u }
+      creator { ...u }
       lastApplier    { ...u }
       specCreator    { ...u }
       lastAppliedAt
@@ -272,7 +272,7 @@ fragment o on Org  { id, name }
 query($namespace: ID!, $name: String!){
   batchChange(namespace: $namespace, name: $name) {
     id, name, description
-    initialApplier { ...u }
+    creator { ...u }
     lastApplier    { ...u }
     specCreator    { ...u }
     lastAppliedAt

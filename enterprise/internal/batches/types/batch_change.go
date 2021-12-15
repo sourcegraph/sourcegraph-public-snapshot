@@ -19,9 +19,9 @@ type BatchChange struct {
 
 	BatchSpecID int64
 
-	InitialApplierID int32
-	LastApplierID    int32
-	LastAppliedAt    time.Time
+	CreatorID     int32
+	LastApplierID int32
+	LastAppliedAt time.Time
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32

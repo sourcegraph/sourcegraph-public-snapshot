@@ -402,12 +402,12 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 			if tc.hasBatchChange {
 				batchChange := &btypes.BatchChange{
-					Name:             "not-blank",
-					InitialApplierID: 1,
-					NamespaceUserID:  1,
-					BatchSpecID:      batchSpec.ID,
-					LastApplierID:    1,
-					LastAppliedAt:    time.Now(),
+					Name:            "not-blank",
+					CreatorID:       1,
+					NamespaceUserID: 1,
+					BatchSpecID:     batchSpec.ID,
+					LastApplierID:   1,
+					LastAppliedAt:   time.Now(),
 				}
 				if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 					t.Fatal(err)
