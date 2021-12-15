@@ -58,7 +58,7 @@ export const getCaptureGroupInsightsPreview = (
             }
 
             // Extend series with synthetic index based series id
-            const indexedSeries = series.map<InsightDataSeriesData>((series, index) => ({
+            const indexedSeries = series.slice(0, 20).map<InsightDataSeriesData>((series, index) => ({
                 seriesId: `${index}`,
                 ...series,
             }))
