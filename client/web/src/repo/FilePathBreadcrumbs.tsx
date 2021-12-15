@@ -21,7 +21,6 @@ interface Props extends RepoRevision, TelemetryProps {
  */
 export const FilePathBreadcrumbs: React.FunctionComponent<Props> = ({
     repoName,
-    repoUrl,
     revision,
     filePath,
     isDir,
