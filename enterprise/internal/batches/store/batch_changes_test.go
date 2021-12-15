@@ -40,7 +40,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 
 			if i != 0 {
 				// The very first batch change is a draft, the rest are not
-				c.InitialApplierID = int32(i) + 50
+				c.CreatorID = int32(i) + 50
 				c.LastAppliedAt = clock.Now()
 				c.LastApplierID = int32(i) + 99
 			}
@@ -48,7 +48,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 			if i%2 == 0 {
 				c.NamespaceOrgID = int32(i) + 23
 			} else {
-				c.NamespaceUserID = c.InitialApplierID
+				c.NamespaceUserID = c.CreatorID
 			}
 
 			want := c.Clone()
@@ -178,9 +178,8 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 
 		t.Run("OnlyForAuthor set", func(t *testing.T) {
 			for _, c := range cs {
-				if c.InitialApplierID != 0 {
-
-					count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{InitialApplierID: c.InitialApplierID})
+				if c.CreatorID != 0 {
+					count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{CreatorID: c.CreatorID})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -444,8 +443,8 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 
 		t.Run("ListBatchChanges OnlyForAuthor set", func(t *testing.T) {
 			for _, c := range cs {
-				if c.InitialApplierID != 0 {
-					have, next, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{InitialApplierID: c.InitialApplierID})
+				if c.CreatorID != 0 {
+					have, next, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{CreatorID: c.CreatorID})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -505,7 +504,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		for _, c := range cs {
 			c.Name += "-updated"
 			c.Description += "-updated"
-			c.InitialApplierID++
+			c.CreatorID++
 			c.ClosedAt = c.ClosedAt.Add(5 * time.Second)
 
 			if c.NamespaceUserID != 0 {
@@ -836,24 +835,24 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 		}
 
 		ownedBatchChange := &btypes.BatchChange{
-			Name:             "owned",
-			NamespaceUserID:  user.ID,
-			InitialApplierID: user.ID,
-			LastApplierID:    user.ID,
-			LastAppliedAt:    clock.Now(),
-			BatchSpecID:      ownedSpec.ID,
+			Name:            "owned",
+			NamespaceUserID: user.ID,
+			CreatorID:       user.ID,
+			LastApplierID:   user.ID,
+			LastAppliedAt:   clock.Now(),
+			BatchSpecID:     ownedSpec.ID,
 		}
 		if err := s.CreateBatchChange(ctx, ownedBatchChange); err != nil {
 			t.Fatal(err)
 		}
 
 		unownedBatchChange := &btypes.BatchChange{
-			Name:             "unowned",
-			NamespaceOrgID:   orgID,
-			InitialApplierID: user.ID,
-			LastApplierID:    user.ID,
-			LastAppliedAt:    clock.Now(),
-			BatchSpecID:      ownedSpec.ID,
+			Name:           "unowned",
+			NamespaceOrgID: orgID,
+			CreatorID:      user.ID,
+			LastApplierID:  user.ID,
+			LastAppliedAt:  clock.Now(),
+			BatchSpecID:    ownedSpec.ID,
 		}
 		if err := s.CreateBatchChange(ctx, unownedBatchChange); err != nil {
 			t.Fatal(err)

@@ -26,20 +26,20 @@ Referenced by:
 
 # Table "public.batch_changes"
 ```
-       Column       |           Type           | Collation | Nullable |                  Default                  
---------------------+--------------------------+-----------+----------+-------------------------------------------
- id                 | bigint                   |           | not null | nextval('batch_changes_id_seq'::regclass)
- name               | text                     |           | not null | 
- description        | text                     |           |          | 
- initial_applier_id | integer                  |           |          | 
- namespace_user_id  | integer                  |           |          | 
- namespace_org_id   | integer                  |           |          | 
- created_at         | timestamp with time zone |           | not null | now()
- updated_at         | timestamp with time zone |           | not null | now()
- closed_at          | timestamp with time zone |           |          | 
- batch_spec_id      | bigint                   |           | not null | 
- last_applier_id    | bigint                   |           |          | 
- last_applied_at    | timestamp with time zone |           |          | 
+      Column       |           Type           | Collation | Nullable |                  Default                  
+-------------------+--------------------------+-----------+----------+-------------------------------------------
+ id                | bigint                   |           | not null | nextval('batch_changes_id_seq'::regclass)
+ name              | text                     |           | not null | 
+ description       | text                     |           |          | 
+ creator_id        | integer                  |           |          | 
+ namespace_user_id | integer                  |           |          | 
+ namespace_org_id  | integer                  |           |          | 
+ created_at        | timestamp with time zone |           | not null | now()
+ updated_at        | timestamp with time zone |           | not null | now()
+ closed_at         | timestamp with time zone |           |          | 
+ batch_spec_id     | bigint                   |           | not null | 
+ last_applier_id   | bigint                   |           |          | 
+ last_applied_at   | timestamp with time zone |           |          | 
 Indexes:
     "batch_changes_pkey" PRIMARY KEY, btree (id)
     "batch_changes_namespace_org_id" btree (namespace_org_id)
@@ -49,7 +49,7 @@ Check constraints:
     "batch_changes_name_not_blank" CHECK (name <> ''::text)
 Foreign-key constraints:
     "batch_changes_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
-    "batch_changes_initial_applier_id_fkey" FOREIGN KEY (initial_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    "batch_changes_initial_applier_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     "batch_changes_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
@@ -2359,7 +2359,7 @@ Check constraints:
 Referenced by:
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
-    TABLE "batch_changes" CONSTRAINT "batch_changes_initial_applier_id_fkey" FOREIGN KEY (initial_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+    TABLE "batch_changes" CONSTRAINT "batch_changes_initial_applier_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "batch_spec_execution_cache_entries" CONSTRAINT "batch_spec_execution_cache_entries_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
