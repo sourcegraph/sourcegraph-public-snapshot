@@ -21,6 +21,7 @@ import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SelfHostedCtaLink } from '@sourcegraph/web/src/components/SelfHostedCtaLink'
 import { Container, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
+import { authenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
 import {
     SiteAdminRepositoryFields,
@@ -38,12 +39,11 @@ import {
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { Owner } from '../cloud-ga'
+import { OrgUserNeedsCodeHost } from '../codeHosts/OrgUserNeedsCodeHost'
 
 import { UserSettingReposContainer } from './components'
 import { defaultFilters, RepositoriesList } from './RepositoriesList'
 import styles from './SettingsRepositoriesPage.module.scss'
-import { authenticatedUser } from '../../../auth'
-import { OrgUserNeedsCodeHost } from '../codeHosts/OrgUserNeedsCodeHost'
 
 interface Props
     extends TelemetryProps,
