@@ -40,7 +40,7 @@ const CardBody: React.FunctionComponent<{ title: string }> = props => {
 
     return (
         <div className={classNames(styles.cardBody, 'card-body flex-1')}>
-            <h3 className="mb-3">{title}</h3>
+            <h3 className={classNames(styles.cardTitle, 'mb-3')}>{title}</h3>
 
             <p className="d-flex flex-column text-muted m-0">{children}</p>
         </div>
@@ -50,7 +50,7 @@ const CardBody: React.FunctionComponent<{ title: string }> = props => {
 export const SearchInsightCard: React.FunctionComponent<CardProps> = props => (
     <Card {...props} footerText="Redis, PostgreSQL and SQLite database usage.">
         <SearchBasedInsightChart className={styles.chart} />
-        <CardBody title="Track">
+        <CardBody title="Track changes">
             Insight <b>based on a custom Sourcegraph search query</b> that creates visualization of the data series you
             will define <b>manually.</b>
         </CardBody>
@@ -70,7 +70,7 @@ export const CaptureGroupInsightCard: React.FunctionComponent<CardProps> = props
     <Card {...props} footerText="Detecting and tracking language or package versions.">
         <CaptureGroupInsightChart className={styles.chart} />
 
-        <CardBody title="Detect and track">
+        <CardBody title="Detect and track patterns">
             Data series will be generated dynamically for each unique value from the
             <b> regular expression capture group </b> included in the search query. Chart will be updated as new values
             appear in the code base.

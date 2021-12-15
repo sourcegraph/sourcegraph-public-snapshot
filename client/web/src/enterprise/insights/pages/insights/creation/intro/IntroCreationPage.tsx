@@ -86,8 +86,6 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     data-testid="create-lang-usage-insight"
                     onClick={handleCreateCodeStatsInsightClick}
                 />
-
-                <ExtensionInsightsCard data-testid="explore-extensions" onClick={handleExploreExtensionsClick} />
             </div>
 
             <footer className="mt-3">
@@ -100,6 +98,10 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     use cases
                 </a>
             </footer>
+
+            <div className={classNames(styles.sectionContent, styles.sectionContentExtension, 'mt-5')}>
+                <ExtensionInsightsCard data-testid="explore-extensions" onClick={handleExploreExtensionsClick} />
+            </div>
         </Page>
     )
 }

@@ -3,7 +3,7 @@
     display: flex;
     flex-direction: column;
     box-shadow: var(--box-shadow);
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     text-align: start;
 
     &:hover {
@@ -39,6 +39,10 @@
     }
 }
 
+.card-title {
+    color: var(--body-color);
+}
+
 // chart specific styles
 .chart {
     overflow: hidden;
@@ -60,5 +64,5 @@
 
 .image {
     object-fit: contain;
-    width: 3rem;
+    width: 1.75rem;
 }
