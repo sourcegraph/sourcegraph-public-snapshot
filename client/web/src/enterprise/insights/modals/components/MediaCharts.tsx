@@ -132,7 +132,7 @@ export const FourLineChart: React.FunctionComponent<React.SVGProps<SVGSVGElement
     </svg>
 )
 
-export const PieChart: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = props => (
+export const LangStatsInsightChart: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = props => (
     <svg
         width="169"
         height="158"
@@ -174,7 +174,7 @@ export const PieChart: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = 
     </svg>
 )
 
-export const CaptureGroupInsight: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = props => (
+export const SearchBasedInsightChart: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = props => (
     <svg
         width="185"
         height="126"
@@ -184,71 +184,105 @@ export const CaptureGroupInsight: React.FunctionComponent<React.SVGProps<SVGSVGE
         {...props}
         className={classNames(styles.chart, props.className)}
     >
-        <rect x="6" y="39" width="137" height="1" />
-        <rect x="6" y="16" width="137" height="1" />
-        <rect x="6" y="62" width="137" height="1" />
-        <rect x="6" y="85" width="137" height="1" />
-        <rect x="6" y="108" width="137" height="1" />
-        <rect x="170" y="16.5" width="15" height="1" />
-        <circle cx="165" cy="17" r="2" fill="var(--orange)" />
-        <rect x="170" y="52.5" width="15" height="1" />
-        <circle cx="165" cy="53" r="2" fill="var(--orange)" />
-        <rect x="170" y="88.5" width="15" height="1" />
-        <circle cx="165" cy="89" r="2" fill="var(--orange)" />
-        <rect x="170" y="61.5" width="15" height="1" />
-        <circle cx="165" cy="62" r="2" fill="var(--pink)" />
-        <rect x="170" y="25.5" width="15" height="1" />
-        <circle cx="165" cy="26" r="2" fill="var(--pink)" />
-        <rect x="170" y="70.5" width="15" height="1" />
-        <circle cx="165" cy="71" r="2" fill="var(--dark-blue)" />
-        <rect x="170" y="97.5" width="15" height="1" />
-        <circle cx="165" cy="98" r="2" fill="var(--pink)" />
-        <rect x="170" y="79.5" width="15" height="1" />
-        <circle cx="165" cy="80" r="2" fill="var(--light-green)" />
-        <rect x="170" y="34.5" width="15" height="1" />
-        <circle cx="165" cy="35" r="2" fill="var(--dark-blue)" />
-        <rect x="170" y="106.5" width="15" height="1" />
-        <circle cx="165" cy="107" r="2" fill="var(--dark-blue)" />
-        <rect x="170" y="43.5" width="15" height="1" />
-        <circle cx="165" cy="44" r="2" fill="var(--light-green)" />
-        <circle cx="7.5" cy="39.5" r="1.5" fill="var(--pink)" />
-        <circle cx="30" cy="39.5" r="1.5" fill="var(--pink)" />
-        <circle cx="51" cy="79" r="1.5" fill="var(--pink)" />
-        <circle cx="74" cy="85" r="1.5" fill="var(--pink)" />
-        <circle cx="95" cy="85" r="1.5" fill="var(--pink)" />
-        <circle cx="116.5" cy="74.7" r="1.5" fill="var(--pink)" />
-        <circle cx="139" cy="74.7" r="1.5" fill="var(--pink)" />
-        <circle cx="29.5" cy="85.5" r="1.5" fill="var(--dark-blue)" />
-        <circle cx="7.5" cy="107.5" r="1.5" fill="var(--dark-blue)" />
-        <circle cx="7.5" cy="94.5" r="1.5" fill="var(--light-green)" />
-        <circle cx="31.5" cy="94.5" r="1.5" fill="var(--light-green)" />
-        <circle cx="52" cy="108.5" r="1.5" fill="var(--light-green)" />
-        <circle cx="75" cy="99" r="1.5" fill="var(--light-green)" />
-        <circle cx="96.5" cy="98.5" r="1.5" fill="var(--light-green)" />
-        <circle cx="117" cy="62" r="1.5" fill="var(--light-green)" />
-        <circle cx="140.5" cy="62" r="1.5" fill="var(--light-green)" />
         <path
-            d="M6.5 108.5L29.5 85.5H51.5L73.8164 64.7647H95.3333L118 39.5H140.5"
-            stroke="var(--dark-blue)"
-            strokeWidth="1.2"
+            fill="var(--border-color-2)"
+            d="M6 39h137v1H6zM6 16h137v1H6zM6 62h137v1H6zM6 85h137v1H6zM6 108h137v1H6zM170 44.5h15v1h-15z"
         />
-        <path d="M7 39.5H30.2115L51 79.5L74 85H95.5769L116 75H139.5" stroke="var(--pink)" strokeWidth="1.2" />
-        <path d="M8 94.5H31.2115L52 108.5L75 99H96.5769L117 62H140.5" stroke="var(--light-green)" strokeWidth="1.2" />
+        <circle cx="165" cy="45" r="2" fill="var(--orange)" />
+        <path fill="var(--border-color-2)" d="M170 53.5h15v1h-15z" />
+        <circle cx="165" cy="54" r="2" fill="var(--pink)" />
+        <path fill="var(--border-color-2)" d="M170 62.5h15v1h-15z" />
+        <circle cx="165" cy="63" r="2" fill="var(--dark-blue)" />
+        <path fill="var(--border-color-2)" d="M170 71.5h15v1h-15z" />
+        <circle cx="165" cy="72" r="2" fill="var(--green)" />
+        <circle cx="8" cy="80" r="2" fill="var(--pink)" />
+        <circle cx="30.5" cy="85" r="2" fill="var(--pink)" />
+        <circle cx="51.5" cy="77.5" r="2" fill="var(--pink)" />
+        <circle cx="74.5" cy="93" r="2" fill="var(--pink)" />
+        <circle cx="95.5" cy="93" r="2" fill="var(--pink)" />
+        <circle cx="116" cy="107.2" r="2" fill="var(--pink)" />
+        <circle cx="139.5" cy="107.2" r="2" fill="var(--pink)" />
+        <circle cx="30" cy="32" r="2" fill="var(--dark-blue)" />
+        <circle cx="7" cy="61" r="2" fill="var(--dark-blue)" />
+        <circle cx="7" cy="47" r="2" fill="var(--green)" />
+        <circle cx="32" cy="63" r="2" fill="var(--green)" />
+        <circle cx="52.5" cy="53" r="2" fill="var(--green)" />
+        <circle cx="75.5" cy="52.5" r="2" fill="var(--green)" />
+        <circle cx="97" cy="36.5" r="2" fill="var(--green)" />
+        <circle cx="117.5" cy="22.5" r="2" fill="var(--green)" />
+        <circle cx="141" cy="22.5" r="2" fill="var(--green)" />
+        <path d="m6.5 62.5 23-31h22l22.316-12.735h21.517L118 33.5h22.5" stroke="var(--dark-blue)" strokeWidth="1.5" />
+        <path d="m7 79.5 23.212 6L51 77.5 74 93h21.577L116 107h23.5" stroke="var(--pink)" strokeWidth="1.5" />
+        <path d="m8 47.5 24.212 15L52 53.5l23-.5 21.577-16L117 23h23.5" stroke="var(--green)" strokeWidth="1.5" />
+        <path d="m8 104 21 .5 22.667-16 22.15-8H92l24.5-21 25-10" stroke="var(--orange)" strokeWidth="1.5" />
+        <circle cx="8.5" cy="103.5" r="2" fill="var(--orange)" />
+        <circle cx="29.5" cy="104" r="2" fill="var(--orange)" />
+        <circle cx="52" cy="88" r="2" fill="var(--orange)" />
+        <circle cx="74" cy="81" r="2" fill="var(--orange)" />
+        <circle cx="92.5" cy="80.5" r="2" fill="var(--orange)" />
+        <circle cx="117" cy="59.5" r="2" fill="var(--orange)" />
+        <circle cx="141" cy="49.5" r="2" fill="var(--orange)" />
+        <circle cx="118.5" cy="33.5" r="2" fill="var(--dark-blue)" />
+        <circle cx="141" cy="33.5" r="2" fill="var(--dark-blue)" />
+        <circle cx="96" cy="19" r="2" fill="var(--dark-blue)" />
+        <circle cx="74" cy="19" r="2" fill="var(--dark-blue)" />
+        <circle cx="51.5" cy="31" r="2" fill="var(--dark-blue)" />
+    </svg>
+)
+
+export const CaptureGroupInsightChart: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = props => (
+    <svg
+        width="185"
+        height="126"
+        viewBox="0 0 185 126"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        {...props}
+        className={classNames(styles.chart, props.className)}
+    >
         <path
-            d="M8 87L29 17.5L51.6667 40.5H73.8164L92 17.5H116.5L141.5 40.5"
-            stroke="var(--orange)"
-            strokeWidth="1.2"
+            fill="var(--border-color-2)"
+            d="M6 39h137v1H6zM6 16h137v1H6zM6 62h137v1H6zM6 85h137v1H6zM6 108h137v1H6zM170 44.5h15v1h-15z"
         />
-        <circle cx="8" cy="87" r="1.5" fill="var(--orange)" />
-        <circle cx="29" cy="17.5" r="1.5" fill="var(--orange)" />
-        <circle cx="51.5" cy="40.5" r="1.5" fill="var(--orange)" />
-        <circle cx="73.5" cy="40.5" r="1.5" fill="var(--orange)" />
-        <circle cx="91.5" cy="18" r="1.5" fill="var(--orange)" />
-        <circle cx="116.5" cy="17.5" r="1.5" fill="var(--orange)" />
-        <circle cx="140.5" cy="39.5" r="1.5" fill="var(--orange)" />
-        <circle cx="118" cy="39.5" r="1.5" fill="var(--dark-blue)" />
-        <circle cx="95.5" cy="64.5" r="1.5" fill="var(--dark-blue)" />
-        <circle cx="73.5" cy="65" r="1.5" fill="var(--dark-blue)" />
-        <circle cx="51" cy="85.5" r="1.5" fill="var(--dark-blue)" />
+        <rect x="170" y="44.5" width="15" height="1" />
+        <circle cx="165" cy="45" r="2" fill="var(--orange)" />
+        <rect x="170" y="53.5" width="15" height="1" />
+        <circle cx="165" cy="54" r="2" fill="var(--pink)" />
+        <rect x="170" y="62.5" width="15" height="1" />
+        <circle cx="165" cy="63" r="2" fill="var(--dark-blue)" />
+        <rect x="170" y="71.5" width="15" height="1" />
+        <circle cx="165" cy="72" r="2" fill="var(--green)" />
+        <circle cx="8" cy="19.5" r="2" fill="var(--pink)" />
+        <circle cx="30.5" cy="19.5" r="2" fill="var(--pink)" />
+        <circle cx="51.5" cy="34" r="2" fill="var(--pink)" />
+        <circle cx="74.5" cy="34" r="2" fill="var(--pink)" />
+        <circle cx="95.5" cy="45" r="2" fill="var(--pink)" />
+        <circle cx="118" cy="45.2" r="2" fill="var(--pink)" />
+        <circle cx="141" cy="66.2" r="2" fill="var(--pink)" />
+        <circle cx="30" cy="86" r="2" fill="var(--dark-blue)" />
+        <circle cx="75.5" cy="99" r="2" fill="var(--green)" />
+        <circle cx="97" cy="99" r="2" fill="var(--green)" />
+        <circle cx="117.5" cy="86" r="2" fill="var(--green)" />
+        <circle cx="141" cy="86" r="2" fill="var(--green)" />
+        <path d="M29.5 85.5H51.5L73.8164 64.7647H95.3333L118 23.5H140.5" stroke="var(--dark-blue)" strokeWidth="1.5" />
+        <path d="M7 19.5H30.2115L51 34H74L95.5769 45H118L140.5 66" stroke="var(--pink)" strokeWidth="1.5" />
+        <path d="M75 99H96.5769L117 86H140.5" stroke="var(--green)" strokeWidth="1.5" />
+        <path d="M7 43H30L51.6667 72.5H73.8164L92 91.5H116.5L141.5 104.5" stroke="var(--orange)" strokeWidth="1.5" />
+        <circle cx="8" cy="43" r="2" fill="var(--orange)" />
+        <circle cx="29.5" cy="43" r="2" fill="var(--orange)" />
+        <circle cx="52" cy="72" r="2" fill="var(--orange)" />
+        <circle cx="74" cy="72.5" r="2" fill="var(--orange)" />
+        <circle cx="92" cy="91.5" r="2" fill="var(--orange)" />
+        <circle cx="117" cy="92" r="2" fill="var(--orange)" />
+        <circle cx="141" cy="104" r="2" fill="var(--orange)" />
+        <circle cx="118.5" cy="23.5" r="2" fill="var(--dark-blue)" />
+        <circle cx="141" cy="23.5" r="2" fill="var(--dark-blue)" />
+        <circle cx="96" cy="64.5" r="2" fill="var(--dark-blue)" />
+        <circle cx="74" cy="65.5" r="2" fill="var(--dark-blue)" />
+        <circle cx="51.5" cy="85.5" r="2" fill="var(--dark-blue)" />
+        <path
+            d="M177.882 104.625a5.261 5.261 0 0 1-.807.065c-.275 0-.541-.024-.808-.065v-2.834l-2.018 2.003a6.703 6.703 0 0 1-1.123-1.123l2.003-2.018h-2.834a5.284 5.284 0 0 1-.065-.808c0-.275.024-.541.065-.808h2.834l-2.003-2.018c.154-.202.315-.404.525-.598.194-.21.396-.371.598-.525l2.018 2.003v-2.834c.267-.04.533-.065.808-.065s.541.024.807.065v2.834l2.019-2.003c.404.315.808.719 1.123 1.123l-2.003 2.018h2.834c.041.267.065.533.065.808s-.024.541-.065.808h-2.834l2.003 2.018a4.462 4.462 0 0 1-.525.598c-.194.21-.396.371-.598.525l-2.019-2.003v2.834Zm-8.882 1.68a1.615 1.615 0 1 1 3.23 0 1.615 1.615 0 0 1-3.23 0Z"
+            fill="#A6B6D9"
+        />
     </svg>
 )
