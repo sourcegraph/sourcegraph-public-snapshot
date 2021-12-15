@@ -35,6 +35,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 			if i <= 1 {
 				// Check for nullability of fields by not setting them
 				c.ClosedAt = time.Time{}
+				c.LastAppliedAt = time.Time{}
 			}
 
 			if i != 0 {
