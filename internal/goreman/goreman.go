@@ -26,12 +26,19 @@ type procInfo struct {
 
 // process informations named with proc.
 var procs map[string]*procInfo
+var procM sync.Mutex
 
 var maxProcNameLength int
 
 // read Procfile and parse it.
-func readProcfile(content []byte) error {
-	procs = map[string]*procInfo{}
+func readProcfile(content []byte) (newProcs []string) {
+	procM.Lock()
+	defer procM.Unlock()
+
+	if len(procs) == 0 {
+		procs = map[string]*procInfo{}
+	}
+
 	re := lazyregexp.New(`\$([a-zA-Z]+[a-zA-Z0-9_]+)`)
 	for _, line := range strings.Split(string(content), "\n") {
 		tokens := strings.SplitN(line, ":", 2)
@@ -47,14 +54,12 @@ func readProcfile(content []byte) error {
 		p := &procInfo{proc: k, cmdline: v}
 		p.cond = sync.NewCond(&p.mu)
 		procs[k] = p
+		newProcs = append(newProcs, k)
 		if len(k) > maxProcNameLength {
 			maxProcNameLength = len(k)
 		}
 	}
-	if len(procs) == 0 {
-		return errors.New("No valid entry")
-	}
-	return nil
+	return newProcs
 }
 
 // ProcDiedAction specifies the behaviour Goreman takes if a process exits
@@ -83,24 +88,39 @@ type Options struct {
 	ProcDiedAction ProcDiedAction
 }
 
+var startOnce sync.Once
+
 // Start starts up the Procfile.
 func Start(contents []byte, opts Options) error {
-	err := readProcfile(contents)
+	var err error
+	startOnce.Do(func() {
+		if opts.ProcDiedAction > Ignore {
+			err = errors.Errorf("invalid ProcDiedAction %v", opts.ProcDiedAction)
+			return
+		}
+		procDiedAction = opts.ProcDiedAction
+		if opts.RPCAddr != "" {
+			if err = os.Setenv("GOREMAN_RPC_ADDR", opts.RPCAddr); err != nil {
+				return
+			}
+
+			if err = startServer(opts.RPCAddr); err != nil {
+				return
+			}
+		}
+	})
 	if err != nil {
 		return err
 	}
-	if opts.ProcDiedAction > Ignore {
-		return errors.Errorf("invalid ProcDiedAction %v", opts.ProcDiedAction)
+
+	newProcs := readProcfile(contents)
+	if len(newProcs) == 0 {
+		return errors.New("No valid entry")
 	}
-	procDiedAction = opts.ProcDiedAction
-	if opts.RPCAddr != "" {
-		if err := os.Setenv("GOREMAN_RPC_ADDR", opts.RPCAddr); err != nil {
-			return err
-		}
-		if err := startServer(opts.RPCAddr); err != nil {
-			return err
-		}
+
+	for _, proc := range newProcs {
+		_ = startProc(proc)
 	}
-	startProcs()
+
 	return waitProcs()
 }

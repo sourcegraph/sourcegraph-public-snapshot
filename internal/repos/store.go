@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"sort"
 	"time"
 
@@ -138,38 +137,40 @@ func (s *Store) trace(ctx context.Context, family string) (*trace.Trace, context
 	return tr, ctx
 }
 
-// CountUserAddedRepos counts the total number of repos that have been added
-// by user owned external services. If userIDs are specified, only repos owned by the given
-// users are counted.
-func (s *Store) CountUserAddedRepos(ctx context.Context, userIDs ...int32) (count uint64, err error) {
-	tr, ctx := s.trace(ctx, "Store.CountUserAddedRepos")
+// CountNamespacedRepos counts the total number of repos that have been added
+// by user or organization owned external services.
+// If userID is specified, only repos owned by that user are counted.
+// If orgID is specified, only repos owned by that organization are counted.
+func (s *Store) CountNamespacedRepos(ctx context.Context, userID, orgID int32) (count uint64, err error) {
+	tr, ctx := s.trace(ctx, "Store.CountNamespacedRepos")
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 
-		uids := fmt.Sprint(userIDs)
-		tr.LogFields(otlog.String("user-ids", uids))
-		s.Metrics.CountUserAddedRepos.Observe(secs, float64(count), &err)
-		logging.Log(s.Log, "store.count-user-added-repos", &err, "count", count, "user-ids", uids)
+		tr.LogFields(otlog.Int32("user-id", userID), otlog.Int32("org-id", orgID))
+		s.Metrics.CountNamespacedRepos.Observe(secs, float64(count), &err)
+		logging.Log(s.Log, "store.count-namespaced-repos", &err, "count", count, "user-id", userID, "org-id", orgID)
 
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
 
 	var q *sqlf.Query
-	if len(userIDs) > 0 {
-		q = sqlf.Sprintf(countTotalUserAddedReposQueryFmtstr+"\nAND user_id = ANY(%s)", pq.Array(userIDs))
+	if userID > 0 {
+		q = sqlf.Sprintf(countTotalNamespacedReposQueryFmtstr+"\nAND user_id = %d", userID)
+	} else if orgID > 0 {
+		q = sqlf.Sprintf(countTotalNamespacedReposQueryFmtstr+"\nAND org_id = %d", orgID)
 	} else {
-		q = sqlf.Sprintf(countTotalUserAddedReposQueryFmtstr)
+		q = sqlf.Sprintf(countTotalNamespacedReposQueryFmtstr)
 	}
 
 	err = s.QueryRow(ctx, q).Scan(&count)
 	return count, err
 }
 
-const countTotalUserAddedReposQueryFmtstr = `
+const countTotalNamespacedReposQueryFmtstr = `
 SELECT COUNT(DISTINCT(repo_id))
 FROM external_service_repos
-WHERE user_id IS NOT NULL`
+WHERE user_id IS NOT NULL OR org_id IS NOT NULL`
 
 // DeleteExternalServiceReposNotIn calls DeleteExternalServiceRepo for every repo not in the given ids that is owned
 // by the given external service. We run one query per repo rather than one batch query in order to reduce the chances

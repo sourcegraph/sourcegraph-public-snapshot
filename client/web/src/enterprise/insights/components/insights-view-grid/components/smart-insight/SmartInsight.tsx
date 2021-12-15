@@ -3,9 +3,8 @@ import React, { forwardRef, ReactElement, Ref } from 'react'
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { Insight, isSearchBasedInsight } from '../../../../core/types'
-import { isSearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
-import { BackendInsight } from '../backend-insight/BackendInsight'
+import { Insight, isBackendInsight } from '../../../../core/types'
+import { BackendInsightView } from '../backend-insight/BackendInsight'
 import { BuiltInInsight } from '../built-in-insight/BuiltInInsight'
 
 export interface SmartInsightProps<D extends keyof ViewContexts>
@@ -25,9 +24,9 @@ export interface SmartInsightProps<D extends keyof ViewContexts>
 export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps<keyof ViewContexts>>((props, reference) => {
     const { insight, resizing = false, telemetryService, where, context, ...otherProps } = props
 
-    if (isSearchBasedInsight(insight) && isSearchBackendBasedInsight(insight)) {
+    if (isBackendInsight(insight)) {
         return (
-            <BackendInsight
+            <BackendInsightView
                 insight={insight}
                 resizing={resizing}
                 telemetryService={telemetryService}

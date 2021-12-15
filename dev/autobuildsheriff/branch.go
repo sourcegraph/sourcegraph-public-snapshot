@@ -183,8 +183,8 @@ func (b *repoBranchLocker) setProtectionsWorkaround(
 
 		  requiresApprovingReviews: true,
 		  requiredApprovingReviewCount: 0,
-		  requiresLinearHistory: true,
 
+		  requiresLinearHistory: true,
 		  requiresStatusChecks: true,
 		  requiredStatusChecks: %s,
 		  requiresStrictStatusChecks: false

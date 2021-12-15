@@ -49,10 +49,10 @@ const (
 var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "true", "Use git-gc during janitorial cleanup phases"))
 
 var (
-	reposRemoved = promauto.NewCounter(prometheus.CounterOpts{
+	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_removed",
 		Help: "number of repos removed during cleanup",
-	})
+	}, []string{"reason"})
 	reposRecloned = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_recloned",
 		Help: "number of repos removed and re-cloned due to age",
@@ -99,19 +99,36 @@ func (s *Server) cleanupRepos() {
 		return false, nil
 	}
 
-	maybeRemoveCorrupt := func(dir GitDir) (done bool, err error) {
+	maybeRemoveCorrupt := func(dir GitDir) (done bool, _ error) {
+		var reason string
+
 		// We treat repositories missing HEAD to be corrupt. Both our cloning
 		// and fetching ensure there is a HEAD file.
-		_, err = os.Stat(dir.Path("HEAD"))
-		if !os.IsNotExist(err) {
+		if _, err := os.Stat(dir.Path("HEAD")); os.IsNotExist(err) {
+			reason = "missing-head"
+		} else if err != nil {
 			return false, err
 		}
 
-		log15.Info("removing corrupt repo", "repo", dir)
+		// We have seen repository corruption fail in such a way that the git
+		// config is missing the bare repo option but everything else looks
+		// like it works. This leads to failing fetches, so treat non-bare
+		// repos as corrupt. Since we often fetch with ensureRevision, this
+		// leads to most commands failing against the repository. It is safer
+		// to remove now than try a safe reclone.
+		if reason == "" && gitIsNonBareBestEffort(dir) {
+			reason = "non-bare"
+		}
+
+		if reason == "" {
+			return false, nil
+		}
+
+		log15.Info("removing corrupt repo", "repo", dir, "reason", reason)
 		if err := s.removeRepoDirectory(dir); err != nil {
 			return true, err
 		}
-		reposRemoved.Inc()
+		reposRemoved.WithLabelValues(reason).Inc()
 		return true, nil
 	}
 
@@ -350,20 +367,20 @@ func (s *Server) howManyBytesToFree() (int64, error) {
 type StatDiskSizer struct{}
 
 func (s *StatDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
-	var fs syscall.Statfs_t
-	if err := syscall.Statfs(mountPoint, &fs); err != nil {
+	var statFS syscall.Statfs_t
+	if err := syscall.Statfs(mountPoint, &statFS); err != nil {
 		return 0, errors.Wrap(err, "statting")
 	}
-	free := fs.Bavail * uint64(fs.Bsize)
+	free := statFS.Bavail * uint64(statFS.Bsize)
 	return free, nil
 }
 
 func (s *StatDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
-	var fs syscall.Statfs_t
-	if err := syscall.Statfs(mountPoint, &fs); err != nil {
+	var statFS syscall.Statfs_t
+	if err := syscall.Statfs(mountPoint, &statFS); err != nil {
 		return 0, errors.Wrap(err, "statting")
 	}
-	free := fs.Blocks * uint64(fs.Bsize)
+	free := statFS.Blocks * uint64(statFS.Bsize)
 	return free, nil
 }
 
@@ -483,7 +500,7 @@ func dirSize(d string) int64 {
 // partial state in the event of server restart or concurrent modifications to
 // the directory.
 //
-// Additionally it removes parent empty directories up until s.ReposDir.
+// Additionally, it removes parent empty directories up until s.ReposDir.
 func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 	ctx := context.Background()
 	dir := string(gitDir)
@@ -708,8 +725,22 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 	}
 }
 
+// gitIsNonBareBestEffort returns true if the repository is not a bare
+// repo. If we fail to check or the repository is bare we return false.
+//
+// Note: it is not always possible to check if a repository is bare since a
+// lock file may prevent the check from succeeding. We only want bare
+// repositories and want to avoid transient false positives.
+func gitIsNonBareBestEffort(dir GitDir) bool {
+	cmd := exec.Command("git", "-C", dir.Path(), "rev-parse", "--is-bare-repository")
+	dir.Set(cmd)
+	b, _ := cmd.Output()
+	b = bytes.TrimSpace(b)
+	return bytes.Equal(b, []byte("false"))
+}
+
 // gitGC will invoke `git-gc` to clean up any garbage in the repo. It will
-// operate synchronously and be aggressive with its internal heurisitcs when
+// operate synchronously and be aggressive with its internal heuristics when
 // deciding to act (meaning it will act now at lower thresholds).
 func gitGC(dir GitDir) error {
 	cmd := exec.Command("git", "-c", "gc.auto=1", "-c", "gc.autoDetach=false", "gc", "--auto")

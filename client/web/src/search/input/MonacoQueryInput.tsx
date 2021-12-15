@@ -309,7 +309,6 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 }
                 editor.setPosition(position)
                 editor.revealPosition(position)
-                editor.focus()
             }
         }
     }, [editor, queryState])

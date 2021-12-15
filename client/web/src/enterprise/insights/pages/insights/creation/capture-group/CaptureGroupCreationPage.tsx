@@ -1,27 +1,57 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
-import { FormChangeEvent } from '../../../../components/form/hooks/useForm'
+import { getSanitizedRepositories } from '../../../../components/creation-ui-kit/sanitizers/repositories'
+import { FormChangeEvent, SubmissionErrors } from '../../../../components/form/hooks/useForm'
+import { CaptureGroupInsight, InsightExecutionType, InsightType } from '../../../../core/types'
 
 import { CaptureGroupCreationContent } from './components/CaptureGroupCreationContent'
 import { CaptureGroupFormFields } from './types'
 
-export const CaptureGroupCreationPage: React.FunctionComponent = props => {
+interface CaptureGroupCreationPageProps extends TelemetryProps {
+    onInsightCreateRequest: (event: { insight: CaptureGroupInsight }) => Promise<unknown>
+    onSuccessfulCreation: (insight: CaptureGroupInsight) => void
+    onCancel: () => void
+}
+
+export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreationPageProps> = props => {
+    const { telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
+
     const [initialFormValues, setInitialFormValues] = useLocalStorage<CaptureGroupFormFields | undefined>(
         'insights.code-stats-creation-ui',
         undefined
     )
 
-    const handleSubmit = (values: CaptureGroupFormFields): void => {
-        console.log(values)
+    useEffect(() => {
+        telemetryService.logViewEvent('CodeInsightsCaptureGroupCreationPage')
+    }, [telemetryService])
+
+    const handleSubmit = async (values: CaptureGroupFormFields): Promise<SubmissionErrors | void> => {
+        const insight = getSanitizedCaptureGroupInsight(values)
+
+        await onInsightCreateRequest({ insight })
+
+        setInitialFormValues(undefined)
+        telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
+        telemetryService.log(
+            'InsightAddition',
+            { insightType: 'codeStatsInsights' },
+            { insightType: 'codeStatsInsights' }
+        )
+
+        onSuccessfulCreation(insight)
     }
 
-    // eslint-disable-next-line unicorn/consistent-function-scoping
     const handleCancel = (): void => {
-        console.log('CaptureGroupCreationPage Cancel')
+        // Clear initial values if user successfully created search insight
+        setInitialFormValues(undefined)
+        telemetryService.log('CodeInsightsCaptureGroupCreationPageCancelClick')
+
+        onCancel()
     }
 
     const handleChange = (event: FormChangeEvent<CaptureGroupFormFields>): void => {
@@ -53,4 +83,17 @@ export const CaptureGroupCreationPage: React.FunctionComponent = props => {
             />
         </Page>
     )
+}
+
+function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields): CaptureGroupInsight {
+    return {
+        title: values.title.trim(),
+        query: values.groupSearchQuery.trim(),
+        repositories: getSanitizedRepositories(values.repositories),
+        viewType: InsightType.CaptureGroup,
+        type: InsightExecutionType.Backend,
+        id: '',
+        visibility: '',
+        step: { [values.step]: +values.stepValue },
+    }
 }

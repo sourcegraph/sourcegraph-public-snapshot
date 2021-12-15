@@ -22,7 +22,7 @@ import (
 
 func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	user := ct.CreateTestUser(t, db, true)
 
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
@@ -208,6 +208,106 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 
 		assertJobState(t, btypes.BatchSpecWorkspaceExecutionJobStateFailed)
 	})
+}
+
+func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete_EmptyDiff(t *testing.T) {
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+	user := ct.CreateTestUser(t, db, true)
+
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
+
+	s := New(db, &observation.TestContext, nil)
+	workStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
+
+	// Setup all the associations
+	batchSpec := &btypes.BatchSpec{UserID: user.ID, NamespaceUserID: user.ID, RawSpec: "horse", Spec: &batcheslib.BatchSpec{
+		ChangesetTemplate: &batcheslib.ChangesetTemplate{},
+	}}
+	if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
+		t.Fatal(err)
+	}
+
+	workspace := &btypes.BatchSpecWorkspace{BatchSpecID: batchSpec.ID, RepoID: repo.ID, Steps: []batcheslib.Step{}}
+	if err := s.CreateBatchSpecWorkspace(ctx, workspace); err != nil {
+		t.Fatal(err)
+	}
+
+	job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: workspace.ID}
+	if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
+		t.Fatal(err)
+	}
+
+	cacheEntryKeys := []string{"Nsw12JxoLSHN4ta6D3G7FQ", "JkC7Q0OOCZZ3Acv79QfwSA-step-0"}
+
+	// Log entries with cache entries that'll be used to build the changeset specs.
+	output := `
+stdout: {"operation":"CACHE_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"Nsw12JxoLSHN4ta6D3G7FQ","value":{"diff":"","changedFiles":{"modified":null,"added":null,"deleted":null,"renamed":null},"outputs":{},"Path":""}}}
+stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.551Z","status":"SUCCESS","metadata":{"key":"JkC7Q0OOCZZ3Acv79QfwSA-step-0","value":{"stepIndex":0,"diff":"","outputs":{},"previousStepResult":{"Files":null,"Stdout":null,"Stderr":null}}}}`
+
+	entry := workerutil.ExecutionLogEntry{
+		Key:        "step.src.0",
+		Command:    []string{"src", "batch", "preview", "-f", "spec.yml", "-text-only"},
+		StartTime:  time.Now().Add(-5 * time.Second),
+		Out:        output,
+		DurationMs: intptr(200),
+	}
+
+	_, err := workStore.AddExecutionLogEntry(ctx, int(job.ID), entry, dbworkerstore.ExecutionLogEntryOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	executionStore := &batchSpecWorkspaceExecutionWorkerStore{Store: workStore, observationContext: &observation.TestContext}
+	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
+
+	attachAccessToken := func(t *testing.T) int64 {
+		t.Helper()
+		tokenID, _, err := database.AccessTokens(db).CreateInternal(ctx, user.ID, []string{"user:all"}, "testing", user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, job.ID, tokenID); err != nil {
+			t.Fatal(err)
+		}
+		return tokenID
+	}
+
+	job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
+	job.WorkerHostname = opts.WorkerHostname
+	ct.UpdateJobState(t, ctx, s, job)
+	tokenID := attachAccessToken(t)
+
+	ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
+	if !ok || err != nil {
+		t.Fatalf("MarkComplete failed. ok=%t, err=%s", ok, err)
+	}
+
+	specs, _, err := s.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
+	if err != nil {
+		t.Fatalf("failed to load changeset specs: %s", err)
+	}
+	if have, want := len(specs), 0; have != want {
+		t.Fatalf("invalid number of changeset specs created: have=%d want=%d", have, want)
+	}
+
+	for _, wantKey := range cacheEntryKeys {
+		entries, err := s.ListBatchSpecExecutionCacheEntries(ctx, ListBatchSpecExecutionCacheEntriesOpts{
+			UserID: user.ID,
+			Keys:   []string{wantKey},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(entries) != 1 {
+			t.Fatal("cache entry not found")
+		}
+	}
+
+	_, err = database.AccessTokens(db).GetByID(ctx, tokenID)
+	if err != database.ErrAccessTokenNotFound {
+		t.Fatalf("access token was not deleted")
+	}
 }
 
 func intptr(i int) *int { return &i }

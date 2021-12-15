@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -17,6 +18,7 @@ type SearchInputs struct {
 	OriginalQuery string     // the raw string of the original search query
 	PatternType   query.SearchType
 	UserSettings  *schema.Settings
+	Features      featureflag.FlagSet
 
 	// DefaultLimit is the default limit to use if not specified in query.
 	DefaultLimit int

@@ -1,4 +1,4 @@
-name: LSIF-Go
+name: lsif-go
 on:
   push:
     paths:
