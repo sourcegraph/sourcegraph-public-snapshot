@@ -119,7 +119,6 @@ func compareNotebookAPIResponses(t *testing.T, wantNotebookResponse notebooksapi
 }
 
 func TestGetNotebook(t *testing.T) {
-	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
@@ -151,7 +150,6 @@ func TestGetNotebook(t *testing.T) {
 }
 
 func TestCreateNotebook(t *testing.T) {
-	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
@@ -177,7 +175,6 @@ func TestCreateNotebook(t *testing.T) {
 }
 
 func TestUpdateNotebook(t *testing.T) {
-	t.Parallel()
 	db := dbtest.NewDB(t)
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
@@ -272,7 +269,6 @@ func TestUpdateNotebook(t *testing.T) {
 }
 
 func TestDeleteNotebook(t *testing.T) {
-	t.Parallel()
 	db := dbtest.NewDB(t)
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
