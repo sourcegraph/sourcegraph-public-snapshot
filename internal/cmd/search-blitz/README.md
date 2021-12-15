@@ -23,7 +23,7 @@ Add the query to [`queries.txt`](https://github.com/sourcegraph/sourcegraph/blob
    ```
    ./scripts/build.sh <next-version, e.g. 0.0.2>
    ```
-3. Update the image tag in [deploy-sourcegraph-dot-com](https://github.com/sourcegraph/deploy-sourcegraph-dot-com/blob/release/configure/search-blitz/search-blitz.StatefulSet.yaml#L36)
+3. Update the image tag in [deploy-sourcegraph-cloud](https://github.com/sourcegraph/deploy-sourcegraph-cloud/blob/release/configure/search-blitz/search-blitz.StatefulSet.yaml#L36)
 
 4. (Optional) Apply the new manifest
 
