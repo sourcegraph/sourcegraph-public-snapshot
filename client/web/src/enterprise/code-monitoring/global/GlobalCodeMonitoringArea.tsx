@@ -8,7 +8,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../../../auth'
-import { CodeMonitoringProps } from '../../../code-monitoring'
 import { Page } from '../../../components/Page'
 import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
 import { lazyComponent } from '../../../util/lazyComponent'
@@ -19,7 +18,6 @@ interface Props
         ExtensionsControllerProps,
         TelemetryProps,
         PlatformContextProps,
-        CodeMonitoringProps,
         SettingsCascadeProps,
         FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null

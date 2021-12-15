@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
@@ -31,6 +32,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+//go:embed sg_maintenance.sh
+var sgMaintenanceScript string
+
 const (
 	// repoTTL is how often we should re-clone a repository.
 	repoTTL = time.Hour * 24 * 45
@@ -47,6 +51,11 @@ const (
 // `git gc --auto` is invoked during janitorial activities. This flag will
 // likely evolve into some form of site config value in the future.
 var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "true", "Use git-gc during janitorial cleanup phases"))
+
+// sg maintenance and git gc must not be enabled at the same time. However, both
+// might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
+// SRC_ENABLE_SG_MAINTENANCE.
+var enableSGMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "false", "Use sg maintenance during janitorial cleanup phases"))
 
 var (
 	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -83,6 +92,7 @@ const reposStatsName = "repos-stats.json"
 // 6. Perform garbage collection
 // 7. Re-clone repos after a while. (simulate git gc)
 // 8. Remove repos based on disk pressure.
+// 9. Perform sg-maintenance
 func (s *Server) cleanupRepos() {
 	janitorRunning.Set(1)
 	defer janitorRunning.Set(0)
@@ -238,10 +248,11 @@ func (s *Server) cleanupRepos() {
 	}
 
 	performGC := func(dir GitDir) (done bool, err error) {
-		if !enableGCAuto {
-			return false, nil
-		}
 		return false, gitGC(dir)
+	}
+
+	performSGMaintenance := func(dir GitDir) (done bool, err error) {
+		return false, sgMaintenance(dir)
 	}
 
 	type cleanupFn struct {
@@ -261,12 +272,22 @@ func (s *Server) cleanupRepos() {
 		// 2021-03-01 (tomas,keegan) we used to store an authenticated remote URL on
 		// disk. We no longer need it so we can scrub it.
 		{"scrub remote URL", scrubRemoteURL},
+	}
+
+	if enableGCAuto && !enableSGMaintenance {
 		// Runs a number of housekeeping tasks within the current repository, such as
 		// compressing file revisions (to reduce disk space and increase performance),
 		// removing unreachable objects which may have been created from prior
 		// invocations of git add, packing refs, pruning reflog, rerere metadata or stale
 		// working trees. May also update ancillary indexes such as the commit-graph.
-		{"garbage collect", performGC},
+		cleanups = append(cleanups, cleanupFn{"garbage collect", performGC})
+	}
+
+	if enableSGMaintenance && !enableGCAuto {
+		// Run tasks to optimize Git repository data, speeding up other Git commands and
+		// reducing storage requirements for the repository. Note: "garbage collect" and
+		// "sg maintenance" must not be enabled at the same time.
+		cleanups = append(cleanups, cleanupFn{"sg maintenance", performSGMaintenance})
 	}
 
 	if !conf.Get().DisableAutoGitUpdates {
@@ -748,6 +769,22 @@ func gitGC(dir GitDir) error {
 	err := cmd.Run()
 	if err != nil {
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to git-gc")
+	}
+	return nil
+}
+
+// sgMaintenance runs a set of git cleanup tasks in dir. This must not be run
+// concurrently with git gc.
+func sgMaintenance(dir GitDir) error {
+	cmd := exec.Command("sh")
+	dir.Set(cmd)
+
+	cmd.Stdin = strings.NewReader(sgMaintenanceScript)
+
+	b, err := cmd.CombinedOutput()
+	if err != nil {
+		log15.Debug("sg maintenance", "dir", dir, "out", string(b))
+		return errors.Wrapf(wrapCmdError(cmd, err), "failed to run sg maintenance")
 	}
 	return nil
 }

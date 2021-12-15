@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 )
 
 type UploadHandler struct {
@@ -31,6 +32,7 @@ func NewUploadHandler(
 	internal bool,
 	authValidators AuthValidatorMap,
 	operations *Operations,
+	hub *sentry.Hub,
 ) http.Handler {
 	handler := &UploadHandler{
 		db:          db,

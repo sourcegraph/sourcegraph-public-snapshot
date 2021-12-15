@@ -18,6 +18,7 @@
     flex-grow: 1;
     min-height: 10rem;
     position: relative;
+    flex-basis: 50%;
 }
 
 .legend {
@@ -26,11 +27,11 @@
         flex-shrink: 0;
         min-width: 11rem;
         margin-left: 1rem;
-        width: 30%;
+        max-width: 30%;
     }
 }
 
-.legend-content {
+.legend-list {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;

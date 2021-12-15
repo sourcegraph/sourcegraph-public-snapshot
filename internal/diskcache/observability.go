@@ -8,8 +8,9 @@ import (
 )
 
 type operations struct {
-	cachedFetch *observation.Operation
-	evict       *observation.Operation
+	cachedFetch     *observation.Operation
+	evict           *observation.Operation
+	backgroundFetch *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context, component string) *operations {
@@ -39,7 +40,8 @@ func newOperations(observationContext *observation.Context, component string) *o
 	}
 
 	return &operations{
-		cachedFetch: op("Cached Fetch", observationContext),
-		evict:       op("Evict", evictObservationContext),
+		cachedFetch:     op("Cached Fetch", observationContext),
+		evict:           op("Evict", evictObservationContext),
+		backgroundFetch: op("Background Fetch", observationContext),
 	}
 }
