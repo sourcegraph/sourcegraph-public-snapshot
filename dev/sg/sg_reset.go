@@ -89,7 +89,7 @@ func resetExec(ctx context.Context, args []string) error {
 			return errors.Wrap(err, "failed to connect to Postgres database")
 		}
 
-		writeFingerPointingLine("This will reset database %s%s%s. Are you okay with this?", output.StyleOrange, name, output.StyleReset)
+		writeFingerPointingLinef("This will reset database %s%s%s. Are you okay with this?", output.StyleOrange, name, output.StyleReset)
 		ok := getBool()
 		if !ok {
 			return nil
@@ -97,7 +97,7 @@ func resetExec(ctx context.Context, args []string) error {
 
 		_, err = db.Exec(ctx, "DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
 		if err != nil {
-			writeFailureLine("Failed to drop schema 'public': %s", err)
+			writeFailureLinef("Failed to drop schema 'public': %s", err)
 			return err
 		}
 
