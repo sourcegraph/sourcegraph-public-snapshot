@@ -12,6 +12,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { SearchContextProps } from '..'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
+import { useExperimentalFeatures } from '../../stores'
 import { ModalVideo } from '../documentation/ModalVideo'
 import searchBoxStyle from '../input/SearchBox.module.scss'
 import searchContextDropDownStyles from '../input/SearchContextDropdown.module.scss'
@@ -175,21 +176,18 @@ const videos = [
     },
 ]
 
-interface NoResultsPageProps
-    extends ThemeProps,
-        TelemetryProps,
-        Pick<SearchContextProps, 'showSearchContext' | 'searchContextsEnabled'> {
+interface NoResultsPageProps extends ThemeProps, TelemetryProps, Pick<SearchContextProps, 'searchContextsEnabled'> {
     isSourcegraphDotCom: boolean
 }
 
 export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
-    showSearchContext,
     searchContextsEnabled,
     isLightTheme,
     telemetryService,
     isSourcegraphDotCom,
 }) => {
     const [hiddenSectionIDs, setHiddenSectionIds] = useTemporarySetting('search.hiddenNoResultsSections')
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
 
     const onClose = useCallback(
         sectionID => {

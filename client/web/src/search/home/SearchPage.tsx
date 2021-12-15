@@ -9,19 +9,14 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import {
-    PatternTypeProps,
-    OnboardingTourProps,
-    HomePanelsProps,
-    ParsedSearchQueryProps,
-    SearchContextInputProps,
-} from '..'
+import { PatternTypeProps, HomePanelsProps, ParsedSearchQueryProps, SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { CodeInsightsProps } from '../../insights/types'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
+import { useExperimentalFeatures } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { HomePanels } from '../panels/HomePanels'
 
@@ -42,7 +37,6 @@ export interface SearchPageProps
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'updateSettings'>,
         SearchContextInputProps,
-        OnboardingTourProps,
         HomePanelsProps,
         CodeInsightsProps,
         FeatureFlagProps {
@@ -61,6 +55,7 @@ export interface SearchPageProps
  */
 export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
     const { extensionViews: ExtensionViewsSection } = props
+    const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 
     return (
@@ -73,8 +68,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
             )}
             <div
                 className={classNames(styles.searchContainer, {
-                    [styles.searchContainerWithContentBelow]:
-                        props.isSourcegraphDotCom || props.showEnterpriseHomePanels,
+                    [styles.searchContainerWithContentBelow]: props.isSourcegraphDotCom || showEnterpriseHomePanels,
                 })}
             >
                 <SearchPageInput {...props} source="home" />
@@ -90,7 +84,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
             <div className="flex-grow-1">
                 {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
 
-                {props.showEnterpriseHomePanels && props.authenticatedUser && <HomePanels {...props} />}
+                {showEnterpriseHomePanels && props.authenticatedUser && <HomePanels {...props} />}
             </div>
 
             <SearchPageFooter {...props} />
