@@ -13,6 +13,14 @@ export interface UseInsightDataResult<T> {
     query: (request: () => ObservableInput<T>) => void
 }
 
+/**
+ * This hook runs consumer request function in parallel with other requests that have
+ * been made by useInsightData hook if and only if the element {@link reference} prop
+ * is visible on the screen.
+ *
+ * @param request - consumer's request to run
+ * @param reference - consumer's element that should be visible to run consumer's request
+ */
 export function useInsightData<D>(
     request: () => ObservableInput<D>,
     reference: React.RefObject<HTMLElement>

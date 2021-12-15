@@ -32,8 +32,16 @@ export interface FetchResult<T> {
 const MAX_PARALLEL_QUERIES = 2
 
 /**
- * Parallel requests Hook factory. Used for better testing approach.
+ * Parallel requests hooks factory. This factory/function generates special
+ * fetching hooks for code insights cards. These hooks are connected to
+ * the inner requests pipeline that is responsible for parallelization and
+ * scheduling requests execution.
+ *
+ * Since this factory generates hooks and this happens in this module's runtime
+ * it's safe to disable the rules of hooks here. This factory is also used in
+ * these hooks unit tests.
  */
+/* eslint-disable react-hooks/rules-of-hooks */
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type,@typescript-eslint/explicit-module-boundary-types
 export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests: MAX_PARALLEL_QUERIES }) {
     const requests = new Subject<Request<T>>()
@@ -88,19 +96,18 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
 
     return {
         /**
-         * Runs your request in parallel with other useParallelRequests request calls.
+         * Runs your request in parallel with other request that have been made with
+         * useParallelRequests request calls.
          *
          * @param request - request factory (observer, promise, subscribable like)
          */
         query: <D>(request: () => ObservableInput<D>): FetchResult<D> => {
-            // eslint-disable-next-line react-hooks/rules-of-hooks
             const [state, setState] = useState<FetchResult<D>>({
                 data: undefined,
                 error: undefined,
                 loading: true,
             })
 
-            // eslint-disable-next-line react-hooks/rules-of-hooks
             useEffect(() => {
                 const cancelStream = new Subject<boolean>()
 
@@ -132,18 +139,19 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
 
             return state
         },
+        /**
+         * This provides query methods that allows to you run your request in parallel with
+         * other request that have been made with useParallelRequests request calls.
+         */
         lazyQuery: <D>(): FetchResult<D> & { query: (request: () => ObservableInput<D>) => Unsubscribable } => {
-            // eslint-disable-next-line react-hooks/rules-of-hooks
             const [state, setState] = useState<FetchResult<D>>({
                 data: undefined,
                 error: undefined,
                 loading: true,
             })
 
-            // eslint-disable-next-line react-hooks/rules-of-hooks
             const localRequestPool = useRef<Request<D>[]>([])
 
-            // eslint-disable-next-line react-hooks/rules-of-hooks
             useEffect(
                 () => () => {
                     for (const request of localRequestPool.current) {
@@ -154,7 +162,6 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
                 []
             )
 
-            // eslint-disable-next-line react-hooks/rules-of-hooks
             const query = useCallback((request: () => ObservableInput<D>) => {
                 const cancelStream = new Subject<boolean>()
 
