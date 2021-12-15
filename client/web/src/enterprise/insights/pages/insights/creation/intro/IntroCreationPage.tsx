@@ -86,20 +86,18 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     data-testid="create-lang-usage-insight"
                     onClick={handleCreateCodeStatsInsightClick}
                 />
-            </div>
 
-            <footer className="mt-3">
-                Not sure which insight type to choose? Learn more about the{' '}
-                <a
-                    href="https://docs.sourcegraph.com/code_insights/references/common_use_cases"
-                    target="_blank"
-                    rel="noopener"
-                >
-                    use cases
-                </a>
-            </footer>
+                <div className={styles.info}>
+                    Not sure which insight type to choose? Learn more about the{' '}
+                    <a
+                        href="https://docs.sourcegraph.com/code_insights/references/common_use_cases"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        use cases
+                    </a>
+                </div>
 
-            <div className={classNames(styles.sectionContent, styles.sectionContentExtension, 'mt-5')}>
                 <ExtensionInsightsCard data-testid="explore-extensions" onClick={handleExploreExtensionsClick} />
             </div>
         </Page>

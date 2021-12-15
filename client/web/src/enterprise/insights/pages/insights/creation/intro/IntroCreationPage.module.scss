@@ -1,5 +1,6 @@
 .container {
     height: min-content;
+    max-width: 62.5rem;
 }
 
 .header {
@@ -11,8 +12,10 @@
     grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
     row-gap: 0.5rem;
     column-gap: 0.5rem;
+}
 
-    &--extension {
-        grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
-    }
+.info {
+    grid-column: 1 / -1;
+    margin-top: 1rem;
+    margin-bottom: 2.5rem;
 }
