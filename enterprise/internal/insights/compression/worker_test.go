@@ -49,7 +49,6 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 		"no-commits": {},
 	}
 	indexer.getCommits = mockCommits(commits)
-	indexer.getRepoID = mockIds(map[string]int{"repo-one": 1, "really-big-repo": 2, "no-commits": 3})
 	indexer.allReposIterator = mockIterator([]string{"repo-one", "really-big-repo", "no-commits"})
 
 	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
@@ -173,10 +172,10 @@ func Test_getMetadata_NoInsertRequired(t *testing.T) {
 }
 
 // mockIterator generates iterator methods given a list of repo names for test scenarios
-func mockIterator(repos []string) func(ctx context.Context, each func(repoName string) error) error {
-	return func(ctx context.Context, each func(repoName string) error) error {
-		for _, repo := range repos {
-			err := each(repo)
+func mockIterator(repos []string) func(ctx context.Context, each func(repoName string, id api.RepoID) error) error {
+	return func(ctx context.Context, each func(repoName string, id api.RepoID) error) error {
+		for i, repo := range repos {
+			err := each(repo, api.RepoID(i))
 			if err != nil {
 				return err
 			}
