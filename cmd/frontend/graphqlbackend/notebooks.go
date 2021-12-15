@@ -9,6 +9,8 @@ import (
 type NotebooksResolver interface {
 	NotebookByID(ctx context.Context, id graphql.ID) (NotebookResolver, error)
 	CreateNotebook(ctx context.Context, args CreateNotebookInputArgs) (NotebookResolver, error)
+	UpdateNotebook(ctx context.Context, args UpdateNotebookInputArgs) (NotebookResolver, error)
+	DeleteNotebook(ctx context.Context, args DeleteNotebookArgs) (*EmptyResponse, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -67,6 +69,15 @@ const (
 
 type CreateNotebookInputArgs struct {
 	Notebook NotebookInputArgs `json:"notebook"`
+}
+
+type UpdateNotebookInputArgs struct {
+	ID       graphql.ID        `json:"id"`
+	Notebook NotebookInputArgs `json:"notebook"`
+}
+
+type DeleteNotebookArgs struct {
+	ID graphql.ID `json:"id"`
 }
 
 type NotebookInputArgs struct {

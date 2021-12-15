@@ -8,6 +8,23 @@ extend type Mutation {
         """
         notebook: NotebookInput!
     ): Notebook!
+    """
+    Update a notebook. Only the owner can update it.
+    """
+    updateNotebook(
+        """
+        Notebook ID.
+        """
+        id: ID!
+        """
+        Notebook input.
+        """
+        notebook: NotebookInput!
+    ): Notebook!
+    """
+    Delete a notebook. Only the owner can delete it.
+    """
+    deleteNotebook(id: ID!): EmptyResponse!
 }
 
 """

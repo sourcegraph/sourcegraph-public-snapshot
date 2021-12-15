@@ -3,8 +3,10 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -71,6 +73,51 @@ mutation CreateNotebook($notebook: NotebookInput!) {
 }
 `, notebookFields)
 
+var updateNotebookMutation = fmt.Sprintf(`
+mutation UpdateNotebook($id: ID!, $notebook: NotebookInput!) {
+	updateNotebook(id: $id, notebook: $notebook) {
+		%s
+	}
+}
+`, notebookFields)
+
+const deleteNotebookMutation = `
+mutation DeleteNotebook($id: ID!) {
+	deleteNotebook(id: $id) {
+		alwaysNil
+	}
+}
+`
+
+func notebookFixture(userID int32, public bool) *notebooks.Notebook {
+	revision := "deadbeef"
+	blocks := notebooks.NotebookBlocks{
+		{ID: "1", Type: notebooks.NotebookQueryBlockType, QueryInput: &notebooks.NotebookQueryBlockInput{Text: "repo:a b"}},
+		{ID: "2", Type: notebooks.NotebookMarkdownBlockType, MarkdownInput: &notebooks.NotebookMarkdownBlockInput{Text: "# Title"}},
+		{ID: "3", Type: notebooks.NotebookFileBlockType, FileInput: &notebooks.NotebookFileBlockInput{
+			RepositoryName: "github.com/sourcegraph/sourcegraph",
+			FilePath:       "client/web/file.tsx",
+			Revision:       &revision,
+			LineRange:      &notebooks.LineRange{StartLine: 10, EndLine: 12},
+		}},
+	}
+	return &notebooks.Notebook{Title: "Notebook Title", Blocks: blocks, Public: public, CreatorUserID: userID}
+}
+
+func compareNotebookAPIResponses(t *testing.T, wantNotebookResponse notebooksapitest.Notebook, gotNotebookResponse notebooksapitest.Notebook, ignoreIDAndTimestamps bool) {
+	t.Helper()
+	if ignoreIDAndTimestamps {
+		// Ignore ID and timestamps for easier comparison
+		wantNotebookResponse.ID = gotNotebookResponse.ID
+		wantNotebookResponse.CreatedAt = gotNotebookResponse.CreatedAt
+		wantNotebookResponse.UpdatedAt = gotNotebookResponse.UpdatedAt
+	}
+
+	if diff := cmp.Diff(wantNotebookResponse, gotNotebookResponse); diff != "" {
+		t.Fatalf("wrong notebook response (-want +got):\n%s", diff)
+	}
+}
+
 func TestGetNotebook(t *testing.T) {
 	t.Parallel()
 	db := dbtest.NewDB(t)
@@ -83,19 +130,7 @@ func TestGetNotebook(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	revision := "deadbeef"
-	blocks := notebooks.NotebookBlocks{
-		{ID: "1", Type: notebooks.NotebookQueryBlockType, QueryInput: &notebooks.NotebookQueryBlockInput{Text: "repo:a b"}},
-		{ID: "2", Type: notebooks.NotebookMarkdownBlockType, MarkdownInput: &notebooks.NotebookMarkdownBlockInput{Text: "# Title"}},
-		{ID: "3", Type: notebooks.NotebookFileBlockType, FileInput: &notebooks.NotebookFileBlockInput{
-			RepositoryName: "github.com/sourcegraph/sourcegraph",
-			FilePath:       "client/web/file.tsx",
-			Revision:       &revision,
-			LineRange:      &notebooks.LineRange{StartLine: 10, EndLine: 12},
-		}},
-	}
-	notebook := &notebooks.Notebook{Title: "Notebook Title", Blocks: blocks, Public: true, CreatorUserID: user.ID}
-	createdNotebook, err := n.CreateNotebook(ctx, notebook)
+	createdNotebook, err := n.CreateNotebook(ctx, notebookFixture(user.ID, true))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,29 +146,8 @@ func TestGetNotebook(t *testing.T) {
 	var response struct{ Node notebooksapitest.Notebook }
 	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(user.ID)), t, schema, input, &response, queryNotebook)
 
-	wantNotebookResponse := notebooksapitest.Notebook{
-		ID:              string(notebookGQLID),
-		Title:           createdNotebook.Title,
-		Creator:         notebooksapitest.NotebookCreator{Username: "u"},
-		CreatedAt:       createdNotebook.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		UpdatedAt:       createdNotebook.UpdatedAt.Format("2006-01-02T15:04:05Z"),
-		Public:          createdNotebook.Public,
-		ViewerCanManage: true,
-		Blocks: []notebooksapitest.NotebookBlock{
-			{Typename: "QueryBlock", ID: blocks[0].ID, QueryInput: blocks[0].QueryInput.Text},
-			{Typename: "MarkdownBlock", ID: blocks[1].ID, MarkdownInput: blocks[1].MarkdownInput.Text},
-			{Typename: "FileBlock", ID: blocks[2].ID, FileInput: notebooksapitest.FileInput{
-				RepositoryName: blocks[2].FileInput.RepositoryName,
-				FilePath:       blocks[2].FileInput.FilePath,
-				Revision:       blocks[2].FileInput.Revision,
-				LineRange:      &notebooksapitest.LineRange{StartLine: blocks[2].FileInput.LineRange.StartLine, EndLine: blocks[2].FileInput.LineRange.EndLine},
-			}},
-		},
-	}
-
-	if diff := cmp.Diff(wantNotebookResponse, response.Node); diff != "" {
-		t.Fatalf("wrong notebook response (-want +got):\n%s", diff)
-	}
+	wantNotebookResponse := notebooksapitest.NotebookToAPIResponse(createdNotebook, notebookGQLID, user.Username, true)
+	compareNotebookAPIResponses(t, wantNotebookResponse, response.Node, false)
 }
 
 func TestCreateNotebook(t *testing.T) {
@@ -153,46 +167,191 @@ func TestCreateNotebook(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queryInput, markdownInput, revision := "repo:a b", "# Title", "rev"
-	blocks := []graphqlbackend.CreateNotebookBlockInputArgs{
-		{ID: "1", Type: graphqlbackend.NotebookQueryBlockType, QueryInput: &queryInput},
-		{ID: "2", Type: graphqlbackend.NotebookMarkdownBlockType, MarkdownInput: &markdownInput},
-		{ID: "3", Type: graphqlbackend.NotebookFileBlockType, FileInput: &graphqlbackend.CreateFileBlockInput{
-			RepositoryName: "github.com/sourcegraph/sourcegraph",
-			FilePath:       "client/web/file.tsx",
-			Revision:       &revision,
-			LineRange:      &graphqlbackend.CreateFileBlockLineRangeInput{StartLine: 10, EndLine: 12},
-		}},
-	}
-	notebookInput := graphqlbackend.NotebookInputArgs{Title: "Notebook Title", Public: true, Blocks: blocks}
-
-	input := map[string]interface{}{"notebook": notebookInput}
+	notebook := notebookFixture(user.ID, true)
+	input := map[string]interface{}{"notebook": notebooksapitest.NotebookToAPIInput(notebook)}
 	var response struct{ CreateNotebook notebooksapitest.Notebook }
 	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(user.ID)), t, schema, input, &response, createNotebookMutation)
 
-	wantNotebookResponse := notebooksapitest.Notebook{
-		// Ignore ID and timestamps when comparing responses
-		ID:        response.CreateNotebook.ID,
-		CreatedAt: response.CreateNotebook.CreatedAt,
-		UpdatedAt: response.CreateNotebook.UpdatedAt,
+	wantNotebookResponse := notebooksapitest.NotebookToAPIResponse(notebook, marshalNotebookID(notebook.ID), user.Username, true)
+	compareNotebookAPIResponses(t, wantNotebookResponse, response.CreateNotebook, true)
+}
 
-		Title:           notebookInput.Title,
-		Creator:         notebooksapitest.NotebookCreator{Username: "u"},
-		Public:          notebookInput.Public,
-		ViewerCanManage: true,
-		Blocks: []notebooksapitest.NotebookBlock{
-			{Typename: "QueryBlock", ID: blocks[0].ID, QueryInput: *blocks[0].QueryInput},
-			{Typename: "MarkdownBlock", ID: blocks[1].ID, MarkdownInput: *blocks[1].MarkdownInput},
-			{Typename: "FileBlock", ID: blocks[2].ID, FileInput: notebooksapitest.FileInput{
-				RepositoryName: blocks[2].FileInput.RepositoryName,
-				FilePath:       blocks[2].FileInput.FilePath,
-				Revision:       blocks[2].FileInput.Revision,
-				LineRange:      &notebooksapitest.LineRange{StartLine: blocks[2].FileInput.LineRange.StartLine, EndLine: blocks[2].FileInput.LineRange.EndLine},
-			}},
+func TestUpdateNotebook(t *testing.T) {
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	internalCtx := actor.WithInternalActor(context.Background())
+	u := database.Users(db)
+	n := notebooks.Notebooks(db)
+
+	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	user2, err := u.Create(internalCtx, database.NewUser{Username: "u2", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	database := database.NewDB(db)
+	schema, err := graphqlbackend.NewSchema(database, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(database))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name            string
+		publicNotebook  bool
+		creatorID       int32
+		creatorUsername string
+		updaterID       int32
+		wantErr         string
+	}{
+		{
+			name:            "user can update their own public notebook",
+			publicNotebook:  true,
+			creatorID:       user1.ID,
+			creatorUsername: user1.Username,
+			updaterID:       user1.ID,
+		},
+		{
+			name:            "user can update their own private notebook",
+			publicNotebook:  false,
+			creatorID:       user1.ID,
+			creatorUsername: user1.Username,
+			updaterID:       user1.ID,
+		},
+		{
+			name:            "user cannot update other public notebooks",
+			publicNotebook:  true,
+			creatorID:       user1.ID,
+			creatorUsername: user1.Username,
+			updaterID:       user2.ID,
+			wantErr:         "user does not have permissions to update the notebook",
+		},
+		{
+			name:            "user cannot update other private notebooks",
+			publicNotebook:  false,
+			creatorID:       user1.ID,
+			creatorUsername: user1.Username,
+			updaterID:       user2.ID,
+			wantErr:         "notebook not found",
 		},
 	}
 
-	if diff := cmp.Diff(wantNotebookResponse, response.CreateNotebook); diff != "" {
-		t.Fatalf("wrong notebook response (-want +got):\n%s", diff)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			createdNotebook, err := n.CreateNotebook(internalCtx, notebookFixture(tt.creatorID, tt.publicNotebook))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			updatedNotebook := createdNotebook
+			updatedNotebook.Title = "Updated Title"
+			updatedNotebook.Public = !createdNotebook.Public
+			updatedNotebook.Blocks = createdNotebook.Blocks[:1]
+
+			input := map[string]interface{}{"id": marshalNotebookID(createdNotebook.ID), "notebook": notebooksapitest.NotebookToAPIInput(updatedNotebook)}
+			var response struct{ UpdateNotebook notebooksapitest.Notebook }
+			gotErrors := apitest.Exec(actor.WithActor(context.Background(), actor.FromUser(tt.updaterID)), t, schema, input, &response, updateNotebookMutation)
+
+			if tt.wantErr != "" && len(gotErrors) == 0 {
+				t.Fatal("expected error, got none")
+			}
+
+			if tt.wantErr != "" && !strings.Contains(gotErrors[0].Message, tt.wantErr) {
+				t.Fatalf("expected error containing '%s', got '%s'", tt.wantErr, gotErrors[0].Message)
+			}
+
+			if tt.wantErr == "" {
+				wantNotebookResponse := notebooksapitest.NotebookToAPIResponse(updatedNotebook, marshalNotebookID(updatedNotebook.ID), tt.creatorUsername, tt.creatorID == tt.updaterID)
+				compareNotebookAPIResponses(t, wantNotebookResponse, response.UpdateNotebook, true)
+			}
+		})
+	}
+}
+
+func TestDeleteNotebook(t *testing.T) {
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	internalCtx := actor.WithInternalActor(context.Background())
+	u := database.Users(db)
+	n := notebooks.Notebooks(db)
+
+	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	user2, err := u.Create(internalCtx, database.NewUser{Username: "u2", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	database := database.NewDB(db)
+	schema, err := graphqlbackend.NewSchema(database, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(database))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name           string
+		publicNotebook bool
+		creatorID      int32
+		deleterID      int32
+		wantErr        string
+	}{
+		{
+			name:           "user can delete their own public notebook",
+			publicNotebook: true,
+			creatorID:      user1.ID,
+			deleterID:      user1.ID,
+		},
+		{
+			name:           "user can delete their own private notebook",
+			publicNotebook: false,
+			creatorID:      user1.ID,
+			deleterID:      user1.ID,
+		},
+		{
+			name:           "user cannot delete other public notebooks",
+			publicNotebook: true,
+			creatorID:      user1.ID,
+			deleterID:      user2.ID,
+			wantErr:        "user does not have permissions to update the notebook",
+		},
+		{
+			name:           "user cannot delete other private notebooks",
+			publicNotebook: false,
+			creatorID:      user1.ID,
+			deleterID:      user2.ID,
+			wantErr:        "notebook not found",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			createdNotebook, err := n.CreateNotebook(internalCtx, notebookFixture(tt.creatorID, tt.publicNotebook))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			input := map[string]interface{}{"id": marshalNotebookID(createdNotebook.ID)}
+			var response struct{}
+			gotErrors := apitest.Exec(actor.WithActor(context.Background(), actor.FromUser(tt.deleterID)), t, schema, input, &response, deleteNotebookMutation)
+
+			if tt.wantErr != "" && len(gotErrors) == 0 {
+				t.Fatal("expected error, got none")
+			}
+
+			if tt.wantErr != "" && !strings.Contains(gotErrors[0].Message, tt.wantErr) {
+				t.Fatalf("expected error containing '%s', got '%s'", tt.wantErr, gotErrors[0].Message)
+			}
+
+			_, err = n.GetNotebook(actor.WithActor(context.Background(), actor.FromUser(tt.creatorID)), createdNotebook.ID)
+			if tt.wantErr == "" && !errors.Is(err, notebooks.ErrNotebookNotFound) {
+				t.Fatal("expected to not find a deleted notebook")
+			}
+		})
 	}
 }

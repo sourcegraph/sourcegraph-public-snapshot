@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/notebooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -118,6 +117,86 @@ func (r *Resolver) CreateNotebook(ctx context.Context, args graphqlbackend.Creat
 	return &notebookResolver{createdNotebook, r.db}, nil
 }
 
+func validateNotebookWritePermissionsForUser(notebook *notebooks.Notebook, userID int32) error {
+	if notebook.CreatorUserID != userID {
+		return errors.New("user does not have permissions to update the notebook")
+	}
+	return nil
+}
+
+func (r *Resolver) UpdateNotebook(ctx context.Context, args graphqlbackend.UpdateNotebookInputArgs) (graphqlbackend.NotebookResolver, error) {
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("notebooks cannot be created by unauthenticated users")
+	}
+
+	id, err := unmarshalNotebookID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	store := notebooks.Notebooks(r.db)
+	notebook, err := store.GetNotebook(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateNotebookWritePermissionsForUser(notebook, actor.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	notebookInput := args.Notebook
+	blocks := make(notebooks.NotebookBlocks, 0, len(notebookInput.Blocks))
+	for _, inputBlock := range notebookInput.Blocks {
+		block, err := convertNotebookBlockInput(inputBlock)
+		if err != nil {
+			return nil, err
+		}
+		blocks = append(blocks, *block)
+	}
+
+	notebook.Title = notebookInput.Title
+	notebook.Public = notebookInput.Public
+	notebook.Blocks = blocks
+
+	updatedNotebook, err := store.UpdateNotebook(ctx, notebook)
+	if err != nil {
+		return nil, err
+	}
+	return &notebookResolver{updatedNotebook, r.db}, nil
+}
+
+func (r *Resolver) DeleteNotebook(ctx context.Context, args graphqlbackend.DeleteNotebookArgs) (*graphqlbackend.EmptyResponse, error) {
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("notebooks cannot be deleted by unauthenticated users")
+	}
+
+	id, err := unmarshalNotebookID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	store := notebooks.Notebooks(r.db)
+	notebook, err := store.GetNotebook(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateNotebookWritePermissionsForUser(notebook, actor.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = store.DeleteNotebook(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
 type notebookResolver struct {
 	notebook *notebooks.Notebook
 	db       database.DB
@@ -159,14 +238,8 @@ func (r *notebookResolver) CreatedAt(ctx context.Context) graphqlbackend.DateTim
 }
 
 func (r *notebookResolver) ViewerCanManage(ctx context.Context) bool {
-	user, err := backend.CurrentUser(ctx, r.db)
-	if err != nil {
-		return false
-	}
-	if user == nil {
-		return false
-	}
-	return user.ID == r.notebook.CreatorUserID
+	actor := actor.FromContext(ctx)
+	return validateNotebookWritePermissionsForUser(r.notebook, actor.UID) == nil
 }
 
 type notebookBlockResolver struct {
