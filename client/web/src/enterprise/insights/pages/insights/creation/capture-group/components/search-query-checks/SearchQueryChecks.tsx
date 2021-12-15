@@ -47,7 +47,7 @@ export const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> 
             </li>
             <li>
                 <CheckListItem valid={checks.isNotRepo}>
-                    Do not contain <code>repo:</code> filter
+                    Does not contain <code>repo:</code> filter
                 </CheckListItem>
             </li>
             <li>
