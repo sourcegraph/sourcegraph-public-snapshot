@@ -193,7 +193,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     public getDashboardById = (input: { dashboardId: string | undefined }): Observable<InsightDashboard | null> => {
         const { dashboardId } = input
 
-        // the 'all' dashboardId is not a real dashboard so return early
+        // the 'all' dashboardId is not a real dashboard so return nothing
         if (dashboardId === ALL_INSIGHTS_DASHBOARD_ID) {
             return of(null)
         }
