@@ -30,6 +30,7 @@ registerHighlightContributions()
 const BITBUCKET_CLASS_PROPS: HoverOverlayClassProps = {
     className: 'aui-dialog',
     actionItemClassName: 'aui-button hover-action-item--bitbucket-server',
+    closeButtonClassName: 'aui-button btn-icon--bitbucket-server close',
     iconClassName: 'aui-icon',
     getAlertClassName: alertKind => {
         switch (alertKind) {

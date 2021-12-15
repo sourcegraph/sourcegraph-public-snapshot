@@ -263,6 +263,7 @@ export const bitbucketServerCodeHost: CodeHost = {
     hoverOverlayClassProps: {
         className: 'aui-dialog',
         actionItemClassName: 'aui-button hover-action-item--bitbucket-server',
+        closeButtonClassName: 'aui-button btn-icon--bitbucket-server',
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
         iconClassName,
     },
