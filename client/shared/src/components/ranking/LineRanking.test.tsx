@@ -1,7 +1,7 @@
 import { range } from 'lodash'
 
-import { MatchItem } from './FileMatch'
-import { calculateMatchGroups, mergeContext } from './FileMatchContext'
+import { calculateMatchGroupsSorted, mergeContext } from './LineRanking'
+import { MatchItem } from './PerFileResultRanking'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),
@@ -31,7 +31,7 @@ describe('components/FileMatchContext', () => {
         test('simple', () => {
             const maxMatches = 3
             const context = 1
-            const { grouped } = calculateMatchGroups(testData6ConsecutiveMatches, maxMatches, context)
+            const { grouped } = calculateMatchGroupsSorted(testData6ConsecutiveMatches, maxMatches, context)
             expect(grouped).toMatchInlineSnapshot(`
                 [
                   {
@@ -75,7 +75,7 @@ describe('components/FileMatchContext', () => {
         test('no context', () => {
             const maxMatches = 3
             const context = 0
-            const { grouped } = calculateMatchGroups(testData6ConsecutiveMatches, maxMatches, context)
+            const { grouped } = calculateMatchGroupsSorted(testData6ConsecutiveMatches, maxMatches, context)
             expect(grouped).toMatchInlineSnapshot(`
                 [
                   {
@@ -113,7 +113,7 @@ describe('components/FileMatchContext', () => {
         test('complex grouping', () => {
             const maxMatches = 10
             const context = 2
-            const { grouped } = calculateMatchGroups(testDataRealMatches, maxMatches, context)
+            const { grouped } = calculateMatchGroupsSorted(testDataRealMatches, maxMatches, context)
             expect(grouped).toMatchInlineSnapshot(`
                 [
                   {

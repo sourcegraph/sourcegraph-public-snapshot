@@ -1,6 +1,7 @@
 import * as H from 'history'
 import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
+import { AggregableBadge } from 'sourcegraph'
 
 import { Badge } from '@sourcegraph/wildcard'
 
@@ -64,7 +65,6 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
 
 const sumHighlightRanges = (count: number, item: MatchItem): number => count + item.highlightRanges.length
 
-const ByLineNumber = 'by-line-number'
 const ByZoektRanking = 'by-zoekt-ranking'
 const DEFAULT_CONTEXT = 1
 
@@ -73,7 +73,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
     const isZoektRanking: boolean =
-        !isErrorLike(props.settingsCascade) &&
+        !isErrorLike(props.settingsCascade.final) &&
         props.settingsCascade?.final?.experimentalFeatures?.clientSearchResultRanking === ByZoektRanking
     const renderTitle = (): JSX.Element => (
         <>

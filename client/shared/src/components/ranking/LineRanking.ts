@@ -17,7 +17,7 @@ export class LineRanking implements PerFileResultRanking {
 /**
  * Groups highlights that have overlapping or adjacent context. The input must be sorted.
  */
-const mergeContext = <T extends { line: number }>(context: number, highlights: T[]): T[][] => {
+export const mergeContext = <T extends { line: number }>(context: number, highlights: T[]): T[][] => {
     const groupsOfHighlights: T[][] = []
 
     for (let index = 0; index < highlights.length; index++) {
@@ -104,7 +104,7 @@ const calculateGroupPositions = (
  * @returns The subset of matches that were sorted and chosen for display, as well as that same
  * list of matches grouped together.
  */
-const calculateMatchGroupsSorted = (
+export const calculateMatchGroupsSorted = (
     matches: MatchItem[],
     maxMatches: number,
     context: number
