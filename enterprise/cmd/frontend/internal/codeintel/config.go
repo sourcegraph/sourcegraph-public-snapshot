@@ -16,9 +16,6 @@ type Config struct {
 	UploadStoreConfig                         *uploadstore.Config
 	AutoIndexEnqueuerConfig                   *enqueuer.Config
 	HunkCacheSize                             int
-	UploadStoreConfig                         *uploadstore.Config
-	AutoIndexEnqueuerConfig                   *enqueuer.Config
-	HunkCacheSize                             int
 	DiagnosticsCountMigrationBatchSize        int
 	DiagnosticsCountMigrationBatchInterval    time.Duration
 	DefinitionsCountMigrationBatchSize        int
