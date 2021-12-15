@@ -22,7 +22,7 @@ type batchSpecWorkspaceStepResolver struct {
 }
 
 func (r *batchSpecWorkspaceStepResolver) Number() int32 {
-	return int32(r.index)
+	return int32(r.index + 1)
 }
 
 func (r *batchSpecWorkspaceStepResolver) Run() string {

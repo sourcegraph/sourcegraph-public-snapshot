@@ -2036,6 +2036,13 @@ type BatchSpecWorkspace implements Node {
     failed.
     """
     diffStat: DiffStat
+
+    """
+    The executor that picked up this job. Null, if the executor has been pruned
+    from the data set or if the job has not started yet.
+    Only available to site-admins.
+    """
+    executor: Executor
 }
 
 """

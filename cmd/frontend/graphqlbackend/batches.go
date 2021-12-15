@@ -796,6 +796,8 @@ type BatchSpecWorkspaceResolver interface {
 	ChangesetSpecs(ctx context.Context) (*[]ChangesetSpecResolver, error)
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	PlaceInQueue() *int32
+
+	Executor(ctx context.Context) (*ExecutorResolver, error)
 }
 
 type BatchSpecWorkspaceStagesResolver interface {
