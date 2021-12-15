@@ -1,4 +1,4 @@
-package oobmigration
+package oobmigrators
 
 import (
 	"context"

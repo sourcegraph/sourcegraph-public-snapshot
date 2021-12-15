@@ -1,4 +1,4 @@
-package oobmigration
+package oobmigrators
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -26,6 +27,8 @@ type ExternalServiceConfigMigrator struct {
 	BatchSize    int
 	AllowDecrypt bool
 }
+
+var _ oobmigration.Migrator = &ExternalServiceConfigMigrator{}
 
 func NewExternalServiceConfigMigrator(store *basestore.Store) *ExternalServiceConfigMigrator {
 	// not locking too many external services at a time to prevent congestion
@@ -199,6 +202,8 @@ type ExternalAccountsMigrator struct {
 	AllowDecrypt bool
 }
 
+var _ oobmigration.Migrator = &ExternalAccountsMigrator{}
+
 func NewExternalAccountsMigrator(store *basestore.Store) *ExternalAccountsMigrator {
 	// not locking too many external accounts at a time to prevent congestion
 	return &ExternalAccountsMigrator{store: store, BatchSize: 50}
@@ -362,7 +367,7 @@ type ExternalServiceWebhookMigrator struct {
 	BatchSize int
 }
 
-var _ Migrator = &ExternalServiceWebhookMigrator{}
+var _ oobmigration.Migrator = &ExternalServiceWebhookMigrator{}
 
 func NewExternalServiceWebhookMigrator(store *basestore.Store) *ExternalServiceWebhookMigrator {
 	// Batch size arbitrarily chosen to match ExternalServiceConfigMigrator.
