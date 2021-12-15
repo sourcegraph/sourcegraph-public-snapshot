@@ -48,8 +48,6 @@ A more detailed introduction is available in the [development quickstart guide](
 
 ## Installation
 
-**`sg` requires the [Sourcegraph development dependencies](https://docs.sourcegraph.com/dev/getting-started/quickstart_1_install_dependencies) to be installed.**
-
 ### Using pre-built binaries (recommended)
 
 Run the following command in a terminal:
@@ -61,6 +59,8 @@ curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh
 That will download the latest release of `sg` from [here](https://github.com/sourcegraph/sg/releases), put it in a temporary location and run `sg install` to install it to a permanent location in your `$PATH`.
 
 ### Using install script
+
+> NOTE: **This method requires that Go has already been installed according to the [development quickstart guide](../../setup/quickstart.md).**
 
 Run the following in the root of `sourcegraph/sourcegraph`:
 
