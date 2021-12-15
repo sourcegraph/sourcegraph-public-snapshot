@@ -330,6 +330,9 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
 
 		if multi := new(ErrCollector); err != nil && errors.As(*err, &multi) {
+			if len(multi.multi.Errors) == 0 {
+				err = nil
+			}
 			logFields = append(logFields, multi.extraFields...)
 		}
 
