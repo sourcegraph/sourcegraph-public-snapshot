@@ -61,8 +61,11 @@ func resetExec(ctx context.Context, args []string) error {
 		})
 	}
 
-	dsnMap := map[string]string{}
-	schemaNames := []string{}
+	var (
+		dsnMap      = map[string]string{}
+		schemaNames []string
+	)
+
 	if *resetDatabaseNameFlag == "all" {
 		schemaNames = schemas.SchemaNames
 	} else {
@@ -75,7 +78,6 @@ func resetExec(ctx context.Context, args []string) error {
 		} else {
 			dsnMap[name] = postgresdsn.New(strings.ToUpper(name), "", getEnv)
 		}
-
 	}
 
 	for name, dsn := range dsnMap {
