@@ -22,6 +22,7 @@ const { add } = storiesOf('web/search/results/sidebar/SearchSidebar', module).ad
 
 const mockUseQueryState = create<SearchQueryState>((set, get) => ({
     queryState: { query: '' },
+    searchCaseSensitivity: false,
     setQueryState: queryStateUpdate => {
         if (typeof queryStateUpdate === 'function') {
             set({ queryState: queryStateUpdate(get().queryState) })
@@ -30,6 +31,7 @@ const mockUseQueryState = create<SearchQueryState>((set, get) => ({
         }
     },
     submitSearch: () => {},
+    setSearchCaseSensitivity: searchCaseSensitivity => set({ searchCaseSensitivity }),
 }))
 
 const defaultProps: SearchSidebarProps = {

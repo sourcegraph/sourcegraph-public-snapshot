@@ -12,6 +12,7 @@ import { QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search/he
 import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { useQueryIntelligence, useQueryDiagnostics } from '@sourcegraph/shared/src/search/useQueryIntelligence'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { observeResize } from '@sourcegraph/shared/src/util/dom'
@@ -64,7 +65,7 @@ export interface MonacoQueryInputProps
     onFocus?: () => void
     onBlur?: () => void
     onCompletionItemSelected?: () => void
-    fetchSuggestions: (query: string) => Observable<SearchMatch[]>
+    fetchSuggestions?: (query: string) => Observable<SearchMatch[]>
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     onEditorCreated?: (editor: Monaco.editor.IStandaloneCodeEditor) => void
     autoFocus?: boolean
@@ -150,7 +151,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     onBlur,
     onChange,
     onSubmit,
-    fetchSuggestions,
+    fetchSuggestions = fetchStreamSuggestions,
     onSuggestionsInitialized,
     onCompletionItemSelected,
     autoFocus,

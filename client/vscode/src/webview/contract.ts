@@ -22,6 +22,7 @@ export interface SourcegraphVSCodeExtensionAPI
         | 'observeActiveWebviewQueryState'
         | 'observeActiveWebviewDynamicFilters'
         | 'setActiveWebviewQueryState'
+        | 'setActiveWebviewCaseSensitivity'
         | 'submitActiveWebviewSearch'
     > {
     ping: () => ProxySubscribable<'pong'>
@@ -51,6 +52,7 @@ export interface SourcegraphVSCodeSearchWebviewAPI {
     observeQueryState: () => ProxySubscribable<QueryStateWithInputProps>
     observeDynamicFilters: () => ProxySubscribable<Filter[] | null>
     setQueryState: (queryState: QueryState) => void
+    setCaseSensitivity: (caseSensitivity: boolean) => void
     submitSearch: (queryState?: QueryState) => void
 }
 

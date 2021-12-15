@@ -109,6 +109,7 @@ export function activate(context: vscode.ExtensionContext): void {
         observeActiveWebviewQueryState: searchSidebarMediator.observeActiveWebviewQueryState,
         observeActiveWebviewDynamicFilters: searchSidebarMediator.observeActiveWebviewDynamicFilters,
         setActiveWebviewQueryState: searchSidebarMediator.setActiveWebviewQueryState,
+        setActiveWebviewCaseSensitivity: searchSidebarMediator.setActiveWebviewCaseSensitivity,
         submitActiveWebviewSearch: searchSidebarMediator.submitActiveWebviewSearch,
 
         getInstanceHostname: () => instanceHostname,

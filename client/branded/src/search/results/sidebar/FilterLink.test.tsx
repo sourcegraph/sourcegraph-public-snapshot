@@ -1,13 +1,15 @@
-import { mount } from 'enzyme'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import React from 'react'
 import sinon from 'sinon'
 
+import {
+    getDynamicFilterLinks,
+    getRepoFilterLinks,
+    getSearchSnippetLinks,
+} from '@sourcegraph/branded/src/search/results/sidebar/FilterLink'
 import { SearchScope } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
-
-import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 
 describe('FilterLink', () => {
     const repoFilter1: Filter = {
@@ -55,8 +57,8 @@ describe('FilterLink', () => {
         const onFilterChosen = sinon.stub()
 
         const links = getRepoFilterLinks(filters, onFilterChosen)
-        expect(links.length).toBe(2)
-        expect(mount(<>{links}</>)).toMatchSnapshot()
+        expect(links).toHaveLength(2)
+        expect(render(<>{links}</>).asFragment()).toMatchSnapshot()
     })
 
     it('should have show icons for repos on cloud', () => {
@@ -64,12 +66,12 @@ describe('FilterLink', () => {
         const onFilterChosen = sinon.stub()
 
         const links = getRepoFilterLinks(filters, onFilterChosen)
-        expect(links.length).toBe(2)
+        expect(links).toHaveLength(2)
 
-        const element = mount(<>{links}</>)
-        expect(element.find(GithubIcon).length).toBe(1)
-        expect(element.find(GitlabIcon).length).toBe(1)
-        expect(element).toMatchSnapshot()
+        const { asFragment } = render(<>{links}</>)
+        expect(screen.getByTitle('github.com')).toBeInTheDocument()
+        expect(screen.getByTitle('gitlab.com')).toBeInTheDocument()
+        expect(asFragment()).toMatchSnapshot()
     })
 
     it('should have no repo links if no repo filters present', () => {
@@ -77,7 +79,7 @@ describe('FilterLink', () => {
         const onFilterChosen = sinon.stub()
 
         const links = getRepoFilterLinks(filters, onFilterChosen)
-        expect(links.length).toBe(0)
+        expect(links).toHaveLength(0)
     })
 
     it('should have correct links for dynamic filters', () => {
@@ -85,8 +87,8 @@ describe('FilterLink', () => {
         const onFilterChosen = sinon.stub()
 
         const links = getDynamicFilterLinks(filters, onFilterChosen)
-        expect(links.length).toBe(3)
-        expect(mount(<>{links}</>)).toMatchSnapshot()
+        expect(links).toHaveLength(3)
+        expect(render(<>{links}</>).asFragment()).toMatchSnapshot()
     })
 
     it('should have no dynamic filters links if no dynamic filters present', () => {
@@ -94,7 +96,7 @@ describe('FilterLink', () => {
         const onFilterChosen = sinon.stub()
 
         const links = getDynamicFilterLinks(filters, onFilterChosen)
-        expect(links.length).toBe(0)
+        expect(links).toHaveLength(0)
     })
 
     it('should have correct links for scopes', () => {
@@ -108,15 +110,15 @@ describe('FilterLink', () => {
         const onFilterChosen = sinon.stub()
 
         const links = getSearchSnippetLinks({ subjects: [], final: { 'search.scopes': scopes } }, onFilterChosen)
-        expect(links.length).toBe(2)
-        expect(mount(<>{links}</>)).toMatchSnapshot()
+        expect(links).toHaveLength(2)
+        expect(render(<>{links}</>).asFragment()).toMatchSnapshot()
     })
 
     it('should have no snippet links if no snippets present', () => {
         const onFilterChosen = sinon.stub()
 
         const links = getSearchSnippetLinks({ subjects: [], final: {} }, onFilterChosen)
-        expect(links.length).toBe(0)
+        expect(links).toHaveLength(0)
     })
 
     it('should call correct callback when clicked', () => {
@@ -124,8 +126,8 @@ describe('FilterLink', () => {
         const onFilterChosen = sinon.spy()
 
         const links = getRepoFilterLinks(filters, onFilterChosen)
-        const link = mount(<>{links}</>).find('[data-testid="filter-link"]')
-        link.simulate('click')
+        render(<>{links}</>)
+        userEvent.click(screen.getByTestId('filter-link'))
 
         sinon.assert.calledWithExactly(onFilterChosen, repoFilter1.value)
     })

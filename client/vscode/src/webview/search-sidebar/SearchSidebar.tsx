@@ -17,6 +17,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
     const useQueryState: UseStore<SearchQueryState> = useMemo(() => {
         const useStore = create<SearchQueryState>((set, get) => ({
             queryState: { query: '' },
+            searchCaseSensitivity: false,
             setQueryState: queryStateUpdate => {
                 const queryState =
                     typeof queryStateUpdate === 'function' ? queryStateUpdate(get().queryState) : queryStateUpdate
@@ -40,6 +41,15 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
                         () => {},
                         () => {}
                     )
+            },
+            setSearchCaseSensitivity: searchCaseSensitivity => {
+                set({ searchCaseSensitivity })
+
+                // TODO error handling
+                sourcegraphVSCodeExtensionAPI.setActiveWebviewCaseSensitivity(searchCaseSensitivity).then(
+                    () => {},
+                    () => {}
+                )
             },
         }))
         return useStore
@@ -71,7 +81,10 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
         // updates query state in the search webview panel.
         if (activeQueryState) {
             // useQueryState.getState().setQueryState(activeQueryState)
-            useQueryState.setState({ queryState: activeQueryState.queryState })
+            useQueryState.setState({
+                queryState: activeQueryState.queryState,
+                searchCaseSensitivity: activeQueryState.caseSensitive,
+            })
         }
     }, [activeQueryState, useQueryState])
 

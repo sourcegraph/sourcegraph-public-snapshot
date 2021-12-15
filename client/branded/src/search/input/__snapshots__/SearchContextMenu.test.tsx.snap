@@ -2,75 +2,37 @@
 
 exports[`SearchContextMenu should filter list by spec when searching 1`] = `
 Array [
-  <SearchContextMenuItem
-    description="Your repositories on Sourcegraph"
-    isDefault={false}
-    key="2"
-    onKeyDown={[Function]}
-    searchFilter="ser"
-    selectSearchContextSpec={[Function]}
-    selected={false}
-    spec="@username"
-    telemetryService={
-      Object {
-        "log": [Function],
-        "logViewEvent": [Function],
-      }
-    }
+  <button
+    class="item dropdown-item"
+    data-search-context-spec="@username"
+    data-testid="search-context-menu-item"
+    role="menuitem"
+    tabindex="0"
+    type="button"
   >
     <small
       class="font-weight-medium itemName"
       data-testid="search-context-menu-item-name"
       title="@username"
     >
-      <button
-        className="item dropdown-item"
-        data-search-context-spec="@username"
-        data-testid="search-context-menu-item"
-        onClick={[Function]}
-        onKeyDown={[Function]}
-        role="menuitem"
-        tabIndex="0"
-        type="button"
-      >
-        <small
-          className="font-weight-medium itemName"
-          data-testid="search-context-menu-item-name"
-          title="@username"
-        >
-          <HighlightedSearchContextSpec
-            searchFilter="ser"
-            spec="@username"
-          >
-            @
-            username
-          </HighlightedSearchContextSpec>
-        </small>
-
-        <small
-          className="itemDescription"
-          title="Your repositories on Sourcegraph"
-        >
-          Your repositories on Sourcegraph
-        </small>
-      </button>
-    </DropdownItem>
-  </SearchContextMenuItem>,
-  <SearchContextMenuItem
-    description="Only code in version 1.5"
-    isDefault={false}
-    key="3"
-    onKeyDown={[Function]}
-    searchFilter="ser"
-    selectSearchContextSpec={[Function]}
-    selected={false}
-    spec="@username/test-version-1.5"
-    telemetryService={
-      Object {
-        "log": [Function],
-        "logViewEvent": [Function],
-      }
-    }
+      @
+      username
+    </small>
+     
+    <small
+      class="itemDescription"
+      title="Your repositories on Sourcegraph"
+    >
+      Your repositories on Sourcegraph
+    </small>
+  </button>,
+  <button
+    class="item dropdown-item"
+    data-search-context-spec="@username/test-version-1.5"
+    data-testid="search-context-menu-item"
+    role="menuitem"
+    tabindex="0"
+    type="button"
   >
     <small
       class="font-weight-medium itemName"
@@ -82,7 +44,7 @@ Array [
       /
       test-version-1.5
     </small>
-
+     
     <small
       class="itemDescription"
       title="Only code in version 1.5"

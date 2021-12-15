@@ -54,6 +54,9 @@ const webviewAPI: SourcegraphVSCodeSearchWebviewAPI = {
     setQueryState: queryState => {
         useQueryState.getState().actions.setQuery(queryState)
     },
+    setCaseSensitivity: caseSensitivity => {
+        useQueryState.getState().actions.setCaseSensitivity(caseSensitivity)
+    },
     submitSearch: queryState => {
         useQueryState.getState().actions.submitQuery(queryState)
     },

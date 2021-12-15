@@ -14,8 +14,6 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 
-import { SourcegraphContext } from '../../jscontext'
-
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
 
 describe('SearchContextDropdown', () => {
@@ -110,24 +108,12 @@ describe('SearchContextDropdown', () => {
     })
 
     describe('with CTA', () => {
-        let oldContext: SourcegraphContext & Mocha.SuiteFunction
-        beforeEach(() => {
-            oldContext = window.context
-            window.context = { externalServicesUserMode: 'all' } as SourcegraphContext & Mocha.SuiteFunction
-        })
-
-        afterEach(() => {
-            window.context = oldContext
-        })
+        const props = { ...defaultProps, isExternalServicesUserModeAll: true }
 
         it('should not display CTA if not on Sourcegraph.com', () => {
             render(
                 <MockTemporarySettings settings={{ 'search.contexts.ctaDismissed': false }}>
-                    <SearchContextDropdown
-                        {...defaultProps}
-                        isSourcegraphDotCom={false}
-                        hasUserAddedRepositories={false}
-                    />
+                    <SearchContextDropdown {...props} isSourcegraphDotCom={false} hasUserAddedRepositories={false} />
                 </MockTemporarySettings>
             )
 
@@ -139,11 +125,7 @@ describe('SearchContextDropdown', () => {
         it('should display CTA on Sourcegraph.com if no repos have been added and not permanently dismissed', () => {
             render(
                 <MockTemporarySettings settings={{ 'search.contexts.ctaDismissed': false }}>
-                    <SearchContextDropdown
-                        {...defaultProps}
-                        isSourcegraphDotCom={true}
-                        hasUserAddedRepositories={false}
-                    />
+                    <SearchContextDropdown {...props} isSourcegraphDotCom={true} hasUserAddedRepositories={false} />
                 </MockTemporarySettings>
             )
 
@@ -162,7 +144,7 @@ describe('SearchContextDropdown', () => {
             render(
                 <MockTemporarySettings settings={{ 'search.contexts.ctaDismissed': false }}>
                     <SearchContextDropdown
-                        {...defaultProps}
+                        {...props}
                         isSourcegraphDotCom={true}
                         hasUserAddedRepositories={false}
                         authenticatedUser={mockUserWithOrg}
@@ -178,11 +160,7 @@ describe('SearchContextDropdown', () => {
         it('should not display CTA on Sourcegraph.com if repos have been added', () => {
             render(
                 <MockTemporarySettings settings={{ 'search.contexts.ctaDismissed': false }}>
-                    <SearchContextDropdown
-                        {...defaultProps}
-                        isSourcegraphDotCom={true}
-                        hasUserAddedRepositories={true}
-                    />
+                    <SearchContextDropdown {...props} isSourcegraphDotCom={true} hasUserAddedRepositories={true} />
                 </MockTemporarySettings>
             )
 
@@ -194,11 +172,7 @@ describe('SearchContextDropdown', () => {
         it('should not display CTA on Sourcegraph.com if dimissed', () => {
             render(
                 <MockTemporarySettings settings={{ 'search.contexts.ctaDismissed': true }}>
-                    <SearchContextDropdown
-                        {...defaultProps}
-                        isSourcegraphDotCom={true}
-                        hasUserAddedRepositories={false}
-                    />
+                    <SearchContextDropdown {...props} isSourcegraphDotCom={true} hasUserAddedRepositories={false} />
                 </MockTemporarySettings>
             )
 
@@ -215,11 +189,7 @@ describe('SearchContextDropdown', () => {
                     settings={{ 'search.contexts.ctaDismissed': false }}
                     onSettingsChanged={onSettingsChanged}
                 >
-                    <SearchContextDropdown
-                        {...defaultProps}
-                        isSourcegraphDotCom={true}
-                        hasUserAddedRepositories={false}
-                    />
+                    <SearchContextDropdown {...props} isSourcegraphDotCom={true} hasUserAddedRepositories={false} />
                 </MockTemporarySettings>
             )
 

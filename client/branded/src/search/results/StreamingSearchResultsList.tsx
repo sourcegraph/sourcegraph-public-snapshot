@@ -44,12 +44,13 @@ export interface StreamingSearchResultsListProps
     footerClassName?: string
     /** Available to web app through JS Context */
     assetsRoot?: string
-    /** Scroll visibility state is reset when a new search is executed. */
-    executedQuery: string
     /**
-     * Used in contexts where we need to run a callback when a search result is selected.
-     * Example: Running "open file" command in VS Code on search result click.
-     */
+     * Latest run query. Resets scroll visibility state when changed.
+     * For example, `location.search` on web.
+     * */
+    executedQuery?: string
+
+    /** Called when a search result is clicked. */
     onSelect?: (result: SearchMatch) => void
 }
 

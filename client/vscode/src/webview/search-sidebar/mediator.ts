@@ -19,6 +19,7 @@ export interface SearchSidebarMediator {
     observeActiveWebviewQueryState: () => ProxySubscribable<QueryStateWithInputProps | null>
     observeActiveWebviewDynamicFilters: () => ProxySubscribable<Filter[] | null>
     setActiveWebviewQueryState: (queryState: QueryState) => Promise<void>
+    setActiveWebviewCaseSensitivity: (caseSensitivity: boolean) => Promise<void>
     submitActiveWebviewSearch: (queryState?: QueryState) => Promise<void>
 }
 
@@ -117,6 +118,18 @@ export function createSearchSidebarMediator(disposables: vscode.Disposable[]): S
 
                     // TODO decide where to do error handling. Feels like fire and forget (w/ error logging) is ok here.
                     await sourcegraphVSCodeSearchWebviewAPI.setQueryState(queryState)
+                } catch (error) {
+                    console.error(error)
+                }
+            }
+        },
+        setActiveWebviewCaseSensitivity: async caseSensitivity => {
+            if (activeSearchWebviewPanel.value) {
+                try {
+                    const { sourcegraphVSCodeSearchWebviewAPI } = activeSearchWebviewPanel.value
+
+                    // TODO decide where to do error handling. Feels like fire and forget (w/ error logging) is ok here.
+                    await sourcegraphVSCodeSearchWebviewAPI.setCaseSensitivity(caseSensitivity)
                 } catch (error) {
                     console.error(error)
                 }

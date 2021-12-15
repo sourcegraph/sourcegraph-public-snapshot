@@ -191,7 +191,6 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                             platformContext={platformContext}
                             footerClassName={searchResultsStyles.streamingSearchResultsContentCentered}
                             assetsRoot={window.context?.assetsRoot}
-                            executedQuery={location.search}
                         />
                     </div>
                 )}
