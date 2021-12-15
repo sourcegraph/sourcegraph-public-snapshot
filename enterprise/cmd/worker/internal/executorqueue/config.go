@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -55,6 +56,14 @@ func (c *Config) Load() {
 			c.GCPConfig.load(&c.BaseConfig)
 		}
 	})
+}
+
+func (c *Config) Validate() error {
+	var errs *multierror.Error
+	errs = multierror.Append(errs, c.BaseConfig.Validate())
+	errs = multierror.Append(errs, c.AWSConfig.Validate())
+	errs = multierror.Append(errs, c.GCPConfig.Validate())
+	return errs.ErrorOrNil()
 }
 
 func parseAllocations(allocations string) (map[string]QueueAllocation, error) {
