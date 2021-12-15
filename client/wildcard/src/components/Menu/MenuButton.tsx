@@ -6,7 +6,13 @@ import { Button, ButtonProps } from '../Button'
 
 export type MenuButtonProps = Omit<ButtonProps, 'as'>
 
-export const MenuButton = React.forwardRef(({ children, className, ...props }, reference) => (
+/**
+ * Wraps a styled Wildcard `<Button />` component that can
+ * toggle the opening and closing of a dropdown menu.
+ *
+ * @see — Docs https://reach.tech/menu-button#menubutton
+ */
+export const MenuButton = React.forwardRef(({ children, ...props }, reference) => (
     <ReachMenuButton ref={reference} as={Button} {...props}>
         {children}
     </ReachMenuButton>
