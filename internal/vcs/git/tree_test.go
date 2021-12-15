@@ -11,7 +11,11 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
@@ -452,5 +456,134 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 			t.Errorf("%s: fs.Open(submod): %s", label, err)
 			continue
 		}
+	}
+}
+
+func TestLsFiles(t *testing.T) {
+	t.Parallel()
+
+	gitCommands := []string{
+		"touch file1",
+		"touch file2",
+		"touch file3",
+		"git add file1 file2 file3",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+
+	repo := MakeGitRepository(t, gitCommands...)
+
+	ctx := context.Background()
+
+	checker := authz.NewMockSubRepoPermissionChecker()
+	// Start disabled
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return false
+	})
+
+	files, err := LsFiles(ctx, checker, repo, "HEAD")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"file1", "file2", "file3",
+	}
+	if diff := cmp.Diff(want, files); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// With filtering
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		if content.Path == "file1" {
+			return authz.Read, nil
+		}
+		return authz.None, nil
+	})
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 1,
+	})
+	files, err = LsFiles(ctx, checker, repo, "HEAD")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want = []string{
+		"file1",
+	}
+	if diff := cmp.Diff(want, files); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestParseDirectoryChildrenRoot(t *testing.T) {
+	dirnames := []string{""}
+	paths := []string{
+		".github",
+		".gitignore",
+		"LICENSE",
+		"README.md",
+		"cmd",
+		"go.mod",
+		"go.sum",
+		"internal",
+		"protocol",
+	}
+
+	expected := map[string][]string{
+		"": paths,
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
+}
+
+func TestParseDirectoryChildrenNonRoot(t *testing.T) {
+	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
+	paths := []string{
+		"cmd/lsif-go",
+		"protocol/protocol.go",
+		"protocol/writer.go",
+	}
+
+	expected := map[string][]string{
+		"cmd/":          {"cmd/lsif-go"},
+		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
+		"cmd/protocol/": nil,
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
+}
+
+func TestParseDirectoryChildrenDifferentDepths(t *testing.T) {
+	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
+	paths := []string{
+		"cmd/lsif-go",
+		"protocol/protocol.go",
+		"protocol/writer.go",
+		"cmd/protocol/main.go",
+	}
+
+	expected := map[string][]string{
+		"cmd/":          {"cmd/lsif-go"},
+		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
+		"cmd/protocol/": {"cmd/protocol/main.go"},
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
+}
+
+func TestCleanDirectoriesForLsTree(t *testing.T) {
+	args := []string{"", "foo", "bar/", "baz"}
+	actual := cleanDirectoriesForLsTree(args)
+	expected := []string{".", "foo/", "bar/", "baz/"}
+
+	if diff := cmp.Diff(expected, actual); diff != "" {
+		t.Errorf("unexpected ls-tree args (-want +got):\n%s", diff)
 	}
 }

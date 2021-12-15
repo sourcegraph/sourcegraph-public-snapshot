@@ -33,17 +33,27 @@ func (c Files) AffectsSg() bool {
 // AffectsGo returns whether the changes affects go files.
 func (c Files) AffectsGo() bool {
 	for _, p := range c {
-		if strings.HasSuffix(p, ".go") || p == "go.sum" || p == "go.mod" || strings.HasPrefix(p, "migrations/") {
+		if strings.HasSuffix(p, ".go") || p == "go.sum" || p == "go.mod" {
 			return true
 		}
 	}
-	return false
+	return c.AffectsDatabaseSchema()
 }
 
 // AffectsDockerfiles returns whether the changes affects Dockerfiles.
 func (f Files) AffectsDockerfiles() bool {
 	for _, p := range f {
 		if strings.HasPrefix(p, "Dockerfile") || strings.HasSuffix(p, "Dockerfile") {
+			return true
+		}
+	}
+	return false
+}
+
+// AffectsDatabaseSchema returns whether the changes affect the database schema definition.
+func (c Files) AffectsDatabaseSchema() bool {
+	for _, p := range c {
+		if strings.HasPrefix(p, "migrations/") {
 			return true
 		}
 	}

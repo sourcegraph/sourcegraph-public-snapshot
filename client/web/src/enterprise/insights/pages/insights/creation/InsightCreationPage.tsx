@@ -46,11 +46,9 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
     const { mode, telemetryService } = props
 
     const history = useHistory()
-
-    const { dashboardId } = useQueryParameters(['dashboardId'])
-
     const { getDashboardById, getInsightSubjects, createInsight } = useContext(CodeInsightsBackendContext)
 
+    const { dashboardId } = useQueryParameters(['dashboardId'])
     const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
     const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
 
@@ -93,6 +91,17 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
     const dashboardBasedVisibility = getVisibilityFromDashboard(dashboard)
     const insightVisibility = dashboardBasedVisibility ?? personalVisibility
 
+    if (mode === InsightCreationPageType.CaptureGroup) {
+        return (
+            <CaptureGroupCreationPage
+                telemetryService={telemetryService}
+                onInsightCreateRequest={handleInsightCreateRequest}
+                onSuccessfulCreation={handleInsightSuccessfulCreation}
+                onCancel={handleCancel}
+            />
+        )
+    }
+
     if (mode === InsightCreationPageType.Search) {
         return (
             <SearchInsightCreationPage
@@ -104,10 +113,6 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
                 onCancel={handleCancel}
             />
         )
-    }
-
-    if (mode === InsightCreationPageType.CaptureGroup) {
-        return <CaptureGroupCreationPage />
     }
 
     return (

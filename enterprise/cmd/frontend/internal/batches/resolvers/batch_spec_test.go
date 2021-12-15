@@ -34,7 +34,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	cstore := store.New(db, &observation.TestContext, nil)
 	repoStore := database.ReposWith(cstore)
@@ -260,7 +260,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	now := timeutil.Now().Truncate(time.Second)
 	minAgo := func(min int) time.Time { return now.Add(time.Duration(-min) * time.Minute) }

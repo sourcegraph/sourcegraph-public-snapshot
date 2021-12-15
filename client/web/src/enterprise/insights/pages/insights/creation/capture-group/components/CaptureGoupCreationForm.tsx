@@ -17,7 +17,7 @@ import { searchQueryValidator } from '../search-query-validator'
 import { CaptureGroupFormFields } from '../types'
 
 import { CaptureGroupSeriesInfoBadge } from './info-badge/CaptureGroupSeriesInfoBadge'
-import { SearchQueryChecks } from './SearchQueryChecks'
+import { SearchQueryChecks } from './search-query-checks/SearchQueryChecks'
 
 interface CaptureGroupCreationFormProps {
     mode: 'creation' | 'edit'

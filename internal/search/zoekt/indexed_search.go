@@ -231,7 +231,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, g
 	if ok {
 		return request, nil
 	}
-	q, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+	q, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 	if err != nil {
 		return nil, err
 	}

@@ -200,6 +200,10 @@ func (r *UserResolver) SiteAdmin(ctx context.Context) (bool, error) {
 	return r.user.SiteAdmin, nil
 }
 
+func (r *UserResolver) TosAccepted(ctx context.Context) bool {
+	return r.user.TosAccepted
+}
+
 type updateUserArgs struct {
 	User        graphql.ID
 	Username    *string
@@ -376,6 +380,29 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 			log15.Warn("Failed to send email to inform user of password creation", "error", err)
 		}
 	}
+	return &EmptyResponse{}, nil
+}
+
+func (r *schemaResolver) SetTosAccepted(ctx context.Context) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only the authenticated user can accept the terms of service.
+	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("no authenticated user")
+	}
+
+	tosAccepted := true
+	update := database.UserUpdate{
+		TosAccepted: &tosAccepted,
+	}
+
+	if err := database.Users(r.db).Update(ctx, user.ID, update); err != nil {
+		return nil, err
+	}
+
 	return &EmptyResponse{}, nil
 }
 

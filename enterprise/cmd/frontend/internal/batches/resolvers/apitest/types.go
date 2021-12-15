@@ -91,6 +91,7 @@ type BatchChange struct {
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat
 	BulkOperations          BulkOperationConnection
+	BatchSpecs              BatchSpecConnection
 }
 
 type BatchChangeConnection struct {

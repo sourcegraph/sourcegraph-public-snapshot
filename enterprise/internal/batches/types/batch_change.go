@@ -1,7 +1,6 @@
 package types
 
 import (
-	"strings"
 	"time"
 )
 
@@ -48,12 +47,4 @@ func (c *BatchChange) Closed() bool { return !c.ClosedAt.IsZero() }
 // IsDraft returns true when the BatchChange is a draft ("shallow") Batch
 // Change, i.e. it's associated with a BatchSpec but it hasn't been applied
 // yet.
-func (c *BatchChange) IsDraft() bool {
-	return c.BatchSpecID != 0 &&
-		c.LastAppliedAt.IsZero() &&
-		c.LastApplierID == 0 &&
-		c.InitialApplierID == 0
-}
-
-// ToGraphQL returns the GraphQL representation of the state.
-func (s BatchChangeState) ToGraphQL() string { return strings.ToUpper(string(s)) }
+func (c *BatchChange) IsDraft() bool { return c.LastAppliedAt.IsZero() }

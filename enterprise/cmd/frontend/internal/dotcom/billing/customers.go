@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // GetOrAssignUserCustomerID returns the billing customer ID associated with the user. If no billing
@@ -111,12 +110,12 @@ var mockCreateCustomerID func(userID int32) (string, error)
 
 // createCustomerID creates a customer record on the billing system and returns the customer ID of
 // the new record.
-func createCustomerID(ctx context.Context, db dbutil.DB, userID int32) (string, error) {
+func createCustomerID(ctx context.Context, db database.DB, userID int32) (string, error) {
 	if mockCreateCustomerID != nil {
 		return mockCreateCustomerID(userID)
 	}
 
-	user, err := graphqlbackend.UserByIDInt32(ctx, database.NewDB(db), userID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, db, userID)
 	if err != nil {
 		return "", err
 	}

@@ -126,6 +126,7 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 
 func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- SymbolOrError, parseRequest fetcher.ParseRequest, totalSymbols *uint32) (err error) {
 	ctx, trace, endObservation := p.operations.handleParseRequest.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("path", parseRequest.Path),
 		log.Int("fileSize", len(parseRequest.Data)),
 	}})
 	defer endObservation(1, observation.Args{})

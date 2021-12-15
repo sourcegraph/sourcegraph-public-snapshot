@@ -5,19 +5,24 @@ interactions:
     body: ""
     form: {}
     headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      - application/vnd.github.nebula-preview+json
       Content-Type:
       - application/json; charset=utf-8
-    url: https://ghe.sgdev.org/api/v3/meta
+    url: https://ghe.sgdev.org/api/v3
     method: GET
   response:
-    body: '{"verifiable_password_authentication":true,"installed_version":"2.22.6"}'
+    body: '{"current_user_url":"https://ghe.sgdev.org/api/v3/user","current_user_authorizations_html_url":"https://ghe.sgdev.org/settings/connections/applications{/client_id}","authorizations_url":"https://ghe.sgdev.org/api/v3/authorizations","code_search_url":"https://ghe.sgdev.org/api/v3/search/code?q={query}{&page,per_page,sort,order}","commit_search_url":"https://ghe.sgdev.org/api/v3/search/commits?q={query}{&page,per_page,sort,order}","emails_url":"https://ghe.sgdev.org/api/v3/user/emails","emojis_url":"https://ghe.sgdev.org/api/v3/emojis","events_url":"https://ghe.sgdev.org/api/v3/events","feeds_url":"https://ghe.sgdev.org/api/v3/feeds","followers_url":"https://ghe.sgdev.org/api/v3/user/followers","following_url":"https://ghe.sgdev.org/api/v3/user/following{/target}","gists_url":"https://ghe.sgdev.org/api/v3/gists{/gist_id}","hub_url":"https://ghe.sgdev.org/api/v3/hub","issue_search_url":"https://ghe.sgdev.org/api/v3/search/issues?q={query}{&page,per_page,sort,order}","issues_url":"https://ghe.sgdev.org/api/v3/issues","keys_url":"https://ghe.sgdev.org/api/v3/user/keys","label_search_url":"https://ghe.sgdev.org/api/v3/search/labels?q={query}&repository_id={repository_id}{&page,per_page}","notifications_url":"https://ghe.sgdev.org/api/v3/notifications","organization_url":"https://ghe.sgdev.org/api/v3/orgs/{org}","organization_repositories_url":"https://ghe.sgdev.org/api/v3/orgs/{org}/repos{?type,page,per_page,sort}","organization_teams_url":"https://ghe.sgdev.org/api/v3/orgs/{org}/teams","public_gists_url":"https://ghe.sgdev.org/api/v3/gists/public","rate_limit_url":"https://ghe.sgdev.org/api/v3/rate_limit","repository_url":"https://ghe.sgdev.org/api/v3/repos/{owner}/{repo}","repository_search_url":"https://ghe.sgdev.org/api/v3/search/repositories?q={query}{&page,per_page,sort,order}","current_user_repositories_url":"https://ghe.sgdev.org/api/v3/user/repos{?type,page,per_page,sort}","starred_url":"https://ghe.sgdev.org/api/v3/user/starred{/owner}{/repo}","starred_gists_url":"https://ghe.sgdev.org/api/v3/gists/starred","topic_search_url":"https://ghe.sgdev.org/api/v3/search/topics?q={query}{&page,per_page}","user_url":"https://ghe.sgdev.org/api/v3/users/{user}","user_organizations_url":"https://ghe.sgdev.org/api/v3/user/orgs","user_repositories_url":"https://ghe.sgdev.org/api/v3/users/{user}/repos{?type,page,per_page,sort}","user_search_url":"https://ghe.sgdev.org/api/v3/search/users?q={query}{&page,per_page,sort,order}"}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
-        X-GitHub-Media-Type, Deprecation, Sunset
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
+        Sunset
       Cache-Control:
       - private, max-age=60, s-maxage=60
       Content-Security-Policy:
@@ -25,15 +30,13 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 25 Nov 2021 13:38:48 GMT
+      - Tue, 14 Dec 2021 21:43:31 GMT
       Etag:
-      - W/"9a549e6716f8657e4702a85208179ef6"
+      - W/"82aeb589183fce7ad6278980b9599e7a038700eebdefa0253cb01346ebe8d663"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
       - GitHub.com
-      Status:
-      - 200 OK
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains
       Vary:
@@ -45,22 +48,23 @@ interactions:
       X-Frame-Options:
       - deny
       X-Github-Enterprise-Version:
-      - 2.22.6
+      - 3.3.0
       X-Github-Media-Type:
-      - github.v3; format=json
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview.nebula-preview;
+        format=json
       X-Github-Request-Id:
-      - 75a06f73-c503-4e59-b137-a0e6afb385c5
+      - a8bc4323-105d-4607-9824-5f21d566c629
       X-Oauth-Scopes:
       - repo
       X-Runtime-Rack:
-      - "0.850670"
+      - "0.021005"
       X-Xss-Protection:
-      - 1; mode=block
+      - "0"
     status: 200 OK
     code: 200
     duration: ""
 - request:
-    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tforkCount\n\t\n}\n\t\nquery($query:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tforkCount\n\tstargazerCount\n\tvisibility\n}\n\t\nquery($query:
       String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
       $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
       { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
@@ -75,28 +79,25 @@ interactions:
     method: POST
   response:
     body: '{"data":{"search":{"repositoryCount":1,"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOjE="},"nodes":[{"id":"MDEwOlJlcG9zaXRvcnk0NDIyODU=","databaseId":442285,"nameWithOwner":"admiring-austin-120/fluffy-enigma","description":"Internal
-      repo used in tests in sourcegraph code.","url":"https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma","isPrivate":true,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"forkCount":0}]}}}'
+      repo used in tests in sourcegraph code.","url":"https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma","isPrivate":true,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"forkCount":0,"stargazerCount":0,"visibility":"INTERNAL"}]}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
-        X-GitHub-Media-Type, Deprecation, Sunset
-      Cache-Control:
-      - no-cache
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
+        Sunset
       Content-Security-Policy:
       - default-src 'none'
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 25 Nov 2021 13:38:48 GMT
+      - Tue, 14 Dec 2021 21:43:31 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
       - GitHub.com
-      Status:
-      - 200 OK
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains
       X-Accepted-Oauth-Scopes:
@@ -106,11 +107,11 @@ interactions:
       X-Frame-Options:
       - deny
       X-Github-Enterprise-Version:
-      - 2.22.6
+      - 3.3.0
       X-Github-Media-Type:
-      - github.antiope-preview; format=json
+      - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 1f83d65c-02cc-413c-807d-3678104700c1
+      - 73b5772f-5667-4616-adb0-abd13e419faf
       X-Oauth-Scopes:
       - repo
       X-Ratelimit-Limit:
@@ -118,11 +119,15 @@ interactions:
       X-Ratelimit-Remaining:
       - "5000"
       X-Ratelimit-Reset:
-      - "1637851128"
+      - "1639521811"
+      X-Ratelimit-Resource:
+      - graphql
+      X-Ratelimit-Used:
+      - "0"
       X-Runtime-Rack:
-      - "0.384835"
+      - "0.548244"
       X-Xss-Protection:
-      - 1; mode=block
+      - "0"
     status: 200 OK
     code: 200
     duration: ""

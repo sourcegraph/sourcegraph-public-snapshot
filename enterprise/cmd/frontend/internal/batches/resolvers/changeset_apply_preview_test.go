@@ -33,7 +33,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
@@ -259,7 +259,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
@@ -379,7 +379,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 			t.Fatal(err)
 		}
 		q := sqlf.Sprintf(`UPDATE changeset_specs SET spec = %s WHERE id = %s`, spec, newFx.specPublished.ID)
-		if _, err := db.Exec(q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+		if _, err := db.ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
 
@@ -407,7 +407,6 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		assertOperations(t, previews, newFx.specToBeDraft, publishDraftOps)
 		assertOperations(t, previews, newFx.specToBeUnpublished, noOps)
 		assertOperations(t, previews, newFx.specToBeOmitted, noOps)
-
 	})
 
 	t.Run("conflicting publication state", func(t *testing.T) {

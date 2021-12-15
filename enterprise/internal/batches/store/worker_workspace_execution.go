@@ -246,7 +246,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 			return rollbackAndMarkFailed(err, fmt.Sprintf("failed to save cache entry: %s", err))
 		}
 
-		// And now build changeset specs from it.
+		// And now build changeset specs from it
 		var executionResult execution.Result
 		if err := json.Unmarshal([]byte(entry.Value), &executionResult); err != nil {
 			return rollbackAndMarkFailed(err, fmt.Sprintf("failed to parse cache entry: %s", err))

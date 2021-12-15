@@ -1,15 +1,19 @@
-name: LSIF-Ts
+name: lsif-ts
 on:
   push:
     paths:
       - '**.ts'
       - '**.js'
+
 jobs:
   lsif-tsc-eslint:
     # Skip running on forks
     if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
+    env:
+      # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+      NODE_OPTIONS: --max_old_space_size=5120
     strategy:
       matrix:
         root:
@@ -46,11 +50,11 @@ jobs:
         run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
         env:
           SRC_ENDPOINT: https://k8s.sgdev.org/
-      # - name: Upload lsif-tsc dump to Demo
-      #   working-directory: ${{ matrix.root }}
-      #   run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
-      #   env:
-      #     SRC_ENDPOINT: https://demo.sourcegraph.com/
+      - name: Upload lsif-tsc dump to Demo
+        working-directory: ${{ matrix.root }}
+        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
+        env:
+          SRC_ENDPOINT: https://demo.sourcegraph.com/
 
       # Run lsif-eslint
       - name: Build TypeScript

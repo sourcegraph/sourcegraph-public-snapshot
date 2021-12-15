@@ -18,19 +18,25 @@ import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
+import { useExperimentalFeatures } from '../stores'
 import { ThemePreference } from '../stores/themeState'
 
 import { cncf } from './cncf'
 import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
 import { temporal } from './Temporal'
 
-const { add } = storiesOf('web/CommunitySearchContextPage', module).addParameters({
-    design: {
-        type: 'figma',
-        url: 'https://www.figma.com/file/Xc4M24VTQq8itU0Lgb1Wwm/RFC-159-Visual-Design?node-id=66%3A611',
-    },
-    chromatic: { viewports: [769, 1200] },
-})
+const { add } = storiesOf('web/CommunitySearchContextPage', module)
+    .addParameters({
+        design: {
+            type: 'figma',
+            url: 'https://www.figma.com/file/Xc4M24VTQq8itU0Lgb1Wwm/RFC-159-Visual-Design?node-id=66%3A611',
+        },
+        chromatic: { viewports: [769, 1200] },
+    })
+    .addDecorator(Story => {
+        useExperimentalFeatures.setState({ showSearchContext: true, showSearchContextManagement: false })
+        return <Story />
+    })
 
 const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = {
     executeCommand: () => new Promise(resolve => setTimeout(resolve, 750)),
@@ -112,9 +118,7 @@ const commonProps = () =>
         setCaseSensitivity: action('setCaseSensitivity'),
         activation: undefined,
         isSourcegraphDotCom: true,
-        showSearchContext: true,
         searchContextsEnabled: true,
-        showSearchContextManagement: false,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
         defaultSearchContextSpec: '',
