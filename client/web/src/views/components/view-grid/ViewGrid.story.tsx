@@ -19,15 +19,11 @@ export default {
 } as Meta
 
 export const SimpleViewGrid: Story = () => (
-    <ViewGrid viewIds={['1', '2', '3']} telemetryService={NOOP_TELEMETRY_SERVICE}>
+    <ViewGrid viewIds={['1', '2', '3']}>
         <View.Root key="1" title="Empty view" />
 
         <View.Root key="2" title="View with chart">
-            <View.Content
-                viewID="unique view id"
-                content={[LINE_CHART_CONTENT_MOCK]}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-            />
+            <View.Content content={[LINE_CHART_CONTENT_MOCK]} telemetryService={NOOP_TELEMETRY_SERVICE} />
         </View.Root>
 
         <View.Root
@@ -43,11 +39,7 @@ export const SimpleViewGrid: Story = () => (
                 </>
             }
         >
-            <View.Content
-                viewID="unique view id"
-                content={[LINE_CHART_CONTENT_MOCK]}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-            />
+            <View.Content content={[LINE_CHART_CONTENT_MOCK]} telemetryService={NOOP_TELEMETRY_SERVICE} />
         </View.Root>
     </ViewGrid>
 )
