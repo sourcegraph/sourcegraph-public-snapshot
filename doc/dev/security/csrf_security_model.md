@@ -10,7 +10,8 @@ If you are looking for general information or wish to disclose a vulnerability, 
   - [Scope](#scope)
   - [What is CSRF, why is it dangerous?](#what-is-csrf-why-is-it-dangerous)
   - [How is CSRF mitigated traditionally?](#how-is-csrf-mitigated-traditionally)
-- [Sourcegraph's CSRF threat model](#sourcegraphs-csrf-threat-model)
+- [Sourcegraph's CSRF security model](#sourcegraphs-csrf-security-model)
+  - [Diagrams](#diagrams)
   - [Request delineation: API and non-API endpoints](#request-delineation-api-and-non-api-endpoints)
   - [Where requests come from](#where-requests-come-from)
   - [Non-API endpoints](#non-api-endpoints)
@@ -83,18 +84,26 @@ There are multiple ways in which CSRF is protected against in the modern web, in
 
 There are more mitigation techniques, and risks, that you should be aware of. See [OWASP: CSRF prevention cheat sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)
 
-# Sourcegraph's CSRF threat model
+# Sourcegraph's CSRF security model
+
+## Diagrams
+
+These diagrams cover our CSRF security model at a high level (click to expand), the document below elaborates in greater detail.
+
+[![](https://user-images.githubusercontent.com/3173176/145488487-904541ca-2639-4b62-ae9b-7122a2151311.png)](https://user-images.githubusercontent.com/3173176/145488487-904541ca-2639-4b62-ae9b-7122a2151311.png)
+
+[![](https://user-images.githubusercontent.com/3173176/145488529-ad7daec8-b0a7-4914-ad75-1c2b50d911e3.png)](https://user-images.githubusercontent.com/3173176/145488529-ad7daec8-b0a7-4914-ad75-1c2b50d911e3.png)
 
 ## Request delineation: API and non-API endpoints
 
 In Sourcegraph, we delineate between two types of requests that reach the frontend (generally the only place HTTP requests make their way into Sourcegraph):
 
 * Those under `/.api`
-  * This is _restricted_ to POST requests only.
   * This includes all GraphQL requests.
+  * This includes the search streaming endpoint.
 * Those _not_ under `/.api`
-  * This is includes GET requests.
-  * This excludes all GraphQL requests.
+  * This includes static page serving.
+  * This includes UI routes like login, logout, etc.
 
 Having a clear separation between Sourcegraph's endpoints between API and non-API endpoints makes it easy for us to reason about the security model of each in relative isolation. It also allows us to ensure all security middleware for each endpoint uniformly applies to _all_ of our API endpoints, or all of our non-API endpoints, with ease and eliminates the need for per-endpoint security analysis.
 
