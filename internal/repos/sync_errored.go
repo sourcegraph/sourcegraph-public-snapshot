@@ -4,6 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/time/rate"
@@ -12,6 +15,11 @@ import (
 )
 
 const syncInterval = 5 * time.Minute
+
+var counter = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_repoupdater_syncer_sync_repos_with_last_error_total",
+	Help: "Counts number of repos with non empty_last errors which have been synced.",
+})
 
 func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, rateLimiter *rate.Limiter) {
 	for {
@@ -40,6 +48,7 @@ func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *rate.
 		if err != nil {
 			log15.Error("error syncing repo", "repo", repo.Name, "err", err)
 		}
+		counter.Add(1)
 		return nil
 	})
 }
