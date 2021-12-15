@@ -75,6 +75,7 @@ const batchSpecWorkspaceFieldsFragment = gql`
     }
 
     fragment BatchSpecWorkspaceStepFields on BatchSpecWorkspaceStep {
+        number
         run
         diffStat {
             added

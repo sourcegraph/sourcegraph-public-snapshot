@@ -21,6 +21,10 @@ type batchSpecWorkspaceStepResolver struct {
 	cachedResult *execution.AfterStepResult
 }
 
+func (r *batchSpecWorkspaceStepResolver) Number() int32 {
+	return int32(r.index)
+}
+
 func (r *batchSpecWorkspaceStepResolver) Run() string {
 	return r.step.Run
 }

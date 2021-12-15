@@ -14,7 +14,8 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
-import { useHistory } from 'react-router'
+import { Redirect, Route, RouteComponentProps, Switch, useHistory } from 'react-router'
+import { NavLink as RouterLink } from 'react-router-dom'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -69,7 +70,7 @@ import {
 } from './backend'
 import styles from './BatchSpecExecutionDetailsPage.module.scss'
 
-export interface BatchSpecExecutionDetailsPageProps extends ThemeProps {
+export interface BatchSpecExecutionDetailsPageProps extends ThemeProps, TelemetryProps, RouteComponentProps<{}> {
     batchSpecID: Scalars['ID']
     authenticatedUser: AuthenticatedUser
 
@@ -81,13 +82,12 @@ export interface BatchSpecExecutionDetailsPageProps extends ThemeProps {
     expandStage?: string
 }
 
-export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
-    BatchSpecExecutionDetailsPageProps & TelemetryProps
-> = ({
+export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExecutionDetailsPageProps> = ({
     batchSpecID,
     isLightTheme,
     authenticatedUser,
     telemetryService,
+    match,
     fetchBatchSpecExecution = _fetchBatchSpecExecution,
     queryBatchSpecWorkspaces,
 }) => {
@@ -96,6 +96,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
     useEffect(() => {
         const subscription = fetchBatchSpecExecution(batchSpecID)
             .pipe(
+                // Poll for latest state of the execution every 2500ms.
                 repeatWhen(notifier => notifier.pipe(delay(2500))),
                 distinctUntilChanged((a, b) => isEqual(a, b))
             )
@@ -105,39 +106,6 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
 
         return () => subscription.unsubscribe()
     }, [fetchBatchSpecExecution, batchSpecID])
-
-    const history = useHistory()
-
-    const selectedWorkspace = useMemo(() => {
-        const query = new URLSearchParams(history.location.search)
-        return query.get('workspace')
-    }, [history.location.search])
-
-    const [isCanceling, setIsCanceling] = useState<boolean | Error>(false)
-    const cancelExecution = useCallback(async () => {
-        try {
-            const execution = await cancelBatchSpecExecution(batchSpecID)
-            setBatchSpecExecution(execution)
-        } catch (error) {
-            setIsCanceling(asError(error))
-        }
-    }, [batchSpecID])
-
-    const [isRetrying, setIsRetrying] = useState<boolean | Error>(false)
-    const retryExecution = useCallback(async () => {
-        try {
-            const execution = await retryBatchSpecExecution(batchSpecID)
-            setBatchSpecExecution(execution)
-        } catch (error) {
-            setIsRetrying(asError(error))
-        }
-    }, [batchSpecID])
-
-    const [selectedIndex, setSelectedIndex] = useState<number>(1)
-
-    const gotoPreview = useCallback(() => {
-        setSelectedIndex(2)
-    }, [])
 
     // Is loading.
     if (batchSpec === undefined) {
@@ -180,165 +148,300 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<
                         </Link>
                     </>
                 }
-                actions={
-                    <div className="d-flex">
-                        <span className="align-self-center mr-2">
-                            <BatchSpecStateBadge state={batchSpec.state} />
-                        </span>
-                        {batchSpec.startedAt && (
-                            <div className="mx-2 text-center text-muted">
-                                <h3>
-                                    <Duration start={batchSpec.startedAt} end={batchSpec.finishedAt ?? undefined} />
-                                </h3>
-                                Total time
-                            </div>
-                        )}
-                        {batchSpec.workspaceResolution?.workspaces.stats && (
-                            <>
-                                <div className="mx-2 text-center text-muted">
-                                    <h3 className="text-danger">
-                                        {batchSpec.workspaceResolution.workspaces.stats.errored}
-                                    </h3>
-                                    Errors
-                                </div>
-                                <div className="mx-2 text-center text-muted">
-                                    <h3 className="text-success">
-                                        {batchSpec.workspaceResolution.workspaces.stats.completed}
-                                    </h3>
-                                    Complete
-                                </div>
-                                <div className="mx-2 text-center text-muted">
-                                    <h3>{batchSpec.workspaceResolution.workspaces.stats.processing}</h3>
-                                    Working
-                                </div>
-                                <div className="mx-2 text-center text-muted">
-                                    <h3>{batchSpec.workspaceResolution.workspaces.stats.queued}</h3>
-                                    Queued
-                                </div>
-                                <div className="mx-2 text-center text-muted">
-                                    <h3>{batchSpec.workspaceResolution.workspaces.stats.ignored}</h3>
-                                    Ignored
-                                </div>
-                            </>
-                        )}
-                        <span>
-                            <div className="btn-group-vertical ml-2">
-                                {(batchSpec.state === BatchSpecState.QUEUED ||
-                                    batchSpec.state === BatchSpecState.PROCESSING) && (
-                                    <button
-                                        type="button"
-                                        className="btn btn-outline-secondary"
-                                        onClick={cancelExecution}
-                                        disabled={isCanceling === true}
-                                    >
-                                        {isCanceling !== true && <>Cancel</>}
-                                        {isCanceling === true && (
-                                            <>
-                                                <LoadingSpinner className="icon-inline" /> Canceling
-                                            </>
-                                        )}
-                                    </button>
-                                )}
-                                {selectedIndex !== 2 &&
-                                    batchSpec.applyURL &&
-                                    batchSpec.state === BatchSpecState.COMPLETED && (
-                                        <button type="button" className="btn btn-primary" onClick={gotoPreview}>
-                                            Preview
-                                        </button>
-                                    )}
-                                {batchSpec.viewerCanRetry && batchSpec.state !== BatchSpecState.COMPLETED && (
-                                    // TODO: Add a second button to allow retrying an entire batch spec,
-                                    // including completed jobs.
-                                    <button
-                                        type="button"
-                                        className="btn btn-outline-secondary"
-                                        onClick={retryExecution}
-                                        disabled={isRetrying === true}
-                                        data-tooltip={isRetrying !== true ? 'Retry all failed workspaces' : undefined}
-                                    >
-                                        {isRetrying !== true && <>Retry</>}
-                                        {isRetrying === true && (
-                                            <>
-                                                <LoadingSpinner className="icon-inline" /> Retrying
-                                            </>
-                                        )}
-                                    </button>
-                                )}
-                                {selectedIndex !== 2 &&
-                                    batchSpec.applyURL &&
-                                    batchSpec.state === BatchSpecState.FAILED && (
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-warning"
-                                            onClick={gotoPreview}
-                                            data-tooltip="Execution didn't finish successfully in all workspaces. The batch spec might have less changeset specs than expected."
-                                        >
-                                            <AlertCircleIcon className="icon-inline mb-0 mr-2 text-warning" />
-                                            Preview
-                                        </button>
-                                    )}
-                            </div>
-                            {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}
-                            {isErrorLike(isRetrying) && <ErrorAlert error={isRetrying} />}
-                        </span>
-                    </div>
-                }
+                // actions={
+                //     // <BatchSpecActions
+                //     //     batchSpec={batchSpec}
+                //     //     setBatchSpecExecution={setBatchSpecExecution}
+                //     //     // selectedTab={selectedTab}
+                //     // />
+                // }
                 className="mb-3"
             />
 
-            <Tabs size="medium" className="mb-3" onChange={setSelectedIndex} index={selectedIndex}>
-                <TabList>
-                    <Tab key="batch-spec">1. Batch spec</Tab>
-                    <Tab key="execution">2. Execution</Tab>
-                    <Tab key="preview" disabled={!batchSpec.applyURL}>
-                        3. Preview
-                    </Tab>
-                </TabList>
-                <TabPanels>
-                    <TabPanel key="batch-spec">
-                        <div className={styles.editorLayoutContainer}>
-                            <BatchSpec
-                                originalInput={batchSpec.originalInput}
-                                isLightTheme={isLightTheme}
-                                className={classNames(styles.batchSpec, 'mt-3')}
-                            />
-                        </div>
-                    </TabPanel>
-                    <TabPanel key="execution">
-                        {batchSpec.failureMessage && <ErrorAlert error={batchSpec.failureMessage} className="mt-3" />}
-                        <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1 mt-3')}>
-                            <div className={classNames(styles.workspacesListContainer, 'd-flex flex-column')}>
-                                <h3 className="mb-2">Workspaces</h3>
-                                <div className="overflow-auto">
-                                    <WorkspacesList
-                                        batchSpecID={batchSpec.id}
-                                        selectedNode={selectedWorkspace ?? undefined}
-                                        queryBatchSpecWorkspaces={queryBatchSpecWorkspaces}
-                                    />
-                                </div>
-                            </div>
-                            <div className="d-flex flex-grow-1">
-                                <div className="d-flex overflow-auto">
-                                    <SelectedWorkspace workspace={selectedWorkspace} isLightTheme={isLightTheme} />
-                                </div>
-                            </div>
-                        </div>
-                    </TabPanel>
-                    <TabPanel key="preview">
-                        <div className="mt-3">
-                            <BatchChangePreviewPage
-                                authenticatedUser={authenticatedUser}
-                                telemetryService={telemetryService}
-                                history={history}
-                                isLightTheme={isLightTheme}
-                                batchSpecID={batchSpec.id}
-                                location={history.location}
-                                headerComponent={() => null}
-                            />
-                        </div>
-                    </TabPanel>
-                </TabPanels>
-            </Tabs>
+            <div className="mb-3">
+                <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
+                    <li className="nav-item">
+                        <RouterLink
+                            to={`${match.url}/edit`}
+                            role="button"
+                            activeClassName="active"
+                            className="nav-link"
+                        >
+                            <span className="text-content" data-tab-content="1. Edit">
+                                1. Edit
+                            </span>
+                        </RouterLink>
+                    </li>
+                    <li className="nav-item">
+                        <RouterLink
+                            to={`${match.url}/execution`}
+                            role="button"
+                            activeClassName="active"
+                            className="nav-link"
+                        >
+                            <span className="text-content" data-tab-content="2. Execution">
+                                2. Execution
+                            </span>
+                        </RouterLink>
+                    </li>
+                    <li className="nav-item">
+                        <RouterLink
+                            to={`${match.url}/preview`}
+                            role="button"
+                            activeClassName="active"
+                            className="nav-link"
+                        >
+                            <span className="text-content" data-tab-content="3. Preview">
+                                3. Preview
+                            </span>
+                        </RouterLink>
+                    </li>
+                </ul>
+            </div>
+
+            <Switch>
+                <Route render={() => <Redirect to={`${match.url}/execution`} />} path={match.url} exact={true} />
+                <Route
+                    path={`${match.url}/edit`}
+                    render={() => <EditPage content={batchSpec.originalInput} isLightTheme={isLightTheme} />}
+                    exact={true}
+                />
+                <Route
+                    path={`${match.url}/execution`}
+                    render={() => (
+                        <ExecutionPage
+                            batchSpec={batchSpec}
+                            isLightTheme={isLightTheme}
+                            queryBatchSpecWorkspaces={queryBatchSpecWorkspaces}
+                        />
+                    )}
+                    exact={true}
+                />
+                <Route
+                    path={`${match.url}/preview`}
+                    render={() => (
+                        <PreviewPage
+                            authenticatedUser={authenticatedUser}
+                            batchSpecID={batchSpec.id}
+                            isLightTheme={isLightTheme}
+                            telemetryService={telemetryService}
+                        />
+                    )}
+                    exact={true}
+                />
+                <Route component={NotFoundPage} key="hardcoded-key" />
+            </Switch>
+        </div>
+    )
+}
+
+interface BatchSpecActionsProps {
+    batchSpec: BatchSpecExecutionFields
+    setBatchSpecExecution: (batchSpec: BatchSpecExecutionFields) => void
+    selectedTab: 'preview' | 'execution' | 'edit'
+}
+
+const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({
+    batchSpec,
+    setBatchSpecExecution,
+    selectedTab,
+}) => {
+    const [isCanceling, setIsCanceling] = useState<boolean | Error>(false)
+    const cancelExecution = useCallback(async () => {
+        try {
+            const execution = await cancelBatchSpecExecution(batchSpec.id)
+            setBatchSpecExecution(execution)
+        } catch (error) {
+            setIsCanceling(asError(error))
+        }
+    }, [batchSpec.id, setBatchSpecExecution])
+
+    const [isRetrying, setIsRetrying] = useState<boolean | Error>(false)
+    const retryExecution = useCallback(async () => {
+        try {
+            const execution = await retryBatchSpecExecution(batchSpec.id)
+            setBatchSpecExecution(execution)
+        } catch (error) {
+            setIsRetrying(asError(error))
+        }
+    }, [batchSpec.id, setBatchSpecExecution])
+
+    return (
+        <div className="d-flex">
+            <span className="align-self-center mr-2">
+                <BatchSpecStateBadge state={batchSpec.state} />
+            </span>
+            {batchSpec.startedAt && (
+                <div className="mx-2 text-center text-muted">
+                    <h3>
+                        <Duration start={batchSpec.startedAt} end={batchSpec.finishedAt ?? undefined} />
+                    </h3>
+                    Total time
+                </div>
+            )}
+            {batchSpec.workspaceResolution!.workspaces.stats && (
+                <>
+                    <div className="mx-2 text-center text-muted">
+                        <h3 className="text-danger">{batchSpec.workspaceResolution!.workspaces.stats.errored}</h3>
+                        Errors
+                    </div>
+                    <div className="mx-2 text-center text-muted">
+                        <h3 className="text-success">{batchSpec.workspaceResolution!.workspaces.stats.completed}</h3>
+                        Complete
+                    </div>
+                    <div className="mx-2 text-center text-muted">
+                        <h3>{batchSpec.workspaceResolution!.workspaces.stats.processing}</h3>
+                        Working
+                    </div>
+                    <div className="mx-2 text-center text-muted">
+                        <h3>{batchSpec.workspaceResolution!.workspaces.stats.queued}</h3>
+                        Queued
+                    </div>
+                    <div className="mx-2 text-center text-muted">
+                        <h3>{batchSpec.workspaceResolution!.workspaces.stats.ignored}</h3>
+                        Ignored
+                    </div>
+                </>
+            )}
+            <span>
+                <div className="btn-group-vertical ml-2">
+                    {(batchSpec.state === BatchSpecState.QUEUED || batchSpec.state === BatchSpecState.PROCESSING) && (
+                        <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={cancelExecution}
+                            disabled={isCanceling === true}
+                        >
+                            {isCanceling !== true && <>Cancel</>}
+                            {isCanceling === true && (
+                                <>
+                                    <LoadingSpinner className="icon-inline" /> Canceling
+                                </>
+                            )}
+                        </button>
+                    )}
+                    {selectedTab !== 'preview' && batchSpec.applyURL && batchSpec.state === BatchSpecState.COMPLETED && (
+                        <Link to="preview" className="btn btn-primary">
+                            Preview
+                        </Link>
+                    )}
+                    {batchSpec.viewerCanRetry && batchSpec.state !== BatchSpecState.COMPLETED && (
+                        // TODO: Add a second button to allow retrying an entire batch spec,
+                        // including completed jobs.
+                        <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={retryExecution}
+                            disabled={isRetrying === true}
+                            data-tooltip={isRetrying !== true ? 'Retry all failed workspaces' : undefined}
+                        >
+                            {isRetrying !== true && <>Retry</>}
+                            {isRetrying === true && (
+                                <>
+                                    <LoadingSpinner className="icon-inline" /> Retrying
+                                </>
+                            )}
+                        </button>
+                    )}
+                    {selectedTab !== 'preview' && batchSpec.applyURL && batchSpec.state === BatchSpecState.FAILED && (
+                        <Link
+                            className="btn btn-outline-warning"
+                            to="preview"
+                            data-tooltip="Execution didn't finish successfully in all workspaces. The batch spec might have less changeset specs than expected."
+                        >
+                            <AlertCircleIcon className="icon-inline mb-0 mr-2 text-warning" />
+                            Preview
+                        </Link>
+                    )}
+                </div>
+                {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}
+                {isErrorLike(isRetrying) && <ErrorAlert error={isRetrying} />}
+            </span>
+        </div>
+    )
+}
+
+interface EditPageProps extends ThemeProps {
+    content: string
+}
+
+const EditPage: React.FunctionComponent<EditPageProps> = ({ content, isLightTheme }) => (
+    <div className={styles.editorLayoutContainer}>
+        <BatchSpec
+            originalInput={content}
+            isLightTheme={isLightTheme}
+            className={classNames(styles.batchSpec, 'mt-3')}
+        />
+    </div>
+)
+
+interface ExecutionPageProps extends ThemeProps {
+    batchSpec: BatchSpecExecutionFields
+
+    /** For testing only. */
+    queryBatchSpecWorkspaces?: typeof _queryBatchSpecWorkspaces
+}
+
+const ExecutionPage: React.FunctionComponent<ExecutionPageProps> = ({
+    batchSpec,
+    isLightTheme,
+    queryBatchSpecWorkspaces = _queryBatchSpecWorkspaces,
+}) => {
+    const history = useHistory()
+
+    // Read the selected workspace from the URL params.
+    const selectedWorkspace = useMemo(() => {
+        const query = new URLSearchParams(history.location.search)
+        return query.get('workspace')
+    }, [history.location.search])
+
+    return (
+        <>
+            {batchSpec.failureMessage && <ErrorAlert error={batchSpec.failureMessage} className="mt-3" />}
+            <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1 mt-3')}>
+                <div className={classNames(styles.workspacesListContainer, 'd-flex flex-column')}>
+                    <h3 className="mb-2">Workspaces</h3>
+                    <div className="overflow-auto">
+                        <WorkspacesList
+                            batchSpecID={batchSpec.id}
+                            selectedNode={selectedWorkspace ?? undefined}
+                            queryBatchSpecWorkspaces={queryBatchSpecWorkspaces}
+                        />
+                    </div>
+                </div>
+                <div className="d-flex flex-grow-1">
+                    <div className="d-flex overflow-auto">
+                        <SelectedWorkspace workspace={selectedWorkspace} isLightTheme={isLightTheme} />
+                    </div>
+                </div>
+            </div>
+        </>
+    )
+}
+
+interface PreviewPageProps extends TelemetryProps, ThemeProps {
+    batchSpecID: Scalars['ID']
+    authenticatedUser: AuthenticatedUser
+}
+const PreviewPage: React.FunctionComponent<PreviewPageProps> = ({
+    authenticatedUser,
+    telemetryService,
+    isLightTheme,
+    batchSpecID,
+}) => {
+    const history = useHistory()
+
+    return (
+        <div className="mt-3">
+            <BatchChangePreviewPage
+                authenticatedUser={authenticatedUser}
+                telemetryService={telemetryService}
+                history={history}
+                isLightTheme={isLightTheme}
+                batchSpecID={batchSpecID}
+                location={history.location}
+                headerComponent={() => null}
+            />
         </div>
     )
 }
@@ -374,7 +477,7 @@ const WorkspacesList: React.FunctionComponent<{
             defaultFirst={20}
             noun="workspace"
             pluralNoun="workspaces"
-            listClassName={classNames(styles.workspacesList, 'list-group list-group-flush')}
+            listClassName={classNames('list-group list-group-flush')}
             listComponent="ul"
             withCenteredSummary={true}
             cursorPaging={true}
@@ -474,6 +577,7 @@ const WorkspaceDetails: React.FunctionComponent<
     if (isErrorLike(workspace)) {
         return <ErrorAlert error={workspace} />
     }
+
     return (
         <>
             {showTimeline && <TimelineModal node={workspace} onCancel={onDismissTimeline} />}
@@ -558,9 +662,8 @@ const WorkspaceDetails: React.FunctionComponent<
                     <WorkspaceStep
                         step={step}
                         cachedResultFound={workspace.cachedResultFound}
-                        stepIndex={index}
                         workspaceID={workspace.id}
-                        key={index}
+                        key={step.number}
                         isLightTheme={isLightTheme}
                     />
                     {index !== workspace.steps.length - 1 && <hr className="m-0" />}
@@ -623,10 +726,12 @@ const ChangesetSpecNode: React.FunctionComponent<
             </div>
         )
     }
+
     // This should not happen.
     if (node.description.__typename === 'ExistingChangesetReference') {
         return null
     }
+
     return (
         <Collapsible
             className="py-2"
@@ -698,12 +803,10 @@ interface WorkspaceStepProps extends ThemeProps {
     cachedResultFound: boolean
     step: BatchSpecWorkspaceStepFields
     workspaceID: Scalars['ID']
-    stepIndex: number
 }
 
 const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
     step,
-    stepIndex,
     isLightTheme,
     workspaceID,
     cachedResultFound,
@@ -736,7 +839,7 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
             title={
                 <div className="d-flex justify-content-between">
                     <div className="flex-grow-1">
-                        <StepStateIcon step={step} /> <strong>Step {stepIndex + 1}</strong>{' '}
+                        <StepStateIcon step={step} /> <strong>Step {step.number}</strong>{' '}
                         <span className="text-monospace text-ellipsis text-muted">{step.run}</span>
                     </div>
                     <div>{step.diffStat && <DiffStat {...step.diffStat} expandedCounts={true} />}</div>
@@ -785,7 +888,7 @@ const WorkspaceStep: React.FunctionComponent<WorkspaceStepProps> = ({
                                         {step.startedAt && (
                                             <WorkspaceStepFileDiffConnection
                                                 isLightTheme={isLightTheme}
-                                                step={stepIndex + 1}
+                                                step={step.number}
                                                 workspaceID={workspaceID}
                                             />
                                         )}
@@ -998,7 +1101,7 @@ const genericStage = <E extends { startTime: string; exitCode: number | null }>(
 const Duration: React.FunctionComponent<{ start: Date | string; end?: Date | string }> = ({ start, end }) => {
     const startDate = typeof start === 'string' ? parseISO(start) : start
     const endDate = typeof end === 'string' ? parseISO(end) : end || new Date()
-    let duration = endDate.getTime() / 1000 - startDate.getTime() / 1000
+    let duration = Math.floor(endDate.getTime() / 1000) - Math.floor(startDate.getTime() / 1000)
     const hours = Math.floor(duration / (60 * 60))
     duration -= hours * 60 * 60
     const minutes = Math.floor(duration / 60)

@@ -805,6 +805,7 @@ type BatchSpecWorkspaceStagesResolver interface {
 }
 
 type BatchSpecWorkspaceStepResolver interface {
+	Number() int32
 	Run() string
 	Container() string
 	IfCondition() *string

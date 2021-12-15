@@ -2043,6 +2043,11 @@ Description of one step in the execution of a workspace.
 """
 type BatchSpecWorkspaceStep {
     """
+    The number of the step.
+    """
+    number: Int!
+
+    """
     The command to run.
     """
     run: String!
