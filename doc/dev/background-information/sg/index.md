@@ -281,6 +281,19 @@ sg check client
 sg check --help
 ```
 
+### `sg reset` - Reset your local Sourcegraph database(s)
+
+```bash
+# Reset the Sourcegraph 'frontend' database
+sg reset
+
+# Reset the 'frontend' and 'codeintel' databases
+sg reset -db=frontend,codeintel
+
+# Reset all databases ('frontend', 'codeintel', 'codeinsights')
+sg reset -db=all
+```
+
 ## Configuration
 
 `sg` is configured through the [`sg.config.yaml` file in the root of the `sourcegraph/sourcegraph` repository](https://github.com/sourcegraph/sourcegraph/blob/main/sg.config.yaml). Take a look at that file to see which commands are run in which environment, how these commands set setup, what environment variables they use, and more.

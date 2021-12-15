@@ -6,7 +6,7 @@ new commit containing the upstream contents as a sub directory.
 
 See https://github.com/sgtest/megarepo
 
-This is running in our production kubernetes cluster. https://github.com/sourcegraph/deploy-sourcegraph-dot-com/tree/release/configure/git-combine
+This is running in our production kubernetes cluster. https://github.com/sourcegraph/deploy-sourcegraph-cloud/tree/release/configure/git-combine
 
 #### Building
 
