@@ -2177,7 +2177,7 @@ type BatchChange implements Node {
     description: String
 
     """
-    The computed state of the batch change.
+    The state of the batch change.
     """
     state: BatchChangeState!
 
