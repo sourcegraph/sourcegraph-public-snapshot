@@ -122,7 +122,7 @@ func ZoektIndexServer() *monitoring.Container {
 				},
 			},
 			{
-				Title: "Indexing Queue Statistics",
+				Title: "Indexing queue statistics",
 				Rows: []monitoring.Row{
 					{
 						{
