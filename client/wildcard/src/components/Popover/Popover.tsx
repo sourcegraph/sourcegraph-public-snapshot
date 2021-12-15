@@ -3,8 +3,8 @@ import classNames from 'classnames'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import FocusLock from 'react-focus-lock'
 
-import { useKeyboard } from './hooks/use-keyboard'
-import { useOnClickOutside } from './hooks/use-outside-click'
+import { useKeyboard } from '../../hooks/useKeyboard'
+import { useOnClickOutside } from '../../hooks/useOnClickOutside'
 
 interface PopoverProps extends React.HTMLAttributes<HTMLDivElement> {
     target: React.RefObject<HTMLElement>
@@ -95,7 +95,6 @@ export const Popover: React.FunctionComponent<PopoverProps> = props => {
         <ReachPopover
             ref={popoverReference}
             targetRef={positionTarget}
-            // hidden={true}
             position={position}
             className={classNames('d-block dropdown-menu', className)}
             role="dialog"
