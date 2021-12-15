@@ -109,7 +109,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                 className="mb-3"
             />
 
-            <TabBar url={match.url} />
+            <TabBar url={match.url} batchSpec={batchSpec} />
 
             <Switch>
                 <Route render={() => <Redirect to={`${match.url}/execution`} />} path={match.url} exact={true} />
@@ -127,6 +127,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                     path={`${match.url}/preview`}
                     render={() => (
                         <PreviewPage
+                            batchSpec={batchSpec}
                             authenticatedUser={authenticatedUser}
                             batchSpecID={batchSpec.id}
                             isLightTheme={isLightTheme}
@@ -141,7 +142,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
     )
 }
 
-const TabBar: React.FunctionComponent<{ url: string }> = ({ url }) => (
+const TabBar: React.FunctionComponent<{ url: string; batchSpec: BatchSpecExecutionFields }> = ({ url, batchSpec }) => (
     <div className="mb-3">
         <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
             <li className="nav-item">
@@ -160,11 +161,24 @@ const TabBar: React.FunctionComponent<{ url: string }> = ({ url }) => (
                 </RouterLink>
             </li>
             <li className="nav-item">
-                <RouterLink to={`${url}/preview`} role="button" activeClassName="active" className="nav-link">
-                    <span className="text-content" data-tab-content="3. Preview">
-                        3. Preview
+                {!batchSpec.applyURL && (
+                    <span
+                        aria-disabled="true"
+                        className="nav-link text-muted"
+                        data-tooltip="Wait for the execution to finish"
+                    >
+                        <span className="text-content" data-tab-content="3. Preview">
+                            3. Preview
+                        </span>
                     </span>
-                </RouterLink>
+                )}
+                {batchSpec.applyURL && (
+                    <RouterLink to={`${url}/preview`} role="button" activeClassName="active" className="nav-link">
+                        <span className="text-content" data-tab-content="3. Preview">
+                            3. Preview
+                        </span>
+                    </RouterLink>
+                )}
             </li>
         </ul>
     </div>
@@ -347,15 +361,21 @@ const ExecutionPage: React.FunctionComponent<ExecutionPageProps> = ({ batchSpec,
 
 interface PreviewPageProps extends TelemetryProps, ThemeProps {
     batchSpecID: Scalars['ID']
+    batchSpec: BatchSpecExecutionFields
     authenticatedUser: AuthenticatedUser
 }
 const PreviewPage: React.FunctionComponent<PreviewPageProps> = ({
     authenticatedUser,
     telemetryService,
     isLightTheme,
+    batchSpec,
     batchSpecID,
 }) => {
     const history = useHistory()
+
+    if (!batchSpec.applyURL) {
+        return <Redirect to="./execution" />
+    }
 
     return (
         <div className="mt-3">
