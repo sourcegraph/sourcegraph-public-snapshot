@@ -667,8 +667,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         return !filteredRepos.some(repo => !selectionState.repos.has(getRepoServiceAndName(repo)))
     }, [selectionState, filteredRepos])
 
-    const toggleAll = (event: ChangeEvent): void => {
-        const checked = event.target.checked === true
+    const toggleAll = (event: ChangeEvent<HTMLInputElement>): void => {
+        const { checked } = event.target
         const newSelectAll = new Map<string, Repo>(selectionState.repos)
 
         for (const repo of filteredRepos) {
