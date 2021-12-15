@@ -3,12 +3,14 @@ package resolvers
 import (
 	"context"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/notebooks"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -49,6 +51,71 @@ func (r *Resolver) NotebookByID(ctx context.Context, id graphql.ID) (graphqlback
 	}
 
 	return &notebookResolver{notebook, r.db}, nil
+}
+
+func convertLineRangeInput(inputLineRage *graphqlbackend.CreateFileBlockLineRangeInput) *notebooks.LineRange {
+	if inputLineRage == nil {
+		return nil
+	}
+	return &notebooks.LineRange{StartLine: inputLineRage.StartLine, EndLine: inputLineRage.EndLine}
+}
+
+func convertNotebookBlockInput(inputBlock graphqlbackend.CreateNotebookBlockInputArgs) (*notebooks.NotebookBlock, error) {
+	block := &notebooks.NotebookBlock{ID: inputBlock.ID}
+	switch inputBlock.Type {
+	case graphqlbackend.NotebookMarkdownBlockType:
+		if inputBlock.MarkdownInput == nil {
+			return nil, errors.Errorf("markdown block with id %s is missing input", inputBlock.ID)
+		}
+		block.Type = notebooks.NotebookMarkdownBlockType
+		block.MarkdownInput = &notebooks.NotebookMarkdownBlockInput{Text: *inputBlock.MarkdownInput}
+	case graphqlbackend.NotebookQueryBlockType:
+		if inputBlock.QueryInput == nil {
+			return nil, errors.Errorf("query block with id %s is missing input", inputBlock.ID)
+		}
+		block.Type = notebooks.NotebookQueryBlockType
+		block.QueryInput = &notebooks.NotebookQueryBlockInput{Text: *inputBlock.QueryInput}
+	case graphqlbackend.NotebookFileBlockType:
+		if inputBlock.FileInput == nil {
+			return nil, errors.Errorf("file block with id %s is missing input", inputBlock.ID)
+		}
+		block.Type = notebooks.NotebookFileBlockType
+		block.FileInput = &notebooks.NotebookFileBlockInput{
+			RepositoryName: inputBlock.FileInput.RepositoryName,
+			FilePath:       inputBlock.FileInput.FilePath,
+			Revision:       inputBlock.FileInput.Revision,
+			LineRange:      convertLineRangeInput(inputBlock.FileInput.LineRange),
+		}
+	}
+	return block, nil
+}
+
+func (r *Resolver) CreateNotebook(ctx context.Context, args graphqlbackend.CreateNotebookInputArgs) (graphqlbackend.NotebookResolver, error) {
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("notebooks cannot be created by unauthenticated users")
+	}
+
+	notebookInput := args.Notebook
+	blocks := make(notebooks.NotebookBlocks, 0, len(notebookInput.Blocks))
+	for _, inputBlock := range notebookInput.Blocks {
+		block, err := convertNotebookBlockInput(inputBlock)
+		if err != nil {
+			return nil, err
+		}
+		blocks = append(blocks, *block)
+	}
+
+	createdNotebook, err := notebooks.Notebooks(r.db).CreateNotebook(ctx, &notebooks.Notebook{
+		Title:         notebookInput.Title,
+		Public:        notebookInput.Public,
+		CreatorUserID: actor.UID,
+		Blocks:        blocks,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &notebookResolver{createdNotebook, r.db}, nil
 }
 
 type notebookResolver struct {

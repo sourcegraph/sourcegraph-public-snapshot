@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -15,48 +16,60 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
-const queryNotebook = `
-query Notebook($id: ID!) {
-	node(id: $id) {
-		... on Notebook {
+const notebookFields = `
+	id
+	title
+	creator {
+		username
+	}
+	createdAt
+	updatedAt
+	public
+	viewerCanManage
+	blocks {
+		... on MarkdownBlock {
+			__typename
 			id
-			title
-			creator {
-				username
-			}
-			createdAt
-			updatedAt
-			public
-			viewerCanManage
-			blocks {
-				... on MarkdownBlock {
-					__typename
-					id
-					markdownInput
-				}
-				... on QueryBlock {
-					__typename
-					id
-					queryInput
-				}
-				... on FileBlock {
-					__typename
-					id
-					fileInput {
-						repositoryName
-						filePath
-						revision
-						lineRange {
-							startLine
-							endLine
-						}
-					}
+			markdownInput
+		}
+		... on QueryBlock {
+			__typename
+			id
+			queryInput
+		}
+		... on FileBlock {
+			__typename
+			id
+			fileInput {
+				repositoryName
+				filePath
+				revision
+				lineRange {
+					startLine
+					endLine
 				}
 			}
 		}
 	}
-}
 `
+
+var queryNotebook = fmt.Sprintf(`
+query Notebook($id: ID!) {
+	node(id: $id) {
+		... on Notebook {
+			%s
+		}
+	}
+}
+`, notebookFields)
+
+var createNotebookMutation = fmt.Sprintf(`
+mutation CreateNotebook($notebook: NotebookInput!) {
+	createNotebook(notebook: $notebook) {
+		%s
+	}
+}
+`, notebookFields)
 
 func TestGetNotebook(t *testing.T) {
 	t.Parallel()
@@ -119,6 +132,67 @@ func TestGetNotebook(t *testing.T) {
 	}
 
 	if diff := cmp.Diff(wantNotebookResponse, response.Node); diff != "" {
+		t.Fatalf("wrong notebook response (-want +got):\n%s", diff)
+	}
+}
+
+func TestCreateNotebook(t *testing.T) {
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	ctx := actor.WithInternalActor(context.Background())
+	u := database.Users(db)
+
+	user, err := u.Create(ctx, database.NewUser{Username: "u", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	database := database.NewDB(db)
+	schema, err := graphqlbackend.NewSchema(database, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(database))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	queryInput, markdownInput, revision := "repo:a b", "# Title", "rev"
+	blocks := []graphqlbackend.CreateNotebookBlockInputArgs{
+		{ID: "1", Type: graphqlbackend.NotebookQueryBlockType, QueryInput: &queryInput},
+		{ID: "2", Type: graphqlbackend.NotebookMarkdownBlockType, MarkdownInput: &markdownInput},
+		{ID: "3", Type: graphqlbackend.NotebookFileBlockType, FileInput: &graphqlbackend.CreateFileBlockInput{
+			RepositoryName: "github.com/sourcegraph/sourcegraph",
+			FilePath:       "client/web/file.tsx",
+			Revision:       &revision,
+			LineRange:      &graphqlbackend.CreateFileBlockLineRangeInput{StartLine: 10, EndLine: 12},
+		}},
+	}
+	notebookInput := graphqlbackend.NotebookInputArgs{Title: "Notebook Title", Public: true, Blocks: blocks}
+
+	input := map[string]interface{}{"notebook": notebookInput}
+	var response struct{ CreateNotebook notebooksapitest.Notebook }
+	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(user.ID)), t, schema, input, &response, createNotebookMutation)
+
+	wantNotebookResponse := notebooksapitest.Notebook{
+		// Ignore ID and timestamps when comparing responses
+		ID:        response.CreateNotebook.ID,
+		CreatedAt: response.CreateNotebook.CreatedAt,
+		UpdatedAt: response.CreateNotebook.UpdatedAt,
+
+		Title:           notebookInput.Title,
+		Creator:         notebooksapitest.NotebookCreator{Username: "u"},
+		Public:          notebookInput.Public,
+		ViewerCanManage: true,
+		Blocks: []notebooksapitest.NotebookBlock{
+			{Typename: "QueryBlock", ID: blocks[0].ID, QueryInput: *blocks[0].QueryInput},
+			{Typename: "MarkdownBlock", ID: blocks[1].ID, MarkdownInput: *blocks[1].MarkdownInput},
+			{Typename: "FileBlock", ID: blocks[2].ID, FileInput: notebooksapitest.FileInput{
+				RepositoryName: blocks[2].FileInput.RepositoryName,
+				FilePath:       blocks[2].FileInput.FilePath,
+				Revision:       blocks[2].FileInput.Revision,
+				LineRange:      &notebooksapitest.LineRange{StartLine: blocks[2].FileInput.LineRange.StartLine, EndLine: blocks[2].FileInput.LineRange.EndLine},
+			}},
+		},
+	}
+
+	if diff := cmp.Diff(wantNotebookResponse, response.CreateNotebook); diff != "" {
 		t.Fatalf("wrong notebook response (-want +got):\n%s", diff)
 	}
 }

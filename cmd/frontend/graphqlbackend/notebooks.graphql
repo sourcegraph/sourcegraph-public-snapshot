@@ -1,3 +1,15 @@
+extend type Mutation {
+    """
+    Create a notebook.
+    """
+    createNotebook(
+        """
+        Notebook input.
+        """
+        notebook: NotebookInput!
+    ): Notebook!
+}
+
 """
 Markdown block renders the Markdown formatted input string into HTML.
 """
@@ -119,4 +131,93 @@ type Notebook implements Node {
     If current viewer can manage (edit, delete) the notebook.
     """
     viewerCanManage: Boolean!
+}
+
+"""
+Input to create a line range for a file block.
+"""
+input CreateFileBlockLineRangeInput {
+    """
+    The first line to fetch (0-indexed, inclusive).
+    """
+    startLine: Int!
+    """
+    The last line to fetch (0-indexed, exclusive).
+    """
+    endLine: Int!
+}
+
+"""
+CreateFileBlockInput contains the information necessary to create a file block.
+"""
+input CreateFileBlockInput {
+    """
+    Name of the repository, e.g. "github.com/sourcegraph/sourcegraph".
+    """
+    repositoryName: String!
+    """
+    Path within the repository, e.g. "client/web/file.tsx".
+    """
+    filePath: String!
+    """
+    An optional revision, e.g. "pr/feature-1", "a9505a2947d3df53558e8c88ff8bcef390fc4e3e".
+    If omitted, we use the latest revision (HEAD).
+    """
+    revision: String
+    """
+    An optional line range. If omitted, we display the entire file.
+    """
+    lineRange: CreateFileBlockLineRangeInput
+}
+
+enum NotebookBlockType {
+    MARKDOWN
+    QUERY
+    FILE
+}
+
+"""
+GraphQL does not accept union types as inputs, so we have to use
+all possible optional inputs with an enum to select the actual block input we want to use.
+"""
+input CreateNotebookBlockInput {
+    """
+    ID of the block.
+    """
+    id: String!
+    """
+    Block type.
+    """
+    type: NotebookBlockType!
+    """
+    Markdown input.
+    """
+    markdownInput: String
+    """
+    Query input.
+    """
+    queryInput: String
+    """
+    File input.
+    """
+    fileInput: CreateFileBlockInput
+}
+
+"""
+Input for a new notebook.
+"""
+input NotebookInput {
+    """
+    The title of the notebook.
+    """
+    title: String!
+    """
+    Array of notebook blocks.
+    """
+    blocks: [CreateNotebookBlockInput!]!
+    """
+    Public property controls the visibility of the notebook. A public notebook is available to
+    any user on the instance. Private notebooks are only available to their creators.
+    """
+    public: Boolean!
 }

@@ -8,6 +8,7 @@ import (
 
 type NotebooksResolver interface {
 	NotebookByID(ctx context.Context, id graphql.ID) (NotebookResolver, error)
+	CreateNotebook(ctx context.Context, args CreateNotebookInputArgs) (NotebookResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -54,4 +55,42 @@ type FileBlockInputResolver interface {
 type FileBlockLineRangeResolver interface {
 	StartLine() int32
 	EndLine() int32
+}
+
+type NotebookBlockType string
+
+const (
+	NotebookMarkdownBlockType NotebookBlockType = "MARKDOWN"
+	NotebookQueryBlockType    NotebookBlockType = "QUERY"
+	NotebookFileBlockType     NotebookBlockType = "FILE"
+)
+
+type CreateNotebookInputArgs struct {
+	Notebook NotebookInputArgs `json:"notebook"`
+}
+
+type NotebookInputArgs struct {
+	Title  string                         `json:"title"`
+	Blocks []CreateNotebookBlockInputArgs `json:"blocks"`
+	Public bool                           `json:"public"`
+}
+
+type CreateNotebookBlockInputArgs struct {
+	ID            string                `json:"id"`
+	Type          NotebookBlockType     `json:"type"`
+	MarkdownInput *string               `json:"markdownInput"`
+	QueryInput    *string               `json:"queryInput"`
+	FileInput     *CreateFileBlockInput `json:"fileInput"`
+}
+
+type CreateFileBlockInput struct {
+	RepositoryName string                         `json:"repositoryName"`
+	FilePath       string                         `json:"filePath"`
+	Revision       *string                        `json:"revision"`
+	LineRange      *CreateFileBlockLineRangeInput `json:"lineRange"`
+}
+
+type CreateFileBlockLineRangeInput struct {
+	StartLine int32 `json:"startLine"`
+	EndLine   int32 `json:"endLine"`
 }
