@@ -612,7 +612,7 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		series.NextRecordingAfter = interval.StepForwards(s.Now())
 	}
 	if series.NextSnapshotAfter.IsZero() {
-		series.NextSnapshotAfter = s.Now()
+		series.NextSnapshotAfter = NextSnapshot(s.Now())
 	}
 	if series.OldestHistoricalAt.IsZero() {
 		// TODO(insights): this value should probably somewhere more discoverable / obvious than here
