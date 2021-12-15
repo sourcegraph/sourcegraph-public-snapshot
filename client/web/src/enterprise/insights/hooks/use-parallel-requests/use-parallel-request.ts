@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { of, from, Subject, ObservableInput, Observable, asyncScheduler, scheduled } from 'rxjs'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { of, from, Subject, ObservableInput, Observable, asyncScheduler, scheduled, Unsubscribable } from 'rxjs'
 import { mergeMap, map, takeUntil, take, catchError, takeWhile, switchMap, publish, refCount } from 'rxjs/operators'
 
 import { ErrorLike, asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -86,51 +86,119 @@ export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests
             onComplete(payload)
         })
 
-    /**
-     * Runs your request in parallel with other useParallelRequests request calls.
-     *
-     * @param request - request factory (observer, promise, subscribable like)
-     */
-    return <D>(request: () => ObservableInput<D>): FetchResult<D> => {
-        const [state, setState] = useState<FetchResult<D>>({
-            data: undefined,
-            error: undefined,
-            loading: true,
-        })
+    return {
+        /**
+         * Runs your request in parallel with other useParallelRequests request calls.
+         *
+         * @param request - request factory (observer, promise, subscribable like)
+         */
+        query: <D>(request: () => ObservableInput<D>): FetchResult<D> => {
+            // eslint-disable-next-line react-hooks/rules-of-hooks
+            const [state, setState] = useState<FetchResult<D>>({
+                data: undefined,
+                error: undefined,
+                loading: true,
+            })
 
-        useEffect(() => {
-            const cancelStream = new Subject<boolean>()
+            // eslint-disable-next-line react-hooks/rules-of-hooks
+            useEffect(() => {
+                const cancelStream = new Subject<boolean>()
 
-            setState({ data: undefined, loading: true, error: undefined })
+                setState({ data: undefined, loading: true, error: undefined })
 
-            const event: Request<D> = {
-                request,
-                // Makes cancel stream a hot observable
-                cancel: cancelStream.pipe(publish(), refCount()),
-                onComplete: result => {
-                    if (isErrorLike(result)) {
-                        return setState({ data: undefined, loading: false, error: result })
+                const event: Request<D> = {
+                    request,
+                    // Makes cancel stream a hot observable
+                    cancel: cancelStream.pipe(publish(), refCount()),
+                    onComplete: result => {
+                        if (isErrorLike(result)) {
+                            return setState({ data: undefined, loading: false, error: result })
+                        }
+
+                        setState({ data: result, loading: false, error: undefined })
+                    },
+                }
+
+                requests.next((event as unknown) as Request<T>)
+
+                return () => {
+                    // Cancel scheduled stream
+                    cancelledRequests.add((event as unknown) as Request<T>)
+
+                    // Stop/cancel ongoing/started request stream
+                    cancelStream.next(true)
+                }
+            }, [request])
+
+            return state
+        },
+        lazyQuery: <D>(): FetchResult<D> & { query: (request: () => ObservableInput<D>) => Unsubscribable } => {
+            // eslint-disable-next-line react-hooks/rules-of-hooks
+            const [state, setState] = useState<FetchResult<D>>({
+                data: undefined,
+                error: undefined,
+                loading: true,
+            })
+
+            // eslint-disable-next-line react-hooks/rules-of-hooks
+            const localRequestPool = useRef<Request<D>[]>([])
+
+            // eslint-disable-next-line react-hooks/rules-of-hooks
+            useEffect(
+                () => () => {
+                    for (const request of localRequestPool.current) {
+                        // Cancel scheduled stream
+                        cancelledRequests.add((request as unknown) as Request<T>)
                     }
-
-                    setState({ data: result, loading: false, error: undefined })
                 },
-            }
+                []
+            )
 
-            requests.next((event as unknown) as Request<T>)
+            // eslint-disable-next-line react-hooks/rules-of-hooks
+            const query = useCallback((request: () => ObservableInput<D>) => {
+                const cancelStream = new Subject<boolean>()
 
-            return () => {
-                // Cancel scheduled stream
-                cancelledRequests.add((event as unknown) as Request<T>)
+                setState({ data: undefined, loading: true, error: undefined })
 
-                // Stop/cancel ongoing/started request stream
-                cancelStream.next(true)
-            }
-        }, [request])
+                const event: Request<D> = {
+                    request,
+                    // Makes cancel stream a hot observable
+                    cancel: cancelStream.pipe(publish(), refCount()),
+                    onComplete: result => {
+                        localRequestPool.current = localRequestPool.current.filter(request => request !== event)
 
-        return state
+                        if (isErrorLike(result)) {
+                            return setState({ data: undefined, loading: false, error: result })
+                        }
+
+                        setState({ data: result, loading: false, error: undefined })
+                    },
+                }
+
+                localRequestPool.current.push(event)
+                requests.next((event as unknown) as Request<T>)
+
+                return {
+                    unsubscribe: () => {
+                        // Cancel scheduled stream
+                        cancelledRequests.add((event as unknown) as Request<T>)
+
+                        // Stop/cancel ongoing/started request stream
+                        cancelStream.next(true)
+
+                        localRequestPool.current = localRequestPool.current.filter(request => request !== event)
+                    },
+                }
+            }, [])
+
+            return { ...state, query }
+        },
     }
 }
 
 // Export useParallelRequests hook with global request manager for all
 // consumers.
-export const useParallelRequests = createUseParallelRequestsHook<unknown>()
+const parallelRequestAPI = createUseParallelRequestsHook<unknown>()
+
+export const useParallelRequests = parallelRequestAPI.query
+export const useLazyParallelRequest = parallelRequestAPI.lazyQuery
