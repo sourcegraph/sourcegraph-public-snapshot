@@ -28,9 +28,9 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 				Name:        fmt.Sprintf("test-batch-change-%d", i),
 				Description: "All the Javascripts are belong to us",
 
-				InitialApplierID: int32(i) + 50,
-				LastAppliedAt:    clock.Now(),
-				LastApplierID:    int32(i) + 99,
+				CreatorID:     int32(i) + 50,
+				LastAppliedAt: clock.Now(),
+				LastApplierID: int32(i) + 99,
 
 				BatchSpecID: 1742 + int64(i),
 				ClosedAt:    clock.Now(),
@@ -44,7 +44,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 			if i%2 == 0 {
 				c.NamespaceOrgID = int32(i) + 23
 			} else {
-				c.NamespaceUserID = c.InitialApplierID
+				c.NamespaceUserID = c.CreatorID
 			}
 
 			want := c.Clone()
@@ -174,7 +174,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 
 		t.Run("OnlyForAuthor set", func(t *testing.T) {
 			for _, c := range cs {
-				count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{InitialApplierID: c.InitialApplierID})
+				count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{CreatorID: c.CreatorID})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -432,7 +432,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 
 		t.Run("ListBatchChanges OnlyForAuthor set", func(t *testing.T) {
 			for _, c := range cs {
-				have, next, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{InitialApplierID: c.InitialApplierID})
+				have, next, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{CreatorID: c.CreatorID})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -491,7 +491,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		for _, c := range cs {
 			c.Name += "-updated"
 			c.Description += "-updated"
-			c.InitialApplierID++
+			c.CreatorID++
 			c.ClosedAt = c.ClosedAt.Add(5 * time.Second)
 
 			if c.NamespaceUserID != 0 {
@@ -822,24 +822,24 @@ func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock c
 		}
 
 		ownedBatchChange := &btypes.BatchChange{
-			Name:             "owned",
-			NamespaceUserID:  user.ID,
-			InitialApplierID: user.ID,
-			LastApplierID:    user.ID,
-			LastAppliedAt:    clock.Now(),
-			BatchSpecID:      ownedSpec.ID,
+			Name:            "owned",
+			NamespaceUserID: user.ID,
+			CreatorID:       user.ID,
+			LastApplierID:   user.ID,
+			LastAppliedAt:   clock.Now(),
+			BatchSpecID:     ownedSpec.ID,
 		}
 		if err := s.CreateBatchChange(ctx, ownedBatchChange); err != nil {
 			t.Fatal(err)
 		}
 
 		unownedBatchChange := &btypes.BatchChange{
-			Name:             "unowned",
-			NamespaceOrgID:   orgID,
-			InitialApplierID: user.ID,
-			LastApplierID:    user.ID,
-			LastAppliedAt:    clock.Now(),
-			BatchSpecID:      ownedSpec.ID,
+			Name:           "unowned",
+			NamespaceOrgID: orgID,
+			CreatorID:      user.ID,
+			LastApplierID:  user.ID,
+			LastAppliedAt:  clock.Now(),
+			BatchSpecID:    ownedSpec.ID,
 		}
 		if err := s.CreateBatchChange(ctx, unownedBatchChange); err != nil {
 			t.Fatal(err)

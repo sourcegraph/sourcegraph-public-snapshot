@@ -897,12 +897,12 @@ func TestMoveBatchChange(t *testing.T) {
 	}
 
 	batchChange := &btypes.BatchChange{
-		BatchSpecID:      batchSpec.ID,
-		Name:             "old-name",
-		InitialApplierID: userID,
-		LastApplierID:    userID,
-		LastAppliedAt:    time.Now(),
-		NamespaceUserID:  batchSpec.UserID,
+		BatchSpecID:     batchSpec.ID,
+		Name:            "old-name",
+		CreatorID:       userID,
+		LastApplierID:   userID,
+		LastAppliedAt:   time.Now(),
+		NamespaceUserID: batchSpec.UserID,
 	}
 	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)

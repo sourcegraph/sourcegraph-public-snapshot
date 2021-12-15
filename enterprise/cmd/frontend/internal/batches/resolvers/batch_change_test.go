@@ -47,13 +47,13 @@ func TestBatchChangeResolver(t *testing.T) {
 	}
 
 	batchChange := &btypes.BatchChange{
-		Name:             "my-unique-name",
-		Description:      "The batch change description",
-		NamespaceOrgID:   orgID,
-		InitialApplierID: userID,
-		LastApplierID:    userID,
-		LastAppliedAt:    now,
-		BatchSpecID:      batchSpec.ID,
+		Name:           "my-unique-name",
+		Description:    "The batch change description",
+		NamespaceOrgID: orgID,
+		CreatorID:      userID,
+		LastApplierID:  userID,
+		LastAppliedAt:  now,
+		BatchSpecID:    batchSpec.ID,
 	}
 	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
@@ -193,11 +193,11 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 		Name:        batchSpec1.Spec.Name,
 		Description: batchSpec1.Spec.Description,
 
-		NamespaceUserID:  userID,
-		InitialApplierID: userID,
-		LastApplierID:    userID,
-		LastAppliedAt:    now,
-		BatchSpecID:      batchSpec1.ID,
+		NamespaceUserID: userID,
+		CreatorID:       userID,
+		LastApplierID:   userID,
+		LastAppliedAt:   now,
+		BatchSpecID:     batchSpec1.ID,
 	}
 
 	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {

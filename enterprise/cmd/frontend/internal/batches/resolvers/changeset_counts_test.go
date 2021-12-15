@@ -134,13 +134,13 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	}
 
 	batchChange := &btypes.BatchChange{
-		Name:             "Test batch change",
-		Description:      "Testing changeset counts",
-		InitialApplierID: userID,
-		NamespaceUserID:  userID,
-		LastApplierID:    userID,
-		LastAppliedAt:    time.Now(),
-		BatchSpecID:      spec.ID,
+		Name:            "Test batch change",
+		Description:     "Testing changeset counts",
+		CreatorID:       userID,
+		NamespaceUserID: userID,
+		LastApplierID:   userID,
+		LastAppliedAt:   time.Now(),
+		BatchSpecID:     spec.ID,
 	}
 
 	err = cstore.CreateBatchChange(ctx, batchChange)

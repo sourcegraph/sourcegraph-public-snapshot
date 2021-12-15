@@ -68,7 +68,7 @@ func (r *batchChangeResolver) InitialApplier(ctx context.Context) (*graphqlbacke
 }
 
 func (r *batchChangeResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.batchChange.InitialApplierID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.batchChange.CreatorID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -111,7 +111,7 @@ func (r *batchChangeResolver) SpecCreator(ctx context.Context) (*graphqlbackend.
 }
 
 func (r *batchChangeResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return checkSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), r.batchChange.InitialApplierID)
+	return checkSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), r.batchChange.CreatorID)
 }
 
 func (r *batchChangeResolver) URL(ctx context.Context) (string, error) {
