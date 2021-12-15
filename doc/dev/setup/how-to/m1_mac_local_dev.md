@@ -31,10 +31,11 @@ open -a /Applications/Chromium.app
 If you hit an error above, try allowing the app under System Preferences > Security & Privacy > General Tab > Allow Anyways. If it was successful, exit Chromium and point Puppeteer to Chromium by adding the following to your shell configuration (e.g. `~/.zshenv`)
 ```
 export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-export PUPPETEER_EXECUTABLE_PATH=`which chromium`
 ```
 
-and updating your shell (e.g. `source ~/.zshenv`). 
+and updating your shell (e.g. `source ~/.zshenv`).
+
+This will unblock `yarn install`, but you still won't be able to run browser-based tests because [Puppeteer ignores `PUPPETEER_EXECUTABLE_PATH` on `arm64`](https://github.com/puppeteer/puppeteer/blob/v5.5.0/src/node/Launcher.ts#L107-L108).
 
 (Based on https://linguinecode.com/post/how-to-fix-m1-mac-puppeteer-chromium-arm64-bug)
 
