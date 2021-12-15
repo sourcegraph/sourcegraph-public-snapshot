@@ -15,7 +15,7 @@ interface Props {
 }
 
 export const GroupCatalogExplorer: React.FunctionComponent<Props> = ({ group, className }) => {
-    const { filters, onFiltersChange } = useCatalogEntityFilters()
+    const filtersProps = useCatalogEntityFilters('')
 
     const [viewMode, setViewMode] = useViewModeTemporarySettings()
 
@@ -26,20 +26,19 @@ export const GroupCatalogExplorer: React.FunctionComponent<Props> = ({ group, cl
             <CatalogExplorerViewOptionsRow
                 before={<h4 className="mb-0 mr-2 font-weight-bold">Components</h4>}
                 toggle={<ViewModeToggle viewMode={viewMode} setViewMode={setViewMode} />}
-                filters={filters}
-                onFiltersChange={onFiltersChange}
+                {...filtersProps}
                 className="pl-3 pr-2 py-2 border-bottom"
             />
             {viewMode === 'list' ? (
                 <CatalogExplorerList
-                    filters={filters}
+                    filters={filtersProps.filters}
                     queryScope={queryScope}
                     noBottomBorder={true}
                     itemStartClassName="pl-3"
                     itemEndClassName="pr-3"
                 />
             ) : (
-                <OverviewEntityGraph filters={filters} queryScope={queryScope} />
+                <OverviewEntityGraph filters={filtersProps.filters} queryScope={queryScope} />
             )}
         </div>
     )
