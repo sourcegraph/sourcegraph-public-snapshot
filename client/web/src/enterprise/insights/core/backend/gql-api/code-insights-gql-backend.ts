@@ -74,6 +74,9 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         return fromObservableQuery(
             this.apolloClient.watchQuery<GetDashboardInsightsResult>({
                 query: GET_DASHBOARD_INSIGHTS_GQL,
+                // Prevent unnecessary network request after mutation over dashboard or insights within
+                // current dashboard
+                nextFetchPolicy: 'cache-first',
                 variables: { id: dashboardId },
             })
         ).pipe(
