@@ -66,7 +66,7 @@ func buildsherrif(ctx context.Context, branch branchLocker, builds []buildkite.B
 	}
 
 	fmt.Println("threshold exceeded, this is a big deal!")
-	results.LockModified, err = branch.Lock(ctx, results.FailedCommits, []string{"dev-experience"})
+	results.LockModified, err = branch.Lock(ctx, results.FailedCommits, "dev-experience")
 	if err != nil {
 		return nil, fmt.Errorf("lockBranch: %w", err)
 	}

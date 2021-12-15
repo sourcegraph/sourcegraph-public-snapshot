@@ -14,7 +14,7 @@ type mockBranchLocker struct{}
 func (m *mockBranchLocker) Unlock(context.Context) (bool, error) {
 	return false, nil
 }
-func (m *mockBranchLocker) Lock(context.Context, []commitInfo, []string) (bool, error) {
+func (m *mockBranchLocker) Lock(context.Context, []commitInfo, string) (bool, error) {
 	return false, nil
 }
 

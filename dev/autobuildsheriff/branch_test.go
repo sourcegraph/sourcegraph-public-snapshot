@@ -53,7 +53,7 @@ func TestRepoBranchLocker(t *testing.T) {
 			{Commit: "06a8636c2e0bea69944d8419aafa03ff3992527a"}, // @bobheadxi
 			{Commit: "93971fa0b036b3e258cbb9a3eb7098e4032eefc4"}, // @jhchabran
 		}
-		modified, err := locker.Lock(ctx, commits, []string{"dev-experience"})
+		modified, err := locker.Lock(ctx, commits, "dev-experience")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -66,6 +66,8 @@ func TestRepoBranchLocker(t *testing.T) {
 				t.Fatal(err)
 			}
 			assert.NotNil(t, protects.Restrictions)
+			assert.NotNil(t, protects.RequiredPullRequestReviews)
+			assert.Zero(t, protects.RequiredPullRequestReviews.RequiredApprovingReviewCount)
 
 			users := []string{}
 			for _, u := range protects.Restrictions.Users {
@@ -83,7 +85,7 @@ func TestRepoBranchLocker(t *testing.T) {
 		validateLiveState()
 
 		// Repeated lock attempt shouldn't change anything
-		modified, err = locker.Lock(ctx, []commitInfo{}, []string{})
+		modified, err = locker.Lock(ctx, []commitInfo{}, "")
 		if err != nil {
 			t.Fatal(err)
 		}
