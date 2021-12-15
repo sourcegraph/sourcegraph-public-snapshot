@@ -1,54 +1,40 @@
 .root {
     position: relative;
-}
+    overflow: auto;
 
-.fader,
-.scrollbox {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
+    &--with-top-fader {
+        .fader--top {
+            opacity: 1;
+        }
+    }
+
+    &--with-bottom-fader {
+        .fader--bottom {
+            opacity: 1;
+        }
+    }
 }
 
 .fader {
-    &::before,
-    &::after {
-        display: none;
-        content: '';
-        position: absolute;
-        z-index: 1;
-        height: 3rem;
-        width: 100%;
-    }
+    display: block;
+    content: '';
+    position: sticky;
+    z-index: 1;
+    height: 3rem;
+    width: 100%;
+    opacity: 0;
 
-    &::before {
+    &--top {
         top: 0;
-        left: 0;
-
         background: linear-gradient(0deg, rgba(249, 250, 251, 0) 0%, var(--card-bg) 100%);
     }
 
-    &::after {
-        bottom: 0;
-        left: 0;
-
+    &--bottom {
+        top: calc(100% - 3rem);
         background: linear-gradient(180deg, rgba(249, 250, 251, 0) 0%, var(--card-bg) 100%);
-    }
-
-    &--has-top-scroll {
-        &::before {
-            display: block;
-        }
-    }
-
-    &--has-bottom-scroll {
-        &::after {
-            display: block;
-        }
     }
 }
 
 .scrollbox {
-    overflow: auto;
+    margin-top: -6rem;
 }
