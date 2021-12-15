@@ -34,8 +34,8 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 
 # hadolint ignore=DL3018
 RUN apk add --no-cache --verbose \
-    # We require git>=2.30 because we use git maintenance.
-    'git>=2.30' \
+    # We require git 2.34.1 because we use git-repack with flag --write-midx.
+    'git=~2.34.1' \
     git-p4 \
     --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main  \
     # NOTE that the Postgres version we run is different
