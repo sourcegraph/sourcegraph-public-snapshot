@@ -15,9 +15,9 @@ import { BackendInsight, InsightTypePrefix } from '../../../../core/types'
 import { SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
-import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
+import { useInsightData } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
 import { BackendAlertOverlay } from './BackendAlertOverlay'
@@ -67,7 +67,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
     const debouncedFilters = useDebounce(useDistinctValue<SearchBasedBackendFilters>(filters), 500)
 
     // Loading the insight backend data
-    const { data, loading, error } = useParallelRequests(
+    const { data, loading, error, isVisible } = useInsightData(
         useCallback(
             () =>
                 getBackendInsightData({
@@ -75,7 +75,8 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
                     filters: debouncedFilters,
                 }),
             [cachedInsight, debouncedFilters, getBackendInsightData]
-        )
+        ),
+        insightCardReference
     )
 
     // Handle insight delete action
@@ -164,7 +165,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
         >
             {resizing ? (
                 <View.Banner>Resizing</View.Banner>
-            ) : loading || isDeleting ? (
+            ) : loading || isDeleting || !isVisible ? (
                 <View.LoadingContent text={isDeleting ? 'Deleting code insight' : 'Loading code insight'} />
             ) : isErrorLike(error) ? (
                 <View.ErrorContent error={error} title={insight.id}>

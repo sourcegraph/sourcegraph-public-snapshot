@@ -1,5 +1,6 @@
 import classNames from 'classnames'
-import React, { Ref, useContext, useMemo, useState } from 'react'
+import React, { Ref, useContext, useMemo, useRef, useState } from 'react'
+import { useMergeRefs } from 'use-callback-ref'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -12,8 +13,8 @@ import { LangStatsInsight } from '../../../../core/types'
 import { SearchExtensionBasedInsight } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
-import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
+import { useInsightData } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
 interface BuiltInInsightProps<D extends keyof ViewContexts> extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
@@ -33,19 +34,23 @@ interface BuiltInInsightProps<D extends keyof ViewContexts> extends TelemetryPro
  * main work thread instead of using Extension API.
  */
 export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsightProps<D>): React.ReactElement {
-    const { insight, resizing, telemetryService, where, context, ...otherProps } = props
+    const { insight, resizing, telemetryService, where, context, innerRef, ...otherProps } = props
     const { getBuiltInInsightData } = useContext(CodeInsightsBackendContext)
     const { dashboard } = useContext(DashboardInsightsContext)
 
+    const insightCardReference = useRef<HTMLDivElement>(null)
+    const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
+
     const cachedInsight = useDistinctValue(insight)
 
-    const { data, loading } = useParallelRequests(
+    const { data, loading, isVisible } = useInsightData(
         useMemo(() => () => getBuiltInInsightData({ insight: cachedInsight, options: { where, context } }), [
             getBuiltInInsightData,
             cachedInsight,
             where,
             context,
-        ])
+        ]),
+        insightCardReference
     )
 
     // Visual line chart settings
@@ -55,6 +60,7 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
     return (
         <View.Root
             {...otherProps}
+            innerRef={mergedInsightCardReference}
             data-testid={`insight-card.${insight.id}`}
             title={insight.title}
             className={classNames('extension-insight-card', otherProps.className)}
@@ -71,7 +77,7 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
         >
             {resizing ? (
                 <View.Banner>Resizing</View.Banner>
-            ) : !data || loading || isDeleting ? (
+            ) : !data || loading || isDeleting || !isVisible ? (
                 <View.LoadingContent text={isDeleting ? 'Deleting code insight' : 'Loading code insight'} />
             ) : isErrorLike(data.view) ? (
                 <View.ErrorContent error={data.view} title={insight.id} />
