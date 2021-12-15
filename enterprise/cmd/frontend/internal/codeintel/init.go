@@ -22,6 +22,10 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 		return err
 	}
 
+	if err := config.Validate(); err != nil {
+		return err
+	}
+
 	resolverObservationContext := &observation.Context{
 		Logger:     observationContext.Logger,
 		Tracer:     observationContext.Tracer,
