@@ -3,7 +3,6 @@ package insights
 import (
 	"context"
 	"database/sql"
-	"log"
 	"os"
 	"strconv"
 	"time"
@@ -41,7 +40,7 @@ func IsEnabled() bool {
 }
 
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
-func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	if !IsEnabled() {
 		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
 			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("backend-run code insights are not available on single-container deployments")
@@ -55,12 +54,6 @@ func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchabl
 		return err
 	}
 	enterpriseServices.InsightsResolver = resolvers.New(timescale, postgres)
-
-	insightsMigrator := migration.NewMigrator(timescale, postgres)
-	// This id (14) was defined arbitrarily in this migration file: 1528395945_settings_migration_out_of_band.up.sql.
-	if err := outOfBandMigrationRunner.Register(14, insightsMigrator, oobmigration.MigratorOptions{Interval: 10 * time.Second}); err != nil {
-		log.Fatalf("failed to register settings migration job: %v", err)
-	}
 
 	return nil
 }
@@ -79,4 +72,24 @@ func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	if !IsEnabled() {
+		return nil
+	}
+
+	timescale, err := InitializeCodeInsightsDB("worker")
+	if err != nil {
+		return err
+	}
+
+	insightsMigrator := migration.NewMigrator(timescale, db)
+
+	// This id (14) was defined arbitrarily in this migration file: 1528395945_settings_migration_out_of_band.up.sql.
+	if err := outOfBandMigrationRunner.Register(14, insightsMigrator, oobmigration.MigratorOptions{Interval: 10 * time.Second}); err != nil {
+		return errors.Wrap(err, "failed to register settings migration job")
+	}
+
+	return nil
 }

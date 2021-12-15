@@ -4,8 +4,16 @@ import (
 	"os"
 	"time"
 
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 const (
@@ -23,6 +31,20 @@ const (
 	// `1528395821_oob_site_credential_encryption_up.sql`.
 	BatchChangesSiteCredentialMigrationID = 10
 )
+
+func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	// Initialize store.
+	cstore := store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey)
+
+	// Register Batch Changes OOB migrations.
+	return Register(cstore, outOfBandMigrationRunner)
+}
 
 // Register registers all currently implemented out of band migrations
 // by batch changes with the migration runner.
