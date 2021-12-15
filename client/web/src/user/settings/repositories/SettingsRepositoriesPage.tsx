@@ -42,6 +42,8 @@ import { Owner } from '../cloud-ga'
 import { UserSettingReposContainer } from './components'
 import { defaultFilters, RepositoriesList } from './RepositoriesList'
 import styles from './SettingsRepositoriesPage.module.scss'
+import { authenticatedUser } from '../../../auth'
+import { OrgUserNeedsCodeHost } from '../codeHosts/OrgUserNeedsCodeHost'
 
 interface Props
     extends TelemetryProps,
@@ -71,6 +73,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const isUserOwner = owner.type === 'user'
     const fetchRepositories = isUserOwner ? listUserRepositories : listOrgRepositories
     const fetchRepositoriesCount = isUserOwner ? fetchUserRepositoriesCount : fetchOrgRepositoriesCount
+    const user = useObservable(authenticatedUser)
 
     const NoAddedReposBanner = (
         <Container className="text-center">
@@ -310,6 +313,10 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             )}
             {!isUserOwner && shouldDisplayContextBanner && owner.name && getSearchContextBanner(owner.name)}
             {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}
+            {!isUserOwner && externalServices && user && (
+                <OrgUserNeedsCodeHost user={user} orgExternalServices={externalServices} />
+            )}
+
             <PageTitle title="Your repositories" />
             <PageHeader
                 headingElement="h2"
