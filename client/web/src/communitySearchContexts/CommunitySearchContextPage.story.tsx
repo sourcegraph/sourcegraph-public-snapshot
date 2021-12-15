@@ -62,6 +62,7 @@ const authUser: AuthenticatedUser = {
     tags: [],
     viewerCanAdminister: true,
     databaseID: 0,
+    tosAccepted: true,
 }
 
 const repositories: ISearchContextRepositoryRevisions[] = [
