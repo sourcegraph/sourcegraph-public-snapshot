@@ -97,7 +97,7 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 			t.Errorf("got UpsertMetadataStamp invocations: %v want %v", got, want)
 		} else {
 			call := commitStore.UpsertMetadataStampFunc.history[0]
-			if call.Arg1 != 3 {
+			if call.Arg1 != 2 {
 				t.Errorf("unexpected repository for UpsertMetadataStamp repo_id: %v", call.Arg1)
 			}
 		}
