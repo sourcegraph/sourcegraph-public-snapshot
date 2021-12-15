@@ -30,7 +30,7 @@ func Postgres() *monitoring.Container {
 					monitoring.Observable{
 						Name:              "connections",
 						Description:       "active connections",
-						Owner:             monitoring.ObservableOwnerCloudSaas,
+						Owner:             monitoring.ObservableOwnerCloudSaaS,
 						DataMustExist:     false, // not deployed on docker-compose
 						Query:             `sum by (job) (pg_stat_activity_count{datname!~"template.*|postgres|cloudsqladmin"})`,
 						Panel:             monitoring.Panel().LegendFormat("{{datname}}"),
@@ -40,7 +40,7 @@ func Postgres() *monitoring.Container {
 					monitoring.Observable{
 						Name:              "transaction_durations",
 						Description:       "maximum transaction durations",
-						Owner:             monitoring.ObservableOwnerCloudSaas,
+						Owner:             monitoring.ObservableOwnerCloudSaaS,
 						DataMustExist:     false, // not deployed on docker-compose
 						Query:             `sum by (datname) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin"})`,
 						Panel:             monitoring.Panel().LegendFormat("{{datname}}").Unit(monitoring.Seconds),
@@ -59,7 +59,7 @@ func Postgres() *monitoring.Container {
 						monitoring.Observable{
 							Name:              "postgres_up",
 							Description:       "database availability",
-							Owner:             monitoring.ObservableOwnerCloudSaas,
+							Owner:             monitoring.ObservableOwnerCloudSaaS,
 							DataMustExist:     false, // not deployed on docker-compose
 							Query:             "pg_up",
 							Panel:             monitoring.Panel().LegendFormat("{{app}}"),
@@ -70,7 +70,7 @@ func Postgres() *monitoring.Container {
 						monitoring.Observable{
 							Name:          "invalid_indexes",
 							Description:   "invalid indexes (unusable by the query planner)",
-							Owner:         monitoring.ObservableOwnerCloudSaas,
+							Owner:         monitoring.ObservableOwnerCloudSaaS,
 							DataMustExist: false, // not deployed on docker-compose
 							Query:         "max by (relname)(pg_invalid_index_count)",
 							Panel:         monitoring.Panel().LegendFormat("{{relname}}"),
@@ -85,7 +85,7 @@ func Postgres() *monitoring.Container {
 						monitoring.Observable{
 							Name:          "pg_exporter_err",
 							Description:   "errors scraping postgres exporter",
-							Owner:         monitoring.ObservableOwnerCloudSaas,
+							Owner:         monitoring.ObservableOwnerCloudSaaS,
 							DataMustExist: false, // not deployed on docker-compose
 							Query:         "pg_exporter_last_scrape_error",
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
@@ -99,7 +99,7 @@ func Postgres() *monitoring.Container {
 						monitoring.Observable{
 							Name:           "migration_in_progress",
 							Description:    "active schema migration",
-							Owner:          monitoring.ObservableOwnerCloudSaas,
+							Owner:          monitoring.ObservableOwnerCloudSaaS,
 							DataMustExist:  false, // not deployed on docker-compose
 							Query:          "pg_sg_migration_status",
 							Panel:          monitoring.Panel().LegendFormat("{{app}}"),
