@@ -596,6 +596,8 @@ describe('toRepoURL', () => {
     })
 
     it('generates absolute repo URL with a rev', () => {
-        expect(toRepoURL({ repoName: 'sourcegraph/sourcegraph', revision: 'main' })).toBe('/sourcegraph/sourcegraph@main')
+        expect(toRepoURL({ repoName: 'sourcegraph/sourcegraph', revision: 'main' })).toBe(
+            '/sourcegraph/sourcegraph@main'
+        )
     })
 })
