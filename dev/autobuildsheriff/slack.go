@@ -10,7 +10,7 @@ import (
 
 func slackSummary(locked bool, failedCommits []commitInfo) string {
 	if !locked {
-		return "Pipeline healthy - branch unlocked!"
+		return ":white_check_mark: Pipeline healthy - branch unlocked!"
 	}
 	message := `:alert: *Consecutive build failures detected - branch has been locked.* :alert:
 The authors of the following failed commits have been granted merge access to investigate and resolve the issue:
