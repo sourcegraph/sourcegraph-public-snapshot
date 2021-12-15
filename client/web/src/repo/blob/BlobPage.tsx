@@ -57,7 +57,7 @@ interface Props
         HoverThresholdProps,
         BreadcrumbSetters,
         SearchStreamingProps,
-        Pick<SearchContextProps, 'searchContextsEnabled' | 'showSearchContext'>,
+        Pick<SearchContextProps, 'searchContextsEnabled'>,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
     location: H.Location
     history: H.History

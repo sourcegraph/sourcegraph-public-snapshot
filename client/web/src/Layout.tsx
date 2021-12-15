@@ -17,7 +17,6 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { TosConsentModal } from './auth/TosConsentModal'
 import { BatchChangesProps } from './batches'
-import { CodeMonitoringProps } from './code-monitoring'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
@@ -53,7 +52,6 @@ import { Settings } from './schema/settings.schema'
 import {
     parseSearchURLQuery,
     PatternTypeProps,
-    OnboardingTourProps,
     HomePanelsProps,
     SearchStreamingProps,
     ParsedSearchQueryProps,
@@ -82,12 +80,9 @@ export interface LayoutProps
         ActivationProps,
         ParsedSearchQueryProps,
         PatternTypeProps,
-        OnboardingTourProps,
         SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,
-        CodeMonitoringProps,
-        SearchContextProps,
         UserExternalServicesOrRepositoriesUpdateProps,
         CodeIntelligenceProps,
         BatchChangesProps,
@@ -126,7 +121,6 @@ export interface LayoutProps
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 
     globbing: boolean
-    showMultilineSearchConsole: boolean
     isSourcegraphDotCom: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never

@@ -69,7 +69,7 @@ export const EmptyView: Story = () => <View.Root {...standardViewProps} title="E
 
 export const ViewWithChartContent: Story = () => (
     <View.Root {...standardViewProps} title="Chart view" subtitle="Subtitle chart description">
-        <View.Content viewID="unique view id" content={[LINE_CHART_DATA]} telemetryService={NOOP_TELEMETRY_SERVICE} />
+        <View.Content content={[LINE_CHART_DATA]} telemetryService={NOOP_TELEMETRY_SERVICE} />
     </View.Root>
 )
 
@@ -122,6 +122,6 @@ export const ViewWithContextMenu: Story = () => (
             </>
         }
     >
-        <View.Content viewID="unique view id" content={[LINE_CHART_DATA]} telemetryService={NOOP_TELEMETRY_SERVICE} />
+        <View.Content content={[LINE_CHART_DATA]} telemetryService={NOOP_TELEMETRY_SERVICE} />
     </View.Root>
 )

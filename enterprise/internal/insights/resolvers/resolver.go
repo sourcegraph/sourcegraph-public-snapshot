@@ -54,7 +54,6 @@ type Resolver struct {
 	insightMetadataStore store.InsightMetadataStore
 	dataSeriesStore      store.DataSeriesStore
 
-	permissionsValidator *InsightPermissionsValidator
 	baseInsightResolver
 }
 
@@ -72,7 +71,6 @@ func newWithClock(timescale, postgres dbutil.DB, clock func() time.Time) *Resolv
 		timeSeriesStore:      base.timeSeriesStore,
 		insightMetadataStore: base.insightStore,
 		dataSeriesStore:      base.insightStore,
-		permissionsValidator: PermissionsValidatorFromBase(base),
 	}
 }
 

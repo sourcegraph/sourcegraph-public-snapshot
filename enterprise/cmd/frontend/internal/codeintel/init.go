@@ -22,7 +22,14 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 		return err
 	}
 
-	resolver, err := newResolver(ctx, db, observationContext, services)
+	resolverObservationContext := &observation.Context{
+		Logger:     observationContext.Logger,
+		Tracer:     observationContext.Tracer,
+		Registerer: observationContext.Registerer,
+		Sentry:     services.hub,
+	}
+
+	resolver, err := newResolver(ctx, db, resolverObservationContext, services)
 	if err != nil {
 		return err
 	}
@@ -55,7 +62,7 @@ func newResolver(ctx context.Context, db database.DB, observationContext *observ
 		observationContext,
 	)
 
-	return codeintelgqlresolvers.NewResolver(db, innerResolver), nil
+	return codeintelgqlresolvers.NewResolver(db, innerResolver, &observation.Context{Sentry: observationContext.Sentry}), nil
 }
 
 func newUploadHandler(services *Services) func(internal bool) http.Handler {
