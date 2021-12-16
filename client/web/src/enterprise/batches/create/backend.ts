@@ -1,9 +1,5 @@
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
-// TODO: We actually want to get the current spec and the latest batch spec. If the latest
-// spec != the current spec (it is unapplied), we will show this in the editor and use it
-// for `replaceBatchSpecInput`. If it does match, we should use `replaceBatchSpecInput` if
-// it's unapplied and `createBatchSpecFromRaw` if it's applied.
 export const GET_BATCH_CHANGE_TO_EDIT = gql`
     query GetBatchChangeToEdit($namespace: ID!, $name: String!) {
         batchChange(namespace: $namespace, name: $name) {
