@@ -102,7 +102,7 @@ func expensiveHasMatch(fs fileskip.FileSystem, filename, query string) bool {
 func BenchmarkQuery(b *testing.B) {
 	for _, corpus := range all {
 		if corpus.Name != "chromium" {
-			continue
+			//continue
 		}
 		benchmarkQuery(b, corpus)
 	}
@@ -157,18 +157,14 @@ func loadCorpus(b *testing.B, corpus Corpus) {
 	//}
 	//b.ReportMetric(float64(stat.Size()), "archive-disk-size")
 	indexedBlobsSize := int64(0)
-	bloomFilterBinaryStorageSize := 0
+	bloomFilterBinaryStorageSize := uint(0)
 	for _, blob := range index.Blobs {
 		statSize, err := index.FS.StatSize(blob.Path)
 		if err != nil {
 			panic(err)
 		}
 		indexedBlobsSize = indexedBlobsSize + statSize
-		serializedBitmap, err := blob.Filter.MarshalBinary()
-		if err != nil {
-			panic(err)
-		}
-		bloomFilterBinaryStorageSize += len(serializedBitmap)
+		bloomFilterBinaryStorageSize += blob.EstimatedBinarySize()
 	}
 	b.ReportMetric(float64(len(index.Blobs)), "indexed-blob-count")
 	b.ReportMetric(float64(indexedBlobsSize), "indexed-blobs-size")

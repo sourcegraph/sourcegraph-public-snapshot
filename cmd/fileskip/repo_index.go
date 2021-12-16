@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
+	"github.com/FastFilter/xorfilter"
 	"github.com/RoaringBitmap/roaring"
 	"github.com/cockroachdb/errors"
 	"github.com/go-enry/go-enry/v2"
@@ -42,8 +43,12 @@ type RepoIndex struct {
 	FS    FileSystem
 }
 type BlobIndex struct {
-	Filter *roaring.Bitmap
+	Filter *xorfilter.BinaryFuse8
 	Path   string
+}
+
+func (b *BlobIndex) EstimatedBinarySize() uint {
+	return uint(len(b.Filter.Fingerprints))
 }
 
 func (b *BlobIndex) WriteTo(w io.Writer) (int64, error) {
@@ -88,7 +93,7 @@ func (b *BlobIndex) ReadFrom(stream io.Reader) (int64, error) {
 	return readByteCount, nil
 }
 
-func onGrams(text string) *roaring.Bitmap {
+func onGrams(text string) (*xorfilter.BinaryFuse8, *roaring.Bitmap) {
 	seen := roaring.New()
 	ch1 := uint32(0)
 	ch2 := uint32(0)
@@ -102,8 +107,8 @@ func onGrams(text string) *roaring.Bitmap {
 			continue
 		}
 		unigram -= ' '
-		bigram := (unigram << 6) | ch1
-		trigram := (bigram << 6) | ch2
+		bigram := (unigram << 5) | ch1
+		trigram := (bigram << 5) | ch2
 		//quadgram := (trigram << 5) | ch3
 		//pentagram := (quadgram << 5) | ch4
 		//seen.Add(unigram)
@@ -124,15 +129,26 @@ func onGrams(text string) *roaring.Bitmap {
 		ch2 = ch1
 		ch1 = unigram
 	}
-	return seen
+	keys := make([]uint64, seen.GetCardinality())
+	i = 0
+	seen.Iterate(func(x uint32) bool {
+		keys[i] = uint64(x)
+		i++
+		return true
+	})
+	filter, err := xorfilter.PopulateBinaryFuse8(keys)
+	if err != nil {
+		panic(err)
+	}
+	return filter, seen
 }
 
 func CollectQueryNgrams(query string) *QueryBitmask {
 	if strings.ToUpper(query) != query {
 		panic(fmt.Sprintf("query must be uppercase: %v"))
 	}
-	grams := onGrams(query)
-	return &QueryBitmask{Bitmask: grams, Cardinality: grams.GetCardinality()}
+	_, grams := onGrams(query)
+	return &QueryBitmask{Bitmask: grams}
 	//result := make([][]byte, len(ngrams))
 	//arities := make([]int8, len(ngrams))
 	//i := 0
@@ -306,7 +322,7 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 					continue
 				}
 				text := strings.ToUpper(string(textBytes))
-				ngrams := onGrams(text)
+				ngrams, _ := onGrams(text)
 				res <- BlobIndex{Path: filename, Filter: ngrams}
 			}
 		}(i, j)
@@ -393,7 +409,16 @@ func (r *RepoIndex) pathsMatchingQuerySync(
 			continue
 		}
 		//query.Bitmask.Intersects()
-		if query.Bitmask.AndCardinality(index.Filter) == query.Cardinality {
+		isMatch := true
+		query.Bitmask.Iterate(func(x uint32) bool {
+			contains := index.Filter.Contains(uint64(x))
+			if !contains {
+				isMatch = false
+			}
+			return contains
+		})
+
+		if isMatch {
 			onMatch(index.Path)
 		}
 	}
