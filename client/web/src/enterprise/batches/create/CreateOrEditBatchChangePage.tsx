@@ -1,12 +1,11 @@
+import { ApolloQueryResult } from '@apollo/client'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useMutation, useQuery } from '@sourcegraph/shared/src/graphql/apollo'
-import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graphql/schema'
 import {
     SettingsCascadeProps,
     SettingsOrgSubject,
@@ -25,6 +24,8 @@ import {
     GetBatchChangeToEditVariables,
     CreateEmptyBatchChangeVariables,
     CreateEmptyBatchChangeResult,
+    Scalars,
+    BatchSpecWorkspaceResolutionState,
 } from '../../../graphql-operations'
 import { Settings } from '../../../schema/settings.schema'
 import { BatchChangePage } from '../BatchChangePage'
@@ -33,15 +34,14 @@ import { BatchSpecDownloadLink } from '../BatchSpec'
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
 import styles from './CreateOrEditBatchChangePage.module.scss'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
-import helloWorldSample from './library/hello-world.batch.yaml'
 import { LibraryPane } from './library/LibraryPane'
 import { NamespaceSelector } from './NamespaceSelector'
 import { useBatchSpecCode } from './useBatchSpecCode'
 import { usePreviewBatchSpec } from './useBatchSpecPreview'
 import { useExecuteBatchSpec } from './useExecuteBatchSpec'
+import { useInitialBatchSpec } from './useInitialBatchSpec'
 import { useNamespaces } from './useNamespaces'
 import { useBatchSpecWorkspaceResolution, WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
-import { insertNameIntoLibraryItem, isMinimalBatchSpec } from './yaml-util'
 
 export interface CreateOrEditBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     /**
@@ -62,7 +62,7 @@ export const CreateOrEditBatchChangePage: React.FunctionComponent<CreateOrEditBa
     batchChangeName,
     ...props
 }) => {
-    const { data, loading } = useQuery<GetBatchChangeToEditResult, GetBatchChangeToEditVariables>(
+    const { data, error, loading, refetch } = useQuery<GetBatchChangeToEditResult, GetBatchChangeToEditVariables>(
         GET_BATCH_CHANGE_TO_EDIT,
         {
             // If we don't have the batch change name or namespace, the user hasn't created a
@@ -78,11 +78,20 @@ export const CreateOrEditBatchChangePage: React.FunctionComponent<CreateOrEditBa
         }
     )
 
+    const refetchBatchChange = useCallback(
+        () =>
+            refetch({
+                namespace: initialNamespaceID as Scalars['ID'],
+                name: batchChangeName as BatchChangeFields['name'],
+            }),
+        [initialNamespaceID, batchChangeName, refetch]
+    )
+
     if (!batchChangeName) {
         return <CreatePage namespaceID={initialNamespaceID} {...props} />
     }
 
-    if (loading) {
+    if (loading && !data) {
         return (
             <div className="text-center">
                 <LoadingSpinner className="icon-inline mx-auto my-4" />
@@ -90,11 +99,11 @@ export const CreateOrEditBatchChangePage: React.FunctionComponent<CreateOrEditBa
         )
     }
 
-    if (!data?.batchChange) {
+    if (!data?.batchChange || error) {
         return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
     }
 
-    return <EditPage batchChange={data.batchChange} {...props} />
+    return <EditPage batchChange={data.batchChange} refetchBatchChange={refetchBatchChange} {...props} />
 }
 
 interface CreatePageProps extends SettingsCascadeProps<Settings> {
@@ -169,14 +178,22 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
 
 interface EditPageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     batchChange: EditBatchChangeFields
+    refetchBatchChange: () => Promise<ApolloQueryResult<GetBatchChangeToEditResult>>
 }
 
-const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, isLightTheme, settingsCascade }) => {
+const EditPage: React.FunctionComponent<EditPageProps> = ({
+    batchChange,
+    refetchBatchChange,
+    isLightTheme,
+    settingsCascade,
+}) => {
     // Get the latest batch spec for the batch change.
     const { batchSpec, isApplied: isLatestBatchSpecApplied, initialCode: initialBatchSpecCode } = useInitialBatchSpec(
         batchChange
     )
 
+    // TODO: Only needed when edit form is open
+    // Get the namespaces this user has access to.
     const { namespaces: _namespaces, defaultSelectedNamespace } = useNamespaces(
         settingsCascade,
         batchChange.namespace.id
@@ -204,19 +221,34 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, isLight
         initialBatchSpecCode
     )
 
-    // Track whenever the batch spec code that is presently in the editor gets ahead of
-    // the batch spec that was last submitted to the backend.
+    // Track whenever the batch spec code that is presently in the editor is newer than
+    // the batch spec code on the backend.
     const [batchSpecStale, setBatchSpecStale] = useState(false)
-    const markUnstale = useCallback(() => setBatchSpecStale(false), [])
+
+    // When we successfully submit the latest batch spec code to the backend for a new
+    // workspaces preview, we can:
+    // - Mark that the batch spec code is no longer stale.
+    // - Mark that the user has previewed the workspaces at least once.
+    // - Refetch the batch change to get the latest batch spec.
+    const onCompletePreview = useCallback(() => {
+        setBatchSpecStale(false)
+        refetchBatchChange().then(noop).catch(noop)
+    }, [refetchBatchChange])
 
     // Manage the batch spec that was last submitted to the backend for the workspaces preview.
     const {
         previewBatchSpec,
-        currentPreviewRequestTime,
         isLoading: isLoadingPreview,
         error: previewError,
         clearError: clearPreviewError,
-    } = usePreviewBatchSpec(batchSpecID, noCache, markUnstale)
+        hasPreviewed,
+    } = usePreviewBatchSpec(
+        batchSpec.id,
+        isLatestBatchSpecApplied,
+        batchChange.namespace.id,
+        noCache,
+        onCompletePreview
+    )
 
     const clearErrorsAndHandleCodeChange = useCallback(
         (newCode: string) => {
@@ -232,43 +264,35 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, isLight
     // is missing, or if we're already processing a preview.
     const previewDisabled = useMemo(() => isValid !== true || isLoadingPreview, [isValid, isLoadingPreview])
 
-    const { resolution: workspacesPreviewResolution } = useBatchSpecWorkspaceResolution(
-        batchSpecID,
-        currentPreviewRequestTime,
-        {
-            fetchPolicy: 'cache-first',
-        }
-    )
+    const { resolution: workspacesPreviewResolution } = useBatchSpecWorkspaceResolution(batchSpec, {
+        fetchPolicy: 'cache-first',
+    })
 
     // Manage submitting a batch spec for execution.
     const { executeBatchSpec, isLoading: isExecuting, error: executeError } = useExecuteBatchSpec(batchSpec.id)
 
     // Disable the execute button if any of the following are true:
-    // * a batch spec has already been applied (the batch change is not a draft)
-    // * the batch spec code is invalid
-    // * there was an error with the preview
-    // * we're already in the middle of previewing or executing
-    // * we haven't submitted the batch spec to the backend yet for the preview
-    // * the batch spec on the backend is stale
-    // * the current workspaces evaluation is not complete
+    // - The batch spec code is invalid.
+    // - There was an error with the preview.
+    // - We're in the middle of previewing or executing the batch spec.
+    // - We haven't yet submitted the batch spec to the backend yet for a preview.
+    // - The batch spec on the backend is stale.
+    // - The current workspaces evaluation is not complete.
     const [disableExecution, executionTooltip] = useMemo(() => {
         const disableExecution = Boolean(
-            batchChange.state !== 'DRAFT' ||
-                isValid !== true ||
+            isValid !== true ||
                 previewError ||
                 isLoadingPreview ||
                 isExecuting ||
-                !currentPreviewRequestTime ||
+                !hasPreviewed ||
                 batchSpecStale ||
                 workspacesPreviewResolution?.state !== BatchSpecWorkspaceResolutionState.COMPLETED
         )
         // The execution tooltip only shows if the execute button is disabled, and explains why.
         const executionTooltip =
-            batchChange.state !== 'DRAFT'
-                ? 'This batch change has already had a spec applied.'
-                : isValid === false || previewError
+            isValid === false || previewError
                 ? "There's a problem with your batch spec."
-                : !currentPreviewRequestTime
+                : !hasPreviewed
                 ? 'Preview workspaces first before you run.'
                 : batchSpecStale
                 ? 'Update your workspaces preview before you run.'
@@ -278,8 +302,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, isLight
 
         return [disableExecution, executionTooltip]
     }, [
-        batchChange,
-        currentPreviewRequestTime,
+        hasPreviewed,
         isValid,
         previewError,
         isLoadingPreview,
