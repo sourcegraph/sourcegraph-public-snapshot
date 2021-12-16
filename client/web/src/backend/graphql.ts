@@ -4,11 +4,11 @@ import { Observable } from 'rxjs'
 import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 
-const getHeaders = (): { [header: string]: string } => ({
+export const getHeaders = (debugMode: boolean = false): { [header: string]: string } => ({
     ...window?.context?.xhrHeaders,
     Accept: 'application/json',
     'Content-Type': 'application/json',
-    'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
+    'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || `${debugMode}` || 'false',
 })
 
 /**

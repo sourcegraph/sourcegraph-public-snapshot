@@ -21,6 +21,7 @@ import { CodeInsightsSettingsCascadeBackend } from './core/backend/setting-based
 import { BetaConfirmationModal } from './modals/BetaConfirmationModal'
 import { DashboardsRoutes } from './pages/dashboards/DasbhoardsRoutes'
 import { CreationRoutes } from './pages/insights/creation/CreationRoutes'
+import {isErrorLike} from "@sourcegraph/shared/src/util/errors";
 
 const EditInsightLazyPage = lazyComponent(
     () => import('./pages/insights/edit-insight/EditInsightPage'),
@@ -55,7 +56,9 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
     const match = useRouteMatch()
     const apolloClient = useApolloClient()
 
-    const gqlApi = useMemo(() => new CodeInsightsGqlBackend(apolloClient), [apolloClient])
+    const debugMode = isErrorLike(settingsCascade.final) ? false : settingsCascade.final?.experimentalFeatures?.codeInsightsDebugMode
+
+    const gqlApi = useMemo(() => new CodeInsightsGqlBackend(apolloClient, debugMode), [apolloClient, debugMode])
     const api = useMemo(
         () =>
             isCodeInsightsGqlApiEnabled

@@ -54,9 +54,11 @@ import { getBackendInsightData } from './methods/get-backend-insight-data/get-ba
 import { getCaptureGroupInsightsPreview } from './methods/get-capture-group-insight-preivew'
 import { updateInsight } from './methods/update-insight/update-insight'
 import { createDashboardGrants } from './utils/get-dashboard-grants'
+import {getHeaders, overwriteClientHeaders} from "../../../../../backend/graphql";
 
 export class CodeInsightsGqlBackend implements CodeInsightsBackend {
-    constructor(private apolloClient: ApolloClient<object>) {}
+    constructor(private apolloClient:
+                    ApolloClient<object>, private debugMode?: boolean) {}
 
     // Insights
     public getInsights = (input: { dashboardId: string }): Observable<Insight[]> => {
@@ -66,7 +68,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         // we need to use here insightViews query to fetch all available insights
         if (dashboardId === ALL_INSIGHTS_DASHBOARD_ID) {
             return fromObservableQuery(
-                this.apolloClient.watchQuery<GetInsightsResult>({ query: GET_INSIGHTS_GQL })
+                this.apolloClient.watchQuery<GetInsightsResult>({ query: GET_INSIGHTS_GQL, context: { headers: getHeaders(this.debugMode) }})
             ).pipe(map(({ data }) => data.insightViews.nodes.map(createInsightView)))
         }
 
@@ -122,7 +124,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         )
 
     public getBackendInsightData = (insight: BackendInsight): Observable<BackendInsightData> =>
-        getBackendInsightData(this.apolloClient, insight)
+        getBackendInsightData(this.apolloClient, insight, this.debugMode)
 
     public getBuiltInInsightData = getBuiltInInsight
 

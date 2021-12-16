@@ -9,10 +9,12 @@ import { InsightInProcessError } from '../../../utils/errors'
 import { GET_INSIGHT_VIEW_GQL } from '../../gql/GetInsightView'
 
 import { createBackendInsightData } from './deserializators'
+import {getHeaders} from "../../../../../../../backend/graphql";
 
 export const getBackendInsightData = (
     client: ApolloClient<unknown>,
-    insight: BackendInsight
+    insight: BackendInsight,
+    debugMode: boolean = false
 ): Observable<BackendInsightData> => {
     const filters: InsightViewFiltersInput = {
         includeRepoRegex: insight.filters?.includeRepoRegexp,
@@ -24,11 +26,12 @@ export const getBackendInsightData = (
         client.query<GetInsightViewResult>({
             query: GET_INSIGHT_VIEW_GQL,
             variables: { id: insight.id, filters },
+            context: { headers: getHeaders(debugMode) }
         })
     ).pipe(
         // Note: this insight is guaranteed to exist since this function
         // is only called from within a loop of insight ids
-        map(({ data }) => data.insightViews.nodes[0]),
+        map(({ data,  }) => data.insightViews.nodes[0]),
         switchMap(data => (!data ? throwError(new InsightInProcessError()) : of(data))),
         map(data => createBackendInsightData(insight, data))
     )
