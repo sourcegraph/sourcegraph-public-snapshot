@@ -85,7 +85,7 @@ func newRepoIndex(t *testing.T) *RepoIndex {
 //	for i := range exampleText {
 //		for j := i + 1; j < len(exampleText); j++ {
 //			query := exampleText[i:j]
-//			truePositiveCount := len(r.PathsMatchingQuerySync(query))
+//			truePositiveCount := len(r.FilenamesMatchingQuerySync(query))
 //			if truePositiveCount == 0 {
 //				t.Fatalf("query '%v' triggered a false negative", query)
 //			}
@@ -95,7 +95,7 @@ func newRepoIndex(t *testing.T) *RepoIndex {
 //				strings.ToUpper(exampleText[i:j]) + strings.ToLower(exampleText[i:j]),
 //			}
 //			for _, falseQuery := range falseQueries {
-//				falsePositiveCount := len(r.PathsMatchingQuerySync(falseQuery))
+//				falsePositiveCount := len(r.FilenamesMatchingQuerySync(falseQuery))
 //				if falsePositiveCount > 0 {
 //					t.Fatalf("query '%v' triggered a false positive", query)
 //				}
@@ -126,7 +126,7 @@ func FalsePositive(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		paths := r.PathsMatchingQuerySync(query)
+		paths := r.FilenamesMatchingQuerySync(query)
 		if len(paths) > 0 && strings.Index(string(bytes), query) < 0 {
 			t.Fatalf("query '%v' triggered a false positive in path '%v'", query, abspath)
 		}

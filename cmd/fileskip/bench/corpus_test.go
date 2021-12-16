@@ -14,13 +14,18 @@ var isQueryBaseline = "true" == os.Getenv("FILESKIP_BASELINE")
 
 func benchmarkQuery(b *testing.B, c Corpus) {
 	fileskip.IsProgressBarEnabled = false
-	index, err := c.LoadRepoIndex()
-	if err != nil {
-		panic(err)
-	}
+	var index *fileskip.RepoIndex
+	var err error
 	b.ResetTimer()
 	for _, query := range c.Queries {
 		b.Run(fmt.Sprintf("%v-%v", c.Name, query), func(b *testing.B) {
+			if index == nil {
+				index, err = c.LoadRepoIndex()
+				if err != nil {
+					panic(err)
+				}
+				b.ResetTimer()
+			}
 			matchingResults := map[string]struct{}{}
 			falsePositives := 0
 			for i := 0; i < b.N; i++ {
@@ -148,7 +153,11 @@ func loadCorpus(b *testing.B, corpus Corpus) {
 			panic(err)
 		}
 		indexedBlobsSize = indexedBlobsSize + statSize
-		bloomFilterBinaryStorageSize = bloomFilterBinaryStorageSize + blob.Filter.BitSet().BinaryStorageSize()
+		serializedBitmap, err := blob.Filter.MarshalBinary()
+		if err != nil {
+			panic(err)
+		}
+		bloomFilterBinaryStorageSize += len(serializedBitmap)
 	}
 	b.ReportMetric(float64(len(index.Blobs)), "indexed-blob-count")
 	b.ReportMetric(float64(indexedBlobsSize), "indexed-blobs-size")

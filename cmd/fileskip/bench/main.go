@@ -98,7 +98,6 @@ func main() {
 			err := corpus.run()
 			if err != nil {
 			}
-			panic(err)
 		}
 	case "grep":
 		for _, corpus := range corpora {
@@ -238,7 +237,7 @@ func (c *Corpus) run() error {
 		isMatch[query] = map[string]struct{}{}
 	}
 	var wg sync.WaitGroup
-	batchSize := 100
+	batchSize := 1_000_000
 	for i := 0; i < len(index.Blobs); i += batchSize {
 		j := i + batchSize
 		if len(index.Blobs) < j {

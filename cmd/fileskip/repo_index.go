@@ -5,22 +5,17 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
-	"github.com/bits-and-blooms/bitset"
+	"github.com/RoaringBitmap/roaring/roaring64"
 	"github.com/cockroachdb/errors"
+	"github.com/go-enry/go-enry/v2"
 	"github.com/schollz/progressbar/v3"
 	"io"
 	"math"
-	"math/rand"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 	"time"
-	"unsafe"
-
-	"github.com/bits-and-blooms/bloom/v3"
-	"github.com/go-enry/go-enry/v2"
 )
 
 var (
@@ -36,13 +31,18 @@ const (
 
 var IsProgressBarEnabled = true
 
+type QueryBitmask struct {
+	Bitmask     *roaring64.Bitmap
+	Cardinality uint64
+}
+
 type RepoIndex struct {
 	Dir   string
 	Blobs []BlobIndex
 	FS    FileSystem
 }
 type BlobIndex struct {
-	Filter *bloom.BloomFilter
+	Filter *roaring64.Bitmap
 	Path   string
 }
 
@@ -88,6 +88,7 @@ func (b *BlobIndex) ReadFrom(stream io.Reader) (int64, error) {
 	return readByteCount, nil
 }
 
+var unigramArity = uint64(1) << 62
 var bigramArity = uint64(2) << 62
 var trigramArity = uint64(3) << 62
 
@@ -101,79 +102,62 @@ func ngramArity(n uint64) int8 {
 	return 1
 }
 
-const smallTrigram = 1 << 21
-
-func onGrams(text string, useBitset bool) (map[uint64]struct{}, *bitset.BitSet) {
-	seen := map[uint64]struct{}{}
+func onGrams(text string) *roaring64.Bitmap {
+	seen := roaring64.New()
 	ch1 := uint64(0)
 	ch2 := uint64(0)
 	i := 0
-	var seenAscii *bitset.BitSet
-	if useBitset {
-		seenAscii = bitset.New(smallTrigram)
-	}
 	for _, ch0 := range text {
 		unigram := uint64(ch0)
-		if useBitset && unigram < smallTrigram {
-			seenAscii.Set(uint(unigram))
-		} else {
-			seen[unigram] = struct{}{}
-		}
+		seen.Add(unigram | unigramArity)
 		if i > 1 {
-			bigram := unigram | (ch1 << 7)
-			if useBitset && bigram < smallTrigram {
-				seenAscii.Set(uint(bigram))
-			} else {
-				seen[bigram] = struct{}{}
-			}
+			bigram := unigram | (ch1 << 8) | bigramArity
+			seen.Add(bigram)
 		}
 		if i > 2 {
-			trigram := unigram | (ch1 << 7) | (ch2 << 14)
-			if useBitset && trigram < smallTrigram {
-				seenAscii.Set(uint(trigram))
-			} else {
-				seen[trigram] = struct{}{}
-			}
+			trigram := unigram | (ch1 << 8) | (ch2 << 16) | trigramArity
+			seen.Add(trigram)
 		}
 		ch2 = ch1
 		ch1 = unigram
 		i++
 	}
-	return seen, seenAscii
+	return seen
 }
 
-func CollectQueryNgrams(query string) [][]byte {
-	ngrams, _ := onGrams(query, false)
-	result := make([][]byte, len(ngrams))
-	arities := make([]int8, len(ngrams))
-	i := 0
-	for hash := range ngrams {
-		data := make([]byte, unsafe.Sizeof(hash))
-		binary.LittleEndian.PutUint64(data, hash)
-		result[i] = data
-		arities[i] = ngramArity(hash)
-		i++
-	}
-	randomNumbers := make([]int, len(ngrams))
-	for i := range randomNumbers {
-		randomNumbers[i] = rand.Int()
-	}
-	sort.SliceStable(result, func(i, j int) bool {
-		if arities[i] == arities[j] {
-			// Shuffle the ordering of n-grams with the same arity to increase entropy
-			// among the n-grams that appear first in the results.
-			// For example, the ID number in the query "bugzilla.redhat.com/show_bug.cgi?id=726143"
-			// appears at the end of the query and we want to move the n-grams from that
-			// ID to appear early in the results to allow the first bloom filter tests to exit early.
-			// we want to avoid the case where we test only the start of the query
-			return randomNumbers[i] < randomNumbers[j]
-		}
-		return arities[i] > arities[j]
-	})
-	if len(result) > maximumQueryNgrams {
-		result = result[:maximumQueryNgrams]
-	}
-	return result
+func CollectQueryNgrams(query string) *QueryBitmask {
+	grams := onGrams(query)
+	return &QueryBitmask{Bitmask: grams, Cardinality: grams.GetCardinality()}
+	//result := make([][]byte, len(ngrams))
+	//arities := make([]int8, len(ngrams))
+	//i := 0
+	//for hash := range ngrams {
+	//	data := make([]byte, unsafe.Sizeof(hash))
+	//	binary.LittleEndian.PutUint64(data, hash)
+	//	result[i] = data
+	//	arities[i] = ngramArity(hash)
+	//	i++
+	//}
+	//randomNumbers := make([]int, len(ngrams))
+	//for i := range randomNumbers {
+	//	randomNumbers[i] = rand.Int()
+	//}
+	//sort.SliceStable(result, func(i, j int) bool {
+	//	if arities[i] == arities[j] {
+	//		// Shuffle the ordering of n-grams with the same arity to increase entropy
+	//		// among the n-grams that appear first in the results.
+	//		// For example, the ID number in the query "bugzilla.redhat.com/show_bug.cgi?id=726143"
+	//		// appears at the end of the query and we want to move the n-grams from that
+	//		// ID to appear early in the results to allow the first bloom filter tests to exit early.
+	//		// we want to avoid the case where we test only the start of the query
+	//		return randomNumbers[i] < randomNumbers[j]
+	//	}
+	//	return arities[i] > arities[j]
+	//})
+	//if len(result) > maximumQueryNgrams {
+	//	result = result[:maximumQueryNgrams]
+	//}
+	//return result
 }
 
 func (r *RepoIndex) SerializeToFile(cacheDir string) (err error) {
@@ -298,8 +282,6 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 		wg.Add(1)
 		go func(start, end int) {
 			defer wg.Done()
-			data64 := make([]byte, unsafe.Sizeof(uint64(1)))
-			data32 := data64[:unsafe.Sizeof(int32(1))]
 			for _, filename := range filenames[start:end] {
 				if IsProgressBarEnabled {
 					bar.Add(1)
@@ -319,21 +301,8 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 					continue
 				}
 				text := string(textBytes)
-				ngrams, ngramsAscii := onGrams(text, true)
-				asciiCount := ngramsAscii.Count()
-				bloomSize := uint(len(ngrams)) + uint(asciiCount)
-				filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
-				for hash := range ngrams {
-					binary.LittleEndian.PutUint64(data64, hash)
-					filter.Add(data64)
-				}
-				indices := make([]uint, asciiCount)
-				ngramsAscii.NextSetMany(0, indices)
-				for _, hash := range indices {
-					binary.LittleEndian.PutUint32(data32, uint32(hash))
-					filter.Add(data64)
-				}
-				res <- BlobIndex{Path: filename, Filter: filter}
+				ngrams := onGrams(text)
+				res <- BlobIndex{Path: filename, Filter: ngrams}
 			}
 		}(i, j)
 	}
@@ -410,7 +379,7 @@ func color(colorString string) func(...interface{}) string {
 }
 
 func (r *RepoIndex) pathsMatchingQuerySync(
-	grams [][]byte,
+	query *QueryBitmask,
 	batch []BlobIndex,
 	onMatch func(matchingPath string),
 ) {
@@ -418,21 +387,13 @@ func (r *RepoIndex) pathsMatchingQuerySync(
 		if index.Filter == nil {
 			continue
 		}
-		isMatch := len(grams) > 0
-		for _, gram := range grams {
-			//fmt.Printf("test %v %v\n", index.Filter.Test(gram))
-			if !index.Filter.Test(gram) {
-				isMatch = false
-				break
-			}
-		}
-		if isMatch {
+		if query.Bitmask.AndCardinality(index.Filter) == query.Cardinality {
 			onMatch(index.Path)
 		}
 	}
 }
 
-func (r *RepoIndex) PathsMatchingQuerySync(query string) []string {
+func (r *RepoIndex) FilenamesMatchingQuerySync(query string) []string {
 	grams := CollectQueryNgrams(query)
 	var result []string
 	r.pathsMatchingQuerySync(grams, r.Blobs, func(matchingPath string) {
