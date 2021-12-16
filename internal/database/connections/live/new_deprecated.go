@@ -14,7 +14,7 @@ func NewFrontendDB(dsn, appName string, migrate bool, observationContext *observ
 		schema = nil
 	}
 
-	return connect(dsn, appName, "frontend", schema, false, observationContext)
+	return connect(dsn, appName, "frontend", schema, true, observationContext)
 }
 
 // DEPRECATED: Use (Raw|Ensure|Migrate)CodeIntelDB instead.
@@ -24,7 +24,7 @@ func NewCodeIntelDB(dsn, appName string, migrate bool, observationContext *obser
 		schema = nil
 	}
 
-	return connect(dsn, appName, "codeintel", schema, false, observationContext)
+	return connect(dsn, appName, "codeintel", schema, true, observationContext)
 }
 
 // DEPRECATED: Use (Raw|Ensure|Migrate)CodeInsightsDB instead.
@@ -34,5 +34,5 @@ func NewCodeInsightsDB(dsn, appName string, migrate bool, observationContext *ob
 		schema = nil
 	}
 
-	return connect(dsn, appName, "codeinsight", schema, false, observationContext)
+	return connect(dsn, appName, "codeinsight", schema, true, observationContext)
 }
