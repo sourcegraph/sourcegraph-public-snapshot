@@ -308,6 +308,7 @@ require (
 )
 
 require (
+	github.com/FastFilter/xorfilter v0.0.0-20211110201040-7b16be1b3375 // indirect
 	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
 	github.com/aws/aws-sdk-go v1.40.45 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.0.0 // indirect
