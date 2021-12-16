@@ -143,12 +143,7 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 // CloseChangeset closes the given *Changeset on the code host and updates the
 // Metadata column in the *batches.Changeset to the newly closed pull request.
 func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset) error {
-	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
-	if !ok {
-		return errors.New("Changeset is not a Bitbucket Server pull request")
-	}
-
-	declined, err := s.callAndRetryIfOutdated(ctx, pr, s.client.DeclinePullRequest)
+	declined, err := s.callAndRetryIfOutdated(ctx, c, s.client.DeclinePullRequest)
 	if err != nil {
 		return err
 	}
@@ -250,12 +245,7 @@ func (s BitbucketServerSource) UpdateChangeset(ctx context.Context, c *Changeset
 // ReopenChangeset reopens the *Changeset on the code host and updates the
 // Metadata column in the *batches.Changeset.
 func (s BitbucketServerSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
-	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
-	if !ok {
-		return errors.New("Changeset is not a Bitbucket Server pull request")
-	}
-
-	reopened, err := s.callAndRetryIfOutdated(ctx, pr, s.client.ReopenPullRequest)
+	reopened, err := s.callAndRetryIfOutdated(ctx, c, s.client.ReopenPullRequest)
 	if err != nil {
 		return err
 
@@ -266,12 +256,7 @@ func (s BitbucketServerSource) ReopenChangeset(ctx context.Context, c *Changeset
 
 // CreateComment posts a comment on the Changeset.
 func (s BitbucketServerSource) CreateComment(ctx context.Context, c *Changeset, text string) error {
-	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
-	if !ok {
-		return errors.New("Changeset is not a Bitbucket Server pull request")
-	}
-
-	_, err := s.callAndRetryIfOutdated(ctx, pr, func(ctx context.Context, pr *bitbucketserver.PullRequest) error {
+	_, err := s.callAndRetryIfOutdated(ctx, c, func(ctx context.Context, pr *bitbucketserver.PullRequest) error {
 		return s.client.CreatePullRequestComment(ctx, pr, text)
 	})
 	return err
@@ -281,12 +266,7 @@ func (s BitbucketServerSource) CreateComment(ctx context.Context, c *Changeset, 
 // The squash parameter is ignored, as Bitbucket Server does not support
 // squash merges.
 func (s BitbucketServerSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
-	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
-	if !ok {
-		return errors.New("Changeset is not a Bitbucket Server pull request")
-	}
-
-	merged, err := s.callAndRetryIfOutdated(ctx, pr, s.client.MergePullRequest)
+	merged, err := s.callAndRetryIfOutdated(ctx, c, s.client.MergePullRequest)
 	if err != nil {
 		if errors.Is(err, bitbucketserver.ErrNotMergeable) {
 			return &ChangesetNotMergeableError{ErrorMsg: err.Error()}
@@ -299,7 +279,12 @@ func (s BitbucketServerSource) MergeChangeset(ctx context.Context, c *Changeset,
 
 type bitbucketClientFunc func(context.Context, *bitbucketserver.PullRequest) error
 
-func (s BitbucketServerSource) callAndRetryIfOutdated(ctx context.Context, pr *bitbucketserver.PullRequest, fn bitbucketClientFunc) (*bitbucketserver.PullRequest, error) {
+func (s BitbucketServerSource) callAndRetryIfOutdated(ctx context.Context, c *Changeset, fn bitbucketClientFunc) (*bitbucketserver.PullRequest, error) {
+	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
+	if !ok {
+		return nil, errors.New("Changeset is not a Bitbucket Server pull request")
+	}
+
 	err := fn(ctx, pr)
 	if err == nil {
 		return pr, nil
@@ -309,13 +294,16 @@ func (s BitbucketServerSource) callAndRetryIfOutdated(ctx context.Context, pr *b
 		return nil, err
 	}
 
+	// If we have an outdated version of the pull request we extract the
+	// pull request that was returned with the error...
 	newestPR, err2 := bitbucketserver.ExtractPullRequest(err)
 	if err2 != nil {
 		return nil, errors.Wrap(err, "failed to extract pull request after receiving error")
 	}
 
-	log15.Info("Reopening Bitbucket Server PR failed because it's outdated. Retrying with newer version", "ID", pr.ID, "oldVersion", pr.Version, "newestVerssion", newestPR.Version)
+	log15.Info("Retrying Bitbucket Server operation because local PR is outdated. Retrying with newer version", "ID", pr.ID, "oldVersion", pr.Version, "newestVerssion", newestPR.Version)
 
+	// ... and try again, but this time with the newest version
 	err = fn(ctx, newestPR)
 	if err != nil {
 		return nil, err
