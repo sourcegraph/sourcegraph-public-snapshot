@@ -971,10 +971,11 @@ tests:
     cmd: yarn --cwd client/browser test-integration
 
   bext-e2e:
-    cmd: yarn --cwd client/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
+    cmd:
+      export PERCY_BROWSER_EXECUTABLE="node_modules/puppeteer/.local-chromium/linux-$(./dev/ci/puppeteer-revision.js)/chrome-linux/chrome"
+      yarn --cwd client/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
     env:
       SOURCEGRAPH_BASE_URL: https://sourcegraph.com
-      PERCY_BROWSER_EXECUTABLE: node_modules/puppeteer/.local-chromium/linux-901812/chrome-linux/chrome
 
   frontend:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook

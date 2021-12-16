@@ -442,6 +442,7 @@ describe('Batches', () => {
 
     describe('Batch changes list', () => {
         it('lists global batch changes', async () => {
+            // force tests
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...batchChangeLicenseGraphQlResults,
