@@ -23,6 +23,7 @@
     "onCommand:sourcegraph.search",
     "onCommand:sourcegraph.copyFileLink",
     "onCommand:sourcegraph.searchOnSourcegraph",
+    "onCommand:sourcegraph.searchInSourcegraph",
     "onCommand:extension.openFile",
     "onView:sourcegraph.extensionHost",
     "onView:sourcegraph.searchSidebar"
@@ -54,7 +55,12 @@
       {
         "command": "sourcegraph.searchOnSourcegraph",
         "category": "Sourcegraph",
-        "title": "Sourcegraph: Search on Sourcegraph"
+        "title": "Sourcegraph: Search Selected Text on Sourcegraph"
+      },
+      {
+        "command": "sourcegraph.searchInSourcegraph",
+        "category": "Sourcegraph",
+        "title": "Sourcegraph: Search Selected Text in VSCE"
       }
     ],
     "viewsContainers": {
@@ -136,6 +142,10 @@
         },
         {
           "command": "sourcegraph.searchOnSourcegraph",
+          "group": "sourcegraph"
+        },
+        {
+          "command": "sourcegraph.searchInSourcegraph",
           "group": "sourcegraph"
         }
       ]

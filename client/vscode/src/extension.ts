@@ -158,6 +158,35 @@ export function activate(context: vscode.ExtensionContext): void {
         })
     )
 
+    // Search Selected Text in Sourcegraph VSCE
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.searchInSourcegraph', async () => {
+            const editor = vscode.window.activeTextEditor
+            if (!editor) {
+                throw new Error('No active editor')
+            }
+            const selectedQuery = editor.document.getText(editor.selection)
+            if (selectedQuery && !searchSidebarMediator.checkActiveWebview()) {
+                sourcegraphSettings.refreshSettings()
+
+                const { sourcegraphVSCodeSearchWebviewAPI, webviewPanel } = await initializeSearchPanelWebview({
+                    extensionUri: context.extensionUri,
+                    sourcegraphVSCodeExtensionAPI,
+                    initializedPanelIDs,
+                })
+
+                searchSidebarMediator.addSearchWebviewPanel(webviewPanel, sourcegraphVSCodeSearchWebviewAPI)
+
+                webviewPanel.onDidDispose(() => {
+                    sourcegraphVSCodeSearchWebviewAPI[releaseProxy]()
+                })
+            }
+            if (selectedQuery) {
+                await searchSidebarMediator.submitActiveWebviewSearch({ query: selectedQuery })
+            }
+        })
+    )
+
     // Trigger initialization of extension host, bring search sidebar into view.
     vscode.commands.executeCommand('sourcegraph.searchSidebar.focus').then(
         () => {},

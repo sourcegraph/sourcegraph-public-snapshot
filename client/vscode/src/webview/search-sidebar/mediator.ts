@@ -20,6 +20,7 @@ export interface SearchSidebarMediator {
     observeActiveWebviewDynamicFilters: () => ProxySubscribable<Filter[] | null>
     setActiveWebviewQueryState: (queryState: QueryState) => Promise<void>
     submitActiveWebviewSearch: (queryState?: QueryState) => Promise<void>
+    checkActiveWebview: () => boolean
 }
 
 /**
@@ -132,6 +133,13 @@ export function createSearchSidebarMediator(disposables: vscode.Disposable[]): S
                     console.error(error)
                 }
             }
+        },
+        checkActiveWebview: () => {
+            if (activeSearchWebviewPanel.value) {
+                console.log(activeSearchWebviewPanel.value)
+                return true
+            }
+            return false
         },
     }
 }
