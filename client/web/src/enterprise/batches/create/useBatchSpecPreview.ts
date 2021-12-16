@@ -28,8 +28,8 @@ interface UsePreviewBatchSpecResult {
 }
 
 /**
- * Custom hook for "Create" page which packages up business logic and exposes an API for
- * powering the "preview" aspect of the workflow, i.e. submitting the batch spec input
+ * Custom hook for "CreateOrEdit" page which packages up business logic and exposes an API
+ * for powering the "preview" aspect of the workflow, i.e. submitting the batch spec input
  * YAML code to the backend to enqueue a batch spec resolution job to evaluate the
  * workspaces that a batch spec would run over.
  *

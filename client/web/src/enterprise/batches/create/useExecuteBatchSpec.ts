@@ -18,7 +18,7 @@ interface UseExecuteBatchSpecResult {
 }
 
 /**
- * Custom hook for "Create" page which wraps `useMutation` for `EXECUTE_BATCH_SPEC`.
+ * Custom hook for "CreateOrEdit" page which wraps `useMutation` for `EXECUTE_BATCH_SPEC`.
  *
  * @param batchSpecID The current batch spec ID.
  */
