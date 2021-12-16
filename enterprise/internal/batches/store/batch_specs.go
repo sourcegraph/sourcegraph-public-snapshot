@@ -433,7 +433,7 @@ ON
 		preds = append(preds, sqlf.Sprintf("(batch_specs.user_id = %s OR batch_specs.created_from_raw IS FALSE)", opts.ExcludeCreatedFromRawNotOwnedByUser))
 	}
 
-	if opts.NewestFirst == true {
+	if opts.NewestFirst {
 		order = sqlf.Sprintf("batch_specs.created_at DESC")
 	}
 
