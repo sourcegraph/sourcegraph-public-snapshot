@@ -536,7 +536,14 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 
 func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ search.IndexedRequestType, selector filter.SelectPath, c streaming.Sender) {
 	files := event.Files
-	limitHit := event.FilesSkipped+event.ShardsSkipped > 0
+
+	limitHit := false
+	if selector.Root() == filter.Repository {
+		limitHit = event.ShardsSkipped > 0
+	} else {
+		limitHit = event.FilesSkipped+event.ShardsSkipped > 0
+	}
+
 
 	if len(files) == 0 {
 		c.Send(streaming.SearchEvent{
