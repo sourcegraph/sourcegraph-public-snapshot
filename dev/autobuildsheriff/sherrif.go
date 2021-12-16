@@ -86,6 +86,7 @@ func isBuildFailed(build buildkite.Build, timeout time.Duration) bool {
 	}
 	// Created, but not done
 	if build.CreatedAt != nil && build.FinishedAt == nil {
+		// Failed if exceeded timeout
 		return time.Now().After(build.CreatedAt.Add(timeout))
 	}
 	return false
