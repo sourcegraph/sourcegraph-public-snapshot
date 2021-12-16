@@ -22,6 +22,7 @@ import puppeteer, {
     BrowserConnectOptions,
 } from 'puppeteer'
 import puppeteerFirefox from 'puppeteer-firefox'
+import { PUPPETEER_REVISIONS } from 'puppeteer/lib/cjs/puppeteer/revisions'
 import { from, fromEvent, merge, Subscription } from 'rxjs'
 import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
@@ -35,7 +36,6 @@ import { isDefined } from '../util/types'
 
 import { getConfig } from './config'
 import { formatPuppeteerConsoleMessage } from './console'
-import { PUPPETEER_BROWSER_REVISION } from './puppeteer-browser-revision'
 import { readEnvironmentBoolean, retry } from './utils'
 
 /**
@@ -827,7 +827,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
             args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
         }
 
-        const revision = PUPPETEER_BROWSER_REVISION[browserName]
+        const revision = PUPPETEER_REVISIONS.chromium
         const revisionInfo = getPuppeteerBrowser(browserName, revision)
 
         console.log(`Using ${browserName} (revision ${revision}) executable path:`, revisionInfo.executablePath)

@@ -1,7 +1,6 @@
 import puppeteer from 'puppeteer'
+import { PUPPETEER_REVISIONS } from 'puppeteer/lib/cjs/puppeteer/revisions'
 import signale from 'signale'
-
-import { PUPPETEER_BROWSER_REVISION } from '../src/testing/puppeteer-browser-revision'
 
 async function main(): Promise<void> {
     const browserName = process.env.BROWSER || 'chrome'
@@ -15,7 +14,7 @@ async function main(): Promise<void> {
     const browserFetcher = ((puppeteer as unknown) as puppeteer.PuppeteerNode).createBrowserFetcher({
         product: browserName,
     })
-    const revision = PUPPETEER_BROWSER_REVISION[browserName]
+    const revision = PUPPETEER_REVISIONS[browserName === 'chrome' ? 'chromium' : 'firefox']
     const revisionInfo = browserFetcher.revisionInfo(revision)
     if (!revisionInfo.local) {
         signale.await(`Puppeteer browser: downloading ${browserName} revision ${revision}.`)
