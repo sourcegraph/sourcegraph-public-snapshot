@@ -70,9 +70,7 @@ export const SearchUserNeedsCodeHost: React.FunctionComponent<SearchUserNeedsCod
         return null
     }
     return (
-        <>
             <PotentialOrgUserNeedsCodeHost user={user} org={org} />
-        </>
     )
 }
 
