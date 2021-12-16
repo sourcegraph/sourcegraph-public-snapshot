@@ -62,8 +62,8 @@ func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {
 
 func (r *configurationPolicyResolver) Type() (_ gql.GitObjectType, err error) {
 	defer r.errTracer.Collect(&err,
-		log.Int("repoID", *r.configurationPolicy.RepositoryID),
 		log.String("configurationPolicyResolver.field", "type"),
+		log.Int("configurationPolicyID", r.configurationPolicy.ID),
 		log.String("policyType", string(r.configurationPolicy.Type)),
 	)
 
