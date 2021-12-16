@@ -1754,7 +1754,7 @@ func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.Del
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
 	if s == nil {
-		return btypes.BatchChangeStateAny, nil
+		return "", nil
 	}
 	switch *s {
 	case "OPEN":
@@ -1764,7 +1764,7 @@ func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
 	case "DRAFT":
 		return btypes.BatchChangeStateDraft, nil
 	default:
-		return btypes.BatchChangeStateAny, errors.Errorf("unknown state %q", *s)
+		return "", errors.Errorf("unknown state %q", *s)
 	}
 }
 

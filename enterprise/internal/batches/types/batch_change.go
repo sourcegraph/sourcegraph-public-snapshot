@@ -9,7 +9,6 @@ import (
 type BatchChangeState string
 
 const (
-	BatchChangeStateAny    BatchChangeState = "ANY"
 	BatchChangeStateOpen   BatchChangeState = "OPEN"
 	BatchChangeStateClosed BatchChangeState = "CLOSED"
 	BatchChangeStateDraft  BatchChangeState = "DRAFT"
