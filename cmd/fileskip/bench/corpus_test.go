@@ -38,7 +38,6 @@ func benchmarkQuery(b *testing.B, c Corpus) {
 				}
 			}
 			b.StopTimer()
-			b.ReportMetric(float64(len(index.Blobs)), "index-size")
 			b.ReportMetric(float64(len(matchingResults)), "result-count")
 			b.ReportMetric(float64(falsePositives), "false-positives")
 			b.ReportMetric(float64(falsePositives)/math.Max(1, float64(len(matchingResults))), "false-positive/true-positive")
