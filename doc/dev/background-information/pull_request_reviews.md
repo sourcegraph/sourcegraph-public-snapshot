@@ -133,7 +133,7 @@ Some valid examples include:
 - Minor documentation changes.
 - Auto-generated changes, such as when performing a version release, where a reviewer would not have anything of substance to review.
 
-It should be obvious to any other engineer on the team from the PR description and/or diff that it was appropriate for you to not wait for approval.
+It should be obvious to any other teammate from the PR description and/or diff that it was appropriate for you to not wait for approval.
 
 Here are some examples of reasons to skip review that are NOT acceptable:
 
