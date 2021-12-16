@@ -20,7 +20,7 @@ import (
 )
 
 func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	cs := make([]*btypes.BatchChange, 0, 3)
+	cs := make([]*btypes.BatchChange, 0, 4)
 
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(cs); i++ {
@@ -28,17 +28,21 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 				Name:        fmt.Sprintf("test-batch-change-%d", i),
 				Description: "All the Javascripts are belong to us",
 
-				CreatorID:     int32(i) + 50,
-				LastAppliedAt: clock.Now(),
-				LastApplierID: int32(i) + 99,
-
 				BatchSpecID: 1742 + int64(i),
 				ClosedAt:    clock.Now(),
 			}
 
-			if i == 0 {
+			if i <= 1 {
 				// Check for nullability of fields by not setting them
 				c.ClosedAt = time.Time{}
+				c.LastAppliedAt = time.Time{}
+			}
+
+			if i != 0 {
+				// The very first batch change is a draft, the rest are not
+				c.CreatorID = int32(i) + 50
+				c.LastAppliedAt = clock.Now()
+				c.LastApplierID = int32(i) + 99
 			}
 
 			if i%2 == 0 {
@@ -174,12 +178,14 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 
 		t.Run("OnlyForAuthor set", func(t *testing.T) {
 			for _, c := range cs {
-				count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{CreatorID: c.CreatorID})
-				if err != nil {
-					t.Fatal(err)
-				}
-				if have, want := count, 1; have != want {
-					t.Fatalf("Incorrect number of batch changes counted, want=%d have=%d", want, have)
+				if c.CreatorID != 0 {
+					count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{CreatorID: c.CreatorID})
+					if err != nil {
+						t.Fatal(err)
+					}
+					if have, want := count, 1; have != want {
+						t.Fatalf("Incorrect number of batch changes counted, want=%d have=%d", want, have)
+					}
 				}
 			}
 		})
@@ -409,11 +415,16 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 			{
 				name:  "Closed",
 				state: btypes.BatchChangeStateClosed,
-				want:  reversedBatchChanges[:len(reversedBatchChanges)-1],
+				want:  reversedBatchChanges[:len(reversedBatchChanges)-2],
 			},
 			{
 				name:  "Open",
 				state: btypes.BatchChangeStateOpen,
+				want:  cs[1:2],
+			},
+			{
+				name:  "Draft",
+				state: btypes.BatchChangeStateDraft,
 				want:  cs[0:1],
 			},
 		}
@@ -432,18 +443,20 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 
 		t.Run("ListBatchChanges OnlyForAuthor set", func(t *testing.T) {
 			for _, c := range cs {
-				have, next, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{CreatorID: c.CreatorID})
-				if err != nil {
-					t.Fatal(err)
-				}
-				if next != 0 {
-					t.Fatal("Next value was true, but false expected")
-				}
-				if have, want := len(have), 1; have != want {
-					t.Fatalf("Incorrect number of batch changes returned, want=%d have=%d", want, have)
-				}
-				if diff := cmp.Diff(have[0], c); diff != "" {
-					t.Fatal(diff)
+				if c.CreatorID != 0 {
+					have, next, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{CreatorID: c.CreatorID})
+					if err != nil {
+						t.Fatal(err)
+					}
+					if next != 0 {
+						t.Fatal("Next value was true, but false expected")
+					}
+					if have, want := len(have), 1; have != want {
+						t.Fatalf("Incorrect number of batch changes returned, want=%d have=%d", want, have)
+					}
+					if diff := cmp.Diff(have[0], c); diff != "" {
+						t.Fatal(diff)
+					}
 				}
 			}
 		})

@@ -63,6 +63,19 @@ func (r *batchChangeResolver) Description() *string {
 	return &r.batchChange.Description
 }
 
+func (r *batchChangeResolver) State() string {
+	var state btypes.BatchChangeState
+	if r.batchChange.Closed() {
+		state = btypes.BatchChangeStateClosed
+	} else if r.batchChange.IsDraft() {
+		state = btypes.BatchChangeStateDraft
+	} else {
+		state = btypes.BatchChangeStateOpen
+	}
+
+	return state.ToGraphQL()
+}
+
 func (r *batchChangeResolver) InitialApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	return r.Creator(ctx)
 }

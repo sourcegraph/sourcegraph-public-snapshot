@@ -1761,6 +1761,8 @@ func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
 		return btypes.BatchChangeStateOpen, nil
 	case "CLOSED":
 		return btypes.BatchChangeStateClosed, nil
+	case "DRAFT":
+		return btypes.BatchChangeStateDraft, nil
 	default:
 		return btypes.BatchChangeStateAny, errors.Errorf("unknown state %q", *s)
 	}

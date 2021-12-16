@@ -206,9 +206,11 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 
 	switch opts.State {
 	case btypes.BatchChangeStateOpen:
-		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL"))
+		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.last_applied_at IS NOT NULL"))
 	case btypes.BatchChangeStateClosed:
 		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
+	case btypes.BatchChangeStateDraft:
+		preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL"))
 	}
 
 	if opts.CreatorID != 0 {
@@ -503,9 +505,11 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 
 	switch opts.State {
 	case btypes.BatchChangeStateOpen:
-		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL"))
+		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.last_applied_at IS NOT NULL"))
 	case btypes.BatchChangeStateClosed:
 		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
+	case btypes.BatchChangeStateDraft:
+		preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL"))
 	}
 
 	if opts.CreatorID != 0 {
