@@ -16,6 +16,7 @@ import {
     mockWorkspaceResolutionStatus,
     mockBatchSpecWorkspaces,
     mockBatchSpecImportingChangesets,
+    mockBatchSpec,
 } from './WorkspacesPreview.mock'
 
 const { add } = storiesOf('web/batches/CreateBatchChangePage/WorkspacesPreview', module).addDecorator(story => (
@@ -27,7 +28,8 @@ add('initial', () => (
         {props => (
             <WorkspacesPreview
                 {...props}
-                // batchSpecInput={text('Batch spec input', minimalSample)}
+                batchSpec={mockBatchSpec()}
+                hasPreviewed={false}
                 previewDisabled={!boolean('Valid batch spec?', true)}
                 preview={noop}
                 batchSpecStale={false}
@@ -64,8 +66,8 @@ add('first preview, error', () => {
                 <MockedTestProvider link={mocks}>
                     <WorkspacesPreview
                         {...props}
-                        batchSpecID="fakelol"
-                        currentPreviewRequestTime="1234"
+                        batchSpec={mockBatchSpec()}
+                        hasPreviewed={true}
                         previewDisabled={false}
                         preview={noop}
                         batchSpecStale={false}
@@ -121,8 +123,8 @@ add('first preview, success', () => {
                 <MockedTestProvider link={mocks}>
                     <WorkspacesPreview
                         {...props}
-                        batchSpecID="fakelol"
-                        currentPreviewRequestTime="1234"
+                        batchSpec={mockBatchSpec()}
+                        hasPreviewed={true}
                         previewDisabled={false}
                         preview={noop}
                         batchSpecStale={false}
@@ -156,8 +158,8 @@ add('first preview, stale', () => {
                 <MockedTestProvider link={mocks}>
                     <WorkspacesPreview
                         {...props}
-                        batchSpecID="fakelol"
-                        currentPreviewRequestTime="1234"
+                        batchSpec={mockBatchSpec()}
+                        hasPreviewed={true}
                         previewDisabled={false}
                         preview={noop}
                         batchSpecStale={true}
