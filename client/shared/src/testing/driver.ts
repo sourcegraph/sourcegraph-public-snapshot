@@ -765,7 +765,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
     }
 
     const { loadExtension } = resolvedOptions
-    const args: string[] = []
+    const args: string[] = ['--no-sandbox'] // https://stackoverflow.com/a/61278676
     const launchOptions: LaunchOptions & BrowserLaunchArgumentOptions & BrowserConnectOptions = {
         ignoreHTTPSErrors: true,
         ...resolvedOptions,
