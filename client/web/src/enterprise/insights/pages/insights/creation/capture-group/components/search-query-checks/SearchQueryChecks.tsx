@@ -1,30 +1,43 @@
 import classNames from 'classnames'
 import Check from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
+import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
 import React from 'react'
 
 import styles from './SearchQueryChecks.module.scss'
 
 interface SearchQueryChecksProps {
     checks: {
-        isValidRegex: boolean
-        isValidOperator: boolean
-        isValidPatternType: boolean
-        isNotRepo: boolean
-        isNotCommitOrDiff: boolean
+        isValidRegex: true | false | undefined
+        isValidOperator: true | false | undefined
+        isValidPatternType: true | false | undefined
+        isNotRepo: true | false | undefined
+        isNotCommitOrDiff: true | false | undefined
     }
 }
 
-const CheckListItem: React.FunctionComponent<{ valid?: boolean }> = ({ children, valid }) =>
-    valid ? (
+const CheckListItem: React.FunctionComponent<{ valid: true | false | undefined }> = ({ children, valid }) => {
+    if (valid === true) {
+        return (
+            <span>
+                <Check size={16} className="text-success icon-inline" style={{ top: '3px' }} /> {children}
+            </span>
+        )
+    }
+    if (valid === false) {
+        return (
+            <span className="text-dark">
+                <CloseIcon size={16} className="text-danger icon-inline" style={{ top: '3px' }} /> {children}
+            </span>
+        )
+    }
+
+    return (
         <span>
-            <Check size={16} className="text-success icon-inline" style={{ top: '3px' }} /> {children}
-        </span>
-    ) : (
-        <span className="text-dark">
-            <CloseIcon size={16} className="text-danger icon-inline" style={{ top: '3px' }} /> {children}
+            <RadioboxBlankIcon size={16} className="icon-inline" style={{ top: '3px' }} /> {children}
         </span>
     )
+}
 
 export const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> = ({ checks }) => (
     <div className={classNames(styles.checks)}>

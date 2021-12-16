@@ -12,14 +12,24 @@ const regexCheck = (value: string): boolean => {
 }
 
 export interface Checks {
-    isValidRegex: boolean
-    isValidOperator: boolean
-    isValidPatternType: boolean
-    isNotRepo: boolean
-    isNotCommitOrDiff: boolean
+    isValidRegex: true | false | undefined
+    isValidOperator: true | false | undefined
+    isValidPatternType: true | false | undefined
+    isNotRepo: true | false | undefined
+    isNotCommitOrDiff: true | false | undefined
 }
 
-export const searchQueryValidator = (value: string): Checks => {
+export const searchQueryValidator = (value: string, touched: boolean): Checks => {
+    if (!touched) {
+        return {
+            isValidRegex: undefined,
+            isValidOperator: undefined,
+            isValidPatternType: undefined,
+            isNotRepo: undefined,
+            isNotCommitOrDiff: undefined,
+        }
+    }
+
     const tokens = scanSearchQuery(value)
 
     if (tokens.type === 'success') {

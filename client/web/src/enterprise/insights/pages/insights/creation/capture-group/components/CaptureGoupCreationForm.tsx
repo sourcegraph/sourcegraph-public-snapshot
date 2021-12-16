@@ -1,4 +1,6 @@
+import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
+import RegexIcon from 'mdi-react/RegexIcon'
 import React from 'react'
 
 import { Button } from '@sourcegraph/wildcard/src'
@@ -16,6 +18,7 @@ import { LinkWithQuery } from '../../../../../components/link-with-query'
 import { searchQueryValidator } from '../search-query-validator'
 import { CaptureGroupFormFields } from '../types'
 
+import styles from './CaptureGoupCreationForm.module.scss'
 import { CaptureGroupSeriesInfoBadge } from './info-badge/CaptureGroupSeriesInfoBadge'
 import { SearchQueryChecks } from './search-query-checks/SearchQueryChecks'
 
@@ -104,18 +107,32 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                 subtitle="Generated dynamically for each unique value from the regular expression capture group."
             >
                 <div className="card card-body p-3">
-                    <FormInput
-                        title="Search query"
-                        required={true}
-                        as={MonacoField}
-                        placeholder="Example: file:\.pom$ <java\.version>(.*)</java\.version>"
-                        valid={query.meta.touched && query.meta.validState === 'VALID'}
-                        error={query.meta.touched && query.meta.error}
-                        className="mb-4"
-                        {...query.input}
-                    />
+                    <div className="position-relative">
+                        <FormInput
+                            title="Search query"
+                            required={true}
+                            as={MonacoField}
+                            placeholder="Example: file:\.pom$ <java\.version>(.*)</java\.version>"
+                            description="Search query must contain a properly formatted regular expression with at least one capture group. The capture group cannot match file or repository names, it can match only the file contents."
+                            valid={query.meta.touched && query.meta.validState === 'VALID'}
+                            error={query.meta.touched && query.meta.error}
+                            className="mb-4"
+                            {...query.input}
+                        />
 
-                    <SearchQueryChecks checks={searchQueryValidator(query.input.value)} />
+                        <button
+                            type="button"
+                            className={classNames('btn btn-icon', styles.regexButton)}
+                            disabled={true}
+                        >
+                            <RegexIcon
+                                size={16}
+                                data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input’"
+                            />
+                        </button>
+                    </div>
+
+                    <SearchQueryChecks checks={searchQueryValidator(query.input.value, query.meta.touched)} />
 
                     <CaptureGroupSeriesInfoBadge>
                         <b>Name</b> and <b>color</b> of each data series will be generated automatically. Chart will
