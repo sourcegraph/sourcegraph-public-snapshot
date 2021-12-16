@@ -12210,6 +12210,33 @@ Query: `sum(index_queue_len)`
 
 <br />
 
+#### zoekt-indexserver: indexed_queue_diff_assigned_tracked
+
+<p class="subtitle"># repos assigned - # repos tracked</p>
+
+zoekt-indexserver`s queue keeps track of all of its repositories, including those it has already finished processing.
+
+If there is a difference between
+- the number of repos that has been assigned to Zoekt, and
+- the number of repos that the queue thinks that it`s tracking
+
+, then there is likely _some_ sort of bug.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100110` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `index_num_assigned - index_queue_cap`
+
+</details>
+
+<br />
+
 ### Zoekt Index Server: Container monitoring (not available on server)
 
 #### zoekt-indexserver: container_missing
