@@ -19,6 +19,7 @@ import { FilesTreeDataProvider } from './file-system/FilesTreeDataProvider'
 import { SourcegraphFileSystemProvider } from './file-system/SourcegraphFileSystemProvider'
 import { SourcegraphUri } from './file-system/SourcegraphUri'
 import { log } from './log'
+import { updateAccessTokenSetting } from './settings/accessTokenSetting'
 import { endpointHostnameSetting, endpointSetting, endpointAccessTokenSetting } from './settings/endpointSetting'
 import { SourcegraphVSCodeExtensionAPI } from './webview/contract'
 import {
@@ -132,7 +133,8 @@ export function activate(context: vscode.ExtensionContext): void {
         observeActiveWebviewDynamicFilters: searchSidebarMediator.observeActiveWebviewDynamicFilters,
         setActiveWebviewQueryState: searchSidebarMediator.setActiveWebviewQueryState,
         submitActiveWebviewSearch: searchSidebarMediator.submitActiveWebviewSearch,
-        hasAccessToken: accessToken,
+        hasAccessToken: () => !!accessToken,
+        updateAccessToken: (token: string) => updateAccessTokenSetting(token),
         getInstanceHostname: () => instanceHostname,
         panelInitialized: panelId => initializedPanelIDs.next(panelId),
         // Call from webview's search results
@@ -179,8 +181,11 @@ export function activate(context: vscode.ExtensionContext): void {
             }
             const selectedQuery = editor.document.getText(editor.selection)
             if (selectedQuery && currentActiveWebviewPanel) {
-                currentActiveWebviewPanel.dispose()
+                currentActiveWebviewPanel.reveal()
+
+                await searchSidebarMediator.submitActiveWebviewSearch({ query: selectedQuery })
             }
+
             if (selectedQuery && !currentActiveWebviewPanel) {
                 sourcegraphSettings.refreshSettings()
 

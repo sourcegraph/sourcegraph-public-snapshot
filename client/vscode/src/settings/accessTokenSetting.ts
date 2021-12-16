@@ -1,9 +1,6 @@
-import { once } from 'lodash'
 import * as vscode from 'vscode'
 
-import { log } from '../log'
-
-import { endpointHostnameSetting, endpointSetting } from './endpointSetting'
+import { endpointHostnameSetting } from './endpointSetting'
 import { readConfiguration } from './readConfiguration'
 
 const invalidAccessTokens = new Set<string>()
@@ -22,61 +19,36 @@ export function accessTokenSetting(): string | undefined {
     return undefined
 }
 
-export async function handleAccessTokenError(tokenValueToDelete: string): Promise<void> {
-    invalidAccessTokens.add(tokenValueToDelete)
+// Ensure that only one access token error message is shown at a time.
+let showingAccessTokenErrorMessage = false
+
+export async function handleAccessTokenError(badToken: string): Promise<void> {
+    invalidAccessTokens.add(badToken)
 
     const currentValue = readConfiguration().get<string>('accessToken')
-    if (currentValue === tokenValueToDelete) {
-        await readConfiguration().update('accessToken', undefined, vscode.ConfigurationTarget.Global)
 
-        await promptUserForAccessTokenSetting(tokenValueToDelete)
-    } else {
-        log.appendLine(
-            `can't delete access token '${tokenValueToDelete}' because it doesn't match ` +
-                `existing configuration value '${currentValue || 'undefined'}'`
-        )
+    if (currentValue === badToken && !showingAccessTokenErrorMessage) {
+        // TODO don't worry about deleting access token. Instead, prompt user to follow
+        // onboarding flow in the sidebar.
+        // To do this we need to maintain some type of `invalidAccessToken` state in the extension
+        // and communicate or expose that to the sidebar. On access token error, show error message
+        // and trigger onboarding flow. NOTE that this should work for auth sidebar validation as well
+        // (e.g. user inputs bad token, we show error message and keep sidebar in "auth onboarding" state.)
+
+        showingAccessTokenErrorMessage = true
+        await vscode.window.showErrorMessage('Invalid Sourcegraph Access Token', {
+            modal: true,
+            detail: `The server at ${endpointHostnameSetting()} is unable to use the access token ${badToken}.`,
+        })
+        showingAccessTokenErrorMessage = false
     }
 }
 
-// Ensure only one prompt at a time (likely multiple request failures at once, only need to prompt for token once,
-// extension will not work until VS Code is reloaded).
-const promptUserForAccessTokenSetting = once(
-    async (badToken: string): Promise<string | undefined> => {
-        try {
-            const title = 'Invalid Sourcegraph Access Token'
-            const detail = `The server at ${endpointHostnameSetting()} is unable to use the access token ${badToken}.`
-
-            const openBrowserMessage = 'Open browser to create an access token'
-            const logout = 'Continue without an access token'
-            const userChoice = await vscode.window.showErrorMessage(
-                title,
-                { modal: true, detail },
-                openBrowserMessage,
-                logout
-            )
-
-            if (userChoice === openBrowserMessage) {
-                await vscode.env.openExternal(vscode.Uri.parse(`${endpointSetting()}/user/settings/tokens`))
-                const newToken = await vscode.window.showInputBox({
-                    title: 'Paste your Sourcegraph access token here',
-                    ignoreFocusOut: true,
-                })
-                if (newToken) {
-                    await readConfiguration().update('accessToken', newToken, vscode.ConfigurationTarget.Global)
-
-                    // TODO flesh out onboarding flow.
-                    await vscode.window.showInformationMessage(
-                        'Updated Sourcegraph access token. Reload VS Code for this change to take effect.'
-                    )
-                    log.appendLine(`new access token from user: ${newToken || 'undefined'}`)
-
-                    return newToken
-                }
-            }
-            return undefined
-        } catch (error) {
-            log.error('promptUserForAccessTokenSetting', error)
-            return undefined
-        }
+export async function updateAccessTokenSetting(newToken: string): Promise<boolean> {
+    try {
+        await readConfiguration().update('accessToken', newToken, vscode.ConfigurationTarget.Global)
+        return true
+    } catch {
+        return false
     }
-)
+}

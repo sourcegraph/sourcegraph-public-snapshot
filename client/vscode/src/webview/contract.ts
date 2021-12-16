@@ -35,7 +35,9 @@ export interface SourcegraphVSCodeExtensionAPI
     /** TODO explain, we deliberately do not react to URL changes in webviews. */
     getInstanceHostname: () => string
     // Get Access Token
-    hasAccessToken: boolean
+    hasAccessToken: () => boolean
+    // Update Access Token - return true when updated successfully
+    updateAccessToken: (token: string) => Promise<boolean>
     /** TODO document. sourcegraph://${host}/${uri} */
     openFile: (sourcegraphUri: string) => void
     // Open links in browser

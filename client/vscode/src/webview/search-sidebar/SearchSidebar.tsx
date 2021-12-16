@@ -14,7 +14,7 @@ import { SidebarAuthCheck } from './SidebarAuthCheck'
 
 interface SearchSidebarProps extends Pick<WebviewPageProps, 'platformContext' | 'sourcegraphVSCodeExtensionAPI'> {}
 
-export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeExtensionAPI }) => {
+export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeExtensionAPI, platformContext }) => {
     const useQueryState: UseStore<SearchQueryState> = useMemo(() => {
         const useStore = create<SearchQueryState>((set, get) => ({
             queryState: { query: '' },

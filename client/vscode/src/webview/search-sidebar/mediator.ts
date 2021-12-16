@@ -23,7 +23,7 @@ export interface SearchSidebarMediator {
 }
 
 /**
- * TODO: explain why
+ * TODO: explain why. Remove `activeSearchWebviewPanel` (there will only be one panel at a time)
  *
  * Theoretically, a search webview could have been initialized before the search sidebar.
  *
@@ -52,26 +52,10 @@ export function createSearchSidebarMediator(disposables: vscode.Disposable[]): S
 
     return {
         addSearchWebviewPanel: (webviewPanel, sourcegraphVSCodeSearchWebviewAPI) => {
-            if (webviewPanel.active) {
-                // Make it active
-                activeSearchWebviewPanel.next({
-                    webviewPanel,
-                    sourcegraphVSCodeSearchWebviewAPI,
-                })
-            }
-
-            webviewPanel.onDidChangeViewState(event => {
-                if (event.webviewPanel.active) {
-                    // Make it active
-                    activeSearchWebviewPanel.next({
-                        webviewPanel,
-                        sourcegraphVSCodeSearchWebviewAPI,
-                    })
-                } else if (activeSearchWebviewPanel.value?.webviewPanel === webviewPanel) {
-                    // Null it out. Was previously the active webview panel
-                    activeSearchWebviewPanel.next(null)
-                }
-            }, disposables)
+            activeSearchWebviewPanel.next({
+                webviewPanel,
+                sourcegraphVSCodeSearchWebviewAPI,
+            })
 
             webviewPanel.onDidDispose(() => {
                 // If this was the active webview panel, null it out.

@@ -136,7 +136,6 @@
       "script": "watch",
       "group": "build",
       "isBackground": true,
-      "problemMatcher": ["$ts-checker-webpack-watch", "$ts-checker-eslint-webpack-watch"],
     },
     {
       "label": "watch-vscode-dev-web",
@@ -145,7 +144,6 @@
       "script": "watch:web",
       "group": "build",
       "isBackground": true,
-      "problemMatcher": ["$ts-checker-webpack-watch", "$ts-checker-eslint-webpack-watch"],
     },
   ],
 }
