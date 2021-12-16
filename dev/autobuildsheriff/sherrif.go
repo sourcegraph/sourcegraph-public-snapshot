@@ -81,7 +81,7 @@ func isBuildPassed(build buildkite.Build) bool {
 
 func isBuildFailed(build buildkite.Build, timeout time.Duration) bool {
 	// Has state and is failed
-	if build.State != nil && *build.State == "failed" {
+	if build.State != nil && (*build.State == "failed" || *build.State == "cancelled") {
 		return true
 	}
 	// Created, but not done
