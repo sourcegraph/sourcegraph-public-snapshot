@@ -140,21 +140,32 @@ export function activate(context: vscode.ExtensionContext): void {
         openSearchPanel: () => vscode.commands.executeCommand('sourcegraph.search'),
     }
 
+    // Track current active webview panel to make sure only one panel exists at a time
+    let currentActiveWebviewPanel: vscode.WebviewPanel | undefined
+
+    // Open Sourcegraph search tab
     context.subscriptions.push(
         vscode.commands.registerCommand('sourcegraph.search', async () => {
-            sourcegraphSettings.refreshSettings()
+            if (currentActiveWebviewPanel) {
+                currentActiveWebviewPanel.reveal()
+            } else {
+                sourcegraphSettings.refreshSettings()
 
-            const { sourcegraphVSCodeSearchWebviewAPI, webviewPanel } = await initializeSearchPanelWebview({
-                extensionUri: context.extensionUri,
-                sourcegraphVSCodeExtensionAPI,
-                initializedPanelIDs,
-            })
+                const { sourcegraphVSCodeSearchWebviewAPI, webviewPanel } = await initializeSearchPanelWebview({
+                    extensionUri: context.extensionUri,
+                    sourcegraphVSCodeExtensionAPI,
+                    initializedPanelIDs,
+                })
 
-            searchSidebarMediator.addSearchWebviewPanel(webviewPanel, sourcegraphVSCodeSearchWebviewAPI)
+                currentActiveWebviewPanel = webviewPanel
 
-            webviewPanel.onDidDispose(() => {
-                sourcegraphVSCodeSearchWebviewAPI[releaseProxy]()
-            })
+                searchSidebarMediator.addSearchWebviewPanel(webviewPanel, sourcegraphVSCodeSearchWebviewAPI)
+
+                webviewPanel.onDidDispose(() => {
+                    sourcegraphVSCodeSearchWebviewAPI[releaseProxy]()
+                    currentActiveWebviewPanel = undefined
+                })
+            }
         })
     )
 
@@ -166,7 +177,10 @@ export function activate(context: vscode.ExtensionContext): void {
                 throw new Error('No active editor')
             }
             const selectedQuery = editor.document.getText(editor.selection)
-            if (selectedQuery && !searchSidebarMediator.checkActiveWebview()) {
+            if (selectedQuery && currentActiveWebviewPanel) {
+                currentActiveWebviewPanel.dispose()
+            }
+            if (selectedQuery && !currentActiveWebviewPanel) {
                 sourcegraphSettings.refreshSettings()
 
                 const { sourcegraphVSCodeSearchWebviewAPI, webviewPanel } = await initializeSearchPanelWebview({
@@ -175,13 +189,14 @@ export function activate(context: vscode.ExtensionContext): void {
                     initializedPanelIDs,
                 })
 
+                currentActiveWebviewPanel = webviewPanel
+
                 searchSidebarMediator.addSearchWebviewPanel(webviewPanel, sourcegraphVSCodeSearchWebviewAPI)
 
                 webviewPanel.onDidDispose(() => {
                     sourcegraphVSCodeSearchWebviewAPI[releaseProxy]()
+                    currentActiveWebviewPanel = undefined
                 })
-            }
-            if (selectedQuery) {
                 await searchSidebarMediator.submitActiveWebviewSearch({ query: selectedQuery })
             }
         })
