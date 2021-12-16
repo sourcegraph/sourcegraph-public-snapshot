@@ -77,7 +77,7 @@
         {
           "type": "webview",
           "id": "sourcegraph.searchSidebar",
-          "name": "Sourcegraph Search Sidebar"
+          "name": "Sourcegraph Search"
         },
         {
           "id": "sourcegraph.files",

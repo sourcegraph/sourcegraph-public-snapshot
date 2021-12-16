@@ -10,6 +10,7 @@ import { WebviewPageProps } from '../platform/context'
 
 import { OpenSearchPanelCta } from './OpenSearchPanelCta'
 import styles from './SearchSidebar.module.scss'
+import { SidebarAuthCheck } from './SidebarAuthCheck'
 
 interface SearchSidebarProps extends Pick<WebviewPageProps, 'platformContext' | 'sourcegraphVSCodeExtensionAPI'> {}
 
@@ -83,10 +84,16 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
         // If no open, show button + CTA to open search panel (links to sign up etc.)
 
         return (
-            <OpenSearchPanelCta
-                className={styles.sidebarContainer}
-                sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
-            />
+            <>
+                <OpenSearchPanelCta
+                    className={styles.sidebarContainer}
+                    sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                />
+                <SidebarAuthCheck
+                    className={styles.sidebarContainer}
+                    sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                />
+            </>
         )
     }
 

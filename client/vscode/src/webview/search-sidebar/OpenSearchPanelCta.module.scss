@@ -1,3 +1,21 @@
 .text {
     font-size: var(--vscode-font-size) !important;
+    color: var(--white)
+}
+
+.button, .button:link, .button:visited {
+    font-size: var(--vscode-font-size) !important;
+    background-color: var(--primary);
+    color: var(--white)
+}
+
+.input {
+    font-size: var(--vscode-font-size) !important;
+    color: var(--gray)
+}
+
+.title {
+    text-transform: uppercase;
+    font-size: var(--vscode-font-size) !important;
+    color: var(--white)
 }

@@ -34,6 +34,8 @@ export interface SourcegraphVSCodeExtensionAPI
     panelInitialized: (panelId: string) => void
     /** TODO explain, we deliberately do not react to URL changes in webviews. */
     getInstanceHostname: () => string
+    // Get Access Token
+    hasAccessToken: boolean
     /** TODO document. sourcegraph://${host}/${uri} */
     openFile: (sourcegraphUri: string) => void
     // Open links in browser

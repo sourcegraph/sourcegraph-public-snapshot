@@ -34,3 +34,11 @@ export function endpointCorsSetting(): string {
     const corsUrl = readConfiguration().get<string>('corsUrl')!
     return corsUrl !== '' ? new URL('', corsUrl).origin : ''
 }
+
+// Check if Access Token is configured in setting
+export function endpointAccessTokenSetting(): boolean {
+    if (readConfiguration().get<string>('accessToken')) {
+        return true
+    }
+    return false
+}

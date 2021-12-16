@@ -129,7 +129,7 @@ export function initializeSearchSidebarWebview({
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: vscode-webview: vscode-resource: https:; script-src 'nonce-${nonce}' vscode-webview:; style-src data: ${
         webviewView.webview.cspSource
     } vscode-resource: http: https: data:; connect-src 'self' http: https:; font-src: https: vscode-resource: vscode-webview:;">
-        <title>Sourcegraph Search Sidebar</title>
+        <title>Sourcegraph Search</title>
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />
     </head>

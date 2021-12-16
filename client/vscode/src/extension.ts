@@ -19,7 +19,7 @@ import { FilesTreeDataProvider } from './file-system/FilesTreeDataProvider'
 import { SourcegraphFileSystemProvider } from './file-system/SourcegraphFileSystemProvider'
 import { SourcegraphUri } from './file-system/SourcegraphUri'
 import { log } from './log'
-import { endpointHostnameSetting, endpointSetting } from './settings/endpointSetting'
+import { endpointHostnameSetting, endpointSetting, endpointAccessTokenSetting } from './settings/endpointSetting'
 import { SourcegraphVSCodeExtensionAPI } from './webview/contract'
 import {
     initializeExtensionHostWebview,
@@ -34,6 +34,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // Pass this to GraphQL client to avoid making requests to the new instance before restarting VS Code.
     const initialSourcegraphUrl = endpointSetting()
     const instanceHostname = endpointHostnameSetting()
+    const accessToken = endpointAccessTokenSetting()
 
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('sourcegraph.url')) {
@@ -131,7 +132,7 @@ export function activate(context: vscode.ExtensionContext): void {
         observeActiveWebviewDynamicFilters: searchSidebarMediator.observeActiveWebviewDynamicFilters,
         setActiveWebviewQueryState: searchSidebarMediator.setActiveWebviewQueryState,
         submitActiveWebviewSearch: searchSidebarMediator.submitActiveWebviewSearch,
-
+        hasAccessToken: accessToken,
         getInstanceHostname: () => instanceHostname,
         panelInitialized: panelId => initializedPanelIDs.next(panelId),
         // Call from webview's search results
