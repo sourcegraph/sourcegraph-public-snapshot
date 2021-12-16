@@ -87,6 +87,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         [submitSearchOnChange]
     )
 
+    const [retainFuzzyFinderCache, setRetainFuzzyFinderCache] = useState(true)
     useEffect(() => {
         if (isSearchPage && isFuzzyFinderVisible) {
             setIsFuzzyFinderVisible(false)
@@ -117,17 +118,20 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 {...KEYBOARD_SHORTCUT_FUZZY_FINDER.keybindings[0]}
                 onMatch={() => {
                     setIsFuzzyFinderVisible(true)
+                    setRetainFuzzyFinderCache(true)
                     const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
                     input?.focus()
                     input?.select()
                 }}
             />
-            {props.isRepositoryRelatedPage && (
+            {props.isRepositoryRelatedPage && retainFuzzyFinderCache && (
                 <FuzzyFinder
                     caseInsensitiveFileCountThreshold={fuzzyFinderCaseInsensitiveFileCountThreshold}
                     setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
                     isVisible={isFuzzyFinderVisible}
                     telemetryService={props.telemetryService}
+                    location={props.location}
+                    setCacheRetention={bool => setRetainFuzzyFinderCache(bool)}
                 />
             )}
         </Form>
