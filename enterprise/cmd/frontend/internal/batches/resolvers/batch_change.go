@@ -334,6 +334,7 @@ func (r *batchChangeResolver) BatchSpecs(
 		LimitOpts: store.LimitOpts{
 			Limit: int(args.First),
 		},
+		NewestFirst: true,
 	}
 
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
