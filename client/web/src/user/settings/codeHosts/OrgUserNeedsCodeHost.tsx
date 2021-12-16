@@ -38,8 +38,8 @@ export const OrgUserNeedsCodeHost: React.FunctionComponent<OrgUserNeedsCodeHost>
             <Container className="mb-4">
                 <h3>Just one more step...</h3>
                 <p>
-                    Connect with {missingString} to start searching across the {orgDisplayName} private repositories on
-                    Sourcegraph.
+                    Connect with {missingString} to start searching across the {orgDisplayName} organization's private
+                    repositories on Sourcegraph.
                 </p>
                 <Link className="btn btn-primary" to={`/users/${user.username}/settings/code-hosts`}>
                     Connect with {missingString}

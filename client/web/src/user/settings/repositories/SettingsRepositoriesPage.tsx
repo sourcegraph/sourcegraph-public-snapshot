@@ -21,7 +21,7 @@ import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SelfHostedCtaLink } from '@sourcegraph/web/src/components/SelfHostedCtaLink'
 import { Container, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
-import { authenticatedUser } from '../../../auth'
+import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
 import {
     SiteAdminRepositoryFields,
@@ -50,6 +50,7 @@ interface Props
         Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'> {
     owner: Owner
     routingPrefix: string
+    authenticatedUser: AuthenticatedUser
 }
 
 type SyncStatusOrError = undefined | 'scheduled' | 'schedule-complete' | ErrorLike
@@ -62,6 +63,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     routingPrefix,
     telemetryService,
     onUserExternalServicesOrRepositoriesUpdate,
+    authenticatedUser,
 }) => {
     const [hasRepos, setHasRepos] = useState(false)
     const [externalServices, setExternalServices] = useState<ExternalServicesResult['externalServices']['nodes']>()
@@ -73,7 +75,6 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const isUserOwner = owner.type === 'user'
     const fetchRepositories = isUserOwner ? listUserRepositories : listOrgRepositories
     const fetchRepositoriesCount = isUserOwner ? fetchUserRepositoriesCount : fetchOrgRepositoriesCount
-    const user = useObservable(authenticatedUser)
 
     const NoAddedReposBanner = (
         <Container className="text-center">
@@ -313,8 +314,12 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             )}
             {!isUserOwner && shouldDisplayContextBanner && owner.name && getSearchContextBanner(owner.name)}
             {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}
-            {!isUserOwner && externalServices && user && owner.name && (
-                <OrgUserNeedsCodeHost user={user} orgExternalServices={externalServices} orgName={owner.name} />
+            {!isUserOwner && externalServices && authenticatedUser && owner.name && (
+                <OrgUserNeedsCodeHost
+                    user={authenticatedUser}
+                    orgExternalServices={externalServices}
+                    orgDisplayName={owner.name}
+                />
             )}
 
             <PageTitle title="Your repositories" />
