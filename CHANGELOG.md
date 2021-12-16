@@ -20,6 +20,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- The `ALLOW_DECRYPT_MIGRATION` environment variable is now read by the `worker` service, not the `frontend` service as in previous versions.
 - External services will stop syncing if they exceed the user / site level limit for total number of repositories added. It will only continue syncing if the extra repositories are removed or the corresponding limit is increased, otherwise it will stop syncing for the very first repository each time the syncer attempts to sync the external service again. [#28674](https://github.com/sourcegraph/sourcegraph/pull/28674)
 - Sourcegraph services now listen to SIGTERM signals. This allows smoother rollouts in kubernetes deployments. [#27958](https://github.com/sourcegraph/sourcegraph/pull/27958)
 - The sourcegraph-frontend ingress now uses the networking.k8s.io/v1 api. This adds support for k8s v1.22 and later, and deprecates support for versions older than v1.18.x [#4029](https://github.com/sourcegraph/deploy-sourcegraph/pull/4029)

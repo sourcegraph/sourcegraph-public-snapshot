@@ -1,8 +1,7 @@
-package codeintel
+package migrations
 
 import (
-	"context"
-
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
 	dbmigrations "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore/migration"
 	lsifmigrations "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore/migration"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -10,12 +9,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-// registerMigrations registers all out-of-band migration instances that should run for
-// the current version of Sourcegraph.
-func registerMigrations(ctx context.Context, db database.DB, outOfBandMigrationRunner *oobmigration.Runner, services *Services) error {
+// RegisterMigrations registers all code intel related out-of-band migration instances that should run for the current version of Sourcegraph.
+func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	if err := config.Validate(); err != nil {
+		return err
+	}
+
+	dbStore, err := codeintel.InitDBStore()
+	if err != nil {
+		return err
+	}
+
+	lsifStore, err := codeintel.InitLSIFStore()
+	if err != nil {
+		return err
+	}
+
+	gitserverClient, err := codeintel.InitGitserverClient()
+	if err != nil {
+		return err
+	}
+
+	repoStore := database.Repos(dbStore.Handle().DB())
+
 	if err := outOfBandMigrationRunner.Register(
 		lsifmigrations.DiagnosticsCountMigrationID, // 1
-		lsifmigrations.NewDiagnosticsCountMigrator(services.lsifStore, config.DiagnosticsCountMigrationBatchSize),
+		lsifmigrations.NewDiagnosticsCountMigrator(lsifStore, config.DiagnosticsCountMigrationBatchSize),
 		oobmigration.MigratorOptions{Interval: config.DiagnosticsCountMigrationBatchInterval},
 	); err != nil {
 		return err
@@ -23,7 +42,7 @@ func registerMigrations(ctx context.Context, db database.DB, outOfBandMigrationR
 
 	if err := outOfBandMigrationRunner.Register(
 		lsifmigrations.DefinitionsCountMigrationID, // 4
-		lsifmigrations.NewLocationsCountMigrator(services.lsifStore, "lsif_data_definitions", config.DefinitionsCountMigrationBatchSize),
+		lsifmigrations.NewLocationsCountMigrator(lsifStore, "lsif_data_definitions", config.DefinitionsCountMigrationBatchSize),
 		oobmigration.MigratorOptions{Interval: config.DefinitionsCountMigrationBatchInterval},
 	); err != nil {
 		return err
@@ -31,7 +50,7 @@ func registerMigrations(ctx context.Context, db database.DB, outOfBandMigrationR
 
 	if err := outOfBandMigrationRunner.Register(
 		lsifmigrations.ReferencesCountMigrationID, // 5
-		lsifmigrations.NewLocationsCountMigrator(services.lsifStore, "lsif_data_references", config.ReferencesCountMigrationBatchSize),
+		lsifmigrations.NewLocationsCountMigrator(lsifStore, "lsif_data_references", config.ReferencesCountMigrationBatchSize),
 		oobmigration.MigratorOptions{Interval: config.ReferencesCountMigrationBatchInterval},
 	); err != nil {
 		return err
@@ -39,7 +58,7 @@ func registerMigrations(ctx context.Context, db database.DB, outOfBandMigrationR
 
 	if err := outOfBandMigrationRunner.Register(
 		lsifmigrations.DocumentColumnSplitMigrationID, // 7
-		lsifmigrations.NewDocumentColumnSplitMigrator(services.lsifStore, config.DocumentColumnSplitMigrationBatchSize),
+		lsifmigrations.NewDocumentColumnSplitMigrator(lsifStore, config.DocumentColumnSplitMigrationBatchSize),
 		oobmigration.MigratorOptions{Interval: config.DocumentColumnSplitMigrationBatchInterval},
 	); err != nil {
 		return err
@@ -49,10 +68,10 @@ func registerMigrations(ctx context.Context, db database.DB, outOfBandMigrationR
 		if err := outOfBandMigrationRunner.Register(
 			lsifmigrations.APIDocsSearchMigrationID, // 12
 			lsifmigrations.NewAPIDocsSearchMigrator(
-				services.lsifStore,
-				services.dbStore,
-				services.repoStore,
-				services.gitserverClient,
+				lsifStore,
+				dbStore,
+				repoStore,
+				gitserverClient,
 				config.APIDocsSearchMigrationBatchSize,
 			),
 			oobmigration.MigratorOptions{Interval: config.APIDocsSearchMigrationBatchInterval},
@@ -63,7 +82,7 @@ func registerMigrations(ctx context.Context, db database.DB, outOfBandMigrationR
 
 	if err := outOfBandMigrationRunner.Register(
 		dbmigrations.CommittedAtMigrationID, // 8
-		dbmigrations.NewCommittedAtMigrator(services.dbStore, services.gitserverClient, config.CommittedAtMigrationBatchSize),
+		dbmigrations.NewCommittedAtMigrator(dbStore, gitserverClient, config.CommittedAtMigrationBatchSize),
 		oobmigration.MigratorOptions{Interval: config.CommittedAtMigrationBatchInterval},
 	); err != nil {
 		return err
@@ -71,7 +90,7 @@ func registerMigrations(ctx context.Context, db database.DB, outOfBandMigrationR
 
 	if err := outOfBandMigrationRunner.Register(
 		dbmigrations.ReferenceCountMigrationID, // 11
-		dbmigrations.NewReferenceCountMigrator(services.dbStore, config.ReferenceCountMigrationBatchSize),
+		dbmigrations.NewReferenceCountMigrator(dbStore, config.ReferenceCountMigrationBatchSize),
 		oobmigration.MigratorOptions{Interval: config.ReferenceCountMigrationBatchInterval},
 	); err != nil {
 		return err

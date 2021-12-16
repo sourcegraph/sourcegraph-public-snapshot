@@ -1,19 +1,20 @@
-package oobmigrators
+package migrators
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
-	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
-func TestExternalServiceConfigMigrator(t *testing.T) {
+func TestExternalAccountsMigrator(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -24,7 +25,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 
 	setupKey := func() func() {
 		keyring.MockDefault(keyring.Ring{
-			ExternalServiceKey: et.TestKey{},
+			UserExternalAccountKey: et.TestKey{},
 		})
 
 		return func() {
@@ -32,10 +33,39 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		}
 	}
 
+	createAccounts := func(db dbutil.DB, n int) []*extsvc.Account {
+		accounts := make([]*extsvc.Account, 0, n)
+
+		for i := 0; i < n; i++ {
+			spec := extsvc.AccountSpec{
+				ServiceType: fmt.Sprintf("x-%d", i),
+				ServiceID:   fmt.Sprintf("x-%d", i),
+				ClientID:    fmt.Sprintf("x-%d", i),
+				AccountID:   fmt.Sprintf("x-%d", i),
+			}
+			authData := json.RawMessage(fmt.Sprintf("auth-%d", i))
+			data := json.RawMessage(fmt.Sprintf("data-%d", i))
+			accData := extsvc.AccountData{
+				AuthData: &authData,
+				Data:     &data,
+			}
+			_, err := database.ExternalAccounts(db).CreateUserAndSave(ctx, database.NewUser{Username: fmt.Sprintf("u-%d", i)}, spec, accData)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			accounts = append(accounts, &extsvc.Account{
+				AccountData: accData,
+			})
+		}
+
+		return accounts
+	}
+
 	t.Run("Up/Down/Progress", func(t *testing.T) {
 		db := dbtest.NewDB(t)
 
-		migrator := NewExternalServiceConfigMigratorWithDB(db)
+		migrator := NewExternalAccountsMigratorWithDB(db)
 		migrator.BatchSize = 2
 		migrator.AllowDecrypt = true
 
@@ -54,16 +84,8 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		// progress on empty table should be 1
 		requireProgressEqual(1)
 
-		// Create 10 external services
-		svcs := typestest.GenerateExternalServices(10, typestest.MakeExternalServices()...)
-		confGet := func() *conf.Unified {
-			return &conf.Unified{}
-		}
-		for _, svc := range svcs {
-			if err := database.ExternalServices(db).Create(ctx, confGet, svc); err != nil {
-				t.Fatal(err)
-			}
-		}
+		// Create 10 user accounts
+		createAccounts(db, 10)
 
 		// progress on non-migrated table should be 0
 		requireProgressEqual(0)
@@ -81,10 +103,10 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		if err := migrator.Up(ctx); err != nil {
 			t.Fatal(err)
 		}
-		// services: 10, migrated: 2, progress: 20%
+		// accounts: 10, migrated: 2, progress: 20%
 		requireProgressEqual(0.2)
 
-		// Let's migrate the other services
+		// Let's migrate the other accounts
 		for i := 2; i <= 5; i++ {
 			if err := migrator.Up(ctx); err != nil {
 				t.Fatal(err)
@@ -93,14 +115,14 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		}
 		requireProgressEqual(1)
 
-		// Down should revert the migration for 2 services
+		// Down should revert the migration for 2 accounts
 		if err := migrator.Down(ctx); err != nil {
 			t.Fatal(err)
 		}
-		// services: 10, migrated: 8, progress: 80%
+		// accounts: 10, migrated: 8, progress: 80%
 		requireProgressEqual(0.8)
 
-		// Let's revert the other services
+		// Let's revert the other accounts
 		for i := 3; i >= 0; i-- {
 			if err := migrator.Down(ctx); err != nil {
 				t.Fatal(err)
@@ -113,57 +135,47 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	t.Run("Up/Encryption", func(t *testing.T) {
 		db := dbtest.NewDB(t)
 
-		migrator := NewExternalServiceConfigMigratorWithDB(db)
+		migrator := NewExternalAccountsMigratorWithDB(db)
 		migrator.BatchSize = 10
 
-		// Create 10 external services
-		svcs := typestest.GenerateExternalServices(10, typestest.MakeExternalServices()...)
-		confGet := func() *conf.Unified {
-			return &conf.Unified{}
-		}
-		for _, svc := range svcs {
-			if err := database.ExternalServices(db).Create(ctx, confGet, svc); err != nil {
-				t.Fatal(err)
-			}
-		}
+		// Create 10 accounts
+		accounts := createAccounts(db, 10)
 
-		// setup key after storing the services
+		// setup key after storing the accounts
 		defer setupKey()()
 
-		// migrate the services
+		// migrate the accounts
 		if err := migrator.Up(ctx); err != nil {
 			t.Fatal(err)
 		}
 
-		// was the config actually encrypted?
-		rows, err := db.Query("SELECT config, encryption_key_id FROM external_services ORDER BY id")
+		// was the data actually encrypted?
+		rows, err := db.Query("SELECT auth_data, account_data, encryption_key_id FROM user_external_accounts ORDER BY id")
 		if err != nil {
 			t.Fatal(err)
 		}
 		defer rows.Close()
 
-		key := et.TestKey{}
+		key := &et.TestKey{}
 
 		var i int
 		for rows.Next() {
-			var config, keyID string
+			var authData, data, keyID string
 
-			err = rows.Scan(&config, &keyID)
+			err = rows.Scan(&authData, &data, &keyID)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if config == svcs[i].Config {
-				t.Fatalf("stored config is the same as before migration")
+			if authData == string(*accounts[i].AuthData) {
+				t.Fatalf("stored data is the same as before migration")
 			}
-
-			secret, err := key.Decrypt(ctx, []byte(config))
+			secret, err := key.Decrypt(ctx, []byte(authData))
 			if err != nil {
 				t.Fatal(err)
 			}
-
-			if secret.Secret() != svcs[i].Config {
-				t.Fatalf("decrypted config is different from the original one")
+			if secret.Secret() != string(*accounts[i].AuthData) {
+				t.Fatalf("decrypted data is different from the original one")
 			}
 
 			if version, _ := key.Version(ctx); keyID != version.JSON() {
@@ -180,25 +192,17 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	t.Run("Down/Decryption", func(t *testing.T) {
 		db := dbtest.NewDB(t)
 
-		migrator := NewExternalServiceConfigMigratorWithDB(db)
+		migrator := NewExternalAccountsMigratorWithDB(db)
 		migrator.BatchSize = 10
 		migrator.AllowDecrypt = true
 
-		// Create 10 external services
-		svcs := typestest.GenerateExternalServices(10, typestest.MakeExternalServices()...)
-		confGet := func() *conf.Unified {
-			return &conf.Unified{}
-		}
-		for _, svc := range svcs {
-			if err := database.ExternalServices(db).Create(ctx, confGet, svc); err != nil {
-				t.Fatal(err)
-			}
-		}
+		// Create 10 accounts
+		accounts := createAccounts(db, 10)
 
-		// setup key after storing the services
+		// setup key after storing the accounts
 		defer setupKey()()
 
-		// migrate the services
+		// migrate the accounts
 		if err := migrator.Up(ctx); err != nil {
 			t.Fatal(err)
 		}
@@ -209,7 +213,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		}
 
 		// was the config actually reverted?
-		rows, err := db.Query("SELECT config, encryption_key_id FROM external_services ORDER BY id")
+		rows, err := db.Query("SELECT auth_data, account_data, encryption_key_id FROM user_external_accounts ORDER BY id")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -217,9 +221,9 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 
 		var i int
 		for rows.Next() {
-			var config, keyID string
+			var authData, data, keyID string
 
-			err = rows.Scan(&config, &keyID)
+			err = rows.Scan(&authData, &data, &keyID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -228,8 +232,8 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 				t.Fatalf("encryption_key_id is still stored in the table")
 			}
 
-			if config != svcs[i].Config {
-				t.Fatalf("stored config is still encrypted")
+			if authData != string(*accounts[i].AuthData) {
+				t.Fatalf("stored data is still encrypted")
 			}
 
 			i++
@@ -242,28 +246,20 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	t.Run("Up/InvalidKey", func(t *testing.T) {
 		db := dbtest.NewDB(t)
 
-		migrator := NewExternalServiceConfigMigratorWithDB(db)
+		migrator := NewExternalAccountsMigratorWithDB(db)
 		migrator.BatchSize = 10
 
-		// Create 10 external services
-		svcs := typestest.GenerateExternalServices(10, typestest.MakeExternalServices()...)
-		confGet := func() *conf.Unified {
-			return &conf.Unified{}
-		}
-		for _, svc := range svcs {
-			if err := database.ExternalServices(db).Create(ctx, confGet, svc); err != nil {
-				t.Fatal(err)
-			}
-		}
+		// Create 10 accounts
+		createAccounts(db, 10)
 
-		// setup invalid key after storing the services
-		keyring.MockDefault(keyring.Ring{ExternalServiceKey: &invalidKey{}})
+		// setup invalid key after storing the accounts
+		keyring.MockDefault(keyring.Ring{UserExternalAccountKey: &invalidKey{}})
 		defer keyring.MockDefault(keyring.Ring{})
 
-		// migrate the services, should fail
+		// migrate the accounts, should fail
 		err := migrator.Up(ctx)
 		if err == nil {
-			t.Fatal("migration the service with an invalid key should fail")
+			t.Fatal("migrating the service with an invalid key should fail")
 		}
 		if err.Error() != "invalid encryption round-trip" {
 			t.Fatal(err)
@@ -273,24 +269,16 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	t.Run("Down/Disabled Decryption", func(t *testing.T) {
 		db := dbtest.NewDB(t)
 
-		migrator := NewExternalServiceConfigMigratorWithDB(db)
+		migrator := NewExternalAccountsMigratorWithDB(db)
 		migrator.BatchSize = 10
 
-		// Create 10 external services
-		svcs := typestest.GenerateExternalServices(10, typestest.MakeExternalServices()...)
-		confGet := func() *conf.Unified {
-			return &conf.Unified{}
-		}
-		for _, svc := range svcs {
-			if err := database.ExternalServices(db).Create(ctx, confGet, svc); err != nil {
-				t.Fatal(err)
-			}
-		}
+		// Create 10 accounts
+		accounts := createAccounts(db, 10)
 
-		// setup key after storing the services
+		// setup key after storing the accounts
 		defer setupKey()()
 
-		// migrate the services
+		// migrate the accounts
 		if err := migrator.Up(ctx); err != nil {
 			t.Fatal(err)
 		}
@@ -301,7 +289,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		}
 
 		// was the config actually reverted?
-		rows, err := db.Query("SELECT config, encryption_key_id FROM external_services ORDER BY id")
+		rows, err := db.Query("SELECT auth_data, account_data, encryption_key_id FROM user_external_accounts ORDER BY id")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -309,9 +297,9 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 
 		var i int
 		for rows.Next() {
-			var config, keyID string
+			var authData, data, keyID string
 
-			err = rows.Scan(&config, &keyID)
+			err = rows.Scan(&authData, &data, &keyID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -320,8 +308,8 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 				t.Fatalf("data was decrypted")
 			}
 
-			if config == svcs[i].Config {
-				t.Fatalf("stored config was decrypted")
+			if authData == string(*accounts[i].AuthData) {
+				t.Fatalf("stored data was decrypted")
 			}
 
 			i++
