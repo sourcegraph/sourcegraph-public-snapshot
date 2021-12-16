@@ -14,18 +14,13 @@ import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManage
 
 import { AuthenticatedUser } from '../auth'
 import { KEYBOARD_SHORTCUT_SHOW_HELP } from '../keyboardShortcuts/keyboardShortcuts'
-import { SearchContextProps } from '../search'
 import { ThemePreference } from '../stores/themeState'
 import { ThemePreferenceProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
 
 import styles from './UserNavItem.module.scss'
 
-export interface UserNavItemProps
-    extends ThemeProps,
-        ThemePreferenceProps,
-        ExtensionAlertAnimationProps,
-        Pick<SearchContextProps, 'showSearchContext' | 'showSearchContextManagement'> {
+export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, ExtensionAlertAnimationProps {
     location: H.Location
     authenticatedUser: Pick<
         AuthenticatedUser,

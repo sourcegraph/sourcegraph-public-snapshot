@@ -14,15 +14,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context, services *Services) error {
-	if err := registerMigrations(ctx, db, outOfBandMigrationRunner, services); err != nil {
+func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context, services *Services) error {
+	if err := config.Validate(); err != nil {
 		return err
 	}
 
-	resolver, err := newResolver(ctx, db, observationContext, services)
+	resolverObservationContext := &observation.Context{
+		Logger:     observationContext.Logger,
+		Tracer:     observationContext.Tracer,
+		Registerer: observationContext.Registerer,
+		Sentry:     services.hub,
+	}
+
+	resolver, err := newResolver(ctx, db, resolverObservationContext, services)
 	if err != nil {
 		return err
 	}
@@ -55,7 +61,7 @@ func newResolver(ctx context.Context, db database.DB, observationContext *observ
 		observationContext,
 	)
 
-	return codeintelgqlresolvers.NewResolver(db, innerResolver), nil
+	return codeintelgqlresolvers.NewResolver(db, innerResolver, &observation.Context{Sentry: observationContext.Sentry}), nil
 }
 
 func newUploadHandler(services *Services) func(internal bool) http.Handler {

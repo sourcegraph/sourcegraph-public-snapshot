@@ -5,7 +5,6 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../auth'
 import { LayoutProps } from '../Layout'
-import { SettingsExperimentalFeatures } from '../schema/settings.schema'
 import { parseSearchURLPatternType } from '../search'
 
 /** A fallback settings subject that can be constructed synchronously at initialization time. */
@@ -57,41 +56,4 @@ export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascad
         return defaultCaseSensitive || false
     }
     return false
-}
-
-export function experimentalFeaturesFromSettings(
-    settingsCascade: SettingsCascadeOrError
-): {
-    showOnboardingTour: boolean
-    showEnterpriseHomePanels: boolean
-    showMultilineSearchConsole: boolean
-    showSearchContext: boolean
-    showSearchContextManagement: boolean
-    enableCodeMonitoring: boolean
-    enableAPIDocs: boolean
-} {
-    const experimentalFeatures: SettingsExperimentalFeatures =
-        (settingsCascade.final && !isErrorLike(settingsCascade.final) && settingsCascade.final.experimentalFeatures) ||
-        {}
-
-    const {
-        showOnboardingTour = true, // Default to true if not set
-        showEnterpriseHomePanels = true, // Default to true if not set
-        showSearchContext = true, // Default to true if not set
-        showSearchContextManagement = true, // Default to true if not set
-        showMultilineSearchConsole = false,
-        codeMonitoring = true, // Default to true if not set
-        // eslint-disable-next-line unicorn/prevent-abbreviations
-        apiDocs = true, // Default to true if not set
-    } = experimentalFeatures
-
-    return {
-        showOnboardingTour,
-        showSearchContext,
-        showSearchContextManagement,
-        showEnterpriseHomePanels,
-        showMultilineSearchConsole,
-        enableCodeMonitoring: codeMonitoring,
-        enableAPIDocs: apiDocs,
-    }
 }

@@ -161,6 +161,11 @@ describe('GitLab', () => {
         const line = await driver.page.waitForSelector(`${lineSelector}:nth-child(${lineNumber})`, {
             timeout: 10000,
         })
+
+        if (!line) {
+            throw new Error(`Found no line with number ${lineNumber}`)
+        }
+
         const [token] = await line.$x('//span[text()="CallOption"]')
         await token.hover()
         await driver.findElementWithText('User is hovering over CallOption', {

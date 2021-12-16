@@ -190,12 +190,12 @@ func TestChangesetResolver(t *testing.T) {
 	}
 
 	batchChange := &btypes.BatchChange{
-		Name:             "my-unique-name",
-		NamespaceUserID:  userID,
-		InitialApplierID: userID,
-		BatchSpecID:      spec.ID,
-		LastApplierID:    userID,
-		LastAppliedAt:    time.Now(),
+		Name:            "my-unique-name",
+		NamespaceUserID: userID,
+		CreatorID:       userID,
+		BatchSpecID:     spec.ID,
+		LastApplierID:   userID,
+		LastAppliedAt:   time.Now(),
 	}
 	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
@@ -203,7 +203,7 @@ func TestChangesetResolver(t *testing.T) {
 	// Associate the changeset with a batch change, so it's considered in syncer logic.
 	addChangeset(t, ctx, cstore, syncedGitHubChangeset, batchChange.ID)
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

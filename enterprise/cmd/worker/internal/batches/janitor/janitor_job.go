@@ -1,4 +1,4 @@
-package batches
+package janitor
 
 import (
 	"context"

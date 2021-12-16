@@ -5,12 +5,12 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
-import { getSanitizedRepositories } from '../../../../components/creation-ui-kit/sanitizers/repositories'
 import { FormChangeEvent, SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { CaptureGroupInsight, InsightExecutionType, InsightType } from '../../../../core/types'
+import { CaptureGroupInsight } from '../../../../core/types'
 
 import { CaptureGroupCreationContent } from './components/CaptureGroupCreationContent'
 import { CaptureGroupFormFields } from './types'
+import { getSanitizedCaptureGroupInsight } from './utils/capture-group-insight-sanitizer'
 
 interface CaptureGroupCreationPageProps extends TelemetryProps {
     onInsightCreateRequest: (event: { insight: CaptureGroupInsight }) => Promise<unknown>
@@ -83,17 +83,4 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
             />
         </Page>
     )
-}
-
-function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields): CaptureGroupInsight {
-    return {
-        title: values.title.trim(),
-        query: values.groupSearchQuery.trim(),
-        repositories: getSanitizedRepositories(values.repositories),
-        viewType: InsightType.CaptureGroup,
-        type: InsightExecutionType.Backend,
-        id: '',
-        visibility: '',
-        step: { [values.step]: +values.stepValue },
-    }
 }
