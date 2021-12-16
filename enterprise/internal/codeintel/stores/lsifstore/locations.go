@@ -103,7 +103,7 @@ func (s *Store) locations(ctx context.Context, bundleID int, ids []precise.ID, l
 	}
 	traceLog(log.Int("totalCount", totalCount))
 
-	// Filter out all data in rangeIDsByResultID that falls outside of the current page. This
+	// Filters out all data in rangeIDsByResultID that falls outside of the current page. This
 	// also returns the set of paths for documents we will need to fetch to resolve the results
 	// of the current page.
 	rangeIDsByResultID, paths := limitResultMap(ids, rangeIDsByResultID, limit, offset)

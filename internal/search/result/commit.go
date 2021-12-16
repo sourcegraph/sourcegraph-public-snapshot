@@ -178,7 +178,7 @@ func selectCommitDiffKind(c *CommitMatch, field string) Match {
 		prefix = "-"
 	}
 	if len(diff.Highlights) == 0 {
-		// No highlights, implying no pattern was specified. Filter by
+		// No highlights, implying no pattern was specified. Filters by
 		// whether there exists lines corresponding to additions or
 		// removals. Inspect c.Body, which is the diff markdown in the
 		// format ```diff <...>``` and which doesn't contain a unified

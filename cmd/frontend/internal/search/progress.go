@@ -100,7 +100,7 @@ func getRepos(stats streaming.Stats, status searchshared.RepoStatus) []sgapi.Rep
 	stats.Status.Filter(status, func(id sgapi.RepoID) {
 		repos = append(repos, id)
 	})
-	// Filter runs in a random order (map traversal), so we should sort to
+	// Filters runs in a random order (map traversal), so we should sort to
 	// give deterministic messages between updates.
 	sort.Slice(repos, func(i, j int) bool {
 		return repos[i] < repos[j]

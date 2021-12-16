@@ -201,7 +201,7 @@ func monikersToString(vs []precise.QualifiedMonikerData) string {
 }
 
 // ReferencesForUpload returns the set of import monikers attached to the given upload identifier. The
-// scanner will return nulls for the Filter field as it's expected to be unused (and rather heavy) by
+// scanner will return nulls for the Filters field as it's expected to be unused (and rather heavy) by
 // callers.
 func (s *Store) ReferencesForUpload(ctx context.Context, uploadID int) (_ PackageReferenceScanner, err error) {
 	ctx, endObservation := s.operations.referencesForUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{

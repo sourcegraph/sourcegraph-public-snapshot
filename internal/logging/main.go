@@ -122,7 +122,7 @@ func Init(options ...Option) {
 	for _, filter := range opts.filters {
 		handler = log15.FilterHandler(filter, handler)
 	}
-	// Filter log output by level.
+	// Filters log output by level.
 	lvl, err := log15.LvlFromString(env.LogLevel)
 	if err == nil {
 		handler = log15.LvlFilterHandler(lvl, handler)

@@ -148,7 +148,9 @@ func loadCorpus(b *testing.B, corpus Corpus) {
 			panic(err)
 		}
 		indexedBlobsSize = indexedBlobsSize + statSize
-		bloomFilterBinaryStorageSize = bloomFilterBinaryStorageSize + blob.Filter.BitSet().BinaryStorageSize()
+		for _, filter := range blob.Filters {
+			bloomFilterBinaryStorageSize += filter.BitSet().BinaryStorageSize()
+		}
 	}
 	b.ReportMetric(float64(len(index.Blobs)), "indexed-blob-count")
 	b.ReportMetric(float64(indexedBlobsSize), "indexed-blobs-size")

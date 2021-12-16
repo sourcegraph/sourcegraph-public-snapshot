@@ -94,7 +94,7 @@ func (s *RepoSearch) Run(ctx context.Context, stream streaming.Sender, repos sea
 	err = repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
 		tr.LogFields(otlog.Int("resolved.len", len(page.RepoRevs)))
 
-		// Filter the repos if there is a repohasfile: or -repohasfile field.
+		// Filters the repos if there is a repohasfile: or -repohasfile field.
 		if len(s.Args.PatternInfo.FilePatternsReposMustExclude) > 0 || len(s.Args.PatternInfo.FilePatternsReposMustInclude) > 0 {
 			// Fallback to batch for reposToAdd
 			page.RepoRevs, err = reposToAdd(ctx, s.Args, page.RepoRevs)

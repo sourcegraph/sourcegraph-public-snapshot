@@ -73,7 +73,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 	board.Editable = false
 	board.AddTags("builtin")
 	board.Templating.List = append([]sdk.TemplateVar{{
-		Label:      "Filter alert level",
+		Label:      "Filters alert level",
 		Name:       "alert_level",
 		AllValue:   ".*",
 		Current:    sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"},

@@ -47,7 +47,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 			return nil, err
 		}
 
-		// Filter before calls to GetCommit. This hopefully reduces the
+		// Filters before calls to GetCommit. This hopefully reduces the
 		// working set enough that we can sort interactively.
 		if args.Query != nil {
 			query := strings.ToLower(*args.Query)
@@ -129,7 +129,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	if args.Query != nil {
 		query := strings.ToLower(*args.Query)
 
-		// Filter using query.
+		// Filters using query.
 		filtered := refs[:0]
 		for _, ref := range refs {
 			if strings.Contains(strings.ToLower(strings.TrimPrefix(ref.name, gitRefPrefix(ref.name))), query) {

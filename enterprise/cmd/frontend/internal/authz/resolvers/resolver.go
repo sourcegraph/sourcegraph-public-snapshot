@@ -84,7 +84,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		return nil, err
 	}
 
-	// Filter out bind IDs that only contains whitespaces.
+	// Filters out bind IDs that only contains whitespaces.
 	bindIDs := make([]string, 0, len(args.UserPermissions))
 	for _, perms := range args.UserPermissions {
 		bindID := strings.TrimSpace(perms.BindID)

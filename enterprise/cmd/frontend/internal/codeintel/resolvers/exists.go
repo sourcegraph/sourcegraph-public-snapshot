@@ -55,7 +55,7 @@ func (r *resolver) findClosestDumps(ctx context.Context, cachedCommitChecker *ca
 		log.String("candidatesWithCommits", uploadIDsToString(candidatesWithCommits)),
 	)
 
-	// Filter in-place
+	// Filters in-place
 	filtered := candidatesWithCommits[:0]
 
 	for i := range candidatesWithCommits {

@@ -81,7 +81,7 @@ func TestRepoStatusMap(t *testing.T) {
 		t.Errorf("a.Iterate diff (-want, +got):\n%s", d)
 	}
 
-	// Filter
+	// Filters
 	assertAFilter := func(status RepoStatus, want []int) {
 		t.Helper()
 		var got []int
@@ -90,7 +90,7 @@ func TestRepoStatusMap(t *testing.T) {
 		})
 		sort.Ints(got)
 		if d := cmp.Diff(want, got, cmpopts.EquateEmpty()); d != "" {
-			t.Errorf("a.Filter(%s) diff (-want, +got):\n%s", status, d)
+			t.Errorf("a.Filters(%s) diff (-want, +got):\n%s", status, d)
 		}
 	}
 	assertAFilter(RepoStatusTimedout, []int{1, 3})
@@ -124,7 +124,7 @@ func TestRepoStatusMap_nil(t *testing.T) {
 		t.Error("Iterate should be empty")
 	})
 	x.Filter(RepoStatusTimedout, func(api.RepoID) {
-		t.Error("Filter should be empty")
+		t.Error("Filters should be empty")
 	})
 	if got, want := x.Get(10), RepoStatus(0); got != want {
 		t.Errorf("Get got %s want %s", got, want)

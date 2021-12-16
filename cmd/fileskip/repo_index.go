@@ -32,6 +32,7 @@ const (
 	targetFalsePositiveRatio = 0.01
 	maxFileSize              = 1 << 20 // 1_048_576
 	maximumQueryNgrams       = 100
+	trigramBucket            = 1 << 10 // 1024
 )
 
 var IsProgressBarEnabled = true
@@ -41,9 +42,40 @@ type RepoIndex struct {
 	Blobs []BlobIndex
 	FS    FileSystem
 }
+type TrigramBucketBuilder struct {
+	filters []*bloom.BloomFilter
+	current *bloom.BloomFilter
+	i       int
+}
+
+func NewTrigramBucketBuilder() *TrigramBucketBuilder {
+	result := &TrigramBucketBuilder{i: 0}
+	result.pushCurrent()
+	return result
+}
+
+func (b *TrigramBucketBuilder) pushCurrent() {
+	b.current = bloom.NewWithEstimates(trigramBucket, targetFalsePositiveRatio)
+	b.filters = append(b.filters, b.current)
+	b.i = 0
+}
+
+func (b *TrigramBucketBuilder) Add(data []byte) {
+	if b.i >= trigramBucket {
+		b.i = 0
+		b.filters = append(b.filters, b.current)
+	}
+	b.i++
+	b.current.Add(data)
+}
+
+type QueryBitmask struct {
+	NGrams []*bloom.BloomFilter
+}
+
 type BlobIndex struct {
-	Filter *bloom.BloomFilter
-	Path   string
+	Filters []*bloom.BloomFilter
+	Path    string
 }
 
 func (b *BlobIndex) WriteTo(w io.Writer) (int64, error) {
@@ -84,7 +116,7 @@ func (b *BlobIndex) ReadFrom(stream io.Reader) (int64, error) {
 		return readByteCount, err
 	}
 	b.Path = other.Path
-	b.Filter = other.Filter
+	b.Filters = other.Filters
 	return readByteCount, nil
 }
 
@@ -142,15 +174,18 @@ func onGrams(text string, useBitset bool) (map[uint64]struct{}, *bitset.BitSet) 
 	return seen, seenAscii
 }
 
-func CollectQueryNgrams(query string) [][]byte {
+func CollectQueryNgrams(query string) QueryBitmask {
 	ngrams, _ := onGrams(query, false)
-	result := make([][]byte, len(ngrams))
+	result := make([]*bloom.BloomFilter, len(ngrams))
 	arities := make([]int8, len(ngrams))
 	i := 0
 	for hash := range ngrams {
 		data := make([]byte, unsafe.Sizeof(hash))
 		binary.LittleEndian.PutUint64(data, hash)
-		result[i] = data
+
+		filter := bloom.NewWithEstimates(trigramBucket, targetFalsePositiveRatio)
+		filter.Add(data)
+		result[i] = filter
 		arities[i] = ngramArity(hash)
 		i++
 	}
@@ -173,7 +208,7 @@ func CollectQueryNgrams(query string) [][]byte {
 	if len(result) > maximumQueryNgrams {
 		result = result[:maximumQueryNgrams]
 	}
-	return result
+	return QueryBitmask{result}
 }
 
 func (r *RepoIndex) SerializeToFile(cacheDir string) (err error) {
@@ -321,19 +356,18 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 				text := string(textBytes)
 				ngrams, ngramsAscii := onGrams(text, true)
 				asciiCount := ngramsAscii.Count()
-				bloomSize := uint(len(ngrams)) + uint(asciiCount)
-				filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
+				buckets := NewTrigramBucketBuilder()
 				for hash := range ngrams {
 					binary.LittleEndian.PutUint64(data64, hash)
-					filter.Add(data64)
+					buckets.Add(data64)
 				}
 				indices := make([]uint, asciiCount)
 				ngramsAscii.NextSetMany(0, indices)
 				for _, hash := range indices {
 					binary.LittleEndian.PutUint32(data32, uint32(hash))
-					filter.Add(data64)
+					buckets.Add(data32)
 				}
-				res <- BlobIndex{Path: filename, Filter: filter}
+				res <- BlobIndex{Path: filename, Filters: buckets.filters}
 			}
 		}(i, j)
 	}
@@ -410,18 +444,25 @@ func color(colorString string) func(...interface{}) string {
 }
 
 func (r *RepoIndex) pathsMatchingQuerySync(
-	grams [][]byte,
+	grams QueryBitmask,
 	batch []BlobIndex,
 	onMatch func(matchingPath string),
 ) {
 	for _, index := range batch {
-		if index.Filter == nil {
+		if index.Filters == nil {
 			continue
 		}
-		isMatch := len(grams) > 0
-		for _, gram := range grams {
-			//fmt.Printf("test %v %v\n", index.Filter.Test(gram))
-			if !index.Filter.Test(gram) {
+		isMatch := len(grams.NGrams) > 0
+		for _, gram := range grams.NGrams {
+			gramHasMatch := false
+			for _, filter := range index.Filters {
+				//fmt.Printf("test %v %v\n", index.Filters.Test(gram))
+				if filter.BitSet().IsSuperSet(gram.BitSet()) {
+					gramHasMatch = true
+					break
+				}
+			}
+			if !gramHasMatch {
 				isMatch = false
 				break
 			}
