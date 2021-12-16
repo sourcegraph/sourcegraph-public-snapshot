@@ -1,6 +1,6 @@
 # Pull request reviews
 
-All contributions to Sourcegraph must be reviewed and approved before being merged into the `main` branch. This includes code changes, document changes, and more.
+All contributions to Sourcegraph must be reviewed and approved before being merged into the `main` branch. This includes code changes, documentation changes, and more.
 
 Our goal is to have a pull request review process and culture that everyone would opt-in to even if reviews weren't required.
 
