@@ -49,12 +49,12 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	}
 
 	batchChange := &btypes.BatchChange{
-		Name:             "my-unique-name",
-		NamespaceUserID:  userID,
-		InitialApplierID: userID,
-		LastApplierID:    userID,
-		LastAppliedAt:    time.Now(),
-		BatchSpecID:      spec.ID,
+		Name:            "my-unique-name",
+		NamespaceUserID: userID,
+		CreatorID:       userID,
+		LastApplierID:   userID,
+		LastAppliedAt:   time.Now(),
+		BatchSpecID:     spec.ID,
 	}
 	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
@@ -109,7 +109,7 @@ func TestChangesetConnectionResolver(t *testing.T) {
 	addChangeset(t, ctx, cstore, changeset3, batchChange.ID)
 	addChangeset(t, ctx, cstore, changeset4, batchChange.ID)
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

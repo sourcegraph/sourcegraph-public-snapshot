@@ -703,7 +703,7 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	if !isSiteAdmin {
 		actor := actor.FromContext(ctx)
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
-			opts.InitialApplierID = actor.UID
+			opts.CreatorID = actor.UID
 		}
 
 		// 🚨 SECURITY: If the user is not an admin, we don't want to include
@@ -1754,15 +1754,17 @@ func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.Del
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
 	if s == nil {
-		return btypes.BatchChangeStateAny, nil
+		return "", nil
 	}
 	switch *s {
 	case "OPEN":
 		return btypes.BatchChangeStateOpen, nil
 	case "CLOSED":
 		return btypes.BatchChangeStateClosed, nil
+	case "DRAFT":
+		return btypes.BatchChangeStateDraft, nil
 	default:
-		return btypes.BatchChangeStateAny, errors.Errorf("unknown state %q", *s)
+		return "", errors.Errorf("unknown state %q", *s)
 	}
 }
 

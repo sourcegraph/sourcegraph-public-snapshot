@@ -67,6 +67,16 @@ func (r *NodeResolver) ToMonitorEmail() (MonitorEmailResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToMonitorWebhook() (MonitorWebhookResolver, bool) {
+	n, ok := r.Node.(MonitorWebhookResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorSlackWebhook() (MonitorSlackWebhookResolver, bool) {
+	n, ok := r.Node.(MonitorSlackWebhookResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToMonitorActionEvent() (MonitorActionEventResolver, bool) {
 	n, ok := r.Node.(MonitorActionEventResolver)
 	return n, ok
@@ -193,6 +203,11 @@ func (r *NodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
 
 func (r *NodeResolver) ToSearchContext() (SearchContextResolver, bool) {
 	n, ok := r.Node.(SearchContextResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToNotebook() (NotebookResolver, bool) {
+	n, ok := r.Node.(NotebookResolver)
 	return n, ok
 }
 

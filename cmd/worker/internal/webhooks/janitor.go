@@ -23,7 +23,9 @@ func NewJanitor() job.Job {
 
 }
 
-func (j *janitor) Config() []env.Config { return []env.Config{} }
+func (j *janitor) Config() []env.Config {
+	return nil
+}
 
 func (j *janitor) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error) {
 	db, err := workerdb.Init()

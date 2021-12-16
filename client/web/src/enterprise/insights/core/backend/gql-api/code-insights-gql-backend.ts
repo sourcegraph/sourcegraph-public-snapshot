@@ -74,6 +74,9 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         return fromObservableQuery(
             this.apolloClient.watchQuery<GetDashboardInsightsResult>({
                 query: GET_DASHBOARD_INSIGHTS_GQL,
+                // Prevent unnecessary network request after mutation over dashboard or insights within
+                // current dashboard
+                nextFetchPolicy: 'cache-first',
                 variables: { id: dashboardId },
             })
         ).pipe(
@@ -190,7 +193,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     public getDashboardById = (input: { dashboardId: string | undefined }): Observable<InsightDashboard | null> => {
         const { dashboardId } = input
 
-        // the 'all' dashboardId is not a real dashboard so return early
+        // the 'all' dashboardId is not a real dashboard so return nothing
         if (dashboardId === ALL_INSIGHTS_DASHBOARD_ID) {
             return of(null)
         }

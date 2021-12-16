@@ -22,6 +22,9 @@ export interface HoverOverlayProps<C extends object, D, A> {
      */
     hoveredToken?: HoveredToken & C
 
+    /** Whether to show the close button for the hover overlay */
+    showCloseButton: boolean
+
     /**
      * Actions to display as buttons or links in the hover.
      */

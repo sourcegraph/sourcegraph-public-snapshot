@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import { isObject } from 'lodash'
-import React, { useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { View, MarkupContent } from 'sourcegraph'
 
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
@@ -21,7 +21,15 @@ const isMarkupContent = (input: unknown): input is MarkupContent =>
 
 export interface ViewContentProps extends TelemetryProps {
     content: View['content']
-    viewID: string
+
+    /**
+     * View tracking type is used to send a proper pings event (InsightHover, InsightDataPointClick)
+     * with view type as a tracking variable. If it equals to null tracking is disabled.
+     *
+     * Note: these events are code insights specific, we have to remove this tracking logic to
+     * reuse this component in other consumers.
+     */
+    viewTrackingType?: string
 
     /** To get container to track hovers for pings */
     containerClassName?: string
@@ -40,26 +48,31 @@ export interface ViewContentProps extends TelemetryProps {
  * without notice.
  */
 export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
-    const { content, viewID, containerClassName, alert, layout, className, telemetryService } = props
+    const { content, viewTrackingType, containerClassName, alert, layout, className, telemetryService } = props
 
     // Track user intent to interact with extension-contributed views
     const viewContentReference = useRef<HTMLDivElement>(null)
 
     // TODO Move this tracking logic out of this shared view component
     useEffect(() => {
-        let viewContentElement = viewContentReference.current
+        // Disable tracking logic if view tracking type wasn't provided
+        if (!viewTrackingType) {
+            return
+        }
 
+        let viewContentElement = viewContentReference.current
         let timeoutID: number | undefined
 
         function onMouseEnter(): void {
             // Set timer to increase confidence that the user meant to interact with the
             // view, as opposed to accidentally moving past it. If the mouse leaves
             // the view quickly, clear the timeout for logging the event
+            // TODO: Move this from common component to shared logic/hook
             timeoutID = window.setTimeout(() => {
                 telemetryService.log(
                     'InsightHover',
-                    { insightType: viewID.split('.')[0] },
-                    { insightType: viewID.split('.')[0] }
+                    { insightType: viewTrackingType },
+                    { insightType: viewTrackingType }
                 )
             }, 500)
 
@@ -84,7 +97,21 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
             viewContentElement?.removeEventListener('mouseleave', onMouseLeave)
             clearTimeout(timeoutID)
         }
-    }, [viewID, containerClassName, telemetryService])
+    }, [viewTrackingType, containerClassName, telemetryService])
+
+    const handleOnDatumLinkClick = useCallback(() => {
+        // Disable tracking logic if view tracking type wasn't provided
+        if (!viewTrackingType) {
+            return
+        }
+
+        // TODO: Move this from common component to shared logic/hook
+        telemetryService.log(
+            'InsightDataPointClick',
+            { insightType: viewTrackingType },
+            { insightType: viewTrackingType }
+        )
+    }, [viewTrackingType, telemetryService])
 
     return (
         <div className={classNames(styles.viewContent, className)} ref={viewContentReference}>
@@ -105,10 +132,9 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
                         {alert && <div className={styles.viewContentAlertOverlay}>{alert}</div>}
                         <ChartViewContent
                             content={content}
-                            viewID={viewID}
                             layout={layout}
-                            telemetryService={props.telemetryService}
                             className="flex-grow-1"
+                            onDatumLinkClick={handleOnDatumLinkClick}
                         />
                     </React.Fragment>
                 ) : null

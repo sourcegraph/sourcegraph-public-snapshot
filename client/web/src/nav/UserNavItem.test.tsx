@@ -51,8 +51,6 @@ describe('UserNavItem', () => {
                         showDotComMarketing={true}
                         isExtensionAlertAnimating={false}
                         codeHostIntegrationMessaging="browser-extension"
-                        showSearchContext={true}
-                        showSearchContextManagement={true}
                     />
                 </MemoryRouter>
             ).asFragment()
