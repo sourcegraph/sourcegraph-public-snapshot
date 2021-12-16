@@ -4,6 +4,9 @@ package main
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"io"
 	"log"
 	"net"
@@ -65,6 +68,17 @@ func main() {
 		log.Fatalf("invalid int %q for SEARCHER_CACHE_SIZE_MB: %s", cacheSizeMB, err)
 	} else {
 		cacheSizeBytes = i * 1000 * 1000
+	}
+
+	// DB initialization. It is unused at the moment, but will be used shortly
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.PostgresDSN
+	})
+	sqlDb, err := connections.NewFrontendDB(dsn, "searcher", false, &observation.TestContext)
+	if err != nil {
+		log.Fatalf("failed to initialize database store: %v", err)
+	} else {
+		log.Printf("Successfully initialized DB: %v", sqlDb)
 	}
 
 	service := &search.Service{
