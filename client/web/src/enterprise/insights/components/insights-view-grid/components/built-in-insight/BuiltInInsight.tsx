@@ -65,14 +65,16 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
             title={insight.title}
             className={classNames('extension-insight-card', otherProps.className)}
             actions={
-                <InsightContextMenu
-                    insight={insight}
-                    dashboard={dashboard}
-                    menuButtonClassName="ml-1 d-inline-flex"
-                    zeroYAxisMin={zeroYAxisMin}
-                    onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
-                    onDelete={() => handleDelete(insight)}
-                />
+                isVisible && (
+                    <InsightContextMenu
+                        insight={insight}
+                        dashboard={dashboard}
+                        menuButtonClassName="ml-1 d-inline-flex"
+                        zeroYAxisMin={zeroYAxisMin}
+                        onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
+                        onDelete={() => handleDelete(insight)}
+                    />
+                )
             }
         >
             {resizing ? (
@@ -96,7 +98,7 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
             {
                 // Passing children props explicitly to render any top-level content like
                 // resize-handler from the react-grid-layout library
-                otherProps.children
+                isVisible && otherProps.children
             }
         </View.Root>
     )

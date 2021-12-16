@@ -1,6 +1,6 @@
 import { camelCase } from 'lodash'
 import { Observable, of } from 'rxjs'
-import { map, mapTo, switchMap } from 'rxjs/operators'
+import { delay, map, mapTo, switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -56,6 +56,9 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
     // Insights
     public getInsights = (input: { dashboardId: string }): Observable<Insight[]> =>
         this.getDashboardById({ dashboardId: input.dashboardId }).pipe(
+            // Do not return insights immediately because it ruins partial
+            // rendering in the view grid component
+            delay(500),
             switchMap(dashboard => {
                 if (dashboard) {
                     const ids = dashboard.insightIds

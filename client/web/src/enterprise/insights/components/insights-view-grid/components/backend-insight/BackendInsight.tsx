@@ -138,26 +138,28 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
             title={insight.title}
             innerRef={mergedInsightCardReference}
             actions={
-                <>
-                    <DrillDownFiltersAction
-                        isOpen={isFiltersOpen}
-                        popoverTargetRef={insightCardReference}
-                        initialFiltersValue={filters}
-                        originalFiltersValue={originalInsightFilters}
-                        onFilterChange={setFilters}
-                        onFilterSave={handleFilterSave}
-                        onInsightCreate={handleInsightFilterCreation}
-                        onVisibilityChange={setIsFiltersOpen}
-                    />
-                    <InsightContextMenu
-                        insight={insight}
-                        dashboard={dashboard}
-                        menuButtonClassName="ml-1 d-inline-flex"
-                        zeroYAxisMin={zeroYAxisMin}
-                        onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
-                        onDelete={() => handleDelete(insight)}
-                    />
-                </>
+                isVisible && (
+                    <>
+                        <DrillDownFiltersAction
+                            isOpen={isFiltersOpen}
+                            popoverTargetRef={insightCardReference}
+                            initialFiltersValue={filters}
+                            originalFiltersValue={originalInsightFilters}
+                            onFilterChange={setFilters}
+                            onFilterSave={handleFilterSave}
+                            onInsightCreate={handleInsightFilterCreation}
+                            onVisibilityChange={setIsFiltersOpen}
+                        />
+                        <InsightContextMenu
+                            insight={insight}
+                            dashboard={dashboard}
+                            menuButtonClassName="ml-1 d-inline-flex"
+                            zeroYAxisMin={zeroYAxisMin}
+                            onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
+                            onDelete={() => handleDelete(insight)}
+                        />
+                    </>
+                )
             }
             className={classNames('be-insight-card', otherProps.className, {
                 [styles.cardWithFilters]: isFiltersOpen,
@@ -194,7 +196,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
             {
                 // Passing children props explicitly to render any top-level content like
                 // resize-handler from the react-grid-layout library
-                otherProps.children
+                isVisible && otherProps.children
             }
         </View.Root>
     )
