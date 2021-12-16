@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react'
 
-import { FilterType } from '@sourcegraph/shared/out/src/search/query/filters'
+import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isFilterType, isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
