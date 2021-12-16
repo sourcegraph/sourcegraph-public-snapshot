@@ -264,9 +264,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
     // is missing, or if we're already processing a preview.
     const previewDisabled = useMemo(() => isValid !== true || isLoadingPreview, [isValid, isLoadingPreview])
 
-    const { resolution: workspacesPreviewResolution } = useBatchSpecWorkspaceResolution(batchSpec, {
-        fetchPolicy: 'cache-first',
-    })
+    const workspacesPreviewResolution = useBatchSpecWorkspaceResolution(batchSpec, { fetchPolicy: 'cache-first' })
 
     // Manage submitting a batch spec for execution.
     const { executeBatchSpec, isLoading: isExecuting, error: executeError } = useExecuteBatchSpec(batchSpec.id)
@@ -369,8 +367,8 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                 >
                     {errors}
                     <WorkspacesPreview
-                        batchSpecID={batchSpecID}
-                        currentPreviewRequestTime={currentPreviewRequestTime}
+                        batchSpec={batchSpec}
+                        hasPreviewed={hasPreviewed}
                         previewDisabled={previewDisabled}
                         preview={() => previewBatchSpec(debouncedCode)}
                         batchSpecStale={batchSpecStale}
