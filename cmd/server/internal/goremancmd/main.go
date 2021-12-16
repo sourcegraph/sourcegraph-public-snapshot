@@ -8,7 +8,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/goreman"
+	"github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"
 )
 
 func do() error {
