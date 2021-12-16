@@ -2,6 +2,8 @@
 
 package schema
 
+// TODO: Should name require a minimum length?
+
 // BatchSpecJSON is the content of the file "../../../schema/batch_spec.schema.json".
 const BatchSpecJSON = `{
   "$id": "batch_spec.schema.json#",
