@@ -253,7 +253,7 @@ type historicalEnqueuer struct {
 	frameLength func() time.Duration
 
 	// The iterator to use for walking over all repositories on Sourcegraph.
-	allReposIterator func(ctx context.Context, each func(repoName string) error) error
+	allReposIterator func(ctx context.Context, each func(repoName string, id api.RepoID) error) error
 	limiter          *rate.Limiter
 
 	statistics statistics
@@ -332,30 +332,23 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[s
 	return hardErr
 }
 
-func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[string]itypes.InsightSeries, sortedSeriesIDs []string, softErr error) func(repoName string) error {
-	return func(repoName string) error {
-		// Lookup the repository (we need its database ID)
-		repo, err := h.repoStore.GetByName(ctx, api.RepoName(repoName))
-		if err != nil {
-			// Ignore RepoNotFoundErr because it could just be that the repository was actually
-			// deleted and allReposIterator had it cached.
-			if errors.HasType(err, &database.RepoNotFoundErr{}) {
-				return err // hard DB error
-			} else {
-				return nil
-			}
-		}
+func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[string]itypes.InsightSeries, sortedSeriesIDs []string, softErr error) func(repoName string, id api.RepoID) error {
+	return func(repoName string, id api.RepoID) error {
+
 		// Find the first commit made to the repository on the default branch.
 		firstHEADCommit, err := h.gitFirstEverCommit(ctx, api.RepoName(repoName))
 		if err != nil {
 			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
+				log15.Info("insights backfill repository skipped - missing rev/repo", "repo_id", id, "repo_name", repoName)
 				return nil // no error - repo may not be cloned yet (or not even pushed to code host yet)
 			}
 			if strings.Contains(err.Error(), `failed (output: "usage: git rev-list [OPTION] <commit-id>...`) {
+				log15.Info("insights backfill repository skipped - empty repo", "repo_id", id, "repo_name", repoName)
 				return nil // repository is empty
 			}
 			// soft error, repo may be in a bad state but others might be OK.
 			softErr = multierror.Append(softErr, errors.Wrap(err, "FirstEverCommit "+repoName))
+			log15.Error("insights backfill repository skipped", "repo_id", id, "repo_name", repoName, "error", err)
 			return nil
 		}
 
@@ -367,11 +360,11 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 				Value: series.SampleIntervalValue,
 			}, series.CreatedAt.Truncate(time.Hour*24))
 
-			log15.Debug("insights: starting frames", "repo_id", repo.ID, "series_id", series.SeriesID, "frames", frames)
-			plan := h.frameFilter.FilterFrames(ctx, frames, repo.ID)
+			log15.Debug("insights: starting frames", "repo_id", id, "series_id", series.SeriesID, "frames", frames)
+			plan := h.frameFilter.FilterFrames(ctx, frames, id)
 			if len(frames) != len(plan.Executions) {
 				h.statistics[seriesID].Compressed += 1
-				log15.Debug("compressed frames", "repo_id", repo.ID, "series_id", series.SeriesID, "plan", plan)
+				log15.Debug("compressed frames", "repo_id", id, "series_id", series.SeriesID, "plan", plan)
 			} else {
 				h.statistics[seriesID].Uncompressed += 1
 			}
@@ -386,7 +379,8 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 				// Build historical data for this unique timeframe+repo+series.
 				hardErr, err := h.buildSeries(ctx, &buildSeriesContext{
 					execution:       queryExecution,
-					repo:            repo,
+					repoName:        api.RepoName(repoName),
+					id:              id,
 					firstHEADCommit: firstHEADCommit,
 					seriesID:        seriesID,
 					series:          series,
@@ -413,7 +407,8 @@ type buildSeriesContext struct {
 	execution *compression.QueryExecution
 
 	// The repository we're building historical data for.
-	repo *types.Repo
+	id       api.RepoID
+	repoName api.RepoName
 
 	// The first commit made in the repository on the default branch.
 	firstHEADCommit *gitdomain.Commit
@@ -446,9 +441,9 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	// Optimization: If the timeframe we're building data for starts (or ends) before the first commit in the
 	// repository, then we know there are no results (the repository didn't have any commits at all
 	// at that point in time.)
-	repoName := string(bctx.repo.Name)
+	repoName := string(bctx.repoName)
 	if bctx.execution.RecordingTime.Before(bctx.firstHEADCommit.Author.Date) {
-		args := bctx.execution.ToRecording(bctx.seriesID, repoName, bctx.repo.ID, 0.0)
+		args := bctx.execution.ToRecording(bctx.seriesID, repoName, bctx.id, 0.0)
 		if err := h.insightsStore.RecordSeriesPoints(ctx, args); err != nil {
 			hardErr = errors.Wrap(err, "RecordSeriesPoints Zero Value")
 			return // DB error
@@ -482,7 +477,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	if len(bctx.execution.Revision) > 0 {
 		revision = bctx.execution.Revision
 	} else {
-		recentCommits, err := h.gitFindRecentCommit(ctx, bctx.repo.Name, bctx.execution.RecordingTime)
+		recentCommits, err := h.gitFindRecentCommit(ctx, bctx.repoName, bctx.execution.RecordingTime)
 		if err != nil {
 			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 				return // no error - repo may not be cloned yet (or not even pushed to code host yet)
@@ -495,16 +490,16 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 			nearestCommit = recentCommits[0]
 		}
 		if nearestCommit == nil {
-			log15.Error("null commit", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime)
+			log15.Error("null commit", "repo_id", bctx.id, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime)
 			h.statistics[bctx.seriesID].Errored += 1
 			return // repository has no commits / is empty. Maybe not yet pushed to code host.
 		}
 		if nearestCommit.Committer == nil {
-			log15.Error("null committer", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime)
+			log15.Error("null committer", "repo_id", bctx.id, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime)
 			h.statistics[bctx.seriesID].Errored += 1
 			return
 		}
-		log15.Debug("nearest_commit", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime, "revhash", nearestCommit.ID.Short(), "time", nearestCommit.Committer.Date)
+		log15.Debug("nearest_commit", "repo_id", bctx.id, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime, "revhash", nearestCommit.ID.Short(), "time", nearestCommit.Committer.Date)
 		revision = string(nearestCommit.ID)
 	}
 

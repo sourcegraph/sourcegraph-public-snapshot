@@ -115,7 +115,7 @@ describe('Search', () => {
                 await driver.page.waitForSelector(`[data-testid="filter-link"][value=${JSON.stringify(filter)}]`)
                 await driver.page.click(`[data-testid="filter-link"][value=${JSON.stringify(filter)}]`)
                 await driver.page.waitForFunction(
-                    expectedQuery => {
+                    (expectedQuery: string) => {
                         const url = new URL(document.location.href)
                         const query = url.searchParams.get('q')
                         return query && query.trim() === expectedQuery

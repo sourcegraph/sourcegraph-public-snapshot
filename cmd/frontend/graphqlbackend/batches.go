@@ -588,9 +588,11 @@ type BatchChangeResolver interface {
 	ID() graphql.ID
 	Name() string
 	Description() *string
+	State() string
 	InitialApplier(ctx context.Context) (*UserResolver, error)
+	Creator(ctx context.Context) (*UserResolver, error)
 	LastApplier(ctx context.Context) (*UserResolver, error)
-	LastAppliedAt() DateTime
+	LastAppliedAt() *DateTime
 	SpecCreator(ctx context.Context) (*UserResolver, error)
 	ViewerCanAdminister(ctx context.Context) (bool, error)
 	URL(ctx context.Context) (string, error)

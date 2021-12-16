@@ -333,7 +333,6 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
-
 }
 
 type fakeRepoupdaterClient struct {

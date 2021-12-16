@@ -121,7 +121,7 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
                 byline={
                     <BatchChangeInfoByline
                         createdAt={batchChange.createdAt}
-                        initialApplier={batchChange.initialApplier}
+                        creator={batchChange.creator}
                         lastAppliedAt={batchChange.lastAppliedAt}
                         lastApplier={batchChange.lastApplier}
                     />

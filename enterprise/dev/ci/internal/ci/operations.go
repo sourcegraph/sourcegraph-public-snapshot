@@ -158,7 +158,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-			bk.Env("RECORD", "false"), // ensure that we use existing recordings
+			bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("yarn --cwd client/shared run download-puppeteer-browser"),
 			bk.Cmd("yarn --cwd client/browser -s run build"),

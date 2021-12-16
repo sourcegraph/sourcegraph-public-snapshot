@@ -30,11 +30,17 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	}
 }
 
+const notebookIDKind = "Notebook"
+
 func marshalNotebookID(notebookID int64) graphql.ID {
-	return relay.MarshalID("Notebook", notebookID)
+	return relay.MarshalID(notebookIDKind, notebookID)
 }
 
 func unmarshalNotebookID(id graphql.ID) (notebookID int64, err error) {
+	if kind := relay.UnmarshalKind(id); kind != notebookIDKind {
+		err = errors.Errorf("expected graphql ID to have kind %q; got %q", notebookIDKind, kind)
+		return
+	}
 	err = relay.UnmarshalSpec(id, &notebookID)
 	return
 }

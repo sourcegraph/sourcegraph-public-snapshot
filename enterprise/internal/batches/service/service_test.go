@@ -633,13 +633,13 @@ func TestService(t *testing.T) {
 			}
 
 			c := &btypes.BatchChange{
-				InitialApplierID: authorID,
-				NamespaceUserID:  userID,
-				NamespaceOrgID:   orgID,
-				Name:             name,
-				LastApplierID:    authorID,
-				LastAppliedAt:    time.Now(),
-				BatchSpecID:      spec.ID,
+				CreatorID:       authorID,
+				NamespaceUserID: userID,
+				NamespaceOrgID:  orgID,
+				Name:            name,
+				LastApplierID:   authorID,
+				LastAppliedAt:   time.Now(),
+				BatchSpecID:     spec.ID,
 			}
 
 			if err := s.CreateBatchChange(ctx, c); err != nil {
@@ -742,14 +742,14 @@ func TestService(t *testing.T) {
 		}
 
 		matchingBatchChange := &btypes.BatchChange{
-			Name:             batchSpec.Spec.Name,
-			Description:      batchSpec.Spec.Description,
-			InitialApplierID: admin.ID,
-			NamespaceOrgID:   batchSpec.NamespaceOrgID,
-			NamespaceUserID:  batchSpec.NamespaceUserID,
-			BatchSpecID:      batchSpec.ID,
-			LastApplierID:    admin.ID,
-			LastAppliedAt:    time.Now(),
+			Name:            batchSpec.Spec.Name,
+			Description:     batchSpec.Spec.Description,
+			CreatorID:       admin.ID,
+			NamespaceOrgID:  batchSpec.NamespaceOrgID,
+			NamespaceUserID: batchSpec.NamespaceUserID,
+			BatchSpecID:     batchSpec.ID,
+			LastApplierID:   admin.ID,
+			LastAppliedAt:   time.Now(),
 		}
 		if err := s.CreateBatchChange(ctx, matchingBatchChange); err != nil {
 			t.Fatalf("failed to create batch change: %s\n", err)
@@ -2235,12 +2235,12 @@ func assertChangesetSpecsNotDeleted(t *testing.T, s *store.Store, specs []*btype
 
 func testBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {
 	c := &btypes.BatchChange{
-		Name:             "test-batch-change",
-		InitialApplierID: user,
-		NamespaceUserID:  user,
-		BatchSpecID:      spec.ID,
-		LastApplierID:    user,
-		LastAppliedAt:    time.Now(),
+		Name:            "test-batch-change",
+		CreatorID:       user,
+		NamespaceUserID: user,
+		BatchSpecID:     spec.ID,
+		LastApplierID:   user,
+		LastAppliedAt:   time.Now(),
 	}
 
 	return c
@@ -2249,7 +2249,7 @@ func testBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {
 func testDraftBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {
 	bc := testBatchChange(user, spec)
 	bc.LastAppliedAt = time.Time{}
-	bc.InitialApplierID = 0
+	bc.CreatorID = 0
 	bc.LastApplierID = 0
 	return bc
 }

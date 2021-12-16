@@ -121,6 +121,22 @@ func ZoektIndexServer() *monitoring.Container {
 					},
 				},
 			},
+			{
+				Title: "Indexing queue statistics",
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:           "indexed_queue_size",
+							Description:    "number of outstanding index jobs",
+							Query:          "sum(index_queue_len)", // total queue size amongst all index-server replicas
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("jobs"),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "A queue that is constantly growing could be a leading indicator of a bottleneck or under-provisioning",
+						},
+					},
+				},
+			},
 
 			// Note:
 			// zoekt_indexserver and zoekt_webserver are deployed together as part of the indexed-search service

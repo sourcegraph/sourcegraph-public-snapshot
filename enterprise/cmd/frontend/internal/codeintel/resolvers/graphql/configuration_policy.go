@@ -6,23 +6,27 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type configurationPolicyResolver struct {
 	db                  database.DB
 	configurationPolicy store.ConfigurationPolicy
+	errTracer           *observation.ErrCollector
 }
 
-func NewConfigurationPolicyResolver(db database.DB, configurationPolicy store.ConfigurationPolicy) gql.CodeIntelligenceConfigurationPolicyResolver {
+func NewConfigurationPolicyResolver(db database.DB, configurationPolicy store.ConfigurationPolicy, op *observation.ErrCollector) gql.CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
 		db:                  db,
 		configurationPolicy: configurationPolicy,
+		errTracer:           op,
 	}
 }
 
@@ -34,10 +38,16 @@ func (r *configurationPolicyResolver) Name() string {
 	return r.configurationPolicy.Name
 }
 
-func (r *configurationPolicyResolver) Repository(ctx context.Context) (*gql.RepositoryResolver, error) {
+func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ *gql.RepositoryResolver, err error) {
 	if r.configurationPolicy.RepositoryID == nil {
 		return nil, nil
 	}
+
+	defer r.errTracer.Collect(&err,
+		log.Int("repoID", *r.configurationPolicy.RepositoryID),
+		log.String("configurationPolicyResolver.field", "repository"),
+	)
+
 	repo, err := backend.NewRepos(r.db.Repos()).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
 	if err != nil {
 		return nil, err
@@ -50,7 +60,13 @@ func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {
 	return r.configurationPolicy.RepositoryPatterns
 }
 
-func (r *configurationPolicyResolver) Type() (gql.GitObjectType, error) {
+func (r *configurationPolicyResolver) Type() (_ gql.GitObjectType, err error) {
+	defer r.errTracer.Collect(&err,
+		log.Int("repoID", *r.configurationPolicy.RepositoryID),
+		log.String("configurationPolicyResolver.field", "type"),
+		log.String("policyType", string(r.configurationPolicy.Type)),
+	)
+
 	switch r.configurationPolicy.Type {
 	case store.GitObjectTypeCommit:
 		return gql.GitObjectTypeCommit, nil

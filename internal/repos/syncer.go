@@ -144,6 +144,7 @@ const (
 	ownerUndefined externalServiceOwnerType = ""
 	ownerSite      externalServiceOwnerType = "site"
 	ownerUser      externalServiceOwnerType = "user"
+	ownerOrg       externalServiceOwnerType = "org"
 )
 
 type ErrUnauthorized struct{}
@@ -387,29 +388,41 @@ type RepoLimitError struct {
 	// Limit of repos that can be added to one site
 	SiteLimit uint64
 
-	// Number of repos added by user
-	UserAdded uint64
+	// Number of repos added by user or org
+	ReposCount uint64
 
-	// Limit of repos that can be added by one user
-	UserLimit uint64
+	// Limit of repos that can be added by one user or org
+	ReposLimit uint64
 
 	// NamespaceUserID of an external service
 	UserID int32
 
-	// Name of user of external service
-	UserName string
+	// NamespaceUserID of an external service
+	OrgID int32
 }
 
 func (e *RepoLimitError) Error() string {
-	return fmt.Sprintf(
-		"reached maximum allowed user added repos: site:%d/%d, user:%d/%d (user-id: %d, username: %q)",
-		e.SiteAdded,
-		e.SiteLimit,
-		e.UserAdded,
-		e.UserLimit,
-		e.UserID,
-		e.UserName,
-	)
+	if e.UserID > 0 {
+		return fmt.Sprintf(
+			"reached maximum allowed user added repos: site:%d/%d, user:%d/%d (user-id: %d)",
+			e.SiteAdded,
+			e.SiteLimit,
+			e.ReposCount,
+			e.ReposLimit,
+			e.UserID,
+		)
+	} else if e.OrgID > 0 {
+		return fmt.Sprintf(
+			"reached maximum allowed organization added repos: site:%d/%d, organization:%d/%d (org-id: %d)",
+			e.SiteAdded,
+			e.SiteLimit,
+			e.ReposCount,
+			e.ReposLimit,
+			e.OrgID,
+		)
+	} else {
+		return "expected either userID or orgID to be defined"
+	}
 }
 
 // SyncExternalService syncs repos using the supplied external service in a streaming fashion, rather than batch.
@@ -436,6 +449,7 @@ func (s *Syncer) SyncExternalService(
 	// Unless our site config explicitly allows private code or the user has the
 	// "AllowUserExternalServicePrivate" tag, user added external services should
 	// only sync public code.
+	// Organization owned external services are always considered allowed.
 	allowed := func(*types.Repo) bool { return true }
 	if svc.NamespaceUserID != 0 {
 		if mode, err := database.UsersWith(s.Store).UserAllowedExternalServices(ctx, svc.NamespaceUserID); err != nil {
@@ -514,12 +528,15 @@ func (s *Syncer) SyncExternalService(
 	}
 
 	// We don't delete any repos of site-level external services if there were any
-	// errors during a sync. Only user external services will delete repos in a sync
-	// run with fatal errors. Site-level external services can own lots of repos and
-	// are managed by site admins. It's preferable to have them fix any invalidated
-	// token manually rather than deleting the repos automatically.
+	// errors during a sync.
+	//
+	// Only user or organization external services will delete
+	// repos in a sync run with fatal errors.
+	//
+	// Site-level external services can own lots of repos and are managed by site admins.
+	// It's preferable to have them fix any invalidated token manually rather than deleting the repos automatically.
 	deleted := 0
-	if err = errs.ErrorOrNil(); err == nil || (svc.NamespaceUserID != 0 && fatal(err)) {
+	if err = errs.ErrorOrNil(); err == nil || (!svc.IsSiteOwned() && fatal(err)) {
 		// Remove associations and any repos that are no longer associated with any
 		// external service.
 		//
@@ -641,33 +658,29 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 		d.Modified = append(d.Modified, stored[0])
 	case 0: // New repo, create.
-		if svc.NamespaceUserID != 0 { // enforce user repo limits
-			siteAdded, err := tx.CountUserAddedRepos(ctx)
+		if !svc.IsSiteOwned() { // enforce user and org repo limits
+			siteAdded, err := tx.CountNamespacedRepos(ctx, 0, 0)
 			if err != nil {
 				return Diff{}, errors.Wrap(err, "counting total user added repos")
 			}
 
-			userAdded, err := tx.CountUserAddedRepos(ctx, svc.NamespaceUserID)
+			// get either user ID or org ID. We cannot have both defined at the same time,
+			// so this naive addition should work
+			userAdded, err := tx.CountNamespacedRepos(ctx, svc.NamespaceUserID, svc.NamespaceOrgID)
 			if err != nil {
-				return Diff{}, errors.Wrap(err, "counting user added repos")
+				return Diff{}, errors.Wrap(err, "counting repos added by user or organization")
 			}
 
+			// TODO: For now we are using the same limit for users as for organizations
 			userLimit, siteLimit := s.userReposMaxPerUser(), s.userReposMaxPerSite()
 			if siteAdded >= siteLimit || userAdded >= userLimit {
-				userStore := database.Users(tx.Handle().DB())
-				var username string
-				// We can ignore the error here as it's not fatal
-				if u, _ := userStore.GetByID(ctx, svc.NamespaceUserID); u != nil {
-					username = u.Username
-				}
-
 				return Diff{}, &RepoLimitError{
-					SiteAdded: siteAdded,
-					SiteLimit: siteLimit,
-					UserAdded: userAdded,
-					UserLimit: userLimit,
-					UserID:    svc.NamespaceUserID,
-					UserName:  username,
+					SiteAdded:  siteAdded,
+					SiteLimit:  siteLimit,
+					ReposCount: userAdded,
+					ReposLimit: userLimit,
+					UserID:     svc.NamespaceUserID,
+					OrgID:      svc.NamespaceOrgID,
 				}
 			}
 		}
@@ -768,6 +781,8 @@ func (s *Syncer) observeSync(
 			owner = string(ownerUndefined)
 		} else if svc.NamespaceUserID > 0 {
 			owner = string(ownerUser)
+		} else if svc.NamespaceOrgID > 0 {
+			owner = string(ownerOrg)
 		} else {
 			owner = string(ownerSite)
 		}

@@ -38,6 +38,10 @@ var GitoliteSchemaJSON string
 //go:embed jvm-packages.schema.json
 var JVMPackagesSchemaJSON string
 
+// NPMPackagesSchemaJSON is the content of the file "npm-packages.schema.json".
+//go:embed npm-packages.schema.json
+var NPMPackagesSchemaJSON string
+
 // OtherExternalServiceSchemaJSON is the content of the file "other_external_service.schema.json".
 //go:embed other_external_service.schema.json
 var OtherExternalServiceSchemaJSON string

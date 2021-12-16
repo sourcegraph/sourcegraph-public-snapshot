@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -43,6 +44,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration/oobmigrators"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
@@ -164,13 +166,13 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 	outOfBandMigrationRunner := newOutOfBandMigrationRunner(ctx, db)
 
 	// Run a background job to handle encryption of external service configuration.
-	extsvcMigrator := oobmigration.NewExternalServiceConfigMigratorWithDB(db)
+	extsvcMigrator := oobmigrators.NewExternalServiceConfigMigratorWithDB(db)
 	extsvcMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
 	if err := outOfBandMigrationRunner.Register(extsvcMigrator.ID(), extsvcMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
 		log.Fatalf("failed to run external service encryption job: %v", err)
 	}
 	// Run a background job to handle encryption of external service configuration.
-	extAccMigrator := oobmigration.NewExternalAccountsMigratorWithDB(db)
+	extAccMigrator := oobmigrators.NewExternalAccountsMigratorWithDB(db)
 	extAccMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
 	if err := outOfBandMigrationRunner.Register(extAccMigrator.ID(), extAccMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
 		log.Fatalf("failed to run user external account encryption job: %v", err)
@@ -178,7 +180,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 
 	// Run a background job to calculate the has_webhooks field on external
 	// service records.
-	webhookMigrator := oobmigration.NewExternalServiceWebhookMigratorWithDB(db)
+	webhookMigrator := oobmigrators.NewExternalServiceWebhookMigratorWithDB(db)
 	if err := outOfBandMigrationRunner.Register(webhookMigrator.ID(), webhookMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
 		log.Fatalf("failed to run external service webhook job: %v", err)
 	}
@@ -245,6 +247,11 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { updatecheck.Start(db) })
+
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
+	if err != nil {
+		log.Fatalf("Failed to create sub-repo client: %v", err)
+	}
 
 	schema, err := graphqlbackend.NewSchema(db,
 		enterprise.BatchChangesResolver,
