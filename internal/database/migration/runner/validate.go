@@ -65,30 +65,31 @@ func (r *Runner) validateSchema(ctx context.Context, schemaName string, schemaCo
 			}
 		})
 	}
-	if dirty {
-		if len(definitions) != 0 {
-			// We have migrations to run but won't be able to run them
-			return errDirtyDatabase
+	if len(definitions) == 0 {
+		if dirty {
+			// Check to see if the database is dirty but in a schema state farther along then what
+			// we need. In this case, the schema may have been marked dirty during a failed upgrade
+			// from the current running instance, which should not generally have any affect on the
+			// stability of the active instance.
+			//
+			// In these cases, we ignore the dirty flag here. The dirty flag error should be obvious
+			// to a site administrator via the migrator instance during the deploy.
+			return withAllDefinitions(func(allDefinitions []definition.Definition) error {
+				if len(allDefinitions) == 0 || version <= allDefinitions[len(allDefinitions)-1].ID {
+					return errDirtyDatabase
+				}
+
+				return nil
+			})
 		}
 
-		// Check to see if the database is dirty but in a schema state farther along then what
-		// we need. In this case, the schema may have been marked dirty during a failed upgrade
-		// from the current running instance, which should not generally have any affect on the
-		// stability of the active instance.
-		//
-		// In these cases, we ignore the dirty flag here. The dirty flag error should be obvious
-		// to a site administrator via the migrator instance during the deploy.
-		return withAllDefinitions(func(allDefinitions []definition.Definition) error {
-			if len(allDefinitions) == 0 || version <= allDefinitions[len(allDefinitions)-1].ID {
-				return errDirtyDatabase
-			}
-
-			return nil
-		})
-	}
-	if len(definitions) == 0 {
 		// No migrations to run, up to date
 		return nil
+
+	}
+	if dirty {
+		// We have migrations to run but won't be able to run them
+		return errDirtyDatabase
 	}
 
 	return &SchemaOutOfDateError{
