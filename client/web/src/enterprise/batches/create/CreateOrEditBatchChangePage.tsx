@@ -143,7 +143,7 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
     return (
         <BatchChangePage namespace={selectedNamespace} title="Create batch change">
             <div className={styles.settingsContainer}>
-                <h4>Batch specification settings</h4>
+                <h4>Batch spec settings</h4>
                 <Container>
                     {error && <ErrorAlert error={error} />}
                     <NamespaceSelector
@@ -352,7 +352,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
             <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1')}>
                 <LibraryPane name={batchChange.name} onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
-                    <h4>Batch specification</h4>
+                    <h4>Batch spec</h4>
                     <MonacoBatchSpecEditor
                         className={styles.editor}
                         isLightTheme={isLightTheme}
