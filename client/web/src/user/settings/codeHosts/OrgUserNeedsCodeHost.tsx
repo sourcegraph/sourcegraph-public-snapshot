@@ -59,10 +59,12 @@ export const SearchUserNeedsCodeHost: React.FunctionComponent<SearchUserNeedsCod
     orgSearchContext,
     user,
 }) => {
+    // If this is not an auto context (that starts with @) we show nothing
     if (!orgSearchContext || !orgSearchContext.startsWith('@')) {
         return null
     }
     const orgName = orgSearchContext.replace('@', '')
+    // Is current user a member of the org that owns the context?
     const org = (user.organizations?.nodes || []).find(org => org.name === orgName)
     if (!org) {
         return null
@@ -74,15 +76,12 @@ export const SearchUserNeedsCodeHost: React.FunctionComponent<SearchUserNeedsCod
     )
 }
 
-export interface PotentialOrgUserNeedsCodeHost {
+interface PotentialOrgUserNeedsCodeHost {
     org: OrgData
     user: UserContext
 }
-
-export const PotentialOrgUserNeedsCodeHost: React.FunctionComponent<PotentialOrgUserNeedsCodeHost> = ({
-    org,
-    user,
-}) => {
+// This is a separate component to make sure the useExternalServices hook is not used conditionally - see https://reactjs.org/docs/hooks-rules.html#only-call-hooks-at-the-top-level
+const PotentialOrgUserNeedsCodeHost: React.FunctionComponent<PotentialOrgUserNeedsCodeHost> = ({ org, user }) => {
     const { externalServices: orgExternalServices } = useExternalServices(org.id)
     return (
         <>
