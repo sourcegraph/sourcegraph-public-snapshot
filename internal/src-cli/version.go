@@ -9,8 +9,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/cockroachdb/errors"
-
-	"github.com/sourcegraph/sourcegraph/internal/linkheader"
+	"github.com/tomnomnom/linkheader"
 )
 
 type releaseMeta struct {
