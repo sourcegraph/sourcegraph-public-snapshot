@@ -31,6 +31,8 @@ export const useInitialBatchSpec = (batchChange: EditBatchChangeFields): UseInit
     // it's different from the `currentSpec` on the batch change, that means the latest
     // batch spec has not yet been applied.
     const latest = nodes[0] || currentSpec
+    // TODO: This should probably just be resolved on the backend as field on the
+    // `BatchChange` from the GraphQL.
     const isLatestApplied = useMemo(() => currentSpec.id === latest.id, [currentSpec.id, latest])
 
     // Show the hello world sample code initially in the Monaco editor if the user hasn't
