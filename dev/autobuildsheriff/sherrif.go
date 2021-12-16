@@ -31,7 +31,7 @@ func buildsherrif(ctx context.Context, branch branchLocker, builds []buildkite.B
 	results = &sherrifResults{}
 
 	// Scan for first build with a meaningful state
-	var firstFailedBuild int
+	var firstFailedBuildIndex int
 	for i, b := range builds {
 		if isBuildPassed(b) {
 			fmt.Printf("most recent finished build %d passed\n", *b.Number)
@@ -43,17 +43,17 @@ func buildsherrif(ctx context.Context, branch branchLocker, builds []buildkite.B
 		}
 		if isBuildFailed(b, opts.BuildTimeout) {
 			fmt.Printf("most recent finished build %d failed\n", *b.Number)
-			firstFailedBuild = i
+			firstFailedBuildIndex = i
 			break
 		}
 
-		// Otherwise, keep looking for builds
+		// Otherwise, keep looking for a completed build
 	}
 
 	// if failed, check if failures are consecutive
 	var exceeded bool
 	results.FailedCommits, exceeded = checkConsecutiveFailures(
-		builds[max(firstFailedBuild-1, 0):], // Check builds starting with the one we found
+		builds[max(firstFailedBuildIndex-1, 0):], // Check builds starting with the one we found
 		opts.FailuresThreshold,
 		opts.BuildTimeout)
 	if !exceeded {
