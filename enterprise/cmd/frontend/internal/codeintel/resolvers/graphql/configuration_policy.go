@@ -44,8 +44,9 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ *gql.Re
 	}
 
 	defer r.errTracer.Collect(&err,
-		log.Int("repoID", *r.configurationPolicy.RepositoryID),
 		log.String("configurationPolicyResolver.field", "repository"),
+		log.Int("configurationPolicyID", r.configurationPolicy.ID),
+		log.Int("repoID", *r.configurationPolicy.RepositoryID),
 	)
 
 	repo, err := backend.NewRepos(r.db.Repos()).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
