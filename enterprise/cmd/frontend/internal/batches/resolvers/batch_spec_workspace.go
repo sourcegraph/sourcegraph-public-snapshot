@@ -125,6 +125,12 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 			si.Skipped = true
 		}
 
+		// If we have marked the step as to-be-skipped, we have to translate
+		// that here into the workspace step info.
+		if r.workspace.StepSkipped(idx) {
+			si.Skipped = true
+		}
+
 		resolver := &batchSpecWorkspaceStepResolver{
 			index:    idx,
 			step:     step,
