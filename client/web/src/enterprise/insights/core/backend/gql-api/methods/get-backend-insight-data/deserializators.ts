@@ -4,7 +4,7 @@ import { SearchBasedInsightSeries } from '../../../../types/insight/search-insig
 import { BackendInsightData } from '../../../code-insights-backend-types'
 import { createLineChartContentFromIndexedSeries } from '../../../utils/create-line-chart-content'
 
-const MAX_NUMBER_OF_SERIES = 20
+export const MAX_NUMBER_OF_SERIES = 20
 
 export const createBackendInsightData = (insight: BackendInsight, response: InsightDataNode): BackendInsightData => {
     const rawSeries = response.dataSeries.slice(0, MAX_NUMBER_OF_SERIES)
