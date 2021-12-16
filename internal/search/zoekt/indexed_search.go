@@ -536,14 +536,20 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 
 func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ search.IndexedRequestType, selector filter.SelectPath, c streaming.Sender) {
 	files := event.Files
+	limitHit := event.FilesSkipped+event.ShardsSkipped > 0
 
-	limitHit := false
 	if selector.Root() == filter.Repository {
-		limitHit = event.ShardsSkipped > 0
-	} else {
-		limitHit = event.FilesSkipped+event.ShardsSkipped > 0
+		// By default we stream up to "all" repository results per
+		// select:repo request, and we never communicate whether a limit
+		// is reached here based on Zoekt progress (because Zoekt can't
+		// tell us the value of something like `ReposSkipped`). Instead,
+		// limitHit is determined by other factors, like whether the
+		// request is cancelled, or when we find the maximum number of
+		// `count` results. I.e., from the webapp, this is
+		// `max(defaultMaxSearchResultsStreaming,count)` which comes to
+		// `max(500,count)`.
+		limitHit = false
 	}
-
 
 	if len(files) == 0 {
 		c.Send(streaming.SearchEvent{
