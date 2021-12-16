@@ -81,7 +81,7 @@ func (s *Store) Version(ctx context.Context) (version int, dirty bool, ok bool, 
 }
 
 func (s *Store) Lock(ctx context.Context) (_ bool, _ func(err error) error, err error) {
-	key := locker.StringKey(fmt.Sprintf("%s:migrations", s.migrationsTable))
+	key := s.lockKey()
 
 	ctx, endObservation := s.operations.lock.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int32("key", key),
@@ -101,6 +101,36 @@ func (s *Store) Lock(ctx context.Context) (_ bool, _ func(err error) error, err 
 	}
 
 	return true, close, nil
+}
+
+func (s *Store) TryLock(ctx context.Context) (_ bool, _ func(err error) error, err error) {
+	key := s.lockKey()
+
+	ctx, endObservation := s.operations.tryLock.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int32("key", key),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	locked, _, err := basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf(`SELECT pg_try_advisory_lock(%s, %s)`, key, 0)))
+	if err != nil {
+		return false, nil, err
+	}
+
+	close := func(err error) error {
+		if locked {
+			if unlockErr := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_unlock(%s, %s)`, key, 0)); unlockErr != nil {
+				err = multierror.Append(err, unlockErr)
+			}
+		}
+
+		return err
+	}
+
+	return locked, close, nil
+}
+
+func (s *Store) lockKey() int32 {
+	return locker.StringKey(fmt.Sprintf("%s:migrations", s.migrationsTable))
 }
 
 func (s *Store) Up(ctx context.Context, definition definition.Definition) (err error) {
@@ -148,13 +178,18 @@ func (s *Store) setVersion(ctx context.Context, expectedCurrentVersion, version 
 	}
 	defer func() { err = tx.Done(err) }()
 
+	assertionFailure := func(description string, args ...interface{}) error {
+		cta := "This condition should not be reachable by normal use of the migration store via the runner and indicates a bug. Please report this issue."
+		return errors.Errorf(description+"\n\n"+cta+"\n", args...)
+	}
+
 	if currentVersion, dirty, ok, err := tx.Version(ctx); err != nil {
 		return err
 	} else if dirty {
-		return errors.New("dirty database")
+		return assertionFailure("dirty database")
 	} else if ok {
 		if currentVersion != expectedCurrentVersion {
-			return errors.New("wrong expected version")
+			return assertionFailure("expected schema to have version %d, but has version %d\n", expectedCurrentVersion, currentVersion)
 		}
 
 		if err := tx.Exec(ctx, sqlf.Sprintf(`DELETE FROM %s`, quote(s.migrationsTable))); err != nil {
