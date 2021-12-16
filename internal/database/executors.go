@@ -222,18 +222,18 @@ func (s *executorStore) GetByID(ctx context.Context, id int) (types.Executor, bo
 const executorStoreGetByIDQuery = `
 -- source: internal/database/executors.go:GetByID
 SELECT
-h.id,
-h.hostname,
-h.queue_name,
-h.os,
-h.architecture,
-h.docker_version,
-h.executor_version,
-h.git_version,
-h.ignite_version,
-h.src_cli_version,
-h.first_seen_at,
-h.last_seen_at
+	h.id,
+	h.hostname,
+	h.queue_name,
+	h.os,
+	h.architecture,
+	h.docker_version,
+	h.executor_version,
+	h.git_version,
+	h.ignite_version,
+	h.src_cli_version,
+	h.first_seen_at,
+	h.last_seen_at
 FROM executor_heartbeats h
 WHERE h.id = %s
 `
@@ -245,18 +245,18 @@ func (s *executorStore) GetByHostname(ctx context.Context, hostname string) (typ
 const executorStoreGetByHostnameQuery = `
 -- source: internal/database/executors.go:GetByHostname
 SELECT
-h.id,
-h.hostname,
-h.queue_name,
-h.os,
-h.architecture,
-h.docker_version,
-h.executor_version,
-h.git_version,
-h.ignite_version,
-h.src_cli_version,
-h.first_seen_at,
-h.last_seen_at
+	h.id,
+	h.hostname,
+	h.queue_name,
+	h.os,
+	h.architecture,
+	h.docker_version,
+	h.executor_version,
+	h.git_version,
+	h.ignite_version,
+	h.src_cli_version,
+	h.first_seen_at,
+	h.last_seen_at
 FROM executor_heartbeats h
 WHERE h.hostname = %s
 `
