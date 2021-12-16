@@ -27,6 +27,8 @@ For the team:
 - reviews increase the overall consistency of our codebase by spreading knowledge of best practices and eliminating anti-patterns.
 - reviews distribute domain expertise, code knowledge, and ownership across the team so development can continue when people are unavailable (e.g. vacation).
 
+Also see [When is an in-depth review not required?](#when-is-an-in-depth-review-not-required) for edge cases.
+
 ## Review cycles
 
 Once a change is ready for review it may go through a few review cycles, in general it'll look something like this:
