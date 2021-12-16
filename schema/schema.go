@@ -577,6 +577,8 @@ type ExperimentalFeatures struct {
 	EventLogging string `json:"eventLogging,omitempty"`
 	// JvmPackages description: Allow adding JVM packages code host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
+	// NpmPackages description: Allow adding NPM packages code host connections
+	NpmPackages string `json:"npmPackages,omitempty"`
 	// Pagure description: Allow adding Pagure code host connections
 	Pagure string `json:"pagure,omitempty"`
 	// Perforce description: Allow adding Perforce code host connections
@@ -1000,6 +1002,25 @@ type MountedEncryptionKey struct {
 	Version    string `json:"version,omitempty"`
 }
 
+// NPMPackagesConnection description: Configuration for a connection to an NPM packages repository.
+// TODO: [npm-package-support-credentials] Add a credential field to NPMConfig.
+type NPMPackagesConnection struct {
+	// Dependencies description: An array of "(@scope/)?packageName@version" strings specifying which NPM packages to mirror on Sourcegraph.
+	Dependencies []string `json:"dependencies,omitempty"`
+	// RateLimit description: Rate limit applied when making background API requests to the NPM registry.
+	RateLimit *NPMRateLimit `json:"rateLimit,omitempty"`
+	// Registry description: The URL at which the NPM registry can be found.
+	Registry string `json:"registry"`
+}
+
+// NPMRateLimit description: Rate limit applied when making background API requests to the NPM registry.
+type NPMRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
+	RequestsPerHour float64 `json:"requestsPerHour"`
+}
+
 // NoOpEncryptionKey description: This encryption key is a no op, leaving your data in plaintext (not recommended).
 type NoOpEncryptionKey struct {
 	Type string `json:"type"`
@@ -1411,6 +1432,8 @@ type SearchScope struct {
 type Sentry struct {
 	// BackendDSN description: Sentry Data Source Name (DSN) for backend errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.
 	BackendDSN string `json:"backendDSN,omitempty"`
+	// CodeIntelDSN description: Sentry Data Source Name (DSN) for code intel errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.
+	CodeIntelDSN string `json:"codeIntelDSN,omitempty"`
 	// Dsn description: Sentry Data Source Name (DSN). Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.
 	Dsn string `json:"dsn,omitempty"`
 }
@@ -1508,6 +1531,8 @@ type SettingsExperimentalFeatures struct {
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
 	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
+	// EnableSearchStack description: Enables search stack
+	EnableSearchStack *bool `json:"enableSearchStack,omitempty"`
 	// EnableSmartQuery description: REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
 	// FuzzyFinder description: Enables fuzzy finder with keyboard shortcut `t`.

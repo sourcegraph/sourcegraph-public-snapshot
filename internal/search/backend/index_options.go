@@ -152,6 +152,10 @@ func getIndexOptions(
 		branches[rev] = struct{}{}
 	}
 
+	// empty string means HEAD which is already in the set. Rather than
+	// sanitize all inputs, just adjust the set before we start resolving.
+	delete(branches, "")
+
 	for branch := range branches {
 		v, err := opts.GetVersion(branch)
 		if err != nil {

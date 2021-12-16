@@ -49,7 +49,9 @@ const ColorSchemeToMonacoEditorClassName: Record<ColorScheme, string> = {
  */
 export const convertImgSourceHttpToBase64 = async (page: Page): Promise<void> => {
     await page.evaluate(() => {
-        const imgs = document.querySelectorAll('img')
+        // Skip images with data-skip-percy
+        // See https://github.com/sourcegraph/sourcegraph/issues/28949
+        const imgs = document.querySelectorAll<HTMLImageElement>('img:not([data-skip-percy])')
 
         for (const img of imgs) {
             if (img.src.startsWith('data:image')) {
@@ -93,7 +95,7 @@ export const setColorScheme = async (
     try {
         // Check Monaco editor is styled correctly
         await page.waitForFunction(
-            expectedClassName =>
+            (expectedClassName: string) =>
                 document.querySelector('#monaco-query-input .monaco-editor') &&
                 document.querySelector('#monaco-query-input .monaco-editor')?.classList.contains(expectedClassName),
             { timeout: 1000 },

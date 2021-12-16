@@ -12,7 +12,7 @@ const config = {
       startServerCommand: 'yarn workspace @sourcegraph/web serve:prod',
       settings: {
         preset: 'desktop',
-        chromeFlags: '--no-sandbox',
+        chromeFlags: '--no-sandbox --disable-dev-shm-usage',
         // We skip a series of audits that are not currently supported by the local server
         skipAudits: [
           // SEO: Normally enabled dynamically for different paths in the production server

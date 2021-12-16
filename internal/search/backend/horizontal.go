@@ -355,6 +355,7 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 
 		aggregate.Repos = append(aggregate.Repos, r.rl.Repos...)
 		aggregate.Crashes += r.rl.Crashes
+		aggregate.Stats.Add(&r.rl.Stats)
 
 		for k, v := range r.rl.Minimal {
 			aggregate.Minimal[k] = v

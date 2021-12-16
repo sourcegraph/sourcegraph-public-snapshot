@@ -9,7 +9,6 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	executor "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -46,7 +45,7 @@ type Resolver interface {
 	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
 	QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error)
 	PreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error)
-	PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType dbstore.GitObjectType, pattern string) (map[string][]string, error)
+	PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType store.GitObjectType, pattern string) (map[string][]string, error)
 	DocumentationSearch(ctx context.Context, query string, repos []string) ([]precise.DocumentationSearchResult, error)
 
 	UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver
@@ -266,8 +265,8 @@ func (r *resolver) PreviewRepositoryFilter(ctx context.Context, patterns []strin
 	return ids, totalCount, repositoryMatchLimit, nil
 }
 
-func (r *resolver) PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType dbstore.GitObjectType, pattern string) (map[string][]string, error) {
-	policyMatches, err := r.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, []dbstore.ConfigurationPolicy{{Type: gitObjectType, Pattern: pattern}}, timeutil.Now())
+func (r *resolver) PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType store.GitObjectType, pattern string) (map[string][]string, error) {
+	policyMatches, err := r.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, []store.ConfigurationPolicy{{Type: gitObjectType, Pattern: pattern}}, timeutil.Now())
 	if err != nil {
 		return nil, err
 	}

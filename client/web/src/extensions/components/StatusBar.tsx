@@ -13,6 +13,7 @@ import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/feature
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Badge } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -114,7 +115,11 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                     </button>
                 )}
                 <div className={classNames('d-flex align-items-center px-2', styles.items)} ref={carouselReference}>
-                    {badgeText && <p className="badge badge-secondary m-0">{badgeText}</p>}
+                    {badgeText && (
+                        <Badge variant="secondary" className="m-0" as="p">
+                            {badgeText}
+                        </Badge>
+                    )}
                     {!!statusBarItems && statusBarItems !== 'loading' && statusBarItems.length > 0
                         ? statusBarItems.map(statusBarItem => (
                               <StatusBarItem

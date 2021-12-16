@@ -353,6 +353,7 @@ func NewSchema(
 	dotcom DotcomRootResolver,
 	searchContexts SearchContextsResolver,
 	orgRepositoryResolver OrgRepositoryResolver,
+	notebooks NotebooksResolver,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
@@ -432,6 +433,16 @@ func NewSchema(
 		schemas = append(schemas, orgSchema)
 	}
 
+	if notebooks != nil {
+		EnterpriseResolvers.notebooksResolver = notebooks
+		resolver.NotebooksResolver = notebooks
+		schemas = append(schemas, notebooksSchema)
+		// Register NodeByID handlers.
+		for kind, res := range notebooks.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
+	}
+
 	schemas = append(schemas, computeSchema)
 
 	return graphql.ParseSchema(
@@ -456,6 +467,7 @@ type schemaResolver struct {
 	DotcomRootResolver
 	SearchContextsResolver
 	OrgRepositoryResolver
+	NotebooksResolver
 
 	db                database.DB
 	repoupdaterClient *repoupdater.Client
@@ -532,6 +544,7 @@ var EnterpriseResolvers = struct {
 	dotcomResolver         DotcomRootResolver
 	searchContextsResolver SearchContextsResolver
 	orgRepositoryResolver  OrgRepositoryResolver
+	notebooksResolver      NotebooksResolver
 }{}
 
 // DEPRECATED

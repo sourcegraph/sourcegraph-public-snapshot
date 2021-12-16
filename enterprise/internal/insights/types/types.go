@@ -7,6 +7,7 @@ import (
 // InsightViewSeries is an abstraction of a complete Code Insight. This type materializes a view with any associated series.
 type InsightViewSeries struct {
 	ViewID                        int
+	DashboardViewID               int
 	UniqueID                      string
 	SeriesID                      string
 	Title                         string
@@ -35,6 +36,7 @@ type InsightViewSeries struct {
 
 type Insight struct {
 	ViewID           int
+	DashboardViewId  int
 	UniqueID         string
 	Title            string
 	Description      string
@@ -148,3 +150,9 @@ const (
 	Line PresentationType = "LINE"
 	Pie  PresentationType = "PIE"
 )
+
+type Frame struct {
+	From   time.Time
+	To     time.Time
+	Commit string
+}

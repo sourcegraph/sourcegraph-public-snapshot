@@ -17,6 +17,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
@@ -50,7 +51,7 @@ func TestSetDefaultQueryCount(t *testing.T) {
 func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 	ctx := context.Background()
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	s := store.New(db, &observation.TestContext, nil)
 
 	u := ct.CreateTestUser(t, db, false)
@@ -381,7 +382,7 @@ func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, u *types.User, ma
 }
 
 func newStreamSearchTestServer(t *testing.T, matches []streamhttp.EventMatch) string {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		type ev struct {
 			Name  string
 			Value interface{}
@@ -420,7 +421,7 @@ func mockDefaultBranches(t *testing.T, defaultBranches map[api.RepoName]defaultB
 }
 
 func mockBatchIgnores(t *testing.T, m map[api.CommitID]bool) {
-	git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
+	git.Mocks.Stat = func(commit api.CommitID, _ string) (fs.FileInfo, error) {
 		hasBatchIgnore, ok := m[commit]
 		if !ok {
 			return nil, fmt.Errorf("unknown commit: %s", commit)
@@ -434,7 +435,7 @@ func mockBatchIgnores(t *testing.T, m map[api.CommitID]bool) {
 }
 
 func mockResolveRevision(t *testing.T, branches map[string]api.CommitID) {
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	git.Mocks.ResolveRevision = func(spec string, _ git.ResolveRevisionOptions) (api.CommitID, error) {
 		if commit, ok := branches[spec]; ok {
 			return commit, nil
 		}

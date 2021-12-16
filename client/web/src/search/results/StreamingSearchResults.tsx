@@ -19,13 +19,12 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { PatternTypeProps, SearchStreamingProps, ParsedSearchQueryProps, SearchContextProps } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { CodeMonitoringProps } from '../../code-monitoring'
 import { PageTitle } from '../../components/PageTitle'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { useNavbarQueryState } from '../../stores'
+import { useExperimentalFeatures, useNavbarQueryState, useSearchStack } from '../../stores'
 import { SearchBetaIcon } from '../CtaIcons'
 import { getSubmittedSearchesCount, submitSearch } from '../helpers'
 
@@ -43,13 +42,12 @@ export interface StreamingSearchResultsProps
         Pick<ActivationProps, 'activation'>,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         Pick<PatternTypeProps, 'patternType'>,
-        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled' | 'showSearchContext'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         SettingsCascadeProps,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         ThemeProps,
-        CodeMonitoringProps,
         CodeInsightsProps,
         FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
@@ -81,6 +79,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         extensionsController: { extHostAPI: extensionHostAPI },
     } = props
 
+    const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
 
     // Log view event on first load
@@ -164,6 +163,22 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         }
     }, [results, telemetryService])
 
+    useSearchStack(
+        useMemo(
+            () =>
+                results?.state === 'complete'
+                    ? {
+                          type: 'search',
+                          query,
+                          caseSensitive,
+                          patternType,
+                          searchContext: props.selectedSearchContextSpec,
+                      }
+                    : null,
+            [results, query, patternType, caseSensitive, props.selectedSearchContextSpec]
+        )
+    )
+
     const [allExpanded, setAllExpanded] = useState(false)
     const onExpandAllResultsToggle = useCallback(() => {
         setAllExpanded(oldValue => !oldValue)
@@ -236,6 +251,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 caseSensitive={caseSensitive}
                 query={query}
                 enableCodeInsights={codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)}
+                enableCodeMonitoring={enableCodeMonitoring}
                 resultsFound={resultsFound}
                 className={classNames('flex-grow-1', styles.streamingSearchResultsInfobar)}
                 allExpanded={allExpanded}

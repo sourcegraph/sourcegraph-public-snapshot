@@ -6,7 +6,7 @@ import React from 'react'
 
 import { InsightDashboard, isRealDashboard } from '../../../../../../../core/types'
 import { getDashboardOwnerName, getDashboardTitle } from '../../helpers/get-dashboard-title'
-import { Badge } from '../badge/Badge'
+import { InsightsBadge } from '../insights-badge/InsightsBadge'
 import { TruncatedText } from '../trancated-text/TrancatedText'
 
 import styles from './MenuButton.module.scss'
@@ -57,7 +57,7 @@ const MenuButtonContent: React.FunctionComponent<MenuButtonContentProps> = props
         <>
             <span className={styles.text}>
                 <TruncatedText title={title}>{title}</TruncatedText>
-                {badge && <Badge value={badge} className={classNames('ml-1 mr-1', styles.badge)} />}
+                {badge && <InsightsBadge value={badge} className={classNames('ml-1 mr-1', styles.badge)} />}
             </span>
 
             <ListboxButtonIcon className={styles.expandedIcon} />

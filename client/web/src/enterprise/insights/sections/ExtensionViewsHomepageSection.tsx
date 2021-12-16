@@ -77,7 +77,7 @@ const ExtensionViewsHomepageSectionContent: React.FunctionComponent<ExtensionVie
     const allViewIds = useMemo(() => [...extensionViews, ...insights].map(view => view.id), [extensionViews, insights])
 
     return (
-        <ViewGrid viewIds={allViewIds} telemetryService={telemetryService} className={className}>
+        <ViewGrid viewIds={allViewIds} className={className}>
             {/* Render extension views for the search page */}
             {extensionViews.map(view => (
                 <StaticView key={view.id} content={view} telemetryService={telemetryService} />

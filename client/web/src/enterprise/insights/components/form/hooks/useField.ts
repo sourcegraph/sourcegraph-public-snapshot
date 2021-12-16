@@ -136,6 +136,13 @@ export function useField<FormValues, Key extends keyof FormAPI<FormValues>['init
             requestAnimationFrame(() => {
                 startAsyncValidation({ value: state.value, validity })
             })
+
+            return setState(state => ({
+                ...state,
+                validState: 'CHECKING' as const,
+                error: '',
+                validity,
+            }))
         }
 
         return setState(state => ({

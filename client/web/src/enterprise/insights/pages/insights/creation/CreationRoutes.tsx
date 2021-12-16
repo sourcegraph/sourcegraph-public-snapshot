@@ -47,6 +47,16 @@ export const CreationRoutes: React.FunctionComponent<CreationRoutesProps> = prop
             />
 
             <Route
+                path={`${match.url}/capture-group`}
+                render={() => (
+                    <InsightCreationLazyPage
+                        mode={InsightCreationPageType.CaptureGroup}
+                        telemetryService={telemetryService}
+                    />
+                )}
+            />
+
+            <Route
                 path={`${match.url}/lang-stats`}
                 exact={true}
                 render={() => (

@@ -10,12 +10,13 @@ If you are looking for general information or wish to disclose a vulnerability, 
   - [Scope](#scope)
   - [What is CSRF, why is it dangerous?](#what-is-csrf-why-is-it-dangerous)
   - [How is CSRF mitigated traditionally?](#how-is-csrf-mitigated-traditionally)
-- [Sourcegraph's CSRF threat model](#sourcegraphs-csrf-threat-model)
+- [Sourcegraph's CSRF security model](#sourcegraphs-csrf-security-model)
+  - [Diagrams](#diagrams)
   - [Request delineation: API and non-API endpoints](#request-delineation-api-and-non-api-endpoints)
   - [Where requests come from](#where-requests-come-from)
   - [Non-API endpoints](#non-api-endpoints)
     - [Non-API endpoints are generally static, unprivileged content only](#non-api-endpoints-are-generally-static-unprivileged-content-only)
-      - [Exclusion: window.context](#exclusion-windowcontext)
+      - [A note about window.context](#a-note-about-windowcontext)
       - [Exclusion: username/password manipulation (sign in, password reset, etc.)](#exclusion-usernamepassword-manipulation-sign-in-password-reset-etc)
     - [Risk of CSRF attacks against our non-API endpoints](#risk-of-csrf-attacks-against-our-non-api-endpoints)
     - [How we protect against CSRF in non-API endpoints](#how-we-protect-against-csrf-in-non-api-endpoints)
@@ -26,7 +27,6 @@ If you are looking for general information or wish to disclose a vulnerability, 
     - [How we protect against CSRF in API endpoints](#how-we-protect-against-csrf-in-api-endpoints)
     - [Known issue](#known-issue)
   - [Improving our CSRF threat model](#improving-our-csrf-threat-model)
-    - [Audit usages of `window.context` to exclude any sensitive information](#audit-usages-of-windowcontext-to-exclude-any-sensitive-information)
     - [Eliminate the username/password manipulation exclusion](#eliminate-the-usernamepassword-manipulation-exclusion)
     - [API endpoints should default to CORS `*` IFF access token authentication is being performed](#api-endpoints-should-default-to-cors--iff-access-token-authentication-is-being-performed)
 
@@ -84,18 +84,26 @@ There are multiple ways in which CSRF is protected against in the modern web, in
 
 There are more mitigation techniques, and risks, that you should be aware of. See [OWASP: CSRF prevention cheat sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)
 
-# Sourcegraph's CSRF threat model
+# Sourcegraph's CSRF security model
+
+## Diagrams
+
+These diagrams cover our CSRF security model at a high level (click to expand), the document below elaborates in greater detail.
+
+[![](https://user-images.githubusercontent.com/3173176/145488487-904541ca-2639-4b62-ae9b-7122a2151311.png)](https://user-images.githubusercontent.com/3173176/145488487-904541ca-2639-4b62-ae9b-7122a2151311.png)
+
+[![](https://user-images.githubusercontent.com/3173176/145488529-ad7daec8-b0a7-4914-ad75-1c2b50d911e3.png)](https://user-images.githubusercontent.com/3173176/145488529-ad7daec8-b0a7-4914-ad75-1c2b50d911e3.png)
 
 ## Request delineation: API and non-API endpoints
 
 In Sourcegraph, we delineate between two types of requests that reach the frontend (generally the only place HTTP requests make their way into Sourcegraph):
 
 * Those under `/.api`
-  * This is _restricted_ to POST requests only.
   * This includes all GraphQL requests.
+  * This includes the search streaming endpoint.
 * Those _not_ under `/.api`
-  * This is includes GET requests.
-  * This excludes all GraphQL requests.
+  * This includes static page serving.
+  * This includes UI routes like login, logout, etc.
 
 Having a clear separation between Sourcegraph's endpoints between API and non-API endpoints makes it easy for us to reason about the security model of each in relative isolation. It also allows us to ensure all security middleware for each endpoint uniformly applies to _all_ of our API endpoints, or all of our non-API endpoints, with ease and eliminates the need for per-endpoint security analysis.
 
@@ -117,9 +125,9 @@ The delineation of API and non-API endpoints is very important because we can al
 
 Aside from the folloowing exclusions, non-API endpoints only serve static, unprivileged content only. However, the two exclusions to this are very notable:
 
-#### Exclusion: window.context
+#### A note about window.context
 
-`window.context` is served with each request. For example, if you make a request via `curl https://sourcegraph.com/search` you'll find each GET request for a page introduces context to JavaScript. Sometimes this contains unprivileged content, such as if you are not authenticated, while other times if you provide the relevant session cookie this may contain privileged content. For example, an unprivileged request looks like:
+`window.context` is served with each request. For example, if you make a request via `curl https://sourcegraph.com/search` you'll find each GET request for a page introduces context to JavaScript. This _only contains unprivileged, public content_ - which is very important as otherwise it could be vulnerable to caching (e.g. if Cloudflare caches a GET request for user A and serves it to user B later):
 
 ```
 	<script ignore-csp>
@@ -127,12 +135,6 @@ Aside from the folloowing exclusions, non-API endpoints only serve static, unpri
 		window.pageError =  null 
 	</script>
 ```
-
-The context provided has various uses:
-
-* It contains context that is merely needed to render the page, e.g. options which are enabled on the site such as which logo image to render (customizable), etc.
-
-Importantly, this context may contain information which is specific to the user's current authentication. That is, if you are authenticated as e.g. an site admin or user, it may contain sensitive information - even though it is merely a GET request.
 
 #### Exclusion: username/password manipulation (sign in, password reset, etc.)
 
@@ -233,14 +235,6 @@ In general, people want to make API requests from other domains - and that is NO
 ## Improving our CSRF threat model
 
 I [@slimsag](https://github.com/slimsag) advise we make the following key improvements to our CSRF threat model in order to improve security, product reliability, and reduce risky behavior of both developers at Sourcegraph and customers on their own private instances:
-
-### Audit usages of `window.context` to exclude any sensitive information
-
-This may be completed at ANY time. It has NO pre-requisites.
-
-Performing this would allow us to restrict `window.context` to ONLY public content, which would alleviate a number of tricky questions around how caching Sourcegraph GET requests can sometimes be harmful. This may already be the case today, but we'd need to verify before adjusting our model to say this is true.
-
-See also: [Exclusion: window.context](#exclusion-windowcontext)
 
 ### Eliminate the username/password manipulation exclusion
 

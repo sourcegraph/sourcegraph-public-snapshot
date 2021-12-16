@@ -28,9 +28,75 @@ Test coverage from unit tests is tracked in [Codecov](https://codecov.io/gh/sour
 
 [React component snapshot tests](https://jestjs.io/docs/en/tutorial-react) are one way of testing React components. They make it easy to see when changes to a React component result in different output. Snapshots are files at `__snapshots__/MyComponent.test.tsx.snap` relative to the component's file, and they are committed (so that you can see the changes in `git diff` or when reviewing a PR).
 
+A typical snapshot test might look like this:
+
+```tsx
+    it('should render a link when provided with a href', () => {
+        const { asFragment } = render(<SpanOrLink href="https://example.com" />)
+        expect(asFragment()).toMatchSnapshot()
+    })
+```
+
 - See the [React component snapshot tests documentation](https://jestjs.io/docs/en/tutorial-react).
 - See [existing test files that use `React Testing Library`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lang:typescript+testing-library/react) for usage examples.
 - Use the jest watcher's <kbd>u</kbd> keyboard shortcut (or `yarn test --updateSnapshot`) to update all snapshot files. Be sure to review the diff!
+
+### Behavior tests
+
+Our behavior tests should simulate a typical user journey **as closely as possible**. We use [testing-library](https://testing-library.com/) to render and interact with our components.
+
+Here is an annotated example of a behavior test:
+
+```tsx
+    it('is possible for the user to update their username', () => {
+        render(<UserProfilePage />)
+
+        // Access the heading using its accessible role and check the DOM textContent
+        expect(screen.getByRole('heading')).toHaveTextContent('User Profile')
+
+        // Access the input using its accessible role and simulate a user typing in the field.
+        userEvent.type(screen.getByRole('textbox'), 'New username')
+
+        // Check the rendered output is correct and visible to the user
+        expect(screen.getByText('Your username is: New username')).toBeVisible()
+    })
+```
+
+Notice how this test doesn't assume anything about `UserProfilePage`. It just checks that it will render a valid heading, input field and some rendered output that can be updated by the user. We could completely refactor this component and, as long as the raw functionality remained the same, the test will still pass.
+
+For more documentation and examples of how to write these tests, please see the [testing-library docs](https://testing-library.com/docs/react-testing-library/intro/).
+
+#### Debugging behavior tests
+
+When running into problems with these tests, we have some useful utilities to help you debug them:
+
+**debug**
+
+This utility method can print the rendered DOM to the console.
+
+```tsx
+    it('this test is causing me problems', () => {
+        render(<UserProfilePage />)
+
+        // Lets print out the rendered output
+        screen.debug()
+    })
+```
+
+**logTestingPlaygroundURL**
+
+This utility method will let you print a URL that will visually render the DOM onto a webpage.
+
+```tsx
+    it('this test is causing me problems', () => {
+        render(<UserProfilePage />)
+
+        // Lets use the visual debugger
+        screen.logTestingPlaygroundURL()
+    })
+```
+
+This page also provides some additional functionality that can make it easier to identify the correct query to use to access a particular DOM element. 
 
 ## Browser-based tests
 

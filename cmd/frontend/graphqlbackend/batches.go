@@ -117,7 +117,8 @@ type RetryBatchSpecWorkspaceExecutionArgs struct {
 }
 
 type RetryBatchSpecExecutionArgs struct {
-	BatchSpec graphql.ID
+	BatchSpec        graphql.ID
+	IncludeCompleted bool
 }
 
 type EnqueueBatchSpecWorkspaceExecutionArgs struct {
@@ -247,7 +248,7 @@ type BatchChangesResolver interface {
 	CancelBatchSpecExecution(ctx context.Context, args *CancelBatchSpecExecutionArgs) (BatchSpecResolver, error)
 	CancelBatchSpecWorkspaceExecution(ctx context.Context, args *CancelBatchSpecWorkspaceExecutionArgs) (*EmptyResponse, error)
 	RetryBatchSpecWorkspaceExecution(ctx context.Context, args *RetryBatchSpecWorkspaceExecutionArgs) (*EmptyResponse, error)
-	RetryBatchSpecExecution(ctx context.Context, args *RetryBatchSpecExecutionArgs) (*EmptyResponse, error)
+	RetryBatchSpecExecution(ctx context.Context, args *RetryBatchSpecExecutionArgs) (BatchSpecResolver, error)
 	EnqueueBatchSpecWorkspaceExecution(ctx context.Context, args *EnqueueBatchSpecWorkspaceExecutionArgs) (*EmptyResponse, error)
 	ToggleBatchSpecAutoApply(ctx context.Context, args *ToggleBatchSpecAutoApplyArgs) (BatchSpecResolver, error)
 
@@ -342,6 +343,8 @@ type BatchSpecResolver interface {
 
 	AllowIgnored() *bool
 	AllowUnsupported() *bool
+
+	ViewerCanRetry(context.Context) (bool, error)
 }
 
 type BatchChangeDescriptionResolver interface {
@@ -585,9 +588,11 @@ type BatchChangeResolver interface {
 	ID() graphql.ID
 	Name() string
 	Description() *string
+	State() string
 	InitialApplier(ctx context.Context) (*UserResolver, error)
+	Creator(ctx context.Context) (*UserResolver, error)
 	LastApplier(ctx context.Context) (*UserResolver, error)
-	LastAppliedAt() DateTime
+	LastAppliedAt() *DateTime
 	SpecCreator(ctx context.Context) (*UserResolver, error)
 	ViewerCanAdminister(ctx context.Context) (bool, error)
 	URL(ctx context.Context) (string, error)
