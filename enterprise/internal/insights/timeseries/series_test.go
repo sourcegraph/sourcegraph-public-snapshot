@@ -34,3 +34,85 @@ func TestStepForward(t *testing.T) {
 		})
 	}
 }
+
+func TestIsValid(t *testing.T) {
+	tests := []struct {
+		name     string
+		want     bool
+		interval TimeInterval
+	}{
+		{
+			name: "month valid",
+			want: true,
+			interval: TimeInterval{
+				Unit:  types.Month,
+				Value: 1,
+			},
+		},
+		{
+			name: "day valid",
+			want: true,
+			interval: TimeInterval{
+				Unit:  types.Day,
+				Value: 1,
+			},
+		},
+		{
+			name: "year valid",
+			want: true,
+			interval: TimeInterval{
+				Unit:  types.Year,
+				Value: 1,
+			},
+		},
+		{
+			name: "hour valid",
+			want: true,
+			interval: TimeInterval{
+				Unit:  types.Hour,
+				Value: 1,
+			},
+		},
+		{
+			name: "week valid",
+			want: true,
+			interval: TimeInterval{
+				Unit:  types.Week,
+				Value: 1,
+			},
+		},
+		{
+			name: "invalid type",
+			want: false,
+			interval: TimeInterval{
+				Unit:  types.IntervalUnit("asdf"),
+				Value: 1,
+			},
+		},
+		{
+			name: "invalid value",
+			want: false,
+			interval: TimeInterval{
+				Unit:  types.Week,
+				Value: -1,
+			},
+		},
+		{
+			name: "valid zero value",
+			want: true,
+			interval: TimeInterval{
+				Unit:  types.Week,
+				Value: 0,
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := test.interval.IsValid()
+			want := test.want
+			if got != want {
+				t.Errorf("unexpected IsValid: want: %v got: %v", want, got)
+			}
+		})
+	}
+}

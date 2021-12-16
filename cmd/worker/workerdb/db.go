@@ -2,6 +2,7 @@ package workerdb
 
 import (
 	"database/sql"
+	"os"
 
 	"github.com/cockroachdb/errors"
 
@@ -26,7 +27,16 @@ var initDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{}, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	db, err := connections.NewFrontendDB(dsn, "worker", false, &observation.TestContext)
+	var (
+		db  *sql.DB
+		err error
+	)
+	if os.Getenv("NEW_MIGRATIONS") == "" {
+		// CURRENTLY DEPRECATING
+		db, err = connections.NewFrontendDB(dsn, "worker", false, &observation.TestContext)
+	} else {
+		db, err = connections.EnsureNewFrontendDB(dsn, "worker", &observation.TestContext)
+	}
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
