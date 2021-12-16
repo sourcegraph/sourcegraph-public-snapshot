@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/cockroachdb/errors"
 	"github.com/loov/hrtime"
-	"github.com/schollz/progressbar/v3"
 	"github.com/sourcegraph/sourcegraph/cmd/fileskip"
 	"io"
+	   "github.com/schollz/progressbar/v3"
 	"math"
 	"net/http"
 	"os"
@@ -64,7 +64,6 @@ var (
 	megarepo = Corpus{
 		Name: "megarepo", URL: "https://github.com/sgtest/megarepo/zipball/11c726fd66bb6252cb8e9c0af8933f5ba0fb1e8d",
 		Queries: []string{
-			"áð",
 			"44a1",
 			"*hl",
 			"*hl_",

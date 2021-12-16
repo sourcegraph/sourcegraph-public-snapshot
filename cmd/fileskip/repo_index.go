@@ -8,8 +8,8 @@ import (
 	"github.com/FastFilter/xorfilter"
 	"github.com/RoaringBitmap/roaring"
 	"github.com/cockroachdb/errors"
-	"github.com/go-enry/go-enry/v2"
-	"github.com/schollz/progressbar/v3"
+	 "github.com/go-enry/go-enry/v2"
+"github.com/schollz/progressbar/v3"
 	"io"
 	"math"
 	"os"
@@ -34,6 +34,7 @@ func init() {
 		IncludePentagram = true
 	case "4":
 		IncludePentagram = true
+	case "":
 	default:
 		panic("unknown FILESKIP_MAX_ARITY value " + arityConfig)
 	}
