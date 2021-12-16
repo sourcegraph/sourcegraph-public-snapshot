@@ -97,8 +97,8 @@ func onGrams(text string) (*xorfilter.BinaryFuse8, *roaring.Bitmap) {
 	seen := roaring.New()
 	ch1 := uint32(0)
 	ch2 := uint32(0)
-	//ch3 := uint32(0)
-	//ch4 := uint32(0)
+	ch3 := uint32(0)
+	ch4 := uint32(0)
 	i := -1
 	for _, ch0 := range text {
 		i++
@@ -109,8 +109,8 @@ func onGrams(text string) (*xorfilter.BinaryFuse8, *roaring.Bitmap) {
 		unigram -= ' '
 		bigram := (unigram << 5) | ch1
 		trigram := (bigram << 5) | ch2
-		//quadgram := (trigram << 5) | ch3
-		//pentagram := (quadgram << 5) | ch4
+		quadgram := (trigram << 5) | ch3
+		pentagram := (quadgram << 5) | ch4
 		//seen.Add(unigram)
 		//if i > 1 {
 		//	seen.Add(bigram)
@@ -118,14 +118,14 @@ func onGrams(text string) (*xorfilter.BinaryFuse8, *roaring.Bitmap) {
 		if i > 2 {
 			seen.Add(trigram)
 		}
-		//if i > 3 {
-		//	seen.Add(quadgram)
-		//}
-		//if i > 4 {
-		//	seen.Add(pentagram)
-		//}
-		//ch4 = ch3
-		//ch3 = ch2
+		if i > 3 {
+			seen.Add(quadgram)
+		}
+		if i > 4 {
+			seen.Add(pentagram)
+		}
+		ch4 = ch3
+		ch3 = ch2
 		ch2 = ch1
 		ch1 = unigram
 	}
