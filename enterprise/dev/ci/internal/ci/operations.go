@@ -145,7 +145,8 @@ func addWebApp(pipeline *bk.Pipeline) {
 }
 
 // We provide our own Chromium instance that is installed through the `download-puppeteer-browser` script
-var percyBrowserExecutableEnv = bk.Env("PERCY_BROWSER_EXECUTABLE", "node_modules/puppeteer/.local-chromium/linux-901812/chrome-linux/chrome")
+// wrong
+var percyBrowserExecutableEnv = bk.Cmd("export PERCY_BROWSER_EXECUTABLE=\"node_modules/puppeteer/.local-chromium/linux-$(./dev/ci/puppeteer-revision.js)/chrome-linux/chrome\"")
 
 // Builds and tests the browser extension.
 func addBrowserExt(pipeline *bk.Pipeline) {
@@ -154,6 +155,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 		pipeline.AddStep(
 			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
 			percyBrowserExecutableEnv,
+			bk.Cmd("echo $PERCY_BROWSER_EXECUTABLE"),
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
