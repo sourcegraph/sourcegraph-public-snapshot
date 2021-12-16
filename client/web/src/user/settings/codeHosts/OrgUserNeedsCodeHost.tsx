@@ -69,9 +69,7 @@ export const SearchUserNeedsCodeHost: React.FunctionComponent<SearchUserNeedsCod
     if (!org) {
         return null
     }
-    return (
-            <PotentialOrgUserNeedsCodeHost user={user} org={org} />
-    )
+    return <PotentialOrgUserNeedsCodeHost user={user} org={org} />
 }
 
 interface PotentialOrgUserNeedsCodeHost {
@@ -82,12 +80,10 @@ interface PotentialOrgUserNeedsCodeHost {
 const PotentialOrgUserNeedsCodeHost: React.FunctionComponent<PotentialOrgUserNeedsCodeHost> = ({ org, user }) => {
     const { externalServices: orgExternalServices } = useExternalServices(org.id)
     return (
-        <>
-            <OrgUserNeedsCodeHost
-                user={user}
-                orgDisplayName={org.displayName || org.name}
-                orgExternalServices={orgExternalServices}
-            />
-        </>
+        <OrgUserNeedsCodeHost
+            user={user}
+            orgDisplayName={org.displayName || org.name}
+            orgExternalServices={orgExternalServices}
+        />
     )
 }
