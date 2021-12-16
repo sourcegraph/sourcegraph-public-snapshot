@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 
-	executor "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/store"
-	executorDB "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/store/db"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -43,7 +41,6 @@ type DB interface {
 	UserPublicRepos() UserPublicRepoStore
 	Users() UserStore
 	WebhookLogs(encryption.Key) WebhookLogStore
-	Executors() executor.Store
 
 	Transact(context.Context) (DB, error)
 	Done(error) error
@@ -187,10 +184,6 @@ func (d *db) Users() UserStore {
 
 func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {
 	return WebhookLogsWith(d.Store, key)
-}
-
-func (d *db) Executors() executor.Store {
-	return executorDB.ExecutorsWith(d.Store)
 }
 
 func (d *db) Unwrap() dbutil.DB {

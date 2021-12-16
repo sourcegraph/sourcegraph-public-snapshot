@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"sync"
 
-	store "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/store"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
 )
@@ -34,9 +33,6 @@ type MockDB struct {
 	// ExecContextFunc is an instance of a mock function object controlling
 	// the behavior of the method ExecContext.
 	ExecContextFunc *DBExecContextFunc
-	// ExecutorsFunc is an instance of a mock function object controlling
-	// the behavior of the method Executors.
-	ExecutorsFunc *DBExecutorsFunc
 	// ExternalServicesFunc is an instance of a mock function object
 	// controlling the behavior of the method ExternalServices.
 	ExternalServicesFunc *DBExternalServicesFunc
@@ -143,11 +139,6 @@ func NewMockDB() *MockDB {
 		ExecContextFunc: &DBExecContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (sql.Result, error) {
 				return nil, nil
-			},
-		},
-		ExecutorsFunc: &DBExecutorsFunc{
-			defaultHook: func() store.Store {
-				return nil
 			},
 		},
 		ExternalServicesFunc: &DBExternalServicesFunc{
@@ -307,11 +298,6 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.ExecContext")
 			},
 		},
-		ExecutorsFunc: &DBExecutorsFunc{
-			defaultHook: func() store.Store {
-				panic("unexpected invocation of MockDB.Executors")
-			},
-		},
 		ExternalServicesFunc: &DBExternalServicesFunc{
 			defaultHook: func() database.ExternalServiceStore {
 				panic("unexpected invocation of MockDB.ExternalServices")
@@ -456,9 +442,6 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		ExecContextFunc: &DBExecContextFunc{
 			defaultHook: i.ExecContext,
-		},
-		ExecutorsFunc: &DBExecutorsFunc{
-			defaultHook: i.Executors,
 		},
 		ExternalServicesFunc: &DBExternalServicesFunc{
 			defaultHook: i.ExternalServices,
@@ -1149,105 +1132,6 @@ func (c DBExecContextFuncCall) Args() []interface{} {
 // invocation.
 func (c DBExecContextFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// DBExecutorsFunc describes the behavior when the Executors method of the
-// parent MockDB instance is invoked.
-type DBExecutorsFunc struct {
-	defaultHook func() store.Store
-	hooks       []func() store.Store
-	history     []DBExecutorsFuncCall
-	mutex       sync.Mutex
-}
-
-// Executors delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockDB) Executors() store.Store {
-	r0 := m.ExecutorsFunc.nextHook()()
-	m.ExecutorsFunc.appendCall(DBExecutorsFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Executors method of
-// the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBExecutorsFunc) SetDefaultHook(hook func() store.Store) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Executors method of the parent MockDB instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *DBExecutorsFunc) PushHook(hook func() store.Store) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *DBExecutorsFunc) SetDefaultReturn(r0 store.Store) {
-	f.SetDefaultHook(func() store.Store {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *DBExecutorsFunc) PushReturn(r0 store.Store) {
-	f.PushHook(func() store.Store {
-		return r0
-	})
-}
-
-func (f *DBExecutorsFunc) nextHook() func() store.Store {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBExecutorsFunc) appendCall(r0 DBExecutorsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBExecutorsFuncCall objects describing the
-// invocations of this function.
-func (f *DBExecutorsFunc) History() []DBExecutorsFuncCall {
-	f.mutex.Lock()
-	history := make([]DBExecutorsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBExecutorsFuncCall is an object that describes an invocation of method
-// Executors on an instance of MockDB.
-type DBExecutorsFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 store.Store
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBExecutorsFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBExecutorsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // DBExternalServicesFunc describes the behavior when the ExternalServices

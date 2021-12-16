@@ -2,6 +2,7 @@ package executors
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/store"
 	postgres "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/store/db"
@@ -13,6 +14,7 @@ type Executor interface {
 	List(ctx context.Context, query string, active bool, offset int, limit int) ([]types.Executor, int, error)
 	GetByID(ctx context.Context, id int) (types.Executor, bool, error)
 	UpsertHeartbeat(ctx context.Context, executor types.Executor) error
+	DeleteInactiveHeartbeats(ctx context.Context, minAge time.Duration) error
 }
 
 func New(db dbutil.DB) Executor {
@@ -40,4 +42,8 @@ func (s *executorService) GetByID(ctx context.Context, id int) (types.Executor, 
 
 func (s *executorService) UpsertHeartbeat(ctx context.Context, executor types.Executor) error {
 	return s.store.UpsertHeartbeat(ctx, executor)
+}
+
+func (s *executorService) DeleteInactiveHeartbeats(ctx context.Context, minAge time.Duration) error {
+	return s.store.DeleteInactiveHeartbeats(ctx, minAge)
 }

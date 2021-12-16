@@ -19,8 +19,3 @@ type ExecutorStore struct {
 func New(db dbutil.DB) *ExecutorStore {
 	return &ExecutorStore{db: basestore.NewWithDB(db, sql.TxOptions{})}
 }
-
-// ExecutorsWith instantiates and returns a new ExecutorStore using the other store handle.
-func ExecutorsWith(other basestore.ShareableStore) *ExecutorStore {
-	return &ExecutorStore{db: basestore.NewWithHandle(other.Handle())}
-}
