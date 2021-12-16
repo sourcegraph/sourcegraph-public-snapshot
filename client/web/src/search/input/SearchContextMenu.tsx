@@ -71,11 +71,9 @@ export const SearchContextMenuItem: React.FunctionComponent<{
 export interface SearchContextMenuProps
     extends Omit<
         SearchContextInputProps,
-        | 'showSearchContext'
-        | 'setSelectedSearchContextSpec'
-        | 'hasUserAddedRepositories'
-        | 'hasUserAddedExternalServices'
+        'setSelectedSearchContextSpec' | 'hasUserAddedRepositories' | 'hasUserAddedExternalServices'
     > {
+    showSearchContextManagement: boolean
     authenticatedUser: AuthenticatedUser | null
     closeMenu: (isEscapeKey?: boolean) => void
     selectSearchContextSpec: (spec: string) => void

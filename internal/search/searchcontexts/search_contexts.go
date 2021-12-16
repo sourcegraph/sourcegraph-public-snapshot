@@ -6,12 +6,14 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -54,21 +56,40 @@ func ResolveSearchContextSpec(ctx context.Context, db database.DB, searchContext
 
 	if IsGlobalSearchContextSpec(searchContextSpec) {
 		return GetGlobalSearchContext(), nil
-	} else if hasNamespaceName && hasSearchContextName {
+	}
+
+	if hasNamespaceName {
 		namespace, err := db.Namespaces().GetByName(ctx, parsedSearchContextSpec.NamespaceName)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "get namespace by name")
 		}
-		return db.SearchContexts().GetSearchContext(ctx, database.GetSearchContextOptions{
-			Name:            parsedSearchContextSpec.SearchContextName,
-			NamespaceUserID: namespace.User,
-			NamespaceOrgID:  namespace.Organization,
-		})
-	} else if hasNamespaceName && !hasSearchContextName {
-		namespace, err := db.Namespaces().GetByName(ctx, parsedSearchContextSpec.NamespaceName)
-		if err != nil {
-			return nil, err
+
+		// Only member of the organization can use search contexts under the
+		// organization namespace on Sourcegraph Cloud.
+		if envvar.SourcegraphDotComMode() && namespace.Organization > 0 {
+			_, err = db.OrgMembers().GetByOrgIDAndUserID(ctx, namespace.Organization, actor.FromContext(ctx).UID)
+			if err != nil {
+				if errcode.IsNotFound(err) {
+					return nil, database.ErrNamespaceNotFound
+				}
+
+				log15.Error("ResolveSearchContextSpec.OrgMembers.GetByOrgIDAndUserID", "error", err)
+
+				// NOTE: We do want to return identical error as if the namespace not found in
+				// case of internal server error. Otherwise, we're leaking the information when
+				// error occurs.
+				return nil, database.ErrNamespaceNotFound
+			}
 		}
+
+		if hasSearchContextName {
+			return db.SearchContexts().GetSearchContext(ctx, database.GetSearchContextOptions{
+				Name:            parsedSearchContextSpec.SearchContextName,
+				NamespaceUserID: namespace.User,
+				NamespaceOrgID:  namespace.Organization,
+			})
+		}
+
 		if namespace.User == 0 && namespace.Organization == 0 {
 			return nil, errors.Errorf("search context %q not found", searchContextSpec)
 		}
@@ -77,6 +98,7 @@ func ResolveSearchContextSpec(ctx context.Context, db database.DB, searchContext
 		}
 		return GetOrganizationSearchContext(namespace.Organization, parsedSearchContextSpec.NamespaceName, parsedSearchContextSpec.NamespaceName), nil
 	}
+
 	// Check if instance-level context
 	return db.SearchContexts().GetSearchContext(ctx, database.GetSearchContextOptions{Name: parsedSearchContextSpec.SearchContextName})
 }

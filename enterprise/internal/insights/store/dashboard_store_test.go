@@ -427,5 +427,73 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 			},
 		}).Equal(t, dashboards)
 	})
+}
 
+func TestHasDashboardPermission(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
+	ctx := context.Background()
+	store := NewDashboardStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+	created, err := store.CreateDashboard(ctx, CreateDashboardArgs{
+		Dashboard: types.Dashboard{
+			Title: "test dashboard 123",
+			Save:  true,
+		},
+		Grants: []DashboardGrant{UserDashboardGrant(1), OrgDashboardGrant(5)},
+		UserID: []int{1}, // this is a weird thing I'd love to get rid of, but for now this will cause the db to return
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created == nil {
+		t.Fatalf("nil dashboard")
+	}
+
+	tests := []struct {
+		name                 string
+		shouldHavePermission bool
+		userIds              []int
+		orgIds               []int
+	}{
+		{
+			name:                 "user 1 has access to dashboard",
+			shouldHavePermission: true,
+			userIds:              []int{1},
+			orgIds:               nil,
+		},
+		{
+			name:                 "user 3 does not have access to dashboard",
+			shouldHavePermission: false,
+			userIds:              []int{3},
+			orgIds:               nil,
+		},
+		{
+			name:                 "org 5 has access to dashboard",
+			shouldHavePermission: true,
+			userIds:              nil,
+			orgIds:               []int{5},
+		},
+		{
+			name:                 "org 7 does not have access to dashboard",
+			shouldHavePermission: false,
+			userIds:              nil,
+			orgIds:               []int{7},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := store.HasDashboardPermission(ctx, []int{created.ID}, test.userIds, test.orgIds)
+			if err != nil {
+				t.Error(err)
+			}
+			want := test.shouldHavePermission
+			if want != got {
+				t.Errorf("unexpected dashboard access result from HasDashboardPermission: want: %v got: %v", want, got)
+			}
+		})
+	}
 }

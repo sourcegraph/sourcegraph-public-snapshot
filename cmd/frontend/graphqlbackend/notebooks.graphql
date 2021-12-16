@@ -1,0 +1,122 @@
+"""
+Markdown block renders the Markdown formatted input string into HTML.
+"""
+type MarkdownBlock {
+    """
+    ID of the block.
+    """
+    id: String!
+    """
+    Markdown formatted input string.
+    """
+    markdownInput: String!
+}
+
+"""
+Query block allows performing inline search queries within a notebook.
+"""
+type QueryBlock {
+    """
+    ID of the block.
+    """
+    id: String!
+    """
+    A Sourcegraph search query string.
+    """
+    queryInput: String!
+}
+
+"""
+A line range inside a file.
+"""
+type FileBlockLineRange {
+    """
+    The first line to fetch (0-indexed, inclusive).
+    """
+    startLine: Int!
+    """
+    The last line to fetch (0-indexed, exclusive).
+    """
+    endLine: Int!
+}
+
+"""
+FileBlockInput contains the information necessary to fetch the file.
+"""
+type FileBlockInput {
+    """
+    Name of the repository, e.g. "github.com/sourcegraph/sourcegraph".
+    """
+    repositoryName: String!
+    """
+    Path within the repository, e.g. "client/web/file.tsx".
+    """
+    filePath: String!
+    """
+    An optional revision, e.g. "pr/feature-1", "a9505a2947d3df53558e8c88ff8bcef390fc4e3e".
+    If omitted, we use the latest revision (HEAD).
+    """
+    revision: String
+    """
+    An optional line range. If omitted, we display the entire file.
+    """
+    lineRange: FileBlockLineRange
+}
+
+"""
+FileBlock specifies a file (or part of a file) to display within the block.
+"""
+type FileBlock {
+    """
+    ID of the block.
+    """
+    id: String!
+    """
+    File block input.
+    """
+    fileInput: FileBlockInput!
+}
+
+"""
+Notebook blocks are represented as a union between three distinct block types: Markdown, Query, and File.
+"""
+union NotebookBlock = MarkdownBlock | QueryBlock | FileBlock
+
+"""
+A notebook with an array of blocks.
+"""
+type Notebook implements Node {
+    """
+    The unique id of the notebook.
+    """
+    id: ID!
+    """
+    The title of the notebook.
+    """
+    title: String!
+    """
+    Array of notebook blocks.
+    """
+    blocks: [NotebookBlock!]!
+    """
+    User that created the notebook or null if the user was removed.
+    """
+    creator: User
+    """
+    Public property controls the visibility of the notebook. A public notebook is available to
+    any user on the instance. Private notebooks are only available to their creators.
+    """
+    public: Boolean!
+    """
+    Date and time the notebook was last updated.
+    """
+    updatedAt: DateTime!
+    """
+    Date and time the notebook was created.
+    """
+    createdAt: DateTime!
+    """
+    If current viewer can manage (edit, delete) the notebook.
+    """
+    viewerCanManage: Boolean!
+}
