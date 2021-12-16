@@ -40,6 +40,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"CI_DEBUG_PROFILE": strconv.FormatBool(c.MessageFlags.ProfilingEnabled),
 		// Bump Node.js memory to prevent OOM crashes
 		"NODE_OPTIONS": "--max_old_space_size=8192",
+		// $DISPLAY variable required for Puppeteer.
+		// https://github.com/puppeteer/puppeteer/issues/5429#issuecomment-869849302
+		"DISPLAY": os.Getenv("DISPLAY"),
 
 		// Bundlesize configuration: https://github.com/siddharthkp/bundlesize2#build-status-and-checks-for-github
 		"CI_REPO_OWNER": "sourcegraph",
