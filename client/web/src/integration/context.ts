@@ -76,6 +76,7 @@ export const createWebIntegrationTestContext = async ({
     sharedTestContext.server
         .get(new URL('/*path', driver.sourcegraphBaseUrl).href)
         .filter(request => !request.pathname.startsWith('/-/'))
+        .filter(request => !request.pathname.startsWith('/.assets/'))
         .intercept((request, response) => {
             response.type('text/html').send(html`
                 <html>
