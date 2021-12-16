@@ -9,6 +9,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/opentracing/opentracing-go"
+
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
@@ -260,6 +268,12 @@ type historicalEnqueuer struct {
 }
 
 func (h *historicalEnqueuer) Handler(ctx context.Context) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "historical_enqueuer.Handler")
+	defer span.Finish()
+
+	log15.Info("historical_enqueuer.Handler start", "traceId", trace.IDFromSpan(span))
+
+	h.statistics = make(statistics)
 	// Discover all insights on the instance.
 	log15.Debug("Fetching data series for historical")
 	foundInsights, err := h.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{BackfillIncomplete: true, GlobalOnly: true})
@@ -329,21 +343,40 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[s
 	var multi error
 
 	hardErr := h.allReposIterator(ctx, h.buildForRepo(ctx, uniqueSeries, sortedSeriesIDs, multi))
+	log15.Error("historical_enqueuer.buildFrames - multierror", "err", multi)
 	return hardErr
 }
 
-func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[string]itypes.InsightSeries, sortedSeriesIDs []string, softErr error) func(repoName string, id api.RepoID) error {
-	return func(repoName string, id api.RepoID) error {
+func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[string]itypes.InsightSeries, sortedSeriesIDs []string, softErr error) func(repoName string, id api.RepoID) (err error) {
+	return func(repoName string, id api.RepoID) (err error) {
+		span, ctx := ot.StartSpanFromContext(ot.WithShouldTrace(ctx, true), "historical_enqueuer.buildForRepo")
+		span.SetTag("repo_id", id)
+		defer func() {
+			if err != nil {
+				span.LogFields(log.Error(err))
+			}
+			span.Finish()
+		}()
+		traceId := trace.IDFromSpan(span)
+
+		// We are encountering a problem where it seems repositories go missing, so this is overly-noisy logging to try and get a complete picture
+		log15.Info("[historical_enqueuer_backfill] buildForRepo start", "repo_id", id, "repo_name", repoName, "traceId", traceId)
 
 		// Find the first commit made to the repository on the default branch.
 		firstHEADCommit, err := h.gitFirstEverCommit(ctx, api.RepoName(repoName))
 		if err != nil {
+			span.LogFields(log.Error(err))
+			for _, stats := range h.statistics {
+				// mark all series as having one error since this error is at the repo level (affects all series)
+				stats.Errored += 1
+			}
+
 			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
-				log15.Info("insights backfill repository skipped - missing rev/repo", "repo_id", id, "repo_name", repoName)
+				log15.Warn("insights backfill repository skipped - missing rev/repo", "repo_id", id, "repo_name", repoName)
 				return nil // no error - repo may not be cloned yet (or not even pushed to code host yet)
 			}
 			if strings.Contains(err.Error(), `failed (output: "usage: git rev-list [OPTION] <commit-id>...`) {
-				log15.Info("insights backfill repository skipped - empty repo", "repo_id", id, "repo_name", repoName)
+				log15.Warn("insights backfill repository skipped - empty repo", "repo_id", id, "repo_name", repoName)
 				return nil // repository is empty
 			}
 			// soft error, repo may be in a bad state but others might be OK.
@@ -373,7 +406,7 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 
 				err := h.limiter.Wait(ctx)
 				if err != nil {
-					return err
+					return errors.Wrap(err, "limiter.Wait")
 				}
 
 				// Build historical data for this unique timeframe+repo+series.
@@ -394,8 +427,8 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 					return multierror.Append(softErr, hardErr)
 				}
 			}
-
 		}
+		log15.Info("[historical_enqueuer_backfill] buildForRepo end", "repo_id", id, "repo_name", repoName)
 		return nil
 	}
 }
@@ -482,7 +515,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 				return // no error - repo may not be cloned yet (or not even pushed to code host yet)
 			}
-			hardErr = errors.Wrap(err, "FindNearestCommit")
+			softErr = multierror.Append(softErr, errors.Wrap(err, "FindNearestCommit"))
 			return
 		}
 		var nearestCommit *gitdomain.Commit
