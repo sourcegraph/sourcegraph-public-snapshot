@@ -7,3 +7,4 @@ kubectl 1.21.7
 github-cli 2.0.0
 packer 1.6.6
 trivy 0.20.0
+kustomize 4.0.5
