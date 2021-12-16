@@ -46,7 +46,7 @@ func benchmarkQuery(b *testing.B, c Corpus) {
 
 func benchmarkFileskipQuery(index *fileskip.RepoIndex, matchingResults map[string]struct{}, query string) int {
 	falsePositives := 0
-	for _, filename := range index.FilenamesMatchingQuerySync(query) {
+	for filename := range index.FilenamesMatchingQuery(query) {
 		if expensiveHasMatch(index.FS, filename, query) {
 			matchingResults[filename] = struct{}{}
 		} else {
