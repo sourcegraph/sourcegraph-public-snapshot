@@ -102,7 +102,18 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
             <FormGroup
                 name="data series"
                 title="Data series"
-                subtitle="Generated dynamically for each unique value from the regular expression capture group."
+                subtitle={
+                    <>
+                        Generated dynamically for each unique value from the regular expression capture group.{' '}
+                        <a
+                            href="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            Learn more.
+                        </a>
+                    </>
+                }
             >
                 <div className="card card-body p-3">
                     <FormInput
@@ -205,7 +216,11 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
 const QueryFieldSubtitle: React.FunctionComponent<{ className?: string }> = props => (
     <small className={classNames(props.className, 'text-muted', 'd-block', 'font-weight-normal')}>
         Search query must contain a properly formatted regular expression with at least one{' '}
-        <a href="" target="_blank" rel="noopener">
+        <a
+            href="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series"
+            target="_blank"
+            rel="noopener"
+        >
             capture group.
         </a>{' '}
         The capture group cannot match file or repository names, it can match only the file contents.
