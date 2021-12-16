@@ -23,7 +23,13 @@ var (
 	}
 	sourcegraph = Corpus{Name: "sourcegraph", URL: "https://github.com/sourcegraph/sourcegraph/archive/refs/tags/v3.34.1.zip",
 		Queries: []string{
-			"ö", "oö", "121", "OLA", "page", "Page", "Repository", "FileTree", "bloomf",
+			"add",
+			"121",
+			"incre",
+			"thread",
+			"pageres",
+			"exec.Command",
+			"page", "Page", "Repository", "FileTree", "bloomf",
 			"COMMENT ON COLUMN lsif", "The identifier of the associated dump",
 		},
 	}
@@ -32,7 +38,7 @@ var (
 	}
 	linux = Corpus{Name: "linux", URL: "https://github.com/torvalds/linux/archive/refs/tags/v5.16-rc3.zip",
 		Queries: []string{
-			"ø", "AAA", "44441", "soundcard", "#include <sys/socket.h>",
+			"add", "gnttab", "unmap", "phys_add", "phys_add", "phys-addr", "phys_addr", "44441", "soundcard", "#include <sys/socket.h>",
 			"new address of the crtc (GPU MC address)",
 			"bugzilla.redhat.com/show_bug.cgi?id=726143",
 			"Clone map from listener for newly accepted socket",
@@ -41,9 +47,13 @@ var (
 	chromium = Corpus{
 		Name: "chromium", URL: "https://github.com/chromium/chromium/archive/refs/tags/98.0.4747.1.zip",
 		Queries: []string{
-			"øø",
-			"799a",
-			"framm",
+			"nest",
+			"nested",
+			"address",
+			"folded",
+			"Instru",
+			"messager",
+			"messenger",
 			"params.has_value()",
 			"assert_true(params.has",
 			"EXPECT_EQ(kDownloadId, pa",
@@ -54,7 +64,6 @@ var (
 	megarepo = Corpus{
 		Name: "megarepo", URL: "https://github.com/sgtest/megarepo/zipball/11c726fd66bb6252cb8e9c0af8933f5ba0fb1e8d",
 		Queries: []string{
-			"áð",
 			"44a1",
 			"*hl",
 			"*hl_",
@@ -68,6 +77,7 @@ var (
 			"github.com/Azure/go-autorest/autorest",
 		},
 	}
+
 	all = []Corpus{flask, sourcegraph, kubernetes, linux, chromium, megarepo}
 )
 
