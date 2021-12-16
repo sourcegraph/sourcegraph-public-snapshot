@@ -1,6 +1,5 @@
 .container {
     height: min-content;
-    max-width: 62.5rem;
 }
 
 .header {
@@ -9,7 +8,7 @@
 
 .section-content {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(22.75rem, 1fr));
     row-gap: 0.5rem;
     column-gap: 0.5rem;
 }
@@ -17,5 +16,5 @@
 .info {
     grid-column: 1 / -1;
     margin-top: 1rem;
-    margin-bottom: 2.5rem;
+    margin-bottom: 2rem;
 }

@@ -6,13 +6,9 @@
     font-size: 0.875rem;
     text-align: start;
 
-    &:hover {
-        background-color: var(--secondary-2);
-    }
-
+    &:hover,
     &:focus {
-        background-color: var(--secondary-2);
-        box-shadow: var(--focus-box-shadow);
+        box-shadow: 0 0 0 0.1875rem var(--primary);
         outline: none;
     }
 
@@ -25,11 +21,12 @@
     display: flex;
     flex-direction: column;
     background-color: transparent;
-    margin-top: 2rem;
+    margin-top: 1rem;
     padding: 0;
 
     b {
         display: contents;
+        font-weight: normal;
 
         // A bootstrap CSS class .card brings custom color styles that we should change
         // for b elements within a card accroding to our designs for this card.
@@ -43,13 +40,23 @@
     color: var(--body-color);
 }
 
+.card-footer {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem;
+    background-color: var(--body-bg);
+    border: 1px solid var(--border-color);
+}
+
 // chart specific styles
 .chart {
     overflow: hidden;
-    height: 10rem;
+    padding: 1rem;
+    height: 10.5rem;
     width: 100%;
     object-fit: contain;
-    background-color: transparent;
+    background-color: var(--body-bg);
 }
 
 .images {
