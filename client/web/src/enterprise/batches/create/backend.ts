@@ -1,7 +1,7 @@
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
-export const GET_BATCH_CHANGE = gql`
-    query GetBatchChange($namespace: ID!, $name: String!) {
+export const GET_BATCH_CHANGE_TO_EDIT = gql`
+    query GetBatchChangeToEdit($namespace: ID!, $name: String!) {
         batchChange(namespace: $namespace, name: $name) {
             ...EditBatchChangeFields
         }

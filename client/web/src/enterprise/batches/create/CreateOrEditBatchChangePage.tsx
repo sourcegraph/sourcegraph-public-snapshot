@@ -21,8 +21,8 @@ import { Button, Container, Input, LoadingSpinner } from '@sourcegraph/wildcard'
 import {
     BatchChangeFields,
     EditBatchChangeFields,
-    GetBatchChangeResult,
-    GetBatchChangeVariables,
+    GetBatchChangeToEditResult,
+    GetBatchChangeToEditVariables,
     CreateEmptyBatchChangeVariables,
     CreateEmptyBatchChangeResult,
 } from '../../../graphql-operations'
@@ -30,7 +30,7 @@ import { Settings } from '../../../schema/settings.schema'
 import { BatchChangePage } from '../BatchChangePage'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
-import { GET_BATCH_CHANGE, CREATE_EMPTY_BATCH_CHANGE } from './backend'
+import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
 import styles from './CreateOrEditBatchChangePage.module.scss'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import helloWorldSample from './library/hello-world.batch.yaml'
@@ -62,18 +62,21 @@ export const CreateOrEditBatchChangePage: React.FunctionComponent<CreateOrEditBa
     batchChangeName,
     ...props
 }) => {
-    const { data, loading } = useQuery<GetBatchChangeResult, GetBatchChangeVariables>(GET_BATCH_CHANGE, {
-        // If we don't have the batch change name or namespace, the user hasn't created a
-        // batch change yet, so skip the request.
-        skip: !initialNamespaceID || !batchChangeName,
-        variables: {
-            namespace: initialNamespaceID as Scalars['ID'],
-            name: batchChangeName as BatchChangeFields['name'],
-        },
-        // Cache this data but always re-request it in the background when we revisit
-        // this page to pick up newer changes.
-        fetchPolicy: 'cache-and-network',
-    })
+    const { data, loading } = useQuery<GetBatchChangeToEditResult, GetBatchChangeToEditVariables>(
+        GET_BATCH_CHANGE_TO_EDIT,
+        {
+            // If we don't have the batch change name or namespace, the user hasn't created a
+            // batch change yet, so skip the request.
+            skip: !initialNamespaceID || !batchChangeName,
+            variables: {
+                namespace: initialNamespaceID as Scalars['ID'],
+                name: batchChangeName as BatchChangeFields['name'],
+            },
+            // Cache this data but always re-request it in the background when we revisit
+            // this page to pick up newer changes.
+            fetchPolicy: 'cache-and-network',
+        }
+    )
 
     if (!batchChangeName) {
         return <CreatePage namespaceID={initialNamespaceID} {...props} />
