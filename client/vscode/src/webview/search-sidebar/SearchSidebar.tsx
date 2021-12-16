@@ -90,6 +90,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
                     sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
                 />
                 <SidebarAuthCheck
+                    platformContext={platformContext}
                     className={styles.sidebarContainer}
                     sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
                 />
