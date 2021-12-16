@@ -47,7 +47,7 @@ func buildsherrif(ctx context.Context, branch branchLocker, builds []buildkite.B
 			break
 		}
 
-		// Otherwise, keep looking for a completed build
+		// Otherwise, keep looking for a completed (failed or passed) build
 	}
 
 	// if failed, check if failures are consecutive
