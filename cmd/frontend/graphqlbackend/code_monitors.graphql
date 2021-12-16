@@ -335,11 +335,11 @@ Webhook is one of the supported actions of code monitors.
 """
 type MonitorWebhook implements Node {
     """
-    The unique id of an email action.
+    The unique id of a webhook action.
     """
     id: ID!
     """
-    Whether the email action is enabled or not.
+    Whether the webhook action is enabled or not.
     """
     enabled: Boolean!
     """
@@ -366,11 +366,11 @@ SlackWebhook is one of the supported actions of code monitors.
 """
 type MonitorSlackWebhook implements Node {
     """
-    The unique id of an email action.
+    The unique id of an Slack webhook action.
     """
     id: ID!
     """
-    Whether the email action is enabled or not.
+    Whether the Slack webhook action is enabled or not.
     """
     enabled: Boolean!
     """
@@ -561,7 +561,7 @@ The input required to create a webhook action.
 """
 input MonitorWebhookInput {
     """
-    Whether the email action is enabled or not.
+    Whether the webhook action is enabled or not.
     """
     enabled: Boolean!
     """
@@ -571,11 +571,11 @@ input MonitorWebhookInput {
 }
 
 """
-The input required to create a slack webhook action.
+The input required to create a Slack webhook action.
 """
 input MonitorSlackWebhookInput {
     """
-    Whether the slack webhook action is enabled or not.
+    Whether the Slack webhook action is enabled or not.
     """
     enabled: Boolean!
     """
