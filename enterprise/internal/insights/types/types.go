@@ -90,6 +90,13 @@ type InsightSeries struct {
 	GenerationMethod           GenerationMethod
 }
 
+type InsightSeriesRecordingTime struct {
+	ID               int
+	InsightSeriesID  int
+	RecordingTime    time.Time
+	RepositoryOffset int
+}
+
 type IntervalUnit string
 
 const (

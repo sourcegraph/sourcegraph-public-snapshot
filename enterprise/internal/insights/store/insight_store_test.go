@@ -31,16 +31,16 @@ func TestGet(t *testing.T) {
 
 	// assign some global grants just so the test can immediately fetch the created views
 	_, err = timescale.Exec(`INSERT INTO insight_view_grants (insight_view_id, global)
-									VALUES (1, true),
-									       (2, true)`)
+									VALUES (1, TRUE),
+									       (2, TRUE)`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	_, err = timescale.Exec(`INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
                             next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method)
-                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search'),
-									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search'),
+                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, NULL, 'search'),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, NULL, 'search'),
 									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search');`, now)
 	if err != nil {
 		t.Fatal(err)
@@ -261,8 +261,8 @@ func TestGetAllOnDashboard(t *testing.T) {
 
 	_, err = timescale.Exec(`INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
                             next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at, generation_method)
-                            VALUES  ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null, 'search'),
-									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null, 'search'),
+                            VALUES  ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, NULL, 'search'),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, NULL, 'search'),
 									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1, 'search');`, now)
 	if err != nil {
 		t.Fatal(err)
@@ -1663,4 +1663,66 @@ func TestUpdateFrontendSeries(t *testing.T) {
 			GenerationMethod:    "search",
 		}}).Equal(t, gotAfterUpdate)
 	})
+}
+
+func TestRecordingTimes(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
+	ctx := context.Background()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	created, err := store.CreateSeries(ctx, types.InsightSeries{
+		SeriesID:                   "asdf1234",
+		Query:                      "asdfasdf",
+		CreatedAt:                  now,
+		OldestHistoricalAt:         now,
+		LastRecordedAt:             now,
+		NextRecordingAfter:         now,
+		LastSnapshotAt:             now,
+		NextSnapshotAfter:          now,
+		BackfillQueuedAt:           now,
+		Enabled:                    true,
+		SampleIntervalUnit:         string(types.Month),
+		SampleIntervalValue:        1,
+		GeneratedFromCaptureGroups: false,
+		JustInTime:                 false,
+		GenerationMethod:           types.Search,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	start := time.Date(2021, 12, 01, 0, 0, 0, 0, time.UTC)
+	var times []time.Time
+	for i := 0; i < 3; i++ {
+		times = append(times, start.AddDate(0, -i, 0))
+	}
+
+	inputs := make([]RecordingTimeInput, 0, len(times))
+	for _, t := range times {
+		inputs = append(inputs, RecordingTimeInput{
+			InsightSeriesID: created.ID,
+			RecordingTime:   t,
+		})
+	}
+	if err = store.InsertRecordingTimes(ctx, inputs); err != nil {
+		t.Errorf("failed to insert recording times, err: %v", err)
+	}
+	got, err := store.GetRecordingTimes(ctx, GetRecordingTimesArgs{insightSeriesIds: []int{created.ID}})
+	if err != nil {
+		t.Errorf("failed GetRecordingTimes err: %v", err)
+	}
+	for i, recordingTime := range got {
+		if recordingTime.InsightSeriesID != created.ID {
+			t.Errorf("mismatched insightSeriesID for RecordingTime id: %v, got: %v", recordingTime.ID, recordingTime.InsightSeriesID)
+		}
+		if recordingTime.RecordingTime != times[i] {
+			t.Errorf("mismatched RecordingTime want: %v got: %v", times[i], recordingTime.RecordingTime)
+		}
+	}
 }

@@ -702,6 +702,55 @@ func (s *InsightStore) SetSeriesEnabled(ctx context.Context, seriesId string, en
 	return s.Exec(ctx, sqlf.Sprintf(setSeriesStatusSql, arg, seriesId))
 }
 
+type GetRecordingTimesArgs struct {
+	insightSeriesIds []int
+}
+
+func (s *InsightStore) GetRecordingTimes(ctx context.Context, args GetRecordingTimesArgs) ([]types.InsightSeriesRecordingTime, error) {
+	var preds []*sqlf.Query
+	preds = append(preds, sqlf.Sprintf("insight_series_id = ANY(%s)", pq.Array(args.insightSeriesIds)))
+	return scanRecordingTimes(s.Query(ctx, sqlf.Sprintf(getRecordingTimesSql, sqlf.Join(preds, "AND"))))
+}
+
+func scanRecordingTimes(rows *sql.Rows, queryErr error) (_ []types.InsightSeriesRecordingTime, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	results := make([]types.InsightSeriesRecordingTime, 0)
+	for rows.Next() {
+		var temp types.InsightSeriesRecordingTime
+		if err := rows.Scan(
+			&temp.ID,
+			&temp.InsightSeriesID,
+			&temp.RecordingTime,
+			&temp.RepositoryOffset,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, temp)
+	}
+	return results, nil
+}
+
+type RecordingTimeInput struct {
+	InsightSeriesID int
+	RecordingTime   time.Time
+}
+
+func (s *InsightStore) InsertRecordingTimes(ctx context.Context, input []RecordingTimeInput) error {
+	var values []*sqlf.Query
+	for _, recordingInput := range input {
+		values = append(values, sqlf.Sprintf("(%s, %s)", recordingInput.InsightSeriesID, recordingInput.RecordingTime))
+	}
+	err := s.Exec(ctx, sqlf.Sprintf(insertRecordingTimesSql, sqlf.Join(values, ",")))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 type MatchSeriesArgs struct {
 	Query                     string
 	StepIntervalUnit          string
@@ -882,4 +931,17 @@ const updateFrontendSeriesSql = `
 UPDATE insight_series
 SET query = %s, repositories = %s, sample_interval_unit = %s, sample_interval_value = %s
 WHERE series_id = %s
+`
+
+const getRecordingTimesSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetRecordingTimes
+SELECT id, insight_series_id, recording_time, repository_offset
+FROM insight_series_recording_times
+WHERE %s;
+`
+
+const insertRecordingTimesSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:InsertRecordingTimes
+INSERT INTO insight_series_recording_times (insight_series_id, recording_time)
+VALUES %s;
 `
