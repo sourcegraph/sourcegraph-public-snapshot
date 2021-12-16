@@ -1,14 +1,14 @@
 import classNames from 'classnames'
 import RegexIcon from 'mdi-react/RegexIcon'
-import React from 'react'
+import React, { forwardRef } from 'react'
 
 import { MonacoField, MonacoFieldProps } from '../../../../../../components/form/monaco-field/MonacoField'
 
 import styles from './CaptureGroupQueryInput.module.scss'
 
-export const CaptureGroupQueryInput: React.FunctionComponent<MonacoFieldProps> = props => (
+export const CaptureGroupQueryInput = forwardRef<HTMLInputElement, MonacoFieldProps>((props, reference) => (
     <div className={styles.root}>
-        <MonacoField {...props} className={classNames(styles.input, props.className)} />
+        <MonacoField {...props} ref={reference} className={classNames(styles.input, props.className)} />
 
         <button type="button" className={classNames('btn btn-icon', styles.regexButton)} disabled={true}>
             <RegexIcon
@@ -17,4 +17,4 @@ export const CaptureGroupQueryInput: React.FunctionComponent<MonacoFieldProps> =
             />
         </button>
     </div>
-)
+))
