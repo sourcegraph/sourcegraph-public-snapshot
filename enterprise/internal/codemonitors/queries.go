@@ -43,7 +43,7 @@ VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) CreateQueryTrigger(ctx context.Context, monitorID int64, query string) error {
+func (s *codeMonitorStore) CreateQueryTrigger(ctx context.Context, monitorID int64, query string) (*QueryTrigger, error) {
 	now := s.Now()
 	a := actor.FromContext(ctx)
 	q := sqlf.Sprintf(
@@ -58,7 +58,8 @@ func (s *codeMonitorStore) CreateQueryTrigger(ctx context.Context, monitorID int
 		now,
 		sqlf.Join(queryColumns, ", "),
 	)
-	return s.Exec(ctx, q)
+	row := s.QueryRow(ctx, q)
+	return scanTriggerQuery(row)
 }
 
 const updateTriggerQueryFmtStr = `
@@ -102,22 +103,6 @@ func (s *codeMonitorStore) GetQueryTriggerForMonitor(ctx context.Context, monito
 	return scanTriggerQuery(row)
 }
 
-const triggerQueryByIDFmtStr = `
-SELECT %s -- queryColumns
-FROM cm_queries
-WHERE id = %s;
-`
-
-func (s *codeMonitorStore) triggerQueryByIDInt64(ctx context.Context, queryID int64) (*QueryTrigger, error) {
-	q := sqlf.Sprintf(
-		triggerQueryByIDFmtStr,
-		sqlf.Join(queryColumns, ","),
-		queryID,
-	)
-	row := s.QueryRow(ctx, q)
-	return scanTriggerQuery(row)
-}
-
 const resetTriggerQueryTimestamps = `
 UPDATE cm_queries
 SET latest_result = null,
@@ -136,11 +121,11 @@ INNER JOIN cm_trigger_jobs j ON cm_queries.id = j.query
 WHERE j.id = %s
 `
 
-func (s *codeMonitorStore) GetQueryTriggerForJob(ctx context.Context, recordID int) (*QueryTrigger, error) {
+func (s *codeMonitorStore) GetQueryTriggerForJob(ctx context.Context, triggerJob int32) (*QueryTrigger, error) {
 	q := sqlf.Sprintf(
 		getQueryByRecordIDFmtStr,
 		sqlf.Join(queryColumns, ","),
-		recordID,
+		triggerJob,
 	)
 	row := s.QueryRow(ctx, q)
 	return scanTriggerQuery(row)

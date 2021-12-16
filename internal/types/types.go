@@ -660,6 +660,7 @@ type User struct {
 	BuiltinAuth           bool
 	Tags                  []string
 	InvalidatedSessionsAt time.Time
+	TosAccepted           bool
 }
 
 type Org struct {
@@ -676,6 +677,11 @@ type OrgMembership struct {
 	UserID    int32
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+type OrgStats struct {
+	OrgID             int32
+	CodeHostRepoCount int32
 }
 
 type PhabricatorRepo struct {

@@ -2,13 +2,15 @@ package codeintel
 
 import (
 	"database/sql"
+	"os"
 
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // InitCodeIntelDatabase initializes and returns a connection to the codeintel db.
@@ -25,7 +27,16 @@ var initCodeIntelDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{},
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-	db, err := dbconn.NewCodeIntelDB(dsn, "worker", false)
+	var (
+		db  *sql.DB
+		err error
+	)
+	if os.Getenv("NEW_MIGRATIONS") == "" {
+		// CURRENTLY DEPRECATING
+		db, err = connections.NewCodeIntelDB(dsn, "worker", false, &observation.TestContext)
+	} else {
+		db, err = connections.EnsureNewCodeIntelDB(dsn, "worker", &observation.TestContext)
+	}
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to codeintel database: %s", err)
 	}

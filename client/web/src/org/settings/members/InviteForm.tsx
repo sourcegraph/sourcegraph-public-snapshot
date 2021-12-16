@@ -55,30 +55,29 @@ export const InviteForm: React.FunctionComponent<Props> = ({
         setUsername(event.currentTarget.value)
     }, [])
     const [loading, setLoading] = useState<'inviteUserToOrganization' | 'addUserToOrganization' | Error>()
-    const [invited, setInvited] = useState<Invited[]>([])
+    const [invited, setInvited] = useState<Invited>()
+    const [isInviteShown, setShowInvitation] = useState<boolean>(false)
 
     const inviteUser = useCallback(() => {
         eventLogger.log('InviteOrgMemberClicked')
         ;(async () => {
             setLoading('inviteUserToOrganization')
             const { invitationURL, sentInvitationEmail } = await inviteUserToOrganization(username, orgID)
-            setInvited(previous => [...previous, { username, sentInvitationEmail, invitationURL }])
+            setInvited({ username, sentInvitationEmail, invitationURL })
+            setShowInvitation(true)
             onOrganizationUpdate()
             setUsername('')
             setLoading(undefined)
         })().catch(error => setLoading(asError(error)))
-    }, [onOrganizationUpdate, orgID, username])
+    }, [onOrganizationUpdate, orgID, setShowInvitation, username])
 
     const onInviteClick = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
         inviteUser()
     }, [inviteUser])
 
-    const dismissNotification = useCallback((dismissedIndex: number): void => {
-        setInvited(previous => {
-            previous.splice(dismissedIndex, 1)
-            return previous
-        })
-    }, [])
+    const dismissNotification = (): void => {
+        setShowInvitation(false)
+    }
 
     const viewerCanAddUserToOrganization = !!authenticatedUser && authenticatedUser.siteAdmin
 
@@ -173,18 +172,18 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                 <DismissibleAlert className="alert-info" partialStorageKey="org-invite-email-config">
                     <p className=" mb-0">
                         Set <code>email.smtp</code> in <Link to="/site-admin/configuration">site configuration</Link> to
-                        send email notfications about invitations.
+                        send email notifications about invitations.
                     </p>
                 </DismissibleAlert>
             )}
-            {invited.map((invite, index) => (
+            {invited && isInviteShown && (
                 <InvitedNotification
-                    key={index}
-                    {...invite}
+                    key={invited.username}
+                    {...invited}
                     className={classNames('alert alert-success', styles.alert)}
-                    onDismiss={() => dismissNotification(index)}
+                    onDismiss={dismissNotification}
                 />
-            ))}
+            )}
             {isErrorLike(loading) && <ErrorAlert className={styles.alert} error={loading} />}
         </div>
     )

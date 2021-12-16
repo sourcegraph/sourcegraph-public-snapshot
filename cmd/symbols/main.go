@@ -15,7 +15,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	sqlite "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
@@ -27,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -61,7 +61,7 @@ func main() {
 
 	// Ensure we register our database driver before calling
 	// anything that tries to open a SQLite database.
-	database.Init()
+	sqlite.Init()
 
 	if config.sanityCheck {
 		fmt.Print("Running sanity check...")
@@ -79,6 +79,10 @@ func main() {
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
+		HoneyDataset: &honey.Dataset{
+			Name:       "codeintel-symbols",
+			SampleRate: 5,
+		},
 	}
 
 	// Start debug server
@@ -92,11 +96,10 @@ func main() {
 		config.ctagsDebugLogs,
 	)
 
-	cache := &diskcache.Store{
-		Dir:               config.cacheDir,
-		Component:         "symbols",
-		BackgroundTimeout: 20 * time.Minute,
-	}
+	cache := diskcache.NewStore(config.cacheDir, "symbols",
+		diskcache.WithBackgroundTimeout(20*time.Minute),
+		diskcache.WithObservationContext(observationContext),
+	)
 
 	parserPool, err := parser.NewParserPool(ctagsParserFactory, config.numCtagsProcesses)
 	if err != nil {
@@ -113,7 +116,7 @@ func main() {
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.HTTPMiddleware(trace.HTTPTraceMiddleware(apiHandler, conf.DefaultClient())),
+		Handler:      ot.HTTPMiddleware(trace.HTTPMiddleware(apiHandler, conf.DefaultClient())),
 	})
 
 	evictionInterval := time.Second * 10

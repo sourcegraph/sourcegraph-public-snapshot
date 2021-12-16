@@ -71,7 +71,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	rcache.SetupForTest(t)
 
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "test-changeset-counts-over-time")
@@ -134,13 +134,13 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 	}
 
 	batchChange := &btypes.BatchChange{
-		Name:             "Test batch change",
-		Description:      "Testing changeset counts",
-		InitialApplierID: userID,
-		NamespaceUserID:  userID,
-		LastApplierID:    userID,
-		LastAppliedAt:    time.Now(),
-		BatchSpecID:      spec.ID,
+		Name:            "Test batch change",
+		Description:     "Testing changeset counts",
+		CreatorID:       userID,
+		NamespaceUserID: userID,
+		LastApplierID:   userID,
+		LastAppliedAt:   time.Now(),
+		BatchSpecID:     spec.ID,
 	}
 
 	err = cstore.CreateBatchChange(ctx, batchChange)
@@ -179,7 +179,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), New(cstore), nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), New(cstore), nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

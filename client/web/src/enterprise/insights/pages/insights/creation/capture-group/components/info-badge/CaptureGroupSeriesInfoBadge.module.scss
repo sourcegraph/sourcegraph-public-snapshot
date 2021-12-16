@@ -1,0 +1,13 @@
+.badge {
+    background-color: var(--subtle-bg);
+    display: flex;
+    padding: 0.75rem;
+}
+
+.icon {
+    width: 1rem;
+    height: 1rem;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+    align-self: flex-start;
+}

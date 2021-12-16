@@ -1,0 +1,40 @@
+.root {
+    position: relative;
+    overflow: auto;
+
+    &--with-top-fader {
+        .fader--top {
+            opacity: 1;
+        }
+    }
+
+    &--with-bottom-fader {
+        .fader--bottom {
+            opacity: 1;
+        }
+    }
+}
+
+.fader {
+    display: block;
+    content: '';
+    position: sticky;
+    z-index: 1;
+    height: 3rem;
+    width: 100%;
+    opacity: 0;
+
+    &--top {
+        top: 0;
+        background: linear-gradient(0deg, rgba(249, 250, 251, 0) 0%, var(--card-bg) 100%);
+    }
+
+    &--bottom {
+        top: calc(100% - 3rem);
+        background: linear-gradient(180deg, rgba(249, 250, 251, 0) 0%, var(--card-bg) 100%);
+    }
+}
+
+.scrollbox {
+    margin-top: -6rem;
+}

@@ -16,7 +16,6 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { BatchChangesProps } from './batches'
-import { CodeMonitoringProps } from './code-monitoring'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
@@ -31,7 +30,7 @@ import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHea
 import { FeatureFlagProps } from './featureFlags/featureFlags'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
-import { CodeInsightsProps } from './insights/types'
+import { CodeInsightsContextProps, CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
 import styles from './Layout.module.scss'
@@ -52,8 +51,6 @@ import { Settings } from './schema/settings.schema'
 import {
     parseSearchURLQuery,
     PatternTypeProps,
-    CaseSensitivityProps,
-    OnboardingTourProps,
     HomePanelsProps,
     SearchStreamingProps,
     ParsedSearchQueryProps,
@@ -63,6 +60,7 @@ import {
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
+import { setQueryStateFromURL } from './stores'
 import { useThemeProps } from './theme'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
@@ -81,17 +79,14 @@ export interface LayoutProps
         ActivationProps,
         ParsedSearchQueryProps,
         PatternTypeProps,
-        CaseSensitivityProps,
-        OnboardingTourProps,
         SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,
-        CodeMonitoringProps,
-        SearchContextProps,
         UserExternalServicesOrRepositoriesUpdateProps,
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
+        CodeInsightsContextProps,
         FeatureFlagProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -125,8 +120,6 @@ export interface LayoutProps
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 
     globbing: boolean
-    showMultilineSearchConsole: boolean
-    showSearchNotebook: boolean
     isSourcegraphDotCom: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never
@@ -146,16 +139,16 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         history,
         parsedSearchQuery: currentQuery,
         patternType: currentPatternType,
-        caseSensitive: currentCaseSensitive,
         selectedSearchContextSpec,
         location,
         setParsedSearchQuery,
         setPatternType,
-        setCaseSensitivity,
         setSelectedSearchContextSpec,
     } = props
 
-    const { query = '', patternType, caseSensitive } = useMemo(() => parseSearchURL(location.search), [location.search])
+    useEffect(() => setQueryStateFromURL(location.search), [location.search])
+
+    const { query = '', patternType } = useMemo(() => parseSearchURL(location.search), [location.search])
 
     const searchContextSpec = useMemo(() => getGlobalSearchContextFilter(query)?.spec, [query])
 
@@ -170,24 +163,17 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 setPatternType(patternType)
             }
 
-            if (caseSensitive !== currentCaseSensitive) {
-                setCaseSensitivity(caseSensitive)
-            }
-
             if (searchContextSpec && searchContextSpec !== selectedSearchContextSpec) {
                 setSelectedSearchContextSpec(searchContextSpec)
             }
         }
     }, [
         history,
-        caseSensitive,
-        currentCaseSensitive,
         currentPatternType,
         currentQuery,
         selectedSearchContextSpec,
         patternType,
         query,
-        setCaseSensitivity,
         setParsedSearchQuery,
         setPatternType,
         setSelectedSearchContextSpec,

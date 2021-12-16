@@ -12,6 +12,7 @@ supports merging multiple site config files.
 1. Configuration can be checked into version control (e.g., Git).
 2. Configuration is enforced across the entire instance, and edits cannot be made via the web UI (by default).
 3. Declarative site-config
+4. Sourcegraph watches the config file for changes and applies any new updates to the corresponding external services.
 
 ## Drawbacks
 

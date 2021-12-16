@@ -1,6 +1,3 @@
-.tooltip-content {
-    margin: 0.25rem;
-}
 .content {
     position: absolute;
     width: 100%;
@@ -64,10 +61,11 @@
     Tooltip element from visx package is adding some inline styles by himself.
     There is no way to override them from css unless !important statement.
 */
-
 .tooltip {
-    box-shadow: var(--border-color-2) 0 1px 2px !important;
+    box-shadow: var(--box-shadow) !important;
     border: 1px solid var(--border-color);
     color: var(--body-color) !important;
-    background: var(--body-bg) !important;
+    background: var(--color-bg-1) !important;
+
+    padding: 0.5rem !important;
 }

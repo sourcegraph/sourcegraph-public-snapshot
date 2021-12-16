@@ -10,13 +10,13 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
-	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	uploadstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -66,7 +66,7 @@ func TestHandle(t *testing.T) {
 		gitserverClient: gitserverClient,
 	}
 
-	requeued, err := handler.handle(context.Background(), upload, func(fields ...log.Field) {})
+	requeued, err := handler.handle(context.Background(), upload, observation.TestTraceLogger)
 	if err != nil {
 		t.Fatalf("unexpected error handling upload: %s", err)
 	} else if requeued {
@@ -200,7 +200,7 @@ func TestHandleError(t *testing.T) {
 		gitserverClient: gitserverClient,
 	}
 
-	requeued, err := handler.handle(context.Background(), upload, func(fields ...log.Field) {})
+	requeued, err := handler.handle(context.Background(), upload, observation.TestTraceLogger)
 	if err == nil {
 		t.Fatalf("unexpected nil error handling upload")
 	} else if !strings.Contains(err.Error(), "uh-oh!") {
@@ -255,7 +255,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 		gitserverClient: gitserverClient,
 	}
 
-	requeued, err := handler.handle(context.Background(), upload, func(fields ...log.Field) {})
+	requeued, err := handler.handle(context.Background(), upload, observation.TestTraceLogger)
 	if err != nil {
 		t.Fatalf("unexpected error handling upload: %s", err)
 	} else if !requeued {

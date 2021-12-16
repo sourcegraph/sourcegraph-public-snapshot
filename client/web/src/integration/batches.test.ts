@@ -300,7 +300,7 @@ function mockCommonGraphQLResponses(
                 createdAt: subDays(new Date(), 5).toISOString(),
                 updatedAt: subDays(new Date(), 5).toISOString(),
                 description: '### Very cool batch change',
-                initialApplier: {
+                creator: {
                     url: '/users/alice',
                     username: 'alice',
                 },
@@ -416,6 +416,30 @@ describe('Batches', () => {
         }),
     }
 
+    describe('Batch changes getting started', () => {
+        it('displays batch changes - getting started section', async () => {
+            // Mock Videos on getting started page
+            const videoDomains = ['https://storage.googleapis.com', 'https://www.youtube-nocookie.com']
+            for (const domain of videoDomains) {
+                testContext.server.host(domain, () => {
+                    testContext.server.get('/*path').intercept((request, response) => {
+                        response.sendStatus(200)
+                    })
+                })
+            }
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                ...batchChangeLicenseGraphQlResults,
+                ...batchChangesListResults,
+            })
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes')
+            await driver.page.waitForSelector('.test-batches-list-page')
+            await driver.page.click('[data-testid="test-getting-started-btn"]')
+            await driver.page.waitForSelector('[data-testid="test-getting-started"]')
+            await percySnapshotWithVariants(driver.page, 'Batch changes getting started page')
+        })
+    })
+
     describe('Batch changes list', () => {
         it('lists global batch changes', async () => {
             testContext.overrideGraphQL({
@@ -479,6 +503,13 @@ describe('Batches', () => {
         })
     })
 
+    describe('Create batch changes', () => {
+        it('is styled correctly', async () => {
+            await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes/create')
+            await percySnapshotWithVariants(driver.page, 'Create batch change')
+        })
+    })
+
     describe('Batch changes details', () => {
         for (const entityType of ['user', 'org'] as const) {
             it(`displays a single batch change for ${entityType}`, async () => {
@@ -496,6 +527,7 @@ describe('Batches', () => {
                 await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change')
                 // View overview page.
                 await driver.page.waitForSelector('.test-batch-change-details-page')
+                await percySnapshotWithVariants(driver.page, 'Batch change details page')
 
                 // Expand one changeset.
                 await driver.page.click('.test-batches-expand-changeset')
@@ -734,6 +766,7 @@ describe('Batches', () => {
                 await driver.page.goto(driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/apply/spec123')
                 // View overview page.
                 await driver.page.waitForSelector('.test-batch-change-apply-page')
+                await percySnapshotWithVariants(driver.page, 'Batch change preview page')
 
                 // Expand one changeset.
                 await driver.page.click('.test-batches-expand-preview')
@@ -858,6 +891,7 @@ describe('Batches', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/alice/settings/batch-changes')
             // View settings page.
             await driver.page.waitForSelector('.test-batches-settings-page')
+            await percySnapshotWithVariants(driver.page, 'User batch changes settings page')
             // Wait for list to load.
             await driver.page.waitForSelector('.test-code-host-connection-node')
             // Check no credential is configured.

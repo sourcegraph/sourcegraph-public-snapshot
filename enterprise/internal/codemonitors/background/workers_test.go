@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
@@ -33,10 +32,6 @@ func TestActionRunner(t *testing.T) {
 		},
 	}
 
-	var (
-		queryID      int64 = 1
-		triggerEvent       = 1
-	)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db := dbtest.NewDB(t)
@@ -45,12 +40,12 @@ func TestActionRunner(t *testing.T) {
 			testQuery := "test patternType:literal"
 
 			// Mocks.
-			got := email.TemplateDataNewSearchResults{}
-			email.MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *email.TemplateDataNewSearchResults) error {
+			got := TemplateDataNewSearchResults{}
+			MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *TemplateDataNewSearchResults) error {
 				got = *data
 				return nil
 			}
-			email.MockExternalURL = func() *url.URL {
+			MockExternalURL = func() *url.URL {
 				externalURL, _ := url.Parse("https://www.sourcegraph.com")
 				return externalURL
 			}
@@ -67,13 +62,15 @@ func TestActionRunner(t *testing.T) {
 			_, err := ts.InsertTestMonitor(userCtx, t)
 			require.NoError(t, err)
 
-			err = ts.EnqueueQueryTriggerJobs(ctx)
+			triggerJobs, err := ts.EnqueueQueryTriggerJobs(ctx)
+			require.NoError(t, err)
+			require.Len(t, triggerJobs, 1)
+			triggerEventID := triggerJobs[0].ID
+
+			err = ts.UpdateTriggerJobWithResults(ctx, triggerEventID, testQuery, tt.numResults)
 			require.NoError(t, err)
 
-			err = ts.UpdateTriggerJobWithResults(ctx, testQuery, tt.numResults, triggerEvent)
-			require.NoError(t, err)
-
-			err = ts.EnqueueActionJobsForQuery(ctx, queryID, triggerEvent)
+			_, err = ts.EnqueueActionJobsForMonitor(ctx, 1, triggerEventID)
 			require.NoError(t, err)
 
 			record, err := ts.GetActionJob(ctx, 1)
@@ -83,7 +80,7 @@ func TestActionRunner(t *testing.T) {
 			err = a.Handle(ctx, record)
 			require.NoError(t, err)
 
-			want := email.TemplateDataNewSearchResults{
+			want := TemplateDataNewSearchResults{
 				Priority:       "New",
 				SearchURL:      externalURL + "/search?q=test+patternType%3Aliteral&utm_source=code-monitoring-email",
 				Description:    "test description",

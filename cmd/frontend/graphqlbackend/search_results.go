@@ -35,7 +35,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -43,7 +42,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
-	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -565,6 +563,18 @@ func withMode(args search.TextParameters, st query.SearchType) search.TextParame
 	return args
 }
 
+func toFeatures(flags featureflag.FlagSet) search.Features {
+	if flags == nil {
+		flags = featureflag.FlagSet{}
+		metricFeatureFlagUnavailable.Inc()
+		log15.Warn("search feature flags are not available")
+	}
+
+	return search.Features{
+		ContentBasedLangFilters: flags.GetBoolOr("search-content-based-lang-detection", false),
+	}
+}
+
 // toSearchInputs converts a query parse tree to the _internal_ representation
 // needed to run a search. To understand why this conversion matters, think
 // about the fact that the query parse tree doesn't know anything about our
@@ -608,6 +618,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 	args := search.TextParameters{
 		PatternInfo: p,
 		Query:       q,
+		Features:    toFeatures(r.SearchInputs.Features),
 		Timeout:     search.TimeoutDuration(b),
 
 		// UseFullDeadline if timeout: set or we are streaming.
@@ -646,13 +657,81 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 		// whether global zoekt search will run (value true).
 		searcherOnly := args.Mode == search.SearcherOnly || (globalSearch && !envvar.SourcegraphDotComMode())
 
+		if globalSearch {
+			repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
+			defaultScope, err := zoektutil.DefaultGlobalQueryScope(repoOptions)
+			if err != nil {
+				return nil, nil, err
+			}
+			includePrivate := repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any
+
+			if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
+				typ := search.TextRequest
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
+				if err != nil {
+					return nil, nil, err
+				}
+
+				globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
+
+				zoektArgs := &search.ZoektParameters{
+					// TODO(rvantonder): the Query value is set when the global zoekt query is
+					// enriched with private repository data in the search job's Run method, and
+					// is therefore set to `nil` below.
+					// Ideally, The ZoektParameters type should not expose this field for Universe text
+					// searches at all, and will be removed once jobs are fully migrated.
+					Query:          nil,
+					Typ:            typ,
+					FileMatchLimit: args.PatternInfo.FileMatchLimit,
+					Select:         args.PatternInfo.Select,
+					Zoekt:          args.Zoekt,
+				}
+
+				jobs = append(jobs, &unindexed.RepoUniverseTextSearch{
+					GlobalZoektQuery: globalZoektQuery,
+					ZoektArgs:        zoektArgs,
+					FileMatchLimit:   args.PatternInfo.FileMatchLimit,
+
+					RepoOptions: repoOptions,
+					Db:          r.db,
+				})
+			}
+
+			if args.ResultTypes.Has(result.TypeSymbol) {
+				typ := search.SymbolRequest
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
+				if err != nil {
+					return nil, nil, err
+				}
+				globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
+
+				zoektArgs := &search.ZoektParameters{
+					Query:          nil,
+					Typ:            typ,
+					FileMatchLimit: args.PatternInfo.FileMatchLimit,
+					Select:         args.PatternInfo.Select,
+					Zoekt:          args.Zoekt,
+				}
+
+				jobs = append(jobs, &symbol.RepoUniverseSymbolSearch{
+					GlobalZoektQuery: globalZoektQuery,
+					ZoektArgs:        zoektArgs,
+					PatternInfo:      args.PatternInfo,
+					Limit:            r.MaxResults(),
+
+					RepoOptions: repoOptions,
+					Db:          r.db,
+				})
+			}
+		}
+
 		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
 			if !skipUnindexed {
 				typ := search.TextRequest
 				// TODO(rvantonder): we don't always have to run
 				// this converter. It depends on whether we run
 				// a zoekt search at all.
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -685,7 +764,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 		if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
 			if !skipUnindexed {
 				typ := search.SymbolRequest
-				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -725,7 +804,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 
 		if r.PatternType == query.SearchTypeStructural && p.Pattern != "" {
 			typ := search.TextRequest
-			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, &args.Features, typ)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -751,6 +830,13 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 				UseIndex:          args.PatternInfo.Index,
 				ContainsRefGlobs:  query.ContainsRefGlobs(q),
 				OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
+			})
+		}
+
+		if args.ResultTypes.Has(result.TypeRepo) {
+			jobs = append(jobs, &run.RepoSearch{
+				Args:  &args,
+				Limit: r.MaxResults(),
 			})
 		}
 	}
@@ -1598,59 +1684,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	args.RepoOptions = r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
 
-	// globalSearch controls whether we run a global zoekt search.
-	globalSearch := args.Mode == search.ZoektGlobalSearch
-
-	// performance optimization: call zoekt early, resolve repos concurrently, filter
-	// search results with resolved repos.
-	if globalSearch {
-		argsIndexed := *args
-
-		userID := int32(0)
-
-		if envvar.SourcegraphDotComMode() {
-			if a := actor.FromContext(ctx); a != nil {
-				userID = a.UID
-			}
-		}
-
-		argsIndexed.UserPrivateRepos = repos.PrivateReposForUser(ctx, r.db, userID, args.RepoOptions)
-
-		wg := waitGroup(true)
-		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-				ctx, stream, cleanup := streaming.WithLimit(ctx, agg, int(argsIndexed.PatternInfo.FileMatchLimit))
-				defer cleanup()
-
-				// This code path implies global-search (3rd arg is true).
-				zoektArgs, err := zoekt.NewIndexedSearchRequest(ctx, &argsIndexed, true, search.TextRequest, zoekt.MissingRepoRevStatus(stream))
-				if err != nil {
-					agg.Error(err)
-					return
-				}
-
-				searcherArgs := &search.SearcherParameters{
-					SearcherURLs:    argsIndexed.SearcherURLs,
-					PatternInfo:     argsIndexed.PatternInfo,
-					UseFullDeadline: argsIndexed.UseFullDeadline,
-				}
-				// This code path implies not-only-searcher is run (3rd arg is true)
-				_ = agg.DoFilePathSearch(ctx, zoektArgs, searcherArgs, true, stream)
-			})
-		}
-
-		if args.ResultTypes.Has(result.TypeSymbol) {
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-				// This code path implies not-only-searcher is run (3rd arg is true) and global-search is run (4rd arg is true)
-				_ = agg.DoSymbolSearch(ctx, &argsIndexed, true, true, limit)
-			})
-		}
-	}
-
 	{
 		wg := waitGroup(true)
 		wg.Add(1)
@@ -1675,13 +1708,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		})
 	}
 
-	if args.ResultTypes.Has(result.TypeRepo) {
-		jobs = append(jobs, &run.RepoSearch{
-			Args:  args,
-			Limit: limit,
-		})
-	}
-
 	wgForJob := func(job run.Job) *sync.WaitGroup {
 		switch job.Name() {
 		case "Diff":
@@ -1690,9 +1716,11 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			return waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
 		case "RepoSubsetSymbol":
 			return waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
+		case "RepoUniverseSymbol":
+			return waitGroup(true)
 		case "Repo":
 			return waitGroup(true)
-		case "RepoSubsetText":
+		case "RepoSubsetText", "RepoUniverseText":
 			return waitGroup(true)
 		case "Structural":
 			return waitGroup(true)
@@ -1876,3 +1904,8 @@ func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
 		})
 	return m
 }
+
+var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_search_featureflag_unavailable",
+	Help: "temporary counter to check if we have feature flag available in practice.",
+})

@@ -15,13 +15,17 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -336,4 +340,41 @@ func (t *RepoSubsetTextSearch) Run(ctx context.Context, stream streaming.Sender,
 
 func (*RepoSubsetTextSearch) Name() string {
 	return "RepoSubsetText"
+}
+
+type RepoUniverseTextSearch struct {
+	GlobalZoektQuery *zoektutil.GlobalZoektQuery
+	ZoektArgs        *search.ZoektParameters
+	FileMatchLimit   int32
+
+	RepoOptions search.RepoOptions
+	Db          database.DB
+	UserID      int32
+}
+
+func (t *RepoUniverseTextSearch) Run(ctx context.Context, stream streaming.Sender, _ searchrepos.Pager) error {
+	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(t.FileMatchLimit))
+	defer cleanup()
+
+	userID := int32(0)
+
+	if envvar.SourcegraphDotComMode() {
+		if a := actor.FromContext(ctx); a != nil {
+			userID = a.UID
+		}
+	}
+
+	userPrivateRepos := repos.PrivateReposForUser(ctx, t.Db, userID, t.RepoOptions)
+	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
+	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error {
+		return zoektutil.DoZoektSearchGlobal(ctx, t.ZoektArgs, stream)
+	})
+	return g.Wait()
+}
+
+func (*RepoUniverseTextSearch) Name() string {
+	return "RepoUniverseText"
 }

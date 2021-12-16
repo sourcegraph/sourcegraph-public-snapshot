@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import { camelCase } from 'lodash'
-import DatabaseIcon from 'mdi-react/DatabaseIcon'
-import React, { useCallback, useContext, useRef, useState } from 'react'
+import React, { Ref, useCallback, useContext, useRef, useState } from 'react'
+import { useMergeRefs } from 'use-callback-ref'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -11,8 +11,8 @@ import * as View from '../../../../../../views'
 import { LineChartSettingsContext } from '../../../../../../views'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
-import { InsightTypePrefix } from '../../../../core/types'
-import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
+import { BackendInsight, InsightTypePrefix } from '../../../../core/types'
+import { SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
@@ -29,14 +29,17 @@ import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/u
 interface BackendInsightProps
     extends TelemetryProps,
         React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
-    insight: SearchBackendBasedInsight
+    insight: BackendInsight
+
+    innerRef: Ref<HTMLElement>
+    resizing?: boolean
 }
 
 /**
  * Renders BE search based insight. Fetches insight data by gql api handler.
  */
-export const BackendInsight: React.FunctionComponent<BackendInsightProps> = props => {
-    const { telemetryService, insight, ref, ...otherProps } = props
+export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = props => {
+    const { telemetryService, insight, innerRef, resizing, ...otherProps } = props
 
     const { dashboard } = useContext(DashboardInsightsContext)
     const { getBackendInsightData, createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
@@ -44,6 +47,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const insightCardReference = useRef<HTMLDivElement>(null)
+    const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
 
     // Use deep copy check in case if a setting subject has re-created copy of
     // the insight config with same structure and values. To avoid insight data
@@ -79,7 +83,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
 
     const handleFilterSave = async (filters: SearchBasedBackendFilters): Promise<SubmissionErrors> => {
         try {
-            const insightWithNewFilters: SearchBackendBasedInsight = { ...insight, filters }
+            const insightWithNewFilters = { ...insight, filters }
 
             await updateInsight({ oldInsight: insight, newInsight: insightWithNewFilters }).toPromise()
 
@@ -104,7 +108,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         }
 
         try {
-            const newInsight: SearchBackendBasedInsight = {
+            const newInsight = {
                 ...insight,
                 id: `${InsightTypePrefix.search}.${camelCase(insightName)}`,
                 title: insightName,
@@ -131,7 +135,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
             {...otherProps}
             data-testid={`insight-card.${insight.id}`}
             title={insight.title}
-            innerRef={insightCardReference}
+            innerRef={mergedInsightCardReference}
             actions={
                 <>
                     <DrillDownFiltersAction
@@ -158,14 +162,12 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                 [styles.cardWithFilters]: isFiltersOpen,
             })}
         >
-            {loading || isDeleting ? (
-                <View.LoadingContent
-                    text={isDeleting ? 'Deleting code insight' : 'Loading code insight'}
-                    description={insight.id}
-                    icon={DatabaseIcon}
-                />
+            {resizing ? (
+                <View.Banner>Resizing</View.Banner>
+            ) : loading || isDeleting ? (
+                <View.LoadingContent text={isDeleting ? 'Deleting code insight' : 'Loading code insight'} />
             ) : isErrorLike(error) ? (
-                <View.ErrorContent error={error} title={insight.id} icon={DatabaseIcon}>
+                <View.ErrorContent error={error} title={insight.id}>
                     {error instanceof InsightInProcessError ? (
                         <div className="alert alert-info m-0">{error.message}</div>
                     ) : null}
@@ -176,7 +178,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                         <View.Content
                             telemetryService={telemetryService}
                             content={data.view.content}
-                            viewID={insight.id}
+                            viewTrackingType={insight.viewType}
                             containerClassName="be-insight-card"
                             alert={
                                 <BackendAlertOverlay

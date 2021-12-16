@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -23,7 +23,7 @@ import (
 // repo-updater and in the future will be the main entry point for the batch changes worker.
 func InitBackgroundJobs(
 	ctx context.Context,
-	db dbutil.DB,
+	db database.DB,
 	key encryption.Key,
 	cf *httpcli.Factory,
 ) interface {

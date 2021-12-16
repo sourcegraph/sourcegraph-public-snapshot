@@ -33,7 +33,7 @@ const footerLinkSections: { name: string; links: { name: string; to: string; eve
         name: 'Company',
         links: [
             { name: 'About', to: 'https://about.sourcegraph.com/' },
-            { name: 'Careers', to: 'https://boards.greenhouse.io/sourcegraph91' },
+            { name: 'Careers', to: 'https://about.sourcegraph.com/jobs/' },
             { name: 'Contact', to: 'https://about.sourcegraph.com/contact' },
         ],
     },

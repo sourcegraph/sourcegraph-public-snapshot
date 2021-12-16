@@ -8,8 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/lib/postgresdsn"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/test"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 )
 
 // TimescaleDB returns a handle to the Code Insights TimescaleDB instance.
@@ -27,7 +28,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 
 	timescaleDSN := postgresdsn.New("codeinsights", username, os.Getenv)
-	initConn, closeInitConn, err := dbconn.ConnectRawForTestDatabase(timescaleDSN)
+	initConn, err := connections.NewTestDB(timescaleDSN)
 	if err != nil {
 		t.Log("")
 		t.Log("README: To run these tests you need to have the codeinsights TimescaleDB running:")
@@ -62,17 +63,17 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 	u.Path = dbname
 	timescaleDSN = u.String()
-	db, closeDBConn, err := dbconn.ConnectRawForTestDatabase(timescaleDSN, dbconn.CodeInsights)
+	db, err = connections.NewTestDB(timescaleDSN, schemas.CodeInsights)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Perform DB migrations.
 	cleanup = func() {
-		if err := closeDBConn(nil); err != nil {
+		if err := db.Close(); err != nil {
 			t.Log(err)
 		}
-		defer closeInitConn(nil)
+		defer initConn.Close()
 		// It would be nice to cleanup by dropping the test DB we just created. But we can't:
 		//
 		// 	dropping test database ERROR: database "insights_test_testresolver_insights" is being accessed by other users (SQLSTATE 55006)

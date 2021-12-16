@@ -1,7 +1,7 @@
 import { Combobox, ComboboxInput, ComboboxPopover } from '@reach/combobox'
 import React, { ChangeEvent, forwardRef, Ref, useImperativeHandle, useRef } from 'react'
 
-import { getSanitizedRepositories } from '../../../pages/insights/creation/search-insight/utils/insight-sanitizer'
+import { getSanitizedRepositories } from '../../creation-ui-kit/sanitizers/repositories'
 
 import { FlexTextArea } from './components/flex-textarea/FlexTextArea'
 import { SuggestionsPanel } from './components/suggestion-panel/SuggestionPanel'

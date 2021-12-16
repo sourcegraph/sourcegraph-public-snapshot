@@ -25,6 +25,6 @@ go mod edit "-replace=${upstream}=${module}"
 go mod download ${upstream}
 go mod tidy
 
-# Ensure we update go.sum by actually compiling some code which depends on
-# zoekt
+echo "Ensure we update go.sum by actually compiling some code which depends on zoekt."
+echo "We do this by running 'go test' without actually running any tests."
 go test -run '^$' github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend

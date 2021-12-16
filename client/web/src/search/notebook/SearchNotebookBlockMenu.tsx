@@ -7,13 +7,13 @@ interface BaseBlockMenuAction {
     type: 'button' | 'link'
     icon: JSX.Element
     label: string
+    isDisabled?: boolean
 }
 
 interface BlockMenuButtonAction extends BaseBlockMenuAction {
     type: 'button'
     onClick: (id: string) => void
-    keyboardShortcutLabel: string
-    isDisabled?: boolean
+    keyboardShortcutLabel?: string
 }
 
 interface BlockMenuLinkAction extends BaseBlockMenuAction {
@@ -33,12 +33,17 @@ const BlockMenuActionComponent: React.FunctionComponent<
     const Element = props.type === 'button' ? 'button' : 'a'
     const elementSpecificProps =
         props.type === 'button'
-            ? { onClick: () => props.id && props.onClick(props.id), disabled: props.isDisabled ?? false }
+            ? { onClick: () => props.id && props.onClick(props.id) }
             : { href: props.url, target: '_blank', rel: 'noopener noreferrer' }
     return (
         <Element
             key={props.label}
-            className={classNames('btn btn-sm d-flex align-items-center', props.className, styles.actionButton)}
+            className={classNames(
+                'btn btn-sm d-flex align-items-center',
+                props.className,
+                styles.actionButton,
+                props.isDisabled && 'disabled'
+            )}
             type="button"
             role="menuitem"
             data-testid={props.label}
@@ -47,7 +52,7 @@ const BlockMenuActionComponent: React.FunctionComponent<
             <div className={props.iconClassName}>{props.icon}</div>
             <div className={classNames('ml-1', styles.hideOnSmallScreen)}>{props.label}</div>
             <div className={classNames('flex-grow-1', styles.hideOnSmallScreen)} />
-            {props.type === 'button' && (
+            {props.type === 'button' && props.keyboardShortcutLabel && (
                 <small className={classNames(props.keyboardShorcutLabelClassName, styles.hideOnSmallScreen)}>
                     {props.keyboardShortcutLabel}
                 </small>

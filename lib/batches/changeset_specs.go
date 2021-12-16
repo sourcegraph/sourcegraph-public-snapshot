@@ -53,6 +53,7 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 		Outputs: input.Result.Outputs,
 		Repository: template.Repository{
 			Name:        input.Repository.Name,
+			Branch:      strings.TrimPrefix(input.Repository.BaseRef, "refs/heads/"),
 			FileMatches: input.Repository.FileMatches,
 		},
 	}

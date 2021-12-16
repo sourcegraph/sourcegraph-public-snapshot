@@ -60,8 +60,6 @@ Note: If you are unable to use the above commands (e.g. you can't install Caddy)
 ### API proxy
 
 In both environments, server proxies API requests to `SOURCEGRAPH_API_URL` provided as the `.env` variable.
-To avoid the `CSRF token is invalid` error CSRF token is retrieved from the `SOURCEGRAPH_API_URL` before the server starts.
-Then this value is used for every subsequent request to the API.
 
 ### esbuild (experimental)
 

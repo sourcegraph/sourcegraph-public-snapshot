@@ -29,9 +29,6 @@ export interface PieChartProps<Datum extends object> extends PieChartContent<Dat
     padding?: typeof DEFAULT_PADDING
 }
 
-/**
- * Display Pie chart with annotation.
- */
 export function PieChart<Datum extends object>(props: PieChartProps<Datum>): ReactElement | null {
     const { width, height, padding = DEFAULT_PADDING, pies, onDatumLinkClick = noop } = props
 

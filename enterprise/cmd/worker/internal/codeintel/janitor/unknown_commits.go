@@ -20,6 +20,7 @@ type unknownCommitJanitor struct {
 	metrics                   *metrics
 	minimumTimeSinceLastCheck time.Duration
 	batchSize                 int
+	maximumCommitLag          time.Duration
 	clock                     glock.Clock
 }
 
@@ -38,6 +39,7 @@ func NewUnknownCommitJanitor(
 	dbStore DBStore,
 	minimumTimeSinceLastCheck time.Duration,
 	batchSize int,
+	maximumCommitLag time.Duration,
 	interval time.Duration,
 	metrics *metrics,
 ) goroutine.BackgroundRoutine {
@@ -45,6 +47,7 @@ func NewUnknownCommitJanitor(
 		dbStore,
 		minimumTimeSinceLastCheck,
 		batchSize,
+		maximumCommitLag,
 		metrics,
 		glock.NewRealClock(),
 	)
@@ -56,6 +59,7 @@ func newJanitor(
 	dbStore DBStore,
 	minimumTimeSinceLastCheck time.Duration,
 	batchSize int,
+	maximumCommitLag time.Duration,
 	metrics *metrics,
 	clock glock.Clock,
 ) *unknownCommitJanitor {
@@ -64,6 +68,7 @@ func newJanitor(
 		metrics:                   metrics,
 		minimumTimeSinceLastCheck: minimumTimeSinceLastCheck,
 		batchSize:                 batchSize,
+		maximumCommitLag:          maximumCommitLag,
 		clock:                     clock,
 	}
 }
@@ -125,18 +130,18 @@ func (j *unknownCommitJanitor) handleCommit(ctx context.Context, tx DBStore, rep
 	}
 
 	if shouldDelete {
-		uploadsUpdated, indexesUpdated, err := tx.DeleteSourcedCommits(ctx, repositoryID, commit, j.clock.Now())
+		_, uploadsDeleted, indexesDeleted, err := tx.DeleteSourcedCommits(ctx, repositoryID, commit, j.maximumCommitLag, j.clock.Now())
 		if err != nil {
 			return errors.Wrap(err, "dbstore.DeleteSourcedCommits")
 		}
 
-		if uploadsUpdated > 0 {
-			log15.Debug("Deleted upload records with unresolvable commits", "count", uploadsUpdated)
-			j.metrics.numUploadRecordsRemoved.Add(float64(uploadsUpdated))
+		if uploadsDeleted > 0 {
+			log15.Debug("Deleted upload records with unresolvable commits", "count", uploadsDeleted)
+			j.metrics.numUploadRecordsRemoved.Add(float64(uploadsDeleted))
 		}
-		if indexesUpdated > 0 {
-			log15.Debug("Deleted index records with unresolvable commits", "count", indexesUpdated)
-			j.metrics.numIndexRecordsRemoved.Add(float64(indexesUpdated))
+		if indexesDeleted > 0 {
+			log15.Debug("Deleted index records with unresolvable commits", "count", indexesDeleted)
+			j.metrics.numIndexRecordsRemoved.Add(float64(indexesDeleted))
 		}
 
 		return nil

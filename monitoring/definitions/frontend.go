@@ -149,6 +149,7 @@ func Frontend() *monitoring.Container {
 								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 								- **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the 'indexed-search.Deployment.yaml' if regularly hitting max CPU utilization.
 								- **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing 'cpus:' of the zoekt-webserver container in 'docker-compose.yml' if regularly hitting max CPU utilization.
+								- This alert may indicate that your instance is struggling to process symbols queries on a monorepo, [learn more here](../how-to/monorepo-issues.md).
 							`,
 						},
 						{
@@ -164,6 +165,7 @@ func Frontend() *monitoring.Container {
 								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 								- **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the 'indexed-search.Deployment.yaml' if regularly hitting max CPU utilization.
 								- **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing 'cpus:' of the zoekt-webserver container in 'docker-compose.yml' if regularly hitting max CPU utilization.
+								- This alert may indicate that your instance is struggling to process symbols queries on a monorepo, [learn more here](../how-to/monorepo-issues.md).
 							`,
 						},
 					},
@@ -432,7 +434,7 @@ func Frontend() *monitoring.Container {
 			},
 
 			{
-				Title:  "Cloud KMS",
+				Title:  "Cloud KMS and cache",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -446,6 +448,28 @@ func Frontend() *monitoring.Container {
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
 								- Revert recent commits that cause extensive listing from "external_services" and/or "user_external_accounts" tables.
+							`,
+						},
+						{
+							Name:        "encryption_cache_hit_ratio",
+							Description: "average encryption cache hit ratio per workload",
+							Query:       `min by (kubernetes_name) (src_encryption_cache_hit_total/(src_encryption_cache_hit_total+src_encryption_cache_miss_total))`,
+							NoAlert:     true,
+							Panel:       monitoring.Panel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `
+								- Encryption cache hit ratio (hits/(hits+misses)) - minimum across all instances of a workload.
+							`,
+						},
+						{
+							Name:        "encryption_cache_evictions",
+							Description: "rate of encryption cache evictions - sum across all instances of a given workload",
+							Query:       `sum by (kubernetes_name) (irate(src_encryption_cache_eviction_total[5m]))`,
+							NoAlert:     true,
+							Panel:       monitoring.Panel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `
+								- Rate of encryption cache evictions (caused by cache exceeding its maximum size) - sum across all instances of a workload
 							`,
 						},
 					},

@@ -2,8 +2,15 @@ package resolvers
 
 import (
 	"context"
+	"regexp"
 	"sync"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/service"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 
 	"github.com/inconshreveable/log15"
 
@@ -86,14 +93,86 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 		filters = &i.view.Filters
 	}
 
-	for j := range i.view.Series {
-		resolvers = append(resolvers, &insightSeriesResolver{
-			insightsStore:   i.timeSeriesStore,
-			workerBaseStore: i.workerBaseStore,
-			series:          i.view.Series[j],
-			metadataStore:   i.insightStore,
-			filters:         *filters,
-		})
+	for j, current := range i.view.Series {
+		if current.GeneratedFromCaptureGroups {
+			// this works fine for now because these are all just-in-time series. As soon as we start including global / recorded
+			// series, we need to have some logic to either fetch from the database or calculate the time series.
+			expanded, err := expandCaptureGroupSeries(ctx, current, i.baseInsightResolver, *filters)
+			if err != nil {
+				return nil, errors.Wrapf(err, "expandCaptureGroupSeries for seriesID: %s", current.SeriesID)
+			}
+			resolvers = append(resolvers, expanded...)
+		} else {
+			resolvers = append(resolvers, &insightSeriesResolver{
+				insightsStore:   i.timeSeriesStore,
+				workerBaseStore: i.workerBaseStore,
+				series:          i.view.Series[j],
+				metadataStore:   i.insightStore,
+				filters:         *filters,
+			})
+		}
+	}
+	return resolvers, nil
+}
+
+func filterRepositories(filters types.InsightViewFilters, repositories []string) ([]string, error) {
+	matches := make(map[string]interface{})
+	// exclude
+	if filters.ExcludeRepoRegex != nil && *filters.ExcludeRepoRegex != "" {
+		excludeRegexp, err := regexp.Compile(*filters.ExcludeRepoRegex)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to compile ExcludeRepoRegex")
+		}
+		for _, repository := range repositories {
+			if !excludeRegexp.MatchString(repository) {
+				matches[repository] = struct{}{}
+			}
+		}
+	} else {
+		for _, repository := range repositories {
+			matches[repository] = struct{}{}
+		}
+	}
+	// include
+	if filters.IncludeRepoRegex != nil && *filters.IncludeRepoRegex != "" {
+		includeRegexp, err := regexp.Compile(*filters.IncludeRepoRegex)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to compile IncludeRepoRegex")
+		}
+		for match := range matches {
+			if !includeRegexp.MatchString(match) {
+				delete(matches, match)
+			}
+		}
+	}
+
+	results := make([]string, 0, len(matches))
+	for match := range matches {
+		results = append(results, match)
+	}
+	return results, nil
+}
+
+func expandCaptureGroupSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
+	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
+	interval := timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
+		Value: definition.SampleIntervalValue,
+	}
+
+	matchedRepos, err := filterRepositories(filters, definition.Repositories)
+	if err != nil {
+		return nil, err
+	}
+	log15.Debug("capture group series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
+	generatedSeries, err := executor.Execute(ctx, definition.Query, matchedRepos, interval)
+	if err != nil {
+		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
+	}
+
+	var resolvers []graphqlbackend.InsightSeriesResolver
+	for i := range generatedSeries {
+		resolvers = append(resolvers, &dynamicInsightSeriesResolver{generated: &generatedSeries[i]})
 	}
 
 	return resolvers, nil
@@ -121,6 +200,15 @@ type searchInsightDataSeriesDefinitionResolver struct {
 	series *types.InsightViewSeries
 }
 
+func (s *searchInsightDataSeriesDefinitionResolver) IsCalculated() (bool, error) {
+	if s.series.GeneratedFromCaptureGroups {
+		// capture groups series are always pre-calculated!
+		return true, nil
+	} else {
+		return !s.series.JustInTime, nil
+	}
+}
+
 func (s *searchInsightDataSeriesDefinitionResolver) SeriesId(ctx context.Context) (string, error) {
 	return s.series.SeriesID, nil
 }
@@ -140,6 +228,9 @@ func (s *searchInsightDataSeriesDefinitionResolver) TimeScope(ctx context.Contex
 	}
 
 	return &insightTimeScopeUnionResolver{resolver: intervalResolver}, nil
+}
+func (s *searchInsightDataSeriesDefinitionResolver) GeneratedFromCaptureGroups() (bool, error) {
+	return s.series.GeneratedFromCaptureGroups, nil
 }
 
 type insightIntervalTimeScopeResolver struct {
@@ -199,6 +290,7 @@ func (l *lineChartDataSeriesPresentationResolver) Color(ctx context.Context) (st
 
 func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
 	uid := actor.FromContext(ctx).UID
+	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
 	tx, err := r.insightStore.Transact(ctx)
 	if err != nil {
@@ -244,7 +336,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 		}
 	}
 
-	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: r.permissionsValidator, viewId: view.UniqueID}, nil
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: view.UniqueID}, nil
 }
 
 func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
@@ -253,13 +345,14 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
+	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
 	var insightViewId string
 	err = relay.UnmarshalSpec(args.Id, &insightViewId)
 	if err != nil {
 		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
 	}
-	err = r.permissionsValidator.validateUserAccessForView(ctx, insightViewId)
+	err = permissionsValidator.validateUserAccessForView(ctx, insightViewId)
 	if err != nil {
 		return nil, err
 	}
@@ -333,7 +426,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 			}
 		}
 	}
-	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: r.permissionsValidator, viewId: insightViewId}, nil
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: insightViewId}, nil
 }
 
 func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.CreatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
@@ -342,6 +435,7 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
+	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
 	uid := actor.FromContext(ctx).UID
 	view, err := tx.CreateView(ctx, types.InsightView{
@@ -353,12 +447,21 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 	if err != nil {
 		return nil, errors.Wrap(err, "CreateView")
 	}
+	repos := args.Input.RepositoryScope.Repositories
 	seriesToAdd, err := tx.CreateSeries(ctx, types.InsightSeries{
 		SeriesID:           ksuid.New().String(),
 		Query:              args.Input.Query,
 		CreatedAt:          time.Now(),
-		Repositories:       args.Input.RepositoryScope.Repositories,
+		Repositories:       repos,
 		SampleIntervalUnit: string(types.Month),
+		JustInTime:         service.IsJustInTime(repos),
+		// one might ask themselves why is the generation method a language stats method if this mutation is search insight? The answer is that search is ultimately the
+		// driver behind language stats, but global language stats behave differently than standard search. Long term the vision is that
+		// search will power this, and we can iterate over repos just like any other search insight. But for now, this is just something weird that we will have to live with.
+		// As a note, this does mean that this mutation doesn't even technically do what it is named - it does not create a 'search' insight, and with that in mind
+		// if we decide to support pie charts for other insights than language stats (which we likely will, say on arbitrary aggregations or capture groups) we will need to
+		// revisit this.
+		GenerationMethod: types.LanguageStats,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "CreateSeries")
@@ -389,7 +492,7 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 		}
 	}
 
-	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: r.permissionsValidator, viewId: view.UniqueID}, nil
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: view.UniqueID}, nil
 }
 
 func (r *Resolver) UpdatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
@@ -398,13 +501,14 @@ func (r *Resolver) UpdatePieChartSearchInsight(ctx context.Context, args *graphq
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
+	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
 	var insightViewId string
 	err = relay.UnmarshalSpec(args.Id, &insightViewId)
 	if err != nil {
 		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
 	}
-	err = r.permissionsValidator.validateUserAccessForView(ctx, insightViewId)
+	err = permissionsValidator.validateUserAccessForView(ctx, insightViewId)
 	if err != nil {
 		return nil, err
 	}
@@ -438,7 +542,7 @@ func (r *Resolver) UpdatePieChartSearchInsight(ctx context.Context, args *graphq
 		return nil, errors.Wrap(err, "UpdateSeries")
 	}
 
-	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: r.permissionsValidator, viewId: view.UniqueID}, nil
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: view.UniqueID}, nil
 }
 
 type pieChartInsightViewPresentation struct {
@@ -655,26 +759,41 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 	var seriesToAdd, matchingSeries types.InsightSeries
 	var foundSeries bool
 	var err error
+	var dynamic bool
+	if series.GeneratedFromCaptureGroups != nil {
+		dynamic = *series.GeneratedFromCaptureGroups
+	}
 
-	// Don't try to match on frontend series
-	if len(series.RepositoryScope.Repositories) == 0 {
+	err = validateLineChartSearchInsightInput(series)
+	if err != nil {
+		return err
+	}
+
+	// Don't try to match on just-in-time series, since they are not recorded
+	if !service.IsJustInTime(series.RepositoryScope.Repositories) {
 		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
-			Query:             series.Query,
-			StepIntervalUnit:  series.TimeScope.StepInterval.Unit,
-			StepIntervalValue: int(series.TimeScope.StepInterval.Value)})
+			Query:                     series.Query,
+			StepIntervalUnit:          series.TimeScope.StepInterval.Unit,
+			StepIntervalValue:         int(series.TimeScope.StepInterval.Value),
+			GenerateFromCaptureGroups: dynamic,
+		})
 		if err != nil {
 			return errors.Wrap(err, "FindMatchingSeries")
 		}
 	}
 
 	if !foundSeries {
+		repos := series.RepositoryScope.Repositories
 		seriesToAdd, err = tx.CreateSeries(ctx, types.InsightSeries{
-			SeriesID:            ksuid.New().String(),
-			Query:               series.Query,
-			CreatedAt:           time.Now(),
-			Repositories:        series.RepositoryScope.Repositories,
-			SampleIntervalUnit:  series.TimeScope.StepInterval.Unit,
-			SampleIntervalValue: int(series.TimeScope.StepInterval.Value),
+			SeriesID:                   ksuid.New().String(),
+			Query:                      series.Query,
+			CreatedAt:                  time.Now(),
+			Repositories:               repos,
+			SampleIntervalUnit:         series.TimeScope.StepInterval.Unit,
+			SampleIntervalValue:        int(series.TimeScope.StepInterval.Value),
+			GeneratedFromCaptureGroups: dynamic,
+			JustInTime:                 service.IsJustInTime(repos),
+			GenerationMethod:           searchGenerationMethod(series),
 		})
 		if err != nil {
 			return errors.Wrap(err, "CreateSeries")
@@ -694,6 +813,24 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 		return errors.Wrap(err, "AttachSeriesToView")
 	}
 	return nil
+}
+
+func validateLineChartSearchInsightInput(series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
+	var generated bool
+	if series.GeneratedFromCaptureGroups != nil {
+		generated = *series.GeneratedFromCaptureGroups
+	}
+	if len(series.RepositoryScope.Repositories) == 0 && generated {
+		return errors.New("generated capture group search insights are not supported globally")
+	}
+	return nil
+}
+
+func searchGenerationMethod(series graphqlbackend.LineChartSearchInsightDataSeriesInput) types.GenerationMethod {
+	if series.GeneratedFromCaptureGroups != nil && *series.GeneratedFromCaptureGroups {
+		return types.SearchCompute
+	}
+	return types.Search
 }
 
 func seriesFound(existingSeries types.InsightViewSeries, inputSeries []graphqlbackend.LineChartSearchInsightDataSeriesInput) bool {
@@ -723,8 +860,9 @@ func (r *Resolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.D
 	if err != nil {
 		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
 	}
+	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
-	err = r.permissionsValidator.validateUserAccessForView(ctx, viewId)
+	err = permissionsValidator.validateUserAccessForView(ctx, viewId)
 	if err != nil {
 		return nil, err
 	}

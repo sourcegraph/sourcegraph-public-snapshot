@@ -1,7 +1,6 @@
 import classNames from 'classnames'
 import { isObject } from 'lodash'
-import { MdiReactIconComponentType } from 'mdi-react'
-import React, { useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { View, MarkupContent } from 'sourcegraph'
 
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
@@ -14,8 +13,7 @@ import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
 import { ErrorAlert } from '../../../../components/alerts'
 
-import { ChartViewContent } from './chart-view-content/ChartViewContent'
-import { ViewDescription } from './description/ViewDescription'
+import { ChartViewContent, ChartViewContentLayout } from './chart-view-content/ChartViewContent'
 import styles from './ViewContent.module.scss'
 
 const isMarkupContent = (input: unknown): input is MarkupContent =>
@@ -23,13 +21,23 @@ const isMarkupContent = (input: unknown): input is MarkupContent =>
 
 export interface ViewContentProps extends TelemetryProps {
     content: View['content']
-    viewID: string
+
+    /**
+     * View tracking type is used to send a proper pings event (InsightHover, InsightDataPointClick)
+     * with view type as a tracking variable. If it equals to null tracking is disabled.
+     *
+     * Note: these events are code insights specific, we have to remove this tracking logic to
+     * reuse this component in other consumers.
+     */
+    viewTrackingType?: string
 
     /** To get container to track hovers for pings */
     containerClassName?: string
 
     /** Optionally display an alert overlay */
     alert?: React.ReactNode
+    layout?: ChartViewContentLayout
+    className?: string
 }
 
 /**
@@ -40,26 +48,31 @@ export interface ViewContentProps extends TelemetryProps {
  * without notice.
  */
 export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
-    const { content, viewID, containerClassName, alert, telemetryService } = props
+    const { content, viewTrackingType, containerClassName, alert, layout, className, telemetryService } = props
 
     // Track user intent to interact with extension-contributed views
     const viewContentReference = useRef<HTMLDivElement>(null)
 
     // TODO Move this tracking logic out of this shared view component
     useEffect(() => {
-        let viewContentElement = viewContentReference.current
+        // Disable tracking logic if view tracking type wasn't provided
+        if (!viewTrackingType) {
+            return
+        }
 
+        let viewContentElement = viewContentReference.current
         let timeoutID: number | undefined
 
         function onMouseEnter(): void {
             // Set timer to increase confidence that the user meant to interact with the
             // view, as opposed to accidentally moving past it. If the mouse leaves
             // the view quickly, clear the timeout for logging the event
+            // TODO: Move this from common component to shared logic/hook
             timeoutID = window.setTimeout(() => {
                 telemetryService.log(
                     'InsightHover',
-                    { insightType: viewID.split('.')[0] },
-                    { insightType: viewID.split('.')[0] }
+                    { insightType: viewTrackingType },
+                    { insightType: viewTrackingType }
                 )
             }, 500)
 
@@ -84,10 +97,24 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
             viewContentElement?.removeEventListener('mouseleave', onMouseLeave)
             clearTimeout(timeoutID)
         }
-    }, [viewID, containerClassName, telemetryService])
+    }, [viewTrackingType, containerClassName, telemetryService])
+
+    const handleOnDatumLinkClick = useCallback(() => {
+        // Disable tracking logic if view tracking type wasn't provided
+        if (!viewTrackingType) {
+            return
+        }
+
+        // TODO: Move this from common component to shared logic/hook
+        telemetryService.log(
+            'InsightDataPointClick',
+            { insightType: viewTrackingType },
+            { insightType: viewTrackingType }
+        )
+    }, [viewTrackingType, telemetryService])
 
     return (
-        <div className={styles.viewContent} ref={viewContentReference}>
+        <div className={classNames(styles.viewContent, className)} ref={viewContentReference}>
             {content.map((content, index) =>
                 isMarkupContent(content) ? (
                     <React.Fragment key={index}>
@@ -105,9 +132,9 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
                         {alert && <div className={styles.viewContentAlertOverlay}>{alert}</div>}
                         <ChartViewContent
                             content={content}
-                            viewID={viewID}
-                            telemetryService={props.telemetryService}
-                            className={styles.chart}
+                            layout={layout}
+                            className="flex-grow-1"
+                            onDatumLinkClick={handleOnDatumLinkClick}
                         />
                     </React.Fragment>
                 ) : null
@@ -119,35 +146,34 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
 export interface ViewErrorContentProps {
     title: string
     error: ErrorLike
-    icon: MdiReactIconComponentType
 }
 
 export const ViewErrorContent: React.FunctionComponent<ViewErrorContentProps> = props => {
-    const { error, title, icon, children } = props
+    const { error, title, children } = props
 
     return (
         <div className="h-100 w-100 d-flex flex-column">
             {children || <ErrorAlert data-testid={`${title} view error`} className="m-0" error={error} />}
-            <ViewDescription className="mt-auto" title={title} icon={icon} />
         </div>
     )
 }
 
 export interface ViewLoadingContentProps {
     text: string
-    description: string
-    icon: MdiReactIconComponentType
 }
 
 export const ViewLoadingContent: React.FunctionComponent<ViewLoadingContentProps> = props => {
-    const { text, description, icon } = props
+    const { text } = props
 
     return (
-        <div className="h-100 w-100 d-flex flex-column">
+        <div className="h-100 w-100 d-flex flex-column flex-grow-1">
             <span className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
                 <LoadingSpinner /> {text}
             </span>
-            <ViewDescription className="mt-auto" title={description} icon={icon} />
         </div>
     )
 }
+
+export const ViewBannerContent: React.FunctionComponent = ({ children }) => (
+    <div className="h-100 w-100 d-flex flex-column justify-content-center align-items-center">{children}</div>
+)

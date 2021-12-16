@@ -2,14 +2,16 @@ import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 
+import { ProductStatusBadge } from '@sourcegraph/wildcard'
+import type { ProductStatusType } from '@sourcegraph/wildcard/src/components/Badge'
+
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
-import { Badge, BadgeStatus } from '../../components/Badge'
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
 import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
-import { OnboardingTourProps } from '../../search'
 import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
+import { useExperimentalFeatures } from '../../stores'
 import { NavItemDescriptor } from '../../util/contributions'
 
 import { UserSettingsAreaRouteContext } from './UserSettingsArea'
@@ -22,7 +24,7 @@ export interface UserSettingsSidebarItemConditionContext extends BatchChangesPro
 }
 
 type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditionContext> & {
-    status?: BadgeStatus
+    status?: ProductStatusType
 }
 
 export type UserSettingsSidebarItems = readonly UserSettingsSidebarItem[]
@@ -30,7 +32,6 @@ export type UserSettingsSidebarItems = readonly UserSettingsSidebarItem[]
 export interface UserSettingsSidebarProps
     extends UserSettingsAreaRouteContext,
         BatchChangesProps,
-        OnboardingTourProps,
         RouteComponentProps<{}> {
     items: UserSettingsSidebarItems
     isSourcegraphDotCom: boolean
@@ -40,6 +41,7 @@ export interface UserSettingsSidebarProps
 /** Sidebar for user account pages. */
 export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarProps> = props => {
     const [, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled')
+    const showOnboardingTour = useExperimentalFeatures(features => features.showOnboardingTour ?? false)
 
     if (!props.authenticatedUser) {
         return null
@@ -68,7 +70,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                     ({ label, to, exact, status, condition = () => true }) =>
                         condition(context) && (
                             <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
-                                {label} {status && <Badge className="ml-1" status={status} />}
+                                {label} {status && <ProductStatusBadge className="ml-1" status={status} />}
                             </SidebarNavItem>
                         )
                 )}
@@ -104,7 +106,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                 <SidebarGroupHeader label="Other actions" />
                 {!siteAdminViewingOtherUser && <SidebarNavItem to="/api/console">API console</SidebarNavItem>}
                 {props.authenticatedUser.siteAdmin && <SidebarNavItem to="/site-admin">Site admin</SidebarNavItem>}
-                {props.showOnboardingTour && (
+                {showOnboardingTour && (
                     <button
                         type="button"
                         className="btn text-left sidebar__link--inactive d-flex w-100"

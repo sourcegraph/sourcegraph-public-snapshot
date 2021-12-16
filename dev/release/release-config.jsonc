@@ -13,7 +13,7 @@
     "captainSlackUsername": "Kevin Wojkovich",
     "captainGitHubUsername": "kevinwojo",
     // Release versions
-    "previousRelease": "3.34.1",
+    "previousRelease": "3.34.2",
     "upcomingRelease": "3.35.0",
     // Release dates
     "oneWorkingDayBeforeRelease": "17 December 2021 10:00 PST",

@@ -20,7 +20,7 @@ var DefinitionDumpsLimit, _ = strconv.ParseInt(env.Get("PRECISE_CODE_INTEL_DEFIN
 
 // DefinitionDumps returns the set of dumps that define at least one of the given monikers.
 func (s *Store) DefinitionDumps(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []Dump, err error) {
-	ctx, traceLog, endObservation := s.operations.definitionDumps.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.definitionDumps.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numMonikers", len(monikers)),
 		log.String("monikers", monikersToString(monikers)),
 	}})
@@ -39,7 +39,7 @@ func (s *Store) DefinitionDumps(ctx context.Context, monikers []precise.Qualifie
 	if err != nil {
 		return nil, err
 	}
-	traceLog(log.Int("numDumps", len(dumps)))
+	trace.Log(log.Int("numDumps", len(dumps)))
 
 	return dumps, nil
 }
@@ -117,7 +117,7 @@ rank() OVER (
 // it can be seen from the given index; otherwise, an index is visible if it can be seen from the tip of
 // the default branch of its own repository.
 func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, commit string, monikers []precise.QualifiedMonikerData, limit, offset int) (_ PackageReferenceScanner, _ int, err error) {
-	ctx, traceLog, endObservation := s.operations.referenceIDsAndFilters.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.referenceIDsAndFilters.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 		log.Int("numMonikers", len(monikers)),
@@ -147,7 +147,7 @@ func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, co
 	if err != nil {
 		return nil, 0, err
 	}
-	traceLog(log.Int("totalCount", totalCount))
+	trace.Log(log.Int("totalCount", totalCount))
 
 	rows, err := s.Query(ctx, sqlf.Sprintf(
 		referenceIDsAndFiltersQuery,

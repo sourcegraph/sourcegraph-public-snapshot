@@ -133,11 +133,11 @@ var (
 	minCode     = env.MustGetInt("SRC_HTTP_LOG_MIN_CODE", 500, "min http code before http responses are logged")
 )
 
-// HTTPTraceMiddleware captures and exports metrics to Prometheus, etc.
+// HTTPMiddleware captures and exports metrics to Prometheus, etc.
 //
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.
-func HTTPTraceMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
+func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
 	return sentry.Recoverer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 

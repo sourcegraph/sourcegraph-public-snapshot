@@ -9,7 +9,13 @@ import TerserPlugin from 'terser-webpack-plugin'
 import webpack, { DllReferencePlugin, Configuration, DefinePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
 
-import { ROOT_PATH, getCSSLoaders } from '@sourcegraph/build-config'
+import {
+    ROOT_PATH,
+    getMonacoCSSRule,
+    getMonacoTTFRule,
+    getMonacoWebpackPlugin,
+    getCSSLoaders,
+} from '@sourcegraph/build-config'
 
 import { ensureDllBundleIsReady } from './dllPlugin'
 import { environment } from './environment-config'
@@ -17,9 +23,6 @@ import {
     monacoEditorPath,
     dllPluginConfig,
     dllBundleManifestPath,
-    getMonacoCSSRule,
-    getMonacoTTFRule,
-    getMonacoWebpackPlugin,
     nodeModulesPath,
     getBasicCSSLoader,
     readJsonFile,

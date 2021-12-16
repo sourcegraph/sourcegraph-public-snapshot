@@ -57,6 +57,24 @@ func UnmarshalNamespaceID(id graphql.ID, userID *int32, orgID *int32) (err error
 	return err
 }
 
+// UnmarshalNamespaceToIDs is similar to UnmarshalNamespaceID, except instead of
+// unmarshalling into existing variables, it creates its own for convenience.
+// It will return exactly one non-nil value.
+func UnmarshalNamespaceToIDs(id graphql.ID) (userID *int32, orgID *int32, err error) {
+	switch relay.UnmarshalKind(id) {
+	case "User":
+		var uid int32
+		err = relay.UnmarshalSpec(id, &uid)
+		return &uid, nil, err
+	case "Org":
+		var oid int32
+		err = relay.UnmarshalSpec(id, &oid)
+		return nil, &oid, err
+	default:
+		return nil, nil, InvalidNamespaceIDErr{id: id}
+	}
+}
+
 func (r *schemaResolver) NamespaceByName(ctx context.Context, args *struct{ Name string }) (*NamespaceResolver, error) {
 	namespace, err := r.db.Namespaces().GetByName(ctx, args.Name)
 	if err == database.ErrNamespaceNotFound {

@@ -83,7 +83,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
     const showList = userHasCodeMonitors !== 'loading' && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
 
     return (
-        <div className="code-monitoring-page">
+        <div className="code-monitoring-page" data-testid="code-monitoring-page">
             <PageTitle title="Code Monitoring" />
             <PageHeader
                 path={[

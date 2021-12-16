@@ -11,7 +11,7 @@ import (
 
 // Stencil return all ranges within a single document.
 func (s *Store) Stencil(ctx context.Context, bundleID int, path string) (_ []Range, err error) {
-	ctx, traceLog, endObservation := s.operations.stencil.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.stencil.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 	}})
@@ -22,7 +22,7 @@ func (s *Store) Stencil(ctx context.Context, bundleID int, path string) (_ []Ran
 		return nil, err
 	}
 
-	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
+	trace.Log(log.Int("numRanges", len(documentData.Document.Ranges)))
 
 	ranges := make([]Range, 0, len(documentData.Document.Ranges))
 	for _, r := range documentData.Document.Ranges {

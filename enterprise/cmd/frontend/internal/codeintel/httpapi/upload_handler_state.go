@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -61,7 +62,7 @@ func (h *UploadHandler) constructUploadState(ctx context.Context, r *http.Reques
 		// of a multi-part upload. Ensure that the repository and commit given in the
 		// request are resolvable. Subsequent multi-part requests will use the new
 		// upload identifier returned in this response.
-		repositoryID, statusCode, err := ensureRepoAndCommitExist(ctx, database.NewDB(h.db), uploadState.repositoryName, uploadState.commit)
+		repositoryID, statusCode, err := ensureRepoAndCommitExist(ctx, h.db, uploadState.repositoryName, uploadState.commit)
 		if err != nil {
 			return uploadState, statusCode, err
 		}
@@ -113,16 +114,16 @@ func ensureRepoAndCommitExist(ctx context.Context, db database.DB, repoName, com
 	// 2. Resolve commit
 
 	if _, err := backend.NewRepos(db.Repos()).ResolveRev(ctx, repo, commit); err != nil {
+		var reason string
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			return 0, http.StatusNotFound, errors.Errorf("unknown commit %q", commit)
-		}
-
-		// If the repository is currently being cloned (which is most likely to happen on dotcom),
-		// then we want to continue to queue the LSIF upload record to unblock the client, then have
-		// the worker wait until the rev is resolvable before starting to process.
-		if !gitdomain.IsCloneInProgress(err) {
+			reason = "commit not found"
+		} else if gitdomain.IsCloneInProgress(err) {
+			reason = "repository still cloning"
+		} else {
 			return 0, http.StatusInternalServerError, err
 		}
+
+		log15.Warn("Accepting LSIF upload with unresolvable commit", "reason", reason)
 	}
 
 	return int(repo.ID), 0, nil

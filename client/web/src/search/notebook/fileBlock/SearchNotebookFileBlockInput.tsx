@@ -64,23 +64,45 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
         }
     }, [inputReference, testTriggerSuggestions])
 
+    const popoverReference = useRef<HTMLDivElement>(null)
+    const onKeyDown = (event: React.KeyboardEvent): void => {
+        // Reach Combobox does not automatically scroll the popover when moving the selected item with a keyboard.
+        // We have to do it manually by finding the currently selected option and scrolling the popover container
+        // to make it visible. We are using requestAnimationFrame to prevent triggering reflows because we are
+        // referencing element sizes and scroll positions.
+        // Code adapted from: https://github.com/reach/reach-ui/issues/357
+        window.requestAnimationFrame(() => {
+            const container = popoverReference.current
+            if (!container) {
+                return
+            }
+            const element = container.querySelector<HTMLElement>('[aria-selected=true]')
+            if (!element) {
+                return
+            }
+            const top = element.offsetTop - container.scrollTop
+            const bottom = container.scrollTop + container.clientHeight - (element.offsetTop + element.clientHeight)
+            if (bottom < 0) {
+                container.scrollTop -= bottom
+            }
+            if (top < 0) {
+                container.scrollTop += top
+            }
+        })
+
+        if (event.key === 'Escape') {
+            const target = event.target as HTMLElement
+            target.blur()
+        } else if (
+            // Allow cmd+Enter/ctrl+Enter to propagate to run the block, stop all other events
+            !(event.key === 'Enter' && isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform))
+        ) {
+            event.stopPropagation()
+        }
+    }
+
     return (
-        <Combobox
-            openOnFocus={true}
-            onSelect={onSelect}
-            className={className}
-            onKeyDown={event => {
-                if (event.key === 'Escape') {
-                    const target = event.target as HTMLElement
-                    target.blur()
-                } else if (
-                    // Allow cmd+Enter/ctrl+Enter to propagate to run the block, stop all other events
-                    !(event.key === 'Enter' && isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform))
-                ) {
-                    event.stopPropagation()
-                }
-            }}
-        >
+        <Combobox openOnFocus={true} onSelect={onSelect} className={className} onKeyDown={onKeyDown}>
             <ComboboxInput
                 id={id}
                 ref={inputReference}
@@ -99,7 +121,7 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
             />
             {/* Only show suggestions popover for the latest input value */}
             {suggestions && value === inputValue && (
-                <ComboboxPopover className={styles.suggestionsPopover}>
+                <ComboboxPopover ref={popoverReference} className={styles.suggestionsPopover}>
                     <ComboboxList className={styles.suggestionsList}>
                         {suggestions.map(suggestion => (
                             <ComboboxOption className={styles.suggestionsOption} key={suggestion} value={suggestion}>

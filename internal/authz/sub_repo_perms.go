@@ -41,6 +41,22 @@ type SubRepoPermissionChecker interface {
 	Enabled() bool
 }
 
+// DefaultSubRepoPermsChecker allows us to use a single instance with a shared
+// cache and database connection. Since we don't have a database connection at
+// initialisation time, services that require this client should initialise it in
+// their main function.
+var DefaultSubRepoPermsChecker SubRepoPermissionChecker = &noopPermsChecker{}
+
+type noopPermsChecker struct{}
+
+func (*noopPermsChecker) Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
+	return None, nil
+}
+
+func (*noopPermsChecker) Enabled() bool {
+	return false
+}
+
 var _ SubRepoPermissionChecker = &SubRepoPermsClient{}
 
 // SubRepoPermissionsGetter allows getting sub repository permissions.
@@ -79,22 +95,12 @@ type compiledRules struct {
 // NewSubRepoPermsClient instantiates an instance of authz.SubRepoPermsClient
 // which implements SubRepoPermissionChecker.
 //
-// SubRepoPermissionChecker is responsible for checking whether a user has access to
-// data within a repo. Sub-repository permissions enforcement is on top of existing
-// repository permissions, which means the user must already have access to the
-// repository itself. The intention is for this client to be created once at startup
-// and passed in to all places that need to check sub repo permissions. For example:
-//
-// 	subRepoOnce.Do(func() {
-// 		var err error
-// 		subRepoClient, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
-// 		if err != nil {
-// 			// We expect creating a client to always succeed. If not, it is due to an error
-// 			// in our code when instantiating it.
-// 			panic(fmt.Sprintf("creating SubRepoPermsClient: %v", err))
-// 		}
-// 	})
-// 	return subRepoClient.WithGetter(db.SubRepoPerms())
+// SubRepoPermissionChecker is responsible for checking whether a user has access
+// to data within a repo. Sub-repository permissions enforcement is on top of
+// existing repository permissions, which means the user must already have access
+// to the repository itself. The intention is for this client to be created once
+// at startup and passed in to all places that need to check sub repo
+// permissions.
 //
 // Note that sub-repo permissions are currently opt-in via the
 // experimentalFeatures.enableSubRepoPermissions option.
@@ -281,12 +287,6 @@ func (s *SubRepoPermsClient) Enabled() bool {
 	return false
 }
 
-// CurrentUserPermissions returns the level of access the authenticated user within
-// the provided context has for the requested content by calling ActorPermissions.
-func CurrentUserPermissions(ctx context.Context, s SubRepoPermissionChecker, content RepoContent) (Perms, error) {
-	return ActorPermissions(ctx, s, actor.FromContext(ctx), content)
-}
-
 // ActorPermissions returns the level of access the given actor has for the requested
 // content.
 //
@@ -308,7 +308,26 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 
 	perms, err := s.Permissions(ctx, a.UID, content)
 	if err != nil {
-		return None, errors.Wrapf(err, "getting actor permissions for actor", a.UID)
+		return None, errors.Wrapf(err, "getting actor permissions for actor: %d", a.UID)
 	}
 	return perms, nil
+}
+
+// FilterActorPaths will filter the given list of paths for the given actor
+// returning on paths they are allowed to read.
+func FilterActorPaths(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, paths []string) ([]string, error) {
+	filtered := make([]string, 0, len(paths))
+	for _, p := range paths {
+		perms, err := ActorPermissions(ctx, checker, a, RepoContent{
+			Repo: repo,
+			Path: p,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "checking sub-repo permissions")
+		}
+		if perms.Include(Read) {
+			filtered = append(filtered, p)
+		}
+	}
+	return filtered, nil
 }

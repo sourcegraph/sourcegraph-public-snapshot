@@ -28,18 +28,22 @@ func TestDeleteOldJobLogs(t *testing.T) {
 	require.NoError(t, err)
 
 	// Add 1 job and date it back to a long time ago.
-	err = s.EnqueueQueryTriggerJobs(ctx)
+	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
+	require.Len(t, triggerJobs, 1)
+	firstTriggerJobID := triggerJobs[0].ID
 
 	longTimeAgo := s.Now().AddDate(0, 0, -(retentionInDays + 1))
-	err = s.Exec(ctx, sqlf.Sprintf(setToCompletedFmtStr, longTimeAgo, longTimeAgo, 1))
+	err = s.Exec(ctx, sqlf.Sprintf(setToCompletedFmtStr, longTimeAgo, longTimeAgo, firstTriggerJobID))
 	require.NoError(t, err)
 
 	// Add second job.
-	err = s.EnqueueQueryTriggerJobs(ctx)
+	triggerJobs, err = s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
+	require.Len(t, triggerJobs, 1)
+	secondTriggerJobID := triggerJobs[0].ID
 
-	err = s.Exec(ctx, sqlf.Sprintf(setToCompletedFmtStr, s.Now(), s.Now(), 2))
+	err = s.Exec(ctx, sqlf.Sprintf(setToCompletedFmtStr, s.Now(), s.Now(), secondTriggerJobID))
 	require.NoError(t, err)
 
 	err = s.DeleteOldTriggerJobs(ctx, retentionInDays)
@@ -49,10 +53,8 @@ func TestDeleteOldJobLogs(t *testing.T) {
 	require.NoError(t, err)
 	defer rows.Close()
 
-	var (
-		rowCount int
-		id       int
-	)
+	rowCount := 0
+	var id int32
 	for rows.Next() {
 		rowCount++
 		if rowCount > 1 {
@@ -61,5 +63,5 @@ func TestDeleteOldJobLogs(t *testing.T) {
 		err = rows.Scan(&id)
 		require.NoError(t, err)
 	}
-	require.Equal(t, 2, id)
+	require.Equal(t, secondTriggerJobID, id)
 }

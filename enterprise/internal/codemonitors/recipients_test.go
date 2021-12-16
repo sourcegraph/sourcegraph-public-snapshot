@@ -6,24 +6,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAllRecipientsForEmailIDInt64(t *testing.T) {
+func TestListRecipients(t *testing.T) {
 	ctx, db, s := newTestStore(t)
-	_, id, _, userCTX := newTestUser(ctx, t, db)
-	_, err := s.insertTestMonitor(userCTX, t)
+	_, _, _, userCTX := newTestUser(ctx, t, db)
+	fixtures, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
-	var (
-		wantEmailID     int64 = 1
-		wantRecipientID int64 = 1
-	)
-	rs, err := s.ListRecipients(ctx, ListRecipientsOpts{EmailID: &wantEmailID})
+	rs, err := s.ListRecipients(ctx, ListRecipientsOpts{EmailID: &fixtures.emails[0].ID})
 	require.NoError(t, err)
 
-	want := []*Recipient{{
-		ID:              wantRecipientID,
-		Email:           wantEmailID,
-		NamespaceUserID: &id,
-		NamespaceOrgID:  nil,
-	}}
-	require.Equal(t, want, rs)
+	require.Equal(t, []*Recipient{fixtures.recipients[0]}, rs)
 }

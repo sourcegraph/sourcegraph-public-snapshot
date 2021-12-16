@@ -353,6 +353,7 @@ func NewSchema(
 	dotcom DotcomRootResolver,
 	searchContexts SearchContextsResolver,
 	orgRepositoryResolver OrgRepositoryResolver,
+	notebooks NotebooksResolver,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
@@ -432,6 +433,16 @@ func NewSchema(
 		schemas = append(schemas, orgSchema)
 	}
 
+	if notebooks != nil {
+		EnterpriseResolvers.notebooksResolver = notebooks
+		resolver.NotebooksResolver = notebooks
+		schemas = append(schemas, notebooksSchema)
+		// Register NodeByID handlers.
+		for kind, res := range notebooks.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
+	}
+
 	schemas = append(schemas, computeSchema)
 
 	return graphql.ParseSchema(
@@ -456,6 +467,7 @@ type schemaResolver struct {
 	DotcomRootResolver
 	SearchContextsResolver
 	OrgRepositoryResolver
+	NotebooksResolver
 
 	db                database.DB
 	repoupdaterClient *repoupdater.Client
@@ -532,6 +544,7 @@ var EnterpriseResolvers = struct {
 	dotcomResolver         DotcomRootResolver
 	searchContextsResolver SearchContextsResolver
 	orgRepositoryResolver  OrgRepositoryResolver
+	notebooksResolver      NotebooksResolver
 }{}
 
 // DEPRECATED
@@ -549,10 +562,7 @@ func (r *schemaResolver) Repository(ctx context.Context, args *struct {
 	if args.URI != nil && args.Name == nil {
 		args.Name = args.URI
 	}
-	resolver, err := r.RepositoryRedirect(ctx, &struct {
-		Name     *string
-		CloneURL *string
-	}{args.Name, args.CloneURL})
+	resolver, err := r.RepositoryRedirect(ctx, &repositoryRedirectArgs{args.Name, args.CloneURL, nil})
 	if err != nil {
 		return nil, err
 	}
@@ -587,6 +597,12 @@ type repositoryRedirect struct {
 	redirect *RedirectResolver
 }
 
+type repositoryRedirectArgs struct {
+	Name       *string
+	CloneURL   *string
+	HashedName *string
+}
+
 func (r *repositoryRedirect) ToRepository() (*RepositoryResolver, bool) {
 	return r.repo, r.repo != nil
 }
@@ -595,10 +611,15 @@ func (r *repositoryRedirect) ToRedirect() (*RedirectResolver, bool) {
 	return r.redirect, r.redirect != nil
 }
 
-func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
-	Name     *string
-	CloneURL *string
-}) (*repositoryRedirect, error) {
+func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositoryRedirectArgs) (*repositoryRedirect, error) {
+	if args.HashedName != nil {
+		// Query by repository hashed name
+		repo, err := r.db.Repos().GetByHashedName(ctx, api.RepoHashedName(*args.HashedName))
+		if err != nil {
+			return nil, err
+		}
+		return &repositoryRedirect{repo: NewRepositoryResolver(r.db, repo)}, nil
+	}
 	var name api.RepoName
 	if args.Name != nil {
 		// Query by name

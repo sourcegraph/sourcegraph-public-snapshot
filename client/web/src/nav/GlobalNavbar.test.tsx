@@ -12,6 +12,7 @@ import {
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { SearchPatternType } from '../graphql-operations'
+import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreference } from '../stores/themeState'
 
 import { GlobalNavbar } from './GlobalNavbar'
@@ -33,25 +34,19 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     patternType: SearchPatternType.literal,
     setPatternType: () => undefined,
-    caseSensitive: false,
-    setCaseSensitivity: () => undefined,
     platformContext: {} as any,
     settingsCascade: NOOP_SETTINGS_CASCADE,
     batchChangesEnabled: false,
     batchChangesExecutionEnabled: false,
     batchChangesWebhookLogsEnabled: false,
-    enableCodeMonitoring: false,
     telemetryService: {} as any,
     isExtensionAlertAnimating: false,
     showSearchBox: true,
-    showSearchContext: false,
-    showSearchContextManagement: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
     defaultSearchContextSpec: '',
     variant: 'default',
     globbing: false,
-    showOnboardingTour: false,
     branding: undefined,
     routes: [],
     searchContextsEnabled: true,
@@ -66,6 +61,10 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 describe('GlobalNavbar', () => {
     setLinkComponent(({ children, ...props }) => <a {...props}>{children}</a>)
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
+    beforeEach(() => {
+        useNavbarQueryState.setState({ searchCaseSensitivity: false })
+        useExperimentalFeatures.setState({ codeMonitoring: false })
+    })
 
     test('default', () => {
         const { asFragment } = render(
