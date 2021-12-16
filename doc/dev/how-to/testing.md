@@ -96,7 +96,7 @@ This utility method will let you print a URL that will visually render the DOM o
     })
 ```
 
-This page also provides some additional functionality that can make it easier to identify the correct query to use to access a particular DOM element. 
+This page also provides some additional functionality that can make it easier to identify the correct query to use to access a particular DOM element.
 
 ## Browser-based tests
 
@@ -230,12 +230,6 @@ The function returns the variables that were passed to the mutation, which can b
 
 Only use `testContext.waitForRequest()` for behavior you need to test, not to generally wait for parts of the application to load.
 Whether a query is made for loading is an implementation detail, instead assert and wait on the DOM using `waitForSelector()` or `retry()`.
-
-##### Mocking JSContext
-
-The backend provides the webapp with a context object under `window.context`.
-You can override this object in integration tests using `testContext.overrideJsContext()`.
-There is a default mock JSContext that you can extend with object spread syntax if needed.
 
 ### End-to-end tests
 
