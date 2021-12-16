@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import styles from './ScrollBox.module.scss'
 
@@ -19,6 +19,8 @@ const addShutterElementsToTarget = (element: HTMLDivElement): void => {
     }
 }
 
+const hasVerticalScroll = (element: HTMLElement): boolean => element.scrollHeight > element.clientHeight
+
 interface ScrollBoxProps extends React.HTMLAttributes<HTMLDivElement> {
     className?: string
 }
@@ -26,23 +28,20 @@ interface ScrollBoxProps extends React.HTMLAttributes<HTMLDivElement> {
 export const ScrollBox: React.FunctionComponent<ScrollBoxProps> = props => {
     const { children, className, ...otherProps } = props
 
-    const scrollBoxReference = useRef<HTMLDivElement>(null)
+    // Catch element reference with useState to trigger elements update through useEffect
+    const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>()
 
     useEffect(() => {
-        const scrollBoxElement = scrollBoxReference.current
-
-        if (!scrollBoxElement) {
+        if (!scrollElement) {
             return
         }
 
         // On mount initial call
-        addShutterElementsToTarget(scrollBoxElement)
+        addShutterElementsToTarget(scrollElement)
     })
 
     useEffect(() => {
-        const scrollBoxElement = scrollBoxReference.current
-
-        if (!scrollBoxElement) {
+        if (!scrollElement) {
             return
         }
 
@@ -57,17 +56,23 @@ export const ScrollBox: React.FunctionComponent<ScrollBoxProps> = props => {
             event.preventDefault()
         }
 
-        scrollBoxElement.addEventListener('scroll', onScroll)
+        scrollElement.addEventListener('scroll', onScroll)
 
-        return () => scrollBoxElement.removeEventListener('scroll', onScroll)
-    }, [])
+        return () => scrollElement.removeEventListener('scroll', onScroll)
+    }, [scrollElement])
+
+    const hasScroll = scrollElement ? hasVerticalScroll(scrollElement) : false
 
     return (
-        <div {...otherProps} ref={scrollBoxReference} className={classNames(styles.root, className)}>
-            <div className={classNames(styles.fader, styles.faderTop)} />
-            <div className={classNames(styles.fader, styles.faderBottom)} />
+        <div {...otherProps} ref={setScrollElement} className={classNames(styles.root, className)}>
+            {hasScroll && (
+                <>
+                    <div className={classNames(styles.fader, styles.faderTop)} />
+                    <div className={classNames(styles.fader, styles.faderBottom)} />
+                </>
+            )}
 
-            <div className={styles.scrollbox}>{children}</div>
+            <div className={classNames({ [styles.scrollbox]: hasScroll })}>{children}</div>
         </div>
     )
 }
