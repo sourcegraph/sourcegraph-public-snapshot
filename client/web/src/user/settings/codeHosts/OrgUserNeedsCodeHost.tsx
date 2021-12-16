@@ -18,9 +18,9 @@ export interface OrgUserNeedsCodeHost {
 }
 
 export const OrgUserNeedsCodeHost: React.FunctionComponent<OrgUserNeedsCodeHost> = ({ orgExternalServices, user }) => {
-    const { externalServices } = useExternalServices(user.id)
+    const { externalServices: userExternalServices } = useExternalServices(user.id)
     const orgKinds = orgExternalServices.map(service => service.kind)
-    const userKinds = new Set((externalServices || []).map(service => service.kind))
+    const userKinds = new Set((userExternalServices || []).map(service => service.kind))
     const userMissing = orgKinds.filter(kind => !userKinds.has(kind)).map(kind => defaultExternalServices[kind].title)
     return (
         <>
