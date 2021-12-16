@@ -87,17 +87,21 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                 }
             />
         </div>
-        <ChangesetStatusOpen
-            className="d-block d-sm-flex"
-            label={<span className="text-muted">{node.changesetsStats.open} open</span>}
-        />
-        <ChangesetStatusClosed
-            className="d-block d-sm-flex text-center"
-            label={<span className="text-muted">{node.changesetsStats.closed} closed</span>}
-        />
-        <ChangesetStatusMerged
-            className="d-block d-sm-flex"
-            label={<span className="text-muted">{node.changesetsStats.merged} merged</span>}
-        />
+        {node.state !== 'DRAFT' && (
+            <>
+                <ChangesetStatusOpen
+                    className="d-block d-sm-flex"
+                    label={<span className="text-muted">{node.changesetsStats.open} open</span>}
+                />
+                <ChangesetStatusClosed
+                    className="d-block d-sm-flex text-center"
+                    label={<span className="text-muted">{node.changesetsStats.closed} closed</span>}
+                />
+                <ChangesetStatusMerged
+                    className="d-block d-sm-flex"
+                    label={<span className="text-muted">{node.changesetsStats.merged} merged</span>}
+                />
+            </>
+        )}
     </>
 )
