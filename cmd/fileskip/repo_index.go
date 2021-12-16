@@ -22,15 +22,21 @@ import (
 var (
 	Yellow = color("\033[1;33m%s\033[0m")
 )
+var IsCaseInsensitive = os.Getenv("FILESKIP_CASE_SENSITIVE") != "true"
 
 const (
-	Version                  = 1
-	targetFalsePositiveRatio = 0.01
-	maxFileSize              = 1 << 20 // 1_048_576
-	maximumQueryNgrams       = 100
+	Version     = 1
+	maxFileSize = 1 << 20 // 1_048_576
 )
 
 var IsProgressBarEnabled = true
+
+func NormalizeText(text string) string {
+	if IsCaseInsensitive {
+		return strings.ToUpper(text)
+	}
+	return text
+}
 
 type QueryBitmask struct {
 	Bitmask     *roaring.Bitmap
@@ -103,7 +109,10 @@ func onGrams(text string) (*xorfilter.BinaryFuse8, *roaring.Bitmap) {
 	for _, ch0 := range text {
 		i++
 		unigram := uint32(ch0)
-		if ch0 < ' ' || ch0 > '`' {
+		if IsCaseInsensitive && (ch0 < ' ' || ch0 > '`') {
+			continue
+		}
+		if !IsCaseInsensitive && (ch0 < ' ' || ch0 > '~') {
 			continue
 		}
 		unigram -= ' '
@@ -144,8 +153,10 @@ func onGrams(text string) (*xorfilter.BinaryFuse8, *roaring.Bitmap) {
 }
 
 func CollectQueryNgrams(query string) *QueryBitmask {
-	if strings.ToUpper(query) != query {
-		panic(fmt.Sprintf("query must be uppercase: %v"))
+	if IsCaseInsensitive {
+		if strings.ToUpper(query) != query {
+			panic(fmt.Sprintf("query must be uppercase: %v"))
+		}
 	}
 	_, grams := onGrams(query)
 	return &QueryBitmask{Bitmask: grams}
@@ -181,6 +192,24 @@ func CollectQueryNgrams(query string) *QueryBitmask {
 	//return result
 }
 
+func (r *RepoIndex) Stats() map[string]float64 {
+	stats := map[string]float64{}
+	indexedBlobsSize := int64(0)
+	bloomFilterBinaryStorageSize := uint(0)
+	for _, blob := range r.Blobs {
+		statSize, err := r.FS.StatSize(blob.Path)
+		if err != nil {
+			panic(err)
+		}
+		indexedBlobsSize = indexedBlobsSize + statSize
+		bloomFilterBinaryStorageSize += blob.EstimatedBinarySize()
+	}
+	stats["indexed-blob-count"] = float64(len(r.Blobs))
+	stats["indexed-blobs-size"] = float64(indexedBlobsSize)
+	stats["bloom-memory-size"] = float64(bloomFilterBinaryStorageSize)
+	stats["compression-ratio"] = float64(bloomFilterBinaryStorageSize) / float64(indexedBlobsSize)
+	return stats
+}
 func (r *RepoIndex) SerializeToFile(cacheDir string) (err error) {
 	//_ = os.Remove(cacheDir)
 	err = os.MkdirAll(filepath.Dir(cacheDir), 0755)
@@ -321,7 +350,11 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 				if enry.IsBinary(textBytes) {
 					continue
 				}
-				text := strings.ToUpper(string(textBytes))
+
+				text := string(textBytes)
+				if IsCaseInsensitive {
+					text = strings.ToUpper(text)
+				}
 				ngrams, _ := onGrams(text)
 				res <- BlobIndex{Path: filename, Filter: ngrams}
 			}

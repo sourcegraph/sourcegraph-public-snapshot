@@ -1,13 +1,13 @@
+goos: darwin
 goarch: amd64
 pkg: github.com/sourcegraph/sourcegraph/cmd/fileskip/bench
 cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
-BenchmarkQuery/chromium-ØØ-12           	       1	17780431128 ns/op	     65904 false-positive/true-positive	    329519 false-positives	    329524 index-size	         5.000 result-count	19761798888 B/op	 5562505 allocs/op
-BenchmarkQuery/chromium-799A-12         	      36	  32901274 ns/op	         1.875 false-positive/true-positive	        45.00 false-positives	    329524 index-size	        24.00 result-count	16308145 B/op	    1920 allocs/op
-BenchmarkQuery/chromium-FRAMM-12        	       1	3210376588 ns/op	      1232 false-positive/true-positive	     11088 false-positives	    329524 index-size	         9.000 result-count	1663214392 B/op	  265748 allocs/op
-BenchmarkQuery/chromium-PARAMS.HAS_VALUE()-12         	      60	  18551229 ns/op	         0.2759 false-positive/true-positive	         8.000 false-positives	    329524 index-size	        29.00 result-count	 6760198 B/op	     515 allocs/op
-BenchmarkQuery/chromium-ASSERT_TRUE(PARAMS.HAS-12     	      37	  33088647 ns/op	         1.000 false-positive/true-positive	        17.00 false-positives	    329524 index-size	        17.00 result-count	14063865 B/op	    1153 allocs/op
-BenchmarkQuery/chromium-EXPECT_EQ(KDOWNLOADID,_PA-12  	     100	  17735760 ns/op	         1.000 false-positive/true-positive	         1.000 false-positives	    329524 index-size	         1.000 result-count	 5439919 B/op	     434 allocs/op
-BenchmarkQuery/chromium-CANSHOWCONTEXTMENUFORPARAMS-12         	      50	  25506138 ns/op	         0.2500 false-positive/true-positive	         1.000 false-positives	    329524 index-size	         4.000 result-count	 7975783 B/op	     627 allocs/op
-BenchmarkQuery/chromium-HTTP://SOMEHOST/PATH?X=ID%3DAAAA%26V%3D1.1%26UC&X=ID%3DBBBB%26V%3D2.0%26UC-12         	     100	  14903524 ns/op	         0 false-positive/true-positive	         0 false-positives	    329524 index-size	         1.000 result-count	 5381991 B/op	     434 allocs/op
+BenchmarkQuery/linux-Ø-12          	       1	3480848249 ns/op	      1886 false-positive/true-positive	     39597 false-positives	     74210 index-size	        21.00 result-count	2999792800 B/op	  772231 allocs/op
+BenchmarkQuery/linux-AAA-12        	      56	  19501036 ns/op	         0.6154 false-positive/true-positive	        16.00 false-positives	     74210 index-size	        26.00 result-count	11854279 B/op	    2031 allocs/op
+BenchmarkQuery/linux-44441-12      	      33	  33256654 ns/op	        45.00 false-positive/true-positive	        45.00 false-positives	     74210 index-size	         1.000 result-count	18025014 B/op	    1262 allocs/op
+BenchmarkQuery/linux-SOUNDCARD-12  	     336	   3423172 ns/op	         0 false-positive/true-positive	         0 false-positives	     74210 index-size	        42.00 result-count	 1377773 B/op	     139 allocs/op
+BenchmarkQuery/linux-#INCLUDE_<SYS/SOCKET.H>-12         	     232	   5048897 ns/op	         0 false-positive/true-positive	         0 false-positives	     74210 index-size	        40.00 result-count	 1297930 B/op	     192 allocs/op
+BenchmarkQuery/linux-NEW_ADDRESS_OF_THE_CRTC_(GPU_MC_ADDRESS)-12         	     129	   9138747 ns/op	         0 false-positive/true-positive	         0 false-positives	     74210 index-size	         6.000 result-count	 3786588 B/op	     345 allocs/op
+BenchmarkQuery/linux-BUGZILLA.REDHAT.COM/SHOW_BUG.CGI?ID=726143-12       	     130	   9038200 ns/op	         0 false-positive/true-positive	         0 false-positives	     74210 index-size	         6.000 result-count	 3837316 B/op	     390 allocs/op
+BenchmarkQuery/linux-CLONE_MAP_FROM_LISTENER_FOR_NEWLY_ACCEPTED_SOCKET-12         	     100	  12678331 ns/op	         0 false-positive/true-positive	         0 false-positives	     74210 index-size	         2.000 result-count	 2726320 B/op	     312 allocs/op
 PASS
-ok  	github.com/sourcegraph/sourcegraph/cmd/fileskip/bench	69.240s

@@ -72,9 +72,11 @@ var (
 )
 
 func init() {
-	for _, corpus := range all {
-		for i, query := range corpus.Queries {
-			corpus.Queries[i] = strings.ToUpper(query)
+	if fileskip.IsCaseInsensitive {
+		for _, corpus := range all {
+			for i, query := range corpus.Queries {
+				corpus.Queries[i] = strings.ToUpper(query)
+			}
 		}
 	}
 }
@@ -98,7 +100,7 @@ func main() {
 	}
 	switch os.Args[1] {
 	case "ngram":
-		fileskip.CollectQueryNgrams(strings.ToUpper(os.Args[3]))
+		fileskip.CollectQueryNgrams(fileskip.NormalizeText(os.Args[3]))
 	case "download":
 		for _, corpus := range corpora {
 			corpus.DownloadUrlAndCache()
@@ -259,7 +261,7 @@ func (c *Corpus) run() error {
 			for _, p := range index.Blobs[start:end] {
 				bar.Add(1)
 				bytes, _ := index.FS.ReadRelativeFilename(p.Path)
-				text := strings.ToUpper(string(bytes))
+				text := fileskip.NormalizeText(string(bytes))
 				for _, query := range c.Queries {
 					if strings.Index(text, query) >= 0 {
 						isMatch[query][p.Path] = struct{}{}

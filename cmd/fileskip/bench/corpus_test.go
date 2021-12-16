@@ -42,6 +42,9 @@ func benchmarkQuery(b *testing.B, c Corpus) {
 			b.ReportMetric(float64(len(matchingResults)), "result-count")
 			b.ReportMetric(float64(falsePositives), "false-positives")
 			b.ReportMetric(float64(falsePositives)/math.Max(1, float64(len(matchingResults))), "false-positive/true-positive")
+			for key, value := range index.Stats() {
+				b.ReportMetric(value, key)
+			}
 		})
 	}
 }
@@ -95,7 +98,10 @@ func expensiveHasMatch(fs fileskip.FileSystem, filename, query string) bool {
 	if err != nil {
 		panic(err)
 	}
-	text := strings.ToUpper(string(textBytes))
+	text := string(textBytes)
+	if fileskip.IsCaseInsensitive {
+		text = strings.ToUpper(text)
+	}
 	return strings.Index(text, query) >= 0
 }
 
@@ -156,20 +162,9 @@ func loadCorpus(b *testing.B, corpus Corpus) {
 	//	panic(err)
 	//}
 	//b.ReportMetric(float64(stat.Size()), "archive-disk-size")
-	indexedBlobsSize := int64(0)
-	bloomFilterBinaryStorageSize := uint(0)
-	for _, blob := range index.Blobs {
-		statSize, err := index.FS.StatSize(blob.Path)
-		if err != nil {
-			panic(err)
-		}
-		indexedBlobsSize = indexedBlobsSize + statSize
-		bloomFilterBinaryStorageSize += blob.EstimatedBinarySize()
+	for key, value := range index.Stats() {
+		b.ReportMetric(value, key)
 	}
-	b.ReportMetric(float64(len(index.Blobs)), "indexed-blob-count")
-	b.ReportMetric(float64(indexedBlobsSize), "indexed-blobs-size")
-	b.ReportMetric(float64(bloomFilterBinaryStorageSize), "bloom-memory-size")
-	b.ReportMetric(float64(bloomFilterBinaryStorageSize)/float64(indexedBlobsSize), "compression-ratio")
 }
 
 func BenchmarkLoadFlask(b *testing.B)       { loadCorpus(b, flask) }
