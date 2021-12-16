@@ -196,6 +196,11 @@ func (r *NodeResolver) ToSearchContext() (SearchContextResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToNotebook() (NotebookResolver, bool) {
+	n, ok := r.Node.(NotebookResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	n, ok := r.Node.(*siteResolver)
 	return n, ok
