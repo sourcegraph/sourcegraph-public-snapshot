@@ -609,7 +609,9 @@ The input required to edit an email action.
 """
 input MonitorEditEmailInput {
     """
-    The id of an email action.
+    The id of an email action. If unset, this will
+    be treated as a new email action and be created
+    rather than updated.
     """
     id: ID
     """
@@ -623,7 +625,9 @@ The input required to edit a webhook action.
 """
 input MonitorEditWebhookInput {
     """
-    The id of a webhook action.
+    The id of a webhook action. If unset, this will
+    be treated as a new webhook action and be created
+    rather than updated.
     """
     id: ID
     """
@@ -637,7 +641,9 @@ The input required to edit a Slack webhook action.
 """
 input MonitorEditSlackWebhookInput {
     """
-    The id of a Slack webhook action.
+    The id of a Slack webhook action. If unset, this will
+    be treated as a new Slack webhook action and be created
+    rather than updated.
     """
     id: ID
     """
