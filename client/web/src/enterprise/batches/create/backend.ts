@@ -24,6 +24,15 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
         currentSpec {
             id
             originalInput
+            createdAt
+        }
+
+        batchSpecs(first: 1) {
+            nodes {
+                id
+                originalInput
+                createdAt
+            }
         }
 
         state

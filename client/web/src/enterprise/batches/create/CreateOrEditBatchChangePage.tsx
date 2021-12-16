@@ -172,7 +172,10 @@ interface EditPageProps extends ThemeProps, SettingsCascadeProps<Settings> {
 }
 
 const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, isLightTheme, settingsCascade }) => {
-    const batchSpecID = batchChange.currentSpec.id
+    // Get the latest batch spec for the batch change.
+    const { batchSpec, isApplied: isLatestBatchSpecApplied, initialCode: initialBatchSpecCode } = useInitialBatchSpec(
+        batchChange
+    )
 
     const { namespaces: _namespaces, defaultSelectedNamespace } = useNamespaces(
         settingsCascade,
@@ -194,17 +197,6 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, isLight
             setBatchSpecStale(true)
         },
         [setNoCache]
-    )
-
-    // Show the hello world sample code initially in the Monaco editor if the user hasn't
-    // written any batch spec code yet, otherwise show the latest spec for the batch
-    // change.
-    const initialBatchSpecCode = useMemo(
-        () =>
-            isMinimalBatchSpec(batchChange.currentSpec.originalInput)
-                ? insertNameIntoLibraryItem(helloWorldSample, batchChange.name)
-                : batchChange.currentSpec.originalInput,
-        [batchChange.currentSpec.originalInput, batchChange.name]
     )
 
     // Manage the batch spec input YAML code that's being edited.
@@ -249,7 +241,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, isLight
     )
 
     // Manage submitting a batch spec for execution.
-    const { executeBatchSpec, isLoading: isExecuting, error: executeError } = useExecuteBatchSpec(batchSpecID)
+    const { executeBatchSpec, isLoading: isExecuting, error: executeError } = useExecuteBatchSpec(batchSpec.id)
 
     // Disable the execute button if any of the following are true:
     // * a batch spec has already been applied (the batch change is not a draft)
