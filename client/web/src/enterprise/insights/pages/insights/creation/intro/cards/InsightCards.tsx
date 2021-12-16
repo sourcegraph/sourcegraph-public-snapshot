@@ -23,7 +23,7 @@ const Card: React.FunctionComponent<CardProps> = props => {
         <button {...otherProps} type="button" className={classNames(styles.card, 'card p-3', otherProps.className)}>
             {children}
 
-            <div className="btn btn-secondary mt-3 w-100">Create</div>
+            <div className="btn btn-sm btn-secondary mt-3 w-100">Create</div>
         </button>
     )
 }
@@ -38,7 +38,7 @@ const CardBody: React.FunctionComponent<CardBodyProps> = props => {
 
     return (
         <div className={classNames(styles.cardBody, className, 'card-body flex-1')}>
-            <h3 className={classNames(styles.cardTitle, 'mb-3')}>{title}</h3>
+            <h3 className={styles.cardTitle}>{title}</h3>
 
             <p className="d-flex flex-column text-muted m-0">{children}</p>
         </div>
@@ -46,9 +46,9 @@ const CardBody: React.FunctionComponent<CardBodyProps> = props => {
 }
 
 const CardExampleBlock: React.FunctionComponent = props => (
-    <footer className={styles.cardFooter}>
-        <small className="text-muted">Example use</small>
-        <span>{props.children}</span>
+    <footer className={classNames(styles.cardFooter, 'text-muted')}>
+        <small>Example use</small>
+        <small>{props.children}</small>
     </footer>
 )
 
