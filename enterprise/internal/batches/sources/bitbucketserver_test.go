@@ -362,9 +362,14 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	pr := &bitbucketserver.PullRequest{ID: 43, Version: 5}
-	pr.ToRef.Repository.Slug = "automation-testing"
-	pr.ToRef.Repository.Project.Key = "SOUR"
+	successPR := &bitbucketserver.PullRequest{ID: 154, Version: 5}
+	successPR.ToRef.Repository.Slug = "automation-testing"
+	successPR.ToRef.Repository.Project.Key = "SOUR"
+
+	// This version is too low
+	outdatedPR := &bitbucketserver.PullRequest{ID: 155, Version: 1}
+	outdatedPR.ToRef.Repository.Slug = "automation-testing"
+	outdatedPR.ToRef.Repository.Project.Key = "SOUR"
 
 	testCases := []struct {
 		name string
@@ -377,7 +382,16 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 				Title:     "This is a new title",
 				Body:      "This is a new body",
 				BaseRef:   "refs/heads/master",
-				Changeset: &btypes.Changeset{Metadata: pr},
+				Changeset: &btypes.Changeset{Metadata: successPR},
+			},
+		},
+		{
+			name: "outdated",
+			cs: &Changeset{
+				Title:     "This is a new title",
+				Body:      "This is a new body",
+				BaseRef:   "refs/heads/master",
+				Changeset: &btypes.Changeset{Metadata: outdatedPR},
 			},
 		},
 	}
