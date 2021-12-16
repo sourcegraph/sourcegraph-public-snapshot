@@ -101,8 +101,7 @@ func (r *Resolver) MonitorByID(ctx context.Context, id graphql.ID) (graphqlbacke
 	if err != nil {
 		return nil, err
 	}
-	var monitorID int64
-	err = relay.UnmarshalSpec(id, &monitorID)
+	monitorID, err := unmarshalMonitorID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -166,8 +165,8 @@ func (r *Resolver) ToggleCodeMonitor(ctx context.Context, args *graphqlbackend.T
 	if err != nil {
 		return nil, errors.Errorf("UpdateMonitorEnabled: %w", err)
 	}
-	var monitorID int64
-	if err := relay.UnmarshalSpec(args.Id, &monitorID); err != nil {
+	monitorID, err := unmarshalMonitorID(args.Id)
+	if err != nil {
 		return nil, err
 	}
 
@@ -184,8 +183,8 @@ func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.D
 		return nil, errors.Errorf("DeleteCodeMonitor: %w", err)
 	}
 
-	var monitorID int64
-	if err := relay.UnmarshalSpec(args.Id, &monitorID); err != nil {
+	monitorID, err := unmarshalMonitorID(args.Id)
+	if err != nil {
 		return nil, err
 	}
 
@@ -206,8 +205,7 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		return nil, errors.Errorf("update namespace: %w", err)
 	}
 
-	var monitorID int64
-	err = relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
+	monitorID, err := unmarshalMonitorID(args.Monitor.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -462,8 +460,8 @@ func splitActionIDs(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorA
 
 func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (*monitor, error) {
 	// Update monitor.
-	var monitorID int64
-	if err := relay.UnmarshalSpec(args.Monitor.Id, &monitorID); err != nil {
+	monitorID, err := unmarshalMonitorID(args.Monitor.Id)
+	if err != nil {
 		return nil, err
 	}
 
@@ -521,8 +519,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 }
 
 func (r *Resolver) updateEmailAction(ctx context.Context, args graphqlbackend.EditActionEmailArgs) error {
-	var emailID int64
-	err := relay.UnmarshalSpec(*args.Id, &emailID)
+	emailID, err := unmarshalEmailID(*args.Id)
 	if err != nil {
 		return err
 	}
@@ -575,13 +572,12 @@ func (r *Resolver) transact(ctx context.Context) (*Resolver, error) {
 }
 
 // isAllowedToEdit checks whether an actor is allowed to edit a given monitor.
-func (r *Resolver) isAllowedToEdit(ctx context.Context, monitorID graphql.ID) error {
-	var monitorIDInt64 int64
-	err := relay.UnmarshalSpec(monitorID, &monitorIDInt64)
+func (r *Resolver) isAllowedToEdit(ctx context.Context, id graphql.ID) error {
+	monitorID, err := unmarshalMonitorID(id)
 	if err != nil {
 		return err
 	}
-	owner, err := r.ownerForID64(ctx, monitorIDInt64)
+	owner, err := r.ownerForID64(ctx, monitorID)
 	if err != nil {
 		return err
 	}
@@ -644,14 +640,6 @@ func (m *monitorConnection) PageInfo() *graphqlutil.PageInfo {
 	return graphqlutil.NextPageCursor(string(m.monitors[len(m.monitors)-1].ID()))
 }
 
-//
-// Monitor
-//
-type monitor struct {
-	*Resolver
-	*cm.Monitor
-}
-
 const (
 	MonitorKind                        = "CodeMonitor"
 	monitorTriggerQueryKind            = "CodeMonitorTriggerQuery"
@@ -664,6 +652,42 @@ const (
 	monitorActionSlackWebhookEventKind = "CodeMonitorActionSlackWebhookEvent"
 	monitorActionEmailRecipientKind    = "CodeMonitorActionEmailRecipient"
 )
+
+func unmarshalMonitorID(id graphql.ID) (int64, error) {
+	if kind := relay.UnmarshalKind(id); kind != MonitorKind {
+		return 0, errors.Errorf("expected graphql ID kind %s, got %s", MonitorKind, kind)
+	}
+	var i int64
+	err := relay.UnmarshalSpec(id, &i)
+	return i, err
+}
+
+func unmarshalEmailID(id graphql.ID) (int64, error) {
+	if kind := relay.UnmarshalKind(id); kind != monitorActionEmailKind {
+		return 0, errors.Errorf("expected graphql ID kind %s, got %s", monitorActionEmailKind, kind)
+	}
+	var i int64
+	err := relay.UnmarshalSpec(id, &i)
+	return i, err
+}
+
+func unmarshalAfter(after *string) (*int, error) {
+	if after == nil {
+		return nil, nil
+	}
+
+	var a int
+	err := relay.UnmarshalSpec(graphql.ID(*after), &a)
+	return &a, err
+}
+
+//
+// Monitor
+//
+type monitor struct {
+	*Resolver
+	*cm.Monitor
+}
 
 func (m *monitor) ID() graphql.ID {
 	return relay.MarshalID(MonitorKind, m.Monitor.ID)
@@ -1162,16 +1186,6 @@ func intPtrToInt64Ptr(i *int) *int64 {
 	}
 	j := int64(*i)
 	return &j
-}
-
-func unmarshalAfter(after *string) (*int, error) {
-	if after == nil {
-		return nil, nil
-	}
-
-	var a int
-	err := relay.UnmarshalSpec(graphql.ID(*after), &a)
-	return &a, err
 }
 
 //
