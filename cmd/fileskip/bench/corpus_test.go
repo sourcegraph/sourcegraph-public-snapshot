@@ -14,13 +14,17 @@ var isQueryBaseline = "true" == os.Getenv("FILESKIP_BASELINE")
 
 func benchmarkQuery(b *testing.B, c Corpus) {
 	fileskip.IsProgressBarEnabled = false
-	index, err := c.LoadRepoIndex()
-	if err != nil {
-		panic(err)
-	}
-	b.ResetTimer()
+	var index *fileskip.RepoIndex
+	var err error
 	for _, query := range c.Queries {
 		b.Run(fmt.Sprintf("%v-%v", c.Name, query), func(b *testing.B) {
+			if index == nil {
+				index, err = c.LoadRepoIndex()
+				if err != nil {
+					panic(err)
+				}
+				b.ResetTimer()
+			}
 			matchingResults := map[string]struct{}{}
 			falsePositives := 0
 			for i := 0; i < b.N; i++ {
@@ -86,6 +90,9 @@ func expensiveHasMatch(fs fileskip.FileSystem, filename, query string) bool {
 	return strings.Index(text, query) >= 0
 }
 
+//func BenchmarkQuerySourcegraph(b *testing.B) {
+//	benchmarkQuery(b, sourcegraph)
+//}
 func BenchmarkQuery(b *testing.B) {
 	for _, corpus := range all {
 		benchmarkQuery(b, corpus)

@@ -32,7 +32,7 @@ const (
 	targetFalsePositiveRatio = 0.01
 	maxFileSize              = 1 << 20 // 1_048_576
 	maximumQueryNgrams       = 100
-	trigramBucket            = 1 << 10 // 1024
+	trigramBucketSize        = 1 << 12
 )
 
 var IsProgressBarEnabled = true
@@ -43,27 +43,26 @@ type RepoIndex struct {
 	FS    FileSystem
 }
 type TrigramBucketBuilder struct {
-	filters []*bloom.BloomFilter
 	current *bloom.BloomFilter
+	filters []*bloom.BloomFilter
 	i       int
 }
 
 func NewTrigramBucketBuilder() *TrigramBucketBuilder {
-	result := &TrigramBucketBuilder{i: 0}
-	result.pushCurrent()
+	result := &TrigramBucketBuilder{}
+	result.appendNewFilter()
 	return result
 }
 
-func (b *TrigramBucketBuilder) pushCurrent() {
-	b.current = bloom.NewWithEstimates(trigramBucket, targetFalsePositiveRatio)
+func (b *TrigramBucketBuilder) appendNewFilter() {
+	b.current = bloom.NewWithEstimates(trigramBucketSize, targetFalsePositiveRatio)
 	b.filters = append(b.filters, b.current)
 	b.i = 0
 }
 
 func (b *TrigramBucketBuilder) Add(data []byte) {
-	if b.i >= trigramBucket {
-		b.i = 0
-		b.filters = append(b.filters, b.current)
+	if b.i >= trigramBucketSize {
+		b.appendNewFilter()
 	}
 	b.i++
 	b.current.Add(data)
@@ -71,6 +70,7 @@ func (b *TrigramBucketBuilder) Add(data []byte) {
 
 type QueryBitmask struct {
 	NGrams []*bloom.BloomFilter
+	Bytes  [][]byte
 }
 
 type BlobIndex struct {
@@ -177,15 +177,16 @@ func onGrams(text string, useBitset bool) (map[uint64]struct{}, *bitset.BitSet) 
 func CollectQueryNgrams(query string) QueryBitmask {
 	ngrams, _ := onGrams(query, false)
 	result := make([]*bloom.BloomFilter, len(ngrams))
+	hashBytes := make([][]byte, len(ngrams))
 	arities := make([]int8, len(ngrams))
 	i := 0
 	for hash := range ngrams {
 		data := make([]byte, unsafe.Sizeof(hash))
 		binary.LittleEndian.PutUint64(data, hash)
-
-		filter := bloom.NewWithEstimates(trigramBucket, targetFalsePositiveRatio)
+		filter := bloom.NewWithEstimates(trigramBucketSize, targetFalsePositiveRatio)
 		filter.Add(data)
 		result[i] = filter
+		hashBytes[i] = data
 		arities[i] = ngramArity(hash)
 		i++
 	}
@@ -208,7 +209,7 @@ func CollectQueryNgrams(query string) QueryBitmask {
 	if len(result) > maximumQueryNgrams {
 		result = result[:maximumQueryNgrams]
 	}
-	return QueryBitmask{result}
+	return QueryBitmask{NGrams: result, Bytes: hashBytes}
 }
 
 func (r *RepoIndex) SerializeToFile(cacheDir string) (err error) {
@@ -334,7 +335,7 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 		go func(start, end int) {
 			defer wg.Done()
 			data64 := make([]byte, unsafe.Sizeof(uint64(1)))
-			data32 := data64[:unsafe.Sizeof(int32(1))]
+			//data32 := data64[:unsafe.Sizeof(int32(1))]
 			for _, filename := range filenames[start:end] {
 				if IsProgressBarEnabled {
 					bar.Add(1)
@@ -364,8 +365,8 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 				indices := make([]uint, asciiCount)
 				ngramsAscii.NextSetMany(0, indices)
 				for _, hash := range indices {
-					binary.LittleEndian.PutUint32(data32, uint32(hash))
-					buckets.Add(data32)
+					binary.LittleEndian.PutUint64(data64, uint64(hash))
+					buckets.Add(data64)
 				}
 				res <- BlobIndex{Path: filename, Filters: buckets.filters}
 			}
@@ -453,6 +454,20 @@ func (r *RepoIndex) pathsMatchingQuerySync(
 			continue
 		}
 		isMatch := len(grams.NGrams) > 0
+		//for _, gram := range grams.Bytes {
+		//	gramHasMatch := false
+		//	for _, filter := range index.Filters {
+		//		//fmt.Printf("test %v %v\n", index.Filters.Test(gram))
+		//		if filter.Test(gram) {
+		//			gramHasMatch = true
+		//			break
+		//		}
+		//	}
+		//	if !gramHasMatch {
+		//		isMatch = false
+		//		break
+		//	}
+		//}
 		for _, gram := range grams.NGrams {
 			gramHasMatch := false
 			for _, filter := range index.Filters {
@@ -485,7 +500,7 @@ func (r *RepoIndex) PathsMatchingQuerySync(query string) []string {
 func (r *RepoIndex) FilenamesMatchingQuery(query string) chan string {
 	grams := CollectQueryNgrams(query)
 	res := make(chan string, len(r.Blobs))
-	batchSize := 10_000
+	batchSize := 1_000_000
 	var wg sync.WaitGroup
 	for i := 0; i < len(r.Blobs); i += batchSize {
 		j := i + batchSize
