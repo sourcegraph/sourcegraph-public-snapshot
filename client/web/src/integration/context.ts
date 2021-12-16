@@ -71,6 +71,8 @@ export const createWebIntegrationTestContext = async ({
     // https://github.com/sourcegraph/sourcegraph/issues/22831
     const runtimeChunkScriptTag = isHotReloadEnabled ? `<script src=${getRuntimeAppBundle()}></script>` : ''
 
+    sharedTestContext.server.get(new URL('/.assets/*path', driver.sourcegraphBaseUrl).href).passthrough()
+
     // Serve all requests for index.html (everything that does not match the handlers above) the same index.html
     let jsContext = createJsContext({ sourcegraphBaseUrl: sharedTestContext.driver.sourcegraphBaseUrl })
     sharedTestContext.server
