@@ -600,11 +600,19 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 	if series.CreatedAt.IsZero() {
 		series.CreatedAt = s.Now()
 	}
+	interval := timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
+		Value: series.SampleIntervalValue,
+	}
+	if !interval.IsValid() {
+		interval = timeseries.DefaultInterval
+	}
+
 	if series.NextRecordingAfter.IsZero() {
-		series.NextRecordingAfter = s.Now()
+		series.NextRecordingAfter = interval.StepForwards(s.Now())
 	}
 	if series.NextSnapshotAfter.IsZero() {
-		series.NextSnapshotAfter = s.Now()
+		series.NextSnapshotAfter = NextSnapshot(s.Now())
 	}
 	if series.OldestHistoricalAt.IsZero() {
 		// TODO(insights): this value should probably somewhere more discoverable / obvious than here

@@ -2,6 +2,7 @@ package codeintel
 
 import (
 	"database/sql"
+	"os"
 
 	"github.com/cockroachdb/errors"
 
@@ -26,7 +27,16 @@ var initCodeIntelDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{},
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-	db, err := connections.NewCodeIntelDB(dsn, "worker", false, &observation.TestContext)
+	var (
+		db  *sql.DB
+		err error
+	)
+	if os.Getenv("NEW_MIGRATIONS") == "" {
+		// CURRENTLY DEPRECATING
+		db, err = connections.NewCodeIntelDB(dsn, "worker", false, &observation.TestContext)
+	} else {
+		db, err = connections.EnsureNewCodeIntelDB(dsn, "worker", &observation.TestContext)
+	}
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to codeintel database: %s", err)
 	}

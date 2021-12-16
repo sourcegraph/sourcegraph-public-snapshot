@@ -36,14 +36,14 @@ var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 var versionRe = lazyregexp.New(`\b12\.\d+\b`)
 
-type databaseFactory func(dsn string, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error)
+type databaseFactory func(dsn string, appName string, observationContext *observation.Context) (*sql.DB, error)
 
 var schemas = map[string]struct {
 	destinationFilename string
 	factory             databaseFactory
 }{
-	"frontend":  {"schema.md", connections.NewFrontendDB},
-	"codeintel": {"schema.codeintel.md", connections.NewCodeIntelDB},
+	"frontend":  {"schema.md", connections.MigrateNewFrontendDB},
+	"codeintel": {"schema.codeintel.md", connections.MigrateNewCodeIntelDB},
 }
 
 // This script generates markdown formatted output containing descriptions of
@@ -113,7 +113,7 @@ func generateAndWrite(name string, factory databaseFactory, dataSource string, c
 		return errors.Wrap(err, fmt.Sprintf("run: %s", out))
 	}
 
-	db, err := factory(dataSource, "", true, &observation.TestContext)
+	db, err := factory(dataSource, "", &observation.TestContext)
 	if err != nil {
 		return err
 	}

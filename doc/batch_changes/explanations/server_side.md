@@ -1,6 +1,6 @@
 # Using executors to compute Batch Changes server-side
 
-<aside class="experimental">This feature is [experimental](../../admin/beta_and_experimental_features.md#experimental-features)</aside>
+<aside class="experimental">This feature is experimental</aside>
 
 By default, Batch Changes uses a command line interface in your local environment to [compute diffs](how_src_executes_a_batch_spec.md) and create changesets. This can be impractical for creating batch changes affecting hundreds or thousands of repositories, with large numbers of workspaces, or if the batch change steps require CPU, memory, or disk resources that are unavailable locally.
 

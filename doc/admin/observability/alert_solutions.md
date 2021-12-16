@@ -3025,11 +3025,11 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> repo-updater: 180000+ total number of user added repos for 5m0s
+- <span class="badge badge-critical">critical</span> repo-updater: 360000+ total number of user added repos for 5m0s
 
 **Possible solutions**
 
-- Check for unusual spikes in user added repos. Each user is only allowed to add 2000
+- Check for unusual spikes in user added repos. Each user is only allowed to add 2000 and we have a site wide limit of 400k.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-user-added-repos).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 

@@ -169,7 +169,7 @@ describe('e2e test suite', () => {
                         `[data-test-access-token-description="${name}"] .test-access-token-delete`,
                         { visible: true }
                     )
-                ).click(),
+                )?.click(),
             ])
 
             await driver.page.waitFor(
@@ -223,7 +223,7 @@ describe('e2e test suite', () => {
                 await driver.page.waitForSelector(
                     `[data-test-external-service-name="${displayName}"] .test-edit-external-service-button`
                 )
-            ).click()
+            )?.click()
 
             // Type in a new external service configuration.
             const newConfig = JSON.stringify({
@@ -253,7 +253,7 @@ describe('e2e test suite', () => {
                         '[data-test-external-service-name="test-github-test-2"] .test-delete-external-service-button',
                         { visible: true }
                     )
-                ).click(),
+                )?.click(),
             ])
 
             await driver.page.waitFor(
@@ -491,7 +491,7 @@ describe('e2e test suite', () => {
                     await driver.page.waitForSelector('[data-tree-path="async.go"]', {
                         visible: true,
                     })
-                ).click()
+                )?.click()
                 await driver.assertWindowLocation(
                     '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/blob/async.go'
                 )
@@ -744,7 +744,7 @@ describe('e2e test suite', () => {
                 test(symbolTest.name, async () => {
                     await driver.page.goto(sourcegraphBaseUrl + symbolTest.filePath)
 
-                    await (await driver.page.waitForSelector('[data-tab-content="symbols"]')).click()
+                    await (await driver.page.waitForSelector('[data-tab-content="symbols"]'))?.click()
 
                     await driver.page.waitForSelector('.test-symbol-name', { visible: true })
 
@@ -800,7 +800,7 @@ describe('e2e test suite', () => {
 
                     await driver.page.goto(repoBaseURL + navigationTest.filePath)
 
-                    await (await driver.page.waitForSelector('[data-tab-content="symbols"]')).click()
+                    await (await driver.page.waitForSelector('[data-tab-content="symbols"]'))?.click()
 
                     await driver.page.waitForSelector('.test-symbol-name', { visible: true })
 
@@ -808,7 +808,7 @@ describe('e2e test suite', () => {
                         await driver.page.waitForSelector(`.test-symbol-link[href*="${navigationTest.symbolPath}"]`, {
                             visible: true,
                         })
-                    ).click()
+                    )?.click()
                     await driver.assertWindowLocation(repoBaseURL + navigationTest.symbolPath, true)
                 })
             }

@@ -300,7 +300,7 @@ function mockCommonGraphQLResponses(
                 createdAt: subDays(new Date(), 5).toISOString(),
                 updatedAt: subDays(new Date(), 5).toISOString(),
                 description: '### Very cool batch change',
-                initialApplier: {
+                creator: {
                     url: '/users/alice',
                     username: 'alice',
                 },
