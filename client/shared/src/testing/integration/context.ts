@@ -5,16 +5,14 @@ import { MODE, Polly, PollyServer } from '@pollyjs/core'
 import FSPersister from '@pollyjs/persister-fs'
 import { GraphQLError } from 'graphql'
 import { snakeCase } from 'lodash'
-import * as mime from 'mime-types'
 import { Test } from 'mocha'
-import { readFile, mkdir } from 'mz/fs'
+import { mkdir } from 'mz/fs'
 import pTimeout from 'p-timeout'
 import * as prettier from 'prettier'
 import { Subject, Subscription, throwError } from 'rxjs'
 import { first, timeoutWith } from 'rxjs/operators'
 
 import { ErrorGraphQLResult, SuccessGraphQLResult } from '../../graphql/graphql'
-import { asError } from '../../util/errors'
 import { keyExistsIn } from '../../util/types'
 import { recordCoverage } from '../coverage'
 import { Driver } from '../driver'
@@ -28,8 +26,6 @@ util.inspect.defaultOptions.maxStringLength = 80
 
 Polly.register(CdpAdapter as any)
 Polly.register(FSPersister)
-
-const ASSETS_DIRECTORY = path.resolve(__dirname, '../../../../../ui/assets')
 
 const checkPollyMode = (mode: string): MODE => {
     if (mode === 'record' || mode === 'replay' || mode === 'passthrough' || mode === 'stopped') {
@@ -166,30 +162,7 @@ export const createSharedIntegrationTestContext = async <
             .send('')
     })
 
-    // Serve assets from disk
-    server.get(new URL('/.assets/*path', driver.sourcegraphBaseUrl).href).intercept(async (request, response) => {
-        const asset = request.params.path
-        // Cache all responses for the entire lifetime of the test run
-        response.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
-        try {
-            const content = await readFile(path.join(ASSETS_DIRECTORY, asset), {
-                // Polly doesn't support Buffers or streams at the moment
-                encoding: 'utf-8',
-            })
-            const contentType = mime.contentType(path.basename(asset))
-            if (contentType) {
-                response.type(contentType)
-            }
-            response.send(content)
-        } catch (error) {
-            if ((asError(error) as NodeJS.ErrnoException).code === 'ENOENT') {
-                response.sendStatus(404)
-            } else {
-                console.error(error)
-                response.status(500).send(asError(error).message)
-            }
-        }
-    })
+    server.get(new URL('/.assets/*path', driver.sourcegraphBaseUrl).href).passthrough()
 
     // GraphQL requests are not handled by HARs, but configured per-test.
     interface GraphQLRequestEvent<O extends TGraphQlOperationNames> {
