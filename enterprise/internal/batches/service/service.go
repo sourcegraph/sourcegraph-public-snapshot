@@ -372,11 +372,7 @@ type createBatchSpecForExecutionOpts struct {
 // createBatchSpecForExecution persists the given BatchSpec in the given transaction,
 // possibly creating ChangesetSpecs if the spec contains importChangesets statements,
 // possibly updating a BatchChange to point to this new spec, and finally creating a
-// BatchSpecResolutionJob.
-//
-// NOTE: This function overwites the spec_id field of the given BatchChange, destroying
-// the link to the previous batch spec, and thus should only be called for draft
-// BatchChanges.
+// BatchSpecResolutionJob. We should only update a BatchChange if it is still a draft.
 func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Store, opts createBatchSpecForExecutionOpts) error {
 	opts.spec.CreatedFromRaw = true
 	opts.spec.AllowIgnored = opts.allowIgnored
@@ -588,10 +584,8 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	if err != nil && err != store.ErrNoResults {
 		return nil, errors.Wrap(err, "getting batch change")
 	}
-	// NOTE: For now we only support replacing the spec input on draft batch changes
-	// because updating a batch change whose spec was already applied destroys the
-	// link between the batch change and the original batch spec that produced the
-	// changesets.
+	// If the batch spec is associated with a batch change, make sure it's a draft. We
+	// don't want to overwrite a batch spec association when it was already applied.
 	if batchChange != nil && !batchChange.IsDraft() {
 		return nil, ErrBatchChangeNotDraft
 	}
