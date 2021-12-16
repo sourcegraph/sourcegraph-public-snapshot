@@ -699,7 +699,7 @@ func getBool() bool {
 }
 
 func presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, category *dependencyCategory) error {
-	printCategoryHeaderAndDependencies(categoryIdx, category)
+	printCategoryHeaderAndDependencies(categoryIdx+1, category)
 
 	choices := map[int]string{1: "I want to fix these manually"}
 	if category.autoFixing {
