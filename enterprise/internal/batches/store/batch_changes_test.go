@@ -409,7 +409,7 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock ct
 		}{
 			{
 				name:  "Any",
-				state: btypes.BatchChangeStateAny,
+				state: "",
 				want:  reversedBatchChanges,
 			},
 			{
