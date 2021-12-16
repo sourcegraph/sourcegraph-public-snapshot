@@ -23,6 +23,22 @@ var (
 	Yellow = color("\033[1;33m%s\033[0m")
 )
 var IsCaseInsensitive = os.Getenv("FILESKIP_CASE_SENSITIVE") != "true"
+var IncludeQuadgram = true
+var IncludePentagram = true
+
+func init() {
+	arityConfig := os.Getenv("FILESKIP_MAX_ARITY")
+	switch arityConfig {
+	case "5":
+		IncludeQuadgram = true
+		IncludePentagram = true
+	case "4":
+		IncludePentagram = true
+	default:
+		panic("unknown FILESKIP_MAX_ARITY value " + arityConfig)
+	}
+
+}
 
 const (
 	Version     = 1
@@ -127,10 +143,10 @@ func onGrams(text string) (*xorfilter.BinaryFuse8, *roaring.Bitmap) {
 		if i > 2 {
 			seen.Add(trigram)
 		}
-		if i > 3 {
+		if IncludeQuadgram && i > 3 {
 			seen.Add(quadgram)
 		}
-		if i > 4 {
+		if IncludePentagram && i > 4 {
 			seen.Add(pentagram)
 		}
 		ch4 = ch3
@@ -204,11 +220,11 @@ func (r *RepoIndex) Stats() map[string]float64 {
 		indexedBlobsSize = indexedBlobsSize + statSize
 		bloomFilterBinaryStorageSize += blob.EstimatedBinarySize()
 	}
-	caseSensitive := 1
 	if IsCaseInsensitive {
-		caseSensitive = 0
+		stats["case-insensitive"] = float64(1)
+	} else {
+		stats["case-sensitive"] = float64(1)
 	}
-	stats["case-sensitive"] = float64(caseSensitive)
 	stats["indexed-blob-count"] = float64(len(r.Blobs))
 	stats["indexed-blobs-size"] = float64(indexedBlobsSize)
 	stats["bloom-memory-size"] = float64(bloomFilterBinaryStorageSize)
