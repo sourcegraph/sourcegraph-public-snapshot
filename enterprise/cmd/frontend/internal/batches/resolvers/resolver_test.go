@@ -461,9 +461,9 @@ func TestApplyBatchChange(t *testing.T) {
 			DatabaseID: userID,
 			SiteAdmin:  true,
 		},
-		InitialApplier: apiUser,
-		LastApplier:    apiUser,
-		LastAppliedAt:  marshalDateTime(t, now),
+		Creator:       apiUser,
+		LastApplier:   apiUser,
+		LastAppliedAt: marshalDateTime(t, now),
 		Changesets: apitest.ChangesetConnection{
 			Nodes: []apitest.Changeset{
 				{Typename: "ExternalChangeset", State: string(btypes.ChangesetStateProcessing)},
@@ -508,7 +508,7 @@ fragment u on User { id, databaseID, siteAdmin }
 fragment o on Org  { id, name }
 fragment batchChange on BatchChange {
 	id, name, description
-    initialApplier    { ...u }
+    creator           { ...u }
     lastApplier       { ...u }
     lastAppliedAt
     namespace {
@@ -852,9 +852,9 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 						DatabaseID: userID,
 						SiteAdmin:  true,
 					},
-					InitialApplier: apiUser,
-					LastApplier:    apiUser,
-					LastAppliedAt:  marshalDateTime(t, now),
+					Creator:       apiUser,
+					LastApplier:   apiUser,
+					LastAppliedAt: marshalDateTime(t, now),
 					Changesets: apitest.ChangesetConnection{
 						Nodes: []apitest.Changeset{
 							{Typename: "ExternalChangeset", State: string(btypes.ChangesetStateProcessing)},
@@ -897,12 +897,12 @@ func TestMoveBatchChange(t *testing.T) {
 	}
 
 	batchChange := &btypes.BatchChange{
-		BatchSpecID:      batchSpec.ID,
-		Name:             "old-name",
-		InitialApplierID: userID,
-		LastApplierID:    userID,
-		LastAppliedAt:    time.Now(),
-		NamespaceUserID:  batchSpec.UserID,
+		BatchSpecID:     batchSpec.ID,
+		Name:            "old-name",
+		CreatorID:       userID,
+		LastApplierID:   userID,
+		LastAppliedAt:   time.Now(),
+		NamespaceUserID: batchSpec.UserID,
 	}
 	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
@@ -962,7 +962,7 @@ fragment o on Org  { id, name }
 mutation($batchChange: ID!, $newName: String, $newNamespace: ID){
   moveBatchChange(batchChange: $batchChange, newName: $newName, newNamespace: $newNamespace) {
 	id, name, description
-	initialApplier  { ...u }
+	creator { ...u }
 	namespace {
 		... on User { ...u }
 		... on Org  { ...o }
@@ -1903,5 +1903,5 @@ mutation($batchChange: ID!, $changesets: [ID!]!, $draft: Boolean!) {
 func stringPtr(s string) *string { return &s }
 
 func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	return graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil, nil, nil)
+	return graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }

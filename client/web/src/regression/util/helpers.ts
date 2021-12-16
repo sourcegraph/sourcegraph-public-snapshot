@@ -279,7 +279,7 @@ export async function login(
         await loginToAuthProvider()
         try {
             await driver.page.waitForFunction(
-                url => document.location.href === url,
+                (url: string) => document.location.href === url,
                 { timeout: 5 * 1000 },
                 sourcegraphBaseUrl + '/search'
             )

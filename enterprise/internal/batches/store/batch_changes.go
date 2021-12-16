@@ -22,7 +22,7 @@ var batchChangeColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_changes.id"),
 	sqlf.Sprintf("batch_changes.name"),
 	sqlf.Sprintf("batch_changes.description"),
-	sqlf.Sprintf("batch_changes.initial_applier_id"),
+	sqlf.Sprintf("batch_changes.creator_id"),
 	sqlf.Sprintf("batch_changes.last_applier_id"),
 	sqlf.Sprintf("batch_changes.last_applied_at"),
 	sqlf.Sprintf("batch_changes.namespace_user_id"),
@@ -39,7 +39,7 @@ var batchChangeColumns = []*sqlf.Query{
 var batchChangeInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("name"),
 	sqlf.Sprintf("description"),
-	sqlf.Sprintf("initial_applier_id"),
+	sqlf.Sprintf("creator_id"),
 	sqlf.Sprintf("last_applier_id"),
 	sqlf.Sprintf("last_applied_at"),
 	sqlf.Sprintf("namespace_user_id"),
@@ -83,7 +83,7 @@ func (s *Store) createBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 		sqlf.Join(batchChangeInsertColumns, ", "),
 		c.Name,
 		c.Description,
-		nullInt32Column(c.InitialApplierID),
+		nullInt32Column(c.CreatorID),
 		nullInt32Column(c.LastApplierID),
 		nullTimeColumn(c.LastAppliedAt),
 		nullInt32Column(c.NamespaceUserID),
@@ -124,7 +124,7 @@ func (s *Store) updateBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 		sqlf.Join(batchChangeInsertColumns, ", "),
 		c.Name,
 		c.Description,
-		nullInt32Column(c.InitialApplierID),
+		nullInt32Column(c.CreatorID),
 		nullInt32Column(c.LastApplierID),
 		nullTimeColumn(c.LastAppliedAt),
 		nullInt32Column(c.NamespaceUserID),
@@ -160,7 +160,7 @@ type CountBatchChangesOpts struct {
 	State       btypes.BatchChangeState
 	RepoID      api.RepoID
 
-	InitialApplierID int32
+	CreatorID int32
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32
@@ -206,13 +206,15 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 
 	switch opts.State {
 	case btypes.BatchChangeStateOpen:
-		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL"))
+		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.last_applied_at IS NOT NULL"))
 	case btypes.BatchChangeStateClosed:
 		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
+	case btypes.BatchChangeStateDraft:
+		preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL"))
 	}
 
-	if opts.InitialApplierID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_changes.initial_applier_id = %d", opts.InitialApplierID))
+	if opts.CreatorID != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_changes.creator_id = %d", opts.CreatorID))
 	}
 
 	if opts.NamespaceUserID != 0 {
@@ -435,7 +437,7 @@ type ListBatchChangesOpts struct {
 	Cursor      int64
 	State       btypes.BatchChangeState
 
-	InitialApplierID int32
+	CreatorID int32
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32
@@ -503,13 +505,15 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 
 	switch opts.State {
 	case btypes.BatchChangeStateOpen:
-		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL"))
+		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.last_applied_at IS NOT NULL"))
 	case btypes.BatchChangeStateClosed:
 		preds = append(preds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
+	case btypes.BatchChangeStateDraft:
+		preds = append(preds, sqlf.Sprintf("batch_changes.last_applied_at IS NULL"))
 	}
 
-	if opts.InitialApplierID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_changes.initial_applier_id = %d", opts.InitialApplierID))
+	if opts.CreatorID != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_changes.creator_id = %d", opts.CreatorID))
 	}
 
 	if opts.NamespaceUserID != 0 {
@@ -564,7 +568,7 @@ func scanBatchChange(c *btypes.BatchChange, s dbutil.Scanner) error {
 		&c.ID,
 		&c.Name,
 		&dbutil.NullString{S: &c.Description},
-		&dbutil.NullInt32{N: &c.InitialApplierID},
+		&dbutil.NullInt32{N: &c.CreatorID},
 		&dbutil.NullInt32{N: &c.LastApplierID},
 		&dbutil.NullTime{Time: &c.LastAppliedAt},
 		&dbutil.NullInt32{N: &c.NamespaceUserID},
