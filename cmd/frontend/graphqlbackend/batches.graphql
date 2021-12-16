@@ -1387,10 +1387,8 @@ extend type Mutation {
         """
         The namespace (either a user or organization). A batch spec can only be applied to (or
         used to create) batch changes in this namespace.
-
-        Defaults to the user who created the batch spec.
         """
-        namespace: ID
+        namespace: ID!
     ): BatchSpec!
 
     """
