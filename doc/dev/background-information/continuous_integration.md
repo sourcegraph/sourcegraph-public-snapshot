@@ -15,6 +15,23 @@ To see what checks will get run against your current branch, use [`sg`](../setup
 sg ci preview
 ```
 
+### Vulnerability scanning
+
+Our CI pipeline scans uses [Trivy](https://aquasecurity.github.io/trivy/) to scan our Docker images for security vulnerabilities.
+
+Trivy will perform scans upon commits to the following branches:
+
+1. `main` 
+2. branches prefixed by `main-dry-run/`
+3. branches prefixed by `docker-images-patch/$IMAGE` (where only a single image is built)
+
+If there are any `HIGH` or `CRITICAL` severities in a Docker image that have a known fix:
+
+1. The CI pipeline will create an annotation that contains links to reports that describe the vulnerabilities
+2. The Trivy scanning step will [soft fail](https://buildkite.com/docs/pipelines/command-step#soft-fail-attributes). Note that soft failures **do not fail builds or block deployments**. They simply highlight the failing step for further analysis.
+
+> NOTE: Our vulnerability management process (including this workflow) is under active development and in its early stages. All of the above is subject to change. See [https://github.com/sourcegraph/sourcegraph/pull/25756](https://github.com/sourcegraph/sourcegraph/pull/25756) for more context.
+
 ### Development
 
 The source code of the pipeline generator is in [`/enterprise/dev/ci`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/enterprise/dev/ci).
@@ -70,13 +87,19 @@ RunType.Is(:[_]) OR case :[_]: patternType:structural repo:^github\.com/sourcegr
 
 For simple PR checks, see [Creating PR checks](#creating-pr-checks).
 
-### Flakes
+### Pipeline health
+
+Maintaining pipeline health is a critical part of ensuring we ship a stable product - changes that make it to the `main` branch may be deployed to various Sourcegraph instances, and having a reliable and predictable pipeline is crucial to ensuring bugs do not make it to production environments.
+
+To enable this, we want to [address flakes as they arise](#flakes) and have tooling to mitigate the impacts of pipeline instability, such as [`buildchecker`](#buildchecker).
+
+#### Flakes
 
 A flake is generally characterized as one-off or rare issues that can be resolved by retrying the failed job or task. In other words: something that sometimes fails, but if you retry it enough times, it passes, *eventually*.
 
 Tests are not the only thing that are flaky - flakes can also encompass sporadic infrastructure issues and other unreliable steps.
 
-#### Flaky tests
+##### Flaky tests
 
 Learn more about our flaky test policy in [Testing principles: Flaky tests](testing_principles.md#flaky-tests).
 
@@ -87,7 +110,7 @@ Use language specific functionality to skip a test. Create an issue and ping an 
 
 If the language or framework allows for a skip reason, include a link to the issue track re-enabling the test, or leave a docstring with a link.
 
-#### Flaky steps
+##### Flaky steps
 
 If a step is flaky we need to get the build back to reliable as soon as possible. If there is not already a discussion in `#buildkite-main` create one and link what step you take. Here are the recommended approaches in order:
 
@@ -108,6 +131,12 @@ An example use of `Skip`:
  }
 ```
 
+#### `buildchecker`
+
+[`buildchecker`](https://github.com/sourcegraph/sourcegraph/tree/main/dev/buildchecker) is a tool responding to periods of consecutive build failures on the `main` branch Sourcegraph Buildkite pipeline. If it detects a series of failures on the `main` branch, merges to `main` will be restricted until the issue is resolved.
+
+<!-- TODO link to handbook version with Sourcegraph-specific docs -->
+
 ### Buildkite infrastructure
 
 #### Pipeline setup
@@ -126,22 +155,7 @@ The term _secret_ refers to authentication credentials like passwords, API keys,
 - use an environment variable name with one of the following suffixes to ensure it gets redacted in the logs: `*_PASSWORD, *_SECRET, *_TOKEN, *_ACCESS_KEY, *_SECRET_KEY, *_CREDENTIALS`
 - while environment variables can be assigned when declaring steps, they should never be used for secrets, because they won't get redacted, even if they match one of the above patterns.
 
-### Vulnerability Scanning
 
-Our CI pipeline scans uses [Trivy](https://aquasecurity.github.io/trivy/) to scan our Docker images for security vulnerabilities.
-
-Trivy will perform scans upon commits to the following branches:
-
-1. `main` 
-2. branches prefixed by `main-dry-run/`
-3. branches prefixed by `docker-images-patch/$IMAGE` (where only a single image is built)
-
-If there are any `HIGH` or `CRITICAL` severities in a Docker image that have a known fix:
-
-1. The CI pipeline will create an annotation that contains links to reports that describe the vulnerabilities
-2. The Trivy scanning step will [soft fail](https://buildkite.com/docs/pipelines/command-step#soft-fail-attributes). Note that soft failures **do not fail builds or block deployments**. They simply highlight the failing step for further analysis.
-
-> NOTE: Our vulnerability management process (including this workflow) is under active development and in its early stages. All of the above is subject to change. See [https://github.com/sourcegraph/sourcegraph/pull/25756](https://github.com/sourcegraph/sourcegraph/pull/25756) for more context.
 
 ## GitHub Actions
 
