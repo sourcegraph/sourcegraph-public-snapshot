@@ -11,6 +11,6 @@ echo "--- Running buildsheriff"
 go run main.go \
   -buildkite.token="$BUILDKITE_TOKEN" \
   -github.token="$GITHUB_TOKEN" \
-  -slack.webhook="$WEBHOOK_URL"
+  -slack.webhook="$SLACK_WEBHOOK"
 
 popd

@@ -10,9 +10,3 @@ steps:
     command:
       - dev/bkstats/run.sh
     agents: { queue: standard }
-
-  - label: ":buildkite: 🤠 Run autobuildsherrif"
-    if: build.message == "autobuildsherrif"
-    command:
-      - dev/autobuildsherrif/run.sh
-    agents: { queue: standard }

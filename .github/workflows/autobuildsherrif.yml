@@ -1,0 +1,20 @@
+name: autobuildsherrif
+on:
+  schedule:
+  - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    environment: autobuildsherrif # secrets are configured here
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with: { go-version: '1.17' }
+
+      - run: ./dev/autobuildsheriff/run.sh
+        env:
+          GITHUB_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_GITHUB_TOKEN }}
+          BUILDKITE_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_BUILDKITE_TOKEN }}
+          SLACK_WEBHOOK: ${{ secrets.AUTOBUILDSHERRIF_SLACK_WEBHOOK }}
