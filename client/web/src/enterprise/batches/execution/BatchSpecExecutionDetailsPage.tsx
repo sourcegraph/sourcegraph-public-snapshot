@@ -32,8 +32,8 @@ import { BatchSpec } from '../BatchSpec'
 import { BatchChangePreviewPage } from '../preview/BatchChangePreviewPage'
 
 import { cancelBatchSpecExecution, FETCH_BATCH_SPEC_EXECUTION, retryBatchSpecExecution } from './backend'
-import { BatchSpecStateBadge } from './BatchSpecBadge'
 import styles from './BatchSpecExecutionDetailsPage.module.scss'
+import { BatchSpecStateBadge } from './BatchSpecStateBadge'
 import { WorkspaceDetails } from './WorkspaceDetails'
 import { WorkspacesList } from './WorkspacesList'
 
