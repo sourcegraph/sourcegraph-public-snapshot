@@ -7,5 +7,5 @@ git fetch
 echo "Running git fetch... done"
 
 echo "install asdf plugins"
-asdf install 
+asdf install
 echo "done installing"
