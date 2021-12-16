@@ -26,10 +26,10 @@ RUN addgroup -g 101 -S sourcegraph && adduser -u 100 -S -G sourcegraph -h /home/
 RUN apk update && apk add --no-cache \
     bind-tools \
     # Requires the use of the edge repo for CVE-2021-28831 until a patched version is brought into the 3.12 mirror.
-    'busybox=1.34.1-r4' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
+    'busybox=~1.34.1' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
     ca-certificates \
     curl \
     mailcap \
     tini \
     # Required due to ssl_clent upgrade with busybox
-    'wget=1.21.1-r1' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.14/main
+    'wget=~1.21.1' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.14/main

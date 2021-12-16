@@ -18,9 +18,23 @@ add('Never updated', () => (
             <BatchChangeInfoByline
                 {...props}
                 createdAt={THREE_DAYS_AGO}
-                initialApplier={{ url: 'http://test.test/alice', username: 'alice' }}
+                creator={{ url: 'http://test.test/alice', username: 'alice' }}
                 lastAppliedAt={THREE_DAYS_AGO}
                 lastApplier={{ url: 'http://test.test/alice', username: 'alice' }}
+            />
+        )}
+    </WebStory>
+))
+
+add('Never updated (SSBC)', () => (
+    <WebStory>
+        {props => (
+            <BatchChangeInfoByline
+                {...props}
+                createdAt={THREE_DAYS_AGO}
+                creator={{ url: 'http://test.test/alice', username: 'alice' }}
+                lastAppliedAt={null}
+                lastApplier={null}
             />
         )}
     </WebStory>
@@ -32,7 +46,7 @@ add('Updated (same user)', () => (
             <BatchChangeInfoByline
                 {...props}
                 createdAt={THREE_DAYS_AGO}
-                initialApplier={{ url: 'http://test.test/alice', username: 'alice' }}
+                creator={{ url: 'http://test.test/alice', username: 'alice' }}
                 lastAppliedAt={subDays(new Date(), 1).toISOString()}
                 lastApplier={{ url: 'http://test.test/alice', username: 'alice' }}
             />
@@ -46,7 +60,7 @@ add('Updated (different users)', () => (
             <BatchChangeInfoByline
                 {...props}
                 createdAt={THREE_DAYS_AGO}
-                initialApplier={{ url: 'http://test.test/alice', username: 'alice' }}
+                creator={{ url: 'http://test.test/alice', username: 'alice' }}
                 lastAppliedAt={subDays(new Date(), 1).toISOString()}
                 lastApplier={{ url: 'http://test.test/bob', username: 'bob' }}
             />

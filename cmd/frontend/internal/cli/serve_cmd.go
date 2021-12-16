@@ -43,7 +43,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
@@ -110,7 +109,7 @@ func InitDB() (*sql.DB, error) {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
+func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable) enterprise.Services) error {
 	ctx := context.Background()
 
 	log.SetFlags(0)
@@ -159,33 +158,8 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
-	// Create an out-of-band migration runner onto which each enterprise init function
-	// can register migration routines to run in the background while they still have
-	// work remaining.
-	outOfBandMigrationRunner := newOutOfBandMigrationRunner(ctx, db)
-
-	// Run a background job to handle encryption of external service configuration.
-	extsvcMigrator := oobmigration.NewExternalServiceConfigMigratorWithDB(db)
-	extsvcMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
-	if err := outOfBandMigrationRunner.Register(extsvcMigrator.ID(), extsvcMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-		log.Fatalf("failed to run external service encryption job: %v", err)
-	}
-	// Run a background job to handle encryption of external service configuration.
-	extAccMigrator := oobmigration.NewExternalAccountsMigratorWithDB(db)
-	extAccMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
-	if err := outOfBandMigrationRunner.Register(extAccMigrator.ID(), extAccMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-		log.Fatalf("failed to run user external account encryption job: %v", err)
-	}
-
-	// Run a background job to calculate the has_webhooks field on external
-	// service records.
-	webhookMigrator := oobmigration.NewExternalServiceWebhookMigratorWithDB(db)
-	if err := outOfBandMigrationRunner.Register(webhookMigrator.ID(), webhookMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-		log.Fatalf("failed to run external service webhook job: %v", err)
-	}
-
 	// Run enterprise setup hook
-	enterprise := enterpriseSetupHook(db, conf.DefaultClient(), outOfBandMigrationRunner)
+	enterprise := enterpriseSetupHook(db, conf.DefaultClient())
 
 	ui.InitRouter(db, enterprise.CodeIntelResolver)
 
@@ -262,6 +236,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 		enterprise.DotcomResolver,
 		enterprise.SearchContextsResolver,
 		enterprise.OrgRepositoryResolver,
+		enterprise.NotebooksResolver,
 	)
 	if err != nil {
 		return err
@@ -282,10 +257,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 		return err
 	}
 
-	routines := []goroutine.BackgroundRoutine{
-		server,
-		outOfBandMigrationRunner,
-	}
+	routines := []goroutine.BackgroundRoutine{server}
 	if internalAPI != nil {
 		routines = append(routines, internalAPI)
 	}
