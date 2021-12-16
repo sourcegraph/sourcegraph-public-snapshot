@@ -162,7 +162,7 @@ export const createSharedIntegrationTestContext = async <
             .send('')
     })
 
-    server.get(new URL('/.assets/*path', driver.sourcegraphBaseUrl).href).passthrough()
+    server.get(new URL('/*path', driver.sourcegraphBaseUrl).href).passthrough()
 
     // GraphQL requests are not handled by HARs, but configured per-test.
     interface GraphQLRequestEvent<O extends TGraphQlOperationNames> {
