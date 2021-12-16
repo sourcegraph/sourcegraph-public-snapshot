@@ -93,8 +93,8 @@ export const CreateOrEditBatchChangePage: React.FunctionComponent<CreateOrEditBa
 
     if (loading && !data) {
         return (
-            <div className="text-center">
-                <LoadingSpinner className="icon-inline mx-auto my-4" />
+            <div className="w-100 text-center">
+                <LoadingSpinner className="icon-inline m-2" />
             </div>
         )
     }
@@ -192,14 +192,14 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         batchChange
     )
 
-    // TODO: Only needed when edit form is open
+    // TODO: Only needed when edit name/namespace form is open
     // Get the namespaces this user has access to.
     const { namespaces: _namespaces, defaultSelectedNamespace } = useNamespaces(
         settingsCascade,
         batchChange.namespace.id
     )
 
-    // TODO: Only needed when edit form is open
+    // TODO: Only needed when edit name/namespace form is open
     // The namespace selected for creating the new batch spec under.
     const [selectedNamespace, _setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
         defaultSelectedNamespace

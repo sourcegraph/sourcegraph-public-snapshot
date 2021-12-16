@@ -186,7 +186,13 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
 
     return (
         <ErrorBoundary location={props.location}>
-            <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+            <React.Suspense
+                fallback={
+                    <div className="w-100 text-center">
+                        <LoadingSpinner className="icon-inline m-2" />
+                    </div>
+                }
+            >
                 <Switch>
                     {userAreaRoutes.map(
                         ({ path, exact, render, condition = () => true, fullPage }) =>
