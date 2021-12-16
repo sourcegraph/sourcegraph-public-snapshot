@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
@@ -31,6 +32,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+//go:embed sg_maintenance.sh
+var sgMaintenanceScript string
+
 const (
 	// repoTTL is how often we should re-clone a repository.
 	repoTTL = time.Hour * 24 * 45
@@ -48,11 +52,16 @@ const (
 // likely evolve into some form of site config value in the future.
 var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "true", "Use git-gc during janitorial cleanup phases"))
 
+// sg maintenance and git gc must not be enabled at the same time. However, both
+// might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
+// SRC_ENABLE_SG_MAINTENANCE.
+var enableSGMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "false", "Use sg maintenance during janitorial cleanup phases"))
+
 var (
-	reposRemoved = promauto.NewCounter(prometheus.CounterOpts{
+	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_removed",
 		Help: "number of repos removed during cleanup",
-	})
+	}, []string{"reason"})
 	reposRecloned = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_recloned",
 		Help: "number of repos removed and re-cloned due to age",
@@ -83,6 +92,7 @@ const reposStatsName = "repos-stats.json"
 // 6. Perform garbage collection
 // 7. Re-clone repos after a while. (simulate git gc)
 // 8. Remove repos based on disk pressure.
+// 9. Perform sg-maintenance
 func (s *Server) cleanupRepos() {
 	janitorRunning.Set(1)
 	defer janitorRunning.Set(0)
@@ -99,19 +109,36 @@ func (s *Server) cleanupRepos() {
 		return false, nil
 	}
 
-	maybeRemoveCorrupt := func(dir GitDir) (done bool, err error) {
+	maybeRemoveCorrupt := func(dir GitDir) (done bool, _ error) {
+		var reason string
+
 		// We treat repositories missing HEAD to be corrupt. Both our cloning
 		// and fetching ensure there is a HEAD file.
-		_, err = os.Stat(dir.Path("HEAD"))
-		if !os.IsNotExist(err) {
+		if _, err := os.Stat(dir.Path("HEAD")); os.IsNotExist(err) {
+			reason = "missing-head"
+		} else if err != nil {
 			return false, err
 		}
 
-		log15.Info("removing corrupt repo", "repo", dir)
+		// We have seen repository corruption fail in such a way that the git
+		// config is missing the bare repo option but everything else looks
+		// like it works. This leads to failing fetches, so treat non-bare
+		// repos as corrupt. Since we often fetch with ensureRevision, this
+		// leads to most commands failing against the repository. It is safer
+		// to remove now than try a safe reclone.
+		if reason == "" && gitIsNonBareBestEffort(dir) {
+			reason = "non-bare"
+		}
+
+		if reason == "" {
+			return false, nil
+		}
+
+		log15.Info("removing corrupt repo", "repo", dir, "reason", reason)
 		if err := s.removeRepoDirectory(dir); err != nil {
 			return true, err
 		}
-		reposRemoved.Inc()
+		reposRemoved.WithLabelValues(reason).Inc()
 		return true, nil
 	}
 
@@ -221,10 +248,11 @@ func (s *Server) cleanupRepos() {
 	}
 
 	performGC := func(dir GitDir) (done bool, err error) {
-		if !enableGCAuto {
-			return false, nil
-		}
 		return false, gitGC(dir)
+	}
+
+	performSGMaintenance := func(dir GitDir) (done bool, err error) {
+		return false, sgMaintenance(dir)
 	}
 
 	type cleanupFn struct {
@@ -244,12 +272,22 @@ func (s *Server) cleanupRepos() {
 		// 2021-03-01 (tomas,keegan) we used to store an authenticated remote URL on
 		// disk. We no longer need it so we can scrub it.
 		{"scrub remote URL", scrubRemoteURL},
+	}
+
+	if enableGCAuto && !enableSGMaintenance {
 		// Runs a number of housekeeping tasks within the current repository, such as
 		// compressing file revisions (to reduce disk space and increase performance),
 		// removing unreachable objects which may have been created from prior
 		// invocations of git add, packing refs, pruning reflog, rerere metadata or stale
 		// working trees. May also update ancillary indexes such as the commit-graph.
-		{"garbage collect", performGC},
+		cleanups = append(cleanups, cleanupFn{"garbage collect", performGC})
+	}
+
+	if enableSGMaintenance && !enableGCAuto {
+		// Run tasks to optimize Git repository data, speeding up other Git commands and
+		// reducing storage requirements for the repository. Note: "garbage collect" and
+		// "sg maintenance" must not be enabled at the same time.
+		cleanups = append(cleanups, cleanupFn{"sg maintenance", performSGMaintenance})
 	}
 
 	if !conf.Get().DisableAutoGitUpdates {
@@ -350,20 +388,20 @@ func (s *Server) howManyBytesToFree() (int64, error) {
 type StatDiskSizer struct{}
 
 func (s *StatDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
-	var fs syscall.Statfs_t
-	if err := syscall.Statfs(mountPoint, &fs); err != nil {
+	var statFS syscall.Statfs_t
+	if err := syscall.Statfs(mountPoint, &statFS); err != nil {
 		return 0, errors.Wrap(err, "statting")
 	}
-	free := fs.Bavail * uint64(fs.Bsize)
+	free := statFS.Bavail * uint64(statFS.Bsize)
 	return free, nil
 }
 
 func (s *StatDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
-	var fs syscall.Statfs_t
-	if err := syscall.Statfs(mountPoint, &fs); err != nil {
+	var statFS syscall.Statfs_t
+	if err := syscall.Statfs(mountPoint, &statFS); err != nil {
 		return 0, errors.Wrap(err, "statting")
 	}
-	free := fs.Blocks * uint64(fs.Bsize)
+	free := statFS.Blocks * uint64(statFS.Bsize)
 	return free, nil
 }
 
@@ -483,7 +521,7 @@ func dirSize(d string) int64 {
 // partial state in the event of server restart or concurrent modifications to
 // the directory.
 //
-// Additionally it removes parent empty directories up until s.ReposDir.
+// Additionally, it removes parent empty directories up until s.ReposDir.
 func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 	ctx := context.Background()
 	dir := string(gitDir)
@@ -708,8 +746,22 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 	}
 }
 
+// gitIsNonBareBestEffort returns true if the repository is not a bare
+// repo. If we fail to check or the repository is bare we return false.
+//
+// Note: it is not always possible to check if a repository is bare since a
+// lock file may prevent the check from succeeding. We only want bare
+// repositories and want to avoid transient false positives.
+func gitIsNonBareBestEffort(dir GitDir) bool {
+	cmd := exec.Command("git", "-C", dir.Path(), "rev-parse", "--is-bare-repository")
+	dir.Set(cmd)
+	b, _ := cmd.Output()
+	b = bytes.TrimSpace(b)
+	return bytes.Equal(b, []byte("false"))
+}
+
 // gitGC will invoke `git-gc` to clean up any garbage in the repo. It will
-// operate synchronously and be aggressive with its internal heurisitcs when
+// operate synchronously and be aggressive with its internal heuristics when
 // deciding to act (meaning it will act now at lower thresholds).
 func gitGC(dir GitDir) error {
 	cmd := exec.Command("git", "-c", "gc.auto=1", "-c", "gc.autoDetach=false", "gc", "--auto")
@@ -717,6 +769,22 @@ func gitGC(dir GitDir) error {
 	err := cmd.Run()
 	if err != nil {
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to git-gc")
+	}
+	return nil
+}
+
+// sgMaintenance runs a set of git cleanup tasks in dir. This must not be run
+// concurrently with git gc.
+func sgMaintenance(dir GitDir) error {
+	cmd := exec.Command("sh")
+	dir.Set(cmd)
+
+	cmd.Stdin = strings.NewReader(sgMaintenanceScript)
+
+	b, err := cmd.CombinedOutput()
+	if err != nil {
+		log15.Debug("sg maintenance", "dir", dir, "out", string(b))
+		return errors.Wrapf(wrapCmdError(cmd, err), "failed to run sg maintenance")
 	}
 	return nil
 }

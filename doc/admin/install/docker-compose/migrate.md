@@ -9,7 +9,8 @@ Sourcegraph's core data (including user accounts, configuration, repository-meta
 ### Version requirements
 
 * This migration can only be done with Sourcegraph v3.13.1+. If you are not currently on at least this version, please upgrade first.
-* Do NOT attempt to upgrade at the same time as migrating to docker-compose. Use the docker-compose version corresponding to your current version. For example, if you are running the `sourcegraph/server` image version `v3.19.2` you must follow this guide using the Docker Compose deployment version `v3.19.2`.
+* Use the docker-compose version corresponding to your _current Sourcegraph version._ Do NOT attempt to upgrade at the same time as migrating to docker-compose. 
+* For example, if the Sourcegraph instance `sourcegraph/server` image is version `v3.19.2` you must follow this guide using the Docker Compose deployment version `v3.19.2`. That means you must migrate to a new instance that is on _the same version you took the Database dump from._
 
 ### Storage location change
 
@@ -53,7 +54,7 @@ CONTAINER ID        IMAGE
 
 ```bash
 # Use the CONTAINER_ID found in the previous step
-docker exec -it "$CONTAINER_ID" sh -c 'pg_dump -C --username=postgres sourcegraph' > /tmp/sourcegaph_db.out
+docker exec -it "$CONTAINER_ID" sh -c 'pg_dump -C --username=postgres sourcegraph' > /tmp/sourcegraph_db.out
 
 docker exec -it "$CONTAINER_ID" sh -c 'pg_dump -C --username=postgres sourcegraph-codeintel' > /tmp/codeintel_db.out
 ```
@@ -75,7 +76,7 @@ docker cp "$CONTAINER_ID":/tmp/*_db.out /tmp/
 scp example_user@example_docker_host.com:/tmp/*.out <local_dir>
 ```
 
-* Run `less "/tmp/sorucegraph_db.out"` and `less "/tmp/codeintel_db.out"` and verify that the database dump has contents that you expect (e.g. that some of your repository names appear)
+* Run `less "/tmp/sourcegraph_db.out"` and `less "/tmp/codeintel_db.out"` and verify that the database dump has contents that you expect (e.g. that some of your repository names appear)
 
 ### Create the new Docker Compose instance
 

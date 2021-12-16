@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/stripeutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -41,7 +40,7 @@ func (p ProductSubscriptionLicensingResolver) ProductSubscriptionByID(ctx contex
 
 // productSubscriptionByID looks up and returns the ProductSubscription with the given GraphQL
 // ID. If no such ProductSubscription exists, it returns a non-nil error.
-func productSubscriptionByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*productSubscription, error) {
+func productSubscriptionByID(ctx context.Context, db database.DB, id graphql.ID) (*productSubscription, error) {
 	idString, err := unmarshalProductSubscriptionID(id)
 	if err != nil {
 		return nil, err
@@ -51,7 +50,7 @@ func productSubscriptionByID(ctx context.Context, db dbutil.DB, id graphql.ID) (
 
 // productSubscriptionByDBID looks up and returns the ProductSubscription with the given database
 // ID. If no such ProductSubscription exists, it returns a non-nil error.
-func productSubscriptionByDBID(ctx context.Context, db dbutil.DB, id string) (*productSubscription, error) {
+func productSubscriptionByDBID(ctx context.Context, db database.DB, id string) (*productSubscription, error) {
 	v, err := dbSubscriptions{db: db}.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -515,7 +514,7 @@ func (r ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.C
 // check permissions.
 type productSubscriptionConnection struct {
 	opt dbSubscriptionsListOptions
-	db  dbutil.DB
+	db  database.DB
 
 	// cache results because they are used by multiple fields
 	once    sync.Once

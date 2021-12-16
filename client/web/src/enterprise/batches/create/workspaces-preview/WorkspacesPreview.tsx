@@ -52,27 +52,31 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
     excludeRepo,
 }) => {
     const [resolutionError, setResolutionError] = useState<string>()
+    const [isLoading, setIsLoading] = useState(false)
+    const setFinishedLoading = useCallback(() => setIsLoading(false), [])
 
     // We show a prompt for the user to trigger a new workspaces preview request (and
     // update the batch spec input YAML) if they haven't yet done so, if the preview
     // workspaces resolution failed, or if the batch spec YAML on the server is out of
     // date with the one in the editor.
     const [showPreviewPrompt, previewPromptForm] = useMemo(() => {
-        const showPreviewPrompt = !batchSpecID || resolutionError || batchSpecStale
+        const showPreviewPrompt = !isLoading && (!batchSpecID || resolutionError || batchSpecStale)
         const previewPromptForm: PreviewPromptForm = !batchSpecID ? 'Initial' : resolutionError ? 'Error' : 'Update'
 
         return [showPreviewPrompt, previewPromptForm]
-    }, [batchSpecID, batchSpecStale, resolutionError])
+    }, [isLoading, batchSpecID, batchSpecStale, resolutionError])
 
     const clearErrorAndPreview = useCallback(() => {
+        setIsLoading(true)
         setResolutionError(undefined)
         preview()
     }, [preview])
 
     return (
-        <>
+        <div className="d-flex flex-column align-items-center w-100">
             <h3 className={styles.header}>Workspaces preview</h3>
-            {resolutionError && <ErrorAlert error={resolutionError} className="mb-3" />}
+            {resolutionError && <ErrorAlert error={resolutionError} className="w-100 mb-3" />}
+            {isLoading ? <PreviewLoadingSpinner className="mt-4" /> : null}
             {showPreviewPrompt && (
                 <PreviewPrompt disabled={previewDisabled} preview={clearErrorAndPreview} form={previewPromptForm} />
             )}
@@ -81,11 +85,13 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
                     batchSpecID={batchSpecID}
                     batchSpecStale={batchSpecStale}
                     setResolutionError={setResolutionError}
+                    isLoading={!isLoading}
+                    setFinishedLoading={setFinishedLoading}
                     excludeRepo={excludeRepo}
                     currentPreviewRequestTime={currentPreviewRequestTime}
                 />
             )}
-        </>
+        </div>
     )
 }
 
@@ -103,6 +109,8 @@ interface WithBatchSpecProps
         Pick<WorkspacesPreviewProps, 'batchSpecID' | 'batchSpecStale' | 'currentPreviewRequestTime' | 'excludeRepo'>
     > {
     setResolutionError: (error: string) => void
+    isLoading: boolean
+    setFinishedLoading: () => void
 }
 
 const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
@@ -110,52 +118,44 @@ const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
     batchSpecStale,
     currentPreviewRequestTime,
     setResolutionError,
+    isLoading,
+    setFinishedLoading,
     excludeRepo,
     /**
      * Whether or not the workspaces previewed in the list are up-to-date with the batch
      * spec YAML that was last submitted for a preview.
      */
 }) => {
-    const { resolution, isLoading } = useBatchSpecWorkspaceResolution(batchSpecID, currentPreviewRequestTime, {
+    const { resolution } = useBatchSpecWorkspaceResolution(batchSpecID, currentPreviewRequestTime, {
         onError: setResolutionError,
+        onFinished: setFinishedLoading,
     })
 
-    return (
-        <>
-            {isLoading || resolution?.state === 'QUEUED' || resolution?.state === 'PROCESSING' ? (
-                <PreviewLoadingSpinner className="mt-4" />
-            ) : null}
-            {/* TODO: Keep stale workspaces list visible while we wait for the resolution. */}
-            {resolution?.state === 'COMPLETED' ? (
-                <div className="d-flex flex-column align-items-center overflow-auto w-100">
-                    <WorkspacesPreviewList
-                        batchSpecID={batchSpecID}
-                        isStale={batchSpecStale}
-                        excludeRepo={excludeRepo}
-                    />
-                    <ImportingChangesetsPreviewList batchSpecID={batchSpecID} isStale={batchSpecStale} />
-                </div>
-            ) : null}
-        </>
-    )
+    // TODO: Keep stale workspaces list visible while we wait for the resolution.
+    return isLoading && resolution?.state === 'COMPLETED' ? (
+        <div className="d-flex flex-column align-items-center overflow-auto w-100">
+            <WorkspacesPreviewList batchSpecID={batchSpecID} isStale={batchSpecStale} excludeRepo={excludeRepo} />
+            <ImportingChangesetsPreviewList batchSpecID={batchSpecID} isStale={batchSpecStale} />
+        </div>
+    ) : null
 }
 
 interface UseBatchSpecWorkspaceResolutionOptions {
     onError?: (error: string) => void
+    onFinished?: () => void
     fetchPolicy?: WatchQueryFetchPolicy
 }
 
 interface UseBatchSpecWorkspaceResolutionResult {
     resolution?: WorkspaceResolution
-    isLoading: boolean
 }
 
 export const useBatchSpecWorkspaceResolution = (
     batchSpecID?: string,
     currentPreviewRequestTime?: string,
-    { onError, fetchPolicy = 'network-only' }: UseBatchSpecWorkspaceResolutionOptions = {}
+    { onError, onFinished, fetchPolicy = 'network-only' }: UseBatchSpecWorkspaceResolutionOptions = {}
 ): UseBatchSpecWorkspaceResolutionResult => {
-    const { data, refetch, loading, startPolling, stopPolling } = useQuery<
+    const { data, refetch, startPolling, stopPolling } = useQuery<
         WorkspaceResolutionStatusResult,
         WorkspaceResolutionStatusVariables
     >(WORKSPACE_RESOLUTION_STATUS, {
@@ -184,16 +184,17 @@ export const useBatchSpecWorkspaceResolution = (
         ) {
             // Report new workspace resolution worker errors back to the parent.
             onError?.(resolution.failureMessage || 'An unknown workspace resolution error occurred.')
+            onFinished?.()
         } else if (resolution?.state === BatchSpecWorkspaceResolutionState.COMPLETED) {
             // We can stop polling once the workspace resolution is complete.
             stopPolling()
+            onFinished?.()
         }
-    }, [data, startPolling, stopPolling, onError])
+    }, [data, startPolling, stopPolling, onError, onFinished])
 
     const resolution = getResolution(data)
 
     return {
         resolution,
-        isLoading: loading,
     }
 }

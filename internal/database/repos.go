@@ -35,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npmpackages"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -517,6 +518,8 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(extsvc.OtherRepoMetadata)
 	case extsvc.TypeJVMPackages:
 		r.Metadata = new(jvmpackages.Metadata)
+	case extsvc.TypeNPMPackages:
+		r.Metadata = new(npmpackages.Metadata)
 	default:
 		log15.Warn("scanRepo - unknown service type", "typ", typ)
 		return nil
@@ -1648,7 +1651,7 @@ func parseCursorConds(cs types.MultiCursor) (cond *sqlf.Query, err error) {
 // will be fast (even if there are many repos) because the query can be constrained
 // efficiently to only the repos in the group.
 func parseIncludePattern(pattern string) (exact, like []string, regexp string, err error) {
-	re, err := regexpsyntax.Parse(pattern, regexpsyntax.OneLine)
+	re, err := regexpsyntax.Parse(pattern, regexpsyntax.Perl)
 	if err != nil {
 		return nil, nil, "", err
 	}

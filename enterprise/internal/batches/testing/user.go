@@ -8,18 +8,18 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var CreateTestUser = func() func(*testing.T, dbutil.DB, bool) *types.User {
+var CreateTestUser = func() func(*testing.T, database.DB, bool) *types.User {
 	var mu sync.Mutex
 	count := 0
 
 	// This function replicates the minimum amount of work required by
 	// database.Users.Create to create a new user, but it doesn't require passing in
 	// a full database.NewUser every time.
-	return func(t *testing.T, db dbutil.DB, siteAdmin bool) *types.User {
+	return func(t *testing.T, db database.DB, siteAdmin bool) *types.User {
 		t.Helper()
 
 		mu.Lock()

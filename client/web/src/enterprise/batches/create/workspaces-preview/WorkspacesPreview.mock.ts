@@ -37,11 +37,6 @@ export const mockWorkspace = (
         id: `repo-${id}`,
         name: `github.com/my-org/repo-${id}`,
         url: 'superfake.com',
-        defaultBranch: {
-            __typename: 'GitRef',
-            id: 'main-branch-id',
-            ...fields?.repository?.defaultBranch,
-        },
         ...fields?.repository,
     },
     branch: {

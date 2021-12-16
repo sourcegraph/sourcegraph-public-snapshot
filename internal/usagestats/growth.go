@@ -5,11 +5,11 @@ package usagestats
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func GetGrowthStatistics(ctx context.Context, db dbutil.DB) (*types.GrowthStatistics, error) {
+func GetGrowthStatistics(ctx context.Context, db database.DB) (*types.GrowthStatistics, error) {
 	const q = `
   -- source: internal/usagestats/growth.go:GetGrowthStatistics
   WITH

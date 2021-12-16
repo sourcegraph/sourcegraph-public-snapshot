@@ -62,22 +62,22 @@ func NewDB(t testing.TB) *sql.DB {
 	if os.Getenv("USE_FAST_DBTEST") != "" {
 		return NewFastDB(t)
 	}
-	return newFromDSN(t, "", "migrated")
+	return newFromDSN(t, "migrated")
 }
 
 // NewRawDB returns a connection to a clean, new temporary testing database.
 func NewRawDB(t testing.TB) *sql.DB {
-	return newFromDSN(t, "", "raw")
+	return newFromDSN(t, "raw")
 }
 
-func newFromDSN(t testing.TB, dsn, templateNamespace string) *sql.DB {
+func newFromDSN(t testing.TB, templateNamespace string) *sql.DB {
 	if testing.Short() {
 		t.Skip("skipping DB test since -short specified")
 	}
 
-	config, err := getDSN(dsn)
+	config, err := getDSN()
 	if err != nil {
-		t.Fatalf("failed to parse dsn %q: %s", dsn, err)
+		t.Fatalf("failed to parse dsn: %s", err)
 	}
 
 	initTemplateDB(t, config)

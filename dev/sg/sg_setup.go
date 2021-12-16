@@ -8,9 +8,11 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/signal"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -81,8 +83,8 @@ func setupExec(ctx context.Context, args []string) error {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for range c {
-			writeOrangeLine("\n💡 You may need to restart your shell for the changes to work in this terminal.")
-			writeOrangeLine("   Close this terminal and open a new one or type the following command and press ENTER: " + filepath.Base(getUserShellPath(ctx)))
+			writeOrangeLinef("\n💡 You may need to restart your shell for the changes to work in this terminal.")
+			writeOrangeLinef("   Close this terminal and open a new one or type the following command and press ENTER: " + filepath.Base(getUserShellPath(ctx)))
 			os.Exit(0)
 		}
 	}()
@@ -92,7 +94,7 @@ func setupExec(ctx context.Context, args []string) error {
 		categories = macOSDependencies
 	} else {
 		// DEPRECATED: The new 'sg setup' doesn't work on Linux yet, so we fall back to the old one.
-		writeWarningLine("'sg setup' on Linux provides instructions for Ubuntu Linux. If you're using another distribution, instructions might need to be adjusted.")
+		writeWarningLinef("'sg setup' on Linux provides instructions for Ubuntu Linux. If you're using another distribution, instructions might need to be adjusted.")
 		return deprecatedSetupForLinux(ctx)
 	}
 
@@ -113,16 +115,16 @@ func setupExec(ctx context.Context, args []string) error {
 	for len(failed) != 0 {
 		out.ClearScreen()
 
-		writeOrangeLine("-------------------------------------")
-		writeOrangeLine("|        Welcome to sg setup!       |")
-		writeOrangeLine("-------------------------------------")
-		writeOrangeLine("Quit any time by typing ctrl-c\n")
+		writeOrangeLinef("-------------------------------------")
+		writeOrangeLinef("|        Welcome to sg setup!       |")
+		writeOrangeLinef("-------------------------------------")
+		writeOrangeLinef("Quit any time by typing ctrl-c\n")
 
 		for i, category := range categories {
 			idx := i + 1
 
 			if category.requiresRepository && !inRepo {
-				writeSkippedLine("%d. %s %s[SKIPPED. Requires 'sg setup' to be run in 'sourcegraph' repository]%s", idx, category.name, output.StyleBold, output.StyleReset)
+				writeSkippedLinef("%d. %s %s[SKIPPED. Requires 'sg setup' to be run in 'sourcegraph' repository]%s", idx, category.name, output.StyleBold, output.StyleReset)
 				skipped = append(skipped, idx)
 				failed = removeEntry(failed, i)
 				continue
@@ -133,15 +135,15 @@ func setupExec(ctx context.Context, args []string) error {
 			pending.Destroy()
 
 			if combined := category.CombinedState(); combined {
-				writeSuccessLine("%d. %s", idx, category.name)
+				writeSuccessLinef("%d. %s", idx, category.name)
 				failed = removeEntry(failed, i)
 			} else {
 				nonEmployeeState := category.CombinedStateNonEmployees()
 				if nonEmployeeState {
-					writeWarningLine("%d. %s", idx, category.name)
+					writeWarningLinef("%d. %s", idx, category.name)
 					employeeFailed = append(skipped, idx)
 				} else {
-					writeFailureLine("%d. %s", idx, category.name)
+					writeFailureLinef("%d. %s", idx, category.name)
 				}
 			}
 		}
@@ -154,8 +156,8 @@ func setupExec(ctx context.Context, args []string) error {
 
 			if len(skipped) != 0 {
 				out.Write("")
-				writeWarningLine("Some checks were skipped because 'sg setup' is not run in the 'sourcegraph' repository.")
-				writeFingerPointingLine("Restart 'sg setup' in the 'sourcegraph' repository to continue.")
+				writeWarningLinef("Some checks were skipped because 'sg setup' is not run in the 'sourcegraph' repository.")
+				writeFingerPointingLinef("Restart 'sg setup' in the 'sourcegraph' repository to continue.")
 			}
 
 			return nil
@@ -164,9 +166,9 @@ func setupExec(ctx context.Context, args []string) error {
 		out.Write("")
 
 		if len(employeeFailed) != 0 && len(failed) == len(employeeFailed) {
-			writeWarningLine("Some checks that are only relevant for Sourcegraph employees failed.\nIf you're not a Sourcegraph employee you're good to go. Hit Ctrl-C.\n\nIf you're a Sourcegraph employee: which one do you want to fix?")
+			writeWarningLinef("Some checks that are only relevant for Sourcegraph employees failed.\nIf you're not a Sourcegraph employee you're good to go. Hit Ctrl-C.\n\nIf you're a Sourcegraph employee: which one do you want to fix?")
 		} else {
-			writeWarningLine("Some checks failed. Which one do you want to fix?")
+			writeWarningLinef("Some checks failed. Which one do you want to fix?")
 		}
 
 		idx, err := getNumberOutOf(all)
@@ -350,29 +352,38 @@ asdf install nodejs
 	{
 		name:               "Setup PostgreSQL database",
 		requiresRepository: true,
+		autoFixing:         true,
 		dependencies: []*dependency{
-			// TODO: We could probably split this check up into two:
-			// 1. Check whether Postgres is running
-			// 2. Check whether Sourcegraph database exists
 			{
-				name:  "Connection to 'sourcegraph' database",
-				check: checkPostgresConnection,
+				name: "Install Postgresql",
+				// In the eventuality of the user using a non standard configuration and having
+				// set it up appropriately in its configuration, we can bypass the standard postgres
+				// check and directly check for the sourcegraph database.
+				//
+				// Because only the latest error is returned, it's better to finish with the real check
+				// for error message clarity.
+				check: anyChecks(checkSourcegraphDatabase, checkPostgresConnection),
 				instructionsComment: `` +
 					`Sourcegraph requires the PostgreSQL database to be running.
 
 We recommend installing it with Homebrew and starting it as a system service.
 If you know what you're doing, you can also install PostgreSQL another way.
-For example: you can use Postgres.app by following the instructions at
-https://postgresapp.com but you also need to run the commands listed below
-that create users and databsaes: 'createdb', 'createuser', ...
+For example: you can use https://postgresapp.com/
 
-If you're not sure: use the recommended commands to install PostgreSQL, start it
-and create the 'sourcegraph' database.`,
-				instructionsCommands: `brew reinstall postgresql && brew services start postgresql 
-sleep 10
-createdb
-createuser --superuser sourcegraph || true
-psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
+If you're not sure: use the recommended commands to install PostgreSQL.`,
+				instructionsCommands: `brew reinstall postgresql && brew services start postgresql
+sleep 5
+createdb || true
+`,
+			},
+			{
+				name:  "Connection to 'sourcegraph' database",
+				check: checkSourcegraphDatabase,
+				instructionsComment: `` +
+					`Once PostgreSQL is installed and running, we need to setup Sourcegraph database itself and a
+specific user.`,
+				instructionsCommands: `createuser --superuser sourcegraph || true
+psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';" 
 createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
 `,
 			},
@@ -723,13 +734,13 @@ func printCategoryHeaderAndDependencies(categoryIdx int, category *dependencyCat
 	for i, dep := range category.dependencies {
 		idx := i + 1
 		if dep.IsMet() {
-			writeSuccessLine("%d. %s", idx, dep.name)
+			writeSuccessLinef("%d. %s", idx, dep.name)
 		} else {
 			var printer func(fmtStr string, args ...interface{})
 			if dep.onlyEmployees {
-				printer = writeWarningLine
+				printer = writeWarningLinef
 			} else {
-				printer = writeFailureLine
+				printer = writeFailureLinef
 			}
 
 			if dep.err != nil {
@@ -766,20 +777,20 @@ func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory)
 }
 
 func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
-	writeFingerPointingLine("Trying my hardest to fix %q automatically...", dep.name)
+	writeFingerPointingLinef("Trying my hardest to fix %q automatically...", dep.name)
 
 	cmd := execFreshShell(ctx, dep.InstructionsCommands(ctx))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		writeFailureLine("Failed to run command: %s", err)
+		writeFailureLinef("Failed to run command: %s", err)
 		return err
 	}
 
-	writeSuccessLine("Done! %q should be fixed now!", dep.name)
+	writeSuccessLinef("Done! %q should be fixed now!", dep.name)
 
 	if dep.requiresSgSetupRestart {
-		writeFingerPointingLine("This command requires restarting of 'sg setup' to pick up the changes.")
+		writeFingerPointingLinef("This command requires restarting of 'sg setup' to pick up the changes.")
 		os.Exit(0)
 	}
 
@@ -807,7 +818,7 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 		if len(toFix) == 1 {
 			idx = toFix[0]
 		} else {
-			writeFingerPointingLine("Which one do you want to fix?")
+			writeFingerPointingLinef("Which one do you want to fix?")
 			var err error
 			idx, err = getNumberOutOf(toFix)
 			if err != nil {
@@ -837,7 +848,7 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 		// If we don't have anything do run, we simply print instructions to
 		// the user
 		if dep.InstructionsCommands(ctx) == "" {
-			writeFingerPointingLine("Hit return once you're done")
+			writeFingerPointingLinef("Hit return once you're done")
 			waitForReturn()
 		} else {
 			// Otherwise we print the command(s) and ask the user whether we should run it or not
@@ -862,7 +873,7 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 
 			switch choice {
 			case 1:
-				writeFingerPointingLine("Hit return once you're done")
+				writeFingerPointingLinef("Hit return once you're done")
 				waitForReturn()
 			case 2:
 				if err := fixDependencyAutomatically(ctx, dep); err != nil {
@@ -1005,7 +1016,81 @@ func checkDevPrivateInParentOrInCurrentDirectory(context.Context) error {
 	return errors.New("could not find dev-private repository either in current directory or one above")
 }
 
+// checkPostgresConnection succeeds connecting to the default user database works, regardless
+// of if it's running locally or with docker.
 func checkPostgresConnection(ctx context.Context) error {
+	dsns, err := dsnCandidates()
+	if err != nil {
+		return err
+	}
+	var errs []error
+	for _, dsn := range dsns {
+		conn, err := pgx.Connect(ctx, dsn)
+		if err != nil {
+			errs = append(errs, errors.Wrapf(err, "failed to connect to Postgresql Database at %s", dsn))
+			continue
+		}
+		defer conn.Close(ctx)
+		err = conn.Ping(ctx)
+		if err == nil {
+			// if ping passed
+			return nil
+		}
+		errs = append(errs, errors.Wrapf(err, "failed to connect to Postgresql Database at %s", dsn))
+	}
+
+	messages := []string{"failed all attempts to connect to Postgresql database"}
+	for _, e := range errs {
+		messages = append(messages, "\t"+e.Error())
+	}
+	return errors.New(strings.Join(messages, "\n"))
+}
+
+func dsnCandidates() ([]string, error) {
+	env := func(key string) string { val, _ := os.LookupEnv(key); return val }
+
+	// best case scenario
+	datasource := env("PGDATASOURCE")
+	// most classic dsn
+	baseURL := url.URL{Scheme: "postgres", Host: "127.0.0.1:5432"}
+	// classic docker dsn
+	dockerURL := baseURL
+	dockerURL.User = url.UserPassword("postgres", "postgres")
+	// other classic docker dsn
+	dockerURL2 := baseURL
+	dockerURL2.User = url.UserPassword("postgres", "password")
+	// env based dsn
+	envURL := baseURL
+	username, ok := os.LookupEnv("PGUSER")
+	if !ok {
+		uinfo, err := user.Current()
+		if err != nil {
+			return nil, err
+		}
+		username = uinfo.Name
+	}
+	envURL.User = url.UserPassword(username, env("PGPASSWORD"))
+	if host, ok := os.LookupEnv("PGHOST"); ok {
+		if port, ok := os.LookupEnv("PGPORT"); ok {
+			envURL.Host = fmt.Sprintf("%s:%s", host, port)
+		}
+		envURL.Host = fmt.Sprintf("%s:%s", host, "5432")
+	}
+	if sslmode := env("PGSSLMODE"); sslmode != "" {
+		qry := envURL.Query()
+		qry.Set("sslmode", sslmode)
+		envURL.RawQuery = qry.Encode()
+	}
+	return []string{
+		datasource,
+		envURL.String(),
+		baseURL.String(),
+		dockerURL.String(),
+		dockerURL2.String(),
+	}, nil
+}
+
+func checkSourcegraphDatabase(ctx context.Context) error {
 	// This check runs only in the `sourcegraph/sourcegraph` repository, so
 	// we try to parse the globalConf and use its `Env` to configure the
 	// Postgres connection.
@@ -1025,22 +1110,13 @@ func checkPostgresConnection(ctx context.Context) error {
 		return globalConf.Env[key]
 	}
 
-	dns := postgresdsn.New("", "", getEnv)
-	conn, err := pgx.Connect(ctx, dns)
+	dsn := postgresdsn.New("", "", getEnv)
+	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
-		return errors.Wrap(err, "failed to connect to Postgres database")
+		return errors.Wrapf(err, "failed to connect to Soucegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
 	}
 	defer conn.Close(ctx)
-
-	var result int
-	row := conn.QueryRow(ctx, "SELECT 1;")
-	if err := row.Scan(&result); err != nil {
-		return errors.Wrap(err, "failed to read from Postgres database")
-	}
-	if result != 1 {
-		return errors.New("failed to read a test value from Postgres database")
-	}
-	return nil
+	return conn.Ping(ctx)
 }
 
 func checkRedisConnection(context.Context) error {
@@ -1159,7 +1235,7 @@ func waitForReturn() { fmt.Scanln() }
 func getChoice(choices map[int]string) (int, error) {
 	for {
 		out.Write("")
-		writeFingerPointingLine("What do you want to do?")
+		writeFingerPointingLinef("What do you want to do?")
 
 		for i := 0; i < len(choices); i++ {
 			num := i + 1
@@ -1181,7 +1257,19 @@ func getChoice(choices map[int]string) (int, error) {
 		if _, ok := choices[s]; ok {
 			return s, nil
 		}
-		writeFailureLine("Invalid choice")
+		writeFailureLinef("Invalid choice")
+	}
+}
+
+func anyChecks(checks ...dependencyCheck) dependencyCheck {
+	return func(ctx context.Context) (err error) {
+		for _, chk := range checks {
+			err = chk(ctx)
+			if err == nil {
+				return nil
+			}
+		}
+		return err
 	}
 }
 

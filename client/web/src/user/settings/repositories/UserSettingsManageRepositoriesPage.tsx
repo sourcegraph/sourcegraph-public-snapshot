@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import { isEqual, capitalize } from 'lodash'
-import React, { FormEvent, useCallback, useEffect, useState, useRef } from 'react'
+import React, { ChangeEvent, FormEvent, useCallback, useEffect, useState, useRef } from 'react'
 import { useHistory } from 'react-router'
 import { Subscription } from 'rxjs'
 
@@ -658,28 +658,25 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         [selectionState, setSelectionState]
     )
 
-    const getSelectedReposByCodeHost = (codeHostId: string = ''): Repo[] => {
-        const selectedRepos = [...selectionState.repos.values()]
-        // if no specific code host selected, return all selected repos
-        return codeHostId ? selectedRepos.filter(({ codeHost }) => codeHost?.id === codeHostId) : selectedRepos
-    }
-
-    const areAllReposSelected = (): boolean => {
-        if (selectionState.repos.size === 0) {
+    const areAllFilteredReposSelected = useCallback((): boolean => {
+        if (selectionState.repos.size === 0 || filteredRepos.length === 0) {
             return false
         }
 
-        const selectedRepos = getSelectedReposByCodeHost(codeHostFilter)
-        return selectedRepos.length === filteredRepos.length
-    }
+        // if selection state does not contain all of the filtered repos, return false
+        return !filteredRepos.some(repo => !selectionState.repos.has(getRepoServiceAndName(repo)))
+    }, [selectionState, filteredRepos])
 
-    const selectAll = (): void => {
-        const newSelectAll = new Map<string, Repo>()
-        // if not all repos are selected, we should select all, otherwise empty the selection
+    const toggleAll = (event: ChangeEvent<HTMLInputElement>): void => {
+        const { checked } = event.target
+        const newSelectAll = new Map<string, Repo>(selectionState.repos)
 
-        if (selectionState.repos.size !== filteredRepos.length) {
-            for (const repo of filteredRepos) {
+        for (const repo of filteredRepos) {
+            // if checkbox is checked, we should add filtered repo, otherwise we remove
+            if (checked) {
                 newSelectAll.set(getRepoServiceAndName(repo), repo)
+            } else {
+                newSelectAll.delete(getRepoServiceAndName(repo))
             }
         }
         setSelectionState({
@@ -700,8 +697,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         id="select-all-repos"
                         className="mr-3"
                         type="checkbox"
-                        checked={areAllReposSelected()}
-                        onChange={selectAll}
+                        checked={areAllFilteredReposSelected()}
+                        onChange={toggleAll}
+                        disabled={filteredRepos.length === 0}
                     />
                     <label
                         htmlFor="select-all-repos"

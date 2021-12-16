@@ -17,7 +17,7 @@ import (
 // of monikers are attached to a single range. The order of the output slice is "outside-in", so that
 // the range attached to earlier monikers enclose the range attached to later monikers.
 func (s *Store) MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) (_ [][]precise.MonikerData, err error) {
-	ctx, traceLog, endObservation := s.operations.monikersByPosition.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.monikersByPosition.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 		log.Int("line", line),
@@ -30,9 +30,9 @@ func (s *Store) MonikersByPosition(ctx context.Context, bundleID int, path strin
 		return nil, err
 	}
 
-	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
+	trace.Log(log.Int("numRanges", len(documentData.Document.Ranges)))
 	ranges := precise.FindRanges(documentData.Document.Ranges, line, character)
-	traceLog(log.Int("numIntersectingRanges", len(ranges)))
+	trace.Log(log.Int("numIntersectingRanges", len(ranges)))
 
 	monikerData := make([][]precise.MonikerData, 0, len(ranges))
 	for _, r := range ranges {
@@ -42,11 +42,11 @@ func (s *Store) MonikersByPosition(ctx context.Context, bundleID int, path strin
 				batch = append(batch, moniker)
 			}
 		}
-		traceLog(log.Int("numMonikersForRange", len(batch)))
+		trace.Log(log.Int("numMonikersForRange", len(batch)))
 
 		monikerData = append(monikerData, batch)
 	}
-	traceLog(log.Int("numMonikers", len(monikerData)))
+	trace.Log(log.Int("numMonikers", len(monikerData)))
 
 	return monikerData, nil
 }
@@ -74,7 +74,7 @@ LIMIT 1
 // whose scheme+identifier matches one of the given monikers. This method also returns the size of the
 // complete result set to aid in pagination.
 func (s *Store) BulkMonikerResults(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []Location, _ int, err error) {
-	ctx, traceLog, endObservation := s.operations.bulkMonikerResults.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.bulkMonikerResults.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("tableName", tableName),
 		log.Int("numUploadIDs", len(uploadIDs)),
 		log.String("uploadIDs", intsToString(uploadIDs)),
@@ -113,7 +113,7 @@ func (s *Store) BulkMonikerResults(ctx context.Context, tableName string, upload
 	for _, monikerLocations := range locationData {
 		totalCount += len(monikerLocations.Locations)
 	}
-	traceLog(
+	trace.Log(
 		log.Int("numDumps", len(locationData)),
 		log.Int("totalCount", totalCount),
 	)
@@ -143,7 +143,7 @@ outer:
 			}
 		}
 	}
-	traceLog(log.Int("numLocations", len(locations)))
+	trace.Log(log.Int("numLocations", len(locations)))
 
 	return locations, totalCount, nil
 }

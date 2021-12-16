@@ -21,11 +21,11 @@ package compression
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 
@@ -42,14 +42,8 @@ type CommitFilter struct {
 type NoopFilter struct {
 }
 
-type Frame struct {
-	From   time.Time
-	To     time.Time
-	Commit string
-}
-
 type DataFrameFilter interface {
-	FilterFrames(ctx context.Context, frames []Frame, id api.RepoID) BackfillPlan
+	FilterFrames(ctx context.Context, frames []types.Frame, id api.RepoID) BackfillPlan
 }
 
 func NewHistoricalFilter(enabled bool, maxHistorical time.Time, db dbutil.DB) DataFrameFilter {
@@ -62,13 +56,13 @@ func NewHistoricalFilter(enabled bool, maxHistorical time.Time, db dbutil.DB) Da
 	return &NoopFilter{}
 }
 
-func (n *NoopFilter) FilterFrames(ctx context.Context, frames []Frame, id api.RepoID) BackfillPlan {
+func (n *NoopFilter) FilterFrames(ctx context.Context, frames []types.Frame, id api.RepoID) BackfillPlan {
 	return uncompressedPlan(frames)
 }
 
 // uncompressedPlan returns a query plan that is completely uncompressed given an initial set of seed frames.
 // This is primarily useful when there are scenarios in which compression cannot be used.
-func uncompressedPlan(frames []Frame) BackfillPlan {
+func uncompressedPlan(frames []types.Frame) BackfillPlan {
 	executions := make([]*QueryExecution, 0, len(frames))
 	for _, frame := range frames {
 		executions = append(executions, &QueryExecution{RecordingTime: frame.From})
@@ -81,13 +75,13 @@ func uncompressedPlan(frames []Frame) BackfillPlan {
 }
 
 // FilterFrames will remove any data frames that can be safely skipped from a given frame set and for a given repository.
-func (c *CommitFilter) FilterFrames(ctx context.Context, frames []Frame, id api.RepoID) BackfillPlan {
+func (c *CommitFilter) FilterFrames(ctx context.Context, frames []types.Frame, id api.RepoID) BackfillPlan {
 	include := make([]*QueryExecution, 0)
 	// we will maintain a pointer to the most recent QueryExecution that we can update it's dependents
 	var prev *QueryExecution
 	var count int
 
-	addToPlan := func(frame Frame, revhash string) {
+	addToPlan := func(frame types.Frame, revhash string) {
 		q := QueryExecution{RecordingTime: frame.From, Revision: revhash}
 		include = append(include, &q)
 		prev = &q
@@ -172,25 +166,20 @@ func (q *QueryExecution) ToRecording(seriesID string, repoName string, repoID ap
 	return args
 }
 
-// ToQueueJob converts the query execution into a queueable job with it's relevant dependent times.
-func (q *QueryExecution) ToQueueJob(seriesID string, query string, cost priority.Cost, jobPriority priority.Priority) *queryrunner.Job {
-	return &queryrunner.Job{
-		SeriesID:        seriesID,
-		SearchQuery:     query,
-		RecordTime:      &q.RecordingTime,
-		Cost:            int(cost),
-		Priority:        int(jobPriority),
-		DependentFrames: q.SharedRecordings,
-		State:           "queued",
-		PersistMode:     string(store.RecordMode),
-	}
-}
-
 // BackfillPlan is a rudimentary query plan. It provides a simple mechanism to store executable nodes
 // to backfill an insight series.
 type BackfillPlan struct {
 	Executions  []*QueryExecution
 	RecordCount int
+}
+
+func (b BackfillPlan) String() string {
+	var strs []string
+	for i := range b.Executions {
+		current := *b.Executions[i]
+		strs = append(strs, fmt.Sprintf("%v", current))
+	}
+	return fmt.Sprintf("[%v]", strings.Join(strs, ","))
 }
 
 // QueryExecution represents a node of an execution plan that should be queried against Sourcegraph.

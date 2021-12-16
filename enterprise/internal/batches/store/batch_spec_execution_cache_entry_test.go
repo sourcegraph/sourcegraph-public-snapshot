@@ -13,6 +13,7 @@ import (
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -145,7 +146,7 @@ func TestStore_CleanBatchSpecExecutionCacheEntries(t *testing.T) {
 	// Separate test function because we want a clean DB
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	c := &ct.TestClock{Time: timeutil.Now()}
 	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
 	user := ct.CreateTestUser(t, db, true)
