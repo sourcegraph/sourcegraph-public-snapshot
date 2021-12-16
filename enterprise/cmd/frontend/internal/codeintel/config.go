@@ -3,6 +3,8 @@ package codeintel
 import (
 	"time"
 
+	"github.com/hashicorp/go-multierror"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -56,4 +58,12 @@ func init() {
 	config.CommittedAtMigrationBatchInterval = config.GetInterval("PRECISE_CODE_INTEL_COMMITTED_AT_MIGRATION_BATCH_INTERVAL", "1s", "The timeout between processing migration batches.")
 	config.ReferenceCountMigrationBatchSize = config.GetInt("PRECISE_CODE_INTEL_REFERENCE_COUNT_MIGRATION_BATCH_SIZE", "100", "The maximum number of upload records to migrate at a time.")
 	config.ReferenceCountMigrationBatchInterval = config.GetInterval("PRECISE_CODE_INTEL_REFERENCE_COUNT_MIGRATION_BATCH_INTERVAL", "1s", "The timeout between processing migration batches.")
+}
+
+func (c *Config) Validate() error {
+	var errs *multierror.Error
+	errs = multierror.Append(errs, c.BaseConfig.Validate())
+	errs = multierror.Append(errs, c.UploadStoreConfig.Validate())
+	errs = multierror.Append(errs, c.AutoIndexEnqueuerConfig.Validate())
+	return errs.ErrorOrNil()
 }

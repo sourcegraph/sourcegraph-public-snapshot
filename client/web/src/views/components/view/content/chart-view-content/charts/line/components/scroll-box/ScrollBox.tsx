@@ -3,51 +3,55 @@ import React, { useEffect, useRef } from 'react'
 
 import styles from './ScrollBox.module.scss'
 
-const addShutterElementsToTarget = (element: HTMLDivElement, fader: HTMLDivElement): void => {
+const addShutterElementsToTarget = (element: HTMLDivElement): void => {
     const { scrollTop, scrollHeight, offsetHeight } = element
 
     if (scrollTop === 0) {
-        fader?.classList.remove(styles.faderHasTopScroll)
+        element.classList.remove(styles.rootWithTopFader)
     } else {
-        fader?.classList.add(styles.faderHasTopScroll)
+        element.classList.add(styles.rootWithTopFader)
     }
 
     if (offsetHeight + scrollTop === scrollHeight) {
-        fader?.classList.remove(styles.faderHasBottomScroll)
+        element.classList.remove(styles.rootWithBottomFader)
     } else {
-        fader?.classList.add(styles.faderHasBottomScroll)
+        element.classList.add(styles.rootWithBottomFader)
     }
 }
 
 interface ScrollBoxProps extends React.HTMLAttributes<HTMLDivElement> {
-    scrollEnabled?: boolean
-    as?: React.ElementType
-    rootClassName?: string
+    className?: string
 }
 
 export const ScrollBox: React.FunctionComponent<ScrollBoxProps> = props => {
-    const { children, as: Component = 'div', scrollEnabled = true, rootClassName, ...otherProps } = props
+    const { children, className, ...otherProps } = props
 
     const scrollBoxReference = useRef<HTMLDivElement>(null)
-    const faderReference = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        const fader = faderReference.current
         const scrollBoxElement = scrollBoxReference.current
 
-        if (!scrollBoxElement || !fader || !scrollEnabled) {
+        if (!scrollBoxElement) {
             return
         }
 
         // On mount initial call
-        addShutterElementsToTarget(scrollBoxElement, fader)
+        addShutterElementsToTarget(scrollBoxElement)
+    })
+
+    useEffect(() => {
+        const scrollBoxElement = scrollBoxReference.current
+
+        if (!scrollBoxElement) {
+            return
+        }
 
         function onScroll(event: Event): void {
             if (!event.target) {
                 return
             }
 
-            addShutterElementsToTarget(event.target as HTMLDivElement, fader as HTMLDivElement)
+            addShutterElementsToTarget(event.target as HTMLDivElement)
 
             event.stopPropagation()
             event.preventDefault()
@@ -56,24 +60,14 @@ export const ScrollBox: React.FunctionComponent<ScrollBoxProps> = props => {
         scrollBoxElement.addEventListener('scroll', onScroll)
 
         return () => scrollBoxElement.removeEventListener('scroll', onScroll)
-    }, [scrollEnabled])
-
-    // If block doesn't have scroll content we render simple component without additional
-    // shutter elements for scroll visual effects
-    if (!scrollEnabled) {
-        return (
-            <Component {...otherProps} className={classNames(otherProps.className, rootClassName)}>
-                {children}
-            </Component>
-        )
-    }
+    }, [])
 
     return (
-        <div {...otherProps} className={classNames(styles.root, rootClassName)}>
-            <div ref={faderReference} className={styles.fader} />
-            <Component ref={scrollBoxReference} className={classNames(otherProps.className, styles.scrollbox)}>
-                {children}
-            </Component>
+        <div {...otherProps} ref={scrollBoxReference} className={classNames(styles.root, className)}>
+            <div className={classNames(styles.fader, styles.faderTop)} />
+            <div className={classNames(styles.fader, styles.faderBottom)} />
+
+            <div className={styles.scrollbox}>{children}</div>
         </div>
     )
 }

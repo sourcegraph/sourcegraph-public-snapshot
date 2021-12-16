@@ -35,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npmpackages"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -517,6 +518,8 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(extsvc.OtherRepoMetadata)
 	case extsvc.TypeJVMPackages:
 		r.Metadata = new(jvmpackages.Metadata)
+	case extsvc.TypeNPMPackages:
+		r.Metadata = new(npmpackages.Metadata)
 	default:
 		log15.Warn("scanRepo - unknown service type", "typ", typ)
 		return nil

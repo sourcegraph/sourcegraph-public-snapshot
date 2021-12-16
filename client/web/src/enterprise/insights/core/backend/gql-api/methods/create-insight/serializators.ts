@@ -80,6 +80,7 @@ export function getSearchInsightCreateInput(
     if (dashboard && !isVirtualDashboard(dashboard)) {
         input.dashboards = [dashboard.id]
     }
+
     return input
 }
 
@@ -87,7 +88,7 @@ export function getLangStatsInsightCreateInput(
     insight: LangStatsInsight,
     dashboard: InsightDashboard | null
 ): PieChartSearchInsightInput {
-    return {
+    const input: PieChartSearchInsightInput = {
         // Query do not exist as setting for this type of insight, it's predefined
         // and locked on BE.
         // TODO: Remove this field as soon as BE removes this from GQL api.
@@ -97,6 +98,11 @@ export function getLangStatsInsightCreateInput(
             title: insight.title,
             otherThreshold: insight.otherThreshold,
         },
-        dashboards: [dashboard?.id ?? ''],
     }
+
+    if (dashboard && !isVirtualDashboard(dashboard)) {
+        input.dashboards = [dashboard.id]
+    }
+
+    return input
 }

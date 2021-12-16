@@ -190,12 +190,12 @@ func TestChangesetResolver(t *testing.T) {
 	}
 
 	batchChange := &btypes.BatchChange{
-		Name:             "my-unique-name",
-		NamespaceUserID:  userID,
-		InitialApplierID: userID,
-		BatchSpecID:      spec.ID,
-		LastApplierID:    userID,
-		LastAppliedAt:    time.Now(),
+		Name:            "my-unique-name",
+		NamespaceUserID: userID,
+		CreatorID:       userID,
+		BatchSpecID:     spec.ID,
+		LastApplierID:   userID,
+		LastAppliedAt:   time.Now(),
 	}
 	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)

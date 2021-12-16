@@ -1,6 +1,7 @@
 package ci
 
 import (
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,7 +42,7 @@ func getWebIntegrationFileNames() []string {
 
 func chunkItems(items []string, size int) [][]string {
 	lenItems := len(items)
-	lenChunks := lenItems/size + 1
+	lenChunks := int(math.Ceil(float64(lenItems) / float64(size)))
 	chunks := make([][]string, lenChunks)
 
 	for i := 0; i < lenChunks; i++ {

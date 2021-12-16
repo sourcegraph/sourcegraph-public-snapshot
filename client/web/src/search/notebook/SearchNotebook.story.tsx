@@ -42,7 +42,6 @@ add('default', () => (
                 {...props}
                 isMacPlatform={true}
                 isSourcegraphDotCom={true}
-                showSearchContext={true}
                 searchContextsEnabled={true}
                 globbing={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -67,7 +66,6 @@ add('default read-only', () => (
                 isReadOnly={true}
                 isMacPlatform={true}
                 isSourcegraphDotCom={true}
-                showSearchContext={true}
                 searchContextsEnabled={true}
                 globbing={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}

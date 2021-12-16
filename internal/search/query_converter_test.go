@@ -14,10 +14,11 @@ import (
 
 func TestQueryToZoektQuery(t *testing.T) {
 	cases := []struct {
-		Name    string
-		Type    IndexedRequestType
-		Pattern *TextPatternInfo
-		Query   string
+		Name     string
+		Type     IndexedRequestType
+		Pattern  *TextPatternInfo
+		Features Features
+		Query    string
 	}{
 		{
 			Name: "substr",
@@ -169,11 +170,23 @@ func TestQueryToZoektQuery(t *testing.T) {
 			Query: `foo (type:repo file:\.go$) (type:repo file:\.yaml$) -(type:repo file:\.java$) -(type:repo file:\.xml$)`,
 		},
 		{
+			Name: "TextPatternInfo.Languages is ignored",
+			Type: TextRequest,
+			Pattern: &TextPatternInfo{
+				IncludePatterns: []string{`\.go$`},
+				Languages:       []string{"go"},
+			},
+			Query: `file:"\\.go(?m:$)"`,
+		},
+		{
 			Name: "language gets passed as both file include and lang: predicate",
 			Type: TextRequest,
 			Pattern: &TextPatternInfo{
 				IncludePatterns: []string{`\.go$`},
 				Languages:       []string{"go"},
+			},
+			Features: Features{
+				ContentBasedLangFilters: true,
 			},
 			Query: `file:"\\.go(?m:$)" lang:Go`,
 		},
@@ -184,7 +197,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to parse %q: %v", tt.Query, err)
 			}
-			got, err := QueryToZoektQuery(tt.Pattern, tt.Type)
+			got, err := QueryToZoektQuery(tt.Pattern, &tt.Features, tt.Type)
 			if err != nil {
 				t.Fatal("queryToZoektQuery failed:", err)
 			}
