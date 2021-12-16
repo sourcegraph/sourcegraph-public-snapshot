@@ -124,12 +124,7 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 	}
 
 	ns := dbmock.NewMockNamespaceStore()
-	ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
-		if name == "org-not-member" {
-			return &database.Namespace{Name: name, Organization: 1}, nil
-		}
-		return &database.Namespace{}, nil
-	})
+	ns.GetByNameFunc.SetDefaultReturn(&database.Namespace{}, nil)
 
 	sc := dbmock.NewMockSearchContextsStore()
 	sc.GetSearchContextFunc.SetDefaultReturn(nil, errors.New("search context not found"))
@@ -161,6 +156,7 @@ func TestResolvingInvalidSearchContextSpecs_Cloud(t *testing.T) {
 		wantErr           string
 	}{
 		{name: "org not a member", searchContextSpec: "@org-not-member", wantErr: "namespace not found"},
+		{name: "org not a member with sub-context", searchContextSpec: "@org-not-member/random", wantErr: "namespace not found"},
 	}
 
 	ns := dbmock.NewMockNamespaceStore()
