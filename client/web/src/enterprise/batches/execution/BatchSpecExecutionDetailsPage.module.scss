@@ -1,8 +1,3 @@
-.workspace-repo,
-.workspace-name {
-    word-wrap: break-word;
-}
-
 .batch-spec {
     min-height: 400px;
     height: 100%;
@@ -14,20 +9,7 @@
     flex-shrink: 0;
 }
 
-.workspace-list-icon {
-    align-self: center;
-}
-
-.workspace-selected {
-    background-color: var(--color-bg-1);
-}
-
-.result-card,
-.step-card {
-    background-color: var(--body-bg);
-}
-
-.editor-layout-container {
+.layout-container {
     // Default of min-height: auto when this element is display: flex allows children to
     // set its height. We want to keep this fixed and have children overflow: auto
     // instead.

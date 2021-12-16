@@ -321,7 +321,7 @@ interface EditPageProps extends ThemeProps {
 }
 
 const EditPage: React.FunctionComponent<EditPageProps> = ({ content, isLightTheme }) => (
-    <div className={classNames(styles.editorLayoutContainer, 'h-100')}>
+    <div className={classNames(styles.layoutContainer, 'h-100')}>
         <BatchSpec originalInput={content} isLightTheme={isLightTheme} className={styles.batchSpec} />
     </div>
 )
@@ -342,7 +342,7 @@ const ExecutionPage: React.FunctionComponent<ExecutionPageProps> = ({ batchSpec,
     return (
         <>
             {batchSpec.failureMessage && <ErrorAlert error={batchSpec.failureMessage} />}
-            <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1')}>
+            <div className={classNames(styles.layoutContainer, 'd-flex flex-1')}>
                 <div className={classNames(styles.workspacesListContainer, 'd-flex flex-column')}>
                     <h3 className="mb-2">Workspaces</h3>
                     <div className={styles.workspacesList}>
