@@ -34,7 +34,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	cstore := store.New(db, &observation.TestContext, nil)
 	repoStore := database.ReposWith(cstore)
@@ -74,12 +74,12 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 
 	matchingBatchChange := &btypes.BatchChange{
-		Name:             spec.Spec.Name,
-		NamespaceOrgID:   orgID,
-		InitialApplierID: userID,
-		LastApplierID:    userID,
-		LastAppliedAt:    time.Now(),
-		BatchSpecID:      spec.ID,
+		Name:           spec.Spec.Name,
+		NamespaceOrgID: orgID,
+		CreatorID:      userID,
+		LastApplierID:  userID,
+		LastAppliedAt:  time.Now(),
+		BatchSpecID:    spec.ID,
 	}
 	if err := cstore.CreateBatchChange(ctx, matchingBatchChange); err != nil {
 		t.Fatal(err)
@@ -260,7 +260,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	now := timeutil.Now().Truncate(time.Second)
 	minAgo := func(min int) time.Time { return now.Add(time.Duration(-min) * time.Minute) }

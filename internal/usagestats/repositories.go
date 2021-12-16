@@ -3,8 +3,8 @@ package usagestats
 import (
 	"context"
 
+	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
@@ -47,23 +47,19 @@ func GetRepositories(ctx context.Context) (*Repositories, error) {
 		total.GitDirBytes += uint64(stat.GitDirBytes)
 	}
 
-	// XXX(tsenart): We temporarily disable the zoekt List call below because
-	// it's causing OOMs in the frontends in production.
-	// Issue: https://github.com/sourcegraph/sourcegraph/issues/28799
-	if search.Indexed() == nil || envvar.SourcegraphDotComMode() {
+	if search.Indexed() == nil {
 		return &total, nil
 	}
 
-	repos, err := search.Indexed().List(ctx, &query.Const{Value: true}, nil)
+	opts := &zoekt.ListOptions{Minimal: true}
+	repos, err := search.Indexed().List(ctx, &query.Const{Value: true}, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, repo := range repos.Repos {
-		total.NewLinesCount += repo.Stats.NewLinesCount
-		total.DefaultBranchNewLinesCount += repo.Stats.DefaultBranchNewLinesCount
-		total.OtherBranchesNewLinesCount += repo.Stats.OtherBranchesNewLinesCount
-	}
+	total.NewLinesCount = repos.Stats.NewLinesCount
+	total.DefaultBranchNewLinesCount = repos.Stats.DefaultBranchNewLinesCount
+	total.OtherBranchesNewLinesCount = repos.Stats.OtherBranchesNewLinesCount
 
 	return &total, nil
 }

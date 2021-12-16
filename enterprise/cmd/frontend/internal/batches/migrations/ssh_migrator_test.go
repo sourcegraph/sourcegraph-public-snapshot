@@ -16,7 +16,7 @@ import (
 
 func TestSSHMigrator(t *testing.T) {
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	user := ct.CreateTestUser(t, db, false)
 
 	ct.MockRSAKeygen(t)

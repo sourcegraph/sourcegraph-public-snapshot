@@ -35,7 +35,7 @@ import (
 
 // BeforeCreateExternalService (if set) is invoked as a hook prior to creating a
 // new external service in the database.
-var BeforeCreateExternalService func(context.Context, dbutil.DB) error
+var BeforeCreateExternalService func(context.Context, DB) error
 
 type ExternalServiceStore interface {
 	// Count counts all external services that satisfy the options (ignoring limit and offset).
@@ -238,6 +238,7 @@ var ExternalServiceKinds = map[string]ExternalServiceKind{
 	extsvc.KindJVMPackages:     {CodeHost: true, JSONSchema: schema.JVMPackagesSchemaJSON},
 	extsvc.KindOther:           {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
 	extsvc.KindPagure:          {CodeHost: true, JSONSchema: schema.PagureSchemaJSON},
+	extsvc.KindNPMPackages:     {CodeHost: true, JSONSchema: schema.NPMPackagesSchemaJSON},
 	extsvc.KindPerforce:        {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
 	extsvc.KindPhabricator:     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
 }
@@ -699,7 +700,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 	// Prior to saving the record, run a validation hook.
 	if BeforeCreateExternalService != nil {
-		if err := BeforeCreateExternalService(ctx, e.Store.Handle().DB()); err != nil {
+		if err := BeforeCreateExternalService(ctx, NewDB(e.Store.Handle().DB())); err != nil {
 			return err
 		}
 	}
@@ -847,10 +848,10 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&dbutil.NullTime{Time: &svcs[i].LastSyncAt},
 			&dbutil.NullTime{Time: &svcs[i].NextSyncAt},
 			&dbutil.NullInt32{N: &svcs[i].NamespaceUserID},
+			&dbutil.NullInt32{N: &svcs[i].NamespaceOrgID},
 			&svcs[i].Unrestricted,
 			&svcs[i].CloudDefault,
 			&encryptionKeyID,
-			&dbutil.NullInt32{N: &svcs[i].NamespaceOrgID},
 			&dbutil.NullBool{B: svcs[i].HasWebhooks},
 		)
 		if err != nil {
@@ -888,6 +889,7 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			nullTimeColumn(s.LastSyncAt),
 			nullTimeColumn(s.NextSyncAt),
 			nullInt32Column(s.NamespaceUserID),
+			nullInt32Column(s.NamespaceOrgID),
 			s.Unrestricted,
 			s.CloudDefault,
 			s.HasWebhooks,
@@ -901,7 +903,7 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -918,6 +920,7 @@ INSERT INTO external_services (
   last_sync_at,
   next_sync_at,
   namespace_user_id,
+  namespace_org_id,
   unrestricted,
   cloud_default,
   has_webhooks
@@ -935,6 +938,7 @@ SET
   last_sync_at       = excluded.last_sync_at,
   next_sync_at       = excluded.next_sync_at,
   namespace_user_id  = excluded.namespace_user_id,
+  namespace_org_id   = excluded.namespace_org_id,
   unrestricted       = excluded.unrestricted,
   cloud_default      = excluded.cloud_default,
   has_webhooks       = excluded.has_webhooks
@@ -949,10 +953,10 @@ RETURNING
 	last_sync_at,
 	next_sync_at,
 	namespace_user_id,
+	namespace_org_id,
 	unrestricted,
 	cloud_default,
 	encryption_key_id,
-	namespace_org_id,
 	has_webhooks
 `
 
@@ -1005,6 +1009,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			Config:            *update.Config,
 			AuthProviders:     ps,
 			NamespaceUserID:   externalService.NamespaceUserID,
+			NamespaceOrgID:    externalService.NamespaceOrgID,
 		})
 		if err != nil {
 			return err

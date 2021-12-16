@@ -119,7 +119,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
@@ -301,7 +301,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
@@ -374,7 +374,7 @@ func TestApplyBatchChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	// Ensure our site configuration doesn't have rollout windows so we get a
 	// consistent initial state.
@@ -461,9 +461,9 @@ func TestApplyBatchChange(t *testing.T) {
 			DatabaseID: userID,
 			SiteAdmin:  true,
 		},
-		InitialApplier: apiUser,
-		LastApplier:    apiUser,
-		LastAppliedAt:  marshalDateTime(t, now),
+		Creator:       apiUser,
+		LastApplier:   apiUser,
+		LastAppliedAt: marshalDateTime(t, now),
 		Changesets: apitest.ChangesetConnection{
 			Nodes: []apitest.Changeset{
 				{Typename: "ExternalChangeset", State: string(btypes.ChangesetStateProcessing)},
@@ -508,7 +508,7 @@ fragment u on User { id, databaseID, siteAdmin }
 fragment o on Org  { id, name }
 fragment batchChange on BatchChange {
 	id, name, description
-    initialApplier    { ...u }
+    creator           { ...u }
     lastApplier       { ...u }
     lastAppliedAt
     namespace {
@@ -541,7 +541,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	cstore := store.New(db, &observation.TestContext, nil)
 
@@ -626,7 +626,7 @@ func TestCreateBatchChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
@@ -690,7 +690,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	// Ensure our site configuration doesn't have rollout windows so we get a
 	// consistent initial state.
@@ -852,9 +852,9 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 						DatabaseID: userID,
 						SiteAdmin:  true,
 					},
-					InitialApplier: apiUser,
-					LastApplier:    apiUser,
-					LastAppliedAt:  marshalDateTime(t, now),
+					Creator:       apiUser,
+					LastApplier:   apiUser,
+					LastAppliedAt: marshalDateTime(t, now),
 					Changesets: apitest.ChangesetConnection{
 						Nodes: []apitest.Changeset{
 							{Typename: "ExternalChangeset", State: string(btypes.ChangesetStateProcessing)},
@@ -877,7 +877,7 @@ func TestMoveBatchChange(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
@@ -897,12 +897,12 @@ func TestMoveBatchChange(t *testing.T) {
 	}
 
 	batchChange := &btypes.BatchChange{
-		BatchSpecID:      batchSpec.ID,
-		Name:             "old-name",
-		InitialApplierID: userID,
-		LastApplierID:    userID,
-		LastAppliedAt:    time.Now(),
-		NamespaceUserID:  batchSpec.UserID,
+		BatchSpecID:     batchSpec.ID,
+		Name:            "old-name",
+		CreatorID:       userID,
+		LastApplierID:   userID,
+		LastAppliedAt:   time.Now(),
+		NamespaceUserID: batchSpec.UserID,
 	}
 	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
@@ -962,7 +962,7 @@ fragment o on Org  { id, name }
 mutation($batchChange: ID!, $newName: String, $newNamespace: ID){
   moveBatchChange(batchChange: $batchChange, newName: $newName, newNamespace: $newNamespace) {
 	id, name, description
-	initialApplier  { ...u }
+	creator { ...u }
 	namespace {
 		... on User { ...u }
 		... on Org  { ...o }
@@ -1143,7 +1143,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	pruneUserCredentials(t, db, nil)
 
@@ -1273,7 +1273,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	ct.MockRSAKeygen(t)
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	pruneUserCredentials(t, db, nil)
 
@@ -1362,7 +1362,7 @@ func TestCreateChangesetComments(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1462,7 +1462,7 @@ func TestReenqueueChangesets(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1569,7 +1569,7 @@ func TestMergeChangesets(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1679,7 +1679,7 @@ func TestCloseChangesets(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -1789,7 +1789,7 @@ func TestPublishChangesets(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID

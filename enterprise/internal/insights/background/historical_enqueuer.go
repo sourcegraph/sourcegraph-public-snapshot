@@ -9,6 +9,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
@@ -249,7 +253,7 @@ type historicalEnqueuer struct {
 	frameLength func() time.Duration
 
 	// The iterator to use for walking over all repositories on Sourcegraph.
-	allReposIterator func(ctx context.Context, each func(repoName string) error) error
+	allReposIterator func(ctx context.Context, each func(repoName string, id api.RepoID) error) error
 	limiter          *rate.Limiter
 
 	statistics statistics
@@ -328,45 +332,39 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, uniqueSeries map[s
 	return hardErr
 }
 
-func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[string]itypes.InsightSeries, sortedSeriesIDs []string, softErr error) func(repoName string) error {
-	return func(repoName string) error {
-		// Lookup the repository (we need its database ID)
-		repo, err := h.repoStore.GetByName(ctx, api.RepoName(repoName))
-		if err != nil {
-			// Ignore RepoNotFoundErr because it could just be that the repository was actually
-			// deleted and allReposIterator had it cached.
-			if errors.HasType(err, &database.RepoNotFoundErr{}) {
-				return err // hard DB error
-			} else {
-				return nil
-			}
-		}
+func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[string]itypes.InsightSeries, sortedSeriesIDs []string, softErr error) func(repoName string, id api.RepoID) error {
+	return func(repoName string, id api.RepoID) error {
+
 		// Find the first commit made to the repository on the default branch.
 		firstHEADCommit, err := h.gitFirstEverCommit(ctx, api.RepoName(repoName))
 		if err != nil {
 			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
+				log15.Info("insights backfill repository skipped - missing rev/repo", "repo_id", id, "repo_name", repoName)
 				return nil // no error - repo may not be cloned yet (or not even pushed to code host yet)
 			}
 			if strings.Contains(err.Error(), `failed (output: "usage: git rev-list [OPTION] <commit-id>...`) {
+				log15.Info("insights backfill repository skipped - empty repo", "repo_id", id, "repo_name", repoName)
 				return nil // repository is empty
 			}
 			// soft error, repo may be in a bad state but others might be OK.
 			softErr = multierror.Append(softErr, errors.Wrap(err, "FirstEverCommit "+repoName))
+			log15.Error("insights backfill repository skipped", "repo_id", id, "repo_name", repoName, "error", err)
 			return nil
 		}
 
 		// For every series that we want to potentially gather historical data for, try.
 		for _, seriesID := range sortedSeriesIDs {
 			series := uniqueSeries[seriesID]
+			frames := query.BuildFrames(12, timeseries.TimeInterval{
+				Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
+				Value: series.SampleIntervalValue,
+			}, series.CreatedAt.Truncate(time.Hour*24))
 
-			frames := FirstOfMonthFrames(12, series.CreatedAt.Truncate(time.Hour*24))
-
-			log15.Debug("insights: starting frames", "repo_id", repo.ID, "series_id", series.SeriesID, "frames", frames)
-			plan := h.frameFilter.FilterFrames(ctx, frames, repo.ID)
-
+			log15.Debug("insights: starting frames", "repo_id", id, "series_id", series.SeriesID, "frames", frames)
+			plan := h.frameFilter.FilterFrames(ctx, frames, id)
 			if len(frames) != len(plan.Executions) {
 				h.statistics[seriesID].Compressed += 1
-				log15.Debug("compressed frames", "repo_id", repo.ID, "series_id", series.SeriesID, "plan", plan.Executions)
+				log15.Debug("compressed frames", "repo_id", id, "series_id", series.SeriesID, "plan", plan)
 			} else {
 				h.statistics[seriesID].Uncompressed += 1
 			}
@@ -378,28 +376,11 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 					return err
 				}
 
-				to := queryExecution.RecordingTime.Add(time.Hour * 24)
-				// If we already have data for this frame+repo+series, then there's nothing to do.
-				var numDataPoints int
-				numDataPoints, err = h.insightsStore.CountData(ctx, store.CountDataOpts{
-					From:     &queryExecution.RecordingTime,
-					To:       &to,
-					SeriesID: &seriesID,
-					RepoID:   &repo.ID,
-				})
-				if err != nil {
-					softErr = multierror.Append(softErr, err)
-					// In this case we will assume the point does not exist and query for it anyway.
-					h.statistics[seriesID].Errored += 1
-				} else if numDataPoints > 0 {
-					h.statistics[seriesID].Skipped += 1
-					continue
-				}
-
 				// Build historical data for this unique timeframe+repo+series.
 				hardErr, err := h.buildSeries(ctx, &buildSeriesContext{
 					execution:       queryExecution,
-					repo:            repo,
+					repoName:        api.RepoName(repoName),
+					id:              id,
 					firstHEADCommit: firstHEADCommit,
 					seriesID:        seriesID,
 					series:          series,
@@ -426,7 +407,8 @@ type buildSeriesContext struct {
 	execution *compression.QueryExecution
 
 	// The repository we're building historical data for.
-	repo *types.Repo
+	id       api.RepoID
+	repoName api.RepoName
 
 	// The first commit made in the repository on the default branch.
 	firstHEADCommit *gitdomain.Commit
@@ -434,33 +416,6 @@ type buildSeriesContext struct {
 	// The series we're building historical data for.
 	seriesID string
 	series   itypes.InsightSeries
-}
-
-// FirstOfMonthFrames builds a set of frames with a specific number of elements, such that all of the
-// starting times of each frame < current will fall on the first of a month.
-func FirstOfMonthFrames(numPoints int, current time.Time) []compression.Frame {
-	if numPoints < 1 {
-		return nil
-	}
-	times := make([]time.Time, 0, numPoints)
-	year, month, _ := current.Date()
-	firstOfCurrent := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
-
-	for i := 0 - numPoints + 1; i < 0; i++ {
-		times = append(times, firstOfCurrent.AddDate(0, i, 0))
-	}
-	times = append(times, firstOfCurrent)
-	times = append(times, current)
-
-	frames := make([]compression.Frame, 0, len(times)-1)
-	for i := 1; i < len(times); i++ {
-		prev := times[i-1]
-		frames = append(frames, compression.Frame{
-			From: prev,
-			To:   times[i],
-		})
-	}
-	return frames
 }
 
 // buildSeries is invoked to build historical data for every unique timeframe * repo * series that
@@ -486,9 +441,9 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	// Optimization: If the timeframe we're building data for starts (or ends) before the first commit in the
 	// repository, then we know there are no results (the repository didn't have any commits at all
 	// at that point in time.)
-	repoName := string(bctx.repo.Name)
+	repoName := string(bctx.repoName)
 	if bctx.execution.RecordingTime.Before(bctx.firstHEADCommit.Author.Date) {
-		args := bctx.execution.ToRecording(bctx.seriesID, repoName, bctx.repo.ID, 0.0)
+		args := bctx.execution.ToRecording(bctx.seriesID, repoName, bctx.id, 0.0)
 		if err := h.insightsStore.RecordSeriesPoints(ctx, args); err != nil {
 			hardErr = errors.Wrap(err, "RecordSeriesPoints Zero Value")
 			return // DB error
@@ -522,7 +477,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	if len(bctx.execution.Revision) > 0 {
 		revision = bctx.execution.Revision
 	} else {
-		recentCommits, err := h.gitFindRecentCommit(ctx, bctx.repo.Name, bctx.execution.RecordingTime)
+		recentCommits, err := h.gitFindRecentCommit(ctx, bctx.repoName, bctx.execution.RecordingTime)
 		if err != nil {
 			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 				return // no error - repo may not be cloned yet (or not even pushed to code host yet)
@@ -535,16 +490,16 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 			nearestCommit = recentCommits[0]
 		}
 		if nearestCommit == nil {
-			log15.Error("null commit", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime)
+			log15.Error("null commit", "repo_id", bctx.id, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime)
 			h.statistics[bctx.seriesID].Errored += 1
 			return // repository has no commits / is empty. Maybe not yet pushed to code host.
 		}
 		if nearestCommit.Committer == nil {
-			log15.Error("null committer", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime)
+			log15.Error("null committer", "repo_id", bctx.id, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime)
 			h.statistics[bctx.seriesID].Errored += 1
 			return
 		}
-		log15.Debug("nearest_commit", "repo_id", bctx.repo.ID, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime, "revhash", nearestCommit.ID.Short(), "time", nearestCommit.Committer.Date)
+		log15.Debug("nearest_commit", "repo_id", bctx.id, "series_id", bctx.series.SeriesID, "from", bctx.execution.RecordingTime, "revhash", nearestCommit.ID.Short(), "time", nearestCommit.Committer.Date)
 		revision = string(nearestCommit.ID)
 	}
 
@@ -553,7 +508,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	query = withCountUnlimited(query)
 	query = fmt.Sprintf("%s repo:^%s$@%s", query, regexp.QuoteMeta(repoName), revision)
 
-	job := bctx.execution.ToQueueJob(bctx.seriesID, query, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
+	job := queryrunner.ToQueueJob(bctx.execution, bctx.seriesID, query, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
 	hardErr = h.enqueueQueryRunnerJob(ctx, job)
 	return
 }

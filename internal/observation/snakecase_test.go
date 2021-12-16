@@ -30,6 +30,7 @@ var cases = []struct {
 	{"codeintel.GoodbyeBob", "codeintel.goodbye_bob"},
 	{"CodeInsights.HistoricalEnqueuer", "code_insights.historical_enqueuer"},
 	{"codeintel.autoindex-enqueuer", "codeintel.autoindex_enqueuer"},
+	{"diskcache.Cached Fetch", "diskcache.cached_fetch"},
 }
 
 func TestToSnakeCase(t *testing.T) {

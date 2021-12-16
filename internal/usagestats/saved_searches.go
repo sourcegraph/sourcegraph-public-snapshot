@@ -3,11 +3,11 @@ package usagestats
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func GetSavedSearches(ctx context.Context, db dbutil.DB) (*types.SavedSearches, error) {
+func GetSavedSearches(ctx context.Context, db database.DB) (*types.SavedSearches, error) {
 	const q = `
 	SELECT
 	(SELECT COUNT(*) FROM saved_searches) AS totalSavedSearches,

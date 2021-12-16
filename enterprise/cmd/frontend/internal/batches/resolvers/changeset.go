@@ -174,7 +174,7 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 	if !isSiteAdmin {
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
 			actor := actor.FromContext(ctx)
-			opts.InitialApplierID = actor.UID
+			opts.CreatorID = actor.UID
 		}
 	}
 

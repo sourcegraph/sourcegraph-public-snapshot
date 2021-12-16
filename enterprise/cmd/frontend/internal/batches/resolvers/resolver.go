@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -704,7 +703,7 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	if !isSiteAdmin {
 		actor := actor.FromContext(ctx)
 		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
-			opts.InitialApplierID = actor.UID
+			opts.CreatorID = actor.UID
 		}
 
 		// 🚨 SECURITY: If the user is not an admin, we don't want to include
@@ -1755,22 +1754,24 @@ func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.Del
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
 	if s == nil {
-		return btypes.BatchChangeStateAny, nil
+		return "", nil
 	}
 	switch *s {
 	case "OPEN":
 		return btypes.BatchChangeStateOpen, nil
 	case "CLOSED":
 		return btypes.BatchChangeStateClosed, nil
+	case "DRAFT":
+		return btypes.BatchChangeStateDraft, nil
 	default:
-		return btypes.BatchChangeStateAny, errors.Errorf("unknown state %q", *s)
+		return "", errors.Errorf("unknown state %q", *s)
 	}
 }
 
-func checkSiteAdminOrSameUser(ctx context.Context, db dbutil.DB, userID int32) (bool, error) {
+func checkSiteAdminOrSameUser(ctx context.Context, db database.DB, userID int32) (bool, error) {
 	// 🚨 SECURITY: Only site admins or the authors of a batch change have batch change
 	// admin rights.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(db), userID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
 		if errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
 			return false, nil
 		}

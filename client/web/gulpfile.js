@@ -29,6 +29,8 @@ const {
   watchCSSModulesTypings,
 } = require('../shared/gulpfile')
 
+const { build: buildEsbuild } = require('./dev/esbuild/build')
+const { esbuildDevelopmentServer } = require('./dev/esbuild/server')
 const { DEV_SERVER_LISTEN_ADDR, DEV_SERVER_PROXY_TARGET_ADDR, shouldCompressResponse } = require('./dev/utils')
 const { DEV_WEB_BUILDER } = require('./dev/utils/environment-config').environmentConfig
 const webpackConfig = require('./webpack.config')
@@ -60,7 +62,7 @@ async function webpack() {
   }
 }
 
-const webBuild = webpack
+const webBuild = DEV_WEB_BUILDER === 'webpack' ? webpack : buildEsbuild
 
 /**
  * Watch files and update the webpack bundle on disk without starting a dev server.
@@ -179,7 +181,22 @@ async function webpackDevelopmentServer() {
   await server.start()
 }
 
-const developmentServer = webpackDevelopmentServer
+const esbuildDevelopmentProxy = () =>
+  esbuildDevelopmentServer(DEV_SERVER_LISTEN_ADDR, app => {
+    app.use(
+      '/',
+      createProxyMiddleware({
+        target: {
+          protocol: 'http:',
+          host: DEV_SERVER_PROXY_TARGET_ADDR.host,
+          port: DEV_SERVER_PROXY_TARGET_ADDR.port,
+        },
+        logLevel: 'error',
+      })
+    )
+  })
+
+const developmentServer = DEV_WEB_BUILDER === 'webpack' ? webpackDevelopmentServer : esbuildDevelopmentProxy
 
 // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
 const generate = gulp.parallel(schema, graphQlSchema, graphQlOperations, cssModulesTypings)

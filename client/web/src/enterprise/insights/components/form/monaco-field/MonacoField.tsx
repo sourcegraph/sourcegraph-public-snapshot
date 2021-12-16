@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
-import React, { forwardRef, InputHTMLAttributes, useMemo } from 'react'
+import React, { forwardRef, InputHTMLAttributes, useImperativeHandle, useMemo } from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
@@ -31,7 +31,7 @@ interface MonacoFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, '
     onChange: (value: string) => void
 }
 
-export const MonacoField: React.FunctionComponent<MonacoFieldProps> = forwardRef(props => {
+export const MonacoField: React.FunctionComponent<MonacoFieldProps> = forwardRef((props, reference) => {
     const {
         value,
         className,
@@ -41,6 +41,11 @@ export const MonacoField: React.FunctionComponent<MonacoFieldProps> = forwardRef
         autoFocus,
         patternType = SearchPatternType.regexp,
     } = props
+
+    // Monaco doesn't have any native input elements, so we mock
+    // ref here to avoid React warnings in console about zero usage of
+    // element ref with forward ref call.
+    useImperativeHandle(reference, () => null)
 
     const { enhancedThemePreference } = useTheme()
     const monacoOptions = useMemo(() => ({ ...MONACO_OPTIONS, readOnly: disabled }), [disabled])

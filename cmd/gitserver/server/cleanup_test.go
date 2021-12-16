@@ -125,10 +125,9 @@ func TestCleanupInactive(t *testing.T) {
 // relevant internal magic numbers and transformations change.
 func TestGitGCAuto(t *testing.T) {
 	// Create a test repository with detectable garbage that GC can prune.
-	root := t.TempDir()
-	repo := filepath.Join(root, "garbage-repo")
-	defer os.RemoveAll(root)
-	runCmd(t, root, "git", "init", repo)
+	wd := t.TempDir()
+	repo := filepath.Join(wd, "garbage-repo")
+	runCmd(t, wd, "git", "init", repo)
 
 	// First we need to generate a moderate number of commits.
 	for i := 0; i < 50; i++ {
@@ -148,6 +147,12 @@ func TestGitGCAuto(t *testing.T) {
 	// Bring everything back together in one branch.
 	runCmd(t, repo, "git", "checkout", "master")
 	runCmd(t, repo, "git", "merge", "secondary")
+
+	// Now create a bare repo like gitserver expects
+	root := t.TempDir()
+	wdRepo := repo
+	repo = filepath.Join(root, "garbage-repo")
+	runCmd(t, root, "git", "clone", "--bare", wdRepo, filepath.Join(repo, ".git"))
 
 	// `git count-objects -v` can indicate objects, packs, etc.
 	// We'll run this before and after to verify that an action
@@ -186,6 +191,7 @@ func TestCleanupExpired(t *testing.T) {
 	repoGCOld := path.Join(root, "repo-gc-old", ".git")
 	repoBoom := path.Join(root, "repo-boom", ".git")
 	repoCorrupt := path.Join(root, "repo-corrupt", ".git")
+	repoNonBare := path.Join(root, "repo-non-bare", ".git")
 	repoPerforce := path.Join(root, "repo-perforce", ".git")
 	repoPerforceGCOld := path.Join(root, "repo-perforce-gc-old", ".git")
 	repoRemoteURLScrub := path.Join(root, "repo-remote-url-scrub", ".git")
@@ -202,6 +208,10 @@ func TestCleanupExpired(t *testing.T) {
 		if err := cmd.Run(); err != nil {
 			t.Fatal(err)
 		}
+	}
+
+	if err := exec.Command("git", "init", filepath.Dir(repoNonBare)).Run(); err != nil {
+		t.Fatal(err)
 	}
 
 	getRemoteURL := func(ctx context.Context, name api.RepoName) (string, error) {
@@ -271,6 +281,10 @@ func TestCleanupExpired(t *testing.T) {
 	repoBoomTime := modTime(repoBoom)
 	repoBoomRecloneTime := recloneTime(repoBoom)
 
+	if _, err := os.Stat(repoNonBare); err != nil {
+		t.Fatal(err)
+	}
+
 	s := &Server{
 		ReposDir:         root,
 		GetRemoteURLFunc: getRemoteURL,
@@ -322,6 +336,10 @@ func TestCleanupExpired(t *testing.T) {
 		t.Fatalf("expected no output from git remote after URL scrubbing, got: %s", out)
 	} else if err != nil {
 		t.Fatal(err)
+	}
+
+	if _, err := os.Stat(repoNonBare); err == nil {
+		t.Fatal("non-bare repo was not removed")
 	}
 }
 
@@ -483,7 +501,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	idMapping := make(map[api.RepoName]api.RepoID)
 

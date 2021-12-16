@@ -261,25 +261,25 @@ func addBrandedTests(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
+// This is a bandage solution to speed up the go tests by running the slowest ones
+// concurrently. As a results, the PR time affecting only Go code is divided by two.
+var slowGoTestPackages = []string{
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore",   // 224s
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore", // 122s
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                   // 82+162s
+	"github.com/sourcegraph/sourcegraph/internal/database",                              // 253s
+	"github.com/sourcegraph/sourcegraph/internal/repos",                                 // 106s
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches",                    // 52 + 60
+	"github.com/sourcegraph/sourcegraph/cmd/frontend",                                   // 100s
+}
+
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
-	// This is a bandage solution to speed up the go tests by running the slowest ones
-	// concurrently. As a results, the PR time affecting only Go code is divided by two.
-	slowPackages := []string{
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore",   // 224s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore", // 122s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                   // 82+162s
-		"github.com/sourcegraph/sourcegraph/internal/database",                              // 253s
-		"github.com/sourcegraph/sourcegraph/internal/repos",                                 // 106s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/batches",                    // 52 + 60
-		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                   // 100s
-	}
-
 	pipeline.AddStep(":go: Test",
-		bk.Cmd("./dev/ci/go-test.sh exclude "+strings.Join(slowPackages, " ")),
+		bk.Cmd("./dev/ci/go-test.sh exclude "+strings.Join(slowGoTestPackages, " ")),
 		bk.Cmd("dev/ci/codecov.sh -c -F go"))
 
-	for _, slowPkg := range slowPackages {
+	for _, slowPkg := range slowGoTestPackages {
 		// Trim the package name for readability
 		name := strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", "")
 		pipeline.AddStep(":go: Test ("+name+")",
@@ -483,26 +483,22 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 	}
 }
 
-// Flaky deployment. See https://github.com/sourcegraph/sourcegraph/issues/25977
-// func clusterQA(candidateTag string) operations.Operation {
-// 	return func(p *bk.Pipeline) {
-// 		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
-// 			bk.Agent("queue", "baremetal"),
-// 			bk.Env("CANDIDATE_VERSION", candidateTag),
-// 			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
-//
-// 			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
-// 			bk.Env("VAGRANT_RUN_ENV", "CI"),
-//
-// 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
-// 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
-// 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
-// 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-// 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-// 			bk.Cmd(".buildkite/vagrant-run.sh sourcegraph-qa-test"),
-// 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
-// 	}
-// }
+func clusterQA(candidateTag string) operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep(":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA",
+			bk.DependsOn(candidateImageStepKey("frontend")),
+			bk.Env("CANDIDATE_VERSION", candidateTag),
+			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
+			bk.Env("NO_CLEANUP", "false"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
+			bk.Cmd("./dev/ci/test/cluster/cluster-test.sh"),
+			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
+	}
+}
 
 // candidateImageStepKey is the key for the given app (see the `images` package). Useful for
 // adding dependencies on a step.

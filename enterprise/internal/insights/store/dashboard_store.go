@@ -372,7 +372,7 @@ SELECT * FROM dashboard_grants where dashboard_id = %s
 `
 
 const getDashboardGrantsByPermissionsSql = `
--- source: enterprise/internal/insights/store/dashboard_store.go:GetDashboardGrants
+-- source: enterprise/internal/insights/store/dashboard_store.go:HasDashboardPermission
 SELECT count(*)
 FROM dashboard
 WHERE id = ANY (%s)

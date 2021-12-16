@@ -9,15 +9,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // NewBeforeCreateUserHook returns a BeforeCreateUserHook closure with the given UsersStore
 // that determines whether new user is allowed to be created.
-func NewBeforeCreateUserHook() func(context.Context, dbutil.DB) error {
-	return func(ctx context.Context, db dbutil.DB) error {
+func NewBeforeCreateUserHook() func(context.Context, database.DB) error {
+	return func(ctx context.Context, db database.DB) error {
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
 			return err
@@ -63,13 +62,13 @@ func NewBeforeCreateUserHook() func(context.Context, dbutil.DB) error {
 
 // NewAfterCreateUserHook returns a AfterCreateUserHook closure that determines whether
 // a new user should be promoted to site admin based on the product license.
-func NewAfterCreateUserHook() func(context.Context, dbutil.DB, *types.User) error {
+func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) error {
 	// 🚨 SECURITY: To be extra safe that we never promote any new user to be site admin on Sourcegraph Cloud.
 	if !licensing.EnforceTiers || envvar.SourcegraphDotComMode() {
 		return nil
 	}
 
-	return func(ctx context.Context, tx dbutil.DB, user *types.User) error {
+	return func(ctx context.Context, tx database.DB, user *types.User) error {
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
 			return err

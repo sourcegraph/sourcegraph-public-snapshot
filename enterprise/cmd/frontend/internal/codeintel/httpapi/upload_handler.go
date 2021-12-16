@@ -13,24 +13,26 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 )
 
 type UploadHandler struct {
-	db          dbutil.DB
+	db          database.DB
 	dbStore     DBStore
 	uploadStore uploadstore.Store
 	operations  *Operations
 }
 
 func NewUploadHandler(
-	db dbutil.DB,
+	db database.DB,
 	dbStore DBStore,
 	uploadStore uploadstore.Store,
 	internal bool,
 	authValidators AuthValidatorMap,
 	operations *Operations,
+	hub *sentry.Hub,
 ) http.Handler {
 	handler := &UploadHandler{
 		db:          db,

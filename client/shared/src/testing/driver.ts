@@ -10,14 +10,16 @@ import getFreePort from 'get-port'
 import { escapeRegExp } from 'lodash'
 import { readFile, appendFile, mkdir } from 'mz/fs'
 import puppeteer, {
-    PageEventObj,
+    PageEventObject,
     Page,
     Serializable,
     LaunchOptions,
-    PageFnOptions,
     ConsoleMessage,
     Target,
-    RevisionInfo,
+    BrowserFetcherRevisionInfo,
+    PuppeteerNode,
+    BrowserLaunchArgumentOptions,
+    BrowserConnectOptions,
 } from 'puppeteer'
 import puppeteerFirefox from 'puppeteer-firefox'
 import { from, fromEvent, merge, Subscription } from 'rxjs'
@@ -39,7 +41,7 @@ import { readEnvironmentBoolean, retry } from './utils'
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
  */
-export const oncePageEvent = <E extends keyof PageEventObj>(page: Page, eventName: E): Promise<PageEventObj[E]> =>
+export const oncePageEvent = <E extends keyof PageEventObject>(page: Page, eventName: E): Promise<PageEventObject[E]> =>
     new Promise(resolve => page.once(eventName, resolve))
 
 export const percySnapshot = readEnvironmentBoolean({ variable: 'PERCY_ON', defaultValue: false })
@@ -63,6 +65,10 @@ type SelectTextMethod = 'selectall' | 'keyboard'
  * where typing would be too slow or we explicitly want to test paste behavior.
  */
 type EnterTextMethod = 'type' | 'paste'
+
+interface PageFnOptions {
+    timeout?: number
+}
 
 interface FindElementOptions {
     /**
@@ -697,7 +703,7 @@ export class Driver {
     }
 
     public async waitUntilURL(url: string, options: PageFnOptions = {}): Promise<void> {
-        await this.page.waitForFunction(url => document.location.href === url, options, url)
+        await this.page.waitForFunction((url: string) => document.location.href === url, options, url)
     }
 }
 
@@ -719,7 +725,7 @@ export function modifyJSONC(
 
 // Copied from node_modules/puppeteer-firefox/misc/install-preferences.js
 async function getFirefoxCfgPath(): Promise<string> {
-    const firefoxFolder = path.dirname(puppeteerFirefox.executablePath())
+    const firefoxFolder = path.dirname(((puppeteerFirefox as unknown) as PuppeteerNode).executablePath())
     let configPath: string
     if (process.platform === 'darwin') {
         configPath = path.join(firefoxFolder, '..', 'Resources')
@@ -734,7 +740,7 @@ async function getFirefoxCfgPath(): Promise<string> {
     return path.join(configPath, 'puppeteer.cfg')
 }
 
-interface DriverOptions extends LaunchOptions {
+interface DriverOptions extends LaunchOptions, BrowserConnectOptions {
     browser?: 'chrome' | 'firefox'
 
     /** If true, load the Sourcegraph browser extension. */
@@ -760,7 +766,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
 
     const { loadExtension } = resolvedOptions
     const args: string[] = []
-    const launchOptions: puppeteer.LaunchOptions = {
+    const launchOptions: LaunchOptions & BrowserLaunchArgumentOptions & BrowserConnectOptions = {
         ignoreHTTPSErrors: true,
         ...resolvedOptions,
         args,
@@ -790,7 +796,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
             await webExt.cmd.run(
                 {
                     sourceDir: firefoxExtensionPath,
-                    firefox: puppeteerFirefox.executablePath(),
+                    firefox: ((puppeteer as unknown) as puppeteer.PuppeteerNode).executablePath(),
                     args,
                 },
                 { shouldExitProgram: false }
@@ -837,8 +843,10 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
  * Get the RevisionInfo (which contains the executable path) for the given
  * browser and revision string.
  */
-export function getPuppeteerBrowser(browserName: string, revision: string): RevisionInfo {
-    const browserFetcher = puppeteer.createBrowserFetcher({ product: browserName })
+export function getPuppeteerBrowser(browserName: string, revision: string): BrowserFetcherRevisionInfo {
+    const browserFetcher = ((puppeteer as unknown) as puppeteer.PuppeteerNode).createBrowserFetcher({
+        product: browserName,
+    })
     const revisionInfo = browserFetcher.revisionInfo(revision)
     if (!revisionInfo.local) {
         throw new Error(

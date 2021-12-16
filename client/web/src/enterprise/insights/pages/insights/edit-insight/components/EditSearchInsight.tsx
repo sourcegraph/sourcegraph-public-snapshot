@@ -26,8 +26,8 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
                 visibility: insight.visibility,
                 repositories: '',
                 series: insight.series.map(line => createDefaultEditSeries({ ...line, valid: true })),
-                stepValue: '2',
-                step: 'weeks',
+                stepValue: Object.values(insight.step)[0]?.toString() ?? '3',
+                step: Object.keys(insight.step)[0] as InsightStep,
                 allRepos: true,
             }
         }

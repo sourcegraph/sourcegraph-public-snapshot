@@ -39,7 +39,7 @@ func TestPermissionLevels(t *testing.T) {
 
 	ct.MockRSAKeygen(t)
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	key := et.TestKey{}
 
 	cstore := store.New(db, &observation.TestContext, key)
@@ -82,12 +82,12 @@ func TestPermissionLevels(t *testing.T) {
 		t.Helper()
 
 		c := &btypes.BatchChange{
-			Name:             name,
-			InitialApplierID: userID,
-			NamespaceUserID:  userID,
-			LastApplierID:    userID,
-			LastAppliedAt:    time.Now(),
-			BatchSpecID:      batchSpecID,
+			Name:            name,
+			CreatorID:       userID,
+			NamespaceUserID: userID,
+			LastApplierID:   userID,
+			LastAppliedAt:   time.Now(),
+			BatchSpecID:     batchSpecID,
 		}
 		if err := s.CreateBatchChange(ctx, c); err != nil {
 			t.Fatal(err)
@@ -1158,7 +1158,7 @@ func TestRepositoryPermissions(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	cstore := store.New(db, &observation.TestContext, nil)
 	sr := &Resolver{store: cstore}
@@ -1228,12 +1228,12 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 
 		batchChange := &btypes.BatchChange{
-			Name:             "my batch change",
-			InitialApplierID: userID,
-			NamespaceUserID:  userID,
-			LastApplierID:    userID,
-			LastAppliedAt:    time.Now(),
-			BatchSpecID:      spec.ID,
+			Name:            "my batch change",
+			CreatorID:       userID,
+			NamespaceUserID: userID,
+			LastApplierID:   userID,
+			LastAppliedAt:   time.Now(),
+			BatchSpecID:     spec.ID,
 		}
 		if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 			t.Fatal(err)

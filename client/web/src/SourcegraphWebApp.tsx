@@ -84,7 +84,12 @@ import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
-import { setQueryStateFromSettings, setQueryStateFromURL, setExperimentalFeaturesFromSettings } from './stores'
+import {
+    setQueryStateFromSettings,
+    setQueryStateFromURL,
+    setExperimentalFeaturesFromSettings,
+    getExperimentalFeatures,
+} from './stores'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -94,12 +99,7 @@ import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { UserSessionStores } from './UserSessionStores'
 import { globbingEnabledFromSettings } from './util/globbing'
 import { observeLocation } from './util/location'
-import {
-    siteSubjectNoAdmin,
-    viewerSubjectFromSettings,
-    defaultPatternTypeFromSettings,
-    experimentalFeaturesFromSettings,
-} from './util/settings'
+import { siteSubjectNoAdmin, viewerSubjectFromSettings, defaultPatternTypeFromSettings } from './util/settings'
 
 export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
@@ -157,12 +157,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      */
     searchPatternType: SearchPatternType
 
-    showOnboardingTour: boolean
-
-    showEnterpriseHomePanels: boolean
-
-    showSearchContext: boolean
-    showSearchContextManagement: boolean
     selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
     hasUserAddedRepositories: boolean
@@ -173,21 +167,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether globbing is enabled for filters.
      */
     globbing: boolean
-
-    /**
-     * Whether we show the mulitiline editor at /search/console
-     */
-    showMultilineSearchConsole: boolean
-
-    /**
-     * Whether the code monitoring feature flag is enabled.
-     */
-    enableCodeMonitoring: boolean
-
-    /**
-     * Whether the API docs feature flag is enabled.
-     */
-    enableAPIDocs: boolean
 
     /**
      * Evaluated feature flags for the current viewer
@@ -253,21 +232,11 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             viewerSubject: siteSubjectNoAdmin(),
             parsedSearchQuery: parsedSearchURL.query || '',
             searchPatternType: urlPatternType,
-            showOnboardingTour: false,
-            showSearchContext: false,
-            showSearchContextManagement: false,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
             hasUserSyncedPublicRepositories: false,
             hasUserAddedExternalServices: false,
-            showEnterpriseHomePanels: false,
             globbing: false,
-            showMultilineSearchConsole: false,
-            enableCodeMonitoring: false,
-            // Disabling linter here as otherwise the application fails to compile. Bad lint?
-            // See 7a137b201330eb2118c746f8cc5acddf63c1f039
-            // eslint-disable-next-line react/no-unused-state
-            enableAPIDocs: false,
             featureFlags: new Map<FeatureFlagName, boolean>(),
         }
     }
@@ -301,7 +270,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     this.setState(state => ({
                         settingsCascade,
                         authenticatedUser,
-                        ...experimentalFeaturesFromSettings(settingsCascade),
                         globbing: globbingEnabledFromSettings(settingsCascade),
                         searchPatternType: defaultPatternTypeFromSettings(settingsCascade) || state.searchPatternType,
                         viewerSubject: viewerSubjectFromSettings(settingsCascade, authenticatedUser),
@@ -460,14 +428,11 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     extensionsController={this.extensionsController}
                                                     telemetryService={eventLogger}
                                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                    showOnboardingTour={this.state.showOnboardingTour}
                                                     searchContextsEnabled={this.props.searchContextsEnabled}
-                                                    showSearchContext={this.state.showSearchContext}
                                                     hasUserAddedRepositories={this.hasUserAddedRepositories()}
                                                     hasUserAddedExternalServices={
                                                         this.state.hasUserAddedExternalServices
                                                     }
-                                                    showSearchContextManagement={this.state.showSearchContextManagement}
                                                     selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                                     setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
                                                     getUserSearchContextNamespaces={getUserSearchContextNamespaces}
@@ -480,10 +445,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     deleteSearchContext={deleteSearchContext}
                                                     isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                                                     defaultSearchContextSpec={this.state.defaultSearchContextSpec}
-                                                    showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
                                                     globbing={this.state.globbing}
-                                                    showMultilineSearchConsole={this.state.showMultilineSearchConsole}
-                                                    enableCodeMonitoring={this.state.enableCodeMonitoring}
                                                     isCodeInsightsGqlApiEnabled={
                                                         window.context.codeInsightsGqlApiEnabled
                                                     }
@@ -549,7 +511,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.state.hasUserAddedRepositories || this.state.hasUserSyncedPublicRepositories
 
     private getSelectedSearchContextSpec = (): string | undefined =>
-        this.state.showSearchContext ? this.state.selectedSearchContextSpec : undefined
+        getExperimentalFeatures().showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpec = (spec: string): void => {
         if (!this.props.searchContextsEnabled) {
