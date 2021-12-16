@@ -1,7 +1,6 @@
 import { storiesOf } from '@storybook/react'
 import { subDays, addMinutes, addHours } from 'date-fns'
 import React from 'react'
-import { of } from 'rxjs'
 
 import { WebStory } from '../../../components/WebStory'
 import { BatchSpecExecutionFields, BatchSpecState } from '../../../graphql-operations'
@@ -37,12 +36,16 @@ const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
     creator: {
         id: 'VXNlcjox',
         url: '/users/mrnugget',
+        username: 'mrnugget',
         displayName: null,
     },
     namespace: {
         id: 'VXNlcjox',
         url: '/users/mrnugget',
         namespaceName: 'mrnugget',
+    },
+    appliesToBatchChange: {
+        url: '/batch-changes/test',
     },
     description: {
         name: 'super-thing',
@@ -72,6 +75,7 @@ const batchSpecExecutionFailed = (): BatchSpecExecutionFields => ({
     creator: {
         id: 'VXNlcjox',
         url: '/users/mrnugget',
+        username: 'mrnugget',
         displayName: null,
     },
     viewerCanRetry: true,
@@ -83,6 +87,9 @@ const batchSpecExecutionFailed = (): BatchSpecExecutionFields => ({
     },
     description: {
         name: 'super-thing',
+    },
+    appliesToBatchChange: {
+        url: '/batch-changes/test1',
     },
     workspaceResolution: {
         workspaces: {
@@ -103,11 +110,11 @@ add('Completed', () => (
             <BatchSpecExecutionDetailsPage
                 {...props}
                 batchSpecID="123123"
-                fetchBatchSpecExecution={() => of(batchSpecExecutionCompleted())}
-                queryBatchSpecWorkspaces={() =>
-                    of({ totalCount: 0, nodes: [], pageInfo: { endCursor: null, hasNextPage: false } })
-                }
-                expandStage="srcPreview"
+                // match={}
+                // fetchBatchSpecExecution={() => of(batchSpecExecutionCompleted())}
+                // queryBatchSpecWorkspaces={() =>
+                //     of({ totalCount: 0, nodes: [], pageInfo: { endCursor: null, hasNextPage: false } })
+                // }
             />
         )}
     </WebStory>
@@ -119,11 +126,10 @@ add('Failed', () => (
             <BatchSpecExecutionDetailsPage
                 {...props}
                 batchSpecID="123123"
-                fetchBatchSpecExecution={() => of(batchSpecExecutionFailed())}
-                queryBatchSpecWorkspaces={() =>
-                    of({ totalCount: 0, nodes: [], pageInfo: { endCursor: null, hasNextPage: false } })
-                }
-                expandStage="srcPreview"
+                // fetchBatchSpecExecution={() => of(batchSpecExecutionFailed())}
+                // queryBatchSpecWorkspaces={() =>
+                //     of({ totalCount: 0, nodes: [], pageInfo: { endCursor: null, hasNextPage: false } })
+                // }
             />
         )}
     </WebStory>

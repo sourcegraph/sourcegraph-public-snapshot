@@ -204,7 +204,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                     >
                         Run batch spec
                     </ButtonTooltip>
-                    <BatchSpecDownloadLink name="new-batch-spec" originalInput={code}>
+                    <BatchSpecDownloadLink name="new-batch-spec" originalInput={code} isLightTheme={isLightTheme}>
                         or download for src-cli
                     </BatchSpecDownloadLink>
                     <div className="form-group">

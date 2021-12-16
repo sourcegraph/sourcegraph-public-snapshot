@@ -90,10 +90,14 @@ export const BatchChangePreviewTabs: React.FunctionComponent<BatchChangePreviewT
             </BatchChangeTabPanel>
             <BatchChangeTabPanel index={1}>
                 <div className="d-flex mb-2 justify-content-end">
-                    <BatchSpecDownloadButton name={spec.description.name} originalInput={spec.originalInput} />
+                    <BatchSpecDownloadButton
+                        name={spec.description.name}
+                        originalInput={spec.originalInput}
+                        isLightTheme={isLightTheme}
+                    />
                 </div>
                 <Container>
-                    <BatchSpec originalInput={spec.originalInput} />
+                    <BatchSpec originalInput={spec.originalInput} isLightTheme={isLightTheme} />
                 </Container>
             </BatchChangeTabPanel>
         </BatchChangeTabPanels>
