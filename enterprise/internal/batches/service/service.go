@@ -171,6 +171,7 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling name")
 	}
+	// TODO: Should name require a minimum length?
 	spec, err := batcheslib.ParseBatchSpec(rawSpec, batcheslib.ParseBatchSpecOptions{})
 	if err != nil {
 		return nil, err
