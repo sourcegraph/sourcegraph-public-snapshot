@@ -168,7 +168,6 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
 }
 
 interface EditPageProps extends ThemeProps, SettingsCascadeProps<Settings> {
-    /** The batch change, if it already exists */
     batchChange: EditBatchChangeFields
 }
 
@@ -180,6 +179,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, isLight
         batchChange.namespace.id
     )
 
+    // TODO: Only needed when edit form is open
     // The namespace selected for creating the new batch spec under.
     const [selectedNamespace, _setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
         defaultSelectedNamespace
@@ -261,7 +261,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, isLight
     // * the current workspaces evaluation is not complete
     const [disableExecution, executionTooltip] = useMemo(() => {
         const disableExecution = Boolean(
-            batchChange.lastApplier !== null ||
+            batchChange.state !== 'DRAFT' ||
                 isValid !== true ||
                 previewError ||
                 isLoadingPreview ||
@@ -272,7 +272,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({ batchChange, isLight
         )
         // The execution tooltip only shows if the execute button is disabled, and explains why.
         const executionTooltip =
-            batchChange.lastApplier !== null
+            batchChange.state !== 'DRAFT'
                 ? 'This batch change has already had a spec applied.'
                 : isValid === false || previewError
                 ? "There's a problem with your batch spec."
