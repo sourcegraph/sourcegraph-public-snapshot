@@ -204,6 +204,11 @@ func (r *RepoIndex) Stats() map[string]float64 {
 		indexedBlobsSize = indexedBlobsSize + statSize
 		bloomFilterBinaryStorageSize += blob.EstimatedBinarySize()
 	}
+	caseInsensitive := 0
+	if IsCaseInsensitive {
+		caseInsensitive = 1
+	}
+	stats["case-sensitive"] = float64(caseInsensitive)
 	stats["indexed-blob-count"] = float64(len(r.Blobs))
 	stats["indexed-blobs-size"] = float64(indexedBlobsSize)
 	stats["bloom-memory-size"] = float64(bloomFilterBinaryStorageSize)
