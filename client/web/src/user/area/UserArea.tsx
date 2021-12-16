@@ -61,6 +61,7 @@ export const USER_AREA_USER_PROFILE = gql`
 `
 
 export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {
+    /** When true, the header is not rendered and the component is not wrapped in a container. */
     fullPage?: boolean
 }
 

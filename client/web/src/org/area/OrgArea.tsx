@@ -78,6 +78,7 @@ const NotFoundPage: React.FunctionComponent = () => (
 )
 
 export interface OrgAreaRoute extends RouteDescriptor<OrgAreaPageProps> {
+    /** When true, the header is not rendered and the component is not wrapped in a container. */
     fullPage?: boolean
 }
 
