@@ -11,11 +11,11 @@ import (
 
 type mockBranchLocker struct{}
 
-func (m *mockBranchLocker) Unlock(context.Context) (bool, error) {
-	return false, nil
+func (m *mockBranchLocker) Unlock(context.Context) (func() error, error) {
+	return func() error { return nil }, nil
 }
-func (m *mockBranchLocker) Lock(context.Context, []commitInfo, string) (bool, error) {
-	return false, nil
+func (m *mockBranchLocker) Lock(context.Context, []commitInfo, string) (func() error, error) {
+	return func() error { return nil }, nil
 }
 
 func TestBuildsherrif(t *testing.T) {
@@ -79,7 +79,9 @@ func TestBuildsherrif(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			res, err := buildsherrif(ctx, lock, tt.builds, testOptions)
 			assert.NoError(t, err)
-			assert.Equal(t, tt.wantLocked, res.Locked)
+			assert.Equal(t, tt.wantLocked, res.LockBranch)
+			// Mock always returns an action, check it's always assigned correctly
+			assert.NotNil(t, res.Action)
 		})
 	}
 }

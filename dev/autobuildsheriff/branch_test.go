@@ -66,11 +66,16 @@ func TestRepoBranchLocker(t *testing.T) {
 			{Commit: "06a8636c2e0bea69944d8419aafa03ff3992527a"}, // @bobheadxi
 			{Commit: "93971fa0b036b3e258cbb9a3eb7098e4032eefc4"}, // @jhchabran
 		}
-		modified, err := locker.Lock(ctx, commits, "dev-experience")
+		lock, err := locker.Lock(ctx, commits, "dev-experience")
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.True(t, modified)
+		assert.NotNil(t, lock, "has callback")
+
+		err = lock()
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		// Validate live state
 		validateLiveState := func() {
@@ -97,11 +102,11 @@ func TestRepoBranchLocker(t *testing.T) {
 		validateLiveState()
 
 		// Repeated lock attempt shouldn't change anything
-		modified, err = locker.Lock(ctx, []commitInfo{}, "")
+		lock, err = locker.Lock(ctx, []commitInfo{}, "")
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.False(t, modified)
+		assert.Nil(t, lock, "should not have callback")
 
 		// should have same state as before
 		validateLiveState()
@@ -112,11 +117,16 @@ func TestRepoBranchLocker(t *testing.T) {
 		defer stop()
 		locker := newBranchLocker(ghc, "sourcegraph", "sourcegraph", testBranch)
 
-		modified, err := locker.Unlock(ctx)
+		unlock, err := locker.Unlock(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.True(t, modified)
+		assert.NotNil(t, unlock, "has callback")
+
+		err = unlock()
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		// Validate live state
 		protects, _, err := ghc.Repositories.GetBranchProtection(ctx, "sourcegraph", "sourcegraph", testBranch)
@@ -127,10 +137,10 @@ func TestRepoBranchLocker(t *testing.T) {
 		assert.Nil(t, protects.Restrictions)
 
 		// Repeat unlock
-		modified, err = locker.Unlock(ctx)
+		unlock, err = locker.Unlock(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		assert.False(t, modified)
+		assert.Nil(t, unlock, "should not have callback")
 	})
 }

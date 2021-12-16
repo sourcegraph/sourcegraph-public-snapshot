@@ -68,8 +68,25 @@ func main() {
 	}
 
 	// Only post an update if the lock has been modified
-	if results.LockModified {
-		if err := postSlackUpdate(slackWebhook, slackSummary(results.Locked, results.FailedCommits)); err != nil {
+	lockModified := results.Action != nil
+	if lockModified {
+		// Post update first to avoid invisible changes
+		if err := postSlackUpdate(slackWebhook, slackSummary(lockModified, results.FailedCommits)); err != nil {
+			// If action is an unlock, try to unlock anyway
+			if !results.LockBranch {
+				log.Println("slack update failed but action is an unlock, trying to unlock branch anyway")
+				goto POST
+			}
+			log.Fatal(err)
+		}
+
+	POST:
+		// If post works, do the thing
+		if err := results.Action(); err != nil {
+			slackErr := postSlackUpdate(slackWebhook, fmt.Sprintf("Failed to execute action (%+v): %s", results, err))
+			if slackErr != nil {
+				log.Println(slackErr)
+			}
 			log.Fatal(err)
 		}
 	}

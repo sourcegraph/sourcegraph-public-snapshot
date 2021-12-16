@@ -20,8 +20,11 @@ type commitInfo struct {
 }
 
 type sherrifResults struct {
-	Locked        bool
-	LockModified  bool
+	// LockBranch indicates whether or not the Action will lock the branch.
+	LockBranch bool
+	// Action is a callback to actually execute changes.
+	Action func() (err error)
+
 	FailedCommits []commitInfo
 }
 
@@ -35,11 +38,10 @@ func buildsherrif(ctx context.Context, branch branchLocker, builds []buildkite.B
 	for i, b := range builds {
 		if isBuildPassed(b) {
 			fmt.Printf("most recent finished build %d passed\n", *b.Number)
-			results.LockModified, err = branch.Unlock(ctx)
+			results.Action, err = branch.Unlock(ctx)
 			if err != nil {
 				return nil, fmt.Errorf("unlockBranch: %w", err)
 			}
-			return
 		}
 		if isBuildFailed(b, opts.BuildTimeout) {
 			fmt.Printf("most recent finished build %d failed\n", *b.Number)
@@ -58,7 +60,7 @@ func buildsherrif(ctx context.Context, branch branchLocker, builds []buildkite.B
 		opts.BuildTimeout)
 	if !exceeded {
 		fmt.Println("threshold not exceeded")
-		results.LockModified, err = branch.Unlock(ctx)
+		results.Action, err = branch.Unlock(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("unlockBranch: %w", err)
 		}
@@ -66,12 +68,11 @@ func buildsherrif(ctx context.Context, branch branchLocker, builds []buildkite.B
 	}
 
 	fmt.Println("threshold exceeded, this is a big deal!")
-	results.LockModified, err = branch.Lock(ctx, results.FailedCommits, "dev-experience")
+	results.LockBranch = true
+	results.Action, err = branch.Lock(ctx, results.FailedCommits, "dev-experience")
 	if err != nil {
 		return nil, fmt.Errorf("lockBranch: %w", err)
 	}
-	results.Locked = true
-
 	return
 }
 

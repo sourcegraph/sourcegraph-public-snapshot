@@ -10,8 +10,10 @@ import (
 )
 
 type branchLocker interface {
-	Unlock(ctx context.Context) (modified bool, err error)
-	Lock(ctx context.Context, commits []commitInfo, fallbackTeam string) (modified bool, err error)
+	// Unlock returns a callback to execute the unlock if one is needed, otherwise returns nil.
+	Unlock(ctx context.Context) (unlock func() error, err error)
+	// Lock returns a callback to execute the lock if one is needed, otherwise returns nil.
+	Lock(ctx context.Context, commits []commitInfo, fallbackTeam string) (lock func() error, err error)
 }
 
 type repoBranchLocker struct {
@@ -30,14 +32,14 @@ func newBranchLocker(ghc *github.Client, owner, repo, branch string) branchLocke
 	}
 }
 
-func (b *repoBranchLocker) Lock(ctx context.Context, commits []commitInfo, fallbackTeam string) (bool, error) {
+func (b *repoBranchLocker) Lock(ctx context.Context, commits []commitInfo, fallbackTeam string) (func() error, error) {
 	protects, _, err := b.ghc.Repositories.GetBranchProtection(ctx, b.owner, b.repo, b.branch)
 	if err != nil {
-		return false, err
+		return nil, fmt.Errorf("getBranchProtection: %+w", err)
 	}
 	if protects.Restrictions != nil {
 		// restrictions already in place, do not overwrite
-		return false, nil
+		return nil, nil
 	}
 
 	// Get the commit authors to determine who to exclude from branch lock
@@ -45,7 +47,7 @@ func (b *repoBranchLocker) Lock(ctx context.Context, commits []commitInfo, fallb
 	for _, c := range commits {
 		commit, _, err := b.ghc.Repositories.GetCommit(ctx, b.owner, b.repo, c.Commit, &github.ListOptions{})
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 		failureAuthors = append(failureAuthors, commit.Author)
 	}
@@ -55,7 +57,7 @@ func (b *repoBranchLocker) Lock(ctx context.Context, commits []commitInfo, fallb
 	for _, u := range failureAuthors {
 		membership, _, err := b.ghc.Organizations.GetOrgMembership(ctx, *u.Login, b.owner)
 		if err != nil {
-			return false, err
+			return nil, fmt.Errorf("getOrgMembership: %+w", err)
 		}
 		if membership == nil || *membership.State != "active" {
 			continue // we don't want this user
@@ -68,7 +70,7 @@ func (b *repoBranchLocker) Lock(ctx context.Context, commits []commitInfo, fallb
 	if fallbackTeam != "" {
 		team, _, err := b.ghc.Teams.GetTeamBySlug(ctx, b.owner, fallbackTeam)
 		if err != nil {
-			return false, err
+			return nil, fmt.Errorf("getTeam: %+w", err)
 		}
 		allowPushFromActors = append(allowPushFromActors, *team.NodeID)
 	}
@@ -78,10 +80,13 @@ func (b *repoBranchLocker) Lock(ctx context.Context, commits []commitInfo, fallb
 	if protects.GetRequiredStatusChecks() != nil {
 		requiredStatusChecks = protects.GetRequiredStatusChecks().Contexts
 	}
-	if err := b.setProtectionsWorkaround(ctx, allowPushFromActors, requiredStatusChecks); err != nil {
-		return false, err
-	}
-	return true, nil
+
+	return func() error {
+		if err := b.setProtectionsWorkaround(ctx, allowPushFromActors, requiredStatusChecks); err != nil {
+			return fmt.Errorf("lock: %+w", err)
+		}
+		return nil
+	}, nil
 }
 
 // Gnarly workaround until https://github.com/github/feedback/discussions/8692 is resolved
@@ -214,14 +219,14 @@ func (b *repoBranchLocker) setProtectionsWorkaround(
 	return nil
 }
 
-func (b *repoBranchLocker) Unlock(ctx context.Context) (bool, error) {
+func (b *repoBranchLocker) Unlock(ctx context.Context) (func() error, error) {
 	protects, _, err := b.ghc.Repositories.GetBranchProtection(ctx, b.owner, b.repo, b.branch)
 	if err != nil {
-		return false, err
+		return nil, fmt.Errorf("getBranchProtection: %+w", err)
 	}
 	if protects.Restrictions == nil {
 		// no restrictions in place, we are done
-		return false, nil
+		return nil, nil
 	}
 
 	req, err := b.ghc.NewRequest(http.MethodDelete,
@@ -229,11 +234,13 @@ func (b *repoBranchLocker) Unlock(ctx context.Context) (bool, error) {
 			b.owner, b.repo, b.branch),
 		nil)
 	if err != nil {
-		return false, err
+		return nil, fmt.Errorf("deleteRestrictions: %+w", err)
 	}
-	_, err = b.ghc.Do(ctx, req, nil)
-	if err != nil {
-		return false, err
-	}
-	return true, nil
+
+	return func() error {
+		if _, err := b.ghc.Do(ctx, req, nil); err != nil {
+			return fmt.Errorf("unlock: %+w", err)
+		}
+		return nil
+	}, nil
 }
