@@ -178,7 +178,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
                         <View.Content
                             telemetryService={telemetryService}
                             content={data.view.content}
-                            viewID={insight.id}
+                            viewTrackingType={insight.viewType}
                             containerClassName="be-insight-card"
                             alert={
                                 <BackendAlertOverlay

@@ -495,7 +495,7 @@ describe('Search contexts', () => {
 
         // Wait for correct number of total elements to load
         await driver.page.waitFor(
-            searchContextsCount =>
+            (searchContextsCount: number) =>
                 document.querySelectorAll('[data-testid="search-context-menu-item-name"]').length ===
                 searchContextsCount,
             {},

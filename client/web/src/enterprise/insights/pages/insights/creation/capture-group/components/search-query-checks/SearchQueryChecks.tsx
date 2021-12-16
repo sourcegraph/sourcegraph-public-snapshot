@@ -1,7 +1,6 @@
 import classNames from 'classnames'
 import Check from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
-import Info from 'mdi-react/InfoCircleOutlineIcon'
 import React from 'react'
 
 import styles from './SearchQueryChecks.module.scss'
@@ -11,7 +10,7 @@ interface SearchQueryChecksProps {
         isValidRegex: boolean
         isValidOperator: boolean
         isValidPatternType: boolean
-        isNotRepoOrFile: boolean
+        isNotRepo: boolean
         isNotCommitOrDiff: boolean
     }
 }
@@ -28,8 +27,8 @@ const CheckListItem: React.FunctionComponent<{ valid?: boolean }> = ({ children,
     )
 
 export const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> = ({ checks }) => (
-    <div className={classNames(styles.formSeriesChecks)}>
-        <ul className={classNames(['mt-4 text-muted', styles.formSeriesCheck])}>
+    <div className={classNames(styles.checks)}>
+        <ul className={classNames('text-muted', styles.check)}>
             <li>
                 <CheckListItem valid={checks.isValidRegex}>
                     Contains a properly formatted regular expression
@@ -47,8 +46,8 @@ export const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> 
                 </CheckListItem>
             </li>
             <li>
-                <CheckListItem valid={checks.isNotRepoOrFile}>
-                    The capture group matches file contents (not <code>repo</code> or <code>file</code>)
+                <CheckListItem valid={checks.isNotRepo}>
+                    Does not contain <code>repo:</code> filter
                 </CheckListItem>
             </li>
             <li>
@@ -57,19 +56,10 @@ export const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> 
                 </CheckListItem>
             </li>
         </ul>
-        <p className="mt-4 text-muted">
+
+        <p className="mt-1 text-muted">
             Tip: use <code>archived:no</code> or <code>fork:no</code> to exclude results from archived or forked
-            repositories. Explore{' '}
-            <a href="https://docs.sourcegraph.com/code_insights/references/common_use_cases">example queries</a> and
-            learn more about{' '}
-            <a href="https://docs.sourcegraph.com/code_insights/references/common_reasons_code_insights_may_not_match_search_results">
-                automatically generated data series
-            </a>
-            .
-        </p>
-        <p className="mt-4 text-muted">
-            <Info size={16} /> <b>Name</b> and <b>color</b> of each data seris will be generated automatically. Chart
-            will display <b>up to 20</b> data series.
+            repositories.
         </p>
     </div>
 )

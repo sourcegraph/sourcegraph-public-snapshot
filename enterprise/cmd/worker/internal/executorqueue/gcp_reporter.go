@@ -17,8 +17,6 @@ import (
 )
 
 type gcpConfig struct {
-	env.BaseConfig
-
 	ProjectID               string
 	CredentialsFile         string
 	CredentialsFileContents string

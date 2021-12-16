@@ -12,9 +12,11 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestUnmarshal(t *testing.T) {
@@ -641,6 +643,14 @@ func TestV4Client_SearchRepos_Enterprise(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGithubInternalRepoVisibility: true,
+				},
+			},
+		})
+
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.ctx == nil {

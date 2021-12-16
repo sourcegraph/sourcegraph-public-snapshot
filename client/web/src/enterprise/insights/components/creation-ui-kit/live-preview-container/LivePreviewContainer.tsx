@@ -60,7 +60,6 @@ export function LivePreviewContainer(props: PropsWithChildren<LivePreviewContain
                         <View.Content
                             telemetryService={NOOP_TELEMETRY_SERVICE}
                             content={[dataOrError ?? defaultMock]}
-                            viewID="search-insight-live-preview"
                             layout={ChartViewContentLayout.ByContentSize}
                             className={classNames({ [styles.chartWithMock]: !dataOrError })}
                         />

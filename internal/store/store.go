@@ -74,7 +74,7 @@ type Store struct {
 	once sync.Once
 
 	// cache is the disk backed cache.
-	cache *diskcache.Store
+	cache diskcache.Store
 
 	// fetchLimiter limits concurrent calls to FetchTar.
 	fetchLimiter *mutablelimiter.Limiter
@@ -94,12 +94,10 @@ type FilterFunc func(hdr *tar.Header) bool
 func (s *Store) Start() {
 	s.once.Do(func() {
 		s.fetchLimiter = mutablelimiter.New(15)
-		s.cache = &diskcache.Store{
-			Dir:               s.Path,
-			Component:         "store",
-			BackgroundTimeout: 10 * time.Minute,
-			BeforeEvict:       s.ZipCache.delete,
-		}
+		s.cache = diskcache.NewStore(s.Path, "store",
+			diskcache.WithBackgroundTimeout(10*time.Minute),
+			diskcache.WithBeforeEvict(s.ZipCache.delete),
+		)
 		_ = os.MkdirAll(s.Path, 0700)
 		metrics.MustRegisterDiskMonitor(s.Path)
 		go s.watchAndEvict()

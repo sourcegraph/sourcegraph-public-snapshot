@@ -1,11 +1,12 @@
-.form-series-checks {
+.checks {
     line-height: 1.6;
     font-size: 0.75rem;
 }
 
-.form-series-check {
+.check {
     list-style: none;
     margin-left: 1.5rem;
+    margin-bottom: 0;
     padding-left: 0;
 
     li {
@@ -19,7 +20,5 @@
 }
 
 code {
-    background-color: #d6eaf1;
-    border-radius: 4px;
     font-weight: 600;
 }

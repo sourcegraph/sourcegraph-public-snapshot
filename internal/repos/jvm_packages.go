@@ -137,7 +137,7 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 				if errors.Is(err, context.DeadlineExceeded) {
 					timedOut++
 				} else {
-					log15.Warn("jvm package not resolvable from coursier", "package", mavenDependency.CoursierSyntax())
+					log15.Warn("jvm package not resolvable from coursier", "package", mavenDependency.PackageManagerSyntax())
 				}
 				continue
 			}

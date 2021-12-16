@@ -276,7 +276,7 @@ async function testCodeNavigation(
         }
     } else if (expectedDefinition) {
         await driver.page.waitForFunction(
-            defURL => document.location.href.endsWith(defURL),
+            (defURL: string) => document.location.href.endsWith(defURL),
             { timeout: 2000 },
             expectedDefinition
         )
