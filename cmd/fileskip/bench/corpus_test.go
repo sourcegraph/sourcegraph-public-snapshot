@@ -101,8 +101,8 @@ func expensiveHasMatch(fs fileskip.FileSystem, filename, query string) bool {
 
 func BenchmarkQuery(b *testing.B) {
 	for _, corpus := range all {
-		if corpus.Name != "sourcegraph" {
-			//continue
+		if corpus.Name != "chromium" {
+			continue
 		}
 		benchmarkQuery(b, corpus)
 	}
