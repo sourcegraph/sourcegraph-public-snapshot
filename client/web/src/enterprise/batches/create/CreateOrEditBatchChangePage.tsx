@@ -354,6 +354,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                 <div className={styles.editorContainer}>
                     <h4>Batch specification</h4>
                     <MonacoBatchSpecEditor
+                        className={styles.editor}
                         isLightTheme={isLightTheme}
                         value={code}
                         onChange={clearErrorsAndHandleCodeChange}

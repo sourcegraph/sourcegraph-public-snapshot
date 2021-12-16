@@ -6,8 +6,16 @@
 }
 
 .editor-container {
+    display: flex;
+    flex-direction: column;
     flex: 1;
     min-width: 60%;
+    height: 100%;
+}
+
+.editor {
+    flex: 1;
+    max-height: 100%;
 }
 
 .workspaces-preview-container {

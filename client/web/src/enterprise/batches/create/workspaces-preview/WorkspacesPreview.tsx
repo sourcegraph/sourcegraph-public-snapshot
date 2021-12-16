@@ -80,7 +80,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
     useBatchSpecWorkspaceResolution(batchSpec, { onError: setResolutionError, onFinished })
 
     return (
-        <div className="d-flex flex-column align-items-center w-100">
+        <div className="d-flex flex-column align-items-center w-100 h-100">
             <h3 className={styles.header}>Workspaces preview</h3>
             {resolutionError && <ErrorAlert error={resolutionError} className="w-100 mb-3" />}
             {isResolvingPreview ? <PreviewLoadingSpinner className="mt-4" /> : null}
