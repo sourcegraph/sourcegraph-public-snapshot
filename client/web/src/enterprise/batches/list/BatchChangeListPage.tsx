@@ -57,6 +57,12 @@ const FILTERS: FilteredConnectionFilter[] = [
                 args: { state: BatchChangeState.OPEN },
             },
             {
+                label: 'Draft',
+                value: 'draft',
+                tooltip: 'Show only batch changes that have not been applied yet',
+                args: { state: BatchChangeState.DRAFT },
+            },
+            {
                 label: 'Closed',
                 value: 'closed',
                 tooltip: 'Show only batch changes that are closed',
