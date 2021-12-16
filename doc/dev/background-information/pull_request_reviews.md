@@ -84,6 +84,8 @@ In some cases, [reviewers may opt to give an approval without performing an in-d
 
 A draft PR signals that the change is not ready for reviewed. This is useful, for example, if you want to self-review your diff before sending review requests to others. If you are looking for feedback or discussion on your change, then you should mark the PR as ready for review and communicate your intentions in the PR description.
 
+You may also set a ready-for-review PR *back* to a draft state to signal that work is being done that shouldn't be interesting (yet), and that potential reviewers should check back later.
+
 ## Reviewing pull requests
 
 ### What makes an effective review?
