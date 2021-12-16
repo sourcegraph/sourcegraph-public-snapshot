@@ -15,55 +15,34 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// NewFrontendDB creates a new connection to the frontend database. After successful connection,
-// the schema version of the database will be compared against an expected version and migrations
-// may be run (taking an advisory lock to ensure exclusive access).
-//
-// TEMPORARY: The migrate flag controls whether or not migrations/version checks are performed on
-// the version. When false, we give back a handle without running any migrations and assume that
-// the database schema is up to date.
-func NewFrontendDB(dsn, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
+func connectFrontendDB(dsn, appName string, validate, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
 	schema := schemas.Frontend
-	if !migrate {
+	if !validate {
 		schema = nil
 	}
 
-	return connect(dsn, appName, "frontend", schema, false, observationContext)
+	return connect(dsn, appName, "frontend", schema, migrate, observationContext)
 }
 
-// NewCodeIntelDB creates a new connection to the codeintel database. After successful connection,
-// the schema version of the database will be compared against an expected version and migrations
-// may be run (taking an advisory lock to ensure exclusive access).
-//
-// TEMPORARY: The migrate flag controls whether or not migrations/version checks are performed on
-// the version. When false, we give back a handle without running any migrations and assume that
-// the database schema is up to date.
-func NewCodeIntelDB(dsn, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
+func connectCodeIntelDB(dsn, appName string, validate, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
 	schema := schemas.CodeIntel
-	if !migrate {
+	if !validate {
 		schema = nil
 	}
 
-	return connect(dsn, appName, "codeintel", schema, false, observationContext)
+	return connect(dsn, appName, "codeintel", schema, migrate, observationContext)
 }
 
-// NewCodeInsightsDB creates a new connection to the codeinsights database. After successful
-// connection, the schema version of the database will be compared against an expected version and
-// migrations may be run (taking an advisory lock to ensure exclusive access).
-//
-// TEMPORARY: The migrate flag controls whether or not migrations/version checks are performed on
-// the version. When false, we give back a handle without running any migrations and assume that
-// the database schema is up to date.
-func NewCodeInsightsDB(dsn, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
+func connectCodeInsightsDB(dsn, appName string, validate, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
 	schema := schemas.CodeInsights
-	if !migrate {
+	if !validate {
 		schema = nil
 	}
 
-	return connect(dsn, appName, "codeinsight", schema, false, observationContext)
+	return connect(dsn, appName, "codeinsights", schema, migrate, observationContext)
 }
 
-func connect(dsn, appName, dbName string, schema *schemas.Schema, validateOnly bool, observationContext *observation.Context) (*sql.DB, error) {
+func connect(dsn, appName, dbName string, schema *schemas.Schema, migrate bool, observationContext *observation.Context) (*sql.DB, error) {
 	db, err := dbconn.ConnectInternal(dsn, appName, dbName)
 	if err != nil {
 		return nil, err
@@ -77,7 +56,7 @@ func connect(dsn, appName, dbName string, schema *schemas.Schema, validateOnly b
 	}()
 
 	if schema != nil {
-		if err := validateSchema(db, schema, validateOnly, observationContext); err != nil {
+		if err := validateSchema(db, schema, !migrate, observationContext); err != nil {
 			return nil, err
 		}
 	}

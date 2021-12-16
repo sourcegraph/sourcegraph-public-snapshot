@@ -108,18 +108,6 @@ func (s *codeMonitorStore) DeleteEmailActions(ctx context.Context, actionIDs []i
 	return s.Exec(ctx, q)
 }
 
-const totalCountActionEmailsFmtStr = `
-SELECT COUNT(*)
-FROM cm_emails
-WHERE monitor = %s;
-`
-
-func (s *codeMonitorStore) CountEmailActions(ctx context.Context, monitorID int64) (int32, error) {
-	var count int32
-	err := s.QueryRow(ctx, sqlf.Sprintf(totalCountActionEmailsFmtStr, monitorID)).Scan(&count)
-	return count, err
-}
-
 const actionEmailByIDFmtStr = `
 SELECT %s -- EmailsColumns
 FROM cm_emails
