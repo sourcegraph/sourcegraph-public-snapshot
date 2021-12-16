@@ -43,11 +43,11 @@ RUN apk add --no-cache --verbose \
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
     && apk add --no-cache --verbose \
-    'bash=5.0.17-r0' \
+    'bash=~5.0.17' \
     'redis=~5.0' \
     python2 \
     python3 \
-    'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0' \
+    'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=~14.5.0' \
     postgresql=12.9-r0 \
     postgresql-contrib
 
