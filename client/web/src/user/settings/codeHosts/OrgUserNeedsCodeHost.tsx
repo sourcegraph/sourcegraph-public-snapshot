@@ -24,28 +24,22 @@ export const OrgUserNeedsCodeHost: React.FunctionComponent<OrgUserNeedsCodeHost>
     orgName,
 }) => {
     const { externalServices: userExternalServices } = useExternalServices(user.id)
-    const orgKinds = orgExternalServices.map(service => service.kind)
     const userKinds = new Set((userExternalServices || []).map(service => service.kind))
-    const userMissing = orgKinds.filter(kind => !userKinds.has(kind)).map(kind => defaultExternalServices[kind].title)
+    const userMissing = orgExternalServices.filter(es => !userKinds.has(es.kind)).map(es => es.displayName)
+ if (userMissing.length > 0) {
+    const missingString = userMissing.join(' and ')
     return (
-        <>
-            {userMissing.length > 0 && (
-                <Container className="mb-4">
+        <Container className="mb-4">
                     <h3>Just one more step...</h3>
                     <p>
-                        {
-                            <>
-                                Connect with{' '}
-                                {userMissing.length === 1 ? userMissing[0] : userMissing[0] + ' and ' + userMissing[1]}
-                            </>
-                        }{' '}
-                        to start searching across the {orgName} organization's private repositories on Sourcegraph.
+                        Connect with {missingString} to start searching across the {orgName} private repositories on Sourcegraph.
                     </p>
                     <Link className="btn btn-primary" to={`/users/${user.username}/settings/code-hosts`}>
-                        Connect with {userMissing.length === 1 ? userMissing[0] : 'code hosts'}
+                        Connect with {missingString}
                     </Link>
                 </Container>
-            )}
-        </>
-    )
+            )
+        } else {
+            return null
+        }
 }
