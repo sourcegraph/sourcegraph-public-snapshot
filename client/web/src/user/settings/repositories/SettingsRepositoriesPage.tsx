@@ -313,8 +313,8 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             )}
             {!isUserOwner && shouldDisplayContextBanner && owner.name && getSearchContextBanner(owner.name)}
             {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}
-            {!isUserOwner && externalServices && user && (
-                <OrgUserNeedsCodeHost user={user} orgExternalServices={externalServices} />
+            {!isUserOwner && externalServices && user && owner.name && (
+                <OrgUserNeedsCodeHost user={user} orgExternalServices={externalServices} orgName={owner.name} />
             )}
 
             <PageTitle title="Your repositories" />

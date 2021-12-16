@@ -13,11 +13,16 @@ export interface UserContext {
 }
 
 export interface OrgUserNeedsCodeHost {
+    orgName: string
     orgExternalServices: ListExternalServiceFields[]
     user: UserContext
 }
 
-export const OrgUserNeedsCodeHost: React.FunctionComponent<OrgUserNeedsCodeHost> = ({ orgExternalServices, user }) => {
+export const OrgUserNeedsCodeHost: React.FunctionComponent<OrgUserNeedsCodeHost> = ({
+    orgExternalServices,
+    user,
+    orgName,
+}) => {
     const { externalServices: userExternalServices } = useExternalServices(user.id)
     const orgKinds = orgExternalServices.map(service => service.kind)
     const userKinds = new Set((userExternalServices || []).map(service => service.kind))
@@ -34,7 +39,7 @@ export const OrgUserNeedsCodeHost: React.FunctionComponent<OrgUserNeedsCodeHost>
                                 {userMissing.length === 1 ? userMissing[0] : userMissing[0] + ' and ' + userMissing[1]}
                             </>
                         }{' '}
-                        to start searching across the AwesomeCorp organization's private repositories on Sourcegraph.
+                        to start searching across the {orgName} organization's private repositories on Sourcegraph.
                     </p>
                     <Link className="btn btn-primary" to={`/users/${user.username}/settings/code-hosts`}>
                         Connect with {userMissing.length === 1 ? userMissing[0] : 'code hosts'}
