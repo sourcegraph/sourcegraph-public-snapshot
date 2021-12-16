@@ -11,12 +11,34 @@ type TimeInterval struct {
 	Value int
 }
 
+var DefaultInterval = TimeInterval{
+	Unit:  types.Month,
+	Value: 1,
+}
+
 func (t TimeInterval) StepBackwards(start time.Time) time.Time {
 	return t.step(start, backward)
 }
 
 func (t TimeInterval) StepForwards(start time.Time) time.Time {
 	return t.step(start, forward)
+}
+
+func (t TimeInterval) IsValid() bool {
+	validType := false
+	switch t.Unit {
+	case types.Year:
+		fallthrough
+	case types.Month:
+		fallthrough
+	case types.Week:
+		fallthrough
+	case types.Day:
+		fallthrough
+	case types.Hour:
+		validType = true
+	}
+	return validType && t.Value >= 0
 }
 
 type stepDirection int
