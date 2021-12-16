@@ -148,12 +148,12 @@ func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset)
 		return errors.New("Changeset is not a Bitbucket Server pull request")
 	}
 
-	err := s.client.DeclinePullRequest(ctx, pr)
+	declined, err := s.callAndRetryIfOutdated(ctx, pr, s.client.DeclinePullRequest)
 	if err != nil {
 		return err
 	}
 
-	return c.Changeset.SetMetadata(pr)
+	return c.Changeset.SetMetadata(declined)
 }
 
 // LoadChangeset loads the latest state of the given Changeset from the codehost.
@@ -255,11 +255,13 @@ func (s BitbucketServerSource) ReopenChangeset(ctx context.Context, c *Changeset
 		return errors.New("Changeset is not a Bitbucket Server pull request")
 	}
 
-	if err := s.client.ReopenPullRequest(ctx, pr); err != nil {
+	reopened, err := s.callAndRetryIfOutdated(ctx, pr, s.client.ReopenPullRequest)
+	if err != nil {
 		return err
+
 	}
 
-	return c.Changeset.SetMetadata(pr)
+	return c.Changeset.SetMetadata(reopened)
 }
 
 // CreateComment posts a comment on the Changeset.
@@ -269,7 +271,10 @@ func (s BitbucketServerSource) CreateComment(ctx context.Context, c *Changeset, 
 		return errors.New("Changeset is not a Bitbucket Server pull request")
 	}
 
-	return s.client.CreatePullRequestComment(ctx, pr, text)
+	_, err := s.callAndRetryIfOutdated(ctx, pr, func(ctx context.Context, pr *bitbucketserver.PullRequest) error {
+		return s.client.CreatePullRequestComment(ctx, pr, text)
+	})
+	return err
 }
 
 // MergeChangeset merges a Changeset on the code host, if in a mergeable state.
@@ -281,12 +286,40 @@ func (s BitbucketServerSource) MergeChangeset(ctx context.Context, c *Changeset,
 		return errors.New("Changeset is not a Bitbucket Server pull request")
 	}
 
-	if err := s.client.MergePullRequest(ctx, pr); err != nil {
+	merged, err := s.callAndRetryIfOutdated(ctx, pr, s.client.MergePullRequest)
+	if err != nil {
 		if errors.Is(err, bitbucketserver.ErrNotMergeable) {
 			return &ChangesetNotMergeableError{ErrorMsg: err.Error()}
 		}
 		return err
 	}
 
-	return c.Changeset.SetMetadata(pr)
+	return c.Changeset.SetMetadata(merged)
+}
+
+type bitbucketClientFunc func(context.Context, *bitbucketserver.PullRequest) error
+
+func (s BitbucketServerSource) callAndRetryIfOutdated(ctx context.Context, pr *bitbucketserver.PullRequest, fn bitbucketClientFunc) (*bitbucketserver.PullRequest, error) {
+	err := fn(ctx, pr)
+	if err == nil {
+		return pr, nil
+	}
+
+	if !bitbucketserver.IsPullRequestOutOfDate(err) {
+		return nil, err
+	}
+
+	newestPR, err2 := bitbucketserver.ExtractPullRequest(err)
+	if err2 != nil {
+		return nil, errors.Wrap(err, "failed to extract pull request after receiving error")
+	}
+
+	log15.Info("Reopening Bitbucket Server PR failed because it's outdated. Retrying with newer version", "ID", pr.ID, "oldVersion", pr.Version, "newestVerssion", newestPR.Version)
+
+	err = fn(ctx, newestPR)
+	if err != nil {
+		return nil, err
+	}
+
+	return newestPR, nil
 }
