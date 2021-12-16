@@ -88,7 +88,7 @@ func RegisterMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.R
 		return nil
 	}
 
-	timescale, err := InitializeCodeInsightsDB("worker")
+	timescale, err := InitializeCodeInsightsDB("worker-oobmigrator")
 	if err != nil {
 		return err
 	}
