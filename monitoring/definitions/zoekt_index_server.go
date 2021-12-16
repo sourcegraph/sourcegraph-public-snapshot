@@ -128,7 +128,7 @@ func ZoektIndexServer() *monitoring.Container {
 						{
 							Name:           "indexed_queue_size",
 							Description:    "number of outstanding index jobs",
-							Query:          "sum(index_queue_len)", // max queue size amongst all index-server replicas
+							Query:          "sum(index_queue_len)", // total queue size amongst all index-server replicas
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("jobs"),
 							Owner:          monitoring.ObservableOwnerSearchCore,
