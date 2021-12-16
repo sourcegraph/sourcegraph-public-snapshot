@@ -33,10 +33,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"VERSION":                            c.Version,
 
 		// Additional flags
-		"GO111MODULE":                      "on",
-		"PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
-		"FORCE_COLOR":                      "3",
-		"ENTERPRISE":                       "1",
+		"GO111MODULE": "on",
+		"FORCE_COLOR": "3",
+		"ENTERPRISE":  "1",
 		// Add debug flags for scripts to consume
 		"CI_DEBUG_PROFILE": strconv.FormatBool(c.MessageFlags.ProfilingEnabled),
 		// Bump Node.js memory to prevent OOM crashes
