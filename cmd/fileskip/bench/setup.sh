@@ -20,5 +20,5 @@ cd sourcegraph
 asdf install
 go get golang.org/x/perf/cmd/benchstat
 go install golang.org/x/perf/cmd/benchstat
-git checkout olafurpg/fileskip
+git checkout olafurpg/fileskip-xor
 ./cmd/fileskip/bench/bench.sh linux
