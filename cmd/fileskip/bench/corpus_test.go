@@ -10,6 +10,8 @@ import (
 	"testing"
 )
 
+const maxResults = 20
+
 var isQueryBaseline = "true" == os.Getenv("FILESKIP_BASELINE")
 
 func benchmarkQuery(b *testing.B, c Corpus) {
@@ -49,6 +51,9 @@ func benchmarkFileskipQuery(index *fileskip.RepoIndex, matchingResults map[strin
 	for filename := range index.FilenamesMatchingQuery(query) {
 		if expensiveHasMatch(index.FS, filename, query) {
 			matchingResults[filename] = struct{}{}
+			if len(matchingResults) > maxResults {
+				break
+			}
 		} else {
 			falsePositives++
 		}
@@ -79,6 +84,9 @@ func benchmarkBaselineQuery(index *fileskip.RepoIndex, matchingResults map[strin
 	close(matches)
 	for path := range matches {
 		matchingResults[path] = struct{}{}
+		if len(matchingResults) > maxResults {
+			break
+		}
 	}
 }
 
@@ -87,15 +95,15 @@ func expensiveHasMatch(fs fileskip.FileSystem, filename, query string) bool {
 	if err != nil {
 		panic(err)
 	}
-	text := string(textBytes)
+	text := strings.ToUpper(string(textBytes))
 	return strings.Index(text, query) >= 0
 }
 
-func BenchmarkQuerySourcegraph(b *testing.B) {
-	benchmarkQuery(b, sourcegraph)
-}
 func BenchmarkQuery(b *testing.B) {
 	for _, corpus := range all {
+		if corpus.Name != "sourcegraph" {
+			//continue
+		}
 		benchmarkQuery(b, corpus)
 	}
 }

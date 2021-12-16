@@ -71,6 +71,14 @@ var (
 	all = []Corpus{flask, sourcegraph, kubernetes, linux, chromium, megarepo}
 )
 
+func init() {
+	for _, corpus := range all {
+		for i, query := range corpus.Queries {
+			corpus.Queries[i] = strings.ToUpper(query)
+		}
+	}
+}
+
 func main() {
 	if len(os.Args) < 3 {
 		panic("missing argument for corpus name")
@@ -89,6 +97,8 @@ func main() {
 		panic("no corpus matching name " + os.Args[2])
 	}
 	switch os.Args[1] {
+	case "ngram":
+		fileskip.CollectQueryNgrams(strings.ToUpper(os.Args[3]))
 	case "download":
 		for _, corpus := range corpora {
 			corpus.DownloadUrlAndCache()
@@ -249,7 +259,7 @@ func (c *Corpus) run() error {
 			for _, p := range index.Blobs[start:end] {
 				bar.Add(1)
 				bytes, _ := index.FS.ReadRelativeFilename(p.Path)
-				text := string(bytes)
+				text := strings.ToUpper(string(bytes))
 				for _, query := range c.Queries {
 					if strings.Index(text, query) >= 0 {
 						isMatch[query][p.Path] = struct{}{}

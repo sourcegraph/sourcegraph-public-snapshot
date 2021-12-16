@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
-	"github.com/RoaringBitmap/roaring/roaring64"
+	"github.com/RoaringBitmap/roaring"
 	"github.com/cockroachdb/errors"
 	"github.com/go-enry/go-enry/v2"
 	"github.com/schollz/progressbar/v3"
@@ -32,7 +32,7 @@ const (
 var IsProgressBarEnabled = true
 
 type QueryBitmask struct {
-	Bitmask     *roaring64.Bitmap
+	Bitmask     *roaring.Bitmap
 	Cardinality uint64
 }
 
@@ -42,7 +42,7 @@ type RepoIndex struct {
 	FS    FileSystem
 }
 type BlobIndex struct {
-	Filter *roaring64.Bitmap
+	Filter *roaring.Bitmap
 	Path   string
 }
 
@@ -88,44 +88,49 @@ func (b *BlobIndex) ReadFrom(stream io.Reader) (int64, error) {
 	return readByteCount, nil
 }
 
-var unigramArity = uint64(1) << 62
-var bigramArity = uint64(2) << 62
-var trigramArity = uint64(3) << 62
-
-func ngramArity(n uint64) int8 {
-	if (trigramArity & n) == trigramArity {
-		return 3
-	}
-	if (bigramArity & n) == bigramArity {
-		return 2
-	}
-	return 1
-}
-
-func onGrams(text string) *roaring64.Bitmap {
-	seen := roaring64.New()
-	ch1 := uint64(0)
-	ch2 := uint64(0)
-	i := 0
+func onGrams(text string) *roaring.Bitmap {
+	seen := roaring.New()
+	ch1 := uint32(0)
+	ch2 := uint32(0)
+	//ch3 := uint32(0)
+	//ch4 := uint32(0)
+	i := -1
 	for _, ch0 := range text {
-		unigram := uint64(ch0)
-		seen.Add(unigram | unigramArity)
-		if i > 1 {
-			bigram := unigram | (ch1 << 8) | bigramArity
-			seen.Add(bigram)
+		i++
+		unigram := uint32(ch0)
+		if ch0 < ' ' || ch0 > '`' {
+			continue
 		}
+		unigram -= ' '
+		bigram := (unigram << 6) | ch1
+		trigram := (bigram << 6) | ch2
+		//quadgram := (trigram << 5) | ch3
+		//pentagram := (quadgram << 5) | ch4
+		//seen.Add(unigram)
+		//if i > 1 {
+		//	seen.Add(bigram)
+		//}
 		if i > 2 {
-			trigram := unigram | (ch1 << 8) | (ch2 << 16) | trigramArity
 			seen.Add(trigram)
 		}
+		//if i > 3 {
+		//	seen.Add(quadgram)
+		//}
+		//if i > 4 {
+		//	seen.Add(pentagram)
+		//}
+		//ch4 = ch3
+		//ch3 = ch2
 		ch2 = ch1
 		ch1 = unigram
-		i++
 	}
 	return seen
 }
 
 func CollectQueryNgrams(query string) *QueryBitmask {
+	if strings.ToUpper(query) != query {
+		panic(fmt.Sprintf("query must be uppercase: %v"))
+	}
 	grams := onGrams(query)
 	return &QueryBitmask{Bitmask: grams, Cardinality: grams.GetCardinality()}
 	//result := make([][]byte, len(ngrams))
@@ -300,7 +305,7 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 				if enry.IsBinary(textBytes) {
 					continue
 				}
-				text := string(textBytes)
+				text := strings.ToUpper(string(textBytes))
 				ngrams := onGrams(text)
 				res <- BlobIndex{Path: filename, Filter: ngrams}
 			}
@@ -387,6 +392,7 @@ func (r *RepoIndex) pathsMatchingQuerySync(
 		if index.Filter == nil {
 			continue
 		}
+		//query.Bitmask.Intersects()
 		if query.Bitmask.AndCardinality(index.Filter) == query.Cardinality {
 			onMatch(index.Path)
 		}
@@ -405,7 +411,7 @@ func (r *RepoIndex) FilenamesMatchingQuerySync(query string) []string {
 func (r *RepoIndex) FilenamesMatchingQuery(query string) chan string {
 	grams := CollectQueryNgrams(query)
 	res := make(chan string, len(r.Blobs))
-	batchSize := 10_000
+	batchSize := 1_000
 	var wg sync.WaitGroup
 	for i := 0; i < len(r.Blobs); i += batchSize {
 		j := i + batchSize
