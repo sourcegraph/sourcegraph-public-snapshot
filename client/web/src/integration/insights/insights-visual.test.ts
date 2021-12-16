@@ -19,9 +19,7 @@ describe('[VISUAL] Code insights page', () => {
     let testContext: WebIntegrationTestContext
 
     before(async () => {
-        driver = await createDriverForTest({
-            defaultViewport: { width: 1920 },
-        })
+        driver = await createDriverForTest()
     })
 
     after(() => driver?.close())

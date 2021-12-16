@@ -75,8 +75,9 @@ type BatchChange struct {
 	ID                      string
 	Name                    string
 	Description             string
+	State                   btypes.BatchChangeState
 	SpecCreator             *User
-	InitialApplier          *User
+	Creator                 *User
 	LastApplier             *User
 	LastAppliedAt           string
 	ViewerCanAdminister     bool

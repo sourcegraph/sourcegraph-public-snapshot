@@ -71,10 +71,6 @@ export const WORKSPACES = gql`
             id
             name
             url
-            defaultBranch {
-                __typename
-                id
-            }
         }
         ignored
         unsupported

@@ -15,7 +15,7 @@ export interface Checks {
     isValidRegex: boolean
     isValidOperator: boolean
     isValidPatternType: boolean
-    isNotRepoOrFile: boolean
+    isNotRepo: boolean
     isNotCommitOrDiff: boolean
 }
 
@@ -44,10 +44,6 @@ export const searchQueryValidator = (value: string): Checks => {
             filter => resolveFilter(filter.field.value)?.type === FilterType.repo && filter.value
         )
 
-        const hasFile = filters.some(
-            filter => resolveFilter(filter.field.value)?.type === FilterType.file && filter.value
-        )
-
         const hasCommit = filters.some(
             filter => resolveFilter(filter.field.value)?.type === FilterType.type && filter.value?.value === 'commit'
         )
@@ -60,7 +56,7 @@ export const searchQueryValidator = (value: string): Checks => {
             isValidRegex: regexCheck(value),
             isValidOperator: !hasAnd && !hasOr,
             isValidPatternType: !hasLiteralPattern && !hasStructuralPattern,
-            isNotRepoOrFile: !hasRepo && !hasFile,
+            isNotRepo: !hasRepo,
             isNotCommitOrDiff: !hasCommit && !hasDiff,
         }
     }
@@ -69,7 +65,7 @@ export const searchQueryValidator = (value: string): Checks => {
         isValidRegex: false,
         isValidOperator: false,
         isValidPatternType: false,
-        isNotRepoOrFile: false,
+        isNotRepo: false,
         isNotCommitOrDiff: false,
     }
 }

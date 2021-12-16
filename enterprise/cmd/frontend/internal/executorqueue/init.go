@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches"
 	codeintelqueue "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
 // Init initializes the executor endpoints required for use with the executor service.
@@ -20,7 +19,6 @@ func Init(
 	ctx context.Context,
 	db database.DB,
 	conf conftypes.UnifiedWatchable,
-	outOfBandMigrationRunner *oobmigration.Runner,
 	enterpriseServices *enterprise.Services,
 	observationContext *observation.Context,
 	codeintelUploadHandler http.Handler,

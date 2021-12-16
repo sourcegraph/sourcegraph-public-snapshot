@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/notebooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/orgrepos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
@@ -45,7 +46,7 @@ func init() {
 	oobmigration.ReturnEnterpriseMigrations = true
 }
 
-type EnterpriseInitializer = func(context.Context, database.DB, conftypes.UnifiedWatchable, *oobmigration.Runner, *enterprise.Services, *observation.Context) error
+type EnterpriseInitializer = func(context.Context, database.DB, conftypes.UnifiedWatchable, *enterprise.Services, *observation.Context) error
 
 var initFunctions = map[string]EnterpriseInitializer{
 	"authz":          authz.Init,
@@ -56,9 +57,10 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"dotcom":         dotcom.Init,
 	"searchcontexts": searchcontexts.Init,
 	"enterprise":     orgrepos.Init,
+	"notebooks":      notebooks.Init,
 }
 
-func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services {
+func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
 		log.Println("enterprise edition")
@@ -80,18 +82,18 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable, outOfB
 		log.Fatal(err)
 	}
 
-	if err := codeintel.Init(ctx, db, conf, outOfBandMigrationRunner, &enterpriseServices, observationContext, services); err != nil {
+	if err := codeintel.Init(ctx, db, conf, &enterpriseServices, observationContext, services); err != nil {
 		log.Fatal(fmt.Sprintf("failed to initialize codeintel: %s", err))
 	}
 
-	// Initialize enterprise-specific services with the code-intel services.
-	if err := executor.Init(ctx, db, conf, outOfBandMigrationRunner, &enterpriseServices, observationContext, services.InternalUploadHandler); err != nil {
+	// Initialize executor-specific services with the code-intel services.
+	if err := executor.Init(ctx, db, conf, &enterpriseServices, observationContext, services.InternalUploadHandler); err != nil {
 		log.Fatal(fmt.Sprintf("failed to initialize executor: %s", err))
 	}
 
 	// Initialize all the enterprise-specific services that do not need the codeintel-specific services.
 	for name, fn := range initFunctions {
-		if err := fn(ctx, db, conf, outOfBandMigrationRunner, &enterpriseServices, observationContext); err != nil {
+		if err := fn(ctx, db, conf, &enterpriseServices, observationContext); err != nil {
 			log.Fatal(fmt.Sprintf("failed to initialize %s: %s", name, err))
 		}
 	}

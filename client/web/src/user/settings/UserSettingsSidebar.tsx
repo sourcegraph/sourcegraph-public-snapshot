@@ -10,8 +10,8 @@ import { BatchChangesProps } from '../../batches'
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
 import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
-import { OnboardingTourProps } from '../../search'
 import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
+import { useExperimentalFeatures } from '../../stores'
 import { NavItemDescriptor } from '../../util/contributions'
 
 import { UserSettingsAreaRouteContext } from './UserSettingsArea'
@@ -32,7 +32,6 @@ export type UserSettingsSidebarItems = readonly UserSettingsSidebarItem[]
 export interface UserSettingsSidebarProps
     extends UserSettingsAreaRouteContext,
         BatchChangesProps,
-        OnboardingTourProps,
         RouteComponentProps<{}> {
     items: UserSettingsSidebarItems
     isSourcegraphDotCom: boolean
@@ -42,6 +41,7 @@ export interface UserSettingsSidebarProps
 /** Sidebar for user account pages. */
 export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarProps> = props => {
     const [, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled')
+    const showOnboardingTour = useExperimentalFeatures(features => features.showOnboardingTour ?? false)
 
     if (!props.authenticatedUser) {
         return null
@@ -106,7 +106,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                 <SidebarGroupHeader label="Other actions" />
                 {!siteAdminViewingOtherUser && <SidebarNavItem to="/api/console">API console</SidebarNavItem>}
                 {props.authenticatedUser.siteAdmin && <SidebarNavItem to="/site-admin">Site admin</SidebarNavItem>}
-                {props.showOnboardingTour && (
+                {showOnboardingTour && (
                     <button
                         type="button"
                         className="btn text-left sidebar__link--inactive d-flex w-100"
