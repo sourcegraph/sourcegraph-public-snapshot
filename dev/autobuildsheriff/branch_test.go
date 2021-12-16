@@ -45,7 +45,7 @@ func TestRepoBranchLocker(t *testing.T) {
 	validateDefaultProtections := func(t *testing.T, protects *github.Protection) {
 		// Require a pull request before merging
 		assert.NotNil(t, protects.RequiredPullRequestReviews)
-		assert.Zero(t, protects.RequiredPullRequestReviews.RequiredApprovingReviewCount)
+		assert.Equal(t, 1, protects.RequiredPullRequestReviews.RequiredApprovingReviewCount)
 		// Require status checks to pass before merging
 		assert.NotNil(t, protects.RequiredStatusChecks)
 		assert.Contains(t, protects.RequiredStatusChecks.Contexts, "buildkite/sourcegraph")
