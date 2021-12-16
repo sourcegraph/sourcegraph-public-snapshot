@@ -21,6 +21,7 @@ scale may be responsible.
    1. Check for elevated error rates on `Codeinsights: dbstore stats` - `Aggregate store operation error rate over 5m`
    2. Check for a queue size greater than zero on `Codeinsights: Query Runner Queue` - `Code insights search queue queue size`
 3. (admin-only) Check the queries currently in background processing using the GraphQL query
+
    ``` gql 
       query seriesStatus {
       insightSeriesQueryStatus {
@@ -33,11 +34,12 @@ scale may be responsible.
       failed
       queued
       }
-      }
+    }
    ```
    1. Inspecting queries with `errored` or `failed` counts may provide a hint to which query is responsible.
 
 4. Check Postgres `pgsql` for any queries stuck in a retry loop
+
   ``` sql
   select * from insights_query_runner_jobs
   where state = 'errored'
@@ -50,6 +52,7 @@ scale may be responsible.
 1. Increase the memory available to the `frontend` pods until it is sufficiently large enough to execute the responsible query.
    1. The error rate on the Code Insights dashboards should return to zero.
 2. (admin-only) Disable any specific queries identified to be problematic using the GraphQL operation by providing a specific `SeriesId`.
+
 ``` gql
 mutation updateInsightSeries($input: UpdateInsightSeriesInput!) {
   updateInsightSeries(input:$input) {
@@ -67,8 +70,10 @@ mutation updateInsightSeries($input: UpdateInsightSeriesInput!) {
   }
 }
 ```
+
 3. Disable any problematic queries stuck in an error loop in Postgres `pgsql`
-``` sql
+
+```sql
 update insights_query_runner_jobs
     set state = 'failed'
 where id = ?;
