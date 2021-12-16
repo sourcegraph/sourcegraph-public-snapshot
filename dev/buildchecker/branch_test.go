@@ -58,9 +58,9 @@ func TestRepoBranchLocker(t *testing.T) {
 	t.Run("lock", func(t *testing.T) {
 		ghc, stop := newTestGitHubClient(ctx, t)
 		defer stop()
-		locker := newBranchLocker(ghc, "sourcegraph", "sourcegraph", testBranch)
+		locker := NewBranchLocker(ghc, "sourcegraph", "sourcegraph", testBranch)
 
-		commits := []commitInfo{
+		commits := []CommitInfo{
 			{Commit: "be7f0f51b73b1966254db4aac65b656daa36e2fb"}, // @davejrt
 			{Commit: "fac6d4973acad43fcd2f7579a3b496cd92619172"}, // @bobheadxi
 			{Commit: "06a8636c2e0bea69944d8419aafa03ff3992527a"}, // @bobheadxi
@@ -102,7 +102,7 @@ func TestRepoBranchLocker(t *testing.T) {
 		validateLiveState()
 
 		// Repeated lock attempt shouldn't change anything
-		lock, err = locker.Lock(ctx, []commitInfo{}, "")
+		lock, err = locker.Lock(ctx, []CommitInfo{}, "")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -115,7 +115,7 @@ func TestRepoBranchLocker(t *testing.T) {
 	t.Run("unlock", func(t *testing.T) {
 		ghc, stop := newTestGitHubClient(ctx, t)
 		defer stop()
-		locker := newBranchLocker(ghc, "sourcegraph", "sourcegraph", testBranch)
+		locker := NewBranchLocker(ghc, "sourcegraph", "sourcegraph", testBranch)
 
 		unlock, err := locker.Unlock(ctx)
 		if err != nil {

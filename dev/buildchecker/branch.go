@@ -8,11 +8,11 @@ import (
 	"github.com/google/go-github/v41/github"
 )
 
-type branchLocker interface {
+type BranchLocker interface {
 	// Unlock returns a callback to execute the unlock if one is needed, otherwise returns nil.
 	Unlock(ctx context.Context) (unlock func() error, err error)
 	// Lock returns a callback to execute the lock if one is needed, otherwise returns nil.
-	Lock(ctx context.Context, commits []commitInfo, fallbackTeam string) (lock func() error, err error)
+	Lock(ctx context.Context, commits []CommitInfo, fallbackTeam string) (lock func() error, err error)
 }
 
 type repoBranchLocker struct {
@@ -22,7 +22,7 @@ type repoBranchLocker struct {
 	branch string
 }
 
-func newBranchLocker(ghc *github.Client, owner, repo, branch string) branchLocker {
+func NewBranchLocker(ghc *github.Client, owner, repo, branch string) BranchLocker {
 	return &repoBranchLocker{
 		ghc:    ghc,
 		owner:  owner,
@@ -31,7 +31,7 @@ func newBranchLocker(ghc *github.Client, owner, repo, branch string) branchLocke
 	}
 }
 
-func (b *repoBranchLocker) Lock(ctx context.Context, commits []commitInfo, fallbackTeam string) (func() error, error) {
+func (b *repoBranchLocker) Lock(ctx context.Context, commits []CommitInfo, fallbackTeam string) (func() error, error) {
 	protects, _, err := b.ghc.Repositories.GetBranchProtection(ctx, b.owner, b.repo, b.branch)
 	if err != nil {
 		return nil, fmt.Errorf("getBranchProtection: %+w", err)

@@ -55,14 +55,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	opts := sherrifOptions{
+	opts := CheckOptions{
 		FailuresThreshold: threshold,
 		BuildTimeout:      time.Duration(timeoutMins) * time.Minute,
 	}
-	fmt.Printf("running buildsherrif over %d builds with option: %+v\n", len(builds), opts)
-	results, err := buildsherrif(
+	fmt.Printf("running buildchecker over %d builds with option: %+v\n", len(builds), opts)
+	results, err := CheckBuilds(
 		ctx,
-		newBranchLocker(ghc, "sourcegraph", "sourcegraph", branch),
+		NewBranchLocker(ghc, "sourcegraph", "sourcegraph", branch),
 		builds,
 		opts,
 	)

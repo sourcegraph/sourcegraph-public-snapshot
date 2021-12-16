@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func slackSummary(locked bool, failedCommits []commitInfo) string {
+func slackSummary(locked bool, failedCommits []CommitInfo) string {
 	if !locked {
 		return ":white_check_mark: Pipeline healthy - branch unlocked!"
 	}

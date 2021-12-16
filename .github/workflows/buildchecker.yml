@@ -1,4 +1,5 @@
-name: autobuildsherrif
+# See dev/buildchecker/README.md
+name: buildchecker
 on:
   schedule:
   - cron: '*/15 * * * *'
@@ -7,13 +8,18 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
-    environment: autobuildsherrif # secrets are configured here
+
+    # secrets for this workflow are configured in the 'autobuildsherrif' environment.
+    # 'autobuildsherrif' was the original name of the 'buildchecker' tool - GitHub does
+    # not provide a simple way to do a rename, so we leave it as is for now.
+    environment: autobuildsherrif
+
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
         with: { go-version: '1.17' }
 
-      - run: ./dev/autobuildsheriff/run.sh
+      - run: ./dev/buildchecker/run.sh
         env:
           GITHUB_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_GITHUB_TOKEN }}
           BUILDKITE_TOKEN: ${{ secrets.AUTOBUILDSHERRIF_BUILDKITE_TOKEN }}

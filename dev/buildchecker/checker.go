@@ -9,29 +9,29 @@ import (
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 )
 
-type sherrifOptions struct {
+type CheckOptions struct {
 	FailuresThreshold int
 	BuildTimeout      time.Duration
 }
 
-type commitInfo struct {
+type CommitInfo struct {
 	Commit string
 	Author string
 }
 
-type sherrifResults struct {
+type CheckResults struct {
 	// LockBranch indicates whether or not the Action will lock the branch.
 	LockBranch bool
 	// Action is a callback to actually execute changes.
 	Action func() (err error)
-
-	FailedCommits []commitInfo
+	// FailedCommits lists the commits with failed builds that were detected.
+	FailedCommits []CommitInfo
 }
 
-// buildsherrif is the main sherrifing program. It checks the given builds for relevant
+// CheckBuilds is the main buildchecker program. It checks the given builds for relevant
 // failures and runs lock/unlock operations on the given branch.
-func buildsherrif(ctx context.Context, branch branchLocker, builds []buildkite.Build, opts sherrifOptions) (results *sherrifResults, err error) {
-	results = &sherrifResults{}
+func CheckBuilds(ctx context.Context, branch BranchLocker, builds []buildkite.Build, opts CheckOptions) (results *CheckResults, err error) {
+	results = &CheckResults{}
 
 	// Scan for first build with a meaningful state
 	var firstFailedBuildIndex int
@@ -107,8 +107,8 @@ func buildSummary(build buildkite.Build) string {
 	return strings.Join(summary, ", ")
 }
 
-func checkConsecutiveFailures(builds []buildkite.Build, threshold int, timeout time.Duration) (failedCommits []commitInfo, thresholdExceeded bool) {
-	failedCommits = []commitInfo{}
+func checkConsecutiveFailures(builds []buildkite.Build, threshold int, timeout time.Duration) (failedCommits []CommitInfo, thresholdExceeded bool) {
+	failedCommits = []CommitInfo{}
 
 	var consecutiveFailures int
 	for _, b := range builds {
@@ -128,7 +128,7 @@ func checkConsecutiveFailures(builds []buildkite.Build, threshold int, timeout t
 		if b.Author != nil {
 			author = fmt.Sprintf("%s (%s)", b.Author.Name, b.Author.Email)
 		}
-		failedCommits = append(failedCommits, commitInfo{
+		failedCommits = append(failedCommits, CommitInfo{
 			Commit: *b.Commit,
 			Author: author,
 		})

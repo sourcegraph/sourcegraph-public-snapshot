@@ -14,15 +14,15 @@ type mockBranchLocker struct{}
 func (m *mockBranchLocker) Unlock(context.Context) (func() error, error) {
 	return func() error { return nil }, nil
 }
-func (m *mockBranchLocker) Lock(context.Context, []commitInfo, string) (func() error, error) {
+func (m *mockBranchLocker) Lock(context.Context, []CommitInfo, string) (func() error, error) {
 	return func() error { return nil }, nil
 }
 
-func TestBuildsherrif(t *testing.T) {
-	// Simple end-to-end test of the buildsherrif entrypoint with mostly fixed parameters
+func TestCheckBuilds(t *testing.T) {
+	// Simple end-to-end tests of the buildchecker entrypoint with mostly fixed parameters
 	ctx := context.Background()
-	var lock branchLocker = &mockBranchLocker{}
-	testOptions := sherrifOptions{
+	var lock BranchLocker = &mockBranchLocker{}
+	testOptions := CheckOptions{
 		FailuresThreshold: 2,
 		BuildTimeout:      time.Hour,
 	}
@@ -77,7 +77,7 @@ func TestBuildsherrif(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			res, err := buildsherrif(ctx, lock, tt.builds, testOptions)
+			res, err := CheckBuilds(ctx, lock, tt.builds, testOptions)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.wantLocked, res.LockBranch)
 			// Mock always returns an action, check it's always assigned correctly
@@ -229,9 +229,9 @@ func TestCheckConsecutiveFailures(t *testing.T) {
 			gotCommits, gotThresholdExceeded := checkConsecutiveFailures(tt.args.builds, tt.args.threshold, tt.args.timeout)
 			assert.Equal(t, tt.wantThresholdExceeded, gotThresholdExceeded, "thresholdExceeded")
 
-			wantCommits := []commitInfo{}
+			wantCommits := []CommitInfo{}
 			for _, c := range tt.wantCommits {
-				wantCommits = append(wantCommits, commitInfo{Commit: c})
+				wantCommits = append(wantCommits, CommitInfo{Commit: c})
 			}
 			assert.Equal(t, wantCommits, gotCommits, "commits")
 		})
