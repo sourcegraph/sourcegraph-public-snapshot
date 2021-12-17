@@ -17,8 +17,8 @@ import (
 	"github.com/joho/godotenv"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
-	"github.com/sourcegraph/sourcegraph/internal/goreman"
 )
 
 // FrontendInternalHost is the value of SRC_FRONTEND_INTERNAL.

@@ -9,4 +9,5 @@ The following articles explain different parts of [Sourcegraph Code Insights](..
 - [Current limitations of Code Insights](current_limitations_of_code_insights.md)
 - [Viewing code insights](viewing_code_insights.md)
 - [Code Insights filters](code_insights_filters.md)
+- [Soon - Automatically generated data series](automatically_generated_data_series.md)
 <!-- - [How Code Insights work](explanations/how_code_insights_work.md) -->
