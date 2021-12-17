@@ -77,7 +77,10 @@ const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
 
-export interface OrgAreaRoute extends RouteDescriptor<OrgAreaPageProps> {}
+export interface OrgAreaRoute extends RouteDescriptor<OrgAreaPageProps> {
+    /** When true, the header is not rendered and the component is not wrapped in a container. */
+    fullPage?: boolean
+}
 
 interface Props
     extends RouteComponentProps<{ name: string }>,
@@ -246,31 +249,40 @@ export class OrgArea extends React.Component<Props> {
         }
 
         return (
-            <Page className="org-area">
-                <OrgHeader {...this.props} {...context} navItems={this.props.orgAreaHeaderNavItems} />
-                <div className="container mt-3">
-                    <ErrorBoundary location={this.props.location}>
-                        <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
-                            <Switch>
-                                {this.props.orgAreaRoutes.map(
-                                    ({ path, exact, render, condition = () => true }) =>
-                                        condition(context) && (
-                                            <Route
-                                                path={this.props.match.url + path}
-                                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                                exact={exact}
-                                                render={routeComponentProps =>
-                                                    render({ ...context, ...routeComponentProps })
-                                                }
-                                            />
-                                        )
-                                )}
-                                <Route key="hardcoded-key" component={NotFoundPage} />
-                            </Switch>
-                        </React.Suspense>
-                    </ErrorBoundary>
-                </div>
-            </Page>
+            <ErrorBoundary location={this.props.location}>
+                <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                    <Switch>
+                        {this.props.orgAreaRoutes.map(
+                            ({ path, exact, render, condition = () => true, fullPage }) =>
+                                condition(context) && (
+                                    <Route
+                                        path={this.props.match.url + path}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        exact={exact}
+                                        render={routeComponentProps =>
+                                            fullPage ? (
+                                                render({ ...context, ...routeComponentProps })
+                                            ) : (
+                                                <Page className="org-area">
+                                                    <OrgHeader
+                                                        {...this.props}
+                                                        {...context}
+                                                        navItems={this.props.orgAreaHeaderNavItems}
+                                                        className="mb-3"
+                                                    />
+                                                    <div className="container">
+                                                        {render({ ...context, ...routeComponentProps })}
+                                                    </div>
+                                                </Page>
+                                            )
+                                        }
+                                    />
+                                )
+                        )}
+                        <Route key="hardcoded-key" component={NotFoundPage} />
+                    </Switch>
+                </React.Suspense>
+            </ErrorBoundary>
         )
     }
 

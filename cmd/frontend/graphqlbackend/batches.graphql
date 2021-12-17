@@ -1327,8 +1327,8 @@ extend type Mutation {
     """
     Creates a batch change with an empty batch spec, such as for drafting a new batch
     change. The user creating the batch change must have permission to create it in the
-    namespace provided. Use `replaceBatchSpecInput` to update the input batch spec after
-    creating.
+    namespace provided. Use `createBatchSpecFromRaw` and `replaceBatchSpecInput` to update
+    the input batch spec after creating.
     """
     createEmptyBatchChange(
         """
@@ -1343,10 +1343,13 @@ extend type Mutation {
     ): BatchChange!
 
     """
-    Creates a batch spec and triggers a job to evaluate the workspaces. Consumers
-    need to poll the batch spec until the resolution is completed to get a full
-    list of all workspaces. This might become streaming so the results will come
-    in over time.
+    Creates a batch spec and triggers a job to evaluate the workspaces. Consumers need to
+    poll the batch spec until the resolution is completed to get a full list of all
+    workspaces. This might become streaming so the results will come in over time.
+
+    This mutation should be used when updating an existing batch change whose previous
+    batch spec was already applied. When the previous batch spec was not yet applied, you
+    can use `replaceBatchSpecInput` instead.
     """
     createBatchSpecFromRaw(
         """
@@ -1384,17 +1387,20 @@ extend type Mutation {
         """
         The namespace (either a user or organization). A batch spec can only be applied to (or
         used to create) batch changes in this namespace.
-
-        Defaults to the user who created the batch spec.
         """
-        namespace: ID
+        namespace: ID!
     ): BatchSpec!
 
     """
-    Replaces the original input of the batch spec. All existing resolution jobs
-    and workspaces are deleted and recreated in the background as the `on` section
-    is evaluated. This mutation is used for overwriting existing resolutions, so
-    after typing in the editor, we don't create 10s of batch specs.
+    Replaces the original input of the batch spec. All existing resolution jobs and
+    workspaces are deleted and recreated in the background as the `on` section is
+    evaluated. This mutation is used for overwriting existing resolutions on unapplied
+    batch specs, so after typing in the editor, we don't create 10s of batch specs. The ID
+    of the batch spec to update should NEVER be that of a batch spec that was already
+    applied to a batch change, or it will be lost.
+
+    For creating a new batch spec for a batch change whose previous spec was already
+    applied, use `createBatchSpecFromRaw` instead.
     """
     replaceBatchSpecInput(
         """
@@ -2348,7 +2354,8 @@ type BatchChange implements Node {
     diffStat: DiffStat!
 
     """
-    The current change spec this change reflects.
+    The last batch spec applied to this batch change, or an "empty" spec if the batch
+    change has never had a spec applied.
     """
     currentSpec: BatchSpec!
 

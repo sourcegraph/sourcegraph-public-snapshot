@@ -26,6 +26,7 @@ import {
     BatchChangeByNamespaceResult,
     BatchChangeChangesetsVariables,
     BatchChangeChangesetsResult,
+    BatchChangeState,
 } from '../graphql-operations'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
@@ -40,6 +41,7 @@ const batchChangeListNode: ListBatchChange = {
     changesetsStats: { closed: 4, merged: 10, open: 5 },
     closedAt: null,
     description: null,
+    state: BatchChangeState.OPEN,
     namespace: {
         namespaceName: 'alice',
         url: '/users/alice',

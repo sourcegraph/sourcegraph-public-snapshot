@@ -82,7 +82,7 @@ type CreateBatchSpecFromRawArgs struct {
 	AllowUnsupported bool
 	Execute          bool
 	NoCache          bool
-	Namespace        *graphql.ID
+	Namespace        graphql.ID
 }
 
 type ReplaceBatchSpecInputArgs struct {
