@@ -35,6 +35,7 @@ type goModuleInfo struct {
 
 func getAllGoModules(ctx context.Context) ([]*goModuleInfo, error) {
 	const cacheFile = "/tmp/sqs-wip-cache/all-goModuleInfo.json"
+	_ = os.MkdirAll(filepath.Dir(cacheFile), 0700)
 	f, err := os.Open(cacheFile)
 	if err != nil && !os.IsNotExist(err) {
 		return nil, err
