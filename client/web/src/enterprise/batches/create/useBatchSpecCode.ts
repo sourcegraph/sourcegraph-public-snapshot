@@ -47,8 +47,8 @@ interface UseBatchSpecCodeResult {
 }
 
 /**
- * Custom hook for "Create" page which packages up business logic and exposes an API for
- * managing the batch spec input YAML code that the user interacts with via the Monaco
+ * Custom hook for "CreateOrEdit" page which packages up business logic and exposes an API
+ * for managing the batch spec input YAML code that the user interacts with via the Monaco
  * editor.
  *
  * @param initialCode The initial YAML code that is displayed in the editor.

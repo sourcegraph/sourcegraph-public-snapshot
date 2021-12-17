@@ -123,8 +123,8 @@ func TestHandler(t *testing.T) {
 				if testCase.expected != nil {
 					t.Errorf("unexpected search result. want=%+v, have=nil", testCase.expected)
 				}
-			} else if !reflect.DeepEqual(*result, testCase.expected) {
-				t.Errorf("unexpected search result. want=%+v, have=%+v", testCase.expected, *result)
+			} else if !reflect.DeepEqual(result, testCase.expected) {
+				t.Errorf("unexpected search result. want=%+v, have=%+v", testCase.expected, result)
 			}
 		})
 	}

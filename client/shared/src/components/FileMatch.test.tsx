@@ -11,7 +11,7 @@ import { HIGHLIGHTED_FILE_LINES_REQUEST, NOOP_SETTINGS_CASCADE, RESULT } from '.
 
 import { MockVisibilitySensor } from './CodeExcerpt.test'
 import { FileMatch, limitGroup } from './FileMatch'
-import { MatchGroup } from './FileMatchContext'
+import { MatchGroup } from './ranking/PerFileResultRanking'
 
 jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children, onChange }) => (
     <>

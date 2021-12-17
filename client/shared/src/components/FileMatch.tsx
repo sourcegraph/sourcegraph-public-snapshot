@@ -1,36 +1,24 @@
 import * as H from 'history'
 import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
-import { AggregableBadge, Badge as ExtensionBadgeType } from 'sourcegraph'
+import { AggregableBadge } from 'sourcegraph'
 
 import { Badge } from '@sourcegraph/wildcard'
 
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '../search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
+import { isErrorLike } from '../util/errors'
 import { pluralize } from '../util/strings'
 
 import { FetchFileParameters } from './CodeExcerpt'
 import { FileMatchChildren } from './FileMatchChildren'
-import { MatchGroup, calculateMatchGroups } from './FileMatchContext'
+import { LineRanking } from './ranking/LineRanking'
+import { MatchGroup, MatchItem } from './ranking/PerFileResultRanking'
+import { ZoektRanking } from './ranking/ZoektRanking'
 import { RepoFileLink } from './RepoFileLink'
 import { RepoIcon } from './RepoIcon'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
-
-const SUBSET_MATCHES_COUNT = 10
-
-export interface MatchItem extends ExtensionBadgeType {
-    highlightRanges: {
-        start: number
-        highlightLength: number
-    }[]
-    preview: string
-    /**
-     * The 0-based line number of this match.
-     */
-    line: number
-    aggregableBadges?: AggregableBadge[]
-}
 
 interface Props extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
@@ -77,10 +65,16 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
 
 const sumHighlightRanges = (count: number, item: MatchItem): number => count + item.highlightRanges.length
 
+const ByZoektRanking = 'by-zoekt-ranking'
+const DEFAULT_CONTEXT = 1
+
 export const FileMatch: React.FunctionComponent<Props> = props => {
     const result = props.result
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
+    const isZoektRanking: boolean =
+        !isErrorLike(props.settingsCascade.final) &&
+        props.settingsCascade?.final?.experimentalFeatures?.clientSearchResultRanking === ByZoektRanking
     const renderTitle = (): JSX.Element => (
         <>
             <RepoIcon repoName={result.repository} className="icon-inline text-muted" />
@@ -112,7 +106,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                 return contextLinesSetting
             }
         }
-        return 1
+        return DEFAULT_CONTEXT
     }, [props.location, props.settingsCascade])
 
     const items: MatchItem[] = useMemo(
@@ -151,11 +145,11 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
 
     let containerProps: ResultContainerProps
 
-    const expandedMatchGroups = useMemo(() => calculateMatchGroups(items, 0, context), [items, context])
-    const collapsedMatchGroups = useMemo(() => calculateMatchGroups(items, SUBSET_MATCHES_COUNT, context), [
-        items,
-        context,
-    ])
+    const ranking = useMemo(() => (isZoektRanking ? new ZoektRanking() : new LineRanking()), [isZoektRanking])
+
+    const expandedMatchGroups = useMemo(() => ranking.expandedResults(items, context), [items, context, ranking])
+    const collapsedMatchGroups = useMemo(() => ranking.collapsedResults(items, context), [items, context, ranking])
+    const collapsedMatchCount = collapsedMatchGroups.matches.length
 
     const highlightRangesCount = useMemo(() => items.reduce(sumHighlightRanges, 0), [items])
     const collapsedHighlightRangesCount = useMemo(() => collapsedMatchGroups.matches.reduce(sumHighlightRanges, 0), [
@@ -194,7 +188,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
 
         const { limitedGrouped, limitedMatchCount } = grouped.reduce(
             (previous, group) => {
-                const remaining = SUBSET_MATCHES_COUNT - previous.limitedMatchCount
+                const remaining = collapsedMatchCount - previous.limitedMatchCount
                 if (remaining <= 0) {
                     return previous
                 }
@@ -271,7 +265,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
     } else {
         const length = highlightRangesCount - collapsedHighlightRangesCount
         containerProps = {
-            collapsible: items.length > SUBSET_MATCHES_COUNT,
+            collapsible: items.length > collapsedMatchCount,
             defaultExpanded: props.expanded,
             icon: props.icon,
             title: renderTitle(),

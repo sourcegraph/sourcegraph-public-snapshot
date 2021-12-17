@@ -3,10 +3,13 @@ import React, { ReactElement, useMemo } from 'react'
 
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
-import { LineChartSeriesWithData, Point } from '../types'
+import { LineChartSeriesWithData, Point } from '../../types'
+import { getLineStroke } from '../LineChartContent'
 
-import { getLineStroke } from './LineChartContent'
+import { getListWindow, ListWindow } from './get-list-window'
 import styles from './TooltipContent.module.scss'
+
+const MAX_ITEMS_IN_TOOLTIP = 10
 
 export interface TooltipContentProps<Datum extends object> extends RenderTooltipParams<Point> {
     /** Dataset of series (lines) on the chart. */
@@ -20,13 +23,14 @@ export interface TooltipContentProps<Datum extends object> extends RenderTooltip
 export function TooltipContent<Datum extends object>(props: TooltipContentProps<Datum>): ReactElement | null {
     const { tooltipData, series } = props
     const datum = tooltipData?.nearestDatum?.datum
+    const nearestSeriesKey = tooltipData?.nearestDatum?.key
 
-    const lines = useMemo(() => {
+    const lines = useMemo<ListWindow<LineChartSeriesWithData<Datum> & { point: Point }>>(() => {
         if (!datum) {
-            return []
+            return { window: [], leftRemaining: 0, rightRemaining: 0 }
         }
 
-        return [...series]
+        const sortedSeries = [...series]
             .map(line => {
                 const point = line.data.find(point => +point.x === +datum.x)
 
@@ -38,7 +42,15 @@ export function TooltipContent<Datum extends object>(props: TooltipContentProps<
             })
             .filter(isDefined)
             .sort((lineA, lineB) => (lineB.point.y ?? 0) - (lineA.point?.y ?? 0))
-    }, [series, datum])
+
+        // Find index of hovered point
+        const hoveredSeriesIndex = sortedSeries.findIndex(line => line.dataKey === nearestSeriesKey)
+
+        // Normalize index of hovered point
+        const centerIndex = hoveredSeriesIndex !== -1 ? hoveredSeriesIndex : Math.floor(sortedSeries.length / 2)
+
+        return getListWindow(sortedSeries, centerIndex, MAX_ITEMS_IN_TOOLTIP)
+    }, [series, datum, nearestSeriesKey])
 
     if (!datum) {
         return null
@@ -51,7 +63,8 @@ export function TooltipContent<Datum extends object>(props: TooltipContentProps<
             <h3>{dateString}</h3>
 
             <ul className={styles.tooltipList}>
-                {lines.map(line => {
+                {lines.leftRemaining > 0 && <li className={styles.item}>... and {lines.leftRemaining} more</li>}
+                {lines.window.map(line => {
                     const value = line.point.y
                     const datumKey = tooltipData?.nearestDatum?.key
 
@@ -71,6 +84,7 @@ export function TooltipContent<Datum extends object>(props: TooltipContentProps<
                         </li>
                     )
                 })}
+                {lines.rightRemaining > 0 && <li className={styles.item}>... and {lines.rightRemaining} more</li>}
             </ul>
         </>
     )
