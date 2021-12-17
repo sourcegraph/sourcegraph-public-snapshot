@@ -28,7 +28,6 @@ import {
     queryAllChangesetIDs as _queryAllChangesetIDs,
 } from './backend'
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
-import styles from './BatchChangeDetailsTabs.module.scss'
 import { BulkOperationsTab } from './BulkOperationsTab'
 import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
 
@@ -160,17 +159,11 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     />
                     <BatchSpecDownloadButton
                         name={batchChange.name}
-                        isLightTheme={isLightTheme}
                         originalInput={batchChange.currentSpec.originalInput}
                     />
                 </div>
                 <Container>
-                    <BatchSpec
-                        name={batchChange.name}
-                        originalInput={batchChange.currentSpec.originalInput}
-                        isLightTheme={isLightTheme}
-                        className={styles.batchSpec}
-                    />
+                    <BatchSpec originalInput={batchChange.currentSpec.originalInput} />
                 </Container>
             </BatchChangeTabPanel>
             <BatchChangeTabPanel index={3}>

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -101,13 +101,13 @@ func TestCheckExternalServiceAccess(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			users := database.NewMockUserStore()
+			users := dbmock.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(test.mockCurrentUser, nil)
 
-			orgMembers := database.NewMockOrgMemberStore()
+			orgMembers := dbmock.NewMockOrgMemberStore()
 			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(test.mockOrgMember, nil)
 
-			db := database.NewMockDB()
+			db := dbmock.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 

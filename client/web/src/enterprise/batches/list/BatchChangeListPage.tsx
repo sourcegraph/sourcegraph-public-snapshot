@@ -4,14 +4,12 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, ReplaySubject } from 'rxjs'
 import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
 
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
-import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
 import {
@@ -22,7 +20,6 @@ import {
     BatchChangesResult,
     BatchChangesByNamespaceVariables,
 } from '../../../graphql-operations'
-import { Settings } from '../../../schema/settings.schema'
 
 import {
     areBatchChangesLicensed as _areBatchChangesLicensed,
@@ -35,10 +32,7 @@ import { BatchChangesListIntro } from './BatchChangesListIntro'
 import { GettingStarted } from './GettingStarted'
 import { NewBatchChangeButton } from './NewBatchChangeButton'
 
-export interface BatchChangeListPageProps
-    extends TelemetryProps,
-        Pick<RouteComponentProps, 'location'>,
-        SettingsCascadeProps<Settings> {
+export interface BatchChangeListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'location'> {
     canCreate: boolean
     headingElement: 'h1' | 'h2'
     displayNamespace?: boolean
@@ -50,40 +44,31 @@ export interface BatchChangeListPageProps
     openTab?: SelectedTab
 }
 
-const OPEN_FILTER = {
-    label: 'Open',
-    value: 'open',
-    tooltip: 'Show only batch changes that are open',
-    args: { state: BatchChangeState.OPEN },
-} as const
-
-const DRAFT_FILTER = {
-    label: 'Draft',
-    value: 'draft',
-    tooltip: 'Show only batch changes that have not been applied yet',
-    args: { state: BatchChangeState.DRAFT },
-} as const
-
-const CLOSED_FILTER = {
-    label: 'Closed',
-    value: 'closed',
-    tooltip: 'Show only batch changes that are closed',
-    args: { state: BatchChangeState.CLOSED },
-}
-
-const ALL_FILTER = {
-    label: 'All',
-    value: 'all',
-    tooltip: 'Show all batch changes',
-    args: {},
-} as const
-
-const getFilters = (withDrafts = false): FilteredConnectionFilter[] => [
+const FILTERS: FilteredConnectionFilter[] = [
     {
         id: 'status',
         label: 'Status',
         type: 'radio',
-        values: [OPEN_FILTER, ...(withDrafts ? [DRAFT_FILTER] : []), CLOSED_FILTER, ALL_FILTER],
+        values: [
+            {
+                label: 'Open',
+                value: 'open',
+                tooltip: 'Show only batch changes that are open',
+                args: { state: BatchChangeState.OPEN },
+            },
+            {
+                label: 'Closed',
+                value: 'closed',
+                tooltip: 'Show only batch changes that are closed',
+                args: { state: BatchChangeState.CLOSED },
+            },
+            {
+                label: 'All',
+                value: 'all',
+                tooltip: 'Show all batch changes',
+                args: {},
+            },
+        ],
     },
 ]
 
@@ -100,12 +85,9 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
     headingElement,
     location,
     openTab,
-    settingsCascade,
     ...props
 }) => {
     useEffect(() => props.telemetryService.logViewEvent('BatchChangesListPage'), [props.telemetryService])
-
-    const showDrafts = isBatchChangesExecutionEnabled(settingsCascade)
 
     /*
      * Tracks whether this is the first fetch since this page has been rendered the first time.
@@ -165,7 +147,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                         queryConnection={query}
                         hideSearch={true}
                         defaultFirst={15}
-                        filters={getFilters(showDrafts)}
+                        filters={FILTERS}
                         noun="batch change"
                         pluralNoun="batch changes"
                         listComponent="div"

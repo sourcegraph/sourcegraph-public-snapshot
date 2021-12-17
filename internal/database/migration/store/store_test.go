@@ -104,26 +104,6 @@ func TestLock(t *testing.T) {
 	})
 }
 
-func TestTryLock(t *testing.T) {
-	db := dbtest.NewDB(t)
-	store := testStore(db)
-	ctx := context.Background()
-
-	t.Run("sanity test", func(t *testing.T) {
-		acquired, close, err := store.TryLock(ctx)
-		if err != nil {
-			t.Fatalf("unexpected error acquiring lock: %s", err)
-		}
-		if !acquired {
-			t.Fatalf("expected lock to be acquired")
-		}
-
-		if err := close(nil); err != nil {
-			t.Fatalf("unexpected error releasing lock: %s", err)
-		}
-	})
-}
-
 func TestUp(t *testing.T) {
 	db := dbtest.NewDB(t)
 	store := testStore(db)
@@ -169,7 +149,7 @@ func TestUp(t *testing.T) {
 	})
 
 	t.Run("unexpected version", func(t *testing.T) {
-		expectedErrorMessage := "expected schema to have version 17, but has version 16"
+		expectedErrorMessage := "wrong expected version"
 
 		if err := store.Up(ctx, definition.Definition{
 			ID: 18,
@@ -288,7 +268,7 @@ func TestDown(t *testing.T) {
 	})
 
 	t.Run("unexpected version", func(t *testing.T) {
-		expectedErrorMessage := "expected schema to have version 12, but has version 13"
+		expectedErrorMessage := "wrong expected version"
 
 		if err := store.Down(ctx, definition.Definition{
 			ID: 12,

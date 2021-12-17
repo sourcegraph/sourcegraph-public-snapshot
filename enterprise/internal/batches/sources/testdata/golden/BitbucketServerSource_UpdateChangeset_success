@@ -1,15 +1,15 @@
 {
-  "id": 154,
+  "id": 43,
   "version": 6,
   "title": "This is a new title",
   "description": "This is a new body",
   "state": "OPEN",
   "open": true,
   "closed": false,
-  "createdDate": 1639582116883,
-  "updatedDate": 1639652359417,
+  "createdDate": 1580213993810,
+  "updatedDate": 1585578260504,
   "fromRef": {
-   "id": "refs/heads/hello-world",
+   "id": "refs/heads/milton/file1txt-1580213978330",
    "repository": {
     "id": 10070,
     "slug": "automation-testing",
@@ -31,12 +31,12 @@
   "locked": false,
   "author": {
    "user": {
-    "name": "thorsten",
-    "emailAddress": "thorsten@sourcegraph.com",
-    "id": 104,
-    "displayName": "thorsten",
+    "name": "milton",
+    "emailAddress": "dev@sourcegraph.com",
+    "id": 1,
+    "displayName": "milton woof",
     "active": true,
-    "slug": "thorsten",
+    "slug": "milton",
     "type": "NORMAL"
    },
    "role": "AUTHOR",
@@ -48,7 +48,7 @@
   "links": {
    "self": [
     {
-     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/154"
+     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/43"
     }
    ]
   }

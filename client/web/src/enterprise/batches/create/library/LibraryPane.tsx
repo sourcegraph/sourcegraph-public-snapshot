@@ -3,9 +3,6 @@ import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
 import React, { useState, useCallback } from 'react'
 import { Collapse } from 'reactstrap'
 
-import { Scalars } from '../../../../graphql-operations'
-import { insertNameIntoLibraryItem } from '../yaml-util'
-
 import combySample from './comby.batch.yaml'
 import goImportsSample from './go-imports.batch.yaml'
 import helloWorldSample from './hello-world.batch.yaml'
@@ -26,25 +23,19 @@ const LIBRARY: [LibraryItem, LibraryItem, LibraryItem, LibraryItem] = [
 ]
 
 interface LibraryPaneProps {
-    /**
-     * The name of the batch change, used for automatically filling in the name for any
-     * item selected from the library.
-     */
-    name: Scalars['String']
     onReplaceItem: (item: string) => void
 }
 
-export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, onReplaceItem }) => {
+export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ onReplaceItem }) => {
     const [collapsed, setCollapsed] = useState(false)
     const [selectedItem, setSelectedItem] = useState<LibraryItem>()
 
     const onConfirm = useCallback(() => {
         if (selectedItem) {
-            const codeWithName = insertNameIntoLibraryItem(selectedItem.code, name)
-            onReplaceItem(codeWithName)
+            onReplaceItem(selectedItem.code)
             setSelectedItem(undefined)
         }
-    }, [name, selectedItem, onReplaceItem])
+    }, [selectedItem, onReplaceItem])
 
     return (
         <>
@@ -73,7 +64,7 @@ export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, o
                 </div>
 
                 {/* TODO: This should slide vertically but not on our version of reactstrap. */}
-                <Collapse className={styles.collapseContainer} isOpen={!collapsed}>
+                <Collapse className={styles.collapseContainer} isOpen={!collapsed} horizontal={false}>
                     <ul className="m-0 p-0">
                         {LIBRARY.map(item => (
                             <li className={styles.libraryItem} key={item.name}>

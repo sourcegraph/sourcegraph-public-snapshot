@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -21,7 +22,7 @@ func TestRepositories(t *testing.T) {
 		},
 	}
 
-	repos := database.NewMockRepoStore()
+	repos := dbmock.NewMockRepoStore()
 	repos.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 		if opt.NoCloned {
 			return mockRepos[0:2], nil
@@ -34,9 +35,9 @@ func TestRepositories(t *testing.T) {
 	})
 	repos.CountFunc.SetDefaultReturn(3, nil)
 
-	users := database.NewMockUserStore()
+	users := dbmock.NewMockUserStore()
 
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.UsersFunc.SetDefaultReturn(users)
 
@@ -234,8 +235,8 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		{ID: 2, Name: "repo3"},
 	}
 
-	repos := database.NewMockRepoStore()
-	db := database.NewMockDB()
+	repos := dbmock.NewMockRepoStore()
+	db := dbmock.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	t.Run("Initial page without a cursor present", func(t *testing.T) {

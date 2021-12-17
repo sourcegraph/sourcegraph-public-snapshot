@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -45,7 +46,7 @@ func TestSearchResults(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 
 	getResults := func(t *testing.T, query, version string) []string {
 		r, err := newSchemaResolver(db).Search(ctx, &SearchArgs{Query: query, Version: version})
@@ -94,7 +95,7 @@ func TestSearchResults(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		repos := database.NewMockRepoStore()
+		repos := dbmock.NewMockRepoStore()
 		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 			require.Equal(t, []string{"r", "p"}, opt.IncludePatterns)
 			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
@@ -118,7 +119,7 @@ func TestSearchResults(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		repos := database.NewMockRepoStore()
+		repos := dbmock.NewMockRepoStore()
 		repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
 		db.ReposFunc.SetDefaultReturn(repos)
 
@@ -158,7 +159,7 @@ func TestSearchResults(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		repos := database.NewMockRepoStore()
+		repos := dbmock.NewMockRepoStore()
 		repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
 		db.ReposFunc.SetDefaultReturn(repos)
 
@@ -334,7 +335,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		t.Run(test.descr, func(t *testing.T) {
 			for _, globbing := range []bool{true, false} {
 				mockDecodedViewerFinalSettings.SearchGlobbing = &globbing
-				actualDynamicFilters := (&SearchResultsResolver{db: database.NewMockDB(), SearchResults: &SearchResults{Matches: test.searchResults}}).DynamicFilters(context.Background())
+				actualDynamicFilters := (&SearchResultsResolver{db: dbmock.NewMockDB(), SearchResults: &SearchResults{Matches: test.searchResults}}).DynamicFilters(context.Background())
 				actualDynamicFilterStrs := make(map[string]int)
 
 				for _, filter := range actualDynamicFilters {
@@ -392,9 +393,9 @@ func TestSearchResultsHydration(t *testing.T) {
 		Fork:         false,
 	}
 
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 
-	repos := database.NewMockRepoStore()
+	repos := dbmock.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(hydratedRepo, nil)
 	repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if opt.OnlyPrivate {
@@ -545,7 +546,7 @@ func TestSearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sr := &SearchResultsResolver{
-				db: database.NewMockDB(),
+				db: dbmock.NewMockDB(),
 				SearchResults: &SearchResults{
 					Stats:   tt.fields.searchResultsCommon,
 					Matches: tt.fields.results,
@@ -732,7 +733,7 @@ func TestCompareSearchResults(t *testing.T) {
 }
 
 func TestEvaluateAnd(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 
 	tests := []struct {
 		name         string
@@ -776,7 +777,7 @@ func TestEvaluateAnd(t *testing.T) {
 
 			ctx := context.Background()
 
-			repos := database.NewMockRepoStore()
+			repos := dbmock.NewMockRepoStore()
 			repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 				if len(opt.IncludePatterns) > 0 || len(opt.ExcludePattern) > 0 {
 					return nil, nil
@@ -852,11 +853,11 @@ func TestSearchContext(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			repos := database.NewMockRepoStore()
+			repos := dbmock.NewMockRepoStore()
 			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
 			repos.CountFunc.SetDefaultReturn(0, nil)
 
-			ns := database.NewMockNamespaceStore()
+			ns := dbmock.NewMockNamespaceStore()
 			ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
 				userID, ok := users[name]
 				if !ok {
@@ -865,7 +866,7 @@ func TestSearchContext(t *testing.T) {
 				return &database.Namespace{Name: name, User: userID}, nil
 			})
 
-			db := database.NewMockDB()
+			db := dbmock.NewMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 			db.NamespacesFunc.SetDefaultReturn(ns)
 

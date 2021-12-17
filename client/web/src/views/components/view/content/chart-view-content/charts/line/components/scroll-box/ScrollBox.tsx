@@ -1,14 +1,9 @@
 import classNames from 'classnames'
-import React, { useEffect, useState } from 'react'
-
-import { observeResize } from '../../../../../../../../../util/dom'
+import React, { useEffect, useRef } from 'react'
 
 import styles from './ScrollBox.module.scss'
 
-/**
- * Mutates element (adds/removes css classes) based on scroll height and client height.
- */
-function addShutterElementsToTarget(element: HTMLDivElement): void {
+const addShutterElementsToTarget = (element: HTMLDivElement): void => {
     const { scrollTop, scrollHeight, offsetHeight } = element
 
     if (scrollTop === 0) {
@@ -31,12 +26,23 @@ interface ScrollBoxProps extends React.HTMLAttributes<HTMLDivElement> {
 export const ScrollBox: React.FunctionComponent<ScrollBoxProps> = props => {
     const { children, className, ...otherProps } = props
 
-    // Catch element reference with useState to trigger elements update through useEffect
-    const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>()
-    const [hasScroll, setHasScroll] = useState(false)
+    const scrollBoxReference = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        if (!scrollElement) {
+        const scrollBoxElement = scrollBoxReference.current
+
+        if (!scrollBoxElement) {
+            return
+        }
+
+        // On mount initial call
+        addShutterElementsToTarget(scrollBoxElement)
+    })
+
+    useEffect(() => {
+        const scrollBoxElement = scrollBoxReference.current
+
+        if (!scrollBoxElement) {
             return
         }
 
@@ -51,35 +57,17 @@ export const ScrollBox: React.FunctionComponent<ScrollBoxProps> = props => {
             event.preventDefault()
         }
 
-        scrollElement.addEventListener('scroll', onScroll)
+        scrollBoxElement.addEventListener('scroll', onScroll)
 
-        const resizeSubscription = observeResize(scrollElement).subscribe(entry => {
-            if (!entry) {
-                return
-            }
-
-            const { target, contentRect } = entry
-
-            setHasScroll(target.scrollHeight > contentRect.height)
-            addShutterElementsToTarget(scrollElement)
-        })
-
-        return () => {
-            scrollElement.removeEventListener('scroll', onScroll)
-            resizeSubscription.unsubscribe()
-        }
-    }, [scrollElement])
+        return () => scrollBoxElement.removeEventListener('scroll', onScroll)
+    }, [])
 
     return (
-        <div {...otherProps} ref={setScrollElement} className={classNames(styles.root, className)}>
-            {hasScroll && (
-                <>
-                    <div className={classNames(styles.fader, styles.faderTop)} />
-                    <div className={classNames(styles.fader, styles.faderBottom)} />
-                </>
-            )}
+        <div {...otherProps} ref={scrollBoxReference} className={classNames(styles.root, className)}>
+            <div className={classNames(styles.fader, styles.faderTop)} />
+            <div className={classNames(styles.fader, styles.faderBottom)} />
 
-            <div className={classNames({ [styles.scrollbox]: hasScroll })}>{children}</div>
+            <div className={styles.scrollbox}>{children}</div>
         </div>
     )
 }

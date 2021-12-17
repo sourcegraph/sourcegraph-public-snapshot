@@ -14,14 +14,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestUserEmail_ViewerCanManuallyVerify(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmock.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		orig := envvar.SourcegraphDotComMode()
@@ -71,9 +72,9 @@ func TestUserEmail_ViewerCanManuallyVerify(t *testing.T) {
 }
 
 func TestAddUserEmail(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmock.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		orig := envvar.SourcegraphDotComMode()
@@ -130,9 +131,9 @@ func TestAddUserEmail(t *testing.T) {
 }
 
 func TestRemoveUserEmail(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmock.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		orig := envvar.SourcegraphDotComMode()
@@ -189,9 +190,9 @@ func TestRemoveUserEmail(t *testing.T) {
 }
 
 func TestSetUserEmailPrimary(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmock.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		orig := envvar.SourcegraphDotComMode()
@@ -249,8 +250,8 @@ func TestSetUserEmailPrimary(t *testing.T) {
 
 func TestSetUserEmailVerified(t *testing.T) {
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		db := database.NewMockDB()
-		users := database.NewMockUserStore()
+		db := dbmock.NewMockDB()
+		users := dbmock.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		orig := envvar.SourcegraphDotComMode()
@@ -292,7 +293,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(database.NewMockDB()).SetUserEmailVerified(
+				_, err := newSchemaResolver(dbmock.NewMockDB()).SetUserEmailVerified(
 					test.ctx,
 					&setUserEmailVerifiedArgs{
 						User: MarshalUserID(1),
@@ -359,16 +360,16 @@ func TestSetUserEmailVerified(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			users := database.NewMockUserStore()
+			users := dbmock.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-			userEmails := database.NewMockUserEmailsStore()
+			userEmails := dbmock.NewMockUserEmailsStore()
 			userEmails.SetVerifiedFunc.SetDefaultReturn(nil)
 
-			authz := database.NewMockAuthzStore()
+			authz := dbmock.NewMockAuthzStore()
 			authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
 
-			db := database.NewMockDB()
+			db := dbmock.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 			db.AuthzFunc.SetDefaultReturn(authz)
@@ -386,8 +387,8 @@ func TestSetUserEmailVerified(t *testing.T) {
 
 func TestResendUserEmailVerification(t *testing.T) {
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		db := database.NewMockDB()
-		users := database.NewMockUserStore()
+		db := dbmock.NewMockDB()
+		users := dbmock.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		orig := envvar.SourcegraphDotComMode()
@@ -429,7 +430,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(database.NewMockDB()).ResendVerificationEmail(
+				_, err := newSchemaResolver(dbmock.NewMockDB()).ResendVerificationEmail(
 					test.ctx,
 					&resendVerificationEmailArgs{
 						User: MarshalUserID(1),
@@ -442,16 +443,16 @@ func TestResendUserEmailVerification(t *testing.T) {
 		}
 	})
 
-	users := database.NewMockUserStore()
+	users := dbmock.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, SiteAdmin: true}, nil
 	})
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := dbmock.NewMockUserEmailsStore()
 	userEmails.SetLastVerificationFunc.SetDefaultReturn(nil)
 
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 

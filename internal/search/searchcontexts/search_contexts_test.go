@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -36,7 +37,7 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 		{name: "resolve namespaced search context with / in name", searchContextSpec: "@user/test/version", wantSearchContextName: "test/version"},
 	}
 
-	ns := database.NewMockNamespaceStore()
+	ns := dbmock.NewMockNamespaceStore()
 	ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
 		if name == "user" {
 			return &database.Namespace{Name: name, User: 1}, nil
@@ -47,12 +48,12 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 		return nil, errors.Errorf(`want "user" or "org", got %q`, name)
 	})
 
-	sc := database.NewMockSearchContextsStore()
+	sc := dbmock.NewMockSearchContextsStore()
 	sc.GetSearchContextFunc.SetDefaultHook(func(_ context.Context, opts database.GetSearchContextOptions) (*types.SearchContext, error) {
 		return &types.SearchContext{Name: opts.Name}, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 	db.NamespacesFunc.SetDefaultReturn(ns)
 	db.SearchContextsFunc.SetDefaultReturn(sc)
 
@@ -81,7 +82,7 @@ func TestResolvingValidSearchContextSpecs_Cloud(t *testing.T) {
 		{name: "resolve organization search context", searchContextSpec: "@org", wantSearchContextName: "org"},
 	}
 
-	ns := database.NewMockNamespaceStore()
+	ns := dbmock.NewMockNamespaceStore()
 	ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
 		if name == "org" {
 			return &database.Namespace{Name: name, Organization: 1}, nil
@@ -89,10 +90,10 @@ func TestResolvingValidSearchContextSpecs_Cloud(t *testing.T) {
 		return nil, errors.Errorf(`want "org", got %q`, name)
 	})
 
-	orgs := database.NewMockOrgMemberStore()
+	orgs := dbmock.NewMockOrgMemberStore()
 	orgs.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
 
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 	db.NamespacesFunc.SetDefaultReturn(ns)
 	db.OrgMembersFunc.SetDefaultReturn(orgs)
 
@@ -122,13 +123,13 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 		{name: "empty user not found", searchContextSpec: "@", wantErr: "search context not found"},
 	}
 
-	ns := database.NewMockNamespaceStore()
+	ns := dbmock.NewMockNamespaceStore()
 	ns.GetByNameFunc.SetDefaultReturn(&database.Namespace{}, nil)
 
-	sc := database.NewMockSearchContextsStore()
+	sc := dbmock.NewMockSearchContextsStore()
 	sc.GetSearchContextFunc.SetDefaultReturn(nil, errors.New("search context not found"))
 
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 	db.NamespacesFunc.SetDefaultReturn(ns)
 	db.SearchContextsFunc.SetDefaultReturn(sc)
 
@@ -158,7 +159,7 @@ func TestResolvingInvalidSearchContextSpecs_Cloud(t *testing.T) {
 		{name: "org not a member with sub-context", searchContextSpec: "@org-not-member/random", wantErr: "namespace not found"},
 	}
 
-	ns := database.NewMockNamespaceStore()
+	ns := dbmock.NewMockNamespaceStore()
 	ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
 		if name == "org-not-member" {
 			return &database.Namespace{Name: name, Organization: 1}, nil
@@ -166,10 +167,10 @@ func TestResolvingInvalidSearchContextSpecs_Cloud(t *testing.T) {
 		return &database.Namespace{}, nil
 	})
 
-	orgs := database.NewMockOrgMemberStore()
+	orgs := dbmock.NewMockOrgMemberStore()
 	orgs.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
 
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 	db.NamespacesFunc.SetDefaultReturn(ns)
 	db.OrgMembersFunc.SetDefaultReturn(orgs)
 

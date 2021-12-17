@@ -2,9 +2,7 @@
 
 .batch-change-node {
     &__badge {
-        justify-self: center;
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
+        width: 100%;
         @media (--xs-breakpoint-down) {
             width: fit-content;
             // Make it full width in the current row.

@@ -9,7 +9,6 @@ import (
 	"golang.org/x/mod/semver"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -43,7 +42,7 @@ func getEnvironment(name string) (result environment, found bool) {
 }
 
 func printDeployedVersion(e environment) error {
-	pending := stdout.Out.Pending(output.Linef("", output.StylePending, "Fetching newest version on %q...", e.Name))
+	pending := out.Pending(output.Linef("", output.StylePending, "Fetching newest version on %q...", e.Name))
 
 	resp, err := http.Get(e.URL + "/__version")
 	if err != nil {
@@ -61,7 +60,7 @@ func printDeployedVersion(e environment) error {
 
 	bodyStr := string(body)
 	if semver.IsValid("v" + bodyStr) {
-		stdout.Out.WriteLine(output.Linef(
+		out.WriteLine(output.Linef(
 			output.EmojiLightbulb, output.StyleLogo,
 			"Live on %q: v%s",
 			e.Name, bodyStr,
@@ -76,7 +75,7 @@ func printDeployedVersion(e environment) error {
 	buildDate := elems[1]
 	buildSha := elems[2]
 
-	pending = stdout.Out.Pending(output.Line("", output.StylePending, "Running 'git fetch' to update list of commits..."))
+	pending = out.Pending(output.Line("", output.StylePending, "Running 'git fetch' to update list of commits..."))
 	_, err = run.GitCmd("fetch", "-q")
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Failed: %s", err))
@@ -90,15 +89,15 @@ func printDeployedVersion(e environment) error {
 		return err
 	}
 
-	stdout.Out.Write("")
+	out.Write("")
 	line := output.Linef(
 		output.EmojiLightbulb, output.StyleLogo,
 		"Live on %q: %s%s%s %s(built on %s)",
 		e.Name, output.StyleBold, buildSha, output.StyleReset, output.StyleLogo, buildDate,
 	)
-	stdout.Out.WriteLine(line)
+	out.WriteLine(line)
 
-	stdout.Out.Write("")
+	out.Write("")
 
 	var shaFound bool
 	for _, logLine := range strings.Split(log, "\n") {
@@ -117,12 +116,12 @@ func printDeployedVersion(e environment) error {
 		}
 
 		line := output.Linef(emoji, style, "%s (%s, %s): %s", sha, timestamp, author, message)
-		stdout.Out.WriteLine(line)
+		out.WriteLine(line)
 	}
 
 	if !shaFound {
 		line := output.Linef(output.EmojiWarning, output.StyleWarning, "Deployed SHA %s not found in last 20 commits on origin/main :(", buildSha)
-		stdout.Out.WriteLine(line)
+		out.WriteLine(line)
 	}
 
 	return nil

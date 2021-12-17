@@ -123,7 +123,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 			FileMatches:        []string{},
 			Path:               "",
 			Steps:              []batcheslib.Step{},
-			SkippedSteps:       []int32{},
 			OnlyFetchWorkspace: true,
 		},
 		{
@@ -135,7 +134,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 			FileMatches:        []string{"a/b/c.go"},
 			Path:               "a/b",
 			Steps:              []batcheslib.Step{},
-			SkippedSteps:       []int32{},
 			OnlyFetchWorkspace: false,
 		},
 		{
@@ -147,7 +145,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 			FileMatches:        []string{"d/e/f.go"},
 			Path:               "d/e",
 			Steps:              []batcheslib.Step{},
-			SkippedSteps:       []int32{},
 			OnlyFetchWorkspace: true,
 		},
 		{
@@ -158,7 +155,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 			ChangesetSpecIDs: []int64{},
 			FileMatches:      []string{"main.go"},
 			Steps:            []batcheslib.Step{},
-			SkippedSteps:     []int32{},
 			Unsupported:      true,
 		},
 		{
@@ -169,7 +165,6 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 			ChangesetSpecIDs: []int64{},
 			FileMatches:      []string{"lol.txt"},
 			Steps:            []batcheslib.Step{},
-			SkippedSteps:     []int32{},
 			Ignored:          true,
 		},
 	}
@@ -287,7 +282,6 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 				FileMatches:        []string{},
 				Path:               "",
 				Steps:              []batcheslib.Step{},
-				SkippedSteps:       []int32{},
 				OnlyFetchWorkspace: true,
 				CachedResultFound:  true,
 			},
@@ -396,71 +390,10 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 				FileMatches:        []string{},
 				Path:               "",
 				Steps:              []batcheslib.Step{},
-				SkippedSteps:       []int32{},
 				OnlyFetchWorkspace: true,
 				CachedResultFound:  false,
 			},
 		})
-
-		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
-			UserID: batchSpec.UserID,
-			Keys:   []string{entry.Key},
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(reloadedEntries) != 1 {
-			t.Fatal("cache entry not found")
-		}
-		reloadedEntry := reloadedEntries[0]
-		if !reloadedEntry.LastUsedAt.IsZero() {
-			t.Fatalf("cache entry LastUsedAt updated, but should not be used: %s", reloadedEntry.LastUsedAt)
-		}
-	})
-
-	t.Run("caching enabled but workspace is ignored", func(t *testing.T) {
-		workspace := buildWorkspace("caching-enabled-ignored")
-		workspace.Ignored = true
-
-		batchSpec := createBatchSpec(t, false)
-
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult)
-
-		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
-		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
-			t.Fatalf("proces failed: %s", err)
-		}
-
-		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
-			UserID: batchSpec.UserID,
-			Keys:   []string{entry.Key},
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(reloadedEntries) != 1 {
-			t.Fatal("cache entry not found")
-		}
-		reloadedEntry := reloadedEntries[0]
-		if !reloadedEntry.LastUsedAt.IsZero() {
-			t.Fatalf("cache entry LastUsedAt updated, but should not be used: %s", reloadedEntry.LastUsedAt)
-		}
-	})
-
-	t.Run("caching enabled but workspace is unsupported", func(t *testing.T) {
-		workspace := buildWorkspace("caching-enabled-ignored")
-		workspace.Unsupported = true
-
-		batchSpec := createBatchSpec(t, false)
-
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult)
-
-		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
-		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
-			t.Fatalf("proces failed: %s", err)
-		}
 
 		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
 			UserID: batchSpec.UserID,

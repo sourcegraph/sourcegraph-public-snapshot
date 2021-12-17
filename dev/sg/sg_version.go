@@ -5,8 +5,6 @@ import (
 	"flag"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
-
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 )
 
 var (
@@ -21,6 +19,6 @@ var (
 )
 
 func versionExec(ctx context.Context, args []string) error {
-	stdout.Out.Write(BuildCommit)
+	out.Write(BuildCommit)
 	return nil
 }

@@ -70,11 +70,8 @@ func transformRecord(ctx context.Context, s BatchesStore, job *btypes.BatchSpecW
 			},
 			Path:               workspace.Path,
 			OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
-			// TODO: We can further optimize here later and tell src-cli to
-			// not run those steps so there is no discrepancy between the backend
-			// and src-cli calculating the if conditions.
-			Steps:             workspace.Steps,
-			SearchResultPaths: workspace.FileMatches,
+			Steps:              workspace.Steps,
+			SearchResultPaths:  workspace.FileMatches,
 		},
 	}
 

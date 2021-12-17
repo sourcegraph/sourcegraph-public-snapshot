@@ -18,7 +18,6 @@ import {
 import { BatchSpec, BatchSpecDownloadButton } from '../BatchSpec'
 
 import { PreviewPageAuthenticatedUser } from './BatchChangePreviewPage'
-import styles from './BatchChangePreviewTabs.module.scss'
 import {
     queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs,
     queryChangesetApplyPreview as _queryChangesetApplyPreview,
@@ -91,19 +90,10 @@ export const BatchChangePreviewTabs: React.FunctionComponent<BatchChangePreviewT
             </BatchChangeTabPanel>
             <BatchChangeTabPanel index={1}>
                 <div className="d-flex mb-2 justify-content-end">
-                    <BatchSpecDownloadButton
-                        name={spec.description.name}
-                        originalInput={spec.originalInput}
-                        isLightTheme={isLightTheme}
-                    />
+                    <BatchSpecDownloadButton name={spec.description.name} originalInput={spec.originalInput} />
                 </div>
                 <Container>
-                    <BatchSpec
-                        name={spec.description.name}
-                        originalInput={spec.originalInput}
-                        isLightTheme={isLightTheme}
-                        className={styles.batchSpec}
-                    />
+                    <BatchSpec originalInput={spec.originalInput} />
                 </Container>
             </BatchChangeTabPanel>
         </BatchChangeTabPanels>

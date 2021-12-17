@@ -60,10 +60,7 @@ export const USER_AREA_USER_PROFILE = gql`
     ${UserAreaGQLFragment}
 `
 
-export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {
-    /** When true, the header is not rendered and the component is not wrapped in a container. */
-    fullPage?: boolean
-}
+export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {}
 
 interface UserAreaProps
     extends RouteComponentProps<{ username: string }>,
@@ -185,48 +182,33 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
     }
 
     return (
-        <ErrorBoundary location={props.location}>
-            <React.Suspense
-                fallback={
-                    <div className="w-100 text-center">
-                        <LoadingSpinner className="icon-inline m-2" />
-                    </div>
-                }
-            >
-                <Switch>
-                    {userAreaRoutes.map(
-                        ({ path, exact, render, condition = () => true, fullPage }) =>
-                            condition(context) && (
-                                <Route
-                                    render={routeComponentProps =>
-                                        fullPage ? (
-                                            render({ ...context, ...routeComponentProps })
-                                        ) : (
-                                            <Page>
-                                                <UserAreaHeader
-                                                    {...props}
-                                                    {...context}
-                                                    className="mb-3"
-                                                    navItems={props.userAreaHeaderNavItems}
-                                                />
-                                                <div className="container">
-                                                    {render({ ...context, ...routeComponentProps })}
-                                                </div>
-                                            </Page>
-                                        )
-                                    }
-                                    path={url + path}
-                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    exact={exact}
-                                />
-                            )
-                    )}
-                    <Route key="hardcoded-key">
-                        <NotFoundPage />
-                    </Route>
-                </Switch>
-            </React.Suspense>
-        </ErrorBoundary>
+        <Page>
+            <UserAreaHeader {...props} {...context} navItems={props.userAreaHeaderNavItems} />
+            <div className="container mt-3">
+                <ErrorBoundary location={props.location}>
+                    <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                        <Switch>
+                            {userAreaRoutes.map(
+                                ({ path, exact, render, condition = () => true }) =>
+                                    condition(context) && (
+                                        <Route
+                                            render={routeComponentProps =>
+                                                render({ ...context, ...routeComponentProps })
+                                            }
+                                            path={url + path}
+                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                            exact={exact}
+                                        />
+                                    )
+                            )}
+                            <Route key="hardcoded-key">
+                                <NotFoundPage />
+                            </Route>
+                        </Switch>
+                    </React.Suspense>
+                </ErrorBoundary>
+            </div>
+        </Page>
     )
 }
 

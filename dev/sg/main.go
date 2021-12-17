@@ -30,6 +30,8 @@ var secretsStore *secrets.Store
 var (
 	BuildCommit = "dev"
 
+	out = stdout.Out
+
 	// globalConf is the global config. If a command needs to access it, it *must* call
 	// `parseConf` before.
 	globalConf *Config

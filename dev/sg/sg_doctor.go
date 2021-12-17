@@ -8,7 +8,6 @@ import (
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 )
 
 var (
@@ -28,7 +27,7 @@ See the "checks:" in the configuration file.`,
 func doctorExec(ctx context.Context, args []string) error {
 	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
 	if !ok {
-		stdout.Out.WriteLine(errLine)
+		out.WriteLine(errLine)
 		os.Exit(1)
 	}
 

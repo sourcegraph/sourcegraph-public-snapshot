@@ -47,7 +47,7 @@ export const CaptureGroupCreationContent: React.FunctionComponent<CaptureGroupCr
         if (!value) {
             return queryRequiredValidator(value)
         }
-        const validatedChecks = searchQueryValidator(value, value !== undefined)
+        const validatedChecks = searchQueryValidator(value)
         const allChecksPassed = Object.values(validatedChecks).every(Boolean)
 
         if (!allChecksPassed) {

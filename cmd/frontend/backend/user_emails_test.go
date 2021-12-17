@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -105,13 +106,13 @@ func TestCheckEmailAbuse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			users := database.NewMockUserStore()
+			users := dbmock.NewMockUserStore()
 			users.CheckAndDecrementInviteQuotaFunc.SetDefaultReturn(test.hasQuote, nil)
 
-			userEmails := database.NewMockUserEmailsStore()
+			userEmails := dbmock.NewMockUserEmailsStore()
 			userEmails.ListByUserFunc.SetDefaultReturn(test.mockEmails, nil)
 
-			db := database.NewMockDB()
+			db := dbmock.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
@@ -167,13 +168,13 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 	}
 	defer func() { txemail.MockSend = nil }()
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := dbmock.NewMockUserEmailsStore()
 	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("a@example.com", true, nil)
 
-	users := database.NewMockUserStore()
+	users := dbmock.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "Foo"}, nil)
 
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UsersFunc.SetDefaultReturn(users)
 

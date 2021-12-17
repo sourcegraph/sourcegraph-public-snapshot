@@ -7,7 +7,7 @@ import (
 
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/sourcegraph/internal/compute"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -26,7 +26,7 @@ func TestToResultResolverList(t *testing.T) {
 			context.Background(),
 			computeQuery.Command,
 			matches,
-			database.NewMockDB(),
+			dbmock.NewMockDB(),
 		)
 		var results []string
 		for _, r := range resolvers {

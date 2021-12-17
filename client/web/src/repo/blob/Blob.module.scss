@@ -38,6 +38,8 @@
     }
 
     tr {
+        transition: background 200ms ease-out;
+
         &:global(.selected) {
             background: var(--code-selection-bg);
         }

@@ -24,14 +24,14 @@ const MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
     },
 }
 
-export interface MonacoFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur'> {
+interface MonacoFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur'> {
     patternType?: SearchPatternType
     value: string
     onBlur: () => void
     onChange: (value: string) => void
 }
 
-export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props, reference) => {
+export const MonacoField: React.FunctionComponent<MonacoFieldProps> = forwardRef((props, reference) => {
     const {
         value,
         className,
@@ -39,15 +39,12 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
         onBlur = noop,
         disabled,
         autoFocus,
-        placeholder,
         patternType = SearchPatternType.regexp,
     } = props
 
     // Monaco doesn't have any native input elements, so we mock
     // ref here to avoid React warnings in console about zero usage of
     // element ref with forward ref call.
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     useImperativeHandle(reference, () => null)
 
     const { enhancedThemePreference } = useTheme()
@@ -64,9 +61,8 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
             caseSensitive={false}
             globbing={true}
             height="auto"
-            data-placeholder={placeholder}
             onSubmit={noop}
-            className={classNames(className, styles.field, { [styles.fieldWithPlaceholder]: !value })}
+            className={classNames(className, styles.field)}
             editorOptions={monacoOptions}
             autoFocus={autoFocus}
             onBlur={onBlur}

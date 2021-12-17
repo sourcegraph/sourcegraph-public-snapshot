@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -36,10 +37,10 @@ func TestRedirects(t *testing.T) {
 	check := func(t *testing.T, path string, wantStatusCode int, wantRedirectLocation, userAgent string) {
 		t.Helper()
 
-		gss := database.NewMockGlobalStateStore()
+		gss := dbmock.NewMockGlobalStateStore()
 		gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "a"}, nil)
 
-		db := database.NewMockDB()
+		db := dbmock.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
 		InitRouter(db, nil)
@@ -177,10 +178,10 @@ func TestNewCommon_repo_error(t *testing.T) {
 				code = statusCode
 			}
 
-			gss := database.NewMockGlobalStateStore()
+			gss := dbmock.NewMockGlobalStateStore()
 			gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "a"}, nil)
 
-			db := database.NewMockDB()
+			db := dbmock.NewMockDB()
 			db.GlobalStateFunc.SetDefaultReturn(gss)
 
 			_, err = newCommon(httptest.NewRecorder(), req, db, "test", index, serveError)
@@ -412,7 +413,7 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			handled, err := redirectTreeOrBlob(test.route, test.path, test.common, w, r, database.NewMockDB())
+			handled, err := redirectTreeOrBlob(test.route, test.path, test.common, w, r, dbmock.NewMockDB())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -432,10 +433,10 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 
 func init() {
 	globals.ConfigurationServerFrontendOnly = &conf.Server{}
-	gss := database.NewMockGlobalStateStore()
+	gss := dbmock.NewMockGlobalStateStore()
 	gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "a"}, nil)
 
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 	db.GlobalStateFunc.SetDefaultReturn(gss)
 	siteid.Init(db)
 }

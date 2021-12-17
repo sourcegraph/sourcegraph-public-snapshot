@@ -171,7 +171,6 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling name")
 	}
-	// TODO: Should name require a minimum length?
 	spec, err := batcheslib.ParseBatchSpec(rawSpec, batcheslib.ParseBatchSpecOptions{})
 	if err != nil {
 		return nil, err
@@ -192,8 +191,6 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 	}
 
 	// The combination of name + namespace must be unique
-	// TODO: Should name be case-insensitive unique? i.e. should "foo" and "Foo"
-	// be considered unique?
 	batchChange, err = s.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
 	if err != nil {
 		return nil, err
@@ -640,7 +637,6 @@ func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *bty
 	ctx, endObservation := s.operations.getBatchChangeMatchingBatchSpec.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	// TODO: Should name be case-insensitive? i.e. are "foo" and "Foo" the same?
 	opts := store.GetBatchChangeOpts{
 		Name:            spec.Spec.Name,
 		NamespaceUserID: spec.NamespaceUserID,

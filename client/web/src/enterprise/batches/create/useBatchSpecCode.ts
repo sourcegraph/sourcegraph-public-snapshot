@@ -13,17 +13,7 @@ import { excludeRepo as excludeRepoFromYaml, hasOnOrImportChangesetsStatement } 
 
 const ajv = new AJV()
 addFormats(ajv)
-
-const formatError = (error: { instancePath: string; message?: string }): string => {
-    if (!error.message) {
-        return ''
-    }
-
-    // The error's instance path will have the format "/property1/property2", so we
-    // convert each "/" to a "." and drop the first one.
-    const dottedPath = error.instancePath.replace(/^\//, '').replace(/\//g, '.')
-    return `${dottedPath} ${error.message}`
-}
+const VALIDATE_SPEC = ajv.compile<BatchSpec>(batchSpecSchemaJSON)
 
 const DEBOUNCE_AMOUNT = 500
 
@@ -57,38 +47,13 @@ interface UseBatchSpecCodeResult {
 }
 
 /**
- * Custom hook for "CreateOrEdit" page which packages up business logic and exposes an API
- * for managing the batch spec input YAML code that the user interacts with via the Monaco
+ * Custom hook for "Create" page which packages up business logic and exposes an API for
+ * managing the batch spec input YAML code that the user interacts with via the Monaco
  * editor.
  *
  * @param initialCode The initial YAML code that is displayed in the editor.
- * @param name The name of the batch change, which is used for validation.
  */
-export const useBatchSpecCode = (initialCode: string, name: string): UseBatchSpecCodeResult => {
-    const validateSpec = useMemo(() => {
-        const schemaID = `${batchSpecSchemaJSON.$id}/${name}`
-
-        const existingValidateFunction = ajv.getSchema(schemaID)
-        if (existingValidateFunction) {
-            return existingValidateFunction
-        }
-
-        // We enforce the exact name match on the schema. The user must use the settings
-        // UI to change the name.
-        const schemaJSONWithName = {
-            ...batchSpecSchemaJSON,
-            $id: schemaID,
-            properties: {
-                ...batchSpecSchemaJSON.properties,
-                name: {
-                    ...batchSpecSchemaJSON.properties.name,
-                    pattern: `^${name}$`,
-                },
-            },
-        }
-        return ajv.compile<BatchSpec>(schemaJSONWithName)
-    }, [name])
-
+export const useBatchSpecCode = (initialCode: string): UseBatchSpecCodeResult => {
     const [code, setCode] = useState<string>(initialCode)
     const debouncedCode = useDebounce(code, 250)
 
@@ -102,34 +67,33 @@ export const useBatchSpecCode = (initialCode: string, name: string): UseBatchSpe
 
     const [isValid, setIsValid] = useState<boolean | 'unknown'>('unknown')
 
-    const validate = useCallback(
-        (newCode: string) => {
-            try {
-                const parsed = loadYAML(newCode)
-                const valid = validateSpec(parsed)
-                const hasOnOrImport = hasOnOrImportChangesetsStatement(newCode)
-                setIsValid(valid && hasOnOrImport)
-                if (!valid && validateSpec.errors?.length) {
-                    setValidationErrors(
-                        `The entered spec is invalid:\n  * ${validateSpec.errors.map(formatError).join('\n  * ')}`
-                    )
-                } else if (!hasOnOrImport) {
-                    setValidationErrors(
-                        'The entered spec must contain either an "on:" or "importingChangesets:" statement.'
-                    )
-                }
-            } catch (error: unknown) {
-                setIsValid(false)
-                // Try to extract the error message.
-                if (error && typeof error === 'object' && 'reason' in error) {
-                    setValidationErrors((error as { reason: string }).reason)
-                } else {
-                    setValidationErrors('unknown validation error occurred')
-                }
+    const validate = useCallback((newCode: string) => {
+        try {
+            const parsed = loadYAML(newCode)
+            const valid = VALIDATE_SPEC(parsed)
+            const hasOnOrImport = hasOnOrImportChangesetsStatement(newCode)
+            setIsValid(valid && hasOnOrImport)
+            if (!valid && VALIDATE_SPEC.errors?.length) {
+                setValidationErrors(
+                    `The entered spec is invalid:\n  * ${VALIDATE_SPEC.errors
+                        .map(error => error.message || '')
+                        .join('\n  * ')}`
+                )
+            } else if (!hasOnOrImport) {
+                setValidationErrors(
+                    'The entered spec must contain either an "on:" or "importingChangesets:" statement.'
+                )
             }
-        },
-        [validateSpec]
-    )
+        } catch (error: unknown) {
+            setIsValid(false)
+            // Try to extract the error message.
+            if (error && typeof error === 'object' && 'reason' in error) {
+                setValidationErrors((error as { reason: string }).reason)
+            } else {
+                setValidationErrors('unknown validation error occurred')
+            }
+        }
+    }, [])
 
     // Run validation once for initial batch spec code.
     useEffect(() => validate(initialCode), [initialCode, validate])

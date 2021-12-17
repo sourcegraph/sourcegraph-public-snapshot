@@ -7,13 +7,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearchFilterSuggestions(t *testing.T) {
-	repos := database.NewMockRepoStore()
+	repos := dbmock.NewMockRepoStore()
 	repos.ListFunc.SetDefaultReturn(
 		[]*types.Repo{
 			{Name: "github.com/foo/repo"},
@@ -22,7 +22,7 @@ func TestSearchFilterSuggestions(t *testing.T) {
 		nil,
 	)
 
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	tests := []struct {

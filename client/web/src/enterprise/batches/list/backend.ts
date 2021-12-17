@@ -25,7 +25,6 @@ const listBatchChangeFragment = gql`
         description
         createdAt
         closedAt
-        state
         changesetsStats {
             open
             closed

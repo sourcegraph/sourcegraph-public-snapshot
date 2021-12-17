@@ -46,9 +46,8 @@ func (r *RepoRevision) HasBranch() bool {
 
 type RepoWorkspace struct {
 	*RepoRevision
-	Path         string
-	Steps        []batcheslib.Step
-	SkippedSteps []int32
+	Path  string
+	Steps []batcheslib.Step
 
 	OnlyFetchWorkspace bool
 
@@ -651,7 +650,7 @@ func findWorkspaces(
 
 	workspaces := make([]*RepoWorkspace, 0, len(workspacesByRepoRev))
 	for _, workspace := range workspacesByRepoRev {
-		steps, skipped, err := stepsForRepo(
+		steps, err := stepsForRepo(
 			spec,
 			string(workspace.Repo.Name),
 			workspace.FileMatches,
@@ -671,7 +670,6 @@ func findWorkspaces(
 				Path:               path,
 				Steps:              steps,
 				OnlyFetchWorkspace: fetchWorkspace,
-				SkippedSteps:       skipped,
 			})
 		}
 	}
@@ -688,13 +686,13 @@ func findWorkspaces(
 }
 
 // stepsForRepo calculates the steps required to run on the given repo.
-func stepsForRepo(spec *batcheslib.BatchSpec, repoName string, fileMatches []string) (steps []batcheslib.Step, skipped []int32, err error) {
-	steps = []batcheslib.Step{}
+func stepsForRepo(spec *batcheslib.BatchSpec, repoName string, fileMatches []string) ([]batcheslib.Step, error) {
+	taskSteps := []batcheslib.Step{}
 
-	for idx, step := range spec.Steps {
+	for _, step := range spec.Steps {
 		// If no if condition is given, just go ahead and add the step to the list.
 		if step.IfCondition() == "" {
-			steps = append(steps, step)
+			taskSteps = append(taskSteps, step)
 			continue
 		}
 
@@ -702,9 +700,6 @@ func stepsForRepo(spec *batcheslib.BatchSpec, repoName string, fileMatches []str
 			Name:        spec.Name,
 			Description: spec.Description,
 		}
-		// TODO: This step ctx is incomplete, is this allowed?
-		// We can at least optimize further here and do more static evaluation
-		// when we have a cached result for the previous step.
 		stepCtx := &template.StepContext{
 			Repository: template.Repository{
 				Name:        repoName,
@@ -714,17 +709,19 @@ func stepsForRepo(spec *batcheslib.BatchSpec, repoName string, fileMatches []str
 		}
 		static, boolVal, err := template.IsStaticBool(step.IfCondition(), stepCtx)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
-		steps = append(steps, step)
-
-		if static && !boolVal {
-			skipped = append(skipped, int32(idx))
+		// If we could evaluate the condition statically and the resulting
+		// boolean is false, we don't add that step.
+		if !static {
+			taskSteps = append(taskSteps, step)
+		} else if boolVal {
+			taskSteps = append(taskSteps, step)
 		}
 	}
 
-	return steps, skipped, nil
+	return taskSteps, nil
 }
 
 type repoRevKey struct {

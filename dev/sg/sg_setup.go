@@ -23,7 +23,6 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -63,7 +62,7 @@ func getUserShellConfigPath(ctx context.Context) string {
 
 func setupExec(ctx context.Context, args []string) error {
 	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
+		out.WriteLine(output.Linef("", output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
 		os.Exit(1)
 	}
 
@@ -114,7 +113,7 @@ func setupExec(ctx context.Context, args []string) error {
 	}
 
 	for len(failed) != 0 {
-		stdout.Out.ClearScreen()
+		out.ClearScreen()
 
 		writeOrangeLinef("-------------------------------------")
 		writeOrangeLinef("|        Welcome to sg setup!       |")
@@ -131,7 +130,7 @@ func setupExec(ctx context.Context, args []string) error {
 				continue
 			}
 
-			pending := stdout.Out.Pending(output.Linef("", output.StylePending, "%d. %s - Determining status...", idx, category.name))
+			pending := out.Pending(output.Linef("", output.StylePending, "%d. %s - Determining status...", idx, category.name))
 			category.Update(ctx)
 			pending.Destroy()
 
@@ -151,12 +150,12 @@ func setupExec(ctx context.Context, args []string) error {
 
 		if len(failed) == 0 && len(employeeFailed) == 0 {
 			if len(skipped) == 0 && len(employeeFailed) == 0 {
-				stdout.Out.Write("")
-				stdout.Out.WriteLine(output.Linef(output.EmojiOk, output.StyleBold, "Everything looks good! Happy hacking!"))
+				out.Write("")
+				out.WriteLine(output.Linef(output.EmojiOk, output.StyleBold, "Everything looks good! Happy hacking!"))
 			}
 
 			if len(skipped) != 0 {
-				stdout.Out.Write("")
+				out.Write("")
 				writeWarningLinef("Some checks were skipped because 'sg setup' is not run in the 'sourcegraph' repository.")
 				writeFingerPointingLinef("Restart 'sg setup' in the 'sourcegraph' repository to continue.")
 			}
@@ -164,7 +163,7 @@ func setupExec(ctx context.Context, args []string) error {
 			return nil
 		}
 
-		stdout.Out.Write("")
+		out.Write("")
 
 		if len(employeeFailed) != 0 && len(failed) == len(employeeFailed) {
 			writeWarningLinef("Some checks that are only relevant for Sourcegraph employees failed.\nIf you're not a Sourcegraph employee you're good to go. Hit Ctrl-C.\n\nIf you're a Sourcegraph employee: which one do you want to fix?")
@@ -181,7 +180,7 @@ func setupExec(ctx context.Context, args []string) error {
 		}
 		selectedCategory := categories[idx]
 
-		stdout.Out.ClearScreen()
+		out.ClearScreen()
 
 		err = presentFailedCategoryWithOptions(ctx, idx, &selectedCategory)
 		if err != nil {
@@ -458,7 +457,7 @@ func deprecatedSetupForLinux(ctx context.Context) error {
 		if instruction.ifBool != "" {
 			val, ok := conditions[instruction.ifBool]
 			if !ok {
-				stdout.Out.WriteLine(output.Line("", output.StyleWarning, "Something went wrong."))
+				out.WriteLine(output.Line("", output.StyleWarning, "Something went wrong."))
 				os.Exit(1)
 			}
 			if !val {
@@ -468,7 +467,7 @@ func deprecatedSetupForLinux(ctx context.Context) error {
 		if instruction.ifNotBool != "" {
 			val, ok := conditions[instruction.ifNotBool]
 			if !ok {
-				stdout.Out.WriteLine(output.Line("", output.StyleWarning, "Something went wrong."))
+				out.WriteLine(output.Line("", output.StyleWarning, "Something went wrong."))
 				os.Exit(1)
 			}
 			if val {
@@ -477,20 +476,20 @@ func deprecatedSetupForLinux(ctx context.Context) error {
 		}
 
 		i++
-		stdout.Out.WriteLine(output.Line("", output.StylePending, "------------------------------------------"))
-		stdout.Out.Writef("%sStep %d:%s%s %s%s", output.StylePending, i, output.StyleReset, output.StyleSuccess, instruction.prompt, output.StyleReset)
-		stdout.Out.Write("")
+		out.WriteLine(output.Line("", output.StylePending, "------------------------------------------"))
+		out.Writef("%sStep %d:%s%s %s%s", output.StylePending, i, output.StyleReset, output.StyleSuccess, instruction.prompt, output.StyleReset)
+		out.Write("")
 
 		if instruction.comment != "" {
-			stdout.Out.Write(instruction.comment)
-			stdout.Out.Write("")
+			out.Write(instruction.comment)
+			out.Write("")
 		}
 
 		if instruction.command != "" {
-			stdout.Out.WriteLine(output.Line("", output.StyleSuggestion, "Run the following command(s) in another terminal:\n"))
-			stdout.Out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(instruction.command)))
+			out.WriteLine(output.Line("", output.StyleSuggestion, "Run the following command(s) in another terminal:\n"))
+			out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(instruction.command)))
 
-			stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion, "Hit return to confirm that you ran the command..."))
+			out.WriteLine(output.Linef("", output.StyleSuggestion, "Hit return to confirm that you ran the command..."))
 			input := bufio.NewScanner(os.Stdin)
 			input.Scan()
 		}
@@ -719,7 +718,7 @@ func presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, cate
 	case 1:
 		err = fixCategoryManually(ctx, categoryIdx, category)
 	case 2:
-		stdout.Out.ClearScreen()
+		out.ClearScreen()
 		err = fixCategoryAutomatically(ctx, category)
 	case 3:
 		return nil
@@ -728,9 +727,9 @@ func presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, cate
 }
 
 func printCategoryHeaderAndDependencies(categoryIdx int, category *dependencyCategory) {
-	stdout.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.CombineStyles(output.StyleSearchQuery, output.StyleBold), "%d. %s", categoryIdx, category.name))
-	stdout.Out.Write("")
-	stdout.Out.Write("Checks:")
+	out.WriteLine(output.Linef(output.EmojiLightbulb, output.CombineStyles(output.StyleSearchQuery, output.StyleBold), "%d. %s", categoryIdx, category.name))
+	out.Write("")
+	out.Write("Checks:")
 
 	for i, dep := range category.dependencies {
 		idx := i + 1
@@ -832,18 +831,18 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 
 		dep := category.dependencies[idx]
 
-		stdout.Out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "%s", dep.name))
-		stdout.Out.Write("")
+		out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "%s", dep.name))
+		out.Write("")
 
 		if dep.err != nil {
-			stdout.Out.WriteLine(output.Linef("", output.StyleBold, "Encountered the following error:\n\n%s%s\n", output.StyleReset, dep.err))
+			out.WriteLine(output.Linef("", output.StyleBold, "Encountered the following error:\n\n%s%s\n", output.StyleReset, dep.err))
 		}
 
-		stdout.Out.WriteLine(output.Linef("", output.StyleBold, "How to fix:"))
+		out.WriteLine(output.Linef("", output.StyleBold, "How to fix:"))
 
 		if dep.instructionsComment != "" {
-			stdout.Out.Write("")
-			stdout.Out.Write(dep.instructionsComment)
+			out.Write("")
+			out.Write(dep.instructionsComment)
 		}
 
 		// If we don't have anything do run, we simply print instructions to
@@ -853,15 +852,15 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 			waitForReturn()
 		} else {
 			// Otherwise we print the command(s) and ask the user whether we should run it or not
-			stdout.Out.Write("")
+			out.Write("")
 			if category.requiresRepository {
-				stdout.Out.Writef("Run the following command(s) %sin the 'sourcegraph' repository%s:", output.StyleBold, output.StyleReset)
+				out.Writef("Run the following command(s) %sin the 'sourcegraph' repository%s:", output.StyleBold, output.StyleReset)
 			} else {
-				stdout.Out.Write("Run the following command(s):")
+				out.Write("Run the following command(s):")
 			}
-			stdout.Out.Write("")
+			out.Write("")
 
-			stdout.Out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.InstructionsCommands(ctx))))
+			out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.InstructionsCommands(ctx))))
 
 			choice, err := getChoice(map[int]string{
 				1: "I'll fix this manually (either by running the command or doing something else)",
@@ -885,7 +884,7 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 			}
 		}
 
-		pending := stdout.Out.Pending(output.Linef("", output.StylePending, "Determining status..."))
+		pending := out.Pending(output.Linef("", output.StylePending, "Determining status..."))
 		for _, dep := range category.dependencies {
 			dep.Update(ctx)
 		}
@@ -1235,7 +1234,7 @@ func waitForReturn() { fmt.Scanln() }
 
 func getChoice(choices map[int]string) (int, error) {
 	for {
-		stdout.Out.Write("")
+		out.Write("")
 		writeFingerPointingLinef("What do you want to do?")
 
 		for i := 0; i < len(choices); i++ {
@@ -1244,7 +1243,7 @@ func getChoice(choices map[int]string) (int, error) {
 			if !ok {
 				return 0, errors.Newf("internal error: %d not found in provided choices", i)
 			}
-			stdout.Out.Writef("%s[%d]%s: %s", output.StyleBold, num, output.StyleReset, desc)
+			out.Writef("%s[%d]%s: %s", output.StyleBold, num, output.StyleReset, desc)
 		}
 
 		fmt.Printf("Enter choice: ")

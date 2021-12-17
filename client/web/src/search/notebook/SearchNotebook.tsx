@@ -9,7 +9,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SearchStreamingProps } from '..'
-import { AuthenticatedUser } from '../../auth'
 import { StreamingSearchResultsListProps } from '../results/StreamingSearchResultsList'
 import { useQueryIntelligence } from '../useQueryIntelligence'
 
@@ -35,7 +34,6 @@ export interface SearchNotebookProps
     isReadOnly?: boolean
     onSerializeBlocks: (blocks: Block[]) => void
     blocks: BlockInput[]
-    authenticatedUser: AuthenticatedUser | null
 }
 
 export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({

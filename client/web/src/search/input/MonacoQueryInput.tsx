@@ -52,14 +52,11 @@ export const DEFAULT_MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstruction
     cursorWidth: 1,
 }
 
-type NativeElementProps = Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'>
-
 export interface MonacoQueryInputProps
     extends ThemeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         Pick<PatternTypeProps, 'patternType'>,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
-        NativeElementProps {
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
     onChange: (newState: QueryState) => void
@@ -158,10 +155,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     preventNewLine = true,
     editorOptions,
     onHandleFuzzyFinder,
-    caseSensitive,
-    keyboardShortcutForFocus,
     onEditorCreated: onEditorCreatedCallback,
-    ...nativeElementProps
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
 
@@ -376,7 +370,6 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     return (
         <div
             ref={setContainer}
-            {...nativeElementProps}
             className={classNames('flex-grow-1 flex-shrink-past-contents', className)}
             onFocus={onFocus}
         >

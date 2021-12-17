@@ -22,3 +22,4 @@ changesetTemplate:
   branch: batches/sprintf-to-itoa # Push the commit to this branch.
   commit:
     message: Replacing fmt.Sprintf with strconv.Iota
+  published: false

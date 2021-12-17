@@ -610,9 +610,9 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 	_, err = c.send(ctx, "POST", path, nil, payload, pr)
 	if err != nil {
 		if IsDuplicatePullRequest(err) {
-			pr, extractErr := ExtractExistingPullRequest(err)
+			pr, extractErr := ExtractDuplicatePullRequest(err)
 			if extractErr != nil {
-				log15.Error("Extracting existing PR", "err", extractErr)
+				log15.Error("Extracting existsing PR", "err", extractErr)
 			}
 			return &ErrAlreadyExists{
 				Existing: pr,
@@ -1381,31 +1381,11 @@ func IsDuplicatePullRequest(err error) bool {
 	return errors.As(err, &e) && e.DuplicatePullRequest()
 }
 
-func IsPullRequestOutOfDate(err error) bool {
-	var e *httpError
-	return errors.As(err, &e) && e.PullRequestOutOfDateException()
-}
-
-func IsMergePreconditionFailedException(err error) bool {
-	var e *httpError
-	return errors.As(err, &e) && e.MergePreconditionFailedException()
-}
-
-// ExtractExistingPullRequest will attempt to extract the existing PR returned with an error.
-func ExtractExistingPullRequest(err error) (*PullRequest, error) {
+// ExtractDuplicatePullRequest will attempt to extract a duplicate PR
+func ExtractDuplicatePullRequest(err error) (*PullRequest, error) {
 	var e *httpError
 	if errors.As(err, &e) {
 		return e.ExtractExistingPullRequest()
-	}
-
-	return nil, errors.Errorf("error does not contain existing PR")
-}
-
-// ExtractPullRequest will attempt to extract the PR returned with an error.
-func ExtractPullRequest(err error) (*PullRequest, error) {
-	var e *httpError
-	if errors.As(err, &e) {
-		return e.ExtractPullRequest()
 	}
 
 	return nil, errors.Errorf("error does not contain existing PR")
@@ -1442,23 +1422,15 @@ func (e *httpError) NoSuchLabelException() bool {
 }
 
 func (e *httpError) MergePreconditionFailedException() bool {
-	return strings.Contains(string(e.Body), bitbucketPullRequestMergeVetoedException)
-}
-
-func (e *httpError) PullRequestOutOfDateException() bool {
-	return strings.Contains(string(e.Body), bitbucketPullRequestOutOfDateException)
+	return e.StatusCode == 409
 }
 
 const (
-	bitbucketDuplicatePRException            = "com.atlassian.bitbucket.pull.DuplicatePullRequestException"
-	bitbucketNoSuchLabelException            = "com.atlassian.bitbucket.label.NoSuchLabelException"
-	bitbucketNoSuchPullRequestException      = "com.atlassian.bitbucket.pull.NoSuchPullRequestException"
-	bitbucketPullRequestOutOfDateException   = "com.atlassian.bitbucket.pull.PullRequestOutOfDateException"
-	bitbucketPullRequestMergeVetoedException = "com.atlassian.bitbucket.pull.PullRequestMergeVetoedException"
+	bitbucketDuplicatePRException       = "com.atlassian.bitbucket.pull.DuplicatePullRequestException"
+	bitbucketNoSuchLabelException       = "com.atlassian.bitbucket.label.NoSuchLabelException"
+	bitbucketNoSuchPullRequestException = "com.atlassian.bitbucket.pull.NoSuchPullRequestException"
 )
 
-// ExtractExistingPullRequest will try to extract a PullRequest from the
-// ExistingPullRequest field of the first Error in the response body.
 func (e *httpError) ExtractExistingPullRequest() (*PullRequest, error) {
 	var dest struct {
 		Errors []struct {
@@ -1479,29 +1451,6 @@ func (e *httpError) ExtractExistingPullRequest() (*PullRequest, error) {
 	}
 
 	return nil, errors.New("existing PR not found")
-}
-
-// ExtractPullRequest will try to extract a PullRequest from the
-// PullRequest field of the first Error in the response body.
-func (e *httpError) ExtractPullRequest() (*PullRequest, error) {
-	var dest struct {
-		Errors []struct {
-			ExceptionName string
-			// This is different from ExistingPullRequest
-			PullRequest PullRequest
-		}
-	}
-
-	err := json.Unmarshal(e.Body, &dest)
-	if err != nil {
-		return nil, errors.Wrap(err, "unmarshalling error")
-	}
-
-	if len(dest.Errors) == 0 {
-		return nil, errors.New("existing PR not found")
-	}
-
-	return &dest.Errors[0].PullRequest, nil
 }
 
 // AuthenticatedUsername returns the username associated with the credentials
@@ -1552,6 +1501,10 @@ func (c *Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest, 
 	return err
 }
 
+// ErrNotMergeable is returned by MergePullRequest when the pull request failed
+// to merge, because a precondition is not met.
+var ErrNotMergeable = errors.New("pull request cannot be merged")
+
 func (c *Client) MergePullRequest(ctx context.Context, pr *PullRequest) error {
 	if pr.ToRef.Repository.Slug == "" {
 		return errors.New("repository slug empty")
@@ -1572,6 +1525,10 @@ func (c *Client) MergePullRequest(ctx context.Context, pr *PullRequest) error {
 
 	_, err := c.send(ctx, "POST", path, qry, nil, pr)
 	if err != nil {
+		var e *httpError
+		if errors.As(err, &e) && e.MergePreconditionFailedException() {
+			return errors.Wrap(ErrNotMergeable, err.Error())
+		}
 		return err
 	}
 	return nil

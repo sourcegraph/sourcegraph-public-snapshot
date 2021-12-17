@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/squash"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
@@ -34,8 +33,8 @@ var (
 		LongHelp:   cliutil.ConstructLongHelp(),
 	}
 
-	upCommand   = cliutil.Up("sg migration", runMigration, stdout.Out)
-	downCommand = cliutil.Down("sg migration", runMigration, stdout.Out)
+	upCommand   = cliutil.Up("sg migration", runMigration, out)
+	downCommand = cliutil.Down("sg migration", runMigration, out)
 
 	migrationSquashFlagSet          = flag.NewFlagSet("sg migration squash", flag.ExitOnError)
 	migrationSquashDatabaseNameFlag = migrationSquashFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance")
@@ -76,11 +75,11 @@ func runMigration(ctx context.Context, options runner.Options) error {
 
 func migrationAddExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No migration name specified"))
+		out.WriteLine(output.Linef("", output.StyleWarning, "No migration name specified"))
 		return flag.ErrHelp
 	}
 	if len(args) != 1 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 
@@ -90,7 +89,7 @@ func migrationAddExec(ctx context.Context, args []string) error {
 		database, ok  = db.DatabaseByName(databaseName)
 	)
 	if !ok {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
 		return flag.ErrHelp
 	}
 
@@ -99,7 +98,7 @@ func migrationAddExec(ctx context.Context, args []string) error {
 		return err
 	}
 
-	block := stdout.Out.Block(output.Linef("", output.StyleBold, "Migration files created"))
+	block := out.Block(output.Linef("", output.StyleBold, "Migration files created"))
 	block.Writef("Up migration: %s", upFile)
 	block.Writef("Down migration: %s", downFile)
 	block.Close()
@@ -117,11 +116,11 @@ const minimumMigrationSquashDistance = 2
 
 func migrationSquashExec(ctx context.Context, args []string) (err error) {
 	if len(args) == 0 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No current-version specified"))
+		out.WriteLine(output.Linef("", output.StyleWarning, "No current-version specified"))
 		return flag.ErrHelp
 	}
 	if len(args) != 1 {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 
@@ -131,7 +130,7 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 		database, ok  = db.DatabaseByName(databaseName)
 	)
 	if !ok {
-		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
 		return flag.ErrHelp
 	}
 
@@ -142,7 +141,7 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 
 	// Get the last migration that existed in the version _before_ `minimumMigrationSquashDistance` releases ago
 	commit := fmt.Sprintf("v%d.%d.0", currentVersion.Major(), currentVersion.Minor()-minimumMigrationSquashDistance-1)
-	stdout.Out.Writef("Squashing migration files defined up through %s", commit)
+	out.Writef("Squashing migration files defined up through %s", commit)
 
 	return squash.Run(database, commit)
 }

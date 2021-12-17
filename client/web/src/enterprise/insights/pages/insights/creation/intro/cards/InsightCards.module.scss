@@ -2,16 +2,16 @@
 .card {
     display: flex;
     flex-direction: column;
-    box-shadow: 0 0 8px -6px rgba(36, 41, 54, 0.08);
-    font-size: 0.875rem;
+    box-shadow: var(--box-shadow);
+    font-size: 0.75rem;
     text-align: start;
 
     &:hover {
-        box-shadow: var(--dropdown-shadow);
-        border: 1px solid var(--border-color-2);
+        background-color: var(--secondary-2);
     }
 
     &:focus {
+        background-color: var(--secondary-2);
         box-shadow: var(--focus-box-shadow);
         outline: none;
     }
@@ -25,12 +25,11 @@
     display: flex;
     flex-direction: column;
     background-color: transparent;
-    margin-top: 1.5rem;
+    margin-top: 2rem;
     padding: 0;
 
     b {
         display: contents;
-        font-weight: normal;
 
         // A bootstrap CSS class .card brings custom color styles that we should change
         // for b elements within a card accroding to our designs for this card.
@@ -40,37 +39,13 @@
     }
 }
 
-.card-title {
-    color: var(--body-color);
-    margin-bottom: 0.5rem;
-}
-
-.card-example-block {
-    margin-top: 0.5rem;
-    color: var(--body-color);
-}
-
-.card-footer {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    padding: 0.5rem;
-    background-color: var(--body-bg);
-    border: 1px solid var(--border-color);
-}
-
 // chart specific styles
 .chart {
     overflow: hidden;
-    padding: 1rem;
-    height: 10.5rem;
+    height: 10rem;
     width: 100%;
     object-fit: contain;
-    background-color: var(--body-bg);
-
-    :global(.theme-dark) & {
-        background-color: transparent;
-    }
+    background-color: transparent;
 }
 
 .images {
@@ -85,5 +60,5 @@
 
 .image {
     object-fit: contain;
-    width: 1.75rem;
+    width: 3rem;
 }

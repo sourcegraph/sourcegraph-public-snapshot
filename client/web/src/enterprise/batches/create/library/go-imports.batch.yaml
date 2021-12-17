@@ -21,3 +21,4 @@ changesetTemplate:
   branch: batches/update-log15-import # Push the commit to this branch.
   commit:
     message: Fix import path for log15 package
+  published: false

@@ -8,24 +8,24 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestOrgRepositories(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmock.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
-	orgs := database.NewMockOrgStore()
+	orgs := dbmock.NewMockOrgStore()
 	orgs.GetByNameFunc.SetDefaultReturn(&types.Org{ID: 1, Name: "acme"}, nil)
 
-	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers := dbmock.NewMockOrgMemberStore()
 	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(&types.OrgMembership{OrgID: 1, UserID: 1}, nil)
 
-	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags := dbmock.NewMockFeatureFlagStore()
 	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
 
-	repos := database.NewMockRepoStore()
+	repos := dbmock.NewMockRepoStore()
 	repos.ListFunc.SetDefaultReturn(
 		[]*types.Repo{
 			{Name: "acme-repo"},
@@ -33,7 +33,7 @@ func TestOrgRepositories(t *testing.T) {
 		nil,
 	)
 
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)

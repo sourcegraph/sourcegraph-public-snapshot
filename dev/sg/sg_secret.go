@@ -7,8 +7,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
-
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -70,8 +68,8 @@ func listSecretExec(ctx context.Context, args []string) error {
 	if err := loadSecrets(); err != nil {
 		return err
 	}
-	stdout.Out.WriteLine(output.Linef("", output.StyleBold, "Secrets:"))
+	out.WriteLine(output.Linef("", output.StyleBold, "Secrets:"))
 	keys := secretsStore.Keys()
-	stdout.Out.WriteLine(output.Linef("", output.StyleWarning, strings.Join(keys, ", ")))
+	out.WriteLine(output.Linef("", output.StyleWarning, strings.Join(keys, ", ")))
 	return nil
 }

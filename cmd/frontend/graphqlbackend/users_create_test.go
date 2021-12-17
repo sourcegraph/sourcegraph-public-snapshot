@@ -5,19 +5,19 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestCreateUser(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmock.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 	users.CreateFunc.SetDefaultReturn(&types.User{ID: 1, Username: "alice"}, nil)
 
-	authz := database.NewMockAuthzStore()
+	authz := dbmock.NewMockAuthzStore()
 	authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
 
-	db := database.NewMockDB()
+	db := dbmock.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.AuthzFunc.SetDefaultReturn(authz)
 

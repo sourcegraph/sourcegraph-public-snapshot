@@ -163,6 +163,7 @@ export const bitbucketCloudCodeHost: CodeHost = {
     },
     hoverOverlayClassProps: {
         className: suffix('hover-overlay'),
+        closeButtonClassName: suffix('hover-overlay__close'),
         badgeClassName: suffix('hover-overlay__badge'),
         actionItemClassName: suffix('hover-overlay__action-item'),
         actionItemPressedClassName: suffix('hover-overlay__action-item-pressed'),
@@ -171,4 +172,7 @@ export const bitbucketCloudCodeHost: CodeHost = {
     },
     notificationClassNames: { 1: '', 2: '', 3: '', 4: '', 5: '' },
     codeViewsRequireTokenization: true,
+    // Virtualized code views make pinned hovers seemingly "float", since they're attached the the same line
+    // element whose content changes on scroll.
+    pinningEnabled: false,
 }

@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import * as H from 'history'
 import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
@@ -25,12 +24,9 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SearchContextProps } from '..'
-import { AuthenticatedUser } from '../../auth'
 import { SearchResult } from '../../components/SearchResult'
-import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 
 import { NoResultsPage } from './NoResultsPage'
-import styles from './StreamingSearchResults.module.scss'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 
 const initialItemsToShow = 15
@@ -40,13 +36,12 @@ export interface StreamingSearchResultsListProps
     extends ThemeProps,
         SettingsCascadeProps,
         TelemetryProps,
-        Pick<SearchContextProps, 'searchContextsEnabled' | 'selectedSearchContextSpec'> {
+        Pick<SearchContextProps, 'searchContextsEnabled'> {
     isSourcegraphDotCom: boolean
     results?: AggregateStreamingSearchResults
     location: H.Location
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    authenticatedUser: AuthenticatedUser | null
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
@@ -59,8 +54,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     isLightTheme,
     isSourcegraphDotCom,
     searchContextsEnabled,
-    selectedSearchContextSpec,
-    authenticatedUser,
 }) => {
     const [itemsToShow, setItemsToShow] = useState(initialItemsToShow)
     const onBottomHit = useCallback(
@@ -135,25 +128,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
 
     return (
         <>
-            <div
-                className={classNames(
-                    styles.streamingSearchResultsContentCentered,
-                    'd-flex flex-column align-items-center'
-                )}
-            >
-                <div className="align-self-stretch">
-                    {isSourcegraphDotCom &&
-                        searchContextsEnabled &&
-                        authenticatedUser &&
-                        results?.state === 'complete' &&
-                        results?.results.length === 0 && (
-                            <SearchUserNeedsCodeHost
-                                user={authenticatedUser}
-                                orgSearchContext={selectedSearchContextSpec}
-                            />
-                        )}
-                </div>
-            </div>
             <VirtualList<SearchMatch>
                 className="mt-2"
                 itemsToShow={itemsToShow}

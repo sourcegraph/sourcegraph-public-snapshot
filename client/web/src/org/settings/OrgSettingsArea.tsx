@@ -7,7 +7,6 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { AuthenticatedUser } from '../../auth'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables } from '../../graphql-operations'
@@ -33,7 +32,6 @@ const NotFoundPage: React.FunctionComponent = () => (
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
     location: H.Location
-    authenticatedUser: AuthenticatedUser
 }
 
 /**

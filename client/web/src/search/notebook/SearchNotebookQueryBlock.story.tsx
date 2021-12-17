@@ -43,7 +43,6 @@ add('default', () => (
             <SearchNotebookQueryBlock
                 {...props}
                 {...noopBlockCallbacks}
-                authenticatedUser={null}
                 id="query-block-1"
                 input="query"
                 type="query"
@@ -83,7 +82,6 @@ add('selected', () => (
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
-                authenticatedUser={null}
             />
         )}
     </WebStory>
@@ -109,7 +107,6 @@ add('read-only selected', () => (
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
-                authenticatedUser={null}
             />
         )}
     </WebStory>
