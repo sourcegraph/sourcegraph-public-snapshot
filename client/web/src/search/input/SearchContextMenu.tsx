@@ -17,7 +17,6 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge } from '@sourcegraph/wildcard'
 
 import { SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -60,9 +59,7 @@ export const SearchContextMenuItem: React.FunctionComponent<{
                 {description}
             </small>
             {isDefault && (
-                <Badge variant="secondary" className={classNames('text-uppercase', styles.itemDefault)}>
-                    Default
-                </Badge>
+                <span className={classNames('badge badge-secondary text-uppercase', styles.itemDefault)}>Default</span>
             )}
         </DropdownItem>
     )
@@ -71,9 +68,11 @@ export const SearchContextMenuItem: React.FunctionComponent<{
 export interface SearchContextMenuProps
     extends Omit<
         SearchContextInputProps,
-        'setSelectedSearchContextSpec' | 'hasUserAddedRepositories' | 'hasUserAddedExternalServices'
+        | 'showSearchContext'
+        | 'setSelectedSearchContextSpec'
+        | 'hasUserAddedRepositories'
+        | 'hasUserAddedExternalServices'
     > {
-    showSearchContextManagement: boolean
     authenticatedUser: AuthenticatedUser | null
     closeMenu: (isEscapeKey?: boolean) => void
     selectSearchContextSpec: (spec: string) => void

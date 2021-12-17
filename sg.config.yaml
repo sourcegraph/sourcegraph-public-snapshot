@@ -5,8 +5,7 @@ env:
   PGPASSWORD: sourcegraph
   PGDATABASE: sourcegraph
   PGSSLMODE: disable
-  SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: 'true'
-  
+
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
   SRC_LOG_LEVEL: info
   SRC_LOG_FORMAT: condensed
@@ -965,7 +964,7 @@ tests:
     cmd: yarn --cwd client/browser test
 
   bext-build:
-    cmd: EXTENSION_PERMISSIONS_ALL_URLS=true yarn --cwd client/browser build
+    cmd: yarn run download-puppeteer-browser && EXTENSION_PERMISSIONS_ALL_URLS=true yarn --cwd client/browser build
 
   bext-integration:
     cmd: yarn --cwd client/browser test-integration
@@ -974,6 +973,7 @@ tests:
     cmd: yarn --cwd client/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
     env:
       SOURCEGRAPH_BASE_URL: https://sourcegraph.com
+      PERCY_BROWSER_EXECUTABLE: node_modules/puppeteer/.local-chromium/linux-901812/chrome-linux/chrome
 
   frontend:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook

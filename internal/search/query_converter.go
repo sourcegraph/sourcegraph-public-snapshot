@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/go-enry/go-enry/v2/data"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -229,7 +228,7 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}, nil
 }
 
-func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
+func QueryToZoektQuery(p *TextPatternInfo, typ IndexedRequestType) (zoekt.Q, error) {
 	var and []zoekt.Q
 
 	var q zoekt.Q
@@ -301,23 +300,6 @@ func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestTyp
 			return nil, err
 		}
 		and = append(and, &zoekt.Not{Child: &zoekt.Type{Type: zoekt.TypeRepo, Child: q}})
-	}
-
-	// Languages are already partially expressed with IncludePatterns, but Zoekt creates
-	// more precise language metadata based on file contents analyzed by go-enry, so it's
-	// useful to pass lang: queries down.
-	//
-	// Currently, negated lang queries create filename-based ExcludePatterns that cannot be
-	// corrected by the more precise language metadata. If this is a problem, indexed search
-	// queries should have a special query converter that produces *only* Language predicates
-	// instead of filepatterns.
-	if len(p.Languages) > 0 && feat.ContentBasedLangFilters {
-		or := &zoekt.Or{}
-		for _, lang := range p.Languages {
-			lang, _ = enry.GetLanguageByAlias(lang) // Invariant: lang is valid.
-			or.Children = append(or.Children, &zoekt.Language{Language: lang})
-		}
-		and = append(and, or)
 	}
 
 	return zoekt.Simplify(zoekt.NewAnd(and...)), nil

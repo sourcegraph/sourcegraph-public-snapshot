@@ -216,7 +216,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
             <div>
               Tags: 
               <div
-                class="badge secondary mr-1"
+                class="mr-1 badge badge-secondary"
               >
                 a
               </div>

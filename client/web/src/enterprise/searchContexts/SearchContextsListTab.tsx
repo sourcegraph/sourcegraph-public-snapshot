@@ -10,7 +10,6 @@ import {
     FilteredConnectionFilter,
     FilteredConnectionFilterValue,
 } from '@sourcegraph/web/src/components/FilteredConnection'
-import { Badge } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import {
@@ -170,14 +169,12 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                                 <Link to={`/contexts/${context.spec}`}>
                                     <strong>{context.spec}</strong>
                                 </Link>
-                                <Badge
-                                    variant="secondary"
-                                    pill={true}
-                                    className={classNames('ml-1', styles.badge)}
-                                    tooltip="Automatic contexts are created by Sourcegraph."
+                                <span
+                                    className={classNames('badge badge-pill badge-secondary ml-1', styles.badge)}
+                                    data-tooltip="Automatic contexts are created by Sourcegraph."
                                 >
                                     auto
-                                </Badge>
+                                </span>
                             </div>
                             <div className="text-muted mt-1">{context.description}</div>
                         </div>

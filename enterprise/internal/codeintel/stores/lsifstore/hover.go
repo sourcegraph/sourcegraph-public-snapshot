@@ -12,7 +12,7 @@ import (
 
 // Hover returns the hover text of the symbol at the given position.
 func (s *Store) Hover(ctx context.Context, bundleID int, path string, line, character int) (_ string, _ Range, _ bool, err error) {
-	ctx, trace, endObservation := s.operations.hover.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := s.operations.hover.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
 		log.Int("line", line),
@@ -25,9 +25,9 @@ func (s *Store) Hover(ctx context.Context, bundleID int, path string, line, char
 		return "", Range{}, false, err
 	}
 
-	trace.Log(log.Int("numRanges", len(documentData.Document.Ranges)))
+	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
 	ranges := precise.FindRanges(documentData.Document.Ranges, line, character)
-	trace.Log(log.Int("numIntersectingRanges", len(ranges)))
+	traceLog(log.Int("numIntersectingRanges", len(ranges)))
 
 	for _, r := range ranges {
 		if text, ok := documentData.Document.HoverResults[r.HoverResultID]; ok {

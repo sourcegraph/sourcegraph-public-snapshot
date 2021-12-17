@@ -46,9 +46,6 @@ func newOperations(observationContext *observation.Context) *operations {
 			Name:              fmt.Sprintf("codeintel.resolvers.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
-			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				return observation.EmitForSentry | observation.EmitForDefault
-			},
 		})
 	}
 
@@ -90,9 +87,9 @@ func observeResolver(
 	observationArgs observation.Args,
 ) (context.Context, observation.TraceLogger, func()) {
 	start := time.Now()
-	ctx, trace, endObservation := operation.WithAndLogger(ctx, err, observationArgs)
+	ctx, traceLog, endObservation := operation.WithAndLogger(ctx, err, observationArgs)
 
-	return ctx, trace, func() {
+	return ctx, traceLog, func() {
 		duration := time.Since(start)
 		endObservation(1, observation.Args{})
 

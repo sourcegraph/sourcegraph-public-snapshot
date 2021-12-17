@@ -16,7 +16,6 @@ import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
-import { useExperimentalFeatures } from '../stores'
 import { ThemePreference } from '../stores/themeState'
 
 import { GlobalNavbar } from './GlobalNavbar'
@@ -50,15 +49,19 @@ const defaultProps = (
     setPatternType: () => undefined,
     platformContext: {} as any,
     keyboardShortcuts: [],
+    showSearchContext: false,
+    showSearchContextManagement: false,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
     defaultSearchContextSpec: '',
+    showOnboardingTour: false,
     isLightTheme: props.isLightTheme,
     isExtensionAlertAnimating: false,
     searchContextsEnabled: true,
     batchChangesEnabled: true,
     batchChangesExecutionEnabled: true,
     batchChangesWebhookLogsEnabled: true,
+    enableCodeMonitoring: true,
     activation: undefined,
     routes: [],
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
@@ -69,10 +72,7 @@ const defaultProps = (
     extensionViews: () => null,
 })
 
-const { add } = storiesOf('web/nav/GlobalNav', module).addDecorator(Story => {
-    useExperimentalFeatures.setState({ codeMonitoring: true })
-    return <Story />
-})
+const { add } = storiesOf('web/nav/GlobalNav', module)
 
 add('Anonymous viewer', () => (
     <WebStory>

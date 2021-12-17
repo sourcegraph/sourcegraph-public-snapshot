@@ -16,11 +16,10 @@ import styles from './SearchContextDropdown.module.scss'
 import { SearchContextMenu } from './SearchContextMenu'
 
 export interface SearchContextDropdownProps
-    extends SearchContextInputProps,
+    extends Omit<SearchContextInputProps, 'showSearchContext'>,
         TelemetryProps,
         Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
     isSourcegraphDotCom: boolean
-    showSearchContextManagement: boolean
     authenticatedUser: AuthenticatedUser | null
     query: string
     className?: string
@@ -42,7 +41,6 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         className,
         telemetryService,
         onEscapeMenuClose,
-        showSearchContextManagement,
     } = props
 
     const [contextCtaDismissed, setContextCtaDismissed] = useTemporarySetting('search.contexts.ctaDismissed', false)
@@ -134,7 +132,6 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
             <DropdownMenu positionFixed={true} className={styles.menu}>
                 <SearchContextMenu
                     {...props}
-                    showSearchContextManagement={showSearchContextManagement}
                     selectSearchContextSpec={selectSearchContextSpec}
                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                     fetchSearchContexts={fetchSearchContexts}

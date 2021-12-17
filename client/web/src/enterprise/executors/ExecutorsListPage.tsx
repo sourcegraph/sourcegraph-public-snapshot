@@ -13,7 +13,7 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Badge, Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ExecutorFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -138,12 +138,12 @@ export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => 
                                 />
                             )}
                             {node.hostname}{' '}
-                            <Badge
-                                variant="secondary"
-                                tooltip={`The executor is configured to pull data from the queue "${node.queueName}"`}
+                            <span
+                                className="badge badge-secondary"
+                                data-tooltip={`The executor is configured to pull data from the queue "${node.queueName}"`}
                             >
                                 {node.queueName}
-                            </Badge>
+                            </span>
                         </h4>
                     </div>
                     <span>

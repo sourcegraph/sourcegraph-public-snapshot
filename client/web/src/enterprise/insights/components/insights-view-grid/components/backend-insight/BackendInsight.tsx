@@ -11,8 +11,8 @@ import * as View from '../../../../../../views'
 import { LineChartSettingsContext } from '../../../../../../views'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
-import { BackendInsight, InsightTypePrefix } from '../../../../core/types'
-import { SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
+import { InsightTypePrefix } from '../../../../core/types'
+import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
@@ -29,7 +29,7 @@ import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/u
 interface BackendInsightProps
     extends TelemetryProps,
         React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
-    insight: BackendInsight
+    insight: SearchBackendBasedInsight
 
     innerRef: Ref<HTMLElement>
     resizing?: boolean
@@ -38,7 +38,7 @@ interface BackendInsightProps
 /**
  * Renders BE search based insight. Fetches insight data by gql api handler.
  */
-export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = props => {
+export const BackendInsight: React.FunctionComponent<BackendInsightProps> = props => {
     const { telemetryService, insight, innerRef, resizing, ...otherProps } = props
 
     const { dashboard } = useContext(DashboardInsightsContext)
@@ -83,7 +83,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
 
     const handleFilterSave = async (filters: SearchBasedBackendFilters): Promise<SubmissionErrors> => {
         try {
-            const insightWithNewFilters = { ...insight, filters }
+            const insightWithNewFilters: SearchBackendBasedInsight = { ...insight, filters }
 
             await updateInsight({ oldInsight: insight, newInsight: insightWithNewFilters }).toPromise()
 
@@ -108,7 +108,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
         }
 
         try {
-            const newInsight = {
+            const newInsight: SearchBackendBasedInsight = {
                 ...insight,
                 id: `${InsightTypePrefix.search}.${camelCase(insightName)}`,
                 title: insightName,
@@ -178,7 +178,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
                         <View.Content
                             telemetryService={telemetryService}
                             content={data.view.content}
-                            viewTrackingType={insight.viewType}
+                            viewID={insight.id}
                             containerClassName="be-insight-card"
                             alert={
                                 <BackendAlertOverlay

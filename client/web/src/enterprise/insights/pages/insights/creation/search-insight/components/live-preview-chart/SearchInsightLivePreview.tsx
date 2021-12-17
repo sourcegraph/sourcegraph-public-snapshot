@@ -4,13 +4,12 @@ import type { LineChartContent } from 'sourcegraph'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useDebounce } from '@sourcegraph/wildcard/src'
 
-import { LivePreviewContainer } from '../../../../../../components/creation-ui-kit/live-preview-container/LivePreviewContainer'
-import { getSanitizedRepositories } from '../../../../../../components/creation-ui-kit/sanitizers/repositories'
+import { LivePreviewContainer } from '../../../../../../components/live-preview-container/LivePreviewContainer'
 import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
 import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
 import { useDistinctValue } from '../../../../../../hooks/use-distinct-value'
 import { EditableDataSeries, InsightStep } from '../../types'
-import { getSanitizedLine } from '../../utils/insight-sanitizer'
+import { getSanitizedLine, getSanitizedRepositories } from '../../utils/insight-sanitizer'
 
 import { DEFAULT_MOCK_CHART_CONTENT } from './live-preview-mock-data'
 
@@ -51,15 +50,19 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
     // Synthetic deps to trigger dry run for fetching live preview data
     const [lastPreviewVersion, setLastPreviewVersion] = useState(0)
 
-    // Compare live insight settings with deep check to avoid unnecessary
-    // search insight content fetching
-    const liveSettings = useDistinctValue({
-        series: series
+    const liveSeries = useDistinctValue(
+        series
             .filter(series => series.valid)
             // Cut off all unnecessary for live preview fields in order to
             // not trigger live preview update if any of unnecessary has been updated
             // Example: edit true => false - chart shouldn't re-fetch data
-            .map<SearchBasedInsightSeries>(getSanitizedLine),
+            .map<SearchBasedInsightSeries>(getSanitizedLine)
+    )
+
+    // Compare live insight settings with deep check to avoid unnecessary
+    // search insight content fetching
+    const liveSettings = useDistinctValue({
+        series: liveSeries,
         repositories: getSanitizedRepositories(repositories),
         step: { [step]: stepValue },
         disabled,

@@ -14,11 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // productLicense implements the GraphQL type ProductLicense.
 type productLicense struct {
-	db database.DB
+	db dbutil.DB
 	v  *dbLicense
 }
 
@@ -30,7 +31,7 @@ func (p ProductSubscriptionLicensingResolver) ProductLicenseByID(ctx context.Con
 
 // productLicenseByID looks up and returns the ProductLicense with the given GraphQL ID. If no such
 // ProductLicense exists, it returns a non-nil error.
-func productLicenseByID(ctx context.Context, db database.DB, id graphql.ID) (*productLicense, error) {
+func productLicenseByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*productLicense, error) {
 	idInt32, err := unmarshalProductLicenseID(id)
 	if err != nil {
 		return nil, err
@@ -40,7 +41,7 @@ func productLicenseByID(ctx context.Context, db database.DB, id graphql.ID) (*pr
 
 // productLicenseByDBID looks up and returns the ProductLicense with the given database ID. If no
 // such ProductLicense exists, it returns a non-nil error.
-func productLicenseByDBID(ctx context.Context, db database.DB, id string) (*productLicense, error) {
+func productLicenseByDBID(ctx context.Context, db dbutil.DB, id string) (*productLicense, error) {
 	v, err := dbLicenses{db: db}.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -98,7 +99,7 @@ func (r *productLicense) CreatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.v.CreatedAt}
 }
 
-func generateProductLicenseForSubscription(ctx context.Context, db database.DB, subscriptionID string, input *graphqlbackend.ProductLicenseInput) (id string, err error) {
+func generateProductLicenseForSubscription(ctx context.Context, db dbutil.DB, subscriptionID string, input *graphqlbackend.ProductLicenseInput) (id string, err error) {
 	licenseKey, err := licensing.GenerateProductLicenseKey(license.Info{
 		Tags:      license.SanitizeTagsList(input.Tags),
 		UserCount: uint(input.UserCount),
@@ -158,7 +159,7 @@ func (r ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Contex
 // check permissions.
 type productLicenseConnection struct {
 	opt dbLicensesListOptions
-	db  database.DB
+	db  dbutil.DB
 
 	// cache results because they are used by multiple fields
 	once    sync.Once

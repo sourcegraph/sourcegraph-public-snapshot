@@ -21,7 +21,7 @@ import {
 
 import { AuthenticatedUser } from '../../auth'
 import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
-import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
+import { useNavbarQueryState } from '../../stores'
 import * as helpers from '../helpers'
 
 import { generateMockedResponses } from './sidebar/Revisions.mocks'
@@ -53,9 +53,11 @@ describe('StreamingSearchResults', () => {
 
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         isLightTheme: true,
+        enableCodeMonitoring: false,
         featureFlags: EMPTY_FEATURE_FLAGS,
         extensionViews: () => null,
         isSourcegraphDotCom: false,
+        showSearchContext: true,
         searchContextsEnabled: true,
     }
 
@@ -79,7 +81,6 @@ describe('StreamingSearchResults', () => {
 
     beforeEach(() => {
         useNavbarQueryState.setState({ searchCaseSensitivity: false })
-        useExperimentalFeatures.setState({ showSearchContext: true, codeMonitoring: false })
     })
 
     it('should call streaming search API with the right parameters from URL', async () => {

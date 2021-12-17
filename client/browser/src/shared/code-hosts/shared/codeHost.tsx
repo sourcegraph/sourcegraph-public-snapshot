@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 import { render as reactDOMRender } from 'react-dom'
@@ -89,14 +88,9 @@ import { toTextDocumentPositionParameters } from '../../backend/extension-api-co
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
-import { resolveRevision, retryWhenCloneInProgressError, resolvePrivateRepo } from '../../repo/backend'
+import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
 import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
-import {
-    DEFAULT_SOURCEGRAPH_URL,
-    getPlatformName,
-    isDefaultSourcegraphUrl,
-    observeSourcegraphURL,
-} from '../../util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, observeSourcegraphURL } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
@@ -109,7 +103,7 @@ import { phabricatorCodeHost } from '../phabricator/codeHost'
 
 import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
 import { ContentView, handleContentViews } from './contentViews'
-import { NotAuthenticatedError, RepoURLParseError } from './errors'
+import { RepoURLParseError } from './errors'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
 import { createPrivateCodeHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
 import {
@@ -118,13 +112,8 @@ import {
     nativeTooltipsEnabledFromSettings,
     registerNativeTooltipContributions,
 } from './nativeTooltips'
-import { SignInButton } from './SignInButton'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
-import {
-    ViewOnSourcegraphButtonClassProps,
-    ViewOnSourcegraphButton,
-    ConfigureSourcegraphButton,
-} from './ViewOnSourcegraphButton'
+import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
 import { delayUntilIntersecting, trackViews, ViewResolver } from './views'
 
 registerHighlightContributions()
@@ -529,7 +518,7 @@ function initCodeIntelligence({
                     location={H.createLocation(window.location)}
                     onCloseButtonClick={this.nextCloseButtonClick}
                     onAlertDismissed={onHoverAlertDismissed}
-                    useBrandedLogo={true}
+                    isBranded={true}
                 />
             ) : null
         }
@@ -641,95 +630,7 @@ export interface HandleCodeHostOptions extends CodeIntelligenceProps {
     background: Pick<BackgroundPageApi, 'notifyPrivateCloudError' | 'openOptionsPage'>
 }
 
-/**
- * Opens extension options page
- */
-const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
-    event.preventDefault()
-    if (isExtension) {
-        await background.openOptionsPage()
-    }
-}
-
-/**
- * @returns boolean indicating whether it is safe to continue initialization
- *
- * Returns
- * - "false": if could not parse repository name or if detected repository is private is not cloned in Sourcegraph Cloud
- * - "true" in all other cases
- *
- * Side-effect:
- * - Notifies background about private cloud error
- * - Renders "Configure Sourcegraph" or "Sign In" button
- */
-const isSafeToContinueCodeIntel = async ({
-    sourcegraphURL,
-    codeHost,
-    requestGraphQL,
-    render,
-}: Pick<HandleCodeHostOptions, 'render' | 'codeHost'> &
-    Pick<HandleCodeHostOptions['platformContext'], 'requestGraphQL' | 'sourcegraphURL'>): Promise<boolean> => {
-    if (!isDefaultSourcegraphUrl(sourcegraphURL) || !codeHost.getContext) {
-        return true
-    }
-    // This is only when connected to Sourcegraph Cloud and code host either GitLab or GitHub
-    try {
-        const { privateRepository, rawRepoName } = await codeHost.getContext()
-        if (!privateRepository) {
-            // We can auto-clone public repos
-            return true
-        }
-
-        const isRepoCloned = await resolvePrivateRepo({
-            rawRepoName,
-            requestGraphQL,
-        }).toPromise()
-
-        return isRepoCloned
-    } catch (error) {
-        // Ignore non-repository pages
-        if (error instanceof RepoURLParseError) {
-            return false
-        }
-
-        if (isExtension) {
-            // Notify to show extension alert-icon
-            background.notifyPrivateCloudError(true).catch(error => {
-                console.error('Error notifying background page of private cloud.', error)
-            })
-        }
-
-        if (!codeHost.getViewContextOnSourcegraphMount) {
-            console.warn('Repository is not cloned or you are not authenticated to Sourcegraph.', error)
-            return false
-        }
-
-        if (error instanceof NotAuthenticatedError) {
-            // Show "Sign In" button
-            console.warn('Not authenticated to Sourcegraph.', error)
-            render(
-                <SignInButton {...{ ...codeHost.viewOnSourcegraphButtonClassProps }} sourcegraphURL={sourcegraphURL} />,
-                codeHost.getViewContextOnSourcegraphMount(document.body)
-            )
-        } else {
-            // Show "Configure Sourcegraph" button
-            console.warn('Repository is not cloned.', error)
-            render(
-                <ConfigureSourcegraphButton
-                    {...codeHost.viewOnSourcegraphButtonClassProps}
-                    className={classNames('open-on-sourcegraph', codeHost.viewOnSourcegraphButtonClassProps?.className)}
-                    codeHostType={codeHost.type}
-                    onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
-                />,
-                codeHost.getViewContextOnSourcegraphMount(document.body)
-            )
-        }
-
-        return false
-    }
-}
-
-export async function handleCodeHost({
+export function handleCodeHost({
     mutations,
     codeHost,
     extensionsController,
@@ -740,7 +641,7 @@ export async function handleCodeHost({
     minimalUI,
     hideActions,
     background,
-}: HandleCodeHostOptions): Promise<Subscription> {
+}: HandleCodeHostOptions): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
     const { requestGraphQL, sourcegraphURL } = platformContext
@@ -783,18 +684,9 @@ export async function handleCodeHost({
     const checkPrivateCloudError = async (error: any): Promise<boolean> =>
         !!(
             isRepoNotFoundErrorLike(error) &&
-            isDefaultSourcegraphUrl(sourcegraphURL) &&
+            sourcegraphURL === DEFAULT_SOURCEGRAPH_URL &&
             (await codeHost.getContext?.())?.privateRepository
         )
-
-    if (codeHost.searchEnhancement) {
-        subscriptions.add(initializeSearchEnhancement(codeHost.searchEnhancement, sourcegraphURL, mutations))
-    }
-
-    if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {
-        // Stop initializing code intelligence
-        return subscriptions
-    }
 
     if (codeHost.nativeTooltipResolvers) {
         const { subscription, nativeTooltipsAlert } = handleNativeTooltips(
@@ -889,6 +781,16 @@ export async function handleCodeHost({
                 return [asError(error)]
             })
         )
+        const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
+            event.preventDefault()
+            // If we're here, then `isInPage` should have been checked already,
+            // but we double check to be sure and to indicate the intent, for
+            // when we might refactor this, that it must only be called in the
+            // extension.
+            if (isExtension) {
+                await background.openOptionsPage()
+            }
+        }
         const onPrivateCloudError = (hasPrivateCloudError: boolean): void => {
             setPrivateCloudError(hasPrivateCloudError)
             if (isExtension) {
@@ -927,6 +829,34 @@ export async function handleCodeHost({
                 )
             })
         )
+    }
+
+    if (codeHost.searchEnhancement) {
+        const { searchViewResolver, resultViewResolver, onChange } = codeHost.searchEnhancement
+        const searchURL = new URL('/search', sourcegraphURL)
+        searchURL.searchParams.append('utm_source', getPlatformName())
+        searchURL.searchParams.append('utm_campaign', 'global-search')
+
+        const searchView = mutations.pipe(
+            trackViews([searchViewResolver]),
+            switchMap(({ element }) =>
+                fromEvent(element, 'input').pipe(
+                    map(event => (event.target as HTMLInputElement).value),
+                    startWith((element as HTMLInputElement).value)
+                )
+            ),
+            map(value => ({
+                value,
+                searchURL: searchURL.href,
+            })),
+            observeOn(asyncScheduler)
+        )
+        const resultView = mutations.pipe(trackViews([resultViewResolver]), observeOn(asyncScheduler))
+
+        const searchEnhancementSubscription = combineLatest([searchView, resultView])
+            .pipe(map(([search, { element: resultElement }]) => ({ ...search, resultElement })))
+            .subscribe(onChange)
+        subscriptions.add(searchEnhancementSubscription)
     }
 
     /** A stream of added or removed code views with the resolved file info */
@@ -1376,7 +1306,7 @@ export const determineCodeHost = (sourcegraphURL?: string): CodeHost | undefined
     // Prevent repo lookups for code hosts that we know cannot have repositories
     // cloned on sourcegraph.com. Repo lookups trigger cloning, which will
     // inevitably fail in this case.
-    if (isDefaultSourcegraphUrl(sourcegraphURL)) {
+    if (sourcegraphURL === DEFAULT_SOURCEGRAPH_URL) {
         const { hostname } = new URL(location.href)
         const validCodeHost = CLOUD_CODE_HOST_HOSTS.some(cloudHost => cloudHost === hostname)
         if (!validCodeHost) {
@@ -1390,37 +1320,6 @@ export const determineCodeHost = (sourcegraphURL?: string): CodeHost | undefined
     }
 
     return codeHost
-}
-
-function initializeSearchEnhancement(
-    searchEnhancement: NonNullable<CodeHost['searchEnhancement']>,
-    sourcegraphURL: string,
-    mutations: Observable<MutationRecordLike[]>
-): Subscription {
-    const { searchViewResolver, resultViewResolver, onChange } = searchEnhancement
-    const searchURL = new URL('/search', sourcegraphURL)
-    searchURL.searchParams.append('utm_source', getPlatformName())
-    searchURL.searchParams.append('utm_campaign', 'global-search')
-
-    const searchView = mutations.pipe(
-        trackViews([searchViewResolver]),
-        switchMap(({ element }) =>
-            fromEvent(element, 'input').pipe(
-                map(event => (event.target as HTMLInputElement).value),
-                startWith((element as HTMLInputElement).value)
-            )
-        ),
-        map(value => ({
-            value,
-            searchURL: searchURL.href,
-        })),
-        observeOn(asyncScheduler)
-    )
-    const resultView = mutations.pipe(trackViews([resultViewResolver]), observeOn(asyncScheduler))
-
-    return combineLatest([searchView, resultView])
-        .pipe(map(([search, { element: resultElement }]) => ({ ...search, resultElement })))
-        .subscribe(onChange)
 }
 
 export function injectCodeIntelligenceToCodeHost(
@@ -1437,7 +1336,6 @@ export function injectCodeIntelligenceToCodeHost(
         isExtension
     )
     const { requestGraphQL } = platformContext
-
     subscriptions.add(extensionsController)
 
     const overrideSendTelemetry = observeSourcegraphURL(isExtension).pipe(
@@ -1470,8 +1368,7 @@ export function injectCodeIntelligenceToCodeHost(
     // Flag to hide the actions in the code view toolbar (hide ActionNavItems) leaving only the "Open on Sourcegraph" button in the toolbar.
     const hideActions = codeHost.type === 'gerrit'
     subscriptions.add(
-        // eslint-disable-next-line rxjs/no-async-subscribe, @typescript-eslint/no-misused-promises
-        extensionDisabled.subscribe(async disableExtension => {
+        extensionDisabled.subscribe(disableExtension => {
             if (disableExtension) {
                 // We don't need to unsubscribe if the extension starts with disabled state.
                 if (codeHostSubscription) {
@@ -1479,7 +1376,7 @@ export function injectCodeIntelligenceToCodeHost(
                 }
                 console.log('Browser extension is disabled')
             } else {
-                codeHostSubscription = await handleCodeHost({
+                codeHostSubscription = handleCodeHost({
                     mutations,
                     codeHost,
                     extensionsController,

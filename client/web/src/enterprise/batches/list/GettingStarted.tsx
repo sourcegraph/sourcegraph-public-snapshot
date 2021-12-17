@@ -11,12 +11,12 @@ export interface GettingStartedProps {
 }
 
 export const GettingStarted: React.FunctionComponent<GettingStartedProps> = ({ footer, className }) => (
-    <div className={className} data-testid="test-getting-started">
+    <div className={className}>
         <Container className="mb-4">
             <div className={classNames(styles.videoRow, 'row')}>
                 <div className="col-12 col-md-7">
                     <video
-                        className="w-100 h-auto shadow percy-hide"
+                        className="w-100 h-auto shadow"
                         width={1280}
                         height={720}
                         autoPlay={true}

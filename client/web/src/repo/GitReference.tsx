@@ -8,7 +8,6 @@ import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
-import { Badge } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import { Timestamp } from '../components/time/Timestamp'
@@ -68,7 +67,7 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
         >
             <span className="d-flex align-items-center">
                 {Icon && <Icon className="icon-inline mr-1" />}
-                <Badge as="code">{node.displayName}</Badge>
+                <code className="badge">{node.displayName}</code>
                 {mostRecentSig && (
                     <small className="pl-2">
                         Updated <Timestamp date={mostRecentSig.date} />{' '}

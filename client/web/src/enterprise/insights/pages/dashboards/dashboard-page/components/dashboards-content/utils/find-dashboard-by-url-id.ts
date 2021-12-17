@@ -13,7 +13,9 @@ export function findDashboardByUrlId(
 ): InsightDashboard | undefined {
     return dashboards.find(dashboard => {
         if (isVirtualDashboard(dashboard)) {
-            return dashboard.id === dashboardID.toLowerCase()
+            return (
+                dashboard.id === dashboardID.toLowerCase() || dashboard.type.toLowerCase() === dashboardID.toLowerCase()
+            )
         }
 
         return (

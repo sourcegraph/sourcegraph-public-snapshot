@@ -44,7 +44,7 @@ func linkPullRequestsAndIssues(trackingIssues, issues []*Issue, pullRequests []*
 func linkTrackingIssues(trackingIssues, issues []*Issue, pullRequests []*PullRequest) {
 	for _, trackingIssue := range trackingIssues {
 		matcher := NewMatcher(
-			trackingIssue.IdentifyingLabels(),
+			nonTrackingLabels(trackingIssue.Labels),
 			trackingIssue.Milestone,
 			"",
 			false,

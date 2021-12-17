@@ -34,7 +34,7 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { LogOutput } from '@sourcegraph/web/src/components/LogOutput'
 import { Timeline, TimelineStage } from '@sourcegraph/web/src/components/Timeline'
-import { Badge, Container, PageHeader, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { ErrorAlert } from '../../../components/alerts'
@@ -58,7 +58,6 @@ import {
     fetchBatchSpecWorkspace,
     queryBatchSpecWorkspaces as _queryBatchSpecWorkspaces,
     queryBatchSpecWorkspaceStepFileDiffs,
-    retryBatchSpecExecution,
     retryWorkspaceExecution,
 } from './backend'
 import styles from './BatchSpecExecutionDetailsPage.module.scss'
@@ -109,16 +108,6 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
             setBatchSpecExecution(execution)
         } catch (error) {
             setIsCanceling(asError(error))
-        }
-    }, [batchSpecID])
-
-    const [isRetrying, setIsRetrying] = useState<boolean | Error>(false)
-    const retryExecution = useCallback(async () => {
-        try {
-            const execution = await retryBatchSpecExecution(batchSpecID)
-            setBatchSpecExecution(execution)
-        } catch (error) {
-            setIsRetrying(asError(error))
         }
     }, [batchSpecID])
 
@@ -211,60 +200,44 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                                 </div>
                             </>
                         )}
-                        <span>
-                            <div className="btn-group-vertical">
-                                {(batchSpec.state === BatchSpecState.QUEUED ||
-                                    batchSpec.state === BatchSpecState.PROCESSING) && (
-                                    <button
-                                        type="button"
-                                        className="btn btn-outline-secondary"
-                                        onClick={cancelExecution}
-                                        disabled={isCanceling === true}
-                                    >
-                                        {isCanceling !== true && <>Cancel</>}
-                                        {isCanceling === true && (
-                                            <>
-                                                <LoadingSpinner className="icon-inline" /> Canceling
-                                            </>
-                                        )}
-                                    </button>
-                                )}
-                                {batchSpec.applyURL && batchSpec.state === BatchSpecState.COMPLETED && (
-                                    <Link to={batchSpec.applyURL} className="btn btn-primary">
-                                        Preview
-                                    </Link>
-                                )}
-                                {batchSpec.viewerCanRetry && batchSpec.state !== BatchSpecState.COMPLETED && (
-                                    // TODO: Add a second button to allow retrying an entire batch spec,
-                                    // including completed jobs.
-                                    <button
-                                        type="button"
-                                        className="btn btn-outline-secondary"
-                                        onClick={retryExecution}
-                                        disabled={isRetrying === true}
-                                    >
-                                        {isRetrying !== true && <>Retry failed</>}
-                                        {isRetrying === true && (
-                                            <>
-                                                <LoadingSpinner className="icon-inline" /> Retrying
-                                            </>
-                                        )}
-                                    </button>
-                                )}
-                                {batchSpec.applyURL && batchSpec.state === BatchSpecState.FAILED && (
-                                    <Link
-                                        to={batchSpec.applyURL}
-                                        className="btn btn-outline-warning"
-                                        data-tooltip="Execution didn't finish successfully in all workspaces. The batch spec might have less changeset specs than expected."
-                                    >
-                                        <AlertCircleIcon className="icon-inline mb-0 mr-2 text-warning" />
-                                        Preview
-                                    </Link>
-                                )}
-                            </div>
-                            {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}
-                            {isErrorLike(isRetrying) && <ErrorAlert error={isRetrying} />}
-                        </span>
+                        {(batchSpec.state === BatchSpecState.QUEUED ||
+                            batchSpec.state === BatchSpecState.PROCESSING) && (
+                            <span>
+                                <button
+                                    type="button"
+                                    className="btn btn-outline-secondary"
+                                    onClick={cancelExecution}
+                                    disabled={isCanceling === true}
+                                >
+                                    {isCanceling !== true && <>Cancel</>}
+                                    {isCanceling === true && (
+                                        <>
+                                            <LoadingSpinner className="icon-inline" /> Canceling
+                                        </>
+                                    )}
+                                </button>
+                                {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}
+                            </span>
+                        )}
+                        {batchSpec.applyURL && batchSpec.state === BatchSpecState.COMPLETED && (
+                            <span>
+                                <Link to={batchSpec.applyURL} className="btn btn-primary">
+                                    Preview
+                                </Link>
+                            </span>
+                        )}
+                        {batchSpec.applyURL && batchSpec.state === BatchSpecState.FAILED && (
+                            <span>
+                                <Link
+                                    to={batchSpec.applyURL}
+                                    className="btn btn-outline-warning"
+                                    data-tooltip="Execution didn't finish successfully in all workspaces. The batch spec might have less changeset specs than expected."
+                                >
+                                    <AlertCircleIcon className="icon-inline mb-0 mr-2 text-warning" />
+                                    Preview
+                                </Link>
+                            </span>
+                        )}
                     </div>
                 }
                 className="mb-3"
@@ -351,7 +324,7 @@ const WorkspaceNode: React.FunctionComponent<WorkspaceNodeProps> = ({ node, sele
             </div>
             {/* Only display the branch if it's not the default branch. */}
             {node.repository.defaultBranch?.abbrevName !== node.branch.abbrevName && (
-                <Badge variant="secondary">{node.branch.abbrevName}</Badge>
+                <span className="badge badge-secondary">{node.branch.abbrevName}</span>
             )}
         </Link>
     </li>
@@ -522,8 +495,8 @@ const ChangesetSpecNode: React.FunctionComponent<{ node: BatchSpecWorkspaceChang
                     <Link to={node.description.baseRepository.url}>{node.description.baseRepository.name}</Link>
                 </p>
                 <p>
-                    <Badge variant="secondary">{node.description.baseRef}</Badge> &larr;
-                    <Badge variant="secondary">{node.description.headRef}</Badge>
+                    <span className="badge badge-secondary">{node.description.baseRef}</span> &larr;
+                    <span className="badge badge-secondary">{node.description.headRef}</span>
                 </p>
                 <p>
                     <strong>Published:</strong> <PublishedValue published={node.description.published} />
@@ -924,10 +897,10 @@ const BatchSpecStateBadge: React.FunctionComponent<{ state: BatchSpecState }> = 
         case BatchSpecState.PROCESSING:
         case BatchSpecState.CANCELED:
         case BatchSpecState.CANCELING:
-            return <Badge variant="secondary">{state}</Badge>
+            return <span className="badge badge-secondary">{state}</span>
         case BatchSpecState.FAILED:
-            return <Badge variant="danger">{state}</Badge>
+            return <span className="badge badge-danger">{state}</span>
         case BatchSpecState.COMPLETED:
-            return <Badge variant="success">{state}</Badge>
+            return <span className="badge badge-success">{state}</span>
     }
 }

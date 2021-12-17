@@ -1,8 +1,6 @@
 .line-chart {
     display: flex;
     flex-direction: column;
-    min-height: 100%;
-    flex-grow: 1;
     overflow: hidden;
 
     &--no-interaction {
@@ -16,9 +14,7 @@
 
 .content-parent-size {
     flex-grow: 1;
-    min-height: 10rem;
     position: relative;
-    flex-basis: 50%;
 }
 
 .legend {
@@ -27,11 +23,11 @@
         flex-shrink: 0;
         min-width: 11rem;
         margin-left: 1rem;
-        max-width: 30%;
+        width: 30%;
     }
 }
 
-.legend-list {
+.legend-content {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;

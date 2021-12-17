@@ -15,7 +15,6 @@ allowed_prefix=(
   github.com/sourcegraph/sourcegraph/cmd/gitserver
   github.com/sourcegraph/sourcegraph/cmd/worker
   github.com/sourcegraph/sourcegraph/cmd/repo-updater
-  github.com/sourcegraph/sourcegraph/cmd/migrator
   github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
   github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
   github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater

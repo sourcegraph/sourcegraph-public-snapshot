@@ -11,9 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
-// NewTestDB creates a new connection to the a database and applies the given migrations.
+// NewTestDB creates a new connection to the a database and applies the given migration.
 func NewTestDB(dsn string, schemas ...*schemas.Schema) (_ *sql.DB, err error) {
-	db, err := dbconn.ConnectInternal(dsn, "", "")
+	db, _, err := dbconn.ConnectInternal(dsn, "", "", nil)
 	if err != nil {
 		return nil, err
 	}

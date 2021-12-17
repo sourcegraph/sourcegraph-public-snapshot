@@ -38,5 +38,5 @@ export const getDashboardOwnerName = (dashboard: RealInsightDashboard): string =
         return 'Global'
     }
 
-    return dashboard.owner?.name ?? ''
+    return dashboard.owner?.name ?? dashboard.grants?.organizations?.[0] ?? 'Unknown'
 }

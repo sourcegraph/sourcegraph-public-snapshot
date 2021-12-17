@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import { isObject } from 'lodash'
-import React, { useCallback, useEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { View, MarkupContent } from 'sourcegraph'
 
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
@@ -13,7 +13,7 @@ import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
 import { ErrorAlert } from '../../../../components/alerts'
 
-import { ChartViewContent, ChartViewContentLayout } from './chart-view-content/ChartViewContent'
+import { ChartViewContent } from './chart-view-content/ChartViewContent'
 import styles from './ViewContent.module.scss'
 
 const isMarkupContent = (input: unknown): input is MarkupContent =>
@@ -21,23 +21,13 @@ const isMarkupContent = (input: unknown): input is MarkupContent =>
 
 export interface ViewContentProps extends TelemetryProps {
     content: View['content']
-
-    /**
-     * View tracking type is used to send a proper pings event (InsightHover, InsightDataPointClick)
-     * with view type as a tracking variable. If it equals to null tracking is disabled.
-     *
-     * Note: these events are code insights specific, we have to remove this tracking logic to
-     * reuse this component in other consumers.
-     */
-    viewTrackingType?: string
+    viewID: string
 
     /** To get container to track hovers for pings */
     containerClassName?: string
 
     /** Optionally display an alert overlay */
     alert?: React.ReactNode
-    layout?: ChartViewContentLayout
-    className?: string
 }
 
 /**
@@ -48,31 +38,26 @@ export interface ViewContentProps extends TelemetryProps {
  * without notice.
  */
 export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
-    const { content, viewTrackingType, containerClassName, alert, layout, className, telemetryService } = props
+    const { content, viewID, containerClassName, alert, telemetryService } = props
 
     // Track user intent to interact with extension-contributed views
     const viewContentReference = useRef<HTMLDivElement>(null)
 
     // TODO Move this tracking logic out of this shared view component
     useEffect(() => {
-        // Disable tracking logic if view tracking type wasn't provided
-        if (!viewTrackingType) {
-            return
-        }
-
         let viewContentElement = viewContentReference.current
+
         let timeoutID: number | undefined
 
         function onMouseEnter(): void {
             // Set timer to increase confidence that the user meant to interact with the
             // view, as opposed to accidentally moving past it. If the mouse leaves
             // the view quickly, clear the timeout for logging the event
-            // TODO: Move this from common component to shared logic/hook
             timeoutID = window.setTimeout(() => {
                 telemetryService.log(
                     'InsightHover',
-                    { insightType: viewTrackingType },
-                    { insightType: viewTrackingType }
+                    { insightType: viewID.split('.')[0] },
+                    { insightType: viewID.split('.')[0] }
                 )
             }, 500)
 
@@ -97,24 +82,10 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
             viewContentElement?.removeEventListener('mouseleave', onMouseLeave)
             clearTimeout(timeoutID)
         }
-    }, [viewTrackingType, containerClassName, telemetryService])
-
-    const handleOnDatumLinkClick = useCallback(() => {
-        // Disable tracking logic if view tracking type wasn't provided
-        if (!viewTrackingType) {
-            return
-        }
-
-        // TODO: Move this from common component to shared logic/hook
-        telemetryService.log(
-            'InsightDataPointClick',
-            { insightType: viewTrackingType },
-            { insightType: viewTrackingType }
-        )
-    }, [viewTrackingType, telemetryService])
+    }, [viewID, containerClassName, telemetryService])
 
     return (
-        <div className={classNames(styles.viewContent, className)} ref={viewContentReference}>
+        <div className={styles.viewContent} ref={viewContentReference}>
             {content.map((content, index) =>
                 isMarkupContent(content) ? (
                     <React.Fragment key={index}>
@@ -132,9 +103,9 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = props => {
                         {alert && <div className={styles.viewContentAlertOverlay}>{alert}</div>}
                         <ChartViewContent
                             content={content}
-                            layout={layout}
-                            className="flex-grow-1"
-                            onDatumLinkClick={handleOnDatumLinkClick}
+                            viewID={viewID}
+                            telemetryService={props.telemetryService}
+                            className={styles.chart}
                         />
                     </React.Fragment>
                 ) : null
@@ -166,7 +137,7 @@ export const ViewLoadingContent: React.FunctionComponent<ViewLoadingContentProps
     const { text } = props
 
     return (
-        <div className="h-100 w-100 d-flex flex-column flex-grow-1">
+        <div className="h-100 w-100 d-flex flex-column">
             <span className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
                 <LoadingSpinner /> {text}
             </span>

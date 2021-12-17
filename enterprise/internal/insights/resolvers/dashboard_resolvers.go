@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"sort"
 	"sync"
 
 	"github.com/inconshreveable/log15"
@@ -198,7 +197,11 @@ func (d *DashboardInsightViewConnectionResolver) PageInfo(ctx context.Context) (
 
 func (d *DashboardInsightViewConnectionResolver) computeConnectedViews(ctx context.Context) ([]types.Insight, string, error) {
 	d.once.Do(func() {
-		args := store.InsightsOnDashboardQueryArgs{DashboardID: d.dashboard.ID}
+		// 🚨 SECURITY: This disabled authorization because we want to resolve all direct connections to the dashboard, regardless
+		// of insight view permissions.
+		// In this case, we are making the **VERY IMPORTANT** assumption that we have already pre-validated the
+		// dashboard is visible to the user context.
+		args := store.InsightQueryArgs{DashboardID: d.dashboard.ID, WithoutAuthorization: true}
 		if d.args.After != nil {
 			var afterID string
 			err := relay.UnmarshalSpec(graphql.ID(*d.args.After), &afterID)
@@ -213,19 +216,16 @@ func (d *DashboardInsightViewConnectionResolver) computeConnectedViews(ctx conte
 		}
 		var err error
 
-		viewSeries, err := d.insightStore.GetAllOnDashboard(ctx, args)
+		viewSeries, err := d.insightStore.Get(ctx, args)
 		if err != nil {
 			d.err = err
 			return
 		}
 
 		d.views = d.insightStore.GroupByView(ctx, viewSeries)
-		sort.Slice(d.views, func(i, j int) bool {
-			return d.views[i].DashboardViewId < d.views[j].DashboardViewId
-		})
 
 		if len(d.views) > 0 {
-			d.next = fmt.Sprintf("%d", d.views[len(d.views)-1].DashboardViewId)
+			d.next = d.views[len(d.views)-1].UniqueID
 		}
 	})
 	return d.views, d.next, d.err
@@ -257,8 +257,6 @@ func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbac
 }
 
 func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbackend.UpdateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
-	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
-
 	var dashboardGrants []store.DashboardGrant
 	if args.Input.Grants != nil {
 		parsedGrants, err := parseDashboardGrants(*args.Input.Grants)
@@ -275,7 +273,7 @@ func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbac
 		return nil, errors.New("unable to update a virtualized dashboard")
 	}
 
-	err = permissionsValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
+	err = r.permissionsValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
 	if err != nil {
 		return nil, err
 	}
@@ -284,8 +282,8 @@ func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbac
 		ID:     int(dashboardID.Arg),
 		Title:  args.Input.Title,
 		Grants: dashboardGrants,
-		UserID: permissionsValidator.userIds,
-		OrgID:  permissionsValidator.orgIds})
+		UserID: r.permissionsValidator.userIds,
+		OrgID:  r.permissionsValidator.orgIds})
 	if err != nil {
 		return nil, err
 	}
@@ -331,9 +329,7 @@ func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbac
 	if dashboardID.isVirtualized() {
 		return emptyResponse, nil
 	}
-
-	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
-	err = permissionsValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
+	err = r.permissionsValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
 	if err != nil {
 		return nil, err
 	}
@@ -362,8 +358,7 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 	}
 	defer func() { err = tx.Done(err) }()
 
-	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
-	txValidator := permissionsValidator.WithBaseStore(tx.Store)
+	txValidator := r.permissionsValidator.WithBaseStore(tx.Store)
 	err = txValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
 	if err != nil {
 		return nil, err
@@ -413,8 +408,7 @@ func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *gra
 	}
 	defer func() { err = tx.Done(err) }()
 
-	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
-	txValidator := permissionsValidator.WithBaseStore(tx.Store)
+	txValidator := r.permissionsValidator.WithBaseStore(tx.Store)
 	err = txValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
 	if err != nil {
 		return nil, err

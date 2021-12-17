@@ -2,9 +2,8 @@ import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 import React from 'react'
 
-import { Badge } from '@sourcegraph/wildcard'
-
 import { HoverMerged } from '../../../api/client/types/hover'
+import { LinkOrSpan } from '../../../components/LinkOrSpan'
 import { asError } from '../../../util/errors'
 import { renderMarkdown } from '../../../util/markdown'
 import hoverOverlayStyle from '../../HoverOverlay.module.scss'
@@ -16,14 +15,6 @@ interface HoverOverlayContentProps {
     content: HoverMerged['contents'][number]
     aggregatedBadges: HoverMerged['aggregatedBadges']
     index: number
-    /**
-     * Use our branded badge. For use in Sourcegraph branded applications.
-     */
-    useBrandedBadge?: boolean
-    /**
-     * Allows custom styles
-     * Primarily used to inherit different styles for use on a code host.
-     */
     badgeClassName?: string
     errorAlertClassName?: string
     contentClassName?: string
@@ -38,7 +29,7 @@ function tryMarkdownRender(content: string): string | Error {
 }
 
 export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentProps> = props => {
-    const { content, aggregatedBadges = [], index, errorAlertClassName, badgeClassName, useBrandedBadge } = props
+    const { content, aggregatedBadges = [], index, errorAlertClassName, badgeClassName } = props
 
     if (content.kind !== 'markdown') {
         return (
@@ -66,18 +57,15 @@ export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentPro
             {index !== 0 && <hr />}
             {aggregatedBadges.map(({ text, linkURL, hoverMessage }) => (
                 <small key={text} className={classNames(hoverOverlayStyle.badge)}>
-                    <Badge
-                        branded={Boolean(useBrandedBadge)}
-                        {...(useBrandedBadge && {
-                            variant: 'secondary',
-                            small: true,
-                        })}
+                    <LinkOrSpan
+                        to={linkURL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-tooltip={hoverMessage}
                         className={classNames('test-hover-badge', badgeClassName, hoverOverlayStyle.badgeLabel)}
-                        href={linkURL}
-                        tooltip={hoverMessage}
                     >
                         {text}
-                    </Badge>
+                    </LinkOrSpan>
                 </small>
             ))}
             <span

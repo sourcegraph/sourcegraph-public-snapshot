@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"flag"
 	"fmt"
+	"strings"
 
 	"github.com/Masterminds/semver"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -12,12 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/squash"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
-	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -30,11 +24,32 @@ var (
 		ShortHelp:  "Add a new migration file",
 		FlagSet:    migrationAddFlagSet,
 		Exec:       migrationAddExec,
-		LongHelp:   cliutil.ConstructLongHelp(),
+		LongHelp:   constructMigrationSubcmdLongHelp(),
 	}
 
-	upCommand   = cliutil.Up("sg migration", runMigration, out)
-	downCommand = cliutil.Down("sg migration", runMigration, out)
+	migrationUpFlagSet          = flag.NewFlagSet("sg migration up", flag.ExitOnError)
+	migrationUpDatabaseNameFlag = migrationUpFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance.")
+	migrationUpNFlag            = migrationUpFlagSet.Int("n", 1, "How many migrations to apply.")
+	migrationUpCommand          = &ffcli.Command{
+		Name:       "up",
+		ShortUsage: fmt.Sprintf("sg migration up [-db=%s] [-n]", db.DefaultDatabase.Name),
+		ShortHelp:  "Run up migration files",
+		FlagSet:    migrationUpFlagSet,
+		Exec:       migrationUpExec,
+		LongHelp:   constructMigrationSubcmdLongHelp(),
+	}
+
+	migrationDownFlagSet          = flag.NewFlagSet("sg migration down", flag.ExitOnError)
+	migrationDownDatabaseNameFlag = migrationDownFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance.")
+	migrationDownNFlag            = migrationDownFlagSet.Int("n", 1, "How many migrations to apply.")
+	migrationDownCommand          = &ffcli.Command{
+		Name:       "down",
+		ShortUsage: fmt.Sprintf("sg migration down [-db=%s] [-n=1]", db.DefaultDatabase.Name),
+		ShortHelp:  "Run down migration files",
+		FlagSet:    migrationDownFlagSet,
+		Exec:       migrationDownExec,
+		LongHelp:   constructMigrationSubcmdLongHelp(),
+	}
 
 	migrationSquashFlagSet          = flag.NewFlagSet("sg migration squash", flag.ExitOnError)
 	migrationSquashDatabaseNameFlag = migrationSquashFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance")
@@ -44,7 +59,20 @@ var (
 		ShortHelp:  "Collapse migration files from historic releases together",
 		FlagSet:    migrationSquashFlagSet,
 		Exec:       migrationSquashExec,
-		LongHelp:   cliutil.ConstructLongHelp(),
+		LongHelp:   constructMigrationSubcmdLongHelp(),
+	}
+
+	migrationFixupFlagSet          = flag.NewFlagSet("sg migration fixup", flag.ExitOnError)
+	migrationFixupDatabaseNameFlag = migrationFixupFlagSet.String("db", "all", "The target database instance (or 'all' for all databases)")
+	migrationFixupMainNameFlag     = migrationFixupFlagSet.String("main", "main", "The branch/revision to compare with")
+	migrationFixupRunFlag          = migrationFixupFlagSet.Bool("run", true, "Run the migrations in your local database")
+	migrationFixupCommand          = &ffcli.Command{
+		Name:       "fixup",
+		ShortUsage: fmt.Sprintf("sg migration fixup [-db=%s] [-main=%s] [-run=true]", "all", "main"),
+		ShortHelp:  "Find and fix any conflicting migration names from rebasing on main. Also properly migrates your local database",
+		FlagSet:    migrationFixupFlagSet,
+		Exec:       migrationFixupExec,
+		LongHelp:   constructMigrationSubcmdLongHelp(),
 	}
 
 	migrationFlagSet = flag.NewFlagSet("sg migration", flag.ExitOnError)
@@ -58,19 +86,25 @@ var (
 		},
 		Subcommands: []*ffcli.Command{
 			migrationAddCommand,
-			upCommand,
-			downCommand,
+			migrationUpCommand,
+			migrationDownCommand,
 			migrationSquashCommand,
+			migrationFixupCommand,
 		},
 	}
 )
 
-func runMigration(ctx context.Context, options runner.Options) error {
-	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-		return store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext))
-	}
+func constructMigrationSubcmdLongHelp() string {
+	var out strings.Builder
 
-	return connections.RunnerFromDSNs(postgresdsn.RawDSNsBySchema(), "sg", storeFactory).Run(ctx, options)
+	fmt.Fprintf(&out, "AVAILABLE DATABASES\n")
+	var names []string
+	for _, name := range db.DatabaseNames() {
+		names = append(names, fmt.Sprintf("  %s", name))
+	}
+	fmt.Fprint(&out, strings.Join(names, "\n"))
+
+	return out.String()
 }
 
 func migrationAddExec(ctx context.Context, args []string) error {
@@ -104,6 +138,52 @@ func migrationAddExec(ctx context.Context, args []string) error {
 	block.Close()
 
 	return nil
+}
+
+func migrationUpExec(ctx context.Context, args []string) error {
+	if len(args) != 0 {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+		return flag.ErrHelp
+	}
+
+	var (
+		databaseName = *migrationUpDatabaseNameFlag
+		database, ok = db.DatabaseByName(databaseName)
+	)
+	if !ok {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
+		return flag.ErrHelp
+	}
+
+	var n *int
+	migrationUpFlagSet.Visit(func(f *flag.Flag) {
+		if f.Name == "n" {
+			n = migrationUpNFlag
+		}
+	})
+
+	// Only pass the value of n here if the user actually set it
+	// We have to do the dance above because the flags package
+	// requires you to define a default value for each flag.
+	return migration.RunUp(database, n)
+}
+
+func migrationDownExec(ctx context.Context, args []string) error {
+	if len(args) != 0 {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+		return flag.ErrHelp
+	}
+
+	var (
+		databaseName = *migrationDownDatabaseNameFlag
+		database, ok = db.DatabaseByName(databaseName)
+	)
+	if !ok {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
+		return flag.ErrHelp
+	}
+
+	return migration.RunDown(database, migrationDownNFlag)
 }
 
 // minimumMigrationSquashDistance is the minimum number of releases a migration is guaranteed to exist
@@ -144,4 +224,36 @@ func migrationSquashExec(ctx context.Context, args []string) (err error) {
 	out.Writef("Squashing migration files defined up through %s", commit)
 
 	return squash.Run(database, commit)
+}
+
+func migrationFixupExec(ctx context.Context, args []string) (err error) {
+	if len(args) != 0 {
+		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+		return flag.ErrHelp
+	}
+
+	branchName := *migrationFixupMainNameFlag
+	if branchName == "" {
+		branchName = "main"
+	}
+
+	databaseName := *migrationFixupDatabaseNameFlag
+	if databaseName == "all" {
+		for _, databaseName := range db.DatabaseNames() {
+			database, _ := db.DatabaseByName(databaseName)
+			if err := migration.RunFixup(database, branchName, *migrationFixupRunFlag); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	} else {
+		database, ok := db.DatabaseByName(databaseName)
+		if !ok {
+			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: database %q not found :(", databaseName))
+			return flag.ErrHelp
+		}
+
+		return migration.RunFixup(database, branchName, *migrationFixupRunFlag)
+	}
 }

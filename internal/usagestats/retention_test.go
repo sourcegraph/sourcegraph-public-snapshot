@@ -23,7 +23,7 @@ func TestRetentionUsageStatistics(t *testing.T) {
 	userCreationDate := time.Date(2020, 10, 26, 0, 0, 0, 0, time.UTC)
 
 	mockTimeNow(eventDate)
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 
 	events := []database.Event{{
 		Name:      "ViewHome",
@@ -47,8 +47,7 @@ func TestRetentionUsageStatistics(t *testing.T) {
 	}
 
 	// Insert user
-	_, err := db.ExecContext(
-		context.Background(),
+	_, err := db.Exec(
 		`INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, site_admin)
 		VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
 		"test", "test", nil, userCreationDate, userCreationDate, "foobar", userCreationDate, true)

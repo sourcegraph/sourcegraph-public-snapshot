@@ -11,7 +11,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -24,8 +23,7 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(sqlDB)
+	db := dbtest.NewDB(t)
 
 	store := store.New(db, &observation.TestContext, nil)
 
@@ -162,6 +160,6 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 		})
 
 		// Clean up database.
-		ct.TruncateTables(t, sqlDB, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+		ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 	}
 }

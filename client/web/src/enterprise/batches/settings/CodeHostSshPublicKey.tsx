@@ -15,7 +15,6 @@ const configInstructionLinks: Record<ExternalServiceKind, string> = {
     [ExternalServiceKind.BITBUCKETCLOUD]: 'unsupported',
     [ExternalServiceKind.GITOLITE]: 'unsupported',
     [ExternalServiceKind.JVMPACKAGES]: 'unsupported',
-    [ExternalServiceKind.NPMPACKAGES]: 'unsupported',
     [ExternalServiceKind.OTHER]: 'unsupported',
     [ExternalServiceKind.PERFORCE]: 'unsupported',
     [ExternalServiceKind.PAGURE]: 'unsupported',

@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 
@@ -40,7 +38,6 @@ type migrator struct {
 	insightStore               *store.InsightStore
 	dashboardStore             *store.DBDashboardStore
 	orgStore                   database.OrgStore
-	workerBaseStore            *basestore.Store
 }
 
 func NewMigrator(insightsDB dbutil.DB, postgresDB dbutil.DB) oobmigration.Migrator {
@@ -52,7 +49,6 @@ func NewMigrator(insightsDB dbutil.DB, postgresDB dbutil.DB) oobmigration.Migrat
 		insightStore:               store.NewInsightStore(insightsDB),
 		dashboardStore:             store.NewDashboardStore(insightsDB),
 		orgStore:                   database.Orgs(postgresDB),
-		workerBaseStore:            basestore.NewWithDB(postgresDB, sql.TxOptions{}),
 	}
 }
 
@@ -210,7 +206,6 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 	for _, insight := range backendInsights {
 		allDefinedInsightIds = append(allDefinedInsightIds, insight.ID)
 	}
-	logDuplicates(allDefinedInsightIds)
 
 	totalInsights := len(langStatsInsights) + len(frontendInsights) + len(backendInsights)
 	var migratedInsightsCount int
@@ -269,17 +264,6 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 	}
 
 	return nil
-}
-
-func logDuplicates(insightIds []string) {
-	set := make(map[string]struct{}, len(insightIds))
-	for _, id := range insightIds {
-		if _, ok := set[id]; ok {
-			log15.Info("insights setting oob-migration: duplicate insight ID", "uniqueId", id)
-		} else {
-			set[id] = struct{}{}
-		}
-	}
 }
 
 func specialCaseDashboardTitle(subjectName string) string {
@@ -406,29 +390,17 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 	return nil
 }
 
-func updateTimeSeriesReferences(handle dbutil.DB, ctx context.Context, oldId, newId string) (int, error) {
-	q := sqlf.Sprintf(`
-		WITH updated AS (
-			UPDATE series_points sp
-			SET series_id = %s
-			WHERE series_id = %s
-			RETURNING sp.series_id
-		)
-		SELECT count(*) FROM updated;
-	`, newId, oldId)
+func updateTimeSeriesReferences(handle dbutil.DB, ctx context.Context, oldId, newId string) error {
+	q := sqlf.Sprintf("update series_points set series_id = %s where series_id = %s", newId, oldId)
 	tempStore := basestore.NewWithDB(handle, sql.TxOptions{})
-	count, _, err := basestore.ScanFirstInt(tempStore.Query(ctx, q))
+	err := tempStore.Exec(ctx, q)
 	if err != nil {
-		return 0, errors.Wrap(err, "updateTimeSeriesReferences")
-	}
-	return count, nil
-}
-
-func updateTimeSeriesJobReferences(workerStore *basestore.Store, ctx context.Context, oldId, newId string) error {
-	q := sqlf.Sprintf("update insights_query_runner_jobs set series_id = %s where series_id = %s", newId, oldId)
-	err := workerStore.Exec(ctx, q)
-	if err != nil {
-		return errors.Wrap(err, "updateTimeSeriesJobReferences")
+		return errors.Wrap(err, "updateTimeSeriesReferences")
 	}
 	return nil
+}
+
+func updateSeriesId(insightStore *store.InsightStore, ctx context.Context, oldId, newId string) error {
+	q := sqlf.Sprintf("update insight_series set series_id = %s where series_id = %s", newId, oldId)
+	return insightStore.Exec(ctx, q)
 }

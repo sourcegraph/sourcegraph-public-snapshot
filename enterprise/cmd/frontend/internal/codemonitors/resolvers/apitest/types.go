@@ -1,12 +1,6 @@
 // Package apitest provided types used in testing.
 package apitest
 
-import (
-	"encoding/json"
-
-	"github.com/cockroachdb/errors"
-)
-
 type Response struct {
 	User User
 }
@@ -56,33 +50,7 @@ type ActionConnection struct {
 }
 
 type Action struct {
-	Email        *ActionEmail
-	Webhook      *ActionWebhook
-	SlackWebhook *ActionSlackWebhook
-}
-
-func (a *Action) UnmarshalJSON(b []byte) error {
-	type typeUnmarshaller struct {
-		TypeName string `json:"__typename"`
-	}
-	var t typeUnmarshaller
-	if err := json.Unmarshal(b, &t); err != nil {
-		return err
-	}
-
-	switch t.TypeName {
-	case "MonitorEmail":
-		a.Email = &ActionEmail{}
-		return json.Unmarshal(b, &a.Email)
-	case "MonitorWebhook":
-		a.Webhook = &ActionWebhook{}
-		return json.Unmarshal(b, &a.Webhook)
-	case "MonitorSlackWebhook":
-		a.SlackWebhook = &ActionSlackWebhook{}
-		return json.Unmarshal(b, &a.SlackWebhook)
-	default:
-		return errors.Errorf("unexpected typename %q", t.TypeName)
-	}
+	ActionEmail
 }
 
 type ActionEmail struct {
@@ -92,20 +60,6 @@ type ActionEmail struct {
 	Recipients RecipientsConnection
 	Header     string
 	Events     ActionEventConnection
-}
-
-type ActionWebhook struct {
-	Id      string
-	Enabled bool
-	URL     string
-	Events  ActionEventConnection
-}
-
-type ActionSlackWebhook struct {
-	Id      string
-	Enabled bool
-	URL     string
-	Events  ActionEventConnection
 }
 
 type RecipientsConnection struct {

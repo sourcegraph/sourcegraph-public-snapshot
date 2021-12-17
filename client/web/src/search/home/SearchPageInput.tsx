@@ -10,12 +10,18 @@ import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/s
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { PatternTypeProps, ParsedSearchQueryProps, SearchContextInputProps, CaseSensitivityProps } from '..'
+import {
+    PatternTypeProps,
+    OnboardingTourProps,
+    ParsedSearchQueryProps,
+    SearchContextInputProps,
+    CaseSensitivityProps,
+} from '..'
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
-import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
+import { useNavbarQueryState } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { canSubmitSearch, submitSearch, SubmitSearchParameters } from '../helpers'
 import { SearchBox } from '../input/SearchBox'
@@ -35,7 +41,8 @@ interface Props
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         Pick<SubmitSearchParameters, 'source'>,
-        SearchContextInputProps {
+        SearchContextInputProps,
+        OnboardingTourProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -60,10 +67,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
         query: props.queryPrefix ? props.queryPrefix : '',
     })
     const { caseSensitive, setCaseSensitivity } = useNavbarQueryState(queryStateSelector, shallow)
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
-    const showSearchContextManagement = useExperimentalFeatures(
-        features => features.showSearchContextManagement ?? false
-    )
+
     useEffect(() => {
         setUserQueryState({ query: props.queryPrefix || '' })
     }, [props.queryPrefix])
@@ -77,7 +81,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
         props.location.pathname,
         props.parsedSearchQuery,
     ])
-    const showOnboardingTour = useExperimentalFeatures(features => features.showOnboardingTour ?? false) && isHomepage
+    const showOnboardingTour = props.showOnboardingTour && isHomepage
 
     const tourContainer = useRef<HTMLDivElement>(null)
 
@@ -137,8 +141,6 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     <SearchBox
                         {...props}
                         {...onboardingTourQueryInputProps}
-                        showSearchContext={showSearchContext}
-                        showSearchContextManagement={showSearchContextManagement}
                         caseSensitive={caseSensitive}
                         setCaseSensitivity={setCaseSensitivity}
                         submitSearchOnToggle={submitSearchOnChange}

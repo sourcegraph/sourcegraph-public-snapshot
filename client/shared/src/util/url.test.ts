@@ -14,7 +14,6 @@ import {
     RepoFile,
     encodeURIPathComponent,
     appendLineRangeQueryParameter,
-    toRepoURL,
 } from './url'
 
 /**
@@ -587,17 +586,5 @@ describe('appendLineRangeQueryParameter', () => {
                 'L24:24'
             )
         ).toBe('/github.com/sourcegraph/sourcegraph/-/blob/.gitattributes?L24:24&test=test')
-    })
-})
-
-describe('toRepoURL', () => {
-    it('generates absolute repo URL without a rev', () => {
-        expect(toRepoURL({ repoName: 'sourcegraph/sourcegraph' })).toBe('/sourcegraph/sourcegraph')
-    })
-
-    it('generates absolute repo URL with a rev', () => {
-        expect(toRepoURL({ repoName: 'sourcegraph/sourcegraph', revision: 'main' })).toBe(
-            '/sourcegraph/sourcegraph@main'
-        )
     })
 })

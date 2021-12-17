@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -31,10 +30,6 @@ type batchChangeResolver struct {
 	namespaceOnce sync.Once
 	namespace     graphqlbackend.NamespaceResolver
 	namespaceErr  error
-
-	batchSpecOnce sync.Once
-	batchSpec     *btypes.BatchSpec
-	batchSpecErr  error
 }
 
 const batchChangeIDKind = "BatchChange"
@@ -63,25 +58,8 @@ func (r *batchChangeResolver) Description() *string {
 	return &r.batchChange.Description
 }
 
-func (r *batchChangeResolver) State() string {
-	var state btypes.BatchChangeState
-	if r.batchChange.Closed() {
-		state = btypes.BatchChangeStateClosed
-	} else if r.batchChange.IsDraft() {
-		state = btypes.BatchChangeStateDraft
-	} else {
-		state = btypes.BatchChangeStateOpen
-	}
-
-	return state.ToGraphQL()
-}
-
 func (r *batchChangeResolver) InitialApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return r.Creator(ctx)
-}
-
-func (r *batchChangeResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.batchChange.CreatorID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.batchChange.InitialApplierID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -89,42 +67,33 @@ func (r *batchChangeResolver) Creator(ctx context.Context) (*graphqlbackend.User
 }
 
 func (r *batchChangeResolver) LastApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	if r.batchChange.LastApplierID == 0 {
-		return nil, nil
-	}
-
 	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.batchChange.LastApplierID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
-
 	return user, err
 }
 
-func (r *batchChangeResolver) LastAppliedAt() *graphqlbackend.DateTime {
-	if r.batchChange.LastAppliedAt.IsZero() {
-		return nil
-	}
-
-	return &graphqlbackend.DateTime{Time: r.batchChange.LastAppliedAt}
+func (r *batchChangeResolver) LastAppliedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.batchChange.LastAppliedAt}
 }
 
 func (r *batchChangeResolver) SpecCreator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	spec, err := r.computeBatchSpec(ctx)
+	spec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
+		ID: r.batchChange.BatchSpecID,
+	})
 	if err != nil {
 		return nil, err
 	}
-
 	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), spec.UserID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
-
 	return user, err
 }
 
 func (r *batchChangeResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return checkSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), r.batchChange.CreatorID)
+	return checkSiteAdminOrSameUser(ctx, r.store.DB(), r.batchChange.InitialApplierID)
 }
 
 func (r *batchChangeResolver) URL(ctx context.Context) (string, error) {
@@ -161,16 +130,6 @@ func (r *batchChangeResolver) computeNamespace(ctx context.Context) (graphqlback
 	})
 
 	return r.namespace, r.namespaceErr
-}
-
-func (r *batchChangeResolver) computeBatchSpec(ctx context.Context) (*btypes.BatchSpec, error) {
-	r.batchSpecOnce.Do(func() {
-		r.batchSpec, r.batchSpecErr = r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
-			ID: r.batchChange.BatchSpecID,
-		})
-	})
-
-	return r.batchSpec, r.batchSpecErr
 }
 
 func (r *batchChangeResolver) CreatedAt() graphqlbackend.DateTime {
@@ -282,7 +241,7 @@ func (r *batchChangeResolver) DiffStat(ctx context.Context) (*graphqlbackend.Dif
 }
 
 func (r *batchChangeResolver) CurrentSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
-	batchSpec, err := r.computeBatchSpec(ctx)
+	batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: r.batchChange.BatchSpecID})
 	if err != nil {
 		// This spec should always exist, so fail hard on not found errors as well.
 		return nil, err
@@ -326,6 +285,11 @@ func (r *batchChangeResolver) BatchSpecs(
 	ctx context.Context,
 	args *graphqlbackend.ListBatchSpecArgs,
 ) (graphqlbackend.BatchSpecConnectionResolver, error) {
+	// TODO(ssbc): currently admin only.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
@@ -335,11 +299,6 @@ func (r *batchChangeResolver) BatchSpecs(
 			Limit: int(args.First),
 		},
 	}
-
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
-		opts.ExcludeCreatedFromRawNotOwnedByUser = actor.FromContext(ctx).UID
-	}
-
 	if args.After != nil {
 		id, err := strconv.Atoi(*args.After)
 		if err != nil {

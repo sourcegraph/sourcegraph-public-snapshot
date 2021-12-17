@@ -43,6 +43,7 @@ export const StaticView = forwardRef<HTMLElement, StaticViewProps>((props, refer
                 <View.Content
                     telemetryService={telemetryService}
                     content={view.content}
+                    viewID={contentId}
                     containerClassName="insight-content-card"
                 />
             )}

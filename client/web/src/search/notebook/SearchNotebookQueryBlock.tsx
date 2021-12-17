@@ -34,7 +34,7 @@ import { BlockProps, QueryBlock } from '.'
 interface SearchNotebookQueryBlockProps
     extends BlockProps,
         QueryBlock,
-        Pick<SearchContextProps, 'searchContextsEnabled'>,
+        Pick<SearchContextProps, 'searchContextsEnabled' | 'showSearchContext'>,
         ThemeProps,
         SettingsCascadeProps,
         TelemetryProps {
@@ -175,6 +175,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                         <StreamingSearchResultsList
                             isSourcegraphDotCom={props.isSourcegraphDotCom}
                             searchContextsEnabled={props.searchContextsEnabled}
+                            showSearchContext={props.showSearchContext}
                             location={location}
                             allExpanded={false}
                             results={searchResults}

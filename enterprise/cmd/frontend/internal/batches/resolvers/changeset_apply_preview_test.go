@@ -33,7 +33,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
@@ -106,7 +106,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		OwnedByBatchChange: batchChange.ID,
 	})
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -259,7 +259,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
@@ -270,7 +270,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 	repo := newGitHubTestRepo("github.com/sourcegraph/test", newGitHubExternalService(t, esStore))
 	require.Nil(t, repoStore.Create(ctx, repo))
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil)
 	require.Nil(t, err)
 
 	// To make it easier to assert against the operations in a preview node,
@@ -379,7 +379,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 			t.Fatal(err)
 		}
 		q := sqlf.Sprintf(`UPDATE changeset_specs SET spec = %s WHERE id = %s`, spec, newFx.specPublished.ID)
-		if _, err := db.ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+		if _, err := db.Exec(q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
 
@@ -407,6 +407,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		assertOperations(t, previews, newFx.specToBeDraft, publishDraftOps)
 		assertOperations(t, previews, newFx.specToBeUnpublished, noOps)
 		assertOperations(t, previews, newFx.specToBeOmitted, noOps)
+
 	})
 
 	t.Run("conflicting publication state", func(t *testing.T) {

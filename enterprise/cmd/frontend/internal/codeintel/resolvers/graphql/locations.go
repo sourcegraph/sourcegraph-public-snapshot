@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -44,9 +45,9 @@ type cachedCommitResolver struct {
 }
 
 // NewCachedLocationResolver creates a location resolver with an empty cache.
-func NewCachedLocationResolver(db database.DB) *CachedLocationResolver {
+func NewCachedLocationResolver(db dbutil.DB) *CachedLocationResolver {
 	return &CachedLocationResolver{
-		db:       db,
+		db:       database.NewDB(db),
 		children: map[api.RepoID]*cachedRepositoryResolver{},
 	}
 }

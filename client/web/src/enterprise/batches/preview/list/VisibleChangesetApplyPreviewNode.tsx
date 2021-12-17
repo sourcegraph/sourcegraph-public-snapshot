@@ -12,7 +12,6 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
-import { Badge } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetState, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
@@ -516,12 +515,12 @@ const References: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFi
             {spec.delta.baseRefChanged &&
                 spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate' &&
                 spec.targets.changeset.currentSpec?.description.__typename === 'GitBranchChangesetDescription' && (
-                    <Badge variant="danger" className="mr-2" as="del">
+                    <del className="badge badge-danger mr-2">
                         {spec.targets.changeset.currentSpec?.description.baseRef}
-                    </Badge>
+                    </del>
                 )}
-            <Badge variant="primary">{spec.targets.changesetSpec.description.baseRef}</Badge> &larr;{' '}
-            <Badge variant="primary">{spec.targets.changesetSpec.description.headRef}</Badge>
+            <span className="badge badge-primary">{spec.targets.changesetSpec.description.baseRef}</span> &larr;{' '}
+            <span className="badge badge-primary">{spec.targets.changesetSpec.description.headRef}</span>
         </div>
     )
 }

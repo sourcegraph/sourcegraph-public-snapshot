@@ -14,6 +14,8 @@ import (
 )
 
 type awsConfig struct {
+	env.BaseConfig
+
 	MetricNamespace string
 	Region          string
 	Endpoint        string

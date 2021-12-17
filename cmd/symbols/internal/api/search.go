@@ -8,7 +8,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -18,7 +17,7 @@ import (
 const searchTimeout = 60 * time.Second
 
 func (h *apiHandler) handleSearchInternal(ctx context.Context, args types.SearchArgs) (_ *result.Symbols, err error) {
-	ctx, trace, endObservation := h.operations.search.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, traceLog, endObservation := h.operations.search.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(args.Repo)),
 		log.String("commitID", string(args.CommitID)),
 		log.String("query", args.Query),
@@ -29,13 +28,7 @@ func (h *apiHandler) handleSearchInternal(ctx context.Context, args types.Search
 		log.String("excludePattern", args.ExcludePattern),
 		log.Int("first", args.First),
 	}})
-	defer func() {
-		endObservation(1, observation.Args{
-			MetricLabelValues: []string{observability.GetParseAmount(ctx)},
-			LogFields:         []log.Field{log.String("parseAmount", observability.GetParseAmount(ctx))},
-		})
-	}()
-	ctx = observability.SeedParseAmount(ctx)
+	defer endObservation(1, observation.Args{})
 
 	ctx, cancel := context.WithTimeout(ctx, searchTimeout)
 	defer cancel()
@@ -44,7 +37,7 @@ func (h *apiHandler) handleSearchInternal(ctx context.Context, args types.Search
 	if err != nil {
 		return nil, errors.Wrap(err, "databaseWriter.GetOrCreateDatabaseFile")
 	}
-	trace.Log(log.String("dbFile", dbFile))
+	traceLog(log.String("dbFile", dbFile))
 
 	var results result.Symbols
 	err = store.WithSQLiteStore(dbFile, func(db store.Store) (err error) {

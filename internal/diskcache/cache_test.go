@@ -6,8 +6,6 @@ import (
 	"io"
 	"os"
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestOpen(t *testing.T) {
@@ -17,10 +15,9 @@ func TestOpen(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	store := &store{
-		dir:       dir,
-		component: "test",
-		observe:   newOperations(&observation.TestContext, "test"),
+	store := &Store{
+		Dir:       dir,
+		Component: "test",
 	}
 
 	do := func() (*File, bool) {

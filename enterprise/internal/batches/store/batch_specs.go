@@ -180,8 +180,6 @@ DELETE FROM batch_specs WHERE id = %s
 // counting batch specs.
 type CountBatchSpecsOpts struct {
 	BatchChangeID int64
-
-	ExcludeCreatedFromRawNotOwnedByUser int32
 }
 
 // CountBatchSpecs returns the number of code mods in the database.
@@ -196,7 +194,7 @@ func (s *Store) CountBatchSpecs(ctx context.Context, opts CountBatchSpecsOpts) (
 
 var countBatchSpecsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:CountBatchSpecs
-SELECT COUNT(batch_specs.id)
+SELECT COUNT(id)
 FROM batch_specs
 -- Joins go here:
 %s
@@ -218,10 +216,6 @@ ON
 		preds = append(preds, sqlf.Sprintf("batch_changes.id = %s", opts.BatchChangeID))
 	}
 
-	if opts.ExcludeCreatedFromRawNotOwnedByUser != 0 {
-		preds = append(preds, sqlf.Sprintf("(batch_specs.user_id = %s OR batch_specs.created_from_raw IS FALSE)", opts.ExcludeCreatedFromRawNotOwnedByUser))
-	}
-
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
@@ -237,8 +231,6 @@ ON
 type GetBatchSpecOpts struct {
 	ID     int64
 	RandID string
-
-	ExcludeCreatedFromRawNotOwnedByUser int32
 }
 
 // GetBatchSpec gets a BatchSpec matching the given options.
@@ -281,10 +273,6 @@ func getBatchSpecQuery(opts *GetBatchSpecOpts) *sqlf.Query {
 
 	if opts.RandID != "" {
 		preds = append(preds, sqlf.Sprintf("rand_id = %s", opts.RandID))
-	}
-
-	if opts.ExcludeCreatedFromRawNotOwnedByUser != 0 {
-		preds = append(preds, sqlf.Sprintf("(user_id = %s OR created_from_raw IS FALSE)", opts.ExcludeCreatedFromRawNotOwnedByUser))
 	}
 
 	if len(preds) == 0 {
@@ -372,8 +360,6 @@ type ListBatchSpecsOpts struct {
 	LimitOpts
 	Cursor        int64
 	BatchChangeID int64
-
-	ExcludeCreatedFromRawNotOwnedByUser int32
 }
 
 // ListBatchSpecs lists BatchSpecs with the given filters.
@@ -407,7 +393,7 @@ SELECT %s FROM batch_specs
 -- Joins go here:
 %s
 WHERE %s
-ORDER BY batch_specs.id ASC
+ORDER BY id ASC
 `
 
 func listBatchSpecsQuery(opts *ListBatchSpecsOpts) *sqlf.Query {
@@ -425,10 +411,6 @@ ON
 	AND
 	batch_changes.namespace_org_id IS NOT DISTINCT FROM batch_specs.namespace_org_id`))
 		preds = append(preds, sqlf.Sprintf("batch_changes.id = %s", opts.BatchChangeID))
-	}
-
-	if opts.ExcludeCreatedFromRawNotOwnedByUser != 0 {
-		preds = append(preds, sqlf.Sprintf("(batch_specs.user_id = %s OR batch_specs.created_from_raw IS FALSE)", opts.ExcludeCreatedFromRawNotOwnedByUser))
 	}
 
 	return sqlf.Sprintf(

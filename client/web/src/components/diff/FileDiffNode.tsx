@@ -9,7 +9,6 @@ import { Observable } from 'rxjs'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Badge } from '@sourcegraph/wildcard'
 
 import { FileDiffFields } from '../../graphql-operations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
@@ -108,20 +107,12 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                         )}
                     </button>
                     <div className={classNames('align-items-baseline', styles.headerPathStat)}>
-                        {!node.oldPath && (
-                            <Badge variant="success" className="text-uppercase mr-2">
-                                Added
-                            </Badge>
-                        )}
-                        {!node.newPath && (
-                            <Badge variant="danger" className="text-uppercase mr-2">
-                                Deleted
-                            </Badge>
-                        )}
+                        {!node.oldPath && <span className="badge badge-success text-uppercase mr-2">Added</span>}
+                        {!node.newPath && <span className="badge badge-danger text-uppercase mr-2">Deleted</span>}
                         {node.newPath && node.oldPath && node.newPath !== node.oldPath && (
-                            <Badge variant="warning" className="text-uppercase mr-2">
+                            <span className="badge badge-warning text-uppercase mr-2">
                                 {dirname(node.newPath) !== dirname(node.oldPath) ? 'Moved' : 'Renamed'}
-                            </Badge>
+                            </span>
                         )}
                         {stat}
                         <Link to={{ ...location, hash: anchor }} className={classNames('ml-2', styles.headerPath)}>

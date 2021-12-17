@@ -28,7 +28,7 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
         unpublished: 4,
     },
     createdAt: subDays(now, 5).toISOString(),
-    creator: {
+    initialApplier: {
         url: '/users/alice',
         username: 'alice',
     },

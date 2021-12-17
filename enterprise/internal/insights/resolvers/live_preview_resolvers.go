@@ -4,9 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -23,8 +20,8 @@ func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbac
 	}
 
 	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
-	interval := timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(args.Input.TimeScope.StepInterval.Unit),
+	interval := query.TimeInterval{
+		Unit:  args.Input.TimeScope.StepInterval.Unit,
 		Value: int(args.Input.TimeScope.StepInterval.Value),
 	}
 	generatedSeries, err := executor.Execute(ctx, args.Input.Query, args.Input.RepositoryScope.Repositories, interval)

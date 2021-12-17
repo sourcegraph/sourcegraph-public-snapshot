@@ -3,7 +3,6 @@ package usagestats
 import (
 	"context"
 
-	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -51,15 +50,16 @@ func GetRepositories(ctx context.Context) (*Repositories, error) {
 		return &total, nil
 	}
 
-	opts := &zoekt.ListOptions{Minimal: true}
-	repos, err := search.Indexed().List(ctx, &query.Const{Value: true}, opts)
+	repos, err := search.Indexed().List(ctx, &query.Const{Value: true}, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	total.NewLinesCount = repos.Stats.NewLinesCount
-	total.DefaultBranchNewLinesCount = repos.Stats.DefaultBranchNewLinesCount
-	total.OtherBranchesNewLinesCount = repos.Stats.OtherBranchesNewLinesCount
+	for _, repo := range repos.Repos {
+		total.NewLinesCount += repo.Stats.NewLinesCount
+		total.DefaultBranchNewLinesCount += repo.Stats.DefaultBranchNewLinesCount
+		total.OtherBranchesNewLinesCount += repo.Stats.OtherBranchesNewLinesCount
+	}
 
 	return &total, nil
 }

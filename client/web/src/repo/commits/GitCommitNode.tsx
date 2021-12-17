@@ -192,10 +192,10 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
             <Link
                 className="btn btn-sm btn-outline-secondary align-center d-inline-flex"
                 to={node.tree.canonicalURL}
-                data-tooltip="Browse files in the repository at this point in history"
+                data-tooltip="View files at this commit"
             >
                 <FileDocumentIcon className="icon-inline mr-1" />
-                Browse files at @{node.abbreviatedOID}
+                View files in commit
             </Link>
             {diffModeSelector()}
         </div>

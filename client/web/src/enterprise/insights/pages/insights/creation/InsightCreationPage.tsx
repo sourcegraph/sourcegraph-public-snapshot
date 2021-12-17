@@ -11,14 +11,12 @@ import { InsightDashboard, isVirtualDashboard, Insight } from '../../../core/typ
 import { isUserSubject } from '../../../core/types/subjects'
 import { useQueryParameters } from '../../../hooks/use-query-parameters'
 
-import { CaptureGroupCreationPage } from './capture-group/CaptureGroupCreationPage'
 import { LangStatsInsightCreationPage } from './lang-stats/LangStatsInsightCreationPage'
 import { SearchInsightCreationPage } from './search-insight/SearchInsightCreationPage'
 
 export enum InsightCreationPageType {
     LangStats = 'lang-stats',
     Search = 'search-based',
-    CaptureGroup = 'capture-group',
 }
 
 const getVisibilityFromDashboard = (dashboard: InsightDashboard | null): string | undefined => {
@@ -46,9 +44,11 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
     const { mode, telemetryService } = props
 
     const history = useHistory()
-    const { getDashboardById, getInsightSubjects, createInsight } = useContext(CodeInsightsBackendContext)
 
     const { dashboardId } = useQueryParameters(['dashboardId'])
+
+    const { getDashboardById, getInsightSubjects, createInsight } = useContext(CodeInsightsBackendContext)
+
     const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
     const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
 
@@ -90,17 +90,6 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
     const personalVisibility = subjects.find(isUserSubject)?.id ?? ''
     const dashboardBasedVisibility = getVisibilityFromDashboard(dashboard)
     const insightVisibility = dashboardBasedVisibility ?? personalVisibility
-
-    if (mode === InsightCreationPageType.CaptureGroup) {
-        return (
-            <CaptureGroupCreationPage
-                telemetryService={telemetryService}
-                onInsightCreateRequest={handleInsightCreateRequest}
-                onSuccessfulCreation={handleInsightSuccessfulCreation}
-                onCancel={handleCancel}
-            />
-        )
-    }
 
     if (mode === InsightCreationPageType.Search) {
         return (

@@ -1,12 +1,4 @@
-# DevX team crons.
-#
-# Configure here: https://buildkite.com/sourcegraph/devx-cron/settings/schedules
-# Condition various cron jobs on `build.message`. Each cron schedule can set a custom
-# "Build Message" to trigger the correct step(s).
-
 steps:
-  - label: ":buildkite: :bar_chart: Report CI red time for the main branch"
-    if: build.message == "report-red-time"
-    command:
-      - dev/bkstats/run.sh
-    agents: { queue: standard }
+  - command:
+      - $REPORT_SCRIPT
+    label: $REPORT_LABEL

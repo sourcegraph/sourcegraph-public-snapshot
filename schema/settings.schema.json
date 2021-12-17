@@ -189,14 +189,6 @@
           "!go": {
             "pointer": true
           }
-        },
-        "enableSearchStack": {
-          "description": "Enables search stack",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
         }
       },
       "group": "Experimental"

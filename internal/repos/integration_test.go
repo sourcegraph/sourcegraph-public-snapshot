@@ -2,6 +2,7 @@ package repos_test
 
 import (
 	"database/sql"
+	"flag"
 	"testing"
 
 	"github.com/cockroachdb/errors"
@@ -17,6 +18,8 @@ import (
 // roll-back the transaction a test case executes in.
 // This is meant to ensure each test case has a clean slate.
 var errRollback = errors.New("tx: rollback")
+
+var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
 func TestIntegration(t *testing.T) {
 	if testing.Short() {
@@ -41,14 +44,13 @@ func TestIntegration(t *testing.T) {
 		{"Syncer/MultipleServices", testSyncerMultipleServices},
 		{"Syncer/OrphanedRepos", testOrphanedRepo},
 		{"Syncer/DeleteExternalService", testDeleteExternalService},
-		{"Syncer/AbortSyncWhenThereIsRepoLimitError", testAbortSyncWhenThereIsRepoLimitError},
 		{"Syncer/UserAddedRepos", testUserAddedRepos},
 		{"Syncer/NameConflictOnRename", testNameOnConflictOnRename},
 		{"Syncer/ConflictingSyncers", testConflictingSyncers},
 		{"Syncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			db := dbtest.NewDB(t)
+			db := dbtest.NewFromDSN(t, *dsn)
 
 			store := repos.NewStore(db, sql.TxOptions{Isolation: sql.LevelReadCommitted})
 

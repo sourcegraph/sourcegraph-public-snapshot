@@ -2,7 +2,6 @@ import classNames from 'classnames'
 import React, { useContext, useMemo } from 'react'
 
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { ApplyPreviewStatsFields, DiffStatFields, Scalars } from '../../../graphql-operations'
@@ -57,9 +56,7 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<BatchChangePrev
     return (
         <div className="d-flex flex-wrap mb-3 align-items-center">
             <h2 className="m-0 align-self-center">
-                <Badge variant="info" className="text-uppercase mb-0">
-                    Preview
-                </Badge>
+                <span className="badge badge-info text-uppercase mb-0">Preview</span>
             </h2>
             <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'd-none d-sm-block mx-3')} />
             <DiffStatStack className={styles.batchChangePreviewStatsBarDiff} {...diffStat} />

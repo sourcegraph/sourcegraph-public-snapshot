@@ -114,9 +114,7 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 				}
 
 				atomic.AddUint32(&totalRequests, 1)
-				if err := p.handleParseRequest(ctx, symbolOrErrors, parseRequestOrError.ParseRequest, &totalSymbols); err != nil {
-					log15.Error("error handling parse request", "error", err, "path", parseRequestOrError.ParseRequest.Path)
-				}
+				_ = p.handleParseRequest(ctx, symbolOrErrors, parseRequestOrError.ParseRequest, &totalSymbols)
 			}
 		}()
 	}
@@ -125,8 +123,7 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 }
 
 func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- SymbolOrError, parseRequest fetcher.ParseRequest, totalSymbols *uint32) (err error) {
-	ctx, trace, endObservation := p.operations.handleParseRequest.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("path", parseRequest.Path),
+	ctx, traceLog, endObservation := p.operations.handleParseRequest.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("fileSize", len(parseRequest.Data)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -135,7 +132,7 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	if err != nil {
 		return err
 	}
-	trace.Log(log.Event("acquired parser from pool"))
+	traceLog(log.Event("acquired parser from pool"))
 
 	defer func() {
 		if err == nil {
@@ -162,7 +159,7 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	if err != nil {
 		return errors.Wrap(err, "parser.Parse")
 	}
-	trace.Log(log.Int("numEntries", len(entries)))
+	traceLog(log.Int("numEntries", len(entries)))
 
 	for _, e := range entries {
 		if !shouldPersistEntry(e) {

@@ -13,8 +13,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"golang.org/x/sys/unix"
-
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // A ZipCache is a shared data structure that provides efficient access to a collection of zip files.
@@ -68,7 +66,7 @@ func (c *ZipCache) Get(path string) (*ZipFile, error) {
 	return zf, nil
 }
 
-func (c *ZipCache) delete(path string, trace observation.TraceLogger) {
+func (c *ZipCache) delete(path string) {
 	shard := c.shardFor(path)
 	shard.mu.Lock()
 	defer shard.mu.Unlock()

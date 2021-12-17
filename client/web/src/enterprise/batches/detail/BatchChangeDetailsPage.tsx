@@ -114,7 +114,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 byline={
                     <BatchChangeInfoByline
                         createdAt={batchChange.createdAt}
-                        creator={batchChange.creator}
+                        initialApplier={batchChange.initialApplier}
                         lastAppliedAt={batchChange.lastAppliedAt}
                         lastApplier={batchChange.lastApplier}
                     />

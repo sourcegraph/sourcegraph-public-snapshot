@@ -53,11 +53,8 @@ package observation
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -65,7 +62,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -78,13 +74,10 @@ type Context struct {
 	Tracer       *trace.Tracer
 	Registerer   prometheus.Registerer
 	HoneyDataset *honey.Dataset
-	Sentry       *sentry.Hub
 }
 
 // TestContext is a behaviorless Context usable for unit tests.
 var TestContext = Context{Registerer: metrics.TestRegisterer}
-
-var TestOperation *Operation
 
 type ErrorFilterBehaviour uint8
 
@@ -94,7 +87,6 @@ const (
 	EmitForLogs
 	EmitForTraces
 	EmitForHoney
-	EmitForSentry
 
 	EmitForDefault = EmitForMetrics | EmitForLogs | EmitForTraces
 )
@@ -150,75 +142,11 @@ type Operation struct {
 
 // TraceLogger is returned from WithAndLogger and can be used to add timestamped key and
 // value pairs into a related opentracing span.
-type TraceLogger interface {
-	Log(fields ...log.Field)
-	Tag(fields ...log.Field)
-}
-
-var TestTraceLogger = &traceLogger{}
-
-type traceLogger struct {
-	opName string
-	event  honey.Event
-	trace  *trace.Trace
-}
-
-func (t traceLogger) Log(fields ...log.Field) {
-	if honey.Enabled() {
-		for _, field := range fields {
-			t.event.AddField(t.opName+"."+toSnakeCase(field.Key()), field.Value())
-		}
-	}
-	if t.trace != nil {
-		t.trace.LogFields(fields...)
-	}
-}
-
-func (t traceLogger) Tag(fields ...log.Field) {
-	if honey.Enabled() {
-		for _, field := range fields {
-			t.event.AddField(t.opName+"."+toSnakeCase(field.Key()), field.Value())
-		}
-	}
-	if t.trace != nil {
-		t.trace.TagFields(fields...)
-	}
-}
+type TraceLogger func(fields ...log.Field)
 
 // FinishFunc is the shape of the function returned by With and should be invoked within
-// a defer directly before the observed function returns or when a context is cancelled
-// with OnCancel.
+// a defer directly before the observed function returns.
 type FinishFunc func(count float64, args Args)
-
-// OnCancel allows for ending an observation when a context is cancelled as opposed to the
-// more common scenario of when the observed function returns through a defer. This can
-// be used for continuing an observation beyond the lifetime of a function if that function
-// returns more units of work that you want to observe as part of the original function.
-func (f FinishFunc) OnCancel(ctx context.Context, count float64, args Args) {
-	go func() {
-		<-ctx.Done()
-		f(count, args)
-	}()
-}
-
-// ErrCollector represents multiple errors and additional log fields that arose from those errors.
-type ErrCollector struct {
-	multi       *multierror.Error
-	extraFields []log.Field
-}
-
-func NewErrorCollector() *ErrCollector { return &ErrCollector{multi: &multierror.Error{}} }
-
-func (e *ErrCollector) Collect(err *error, fields ...log.Field) {
-	if err != nil && *err != nil {
-		e.multi.Errors = append(e.multi.Errors, *err)
-		e.extraFields = append(e.extraFields, fields...)
-	}
-}
-
-func (e *ErrCollector) Error() string {
-	return e.multi.Error()
-}
 
 // Args configures the observation behavior of an invocation of an operation.
 type Args struct {
@@ -250,39 +178,7 @@ func (args Args) LogFieldPairs() []interface{} {
 	return pairs
 }
 
-// WithErrors prepares the necessary timers, loggers, and metrics to observe the invocation of an
-// operation. This method returns a modified context, an multi-error capturing type and a function to be deferred until the
-// end of the operation. It can be used with FinishFunc.OnCancel to capture multiple async errors.
-func (op *Operation) WithErrors(ctx context.Context, root *error, args Args) (context.Context, *ErrCollector, FinishFunc) {
-	ctx, collector, _, endObservation := op.WithErrorsAndLogger(ctx, root, args)
-	return ctx, collector, endObservation
-}
-
-// WithErrorsAndLogger prepares the necessary timers, loggers, and metrics to observe the invocation of an
-// operation. This method returns a modified context, an multi-error capturing type, a function that will add a log field
-// to the active trace, and a function to be deferred until the end of the operation. It can be used with
-// FinishFunc.OnCancel to capture multiple async errors.
-func (op *Operation) WithErrorsAndLogger(ctx context.Context, root *error, args Args) (context.Context, *ErrCollector, TraceLogger, FinishFunc) {
-	errTracer := NewErrorCollector()
-	err := error(errTracer)
-
-	ctx, traceLogger, endObservation := op.WithAndLogger(ctx, &err, args)
-
-	// to avoid recursion stack overflow, we need a new binding
-	endFunc := endObservation
-
-	if root != nil {
-		endFunc = func(count float64, args Args) {
-			if *root != nil {
-				errTracer.multi.Errors = append(errTracer.multi.Errors, *root)
-			}
-			endObservation(count, args)
-		}
-	}
-	return ctx, errTracer, traceLogger, endFunc
-}
-
-// With prepares the necessary timers, loggers, and metrics to observe the invocation of an
+// With prepares the necessary timers, loggers, and metrics to observe the invocation  of an
 // operation. This method returns a modified context and a function to be deferred until the
 // end of the operation.
 func (op *Operation) With(ctx context.Context, err *error, args Args) (context.Context, FinishFunc) {
@@ -295,7 +191,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 // to the active trace, and a function to be deferred until the end of the operation.
 func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (context.Context, TraceLogger, FinishFunc) {
 	start := time.Now()
-	tr, ctx := op.startTrace(ctx, args)
+	tr, ctx := op.trace(ctx, args)
 
 	event := honey.NoopEvent()
 	snakecaseOpName := toSnakeCase(op.name)
@@ -307,14 +203,20 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 		})
 	}
 
-	logFields := traceLogger{
-		opName: snakecaseOpName,
-		event:  event,
-		trace:  tr,
-	}
-
-	if mergedFields := mergeLogFields(op.logFields, args.LogFields); len(mergedFields) > 0 {
-		logFields.Tag(mergedFields...)
+	var logFields TraceLogger
+	if tr != nil {
+		logFields = func(fields ...log.Field) {
+			for _, field := range fields {
+				event.AddField(snakecaseOpName+"."+toSnakeCase(field.Key()), field.Value())
+			}
+			tr.LogFields(fields...)
+		}
+	} else {
+		logFields = func(fields ...log.Field) {
+			for _, field := range fields {
+				event.AddField(snakecaseOpName+"."+toSnakeCase(field.Key()), field.Value())
+			}
+		}
 	}
 
 	if traceID := trace.ID(ctx); traceID != "" {
@@ -326,39 +228,34 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 		elapsed := since.Seconds()
 		elapsedMs := since.Milliseconds()
 		defaultFinishFields := []log.Field{log.Float64("count", count), log.Float64("elapsed", elapsed)}
-		logFields := mergeLogFields(defaultFinishFields, finishArgs.LogFields, args.LogFields)
+		logFields := mergeLogFields(defaultFinishFields, finishArgs.LogFields)
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
-
-		if multi := new(ErrCollector); err != nil && errors.As(*err, &multi) {
-			if len(multi.multi.Errors) == 0 {
-				err = nil
-			}
-			logFields = append(logFields, multi.extraFields...)
-		}
 
 		var (
 			logErr     = op.applyErrorFilter(err, EmitForLogs)
 			metricsErr = op.applyErrorFilter(err, EmitForMetrics)
 			traceErr   = op.applyErrorFilter(err, EmitForTraces)
 			honeyErr   = op.applyErrorFilter(err, EmitForHoney)
-			sentryErr  = op.applyErrorFilter(err, EmitForSentry)
 		)
 		op.emitErrorLogs(logErr, logFields)
 		op.emitHoneyEvent(honeyErr, snakecaseOpName, event, logFields, elapsedMs)
 		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
 		op.finishTrace(traceErr, tr, logFields)
-		op.emitSentryError(sentryErr, logFields)
 	}
 }
 
-// startTrace creates a new Trace object and returns the wrapped context. This returns
-// an unmodified context and a nil startTrace if no tracer was supplied on the observation context.
-func (op *Operation) startTrace(ctx context.Context, args Args) (*trace.Trace, context.Context) {
+// trace creates a new Trace object and returns the wrapped context. If any log fields are
+// attached to the operation or to the args to With, they are emitted immediately. This returns
+// an unmodified context and a nil trace if no tracer was supplied on the observation context.
+func (op *Operation) trace(ctx context.Context, args Args) (*trace.Trace, context.Context) {
 	if op.context.Tracer == nil {
 		return nil, ctx
 	}
 
 	tr, ctx := op.context.Tracer.New(ctx, op.kebabName, "")
+	if mergedFields := mergeLogFields(op.logFields, args.LogFields); len(mergedFields) > 0 {
+		tr.LogFields(mergedFields...)
+	}
 	return tr, ctx
 }
 
@@ -391,26 +288,6 @@ func (op *Operation) emitHoneyEvent(err *error, opName string, event honey.Event
 	}
 
 	event.Send()
-}
-
-// emitSentryError will send errors to Sentry.
-func (op *Operation) emitSentryError(err *error, logFields []log.Field) {
-	if err == nil || *err == nil {
-		return
-	}
-
-	if op.context.Sentry == nil {
-		return
-	}
-
-	logs := make(map[string]string)
-	for _, field := range logFields {
-		logs[field.Key()] = fmt.Sprintf("%v", field.Value())
-	}
-
-	logs["operation"] = op.name
-
-	op.context.Sentry.CaptureError(*err, logs)
 }
 
 // emitMetrics will emit observe the duration, operation/result, and error counter metrics

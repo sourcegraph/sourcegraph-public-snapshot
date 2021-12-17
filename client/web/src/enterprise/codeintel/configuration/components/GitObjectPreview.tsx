@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import React, { FunctionComponent } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
-import { Badge, LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { GitObjectType } from '../../../../graphql-operations'
 import { GitObjectPreviewResult, usePreviewGitObjectFilter } from '../hooks/usePreviewGitObjectFilter'
@@ -114,9 +114,7 @@ const GitObjectPreview: FunctionComponent<GitObjectPreviewProps> = ({
                                     <span>{tag.repoName}</span>
                                     <span className="search-filter-keyword">@</span>
                                     <span>{tag.name}</span>
-                                    <Badge variant="info" className="ml-4">
-                                        {tag.rev.slice(0, 7)}
-                                    </Badge>
+                                    <span className="badge badge-info ml-4">{tag.rev.slice(0, 7)}</span>
                                 </p>
                             ))}
                         </div>

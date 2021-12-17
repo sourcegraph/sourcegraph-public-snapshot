@@ -29,7 +29,7 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
@@ -74,7 +74,7 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 		changesetSpecs = append(changesetSpecs, s)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -507,7 +507,6 @@ type mockChangesetApplyPreviewResolver struct {
 func (r *mockChangesetApplyPreviewResolver) ToHiddenChangesetApplyPreview() (graphqlbackend.HiddenChangesetApplyPreviewResolver, bool) {
 	return r.hidden, r.hidden != nil
 }
-
 func (r *mockChangesetApplyPreviewResolver) ToVisibleChangesetApplyPreview() (graphqlbackend.VisibleChangesetApplyPreviewResolver, bool) {
 	return r.visible, r.visible != nil
 }
@@ -519,11 +518,9 @@ type mockHiddenChangesetApplyPreviewResolver struct{}
 func (*mockHiddenChangesetApplyPreviewResolver) Operations(context.Context) ([]string, error) {
 	return nil, errors.New("hidden changeset")
 }
-
 func (*mockHiddenChangesetApplyPreviewResolver) Delta(context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
 	return nil, errors.New("hidden changeset")
 }
-
 func (*mockHiddenChangesetApplyPreviewResolver) Targets() graphqlbackend.HiddenApplyPreviewTargetsResolver {
 	return nil
 }
@@ -545,11 +542,9 @@ func (r *mockVisibleChangesetApplyPreviewResolver) Operations(context.Context) (
 	}
 	return strOps, r.operationsErr
 }
-
 func (r *mockVisibleChangesetApplyPreviewResolver) Delta(context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
 	return r.delta, r.deltaErr
 }
-
 func (r *mockVisibleChangesetApplyPreviewResolver) Targets() graphqlbackend.VisibleApplyPreviewTargetsResolver {
 	return r.targets
 }

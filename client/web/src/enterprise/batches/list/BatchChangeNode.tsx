@@ -4,7 +4,6 @@ import React from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-import { Badge } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../components/time/Timestamp'
 import { ListBatchChange } from '../../../graphql-operations'
@@ -34,14 +33,10 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
     <>
         <span className={styles.batchChangeNodeSeparator} />
         {!node.closedAt && (
-            <Badge variant="success" className={classNames(styles.batchChangeNodeBadge, 'text-uppercase')}>
-                Open
-            </Badge>
+            <span className={classNames(styles.batchChangeNodeBadge, 'badge badge-success text-uppercase')}>Open</span>
         )}
         {node.closedAt && (
-            <Badge variant="danger" className={classNames(styles.batchChangeNodeBadge, 'text-uppercase')}>
-                Closed
-            </Badge>
+            <span className={classNames(styles.batchChangeNodeBadge, 'badge badge-danger text-uppercase')}>Closed</span>
         )}
         <div className={styles.batchChangeNodeContent}>
             <div className="m-0 d-md-flex d-block align-items-baseline">

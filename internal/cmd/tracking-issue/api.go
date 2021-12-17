@@ -58,7 +58,7 @@ func makeQueries(org string, trackingIssues []*Issue) (queries []string) {
 	var rawTerms [][]string
 	for _, trackingIssue := range trackingIssues {
 		var labelTerms []string
-		for _, label := range trackingIssue.IdentifyingLabels() {
+		for _, label := range nonTrackingLabels(trackingIssue.Labels) {
 			labelTerms = append(labelTerms, fmt.Sprintf("label:%q", label))
 		}
 

@@ -18,6 +18,7 @@ import {
     UserSettingsAreaUserProfileResult,
     UserSettingsAreaUserProfileVariables,
 } from '../../graphql-operations'
+import { OnboardingTourProps } from '../../search'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { RouteDescriptor } from '../../util/contributions'
@@ -36,6 +37,7 @@ export interface UserSettingsAreaProps
         RouteComponentProps<{}>,
         ThemeProps,
         TelemetryProps,
+        OnboardingTourProps,
         UserExternalServicesOrRepositoriesUpdateProps {
     authenticatedUser: AuthenticatedUser
     sideBarItems: UserSettingsSidebarItems

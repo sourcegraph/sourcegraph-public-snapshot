@@ -15,13 +15,13 @@ type CreateBatchChanger interface {
 
 func BuildBatchChange(store CreateBatchChanger, name string, userID int32, spec int64) *btypes.BatchChange {
 	b := &btypes.BatchChange{
-		CreatorID:       userID,
-		LastApplierID:   userID,
-		LastAppliedAt:   store.Clock()(),
-		NamespaceUserID: userID,
-		BatchSpecID:     spec,
-		Name:            name,
-		Description:     "batch change description",
+		InitialApplierID: userID,
+		LastApplierID:    userID,
+		LastAppliedAt:    store.Clock()(),
+		NamespaceUserID:  userID,
+		BatchSpecID:      spec,
+		Name:             name,
+		Description:      "batch change description",
 	}
 	return b
 }

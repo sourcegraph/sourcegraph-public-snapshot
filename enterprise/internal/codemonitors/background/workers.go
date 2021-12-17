@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -244,7 +245,7 @@ func (r *actionRunner) handleEmail(ctx context.Context, j *cm.ActionJob) error {
 		return errors.Wrap(err, "ListRecipients")
 	}
 
-	data, err := NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
+	data, err := email.NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
 	if err != nil {
 		return errors.Wrap(err, "NewTemplateDataForNewSearchResults")
 	}
@@ -256,7 +257,7 @@ func (r *actionRunner) handleEmail(ctx context.Context, j *cm.ActionJob) error {
 		if rec.NamespaceUserID == nil {
 			return errors.New("nil recipient")
 		}
-		err = SendEmailForNewSearchResult(ctx, *rec.NamespaceUserID, data)
+		err = email.SendEmailForNewSearchResult(ctx, *rec.NamespaceUserID, data)
 		if err != nil {
 			return err
 		}
@@ -265,91 +266,11 @@ func (r *actionRunner) handleEmail(ctx context.Context, j *cm.ActionJob) error {
 }
 
 func (r *actionRunner) handleWebhook(ctx context.Context, j *cm.ActionJob) error {
-	s, err := r.CodeMonitorStore.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = s.Done(err) }()
-
-	m, err := s.GetActionJobMetadata(ctx, j.ID)
-	if err != nil {
-		return errors.Wrap(err, "GetActionJobMetadata")
-	}
-
-	w, err := s.GetSlackWebhookAction(ctx, *j.SlackWebhook)
-	if err != nil {
-		return errors.Wrap(err, "GetSlackWebhookAction")
-	}
-
-	utmSource := "code-monitor-slack-webhook"
-	searchURL, err := getSearchURL(ctx, m.Query, utmSource)
-	if err != nil {
-		return errors.Wrap(err, "GetSearchURL")
-	}
-
-	codeMonitorURL, err := getCodeMonitorURL(ctx, w.Monitor, utmSource)
-	if err != nil {
-		return errors.Wrap(err, "GetCodeMonitorURL")
-	}
-
-	args := actionArgs{
-		MonitorDescription: m.Description,
-		MonitorURL:         codeMonitorURL,
-		Query:              m.Query,
-		QueryURL:           searchURL,
-		NumResults:         zeroOrVal(m.NumResults),
-	}
-
-	return sendWebhookNotification(ctx, w.URL, args)
+	panic("unimplemented")
 }
 
 func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *cm.ActionJob) error {
-	s, err := r.CodeMonitorStore.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = s.Done(err) }()
-
-	m, err := s.GetActionJobMetadata(ctx, j.ID)
-	if err != nil {
-		return errors.Wrap(err, "GetActionJobMetadata")
-	}
-
-	w, err := s.GetSlackWebhookAction(ctx, *j.SlackWebhook)
-	if err != nil {
-		return errors.Wrap(err, "GetSlackWebhookAction")
-	}
-
-	utmSource := "code-monitor-slack-webhook"
-	searchURL, err := getSearchURL(ctx, m.Query, utmSource)
-	if err != nil {
-		return errors.Wrap(err, "GetSearchURL")
-	}
-
-	codeMonitorURL, err := getCodeMonitorURL(ctx, w.Monitor, utmSource)
-	if err != nil {
-		return errors.Wrap(err, "GetCodeMonitorURL")
-	}
-
-	args := actionArgs{
-		MonitorDescription: m.Description,
-		MonitorURL:         codeMonitorURL,
-		Query:              m.Query,
-		QueryURL:           searchURL,
-		NumResults:         zeroOrVal(m.NumResults),
-	}
-
-	return sendSlackNotification(ctx, w.URL, args)
-}
-
-type StatusCodeError struct {
-	Code   int
-	Status string
-	Body   string
-}
-
-func (s StatusCodeError) Error() string {
-	return fmt.Sprintf("non-200 response %d %s with body %q", s.Code, s.Status, s.Body)
+	panic("unimplemented")
 }
 
 // newQueryWithAfterFilter constructs a new query which finds search results

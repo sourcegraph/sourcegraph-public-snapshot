@@ -36,7 +36,7 @@ export interface StreamingSearchResultsListProps
     extends ThemeProps,
         SettingsCascadeProps,
         TelemetryProps,
-        Pick<SearchContextProps, 'searchContextsEnabled'> {
+        Pick<SearchContextProps, 'searchContextsEnabled' | 'showSearchContext'> {
     isSourcegraphDotCom: boolean
     results?: AggregateStreamingSearchResults
     location: H.Location
@@ -54,6 +54,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     isLightTheme,
     isSourcegraphDotCom,
     searchContextsEnabled,
+    showSearchContext,
 }) => {
     const [itemsToShow, setItemsToShow] = useState(initialItemsToShow)
     const onBottomHit = useCallback(
@@ -144,6 +145,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                         {results?.state === 'complete' && results?.results.length === 0 && (
                             <NoResultsPage
                                 searchContextsEnabled={searchContextsEnabled}
+                                showSearchContext={showSearchContext}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 isLightTheme={isLightTheme}
                                 telemetryService={telemetryService}

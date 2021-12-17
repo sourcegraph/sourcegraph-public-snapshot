@@ -13,19 +13,14 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations/migrators"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -35,14 +30,7 @@ import (
 const addr = ":3189"
 
 // Start runs the worker. This method does not return.
-func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrations func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error) {
-	registerMigrations := composeRegisterMigrations(migrators.RegisterOSSMigrations, registerEnterpriseMigrations)
-
-	builtins := map[string]job.Job{
-		"webhook-log-janitor":    webhooks.NewJanitor(),
-		"out-of-band-migrations": migrations.NewMigrator(registerMigrations),
-	}
-
+func Start(additionalJobs map[string]job.Job) {
 	jobs := map[string]job.Job{}
 	for name, job := range builtins {
 		jobs[name] = job
@@ -257,18 +245,4 @@ func jobNames(jobs map[string]job.Job) []string {
 	sort.Strings(names)
 
 	return names
-}
-
-func composeRegisterMigrations(fns ...func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error) func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-	return func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
-		for _, fn := range fns {
-			if fn != nil {
-				if err := fn(db, outOfBandMigrationRunner); err != nil {
-					return err
-				}
-			}
-		}
-
-		return nil
-	}
 }

@@ -48,7 +48,3 @@ var searchContextsSchema string
 // organization repositories.
 //go:embed org.graphql
 var orgSchema string
-
-// notebooksSchema is the Notebooks raw graqhql schema.
-//go:embed notebooks.graphql
-var notebooksSchema string

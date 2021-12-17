@@ -29,24 +29,14 @@ export const observeResize = (target: HTMLElement): Observable<ResizeObserverEnt
 }
 
 interface ObserveQuerySelectorInit {
-    /**
-     * Any valid HTML/CSS selector
-     */
     selector: string
-    /**
-     * Timeout in milliseconds
-     */
-    timeout: number
-    /**
-     * Target element to observe for changes.
-     * Default is document
-     */
+    timeoutMs: number
     target?: HTMLElement
 }
 
 class ElementNotFoundError extends Error {
     public readonly name = 'ElementNotFoundError'
-    constructor({ selector, timeout: timeoutMs }: ObserveQuerySelectorInit) {
+    constructor({ selector, timeoutMs }: ObserveQuerySelectorInit) {
         super(`Could not find element with selector ${selector} within ${timeoutMs}ms.`)
     }
 }
@@ -55,22 +45,24 @@ class ElementNotFoundError extends Error {
  * Returns an observable that emits when an element that matches `selector` is found.
  * Errors out if the selector doesn't yield an element by `timeoutMs`
  */
-export const observeQuerySelector = ({ selector, timeout, target }: ObserveQuerySelectorInit): Observable<Element> =>
+export const observeQuerySelector = ({ selector, timeoutMs, target }: ObserveQuerySelectorInit): Observable<Element> =>
     new Observable(function subscribe(observer) {
         const targetElement = target ?? document
-        const intervalId = setInterval(() => {
-            const element = targetElement.querySelector(selector)
-            if (element) {
-                observer.next(element)
-                observer.complete()
-            }
-        }, Math.min(100, timeout))
-
+        const intervalId = setInterval(
+            () => {
+                const element = targetElement.querySelector(selector)
+                if (element) {
+                    observer.next(element)
+                    observer.complete()
+                }
+            },
+            timeoutMs > 100 ? 100 : timeoutMs
+        )
         const timeoutId = setTimeout(() => {
             clearInterval(intervalId)
             // If the element still hasn't appeared, call error handler.
             observer.error(ElementNotFoundError)
-        }, timeout)
+        }, timeoutMs)
 
         return function unsubscribe() {
             clearTimeout(timeoutId)

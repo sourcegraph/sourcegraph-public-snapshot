@@ -129,7 +129,7 @@ func TestGetIndexOptions(t *testing.T) {
 		},
 	}, {
 		name: "conf index branches",
-		conf: withBranches(schema.SiteConfiguration{}, REPO, "a", "", "b"),
+		conf: withBranches(schema.SiteConfiguration{}, REPO, "a"),
 		repo: REPO,
 		want: zoektIndexOptions{
 			RepoID:  1,
@@ -138,7 +138,6 @@ func TestGetIndexOptions(t *testing.T) {
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
 				{Name: "a", Version: "!a"},
-				{Name: "b", Version: "!b"},
 			},
 		},
 	}, {

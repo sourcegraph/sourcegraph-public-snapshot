@@ -63,11 +63,5 @@ func New(prefix, currentUser string, getenv func(string) string) string {
 		dsn.RawQuery = qry.Encode()
 	}
 
-	if tz := env("PGTZ"); tz != "" {
-		qry := dsn.Query()
-		qry.Set("timezone", tz)
-		dsn.RawQuery = qry.Encode()
-	}
-
 	return dsn.String()
 }

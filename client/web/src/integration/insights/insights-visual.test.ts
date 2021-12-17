@@ -19,7 +19,9 @@ describe('[VISUAL] Code insights page', () => {
     let testContext: WebIntegrationTestContext
 
     before(async () => {
-        driver = await createDriverForTest()
+        driver = await createDriverForTest({
+            defaultViewport: { width: 1920 },
+        })
     })
 
     after(() => driver?.close())
@@ -199,15 +201,5 @@ describe('[VISUAL] Code insights page', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
         await takeChartSnapshot('Code insights page with all types of insight')
-    })
-
-    describe('Add dashboard page', () => {
-        it('is styled correctly', async () => {
-            overrideGraphQLExtensions({ testContext })
-            await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/add-dashboard')
-            await driver.page.waitForSelector('input[name="name"]')
-
-            await percySnapshotWithVariants(driver.page, 'Code insights add new dashboard page')
-        })
     })
 })

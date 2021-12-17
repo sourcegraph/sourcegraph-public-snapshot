@@ -43,6 +43,15 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
             )}
             key={`${item.repository.id}_${item.branch.target.oid}_${item.path || '/'}`}
         >
+            <button
+                className="btn p-0 m-0 mr-2"
+                disabled={toBeExcluded}
+                data-tooltip={toBeExcluded ? undefined : 'Omit this repository from batch spec file'}
+                type="button"
+                onClick={handleExclude}
+            >
+                <CloseIcon className="icon-inline" />
+            </button>
             <div className={classNames(styles.statusContainer, 'mr-2')}>
                 <StatusIcon status={toBeExcluded ? 'to-exclude' : item.cachedResultFound ? 'cached' : 'none'} />
             </div>
@@ -51,25 +60,18 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
                     className={classNames(styles.link, styles.overflow, (toBeExcluded || isStale) && styles.linkStale)}
                     to={item.branch.url}
                 >
-                    {item.repository.name}
+                    {item.repository.name}:{item.branch.abbrevName}
                 </Link>
                 {item.path !== '' && item.path !== '/' ? (
                     <span className={classNames(styles.overflow, 'd-block text-muted')}>{item.path}</span>
                 ) : null}
-                <div className="d-flex align-items-center text-muted text-monospace mt-1">
-                    <SourceBranchIcon className="icon-inline mr-1" />
-                    <small>{item.branch.displayName}</small>
-                </div>
+                {item.branch.id !== item.repository.defaultBranch?.id ? (
+                    <div className="d-flex align-items-center text-muted">
+                        <SourceBranchIcon className="icon-inline mr-1" />
+                        {item.branch.displayName}
+                    </div>
+                ) : null}
             </div>
-            <button
-                className="btn p-0 my-0 mx-2"
-                disabled={toBeExcluded}
-                data-tooltip={toBeExcluded ? undefined : 'Omit this repository from batch spec file'}
-                type="button"
-                onClick={handleExclude}
-            >
-                <CloseIcon className="icon-inline" />
-            </button>
         </li>
     )
 }

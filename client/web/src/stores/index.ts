@@ -11,9 +11,4 @@
 
 export { useNavbarQueryState, setQueryStateFromURL, setQueryStateFromSettings } from './navbarSearchQueryState'
 export { useThemeState } from './themeState'
-export {
-    useExperimentalFeatures,
-    getExperimentalFeatures,
-    setExperimentalFeaturesFromSettings,
-} from './experimentalFeatures'
-export { useSearchStackState, useSearchStack } from './searchStack'
+export { useExperimentalFeatures, setExperimentalFeaturesFromSettings } from './experimentalFeatures'

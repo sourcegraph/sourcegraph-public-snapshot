@@ -25,9 +25,9 @@ type CodeMonitorsResolver interface {
 }
 
 type MonitorConnectionResolver interface {
-	Nodes() []MonitorResolver
-	TotalCount() int32
-	PageInfo() *graphqlutil.PageInfo
+	Nodes(ctx context.Context) ([]MonitorResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
 type MonitorResolver interface {
@@ -52,9 +52,9 @@ type MonitorQueryResolver interface {
 }
 
 type MonitorTriggerEventConnectionResolver interface {
-	Nodes() []MonitorTriggerEventResolver
-	TotalCount() int32
-	PageInfo() *graphqlutil.PageInfo
+	Nodes(ctx context.Context) ([]MonitorTriggerEventResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
 type MonitorTriggerEventResolver interface {
@@ -66,16 +66,13 @@ type MonitorTriggerEventResolver interface {
 }
 
 type MonitorActionConnectionResolver interface {
-	Nodes() []MonitorAction
-	TotalCount() int32
-	PageInfo() *graphqlutil.PageInfo
+	Nodes(ctx context.Context) ([]MonitorAction, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
 type MonitorAction interface {
-	ID() graphql.ID
 	ToMonitorEmail() (MonitorEmailResolver, bool)
-	ToMonitorWebhook() (MonitorWebhookResolver, bool)
-	ToMonitorSlackWebhook() (MonitorSlackWebhookResolver, bool)
 }
 
 type MonitorEmailResolver interface {
@@ -87,34 +84,20 @@ type MonitorEmailResolver interface {
 	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
 }
 
-type MonitorWebhookResolver interface {
-	ID() graphql.ID
-	Enabled() bool
-	URL() string
-	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
-}
-
-type MonitorSlackWebhookResolver interface {
-	ID() graphql.ID
-	Enabled() bool
-	URL() string
-	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
-}
-
 type MonitorEmailRecipient interface {
 	ToUser() (*UserResolver, bool)
 }
 
 type MonitorActionEmailRecipientsConnectionResolver interface {
-	Nodes() []NamespaceResolver
-	TotalCount() int32
-	PageInfo() *graphqlutil.PageInfo
+	Nodes(ctx context.Context) ([]NamespaceResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
 type MonitorActionEventConnectionResolver interface {
-	Nodes() []MonitorActionEventResolver
-	TotalCount() int32
-	PageInfo() *graphqlutil.PageInfo
+	Nodes(ctx context.Context) ([]MonitorActionEventResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
 type MonitorActionEventResolver interface {
@@ -155,9 +138,7 @@ type CreateTriggerArgs struct {
 }
 
 type CreateActionArgs struct {
-	Email        *CreateActionEmailArgs
-	Webhook      *CreateActionWebhookArgs
-	SlackWebhook *CreateActionSlackWebhookArgs
+	Email *CreateActionEmailArgs
 }
 
 type CreateActionEmailArgs struct {
@@ -165,16 +146,6 @@ type CreateActionEmailArgs struct {
 	Priority   string
 	Recipients []graphql.ID
 	Header     string
-}
-
-type CreateActionWebhookArgs struct {
-	Enabled bool
-	URL     string
-}
-
-type CreateActionSlackWebhookArgs struct {
-	Enabled bool
-	URL     string
 }
 
 type ToggleCodeMonitorArgs struct {
@@ -207,20 +178,8 @@ type EditActionEmailArgs struct {
 	Update *CreateActionEmailArgs
 }
 
-type EditActionWebhookArgs struct {
-	Id     *graphql.ID
-	Update *CreateActionWebhookArgs
-}
-
-type EditActionSlackWebhookArgs struct {
-	Id     *graphql.ID
-	Update *CreateActionSlackWebhookArgs
-}
-
 type EditActionArgs struct {
-	Email        *EditActionEmailArgs
-	Webhook      *EditActionWebhookArgs
-	SlackWebhook *EditActionSlackWebhookArgs
+	Email *EditActionEmailArgs
 }
 
 type EditTriggerArgs struct {

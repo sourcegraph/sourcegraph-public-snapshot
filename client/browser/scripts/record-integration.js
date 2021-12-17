@@ -17,7 +17,7 @@ const shelljs = require('shelljs')
 
   for (const testName of testNames) {
     shelljs.exec(
-      `POLLYJS_MODE=record SOURCEGRAPH_BASE_URL=https://sourcegraph.com yarn test-integration --grep='${testName}'`,
+      `RECORD=true SOURCEGRAPH_BASE_URL=https://sourcegraph.com yarn test-integration --grep='${testName}'`,
       (error, stdout, stderr) => {
         if (error) {
           console.error(error)

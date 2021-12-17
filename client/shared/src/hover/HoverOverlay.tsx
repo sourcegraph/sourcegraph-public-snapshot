@@ -54,12 +54,7 @@ export interface HoverOverlayProps
     hoverRef?: React.Ref<HTMLDivElement>
     /** Called when the close button is clicked */
     onCloseButtonClick?: (event: MouseEvent) => void
-
-    /** Show Sourcegraph logo alongside prompt */
-    useBrandedLogo?: boolean
-
-    /** Show Sourcegraph branded badges */
-    useBrandedBadge?: boolean
+    isBranded?: boolean
 }
 
 const getOverlayStyle = (overlayPosition: HoverOverlayProps['overlayPosition']): CSSProperties =>
@@ -99,8 +94,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
         onAlertDismissed,
         onCloseButtonClick,
 
-        useBrandedLogo,
-        useBrandedBadge,
+        isBranded,
     } = props
 
     useLogTelemetryEvent(props)
@@ -142,7 +136,6 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                 <HoverOverlayContents
                     hoverOrError={hoverOrError}
                     iconClassName={iconClassName}
-                    useBrandedBadge={useBrandedBadge}
                     badgeClassName={badgeClassName}
                     errorAlertClassName={getAlertClassName?.(NotificationType.Error)}
                     contentClassName={contentClassName}
@@ -190,7 +183,7 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                             ))}
                         </div>
 
-                        {useBrandedLogo && <HoverOverlayLogo className={hoverOverlayStyle.overlayLogo} />}
+                        {isBranded && <HoverOverlayLogo className={hoverOverlayStyle.overlayLogo} />}
                     </div>
                 )}
         </div>

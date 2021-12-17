@@ -8,11 +8,12 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/stretchr/testify/require"
+
+	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
@@ -20,7 +21,7 @@ import (
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 
-	parsedSchema, parseSchemaErr := NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	parsedSchema, parseSchemaErr := NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)
 	}

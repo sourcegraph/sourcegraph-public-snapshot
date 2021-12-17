@@ -26,7 +26,7 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 
 	bstore := store.New(db, &observation.TestContext, nil)
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
@@ -70,7 +70,7 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 	}
 	apiID := string(marshalBatchSpecWorkspaceID(workspace.ID))
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

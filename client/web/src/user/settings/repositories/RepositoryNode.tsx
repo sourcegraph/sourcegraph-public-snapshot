@@ -10,7 +10,6 @@ import React, { useCallback } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { Badge } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -132,11 +131,7 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
                         <RepoLink className="text-muted" repoName={name} to={null} />
                     </div>
                     <div>
-                        {isPrivate && (
-                            <Badge variant="secondary" className="text-muted" as="div">
-                                Private
-                            </Badge>
-                        )}
+                        {isPrivate && <div className="badge badge-secondary text-muted">Private</div>}
                         <ChevronRightIcon className="icon-inline ml-2 text-primary" />
                     </div>
                 </a>
@@ -200,13 +195,7 @@ export const CheckboxRepositoryNode: React.FunctionComponent<CheckboxRepositoryN
                         onClick={handleOnClick}
                     />
                 </div>
-                <div>
-                    {isPrivate && (
-                        <Badge className="bg-color-2 text-muted" as="div">
-                            Private
-                        </Badge>
-                    )}
-                </div>
+                <div>{isPrivate && <div className="badge bg-color-2 text-muted">Private</div>}</div>
             </RepositoryNodeContainer>
         </tr>
     )

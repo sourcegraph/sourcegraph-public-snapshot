@@ -74,7 +74,7 @@ export const addInsightToSettings = (settings: string, insight: Insight): string
 /**
  * Returns insight configuration, removes all synthetic properties from the insight object
  */
-const getSanitizedInsight = (insight: Insight): InsightConfiguration | undefined => {
+const getSanitizedInsight = (insight: Insight): InsightConfiguration => {
     if (isLangStatsInsight(insight)) {
         const { id, visibility, type, viewType, ...originalInsight } = insight
 
@@ -92,7 +92,7 @@ const getSanitizedInsight = (insight: Insight): InsightConfiguration | undefined
         return { ...originalInsight, series: sanitizedSeries }
     }
 
-    return
+    return insight
 }
 
 interface RemoveInsightFromSettingsInputs {

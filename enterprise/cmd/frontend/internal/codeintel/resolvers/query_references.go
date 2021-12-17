@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -21,7 +22,7 @@ const slowReferencesRequestThreshold = time.Second
 
 // References returns the list of source locations that reference the symbol at the given position.
 func (r *queryResolver) References(ctx context.Context, line, character, limit int, rawCursor string) (_ []AdjustedLocation, _ string, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, "References", r.operations.references, slowReferencesRequestThreshold, observation.Args{
+	ctx, traceLog, endObservation := observeResolver(ctx, &err, "References", r.operations.references, slowReferencesRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -64,7 +65,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 			return nil, "", err
 		}
 	}
-	trace.Log(
+	traceLog(
 		log.Int("numMonikers", len(cursor.OrderedMonikers)),
 		log.String("monikers", monikersToString(cursor.OrderedMonikers)),
 	)
@@ -80,7 +81,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 			adjustedUploads,
 			&cursor.LocalCursor,
 			limit-len(locations),
-			trace,
+			traceLog,
 		)
 		if err != nil {
 			return nil, "", err
@@ -118,7 +119,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 		}
 
 		for len(locations) < limit {
-			remoteLocations, hasMore, err := r.pageRemoteLocations(ctx, "references", adjustedUploads, cursor.OrderedMonikers, &cursor.RemoteCursor, limit-len(locations), trace)
+			remoteLocations, hasMore, err := r.pageRemoteLocations(ctx, "references", adjustedUploads, cursor.OrderedMonikers, &cursor.RemoteCursor, limit-len(locations), traceLog)
 			if err != nil {
 				return nil, "", err
 			}
@@ -131,7 +132,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 		}
 	}
 
-	trace.Log(log.Int("numLocations", len(locations)))
+	traceLog(log.Int("numLocations", len(locations)))
 
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
 	// locations within the repository the user is browsing so that it appears all references
@@ -141,7 +142,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	if err != nil {
 		return nil, "", err
 	}
-	trace.Log(log.Int("numAdjustedLocations", len(adjustedLocations)))
+	traceLog(log.Int("numAdjustedLocations", len(adjustedLocations)))
 
 	nextCursor := ""
 	if cursor.Phase != "done" {
@@ -213,7 +214,7 @@ func (r *queryResolver) pageLocalLocations(
 	adjustedUploads []adjustedUpload,
 	cursor *localCursor,
 	limit int,
-	trace observation.TraceLogger,
+	traceLog observation.TraceLogger,
 ) ([]lsifstore.Location, bool, error) {
 	var allLocations []lsifstore.Location
 	for i := range adjustedUploads {
@@ -240,7 +241,7 @@ func (r *queryResolver) pageLocalLocations(
 		}
 
 		numLocations := len(locations)
-		trace.Log(log.Int("pageLocalLocations.numLocations", numLocations))
+		traceLog(log.Int("pageLocalLocations.numLocations", numLocations))
 		cursor.LocationOffset += numLocations
 
 		if cursor.LocationOffset >= totalCount {
@@ -270,7 +271,7 @@ func (r *queryResolver) pageRemoteLocations(
 	orderedMonikers []precise.QualifiedMonikerData,
 	cursor *remoteCursor,
 	limit int,
-	trace observation.TraceLogger,
+	traceLog observation.TraceLogger,
 ) ([]lsifstore.Location, bool, error) {
 	for len(cursor.UploadBatchIDs) == 0 {
 		if cursor.UploadOffset < 0 {
@@ -290,7 +291,7 @@ func (r *queryResolver) pageRemoteLocations(
 			ignoreIDs,
 			maximumIndexesPerMonikerSearch,
 			cursor.UploadOffset,
-			trace,
+			traceLog,
 		)
 		if err != nil {
 			return nil, false, err
@@ -318,7 +319,7 @@ func (r *queryResolver) pageRemoteLocations(
 	}
 
 	numLocations := len(locations)
-	trace.Log(log.Int("pageLocalLocations.numLocations", numLocations))
+	traceLog(log.Int("pageLocalLocations.numLocations", numLocations))
 	cursor.LocationOffset += numLocations
 
 	if cursor.LocationOffset >= totalCount {
@@ -391,7 +392,7 @@ func (r *queryResolver) uploadIDsWithReferences(
 	ignoreIDs []int,
 	limit int,
 	offset int,
-	trace observation.TraceLogger,
+	traceLog observation.TraceLogger,
 ) (ids []int, recordsScanned int, totalCount int, err error) {
 	scanner, totalCount, err := r.dbStore.ReferenceIDsAndFilters(ctx, r.repositoryID, r.commit, orderedMonikers, limit, offset)
 	if err != nil {
@@ -446,7 +447,7 @@ func (r *queryResolver) uploadIDsWithReferences(
 		}
 	}
 
-	trace.Log(
+	traceLog(
 		log.Int("uploadIDsWithReferences.numFiltered", len(filtered)),
 		log.Int("uploadIDsWithReferences.numRecordsScanned", recordsScanned),
 	)
@@ -480,7 +481,7 @@ func testFilter(filter []byte, orderedMonikers []precise.QualifiedMonikerData) (
 // uploadsByIDs returns a slice of uploads with the given identifiers. This method will not return a
 // new upload record for a commit which is unknown to gitserver. The given upload map is used as a
 // caching mechanism - uploads present in the map are not fetched again from the database.
-func (r *queryResolver) uploadsByIDs(ctx context.Context, ids []int) ([]store.Dump, error) {
+func (r *queryResolver) uploadsByIDs(ctx context.Context, ids []int) ([]dbstore.Dump, error) {
 	missingIDs := make([]int, 0, len(ids))
 	existingUploads := make([]store.Dump, 0, len(ids))
 

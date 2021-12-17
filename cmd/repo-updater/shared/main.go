@@ -10,7 +10,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/golang/gddo/httputil"
@@ -56,7 +55,7 @@ var stateHTMLTemplate string
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(db database.DB, store *repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
+type EnterpriseInit func(db *sql.DB, store *repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
 
 func Main(enterpriseInit EnterpriseInit) {
 	// NOTE: Internal actor is required to have full visibility of the repo table
@@ -118,16 +117,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	var (
-		sqlDB *sql.DB
-		err   error
-	)
-	if os.Getenv("NEW_MIGRATIONS") == "" {
-		// CURRENTLY DEPRECATING
-		sqlDB, err = connections.NewFrontendDB(dsn, "repo-updater", false, &observation.TestContext)
-	} else {
-		sqlDB, err = connections.EnsureNewFrontendDB(dsn, "repo-updater", &observation.TestContext)
-	}
+	sqlDB, err := connections.NewFrontendDB(dsn, "repo-updater", false, &observation.TestContext)
 	if err != nil {
 		log.Fatalf("failed to initialize database store: %v", err)
 	}
@@ -177,7 +167,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	// All dependencies ready
 	var debugDumpers []debugserver.Dumper
 	if enterpriseInit != nil {
-		debugDumpers = enterpriseInit(db, store, keyring.Default(), cf, server)
+		debugDumpers = enterpriseInit(sqlDB, store, keyring.Default(), cf, server)
 	}
 
 	syncer := &repos.Syncer{

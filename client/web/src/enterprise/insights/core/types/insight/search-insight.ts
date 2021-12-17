@@ -39,7 +39,6 @@ export interface SearchBackendBasedInsight extends SearchBasedBackendInsightSett
     type: InsightExecutionType.Backend
     viewType: InsightType.SearchBased
     series: SearchBasedInsightSeries[]
-    step: Duration
 }
 
 /**

@@ -2,7 +2,6 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { Badge } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, ChangesetState } from '../../../../graphql-operations'
 
@@ -54,9 +53,7 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                     </Link>{' '}
                     {hasHeadReference(node) && (
                         <div className="d-block d-sm-inline-block">
-                            <Badge variant="secondary" className="text-monospace">
-                                {headReference(node)}
-                            </Badge>
+                            <span className="badge badge-secondary text-monospace">{headReference(node)}</span>
                         </div>
                     )}
                 </span>

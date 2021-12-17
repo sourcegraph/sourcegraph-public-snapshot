@@ -1,8 +1,6 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { ProductStatusBadge } from '@sourcegraph/wildcard'
-
 import styles from './DropdownButton.module.scss'
 
 export interface Action {
@@ -183,7 +181,7 @@ const DropdownItem: React.FunctionComponent<DropdownItemProps> = ({ action, setS
                     {action.experimental && (
                         <>
                             {' '}
-                            <ProductStatusBadge status="experimental" as="small" />
+                            <small className="badge badge-info">Experimental</small>
                         </>
                     )}
                 </h4>

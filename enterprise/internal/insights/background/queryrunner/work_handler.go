@@ -6,8 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -99,8 +97,8 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	// is OK to expose to every user on Sourcegraph (e.g. total result counts are fine, exposing
 	// that a repository exists may or may not be fine, exposing individual results is definitely
 	// not, etc.)
-	var results *query.GqlSearchResponse
-	results, err = query.Search(ctx, job.SearchQuery)
+	var results *gqlSearchResponse
+	results, err = search(ctx, job.SearchQuery)
 	if err != nil {
 		return err
 	}
@@ -164,12 +162,12 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	matchesPerRepo := make(map[string]int, len(results.Data.Search.Results.Results)*4)
 	repoNames := make(map[string]string, len(matchesPerRepo))
 	for _, result := range results.Data.Search.Results.Results {
-		decoded, err := query.DecodeResult(result)
+		decoded, err := decodeResult(result)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf(`for query "%s"`, job.SearchQuery))
 		}
-		repoNames[decoded.RepoID()] = decoded.RepoName()
-		matchesPerRepo[decoded.RepoID()] = matchesPerRepo[decoded.RepoID()] + decoded.MatchCount()
+		repoNames[decoded.repoID()] = decoded.repoName()
+		matchesPerRepo[decoded.repoID()] = matchesPerRepo[decoded.repoID()] + decoded.matchCount()
 	}
 
 	tx, err := r.insightsStore.Transact(ctx)

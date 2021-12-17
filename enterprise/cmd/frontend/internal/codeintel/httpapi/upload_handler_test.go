@@ -24,8 +24,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -74,13 +74,12 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 	}
 
 	NewUploadHandler(
-		database.NewDB(nil),
+		nil,
 		mockDBStore,
 		mockUploadStore,
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusAccepted {
@@ -166,13 +165,12 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 	}
 
 	NewUploadHandler(
-		database.NewDB(nil),
+		nil,
 		mockDBStore,
 		mockUploadStore,
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusAccepted {
@@ -228,13 +226,12 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 	}
 
 	NewUploadHandler(
-		database.NewDB(nil),
+		nil,
 		mockDBStore,
 		mockUploadStore,
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusAccepted {
@@ -300,13 +297,12 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 	}
 
 	NewUploadHandler(
-		database.NewDB(nil),
+		nil,
 		mockDBStore,
 		mockUploadStore,
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusNoContent {
@@ -375,13 +371,12 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 	}
 
 	NewUploadHandler(
-		database.NewDB(nil),
+		nil,
 		mockDBStore,
 		mockUploadStore,
 		true,
 		nil,
 		NewOperations(&observation.TestContext),
-		nil,
 	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusNoContent {
@@ -459,7 +454,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 func TestHandleEnqueueAuth(t *testing.T) {
 	setupRepoMocks(t)
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -545,7 +540,6 @@ func TestHandleEnqueueAuth(t *testing.T) {
 			false,
 			authValidators,
 			NewOperations(&observation.TestContext),
-			nil,
 		).ServeHTTP(w, r)
 
 		if w.Code != user.statusCode {
@@ -575,7 +569,7 @@ func setupRepoMocks(t testing.TB) {
 	}
 }
 
-func insertTestUser(t *testing.T, db database.DB, name string, isAdmin bool) (userID int32) {
+func insertTestUser(t *testing.T, db dbutil.DB, name string, isAdmin bool) (userID int32) {
 	t.Helper()
 
 	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)

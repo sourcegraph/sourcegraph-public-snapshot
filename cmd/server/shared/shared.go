@@ -4,7 +4,6 @@
 package shared
 
 import (
-	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -15,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/goreman"
@@ -176,27 +174,15 @@ func Main() {
 		procfile = append(procfile, redisCacheLine)
 	}
 
-	procfile = append(procfile, maybeZoektProcFile()...)
-
-	var (
-		postgresProcfile []string
-		restore, _       = strconv.ParseBool(os.Getenv("PGRESTORE"))
-	)
-
 	postgresLine, err := maybePostgresProcFile()
 	if err != nil {
 		log.Fatal(err)
 	}
 	if postgresLine != "" {
-		if restore {
-			// If in restore mode, only run PostgreSQL
-			procfile = []string{postgresLine}
-		} else {
-			postgresProcfile = append(postgresProcfile, postgresLine)
-		}
-	} else if restore {
-		log.Fatal("PGRESTORE is set but a local Postgres instance is not configured")
+		procfile = append(procfile, postgresLine)
 	}
+
+	procfile = append(procfile, maybeZoektProcFile()...)
 
 	// Shutdown if any process dies
 	procDiedAction := goreman.Shutdown
@@ -208,58 +194,17 @@ func Main() {
 		procDiedAction = goreman.Ignore
 	}
 
-	runMigrations := !restore
-	run(procfile, postgresProcfile, runMigrations, procDiedAction)
-}
-
-func run(procfile, postgresProcfile []string, runMigrations bool, procDiedAction goreman.ProcDiedAction) {
-	if !runMigrations {
-		procfile = append(procfile, postgresProcfile...)
-		postgresProcfile = nil
+	// If in restore mode, only run PostgreSQL
+	if restore, _ := strconv.ParseBool(os.Getenv("PGRESTORE")); restore {
+		procfile = []string{}
+		procfile = append(procfile, postgresLine)
 	}
 
-	group, _ := errgroup.WithContext(context.Background())
-
-	options := goreman.Options{
+	err = goreman.Start([]byte(strings.Join(procfile, "\n")), goreman.Options{
 		RPCAddr:        "127.0.0.1:5005",
 		ProcDiedAction: procDiedAction,
-	}
-	startProcesses(group, "postgres", postgresProcfile, options)
-
-	if runMigrations {
-		// Run migrations before starting up the application but after
-		// starting any postgres instance within the server container.
-		runMigrator()
-	}
-
-	startProcesses(group, "all", procfile, options)
-
-	if err := group.Wait(); err != nil {
+	})
+	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func startProcesses(group *errgroup.Group, name string, procfile []string, options goreman.Options) {
-	if len(procfile) == 0 {
-		return
-	}
-
-	log.Printf("Starting %s processes", name)
-	group.Go(func() error { return goreman.Start([]byte(strings.Join(procfile, "\n")), options) })
-}
-
-func runMigrator() {
-	log.Println("Starting migrator")
-
-	for _, schemaName := range []string{"frontend", "codeintel"} {
-		e := execer{}
-		e.Command("migrator", "up", "-db", schemaName)
-
-		if err := e.Error(); err != nil {
-			pgPrintf("Migrating %s schema failed%s", schemaName)
-			log.Fatal(err.Error())
-		}
-	}
-
-	log.Println("Migrated postgres schemas.")
 }

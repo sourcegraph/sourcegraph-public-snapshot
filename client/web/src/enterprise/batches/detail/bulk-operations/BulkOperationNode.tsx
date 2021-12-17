@@ -11,7 +11,6 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BulkOperationState, BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Badge } from '@sourcegraph/wildcard'
 
 import { ErrorMessage } from '../../../../components/alerts'
 import { Collapsible } from '../../../../components/Collapsible'
@@ -66,9 +65,7 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
             )}
         >
             <div className={classNames(styles.bulkOperationNodeChangesetCounts, 'text-center')}>
-                <Badge variant="secondary" className="mb-2" as="p">
-                    {node.changesetCount}
-                </Badge>
+                <p className="badge badge-secondary mb-2">{node.changesetCount}</p>
                 <p className="mb-0">{pluralize('changeset', node.changesetCount)}</p>
             </div>
             <div className={styles.bulkOperationNodeDivider} />
@@ -85,14 +82,10 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
                 </div>
             )}
             {node.state === BulkOperationState.FAILED && (
-                <Badge variant="danger" className="text-uppercase">
-                    failed
-                </Badge>
+                <span className="badge badge-danger text-uppercase">failed</span>
             )}
             {node.state === BulkOperationState.COMPLETED && (
-                <Badge variant="success" className="text-uppercase">
-                    complete
-                </Badge>
+                <span className="badge badge-success text-uppercase">complete</span>
             )}
         </div>
         {node.errors.length > 0 && (

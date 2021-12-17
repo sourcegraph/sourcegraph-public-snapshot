@@ -434,17 +434,14 @@ func (c *V3Client) GetRepository(ctx context.Context, owner, name string) (*Repo
 	}
 
 	key := ownerNameCacheKey(owner, name)
-
-	getRepoFromAPI := func(ctx context.Context) (repo *Repository, keys []string, err error) {
+	return c.cachedGetRepository(ctx, key, func(ctx context.Context) (repo *Repository, keys []string, err error) {
 		keys = append(keys, key)
 		repo, err = c.getRepositoryFromAPI(ctx, owner, name)
 		if repo != nil {
 			keys = append(keys, nodeIDCacheKey(repo.ID)) // also cache under GraphQL node ID
 		}
 		return repo, keys, err
-	}
-
-	return c.cachedGetRepository(ctx, key, getRepoFromAPI)
+	}, false)
 }
 
 // GetOrganization gets an org from GitHub by its login.

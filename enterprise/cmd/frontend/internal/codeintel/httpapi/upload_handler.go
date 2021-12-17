@@ -13,26 +13,24 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 )
 
 type UploadHandler struct {
-	db          database.DB
+	db          dbutil.DB
 	dbStore     DBStore
 	uploadStore uploadstore.Store
 	operations  *Operations
 }
 
 func NewUploadHandler(
-	db database.DB,
+	db dbutil.DB,
 	dbStore DBStore,
 	uploadStore uploadstore.Store,
 	internal bool,
 	authValidators AuthValidatorMap,
 	operations *Operations,
-	hub *sentry.Hub,
 ) http.Handler {
 	handler := &UploadHandler{
 		db:          db,
@@ -79,7 +77,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	// easily. The remainder of the function simply serializes the result to the
 	// HTTP response writer.
 	payload, statusCode, err := func() (_ interface{}, statusCode int, err error) {
-		ctx, trace, endObservation := h.operations.handleEnqueue.WithAndLogger(r.Context(), &err, observation.Args{})
+		ctx, traceLog, endObservation := h.operations.handleEnqueue.WithAndLogger(r.Context(), &err, observation.Args{})
 		defer func() {
 			endObservation(1, observation.Args{LogFields: []log.Field{
 				log.Int("statusCode", statusCode),
@@ -90,7 +88,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return nil, statusCode, err
 		}
-		trace.Log(
+		traceLog(
 			log.Int("repositoryID", uploadState.repositoryID),
 			log.Int("uploadID", uploadState.uploadID),
 			log.String("commit", uploadState.commit),

@@ -11,7 +11,6 @@ import (
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -154,7 +153,7 @@ func TestBatchSpecResolutionJobs_BatchSpecIDUnique(t *testing.T) {
 	ctx := context.Background()
 	c := &ct.TestClock{Time: timeutil.Now()}
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
 
 	user := ct.CreateTestUser(t, db, true)

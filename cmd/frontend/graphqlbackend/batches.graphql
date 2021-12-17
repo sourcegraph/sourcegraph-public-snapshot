@@ -1634,12 +1634,9 @@ extend type Mutation {
     """
     Requeue all workspaces in the batch spec for execution. Previous results and
     logs will be deleted and the executions are _replaced_. The workspaces must be in
-    a final state (COMPLETED, FAILED, CANCELED) to be retryable.
-
-    If includeCompleted is set, then workspaces that successfully completed
-    execution will also be retried and their changeset specs deleted.
+    a final state (COMPLETED, FAILED) to be retryable.
     """
-    retryBatchSpecExecution(batchSpec: ID!, includeCompleted: Boolean = false): BatchSpec!
+    retryBatchSpecExecution(batchSpec: ID!): EmptyResponse!
 
     """
     Enqueue the workspace for execution. The workspace must not be running, and
@@ -2149,7 +2146,6 @@ The state of the batch change.
 enum BatchChangeState {
     OPEN
     CLOSED
-    DRAFT
 }
 
 """
@@ -2177,30 +2173,14 @@ type BatchChange implements Node {
     description: String
 
     """
-    The state of the batch change.
-    """
-    state: BatchChangeState!
-
-    """
     The user that created the initial spec. In an org, this will be different from the namespace, or null if the user was deleted.
     """
     specCreator: User
-        @deprecated(
-            reason: "Unused. This always incorrectly returned the current batch specs creator, not the intial one. This field is deprecated and will be removed in a future release."
-        )
 
     """
     The user who created the batch change initially by applying the spec for the first time, or null if the user was deleted.
-
-    This is an alias of BatchChange.creator.
     """
     initialApplier: User
-        @deprecated(reason: "Use creator instead. This field is deprecated and will be removed in a future release.")
-
-    """
-    The user who created the batch change, or null if the user was deleted.
-    """
-    creator: User
 
     """
     The user who last updated the batch change by applying a spec to this batch change.
@@ -2230,10 +2210,9 @@ type BatchChange implements Node {
     updatedAt: DateTime!
 
     """
-    The date and time when the batch change was last updated with a new spec. Null, if a batch spec has never been
-    applied yet.
+    The date and time when the batch change was last updated with a new spec.
     """
-    lastAppliedAt: DateTime
+    lastAppliedAt: DateTime!
 
     """
     The date and time when the batch change was closed. If set, applying a spec for this batch change will fail with an error.
@@ -2787,12 +2766,6 @@ type BatchSpec implements Node {
     Null, if not created through createBatchSpecFromRaw.
     """
     allowUnsupported: Boolean
-
-    """
-    If true, viewer can retry the batch spec execution by calling
-    retryBatchSpecExecution.
-    """
-    viewerCanRetry: Boolean!
 }
 
 """

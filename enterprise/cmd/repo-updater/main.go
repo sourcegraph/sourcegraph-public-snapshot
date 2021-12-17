@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"os"
 	"strconv"
@@ -20,6 +21,7 @@ import (
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	ossDB "github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -37,7 +39,7 @@ func main() {
 }
 
 func enterpriseInit(
-	db ossDB.DB,
+	db *sql.DB,
 	repoStore *repos.Store,
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
@@ -70,7 +72,7 @@ func enterpriseInit(
 }
 
 // startBackgroundPermsSync sets up background permissions syncing.
-func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db ossDB.DB) {
+func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db dbutil.DB) {
 	globals.WatchPermissionsUserMapping()
 	go func() {
 		t := time.NewTicker(5 * time.Second)

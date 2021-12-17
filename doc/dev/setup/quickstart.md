@@ -1,4 +1,4 @@
-# Quickstart for setting up the local environment
+# Quickstart for setting up the local enviroment
 
 This is the quickstart guide for [developing Sourcegraph](../index.md).
 

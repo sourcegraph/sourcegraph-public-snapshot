@@ -1,7 +1,7 @@
 import * as path from 'path'
 import * as util from 'util'
 
-import { MODE, Polly, PollyServer } from '@pollyjs/core'
+import { Polly, PollyServer } from '@pollyjs/core'
 import FSPersister from '@pollyjs/persister-fs'
 import { GraphQLError } from 'graphql'
 import { snakeCase } from 'lodash'
@@ -18,7 +18,7 @@ import { asError } from '../../util/errors'
 import { keyExistsIn } from '../../util/types'
 import { recordCoverage } from '../coverage'
 import { Driver } from '../driver'
-import { readEnvironmentString } from '../utils'
+import { readEnvironmentBoolean } from '../utils'
 
 import { CdpAdapter, CdpAdapterOptions } from './polly/CdpAdapter'
 
@@ -31,15 +31,7 @@ Polly.register(FSPersister)
 
 const ASSETS_DIRECTORY = path.resolve(__dirname, '../../../../../ui/assets')
 
-const checkPollyMode = (mode: string): MODE => {
-    if (mode === 'record' || mode === 'replay' || mode === 'passthrough' || mode === 'stopped') {
-        return mode
-    }
-
-    throw new Error(`Invalid Polly mode (check POLLYJS_MODE): ${mode}`)
-}
-
-const pollyMode = checkPollyMode(readEnvironmentString({ variable: 'POLLYJS_MODE', defaultValue: 'passthrough' }))
+const record = readEnvironmentBoolean({ variable: 'RECORD', defaultValue: false })
 
 export class IntegrationTestGraphQlError extends Error {
     constructor(public errors: GraphQLError[]) {
@@ -110,7 +102,7 @@ export const createSharedIntegrationTestContext = async <
 }: IntegrationTestOptions): Promise<IntegrationTestContext<TGraphQlOperations, TGraphQlOperationNames>> => {
     await driver.newPage()
     const recordingsDirectory = path.join(directory, '__fixtures__', snakeCase(currentTest.fullTitle()))
-    if (pollyMode === 'record') {
+    if (record) {
         await mkdir(recordingsDirectory, { recursive: true })
     }
     const subscriptions = new Subscription()
@@ -129,7 +121,7 @@ export const createSharedIntegrationTestContext = async <
             },
         },
         expiryStrategy: 'warn',
-        recordIfMissing: pollyMode === 'record',
+        recordIfMissing: record,
         matchRequestsBy: {
             method: true,
             body: true,
@@ -137,7 +129,7 @@ export const createSharedIntegrationTestContext = async <
             // Origin header will change when running against a test instance
             headers: false,
         },
-        mode: pollyMode,
+        mode: record ? 'record' : 'replay',
         logging: false,
     })
     const { server } = polly

@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
-	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
@@ -14,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 var ErrNotebookNotFound = errors.New("notebook not found")
@@ -34,7 +31,6 @@ type ListNotebooksPageOptions struct {
 
 type ListNotebooksOptions struct {
 	Query             string
-	CreatorUserID     int32
 	OrderBy           NotebooksOrderByOption
 	OrderByDescending bool
 }
@@ -62,8 +58,9 @@ type NotebooksStore interface {
 	CreateNotebook(context.Context, *Notebook) (*Notebook, error)
 	UpdateNotebook(context.Context, *Notebook) (*Notebook, error)
 	DeleteNotebook(context.Context, int64) error
-	ListNotebooks(context.Context, ListNotebooksPageOptions, ListNotebooksOptions) ([]*Notebook, error)
-	CountNotebooks(context.Context, ListNotebooksOptions) (int64, error)
+	// TODO
+	// ListNotebooks(context.Context, ListNotebooksPageOptions, ListNotebooksOptions) ([]*Notebook, error)
+	// CountNotebooks(context.Context, ListNotebooksOptions) (int, error)
 }
 
 type notebooksStore struct {
@@ -97,7 +94,7 @@ var notebookColumns = []*sqlf.Query{
 	sqlf.Sprintf("notebooks.updated_at"),
 }
 
-func notebooksPermissionsCondition(ctx context.Context) *sqlf.Query {
+func notebooksPermissionsCondition(ctx context.Context, db dbutil.DB) *sqlf.Query {
 	a := actor.FromContext(ctx)
 	authenticatedUserID := int32(0)
 	bypassPermissionsCheck := a.Internal
@@ -118,14 +115,6 @@ LIMIT %d
 OFFSET %d
 `
 
-const countNotebooksFmtStr = `
-SELECT COUNT(*)
-FROM notebooks
-WHERE
-	(%s) -- permission conditions
-	AND (%s) -- query conditions
-`
-
 func getNotebooksOrderByClause(orderBy NotebooksOrderByOption, descending bool) *sqlf.Query {
 	orderDirection := "ASC"
 	if descending {
@@ -142,9 +131,9 @@ func getNotebooksOrderByClause(orderBy NotebooksOrderByOption, descending bool) 
 	panic("invalid NotebooksOrderByOption option")
 }
 
-func scanNotebook(scanner dbutil.Scanner) (*Notebook, error) {
+func scanNotebook(row *sql.Row) (*Notebook, error) {
 	n := &Notebook{}
-	err := scanner.Scan(
+	err := row.Scan(
 		&n.ID,
 		&n.Title,
 		&n.Blocks,
@@ -153,110 +142,29 @@ func scanNotebook(scanner dbutil.Scanner) (*Notebook, error) {
 		&n.CreatedAt,
 		&n.UpdatedAt,
 	)
-	if err != nil {
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotebookNotFound
+	} else if err != nil {
 		return nil, err
 	}
-	return n, err
-}
-
-func scanNotebooks(rows *sql.Rows) ([]*Notebook, error) {
-	var notebooks []*Notebook
-	for rows.Next() {
-		n, err := scanNotebook(rows)
-		if err != nil {
-			return nil, err
-		}
-		notebooks = append(notebooks, n)
-	}
-	return notebooks, nil
-}
-
-// Special characters used by TSQUERY we need to omit to prevent syntax errors.
-// See: https://www.postgresql.org/docs/12/datatype-textsearch.html#DATATYPE-TSQUERY
-var postgresTextSearchSpecialCharsRegex = lazyregexp.New(`&|!|\||\(|\)|:`)
-
-func toPostgresTextSearchQuery(query string) string {
-	tokens := strings.Fields(postgresTextSearchSpecialCharsRegex.ReplaceAllString(query, " "))
-	prefixTokens := make([]string, len(tokens))
-	for idx, token := range tokens {
-		// :* is used for prefix matching
-		prefixTokens[idx] = fmt.Sprintf("%s:*", token)
-	}
-	return strings.Join(prefixTokens, " & ")
-}
-
-func getNotebooksQueryCondition(opts ListNotebooksOptions) *sqlf.Query {
-	conds := []*sqlf.Query{}
-	if opts.CreatorUserID != 0 {
-		conds = append(conds, sqlf.Sprintf("notebooks.creator_user_id = %d", opts.CreatorUserID))
-	}
-	if opts.Query != "" {
-		conds = append(
-			conds,
-			sqlf.Sprintf("(notebooks.title ILIKE %s OR notebooks.blocks_tsvector @@ to_tsquery('english', %s))", "%"+opts.Query+"%", toPostgresTextSearchQuery(opts.Query)),
-		)
-	}
-	if len(conds) == 0 {
-		// If no conditions are present, append a catch-all condition to avoid a SQL syntax error
-		conds = append(conds, sqlf.Sprintf("1 = 1"))
-	}
-	return sqlf.Join(conds, "\n AND")
-}
-
-func (s *notebooksStore) ListNotebooks(ctx context.Context, pageOpts ListNotebooksPageOptions, opts ListNotebooksOptions) ([]*Notebook, error) {
-	rows, err := s.Query(ctx,
-		sqlf.Sprintf(
-			listNotebooksFmtStr,
-			sqlf.Join(notebookColumns, ","),
-			notebooksPermissionsCondition(ctx),
-			getNotebooksQueryCondition(opts),
-			getNotebooksOrderByClause(opts.OrderBy, opts.OrderByDescending),
-			pageOpts.First,
-			pageOpts.After,
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	return scanNotebooks(rows)
-}
-
-func (s *notebooksStore) CountNotebooks(ctx context.Context, opts ListNotebooksOptions) (int64, error) {
-	var count int64
-	err := s.QueryRow(ctx,
-		sqlf.Sprintf(
-			countNotebooksFmtStr,
-			notebooksPermissionsCondition(ctx),
-			getNotebooksQueryCondition(opts),
-		),
-	).Scan(&count)
-	if err != nil {
-		return -1, err
-	}
-	return count, nil
+	return n, nil
 }
 
 func (s *notebooksStore) GetNotebook(ctx context.Context, id int64) (*Notebook, error) {
+	permissionsCond := notebooksPermissionsCondition(ctx, s.Handle().DB())
 	row := s.QueryRow(
 		ctx,
 		sqlf.Sprintf(
 			listNotebooksFmtStr,
 			sqlf.Join(notebookColumns, ","),
-			notebooksPermissionsCondition(ctx),
+			permissionsCond,
 			sqlf.Sprintf("notebooks.id = %d", id),
 			getNotebooksOrderByClause(NotebooksOrderByID, false),
 			1, // limit
 			0, // offset
 		),
 	)
-	notebook, err := scanNotebook(row)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrNotebookNotFound
-	} else if err != nil {
-		return nil, err
-	}
-	return notebook, nil
+	return scanNotebook(row)
 }
 
 const insertNotebookFmtStr = `

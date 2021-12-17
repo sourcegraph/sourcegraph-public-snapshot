@@ -3,7 +3,7 @@ import * as React from 'react'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { toRepoURL, RepoRevision, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import { RepoRevision, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { toTreeURL } from '../util/url'
 
@@ -21,6 +21,7 @@ interface Props extends RepoRevision, TelemetryProps {
  */
 export const FilePathBreadcrumbs: React.FunctionComponent<Props> = ({
     repoName,
+    repoUrl,
     revision,
     filePath,
     isDir,
@@ -43,7 +44,7 @@ export const FilePathBreadcrumbs: React.FunctionComponent<Props> = ({
         <LinkOrSpan
             key="root-dir"
             className={classNames('test-breadcrumb-part-directory', styles.partDirectory)}
-            to={toRepoURL({ repoName, revision })}
+            to={repoUrl}
             aria-current={false}
             onClick={() => telemetryService.log('RootBreadcrumbClicked', { action: 'click', label: 'root directory' })}
         >

@@ -6,7 +6,6 @@ import { map } from 'rxjs/operators'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
-import { Badge } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -28,7 +27,7 @@ class AuthProviderNode extends React.PureComponent<AuthProviderNodeProps> {
                 <div className="d-flex align-items-center justify-content-between">
                     <div className="mr-2">
                         <strong>{this.props.node.displayName}</strong>{' '}
-                        <Badge variant="secondary">{this.props.node.serviceType}</Badge>
+                        <span className="badge badge-secondary">{this.props.node.serviceType}</span>
                         <br />
                         {(this.props.node.serviceID || this.props.node.clientID) && (
                             <small className="text-muted">

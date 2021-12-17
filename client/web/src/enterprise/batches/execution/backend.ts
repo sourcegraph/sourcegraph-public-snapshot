@@ -23,8 +23,6 @@ import {
     WorkspaceStepFileDiffConnectionFields,
     RetryWorkspaceExecutionResult,
     RetryWorkspaceExecutionVariables,
-    RetryBatchSpecExecutionResult,
-    RetryBatchSpecExecutionVariables,
 } from '../../../graphql-operations'
 
 const batchSpecWorkspaceFieldsFragment = gql`
@@ -158,7 +156,6 @@ const batchSpecExecutionFieldsFragment = gql`
             url
             namespaceName
         }
-        viewerCanRetry
         workspaceResolution {
             workspaces {
                 stats {
@@ -386,24 +383,4 @@ export async function retryWorkspaceExecution(id: Scalars['ID']): Promise<void> 
         { id }
     ).toPromise()
     dataOrThrowErrors(result)
-}
-
-export async function retryBatchSpecExecution(id: Scalars['ID']): Promise<BatchSpecExecutionFields> {
-    return requestGraphQL<RetryBatchSpecExecutionResult, RetryBatchSpecExecutionVariables>(
-        gql`
-            mutation RetryBatchSpecExecution($id: ID!) {
-                retryBatchSpecExecution(batchSpec: $id) {
-                    ...BatchSpecExecutionFields
-                }
-            }
-
-            ${batchSpecExecutionFieldsFragment}
-        `,
-        { id }
-    )
-        .pipe(
-            map(dataOrThrowErrors),
-            map(({ retryBatchSpecExecution }) => retryBatchSpecExecution)
-        )
-        .toPromise()
 }

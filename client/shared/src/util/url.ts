@@ -549,7 +549,9 @@ export function toAbsoluteBlobURL(
 }
 
 /**
- * Returns the URL path for the given repository name and revision.
+ * Returns the URL path for the given repository name.
+ *
+ * @deprecated Obtain the repository's URL from the GraphQL Repository.url field instead.
  */
 export function toRepoURL(target: RepoSpec & Partial<RevisionSpec>): string {
     return '/' + encodeRepoRevision(target)

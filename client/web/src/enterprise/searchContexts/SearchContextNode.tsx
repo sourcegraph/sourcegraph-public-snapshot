@@ -4,7 +4,6 @@ import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Badge } from '@sourcegraph/wildcard'
 
 import { SearchContextFields } from '../../graphql-operations'
 
@@ -25,11 +24,7 @@ export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> 
                 <Link to={`/contexts/${node.spec}`}>
                     <strong>{node.spec}</strong>
                 </Link>
-                {!node.public && (
-                    <Badge variant="secondary" pill={true} className="ml-1" as="div">
-                        Private
-                    </Badge>
-                )}
+                {!node.public && <div className="badge badge-pill badge-secondary ml-1">Private</div>}
             </div>
 
             {node.description.length > 0 && (

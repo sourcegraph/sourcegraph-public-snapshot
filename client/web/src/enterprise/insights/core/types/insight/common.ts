@@ -26,12 +26,11 @@ export enum InsightExecutionType {
 export enum InsightType {
     SearchBased = 'SearchBased',
     LangStats = 'LangStats',
-    CaptureGroup = 'CaptureGroup',
 }
 
 /**
  * These fields are needed only for the code insight FE runtime logic and they are not stored
- * in any settings (insight configurations or BE) fields.
+ * in any settings (insight configurations) fields.
  */
 export interface SyntheticInsightFields {
     id: string

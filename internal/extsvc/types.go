@@ -84,7 +84,6 @@ const (
 	KindPhabricator     = "PHABRICATOR"
 	KindJVMPackages     = "JVMPACKAGES"
 	KindPagure          = "PAGURE"
-	KindNPMPackages     = "NPMPACKAGES"
 	KindOther           = "OTHER"
 )
 
@@ -126,9 +125,6 @@ const (
 
 	// TypePagure is the (api.ExternalRepoSpec).ServiceType value for Pagure projects.
 	TypePagure = "pagure"
-
-	// TypeNPMPackages is the (api.ExternalRepoSpec).ServiceType value for NPM packages (JavaScript/TypeScript ecosystem libraries).
-	TypeNPMPackages = "npmPackages"
 
 	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	TypeOther = "other"
@@ -203,7 +199,6 @@ var (
 	bbsLower = strings.ToLower(TypeBitbucketServer)
 	bbcLower = strings.ToLower(TypeBitbucketCloud)
 	jvmLower = strings.ToLower(TypeJVMPackages)
-	npmLower = strings.ToLower(TypeNPMPackages)
 )
 
 // ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
@@ -228,8 +223,6 @@ func ParseServiceType(s string) (string, bool) {
 		return TypePhabricator, true
 	case jvmLower:
 		return TypeJVMPackages, true
-	case npmLower:
-		return TypeNPMPackages, true
 	case TypePagure:
 		return TypePagure, true
 	case TypeOther:
@@ -306,8 +299,6 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 		cfg = &schema.JVMPackagesConnection{}
 	case KindPagure:
 		cfg = &schema.PagureConnection{}
-	case KindNPMPackages:
-		cfg = &schema.NPMPackagesConnection{}
 	case KindOther:
 		cfg = &schema.OtherExternalServiceConnection{}
 	default:
@@ -540,8 +531,6 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 		return c.P4Port, nil
 	case *schema.JVMPackagesConnection:
 		return KindJVMPackages, nil
-	case *schema.NPMPackagesConnection:
-		return KindNPMPackages, nil
 	case *schema.PagureConnection:
 		rawURL = c.Url
 	default:

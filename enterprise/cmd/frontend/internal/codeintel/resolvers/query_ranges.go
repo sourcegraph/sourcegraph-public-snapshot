@@ -17,7 +17,7 @@ const slowRangesRequestThreshold = time.Second
 // results are partial and do not include references outside the current file, or any location that
 // requires cross-linking of bundles (cross-repo or cross-root).
 func (r *queryResolver) Ranges(ctx context.Context, startLine, endLine int) (adjustedRanges []AdjustedCodeIntelligenceRange, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, "Ranges", r.operations.ranges, slowRangesRequestThreshold, observation.Args{
+	ctx, traceLog, endObservation := observeResolver(ctx, &err, "Ranges", r.operations.ranges, slowRangesRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -36,7 +36,7 @@ func (r *queryResolver) Ranges(ctx context.Context, startLine, endLine int) (adj
 	}
 
 	for i := range adjustedUploads {
-		trace.Log(log.Int("uploadID", adjustedUploads[i].Upload.ID))
+		traceLog(log.Int("uploadID", adjustedUploads[i].Upload.ID))
 
 		ranges, err := r.lsifStore.Ranges(
 			ctx,
@@ -61,7 +61,7 @@ func (r *queryResolver) Ranges(ctx context.Context, startLine, endLine int) (adj
 			adjustedRanges = append(adjustedRanges, adjustedRange)
 		}
 	}
-	trace.Log(log.Int("numRanges", len(adjustedRanges)))
+	traceLog(log.Int("numRanges", len(adjustedRanges)))
 
 	return adjustedRanges, nil
 }

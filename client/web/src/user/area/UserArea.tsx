@@ -19,7 +19,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
 import { UserAreaUserFields, UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
-import { PatternTypeProps } from '../../search'
+import { PatternTypeProps, OnboardingTourProps } from '../../search'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
@@ -70,6 +70,7 @@ interface UserAreaProps
         ThemeProps,
         TelemetryProps,
         ActivationProps,
+        OnboardingTourProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
         BatchChangesProps,
@@ -100,6 +101,7 @@ export interface UserAreaRouteContext
         TelemetryProps,
         ActivationProps,
         NamespaceProps,
+        OnboardingTourProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
         BatchChangesProps,

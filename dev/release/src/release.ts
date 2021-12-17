@@ -401,14 +401,12 @@ cc @${config.captainGitHubUsername}
                             `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newBuild(":[1]")' "latestReleaseDockerComposeOrPureDocker = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
 
                             // Support current release as the "previous release" going forward
-                            notPatchRelease
-                                ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`
-                                : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
+                            `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`,
 
                             // Add a stub to add upgrade guide entries
                             notPatchRelease
                                 ? `${sed} -i -E '/GENERATE UPGRADE GUIDE ON RELEASE/a \\\n\\n${upgradeGuideEntry}' doc/admin/updates/*.md`
-                                : 'echo "Skipping upgrade guide entries on patch release"',
+                                : 'echo "Skipping upgrade guide entries"',
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {

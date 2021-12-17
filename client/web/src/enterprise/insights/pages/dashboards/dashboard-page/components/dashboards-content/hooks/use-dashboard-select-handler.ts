@@ -14,7 +14,7 @@ export function useDashboardSelectHandler(): SelectHandler {
 
     return (dashboard: InsightDashboard): void => {
         if (isVirtualDashboard(dashboard)) {
-            history.push(`/insights/dashboards/${dashboard.id}`)
+            history.push(`/insights/dashboards/${dashboard.type}`)
 
             return
         }

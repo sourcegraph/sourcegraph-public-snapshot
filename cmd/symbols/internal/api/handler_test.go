@@ -34,7 +34,11 @@ func TestHandler(t *testing.T) {
 	}
 	defer func() { os.RemoveAll(tmpDir) }()
 
-	cache := diskcache.NewStore(tmpDir, "symbols", diskcache.WithBackgroundTimeout(20*time.Minute))
+	cache := &diskcache.Store{
+		Dir:               tmpDir,
+		Component:         "symbols",
+		BackgroundTimeout: 20 * time.Minute,
+	}
 
 	parserFactory := func() (ctags.Parser, error) {
 		return newMockParser("x", "y"), nil

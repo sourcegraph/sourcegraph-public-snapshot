@@ -106,7 +106,7 @@ const batchChangeFragment = gql`
         description
 
         createdAt
-        creator {
+        initialApplier {
             username
             url
         }

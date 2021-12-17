@@ -10,7 +10,7 @@ import (
 )
 
 func TestDBUsersBillingCustomerID(t *testing.T) {
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	t.Run("existing user", func(t *testing.T) {

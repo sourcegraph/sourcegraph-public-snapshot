@@ -81,7 +81,7 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
                         <View.Content
                             telemetryService={telemetryService}
                             content={data.view.content}
-                            viewTrackingType={insight.viewType}
+                            viewID={insight.id}
                             containerClassName="extension-insight-card"
                         />
                     </LineChartSettingsContext.Provider>

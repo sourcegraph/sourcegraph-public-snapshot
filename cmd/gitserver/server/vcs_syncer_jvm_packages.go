@@ -135,7 +135,7 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 		}
 		// the gitPushDependencyTag method is reponsible for cleaning up temporary directories.
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency, i == 0); err != nil {
-			return errors.Wrapf(err, "error pushing dependency %q", dependency.PackageManagerSyntax())
+			return errors.Wrapf(err, "error pushing dependency %q", dependency.CoursierSyntax())
 		}
 	}
 
@@ -291,7 +291,7 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource.MavenDependency,
 	workingDirectory, sourceCodeJarPath string, connection *schema.JVMPackagesConnection) error {
 	if err := unzipJarFile(sourceCodeJarPath, workingDirectory); err != nil {
-		return errors.Wrapf(err, "failed to unzip jar file for %s to %v", dependency.PackageManagerSyntax(), sourceCodeJarPath)
+		return errors.Wrapf(err, "failed to unzip jar file for %s to %v", dependency.CoursierSyntax(), sourceCodeJarPath)
 	}
 
 	file, err := os.Create(filepath.Join(workingDirectory, "lsif-java.json"))
@@ -305,7 +305,6 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 		return err
 	}
 
-	// See [NOTE: LSIF-config-json] for details on why we use this JSON file.
 	jsonContents, err := json.Marshal(&lsifJavaJSON{
 		Kind:         dependency.MavenModule.LsifJavaKind(),
 		JVM:          jvmVersion,
@@ -326,12 +325,12 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 	}
 
 	// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
-	cmd = exec.CommandContext(ctx, "git", "commit", "--no-verify", "-m", dependency.PackageManagerSyntax(), "--date", stableGitCommitDate)
+	cmd = exec.CommandContext(ctx, "git", "commit", "--no-verify", "-m", dependency.CoursierSyntax(), "--date", stableGitCommitDate)
 	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory, dependency); err != nil {
 		return err
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "tag", "-m", dependency.PackageManagerSyntax(), dependency.GitTagFromVersion())
+	cmd = exec.CommandContext(ctx, "git", "tag", "-m", dependency.CoursierSyntax(), dependency.GitTagFromVersion())
 	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory, dependency); err != nil {
 		return err
 	}
@@ -348,11 +347,29 @@ func unzipJarFile(jarPath, destination string) (err error) {
 	destinationDirectory := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
 
 	for _, file := range reader.File {
-		cleanedOutputPath, isPotentiallyMalicious :=
-			isPotentiallyMaliciousFilepathInArchive(file.Name, destinationDirectory)
-		if isPotentiallyMalicious {
+		if strings.HasPrefix(file.Name, ".git/") {
+			// For security reasons, don't unzip files under the `.git/`
+			// directory. See https://github.com/sourcegraph/security-issues/issues/163
 			continue
 		}
+		if strings.HasSuffix(file.Name, "/") {
+			// Skip directory entries. Directory entries must end
+			// with a forward slash (even on Windows) according to
+			// `file.Name` docstring.
+			continue
+		}
+		if strings.HasPrefix(file.Name, "/") {
+			// Skip absolute paths. While they are extracted relative to `destination`,
+			// they should be unimportant. Related issue https://github.com/golang/go/issues/48085#issuecomment-912659635
+			continue
+		}
+		cleanedOutputPath := path.Join(destination, file.Name)
+		if !strings.HasPrefix(cleanedOutputPath, destinationDirectory) {
+			// For security reasons, skip file if it's not a child
+			// of the target directory. See "Zip Slip Vulnerability".
+			continue
+		}
+
 		err := copyZipFileEntry(file, cleanedOutputPath)
 		if err != nil {
 			return err
@@ -448,6 +465,24 @@ func roundJVMVersionToNearestStableVersion(javaVersion int) int {
 	}
 	// Version from the future, do not round up to the next stable release.
 	return javaVersion
+}
+
+func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory string, dependency reposource.MavenDependency) (string, error) {
+	gitName := dependency.MavenModule.CoursierSyntax() + " authors"
+	gitEmail := "code-intel@sourcegraph.com"
+	cmd.Dir = workingDirectory
+	cmd.Env = append(cmd.Env, "EMAIL="+gitEmail)
+	cmd.Env = append(cmd.Env, "GIT_AUTHOR_NAME="+gitName)
+	cmd.Env = append(cmd.Env, "GIT_AUTHOR_EMAIL="+gitEmail)
+	cmd.Env = append(cmd.Env, "GIT_AUTHOR_DATE="+stableGitCommitDate)
+	cmd.Env = append(cmd.Env, "GIT_COMMITTER_NAME="+gitName)
+	cmd.Env = append(cmd.Env, "GIT_COMMITTER_EMAIL="+gitEmail)
+	cmd.Env = append(cmd.Env, "GIT_COMMITTER_DATE="+stableGitCommitDate)
+	output, err := runWith(ctx, cmd, false, nil)
+	if err != nil {
+		return "", errors.Wrapf(err, "command %s failed with output %s", cmd.Args, string(output))
+	}
+	return string(output), nil
 }
 
 type lsifJavaJSON struct {

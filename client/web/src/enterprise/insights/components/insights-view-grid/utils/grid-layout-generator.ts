@@ -9,34 +9,20 @@ import {
     MIN_WIDTHS,
 } from '../../../../../views'
 import { MINIMAL_SERIES_FOR_ASIDE_LEGEND } from '../../../../../views/components/view/content/chart-view-content/charts/line/constants'
-import {
-    CaptureGroupInsight,
-    Insight,
-    isCaptureGroupInsight,
-    isSearchBasedInsight,
-    SearchBasedInsight,
-} from '../../../core/types'
+import { Insight, isSearchBasedInsight, SearchBasedInsight } from '../../../core/types'
 
 const MIN_WIDTHS_LANDSCAPE_MODE: Record<BreakpointName, number> = { xs: 1, sm: 3, md: 4, lg: 4 }
 
-type InsightWithLegend = SearchBasedInsight | CaptureGroupInsight
-
-const isManySeriesInsight = (insight: Insight): insight is InsightWithLegend =>
-    isCaptureGroupInsight(insight) ||
-    (isSearchBasedInsight(insight) && insight.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND)
+const isManySeriesInsight = (insight: Insight): insight is SearchBasedInsight =>
+    isSearchBasedInsight(insight) && insight.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
 
 const getMinWidth = (breakpoint: BreakpointName, insight: Insight): number =>
     isManySeriesInsight(insight) ? MIN_WIDTHS_LANDSCAPE_MODE[breakpoint] : MIN_WIDTHS[breakpoint]
 
-const getMinHeight = (insight: Insight): number => {
-    if (!isManySeriesInsight(insight)) {
-        return DEFAULT_HEIGHT
-    }
-
-    return isSearchBasedInsight(insight)
+const getMinHeight = (insight: Insight): number =>
+    isManySeriesInsight(insight)
         ? Math.min(DEFAULT_HEIGHT + insight.series.length * 0.1, DEFAULT_HEIGHT * 2)
-        : DEFAULT_HEIGHT * 2
-}
+        : DEFAULT_HEIGHT
 
 /**
  * Custom Code Insight Grid layout generator. For different screens (xs, sm, md, lg) it
@@ -97,7 +83,9 @@ export const insightLayoutGenerator = (insights: Insight[]): ReactGridLayouts =>
                 return insights
                     .reduce<Layout[][]>(
                         (grid, insight) => {
-                            const itemsPerRow = isManySeriesInsight(insight) ? 2 : DEFAULT_ITEMS_PER_ROW[breakpointName]
+                            const isManySeriesChart =
+                                isSearchBasedInsight(insight) && insight.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
+                            const itemsPerRow = isManySeriesChart ? 2 : DEFAULT_ITEMS_PER_ROW[breakpointName]
                             const columnsPerRow = COLUMNS[breakpointName]
                             const width = columnsPerRow / itemsPerRow
                             const lastRow = grid[grid.length - 1]
@@ -162,7 +150,10 @@ export const recalculateGridLayout = (nextLayouts: ReactGridLayouts, insights: I
                 return item
             }
 
-            if (isManySeriesInsight(insight) && item.minW === item.w) {
+            const isManySeriesChart =
+                isSearchBasedInsight(insight) && insight.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
+
+            if (isManySeriesChart && item.minW === item.w) {
                 item.minH = getMinHeight(insight)
                 item.h = item.h > (item.minH ?? 0) ? item.h : getMinHeight(insight)
             } else {

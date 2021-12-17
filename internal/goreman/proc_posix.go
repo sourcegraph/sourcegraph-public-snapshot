@@ -15,11 +15,7 @@ import (
 func spawnProc(proc string) bool {
 	logger := createLogger(proc)
 
-	procM.Lock()
-	p := procs[proc]
-	procM.Unlock()
-
-	cs := []string{"/bin/sh", "-c", "exec " + p.cmdline}
+	cs := []string{"/bin/sh", "-c", "exec " + procs[proc].cmdline}
 	cmd := exec.Command(cs[0], cs[1:]...)
 	cmd.Stdin = nil
 	cmd.Stdout = logger
@@ -31,22 +27,20 @@ func spawnProc(proc string) bool {
 		fmt.Fprintf(logger, "Failed to start %s: %s\n", proc, err)
 		return false
 	}
-	p.cmd = cmd
-	p.mu.Unlock()
+	procs[proc].cmd = cmd
+	procs[proc].mu.Unlock()
 	err = cmd.Wait()
-	p.mu.Lock()
-	p.cond.Broadcast()
-	p.waitErr = err
-	p.cmd = nil
+	procs[proc].mu.Lock()
+	procs[proc].cond.Broadcast()
+	procs[proc].waitErr = err
+	procs[proc].cmd = nil
 	fmt.Fprintf(logger, "Terminating %s\n", proc)
 
-	return p.stopped
+	return procs[proc].stopped
 }
 
 func terminateProc(proc string) error {
-	procM.Lock()
 	p := procs[proc].cmd.Process
-	procM.Unlock()
 	if p == nil {
 		return nil
 	}

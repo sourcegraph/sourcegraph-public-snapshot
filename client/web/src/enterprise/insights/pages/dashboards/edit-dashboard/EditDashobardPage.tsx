@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom'
 
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge, Button, Container, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Container, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
@@ -65,11 +65,9 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                 title="Oops, we couldn't find the dashboard"
                 subtitle={
                     <span>
-                        We couldn't find that dashboard. Try to find the dashboard with ID:
-                        <Badge variant="secondary" as="code">
-                            {dashboardId}
-                        </Badge>{' '}
-                        in your <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
+                        We couldn't find that dashboard. Try to find the dashboard with ID:{' '}
+                        <code className="badge badge-secondary">{dashboardId}</code> in your{' '}
+                        <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
                     </span>
                 }
             />

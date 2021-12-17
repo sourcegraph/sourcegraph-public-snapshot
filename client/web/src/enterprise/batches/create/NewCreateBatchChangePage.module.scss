@@ -10,15 +10,12 @@
 }
 
 .editor-container {
-    flex: 1;
-    min-width: 60%;
+    width: 70%;
 }
 
 .workspaces-preview-container {
     padding-top: 0.25rem;
     background: none;
     border: none;
-    min-width: 300px;
     width: 30%;
-    max-width: 700px;
 }

@@ -14,6 +14,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -25,7 +26,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := dbtest.NewDB(t)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -34,7 +35,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 	user := ct.CreateTestUser(t, db, true)
 	spec := ct.CreateBatchSpec(t, ctx, cstore, "test-batch-change", user.ID)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-batch-change", user.ID, spec.ID)
-	repos, _ := ct.CreateTestRepos(t, ctx, cstore.DatabaseDB(), 2)
+	repos, _ := ct.CreateTestRepos(t, ctx, cstore.DB(), 2)
 	repo := repos[0]
 	deletedRepo := repos[1]
 	if err := cstore.Repos().Delete(ctx, deletedRepo.ID); err != nil {
@@ -52,7 +53,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
-		assertReturnedChangesetIDs(t, ctx, cstore.DatabaseDB(), []int{int(c.ID)})
+		assertReturnedChangesetIDs(t, ctx, cstore.DB(), []int{int(c.ID)})
 	})
 	t.Run("Not in batch change", func(t *testing.T) {
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
@@ -65,7 +66,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
-		assertReturnedChangesetIDs(t, ctx, cstore.DatabaseDB(), []int{})
+		assertReturnedChangesetIDs(t, ctx, cstore.DB(), []int{})
 	})
 	t.Run("In batch change with deleted user namespace", func(t *testing.T) {
 		deletedUser := ct.CreateTestUser(t, db, true)
@@ -83,7 +84,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
-		assertReturnedChangesetIDs(t, ctx, cstore.DatabaseDB(), []int{})
+		assertReturnedChangesetIDs(t, ctx, cstore.DB(), []int{})
 	})
 	t.Run("In batch change with deleted org namespace", func(t *testing.T) {
 		orgID := ct.InsertTestOrg(t, db, "deleted-org")
@@ -105,7 +106,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
-		assertReturnedChangesetIDs(t, ctx, cstore.DatabaseDB(), []int{})
+		assertReturnedChangesetIDs(t, ctx, cstore.DB(), []int{})
 	})
 	t.Run("In batch change with deleted namespace but another batch change with an existing one", func(t *testing.T) {
 		deletedUser := ct.CreateTestUser(t, db, true)
@@ -128,7 +129,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
-		assertReturnedChangesetIDs(t, ctx, cstore.DatabaseDB(), []int{int(c.ID)})
+		assertReturnedChangesetIDs(t, ctx, cstore.DB(), []int{int(c.ID)})
 	})
 	t.Run("In deleted repo", func(t *testing.T) {
 		c := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
@@ -141,11 +142,11 @@ func TestReconcilerWorkerView(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
-		assertReturnedChangesetIDs(t, ctx, cstore.DatabaseDB(), []int{})
+		assertReturnedChangesetIDs(t, ctx, cstore.DB(), []int{})
 	})
 }
 
-func assertReturnedChangesetIDs(t *testing.T, ctx context.Context, db database.DB, want []int) {
+func assertReturnedChangesetIDs(t *testing.T, ctx context.Context, db dbutil.DB, want []int) {
 	t.Helper()
 
 	have := make([]int, 0)

@@ -42,7 +42,7 @@ interface UseFormProps<FormValues extends object> {
     /**
      * Submit handler for a form element.
      */
-    onSubmit?: (values: FormValues) => SubmissionResult
+    onSubmit?: (values: FormValues) => SubmissionErrors | Promise<SubmissionErrors> | void
 
     /**
      * Change handler will be called every time when some field withing the form

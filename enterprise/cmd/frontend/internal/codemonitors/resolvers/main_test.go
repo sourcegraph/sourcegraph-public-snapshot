@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"database/sql"
 	"strings"
 	"testing"
 	"time"
@@ -9,32 +10,31 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
-	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func insertTestUser(t *testing.T, db database.DB, name string, isAdmin bool) *types.User {
+func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID int32) {
 	t.Helper()
 
-	u, err := db.Users().Create(context.Background(), database.NewUser{Username: name})
-	require.NoError(t, err)
+	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
 
-	err = db.Users().SetIsSiteAdmin(context.Background(), u.ID, isAdmin)
-	require.NoError(t, err)
+	err := db.QueryRow(q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	return u
+	return userID
 }
 
-func addUserToOrg(t *testing.T, db database.DB, userID int32, orgID int32) {
+func addUserToOrg(t *testing.T, db *sql.DB, userID int32, orgID int32) {
 	t.Helper()
 
 	q := sqlf.Sprintf("INSERT INTO org_members (org_id, user_id) VALUES (%s, %s)", orgID, userID)
 
-	_, err := db.ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := db.Exec(q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,16 +95,15 @@ func (r *Resolver) insertTestMonitorWithOpts(ctx context.Context, t *testing.T, 
 	t.Helper()
 
 	defaultOwner := relay.MarshalID("User", actor.FromContext(ctx).UID)
-	defaultActions := []*graphqlbackend.CreateActionArgs{
+	defaultAction := []*graphqlbackend.CreateActionArgs{
 		{Email: &graphqlbackend.CreateActionEmailArgs{
 			Enabled:    true,
 			Priority:   "NORMAL",
 			Recipients: []graphql.ID{defaultOwner},
-			Header:     "test header"}},
-	}
+			Header:     "test header"}}}
 
 	options := options{
-		actions:   defaultActions,
+		actions:   defaultAction,
 		owner:     defaultOwner,
 		postHooks: nil,
 	}
@@ -134,7 +133,7 @@ func (r *Resolver) insertTestMonitorWithOpts(ctx context.Context, t *testing.T, 
 
 // newTestResolver returns a Resolver with stopped clock, which is useful to
 // compare input and outputs in tests.
-func newTestResolver(t *testing.T, db database.DB) *Resolver {
+func newTestResolver(t *testing.T, db dbutil.DB) *Resolver {
 	t.Helper()
 
 	now := time.Now().UTC().Truncate(time.Microsecond)

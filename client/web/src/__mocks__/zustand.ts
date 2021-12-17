@@ -3,10 +3,6 @@
 import { act } from 'react-dom/test-utils'
 import actualCreate, { StateCreator, UseStore } from 'zustand'
 
-// This allows test suites to specify which 'act' funtion to use. This is
-// necessary if test suites use a different renderer.
-let actToUse = act
-
 // a variable to hold reset functions for all stores declared in the app
 const storeResetFns: Set<() => void> = new Set()
 
@@ -20,25 +16,12 @@ const create = <T extends object>(createState: StateCreator<T>): UseStore<T> => 
 
 // Reset all stores after each test run
 afterEach(() => {
-    actToUse(() => {
+    act(() => {
         for (const resetFn of storeResetFns) {
             resetFn()
         }
     })
 })
-
-afterAll(() => {
-    actToUse = act
-})
-
-/**
- * Use this function to overwrite the 'act' function that should be used be
- * this mock to reset stores. Setting this is necessary if you use a renderer
- * different from 'react-dom/test-utils'.
- */
-export function setAct(newAct: typeof act): void {
-    actToUse = newAct
-}
 
 // eslint-disable-next-line import/no-default-export
 export default create

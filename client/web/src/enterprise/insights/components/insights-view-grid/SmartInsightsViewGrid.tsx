@@ -34,37 +34,6 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
         setLayouts(insightLayoutGenerator(insights))
     }, [insights])
 
-    const trackUICustomization = useCallback(
-        (item: Layout) => {
-            try {
-                const insight = insights.find(insight => item.i === insight.id)
-
-                if (insight) {
-                    telemetryService.log(
-                        'InsightUICustomization',
-                        { insightType: insight.viewType },
-                        { insightType: insight.viewType }
-                    )
-                }
-            } catch {
-                // noop
-            }
-        },
-        [telemetryService, insights]
-    )
-
-    const handleResizeStart = useCallback(
-        (item: Layout) => {
-            setResizeView(item)
-            trackUICustomization(item)
-        },
-        [trackUICustomization]
-    )
-
-    const handleResizeStop = useCallback((item: Layout) => {
-        setResizeView(null)
-    }, [])
-
     const handleLayoutChange = useCallback(
         (currentLayout: Layout[], allLayouts: Layouts): void => {
             setLayouts(recalculateGridLayout(allLayouts, insights))
@@ -72,12 +41,16 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
         [insights]
     )
 
+    const handleResizeStop = useCallback((item: Layout) => {
+        setResizeView(null)
+    }, [])
+
     return (
         <ViewGrid
             layouts={layouts}
-            onResizeStart={handleResizeStart}
+            telemetryService={telemetryService}
+            onResizeStart={setResizeView}
             onResizeStop={handleResizeStop}
-            onDragStart={trackUICustomization}
             onLayoutChange={handleLayoutChange}
         >
             {insights.map(insight => (

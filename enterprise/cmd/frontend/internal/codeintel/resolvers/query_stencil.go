@@ -16,7 +16,7 @@ const slowStencilRequestThreshold = time.Second
 
 // Stencil return all ranges within a single document.
 func (r *queryResolver) Stencil(ctx context.Context) (adjustedRanges []lsifstore.Range, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, "Stencil", r.operations.stencil, slowStencilRequestThreshold, observation.Args{
+	ctx, traceLog, endObservation := observeResolver(ctx, &err, "Stencil", r.operations.stencil, slowStencilRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
@@ -33,7 +33,7 @@ func (r *queryResolver) Stencil(ctx context.Context) (adjustedRanges []lsifstore
 	}
 
 	for i := range adjustedUploads {
-		trace.Log(log.Int("uploadID", adjustedUploads[i].Upload.ID))
+		traceLog(log.Int("uploadID", adjustedUploads[i].Upload.ID))
 
 		ranges, err := r.lsifStore.Stencil(
 			ctx,
@@ -54,7 +54,7 @@ func (r *queryResolver) Stencil(ctx context.Context) (adjustedRanges []lsifstore
 			adjustedRanges = append(adjustedRanges, adjustedRange)
 		}
 	}
-	trace.Log(log.Int("numRanges", len(adjustedRanges)))
+	traceLog(log.Int("numRanges", len(adjustedRanges)))
 
 	return sortRanges(adjustedRanges), nil
 }
