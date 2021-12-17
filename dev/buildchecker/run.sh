@@ -5,9 +5,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 set -eu
 
-pushd dev/buildsheriff
+pushd dev/buildchecker
 
-echo "--- Running buildsheriff"
+echo "--- Running buildchecker"
 go run main.go \
   -buildkite.token="$BUILDKITE_TOKEN" \
   -github.token="$GITHUB_TOKEN" \
