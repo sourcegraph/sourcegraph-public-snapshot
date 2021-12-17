@@ -29,7 +29,7 @@ var (
 	opsUpdateImagesFlagSet = flag.NewFlagSet("sg ops update-images", flag.ExitOnError)
 	opsUpdateImagesCommand = &ffcli.Command{
 		Name:        "update-images",
-		ShortUsage:  "sg ops update-images [flags] /dir",
+		ShortUsage:  "sg ops update-images [flags] <dir>",
 		ShortHelp:   "Updates images in given directory to latest published image",
 		LongHelp:    "Updates images in given directory to latest published image",
 		UsageFunc:   nil,
