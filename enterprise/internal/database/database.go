@@ -1,6 +1,8 @@
 package database
 
 import (
+	"time"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
@@ -8,6 +10,7 @@ import (
 type EnterpriseDB interface {
 	database.DB
 	CodeMonitors() CodeMonitorStore
+	Perms() PermsStore
 }
 
 func NewEnterpriseDB(db database.DB) EnterpriseDB {
@@ -27,4 +30,8 @@ type enterpriseDB struct {
 
 func (edb *enterpriseDB) CodeMonitors() CodeMonitorStore {
 	return &codeMonitorStore{Store: basestore.NewWithHandle(edb.Handle())}
+}
+
+func (edb *enterpriseDB) Perms() PermsStore {
+	return &permsStore{Store: basestore.NewWithHandle(edb.Handle()), clock: time.Now}
 }

@@ -6633,6 +6633,9 @@ type MockEnterpriseDB struct {
 	// OrgsFunc is an instance of a mock function object controlling the
 	// behavior of the method Orgs.
 	OrgsFunc *EnterpriseDBOrgsFunc
+	// PermsFunc is an instance of a mock function object controlling the
+	// behavior of the method Perms.
+	PermsFunc *EnterpriseDBPermsFunc
 	// PhabricatorFunc is an instance of a mock function object controlling
 	// the behavior of the method Phabricator.
 	PhabricatorFunc *EnterpriseDBPhabricatorFunc
@@ -6774,6 +6777,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		OrgsFunc: &EnterpriseDBOrgsFunc{
 			defaultHook: func() database.OrgStore {
+				return nil
+			},
+		},
+		PermsFunc: &EnterpriseDBPermsFunc{
+			defaultHook: func() PermsStore {
 				return nil
 			},
 		},
@@ -6954,6 +6962,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.Orgs")
 			},
 		},
+		PermsFunc: &EnterpriseDBPermsFunc{
+			defaultHook: func() PermsStore {
+				panic("unexpected invocation of MockEnterpriseDB.Perms")
+			},
+		},
 		PhabricatorFunc: &EnterpriseDBPhabricatorFunc{
 			defaultHook: func() database.PhabricatorStore {
 				panic("unexpected invocation of MockEnterpriseDB.Phabricator")
@@ -7095,6 +7108,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		OrgsFunc: &EnterpriseDBOrgsFunc{
 			defaultHook: i.Orgs,
+		},
+		PermsFunc: &EnterpriseDBPermsFunc{
+			defaultHook: i.Perms,
 		},
 		PhabricatorFunc: &EnterpriseDBPhabricatorFunc{
 			defaultHook: i.Phabricator,
@@ -8962,6 +8978,105 @@ func (c EnterpriseDBOrgsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBOrgsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBPermsFunc describes the behavior when the Perms method of the
+// parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBPermsFunc struct {
+	defaultHook func() PermsStore
+	hooks       []func() PermsStore
+	history     []EnterpriseDBPermsFuncCall
+	mutex       sync.Mutex
+}
+
+// Perms delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockEnterpriseDB) Perms() PermsStore {
+	r0 := m.PermsFunc.nextHook()()
+	m.PermsFunc.appendCall(EnterpriseDBPermsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Perms method of the
+// parent MockEnterpriseDB instance is invoked and the hook queue is empty.
+func (f *EnterpriseDBPermsFunc) SetDefaultHook(hook func() PermsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Perms method of the parent MockEnterpriseDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *EnterpriseDBPermsFunc) PushHook(hook func() PermsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnterpriseDBPermsFunc) SetDefaultReturn(r0 PermsStore) {
+	f.SetDefaultHook(func() PermsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnterpriseDBPermsFunc) PushReturn(r0 PermsStore) {
+	f.PushHook(func() PermsStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBPermsFunc) nextHook() func() PermsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBPermsFunc) appendCall(r0 EnterpriseDBPermsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBPermsFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBPermsFunc) History() []EnterpriseDBPermsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBPermsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBPermsFuncCall is an object that describes an invocation of
+// method Perms on an instance of MockEnterpriseDB.
+type EnterpriseDBPermsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 PermsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBPermsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBPermsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
