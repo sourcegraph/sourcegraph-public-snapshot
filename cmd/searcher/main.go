@@ -4,9 +4,6 @@ package main
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"io"
 	"log"
 	"net"
@@ -17,6 +14,10 @@ import (
 	"strconv"
 	"syscall"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/inconshreveable/log15"
 
@@ -74,11 +75,12 @@ func main() {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	sqlDb, err := connections.NewFrontendDB(dsn, "searcher", false, &observation.TestContext)
+	// TODO: use EnsureNewFrontendDB function as soon as https://github.com/sourcegraph/sourcegraph/pull/29144 is merged
+	db, err := connections.NewFrontendDB(dsn, "searcher", false, &observation.TestContext)
 	if err != nil {
 		log.Fatalf("failed to initialize database store: %v", err)
 	} else {
-		log.Printf("Successfully initialized DB: %v", sqlDb)
+		log.Printf("Successfully initialized DB: %v", db)
 	}
 
 	service := &search.Service{
