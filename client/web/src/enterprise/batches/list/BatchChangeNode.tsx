@@ -23,21 +23,21 @@ export interface BatchChangeNodeProps {
     displayNamespace: boolean
 }
 
-const getBadge = (state: BatchChangeState): JSX.Element => {
+const StateBadge: React.FunctionComponent<{ state: BatchChangeState }> = ({ state }) => {
     switch (state) {
-        case 'OPEN':
+        case BatchChangeState.OPEN:
             return (
                 <Badge variant="success" className={classNames(styles.batchChangeNodeBadge, 'text-uppercase')}>
                     Open
                 </Badge>
             )
-        case 'CLOSED':
+        case BatchChangeState.CLOSED:
             return (
                 <Badge variant="danger" className={classNames(styles.batchChangeNodeBadge, 'text-uppercase')}>
                     Closed
                 </Badge>
             )
-        case 'DRAFT':
+        case BatchChangeState.DRAFT:
         default:
             return (
                 <Badge variant="secondary" className={classNames(styles.batchChangeNodeBadge, 'text-uppercase')}>
@@ -57,7 +57,7 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
 }) => (
     <>
         <span className={styles.batchChangeNodeSeparator} />
-        {getBadge(node.state)}
+        <StateBadge state={node.state} />
         <div className={styles.batchChangeNodeContent}>
             <div className="m-0 d-md-flex d-block align-items-baseline">
                 <h3 className={classNames(styles.batchChangeNodeTitle, 'm-0 d-md-inline-block d-block')}>
@@ -72,7 +72,10 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                             <span className="text-muted d-inline-block mx-1">/</span>
                         </div>
                     )}
-                    <Link className="test-batches-link mr-2" to={`${node.url}${node.state === 'DRAFT' ? '/edit' : ''}`}>
+                    <Link
+                        className="test-batches-link mr-2"
+                        to={`${node.url}${node.state === BatchChangeState.DRAFT ? '/edit' : ''}`}
+                    >
                         {node.name}
                     </Link>
                 </h3>
@@ -87,7 +90,7 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                 }
             />
         </div>
-        {node.state !== 'DRAFT' && (
+        {node.state !== BatchChangeState.DRAFT && (
             <>
                 <ChangesetStatusOpen
                     className="d-block d-sm-flex"
