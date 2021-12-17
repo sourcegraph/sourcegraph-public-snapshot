@@ -211,6 +211,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 		if problem == "" && strings.Contains(err.Error(), "broken pipe") {
 			problem = "broken pipe"
 		}
+
 		if problem != "" {
 			// A problem that can sometimes be expected has occurred. We will
 			// identify such problems through metrics/logs and resolve them on
