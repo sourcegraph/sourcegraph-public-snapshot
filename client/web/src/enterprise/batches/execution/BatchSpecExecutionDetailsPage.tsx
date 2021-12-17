@@ -29,7 +29,7 @@ import {
     Scalars,
 } from '../../../graphql-operations'
 import { BatchSpec } from '../BatchSpec'
-import { BatchChangePreviewPage } from '../preview/BatchChangePreviewPage'
+import { NewBatchChangePreviewPage } from '../preview/BatchChangePreviewPage'
 
 import { cancelBatchSpecExecution, FETCH_BATCH_SPEC_EXECUTION, retryBatchSpecExecution } from './backend'
 import styles from './BatchSpecExecutionDetailsPage.module.scss'
@@ -379,14 +379,13 @@ const PreviewPage: React.FunctionComponent<PreviewPageProps> = ({
 
     return (
         <div className="mt-3">
-            <BatchChangePreviewPage
+            <NewBatchChangePreviewPage
                 authenticatedUser={authenticatedUser}
                 telemetryService={telemetryService}
                 history={history}
                 isLightTheme={isLightTheme}
                 batchSpecID={batchSpecID}
                 location={history.location}
-                headerComponent={() => null}
             />
         </div>
     )
