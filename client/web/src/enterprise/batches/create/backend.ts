@@ -57,6 +57,17 @@ export const CREATE_EMPTY_BATCH_CHANGE = gql`
     }
 `
 
+// This mutation is used to move an existing batch change to a new namespace, or give it a
+// different name.
+export const MOVE_BATCH_CHANGE = gql`
+    mutation MoveBatchChange($batchChange: ID!, $namespace: ID!, $name: String!) {
+        moveBatchChange(batchChange: $batchChange, namespace: $namespace, name: $name) {
+            id
+            url
+        }
+    }
+`
+
 // This mutation is used to create a new batch spec when the existing batch spec attached
 // to a batch change has already been applied.
 export const CREATE_BATCH_SPEC_FROM_RAW = gql`
