@@ -13,7 +13,7 @@ export const CaptureGroupQueryInput = forwardRef<HTMLInputElement, MonacoFieldPr
         <button type="button" className={classNames('btn btn-icon', styles.regexButton)} disabled={true}>
             <RegexIcon
                 size={24}
-                data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input’"
+                data-tooltip="Regular expression is the only pattern type usable with capture groups and it’s enabled by default for this search input."
             />
         </button>
     </div>

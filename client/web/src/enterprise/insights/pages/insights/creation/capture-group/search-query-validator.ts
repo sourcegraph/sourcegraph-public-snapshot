@@ -2,17 +2,7 @@ import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter, Keyword } from '@sourcegraph/shared/src/search/query/token'
 
-const regexCheck = (value: string): boolean => {
-    try {
-        new RegExp(value)
-        return true
-    } catch {
-        return false
-    }
-}
-
 export interface Checks {
-    isValidRegex: true | false | undefined
     isValidOperator: true | false | undefined
     isValidPatternType: true | false | undefined
     isNotRepo: true | false | undefined
@@ -20,9 +10,8 @@ export interface Checks {
 }
 
 export const searchQueryValidator = (value: string, touched: boolean): Checks => {
-    if (!touched) {
+    if (!touched || !value || value.length === 0) {
         return {
-            isValidRegex: undefined,
             isValidOperator: undefined,
             isValidPatternType: undefined,
             isNotRepo: undefined,
@@ -63,7 +52,6 @@ export const searchQueryValidator = (value: string, touched: boolean): Checks =>
         )
 
         return {
-            isValidRegex: regexCheck(value),
             isValidOperator: !hasAnd && !hasOr,
             isValidPatternType: !hasLiteralPattern && !hasStructuralPattern,
             isNotRepo: !hasRepo,
@@ -72,7 +60,6 @@ export const searchQueryValidator = (value: string, touched: boolean): Checks =>
     }
 
     return {
-        isValidRegex: false,
         isValidOperator: false,
         isValidPatternType: false,
         isNotRepo: false,

@@ -8,7 +8,6 @@ import styles from './SearchQueryChecks.module.scss'
 
 interface SearchQueryChecksProps {
     checks: {
-        isValidRegex: true | false | undefined
         isValidOperator: true | false | undefined
         isValidPatternType: true | false | undefined
         isNotRepo: true | false | undefined
@@ -46,11 +45,6 @@ const CheckListItem: React.FunctionComponent<{ valid: true | false | undefined }
 export const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> = ({ checks }) => (
     <div className={classNames(styles.checksWrapper)}>
         <ul className={classNames(styles.checks)}>
-            <li>
-                <CheckListItem valid={checks.isValidRegex}>
-                    Contains a properly formatted regular expression
-                </CheckListItem>
-            </li>
             <li>
                 <CheckListItem valid={checks.isValidOperator}>
                     Does not contain boolean operator <code>AND</code> and <code>OR</code> (regular expression boolean
