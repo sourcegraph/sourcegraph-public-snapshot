@@ -343,42 +343,46 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		}
 	})
 
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	database.Mocks.Users.GetByVerifiedEmail = func(_ context.Context, email string) (*types.User, error) {
+	users := database.NewStrictMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByVerifiedEmailFunc.SetDefaultHook(func(_ context.Context, email string) (*types.User, error) {
 		if email == "alice@example.com" {
 			return &types.User{ID: 1}, nil
 		}
 		return nil, database.MockUserNotFoundErr
-	}
-	database.Mocks.Users.GetByUsername = func(_ context.Context, username string) (*types.User, error) {
+	})
+	users.GetByUsernameFunc.SetDefaultHook(func(_ context.Context, username string) (*types.User, error) {
 		if username == "alice" {
 			return &types.User{ID: 1}, nil
 		}
 		return nil, database.MockUserNotFoundErr
-	}
-	database.Mocks.Repos.GetByIDs = func(_ context.Context, ids ...api.RepoID) ([]*types.Repo, error) {
+	})
+
+	repos := database.NewStrictMockRepoStore()
+	repos.GetByIDsFunc.SetDefaultHook(func(_ context.Context, ids ...api.RepoID) ([]*types.Repo, error) {
 		repos := make([]*types.Repo, len(ids))
 		for i, id := range ids {
 			repos[i] = &types.Repo{ID: id}
 		}
 		return repos, nil
-	}
-	edb.Mocks.Perms.LoadUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
+	})
+
+	perms := edb.NewStrictMockPermsStore()
+	perms.LoadUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
 		p.IDs = roaring.NewBitmap()
 		p.IDs.Add(1)
 		return nil
-	}
-	edb.Mocks.Perms.LoadUserPendingPermissions = func(_ context.Context, p *authz.UserPendingPermissions) error {
+	})
+	perms.LoadUserPendingPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPendingPermissions) error {
 		p.IDs = roaring.NewBitmap()
 		p.IDs.Add(2)
 		return nil
-	}
-	defer func() {
-		database.Mocks.Users = database.MockUsers{}
-		edb.Mocks.Perms = edb.MockPerms{}
-	}()
+	})
+
+	db := edb.NewStrictMockEnterpriseDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.ReposFunc.SetDefaultReturn(repos)
+	db.PermsFunc.SetDefaultReturn(perms)
 
 	tests := []struct {
 		name     string
@@ -388,7 +392,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 			name: "check authorized repos via email",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				{
 					authorizedUserRepositories(
@@ -416,7 +420,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 			name: "check authorized repos via username",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				{
 					authorizedUserRepositories(
@@ -444,7 +448,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 			name: "check pending authorized repos via email",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				{
 					authorizedUserRepositories(
@@ -472,7 +476,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 			name: "check pending authorized repos via username",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				{
 					authorizedUserRepositories(
