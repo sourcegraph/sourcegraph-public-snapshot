@@ -83,8 +83,8 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
                     <a href="https://docs.sourcegraph.com/code_intelligence/explanations/auto_indexing" rel="noopener">
                         auto-indexing for Code Intelligence
                     </a>{' '}
-                    and {/* TODO: Adjust this link */}
-                    <a href="https://docs.sourcegraph.com/batches/server_side" rel="noopener">
+                    and{' '}
+                    <a href="https://docs.sourcegraph.com/batch_changes/explanations/server_side" rel="noopener">
                         server-side Batch Changes
                     </a>
                     . In order to use those features,{' '}
