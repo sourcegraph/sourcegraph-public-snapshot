@@ -100,7 +100,7 @@ func ZoektIndexServer() *monitoring.Container {
 							// This value can spike, so only if we have a
 							// sustained error rate do we alert.
 							Warning:  monitoring.Alert().GreaterOrEqual(100, nil).For(time.Minute),
-							Critical: monitoring.Alert().GreaterOrEqual(100, nil).For(10 * time.Minute),
+							Critical: monitoring.Alert().GreaterOrEqual(100, nil).For(20 * time.Minute),
 							Panel:    monitoring.Panel().Min(0),
 							Owner:    monitoring.ObservableOwnerSearchCore,
 							PossibleSolutions: `
