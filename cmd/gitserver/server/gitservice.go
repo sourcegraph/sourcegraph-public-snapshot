@@ -19,22 +19,7 @@ var gitServiceMaxEgressBytesPerSecond = func() int64 {
 	bps, err := strconv.ParseInt(env.Get(
 		"SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND",
 		"1000000000",
-		"Git service egress rate limit in bytes per second (-1 = no limit)"),
-		10,
-		64,
-	)
-	if err != nil {
-		log15.Error("gitservice: failed parsing SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND. defaulting to 1Gbps", "error", err)
-		bps = 1000 * 1000 * 1000 // 1Gbps
-	}
-	return bps
-}()
-
-var gitServiceIngressGzip = func() int64 {
-	bps, err := strconv.ParseInt(env.Get(
-		"SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND",
-		"1000000000",
-		"Git service egress rate limit in bytes per second (-1 = no limit)"),
+		"Git service egress rate limit in bytes per second (-1 = no limit, default = 1Gbps)"),
 		10,
 		64,
 	)
