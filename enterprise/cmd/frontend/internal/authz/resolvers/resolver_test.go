@@ -571,7 +571,6 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 }
 
 func TestResolver_AuthorizedUsers(t *testing.T) {
-
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
@@ -589,32 +588,35 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 		}
 	})
 
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	database.Mocks.Users.List = func(_ context.Context, opt *database.UsersListOptions) ([]*types.User, error) {
+	users := database.NewStrictMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.ListFunc.SetDefaultHook(func(_ context.Context, opt *database.UsersListOptions) ([]*types.User, error) {
 		users := make([]*types.User, len(opt.UserIDs))
 		for i, id := range opt.UserIDs {
 			users[i] = &types.User{ID: id}
 		}
 		return users, nil
-	}
-	database.Mocks.Repos.GetByName = func(_ context.Context, repo api.RepoName) (*types.Repo, error) {
+	})
+
+	repos := database.NewStrictMockRepoStore()
+	repos.GetByNameFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName) (*types.Repo, error) {
 		return &types.Repo{ID: 1, Name: repo}, nil
-	}
-	database.Mocks.Repos.Get = func(_ context.Context, id api.RepoID) (*types.Repo, error) {
+	})
+	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 		return &types.Repo{ID: id}, nil
-	}
-	edb.Mocks.Perms.LoadRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
+	})
+
+	perms := edb.NewStrictMockPermsStore()
+	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
 		p.UserIDs = roaring.NewBitmap()
 		p.UserIDs.Add(1)
 		return nil
-	}
-	defer func() {
-		database.Mocks.Users = database.MockUsers{}
-		database.Mocks.Repos = database.MockRepos{}
-		edb.Mocks.Perms = edb.MockPerms{}
-	}()
+	})
+
+	db := edb.NewStrictMockEnterpriseDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.ReposFunc.SetDefaultReturn(repos)
+	db.PermsFunc.SetDefaultReturn(perms)
 
 	tests := []struct {
 		name     string
@@ -624,7 +626,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 			name: "get authorized users",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				{
 					repository(name: "github.com/owner/repo") {
