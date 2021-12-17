@@ -2337,7 +2337,8 @@ type BatchChange implements Node {
     diffStat: DiffStat!
 
     """
-    The last batch spec applied to this batch change.
+    The last batch spec applied to this batch change, or an "empty" spec if the batch
+    change has never had a spec applied.
     """
     currentSpec: BatchSpec!
 

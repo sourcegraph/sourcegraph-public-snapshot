@@ -39,7 +39,7 @@ interface BatchChangePageProps {
 
 /**
  * BatchChangePage is a page layout component that renders a consistent header for
- * SSBC-style batch change pages and shoulld wrap the other content contained on the page.
+ * SSBC-style batch change pages and should wrap the other content contained on the page.
  */
 export const BatchChangePage: React.FunctionComponent<BatchChangePageProps> = ({
     children,
