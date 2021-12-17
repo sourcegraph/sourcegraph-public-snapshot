@@ -21,7 +21,6 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             displayName: null,
             siteAdmin: true,
             tags: [],
-            tosAccepted: true,
             url: '/users/test',
             settingsURL: '/users/test/settings',
             organizations: { nodes: [] },

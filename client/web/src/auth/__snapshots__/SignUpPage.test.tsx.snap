@@ -276,31 +276,6 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
               Register
             </button>
           </div>
-          <p
-            class="mt-3 mb-0"
-          >
-            <small
-              class="form-text text-muted"
-            >
-              By signing up, you agree to our 
-              <a
-                href="https://about.sourcegraph.com/terms"
-                rel="noopener"
-                target="_blank"
-              >
-                Terms of Service
-              </a>
-               and 
-              <a
-                href="https://about.sourcegraph.com/privacy"
-                rel="noopener"
-                target="_blank"
-              >
-                Privacy Policy
-              </a>
-              .
-            </small>
-          </p>
         </form>
         <p
           class="mt-3"

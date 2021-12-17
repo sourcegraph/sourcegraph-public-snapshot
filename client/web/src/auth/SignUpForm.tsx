@@ -21,7 +21,7 @@ import { LoaderButton } from '../components/LoaderButton'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY, LAST_SOURCE_URL_KEY } from '../tracking/eventLogger'
-import { enterpriseTrial } from '../util/features'
+import { enterpriseTrial, signupTerms } from '../util/features'
 
 import { OrDivider } from './OrDivider'
 import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
@@ -288,7 +288,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                     </>
                 )}
 
-                {!experimental && (
+                {!experimental && signupTerms && (
                     <p className="mt-3 mb-0">
                         <small className="form-text text-muted">
                             By signing up, you agree to our {/* eslint-disable-next-line react/jsx-no-target-blank */}
