@@ -10,6 +10,8 @@ import styles from './FormInput.module.scss'
 interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'title'> {
     /** Title of input. */
     title?: ReactNode
+
+    subtitle?: ReactNode
     /** Description block for field. */
     description?: ReactNode
     /** Custom class name for root label element. */
@@ -38,6 +40,7 @@ const FormInput = forwardRef((props, reference) => {
         as: Component = 'input',
         type = 'text',
         title,
+        subtitle,
         description,
         className,
         inputClassName,
@@ -58,6 +61,8 @@ const FormInput = forwardRef((props, reference) => {
     return (
         <label className={classNames('w-100', className)}>
             {title && <div className="mb-2">{title}</div>}
+
+            {subtitle}
 
             <LoaderInput className="d-flex" loading={loading}>
                 <Component

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React from 'react'
 
@@ -10,13 +11,13 @@ import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { useFieldAPI } from '../../../../../components/form/hooks/useField'
 import { Form, FORM_ERROR } from '../../../../../components/form/hooks/useForm'
-import { MonacoField } from '../../../../../components/form/monaco-field/MonacoField'
 import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
 import { LinkWithQuery } from '../../../../../components/link-with-query'
 import { searchQueryValidator } from '../search-query-validator'
 import { CaptureGroupFormFields } from '../types'
 
 import { CaptureGroupSeriesInfoBadge } from './info-badge/CaptureGroupSeriesInfoBadge'
+import { CaptureGroupQueryInput } from './query-input/CaptureGroupQueryInput'
 import { SearchQueryChecks } from './search-query-checks/SearchQueryChecks'
 
 interface CaptureGroupCreationFormProps {
@@ -101,25 +102,38 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
             <FormGroup
                 name="data series"
                 title="Data series"
-                subtitle="Generated dynamically for each unique value from the regular expression capture group."
+                subtitle={
+                    <>
+                        Generated dynamically for each unique value from the regular expression capture group.{' '}
+                        <a
+                            href="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            Learn more.
+                        </a>
+                    </>
+                }
             >
                 <div className="card card-body p-3">
                     <FormInput
                         title="Search query"
                         required={true}
-                        as={MonacoField}
+                        as={CaptureGroupQueryInput}
+                        subtitle={<QueryFieldSubtitle className="mb-3" />}
                         placeholder="Example: file:\.pom$ <java\.version>(.*)</java\.version>"
                         valid={query.meta.touched && query.meta.validState === 'VALID'}
                         error={query.meta.touched && query.meta.error}
-                        className="mb-4"
+                        className="mb-3"
                         {...query.input}
                     />
 
-                    <SearchQueryChecks checks={searchQueryValidator(query.input.value)} />
+                    <SearchQueryChecks checks={searchQueryValidator(query.input.value, query.meta.touched)} />
 
                     <CaptureGroupSeriesInfoBadge>
-                        <b>Name</b> and <b>color</b> of each data series will be generated automatically. Chart will
-                        display <b>up to 20</b> data series.
+                        <b className="font-weight-medium">Name</b> and <b className="font-weight-medium">color</b> of
+                        each data series will be generated automatically. Chart will display{' '}
+                        <b className="font-weight-medium">up to 20</b> data series.
                     </CaptureGroupSeriesInfoBadge>
 
                     <small className="mt-3">
@@ -199,3 +213,17 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
         </form>
     )
 }
+
+const QueryFieldSubtitle: React.FunctionComponent<{ className?: string }> = props => (
+    <small className={classNames(props.className, 'text-muted', 'd-block', 'font-weight-normal')}>
+        Search query must contain a properly formatted regular expression with at least one{' '}
+        <a
+            href="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series#regular-expression-capture-group-resources"
+            target="_blank"
+            rel="noopener"
+        >
+            capture group.
+        </a>{' '}
+        The capture group cannot match file or repository names, it can match only the file contents.
+    </small>
+)
