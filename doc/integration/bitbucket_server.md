@@ -82,11 +82,11 @@ You can enable this feature when [configuring the connection to your Bitbucket S
 
 The speed improvements are most important on larger Bitbucket Server instances with thousands of repositories. When connected to these instances, Sourcegraph would have to make many wasteful requests to fetch permission data if the plugin is not installed.
 
-To learn how and why this works, read the [through technical details of fast permission syncing](#fast-permissions-syncing) below.
+To learn how and why this works, read through technical details of fast permission syncing below.
 
 ### Technical Details
 
-This section provides some technical insight into the Bitbucket Server plugin to make it easier to users to decide whether or not to install it on their Bitbucket Server instance.
+This section provides some technical insight into the Bitbucket Server plugin to make it easier for users to decide whether or not to install it on their Bitbucket Server instance.
 
 You can find the full source code for the plugin at [github.com/sourcegraph/bitbucket-server-plugin](https://github.com/sourcegraph/bitbucket-server-plugin/).
 
@@ -98,11 +98,11 @@ It does that by fetching the required JavaScript code from the configured Source
 
 The code that's injected is the code of the [Sourcegraph browser extension](#browser-extension). It is hosted by your Sourcegraph instance in this case and adds the same code intelligence functionality to all files and pull requests viewed on Bitbucket Server.
 
-The code only talks to the Sourcegraph instance that's configured in the Bitbucket Server plugin configuration. It doesn't add any more load to the Bitbucker Server instance.
+The code only talks to the Sourcegraph instance that's configured in the Bitbucket Server plugin configuration. It doesn't add any more load to the Bitbucket Server instance.
 
 No private code, private repository names, usernames, or any other specific data is sent somewhere else. The code will send usage information to the connected private Sourcegraph instance only, so that the site admins can see usage statistics.
 
-If it failed to load or talk to the Sourcegraph instance, messages are logged to the browser console.
+If it fails to load or talk to the Sourcegraph instance, messages are logged to the browser console.
 
 When the Sourcegraph instance is updated to a newer version, the embedded browser extension code that provides the native code intelligence may also be updated.
 
