@@ -8,8 +8,8 @@
     &:global(.is-valid) {
         // Shift valid and invalid bootstrap icons to the left in order to make a space for
         // regexp icon
-        padding-right: calc(1.4285714286em + 2.25rem);
-        background-position: top calc(0.3571428571em + 0.2075rem) right calc(0.3571428571em + 1.861875rem);
+        padding-right: calc(1.4285714286rem + 2.25rem);
+        background-position: top calc(0.3571428571rem + 0.2075rem) right calc(0.3571428571rem + 1.861875rem);
     }
 }
 

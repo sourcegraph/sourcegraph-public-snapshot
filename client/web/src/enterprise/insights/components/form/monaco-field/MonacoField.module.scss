@@ -51,7 +51,7 @@
     }
 
     &--with-placeholder {
-        &:before {
+        &::before {
             display: block;
         }
     }
