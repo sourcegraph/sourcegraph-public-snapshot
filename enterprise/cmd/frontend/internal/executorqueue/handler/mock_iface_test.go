@@ -19,6 +19,9 @@ type MockStore struct {
 	// DeleteInactiveHeartbeatsFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteInactiveHeartbeats.
 	DeleteInactiveHeartbeatsFunc *StoreDeleteInactiveHeartbeatsFunc
+	// GetByHostnameFunc is an instance of a mock function object
+	// controlling the behavior of the method GetByHostname.
+	GetByHostnameFunc *StoreGetByHostnameFunc
 	// GetByIDFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByID.
 	GetByIDFunc *StoreGetByIDFunc
@@ -37,6 +40,11 @@ func NewMockStore() *MockStore {
 		DeleteInactiveHeartbeatsFunc: &StoreDeleteInactiveHeartbeatsFunc{
 			defaultHook: func(context.Context, time.Duration) error {
 				return nil
+			},
+		},
+		GetByHostnameFunc: &StoreGetByHostnameFunc{
+			defaultHook: func(context.Context, string) (types.Executor, bool, error) {
+				return types.Executor{}, false, nil
 			},
 		},
 		GetByIDFunc: &StoreGetByIDFunc{
@@ -66,6 +74,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.DeleteInactiveHeartbeats")
 			},
 		},
+		GetByHostnameFunc: &StoreGetByHostnameFunc{
+			defaultHook: func(context.Context, string) (types.Executor, bool, error) {
+				panic("unexpected invocation of MockStore.GetByHostname")
+			},
+		},
 		GetByIDFunc: &StoreGetByIDFunc{
 			defaultHook: func(context.Context, int) (types.Executor, bool, error) {
 				panic("unexpected invocation of MockStore.GetByID")
@@ -90,6 +103,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 	return &MockStore{
 		DeleteInactiveHeartbeatsFunc: &StoreDeleteInactiveHeartbeatsFunc{
 			defaultHook: i.DeleteInactiveHeartbeats,
+		},
+		GetByHostnameFunc: &StoreGetByHostnameFunc{
+			defaultHook: i.GetByHostname,
 		},
 		GetByIDFunc: &StoreGetByIDFunc{
 			defaultHook: i.GetByID,
@@ -209,6 +225,117 @@ func (c StoreDeleteInactiveHeartbeatsFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreDeleteInactiveHeartbeatsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// StoreGetByHostnameFunc describes the behavior when the GetByHostname
+// method of the parent MockStore instance is invoked.
+type StoreGetByHostnameFunc struct {
+	defaultHook func(context.Context, string) (types.Executor, bool, error)
+	hooks       []func(context.Context, string) (types.Executor, bool, error)
+	history     []StoreGetByHostnameFuncCall
+	mutex       sync.Mutex
+}
+
+// GetByHostname delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockStore) GetByHostname(v0 context.Context, v1 string) (types.Executor, bool, error) {
+	r0, r1, r2 := m.GetByHostnameFunc.nextHook()(v0, v1)
+	m.GetByHostnameFunc.appendCall(StoreGetByHostnameFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetByHostname method
+// of the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreGetByHostnameFunc) SetDefaultHook(hook func(context.Context, string) (types.Executor, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetByHostname method of the parent MockStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreGetByHostnameFunc) PushHook(hook func(context.Context, string) (types.Executor, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *StoreGetByHostnameFunc) SetDefaultReturn(r0 types.Executor, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, string) (types.Executor, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *StoreGetByHostnameFunc) PushReturn(r0 types.Executor, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, string) (types.Executor, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *StoreGetByHostnameFunc) nextHook() func(context.Context, string) (types.Executor, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreGetByHostnameFunc) appendCall(r0 StoreGetByHostnameFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreGetByHostnameFuncCall objects
+// describing the invocations of this function.
+func (f *StoreGetByHostnameFunc) History() []StoreGetByHostnameFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreGetByHostnameFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreGetByHostnameFuncCall is an object that describes an invocation of
+// method GetByHostname on an instance of MockStore.
+type StoreGetByHostnameFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 types.Executor
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreGetByHostnameFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreGetByHostnameFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreGetByIDFunc describes the behavior when the GetByID method of the
