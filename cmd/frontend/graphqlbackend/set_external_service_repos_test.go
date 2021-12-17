@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -20,7 +20,7 @@ import (
 )
 
 func TestSetExternalServiceRepos(t *testing.T) {
-	externalServices := dbmock.NewMockExternalServiceStore()
+	externalServices := database.NewMockExternalServiceStore()
 	externalServices.GetByIDFunc.SetDefaultReturn(
 		&types.ExternalService{
 			DisplayName:     "test",
@@ -49,7 +49,7 @@ func TestSetExternalServiceRepos(t *testing.T) {
 		return nil
 	})
 
-	users := dbmock.NewMockUserStore()
+	users := database.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{
 			ID:        id,
@@ -63,7 +63,7 @@ func TestSetExternalServiceRepos(t *testing.T) {
 		UID:      1,
 	})
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.UsersFunc.SetDefaultReturn(users)
 

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -39,9 +39,9 @@ func TestStatusMessages(t *testing.T) {
 		}
 	`
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	t.Run("unauthenticated", func(t *testing.T) {
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -55,7 +55,7 @@ func TestStatusMessages(t *testing.T) {
 	})
 
 	t.Run("no messages", func(t *testing.T) {
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -78,10 +78,10 @@ func TestStatusMessages(t *testing.T) {
 	})
 
 	t.Run("messages", func(t *testing.T) {
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-		externalServices := dbmock.NewMockExternalServiceStore()
+		externalServices := database.NewMockExternalServiceStore()
 		externalServices.GetByIDFunc.SetDefaultReturn(&types.ExternalService{ID: 1, DisplayName: "GitHub.com testing"}, nil)
 
 		db.UsersFunc.SetDefaultReturn(users)

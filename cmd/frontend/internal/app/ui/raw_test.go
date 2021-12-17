@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -74,7 +74,7 @@ func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {
 		req := httptest.NewRequest("HEAD", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(dbmock.NewMockDB())(w, req)
+		err := serveRaw(database.NewMockDB())(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -92,7 +92,7 @@ func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {
 		req := httptest.NewRequest("HEAD", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(dbmock.NewMockDB())(w, req)
+		err := serveRaw(database.NewMockDB())(w, req)
 		if err == nil {
 			t.Fatal("Want error but got nil")
 		}
@@ -126,7 +126,7 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw?format=zip", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(dbmock.NewMockDB())(w, req)
+		err := serveRaw(database.NewMockDB())(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -165,7 +165,7 @@ func Test_serveRawWithContentArchive(t *testing.T) {
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw?format=tar", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(dbmock.NewMockDB())(w, req)
+		err := serveRaw(database.NewMockDB())(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -242,7 +242,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(dbmock.NewMockDB())(w, req)
+		err := serveRaw(database.NewMockDB())(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -275,7 +275,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(dbmock.NewMockDB())(w, req)
+		err := serveRaw(database.NewMockDB())(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -312,7 +312,7 @@ c.go`
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(dbmock.NewMockDB())(w, req)
+		err := serveRaw(database.NewMockDB())(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
@@ -349,7 +349,7 @@ c.go`
 		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw?format=exe", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(dbmock.NewMockDB())(w, req)
+		err := serveRaw(database.NewMockDB())(w, req)
 		if err != nil {
 			t.Fatalf("Failed to invoke serveRaw: %v", err)
 		}
