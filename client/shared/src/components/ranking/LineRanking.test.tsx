@@ -2,7 +2,7 @@ import { range } from 'lodash'
 
 import { calculateMatchGroupsSorted, mergeContext } from './LineRanking'
 import { MatchItem } from './PerFileResultRanking'
-import { testDataRealMatches } from './PerFileResultRanking.test'
+import { testDataRealMatches } from './PerFileResultRankingTestHelpers'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),

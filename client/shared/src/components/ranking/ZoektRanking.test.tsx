@@ -1,4 +1,4 @@
-import { testDataRealMatches } from './PerFileResultRanking.test'
+import { testDataRealMatches } from './PerFileResultRankingTestHelpers'
 import { ZoektRanking } from './ZoektRanking'
 
 describe('ZoektRanking', () => {
