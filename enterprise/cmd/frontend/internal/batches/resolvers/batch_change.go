@@ -334,6 +334,7 @@ func (r *batchChangeResolver) BatchSpecs(
 		LimitOpts: store.LimitOpts{
 			Limit: int(args.First),
 		},
+		// We want the batch spec connection to always show the latest one first.
 		NewestFirst: true,
 	}
 

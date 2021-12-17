@@ -412,11 +412,9 @@ ORDER BY %s
 `
 
 func listBatchSpecsQuery(opts *ListBatchSpecsOpts) *sqlf.Query {
-	preds := []*sqlf.Query{
-		sqlf.Sprintf("batch_specs.id >= %s", opts.Cursor),
-	}
+	preds := []*sqlf.Query{}
 	joins := []*sqlf.Query{}
-	order := sqlf.Sprintf("batch_specs.created_at ASC")
+	order := sqlf.Sprintf("batch_specs.id ASC")
 
 	if opts.BatchChangeID != 0 {
 		joins = append(joins, sqlf.Sprintf(`INNER JOIN batch_changes
@@ -434,7 +432,12 @@ ON
 	}
 
 	if opts.NewestFirst {
-		order = sqlf.Sprintf("batch_specs.created_at DESC")
+		order = sqlf.Sprintf("batch_specs.id DESC")
+		if opts.Cursor != 0 {
+			preds = append(preds, sqlf.Sprintf("batch_specs.id <= %s", opts.Cursor))
+		}
+	} else {
+		preds = append(preds, sqlf.Sprintf("batch_specs.id >= %s", opts.Cursor))
 	}
 
 	return sqlf.Sprintf(
