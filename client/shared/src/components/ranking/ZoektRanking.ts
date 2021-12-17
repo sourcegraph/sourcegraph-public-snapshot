@@ -1,4 +1,4 @@
-import { MatchGroup, MatchGroupMatch, MatchItem, RankingResult, PerFileResultRanking } from './PerFileResultRanking'
+import { MatchGroup, MatchGroupMatch, MatchItem, PerFileResultRanking, RankingResult } from './PerFileResultRanking'
 
 /**
  * ZoektRanking preserves the original relevance that's computed by Zoekt.
@@ -29,7 +29,7 @@ function addHunkItem(hunk: Hunk, item: MatchItem): void {
 }
 
 function sortHunkMatches(hunk: Hunk): void {
-    const sortedMatches = hunk.matches.sort((a, b) => {
+    hunk.matches.sort((a, b) => {
         if (a.line < b.line) {
             return -1
         }
@@ -43,7 +43,6 @@ function sortHunkMatches(hunk: Hunk): void {
         }
         return 1
     })
-    hunk.matches = sortedMatches
 }
 
 function isMatchWithinGroup(group: Hunk, item: MatchItem, context: number): boolean {
