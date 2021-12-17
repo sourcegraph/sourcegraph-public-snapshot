@@ -17,8 +17,8 @@ import (
 )
 
 // NewResolver returns a new Resolver that uses the given database
-func NewResolver(db database.DB) graphqlbackend.CodeMonitorsResolver {
-	return &Resolver{store: edb.CodeMonitors(db)}
+func NewResolver(db edb.EnterpriseDB) graphqlbackend.CodeMonitorsResolver {
+	return &Resolver{store: db.CodeMonitors()}
 }
 
 // newResolverWithClock is used in tests to set the clock manually.
