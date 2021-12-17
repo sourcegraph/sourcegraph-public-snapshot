@@ -35,7 +35,7 @@ func main() {
 
 	config, err := buildkite.NewTokenConfig(buildkiteToken, false)
 	if err != nil {
-		panic(err)
+		log.Fatal("buildkite.NewTokenConfig: ", err)
 	}
 	// Buildkite client
 	bkc := buildkite.NewClient(config.Client())
@@ -53,14 +53,14 @@ func main() {
 		ListOptions: buildkite.ListOptions{PerPage: 99},
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Builds.ListByPipeline: ", err)
 	}
 
 	opts := CheckOptions{
 		FailuresThreshold: threshold,
 		BuildTimeout:      time.Duration(timeoutMins) * time.Minute,
 	}
-	fmt.Printf("running buildchecker over %d builds with option: %+v\n", len(builds), opts)
+	log.Printf("running buildchecker over %d builds with option: %+v\n", len(builds), opts)
 	results, err := CheckBuilds(
 		ctx,
 		NewBranchLocker(ghc, "sourcegraph", "sourcegraph", branch),
@@ -68,20 +68,22 @@ func main() {
 		opts,
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("CheckBuilds: ", err)
 	}
+	log.Printf("results: %+v\n", err)
 
 	// Only post an update if the lock has been modified
 	lockModified := results.Action != nil
 	if lockModified {
 		// Post update first to avoid invisible changes
-		if err := postSlackUpdate(slackWebhook, slackSummary(lockModified, results.FailedCommits)); err != nil {
+		summary := slackSummary(results.LockBranch, results.FailedCommits)
+		if err := postSlackUpdate(slackWebhook, summary); err != nil {
 			// If action is an unlock, try to unlock anyway
 			if !results.LockBranch {
 				log.Println("slack update failed but action is an unlock, trying to unlock branch anyway")
 				goto POST
 			}
-			log.Fatal(err)
+			log.Fatal("postSlackUpdate: ", err)
 		}
 
 	POST:
@@ -89,9 +91,9 @@ func main() {
 		if err := results.Action(); err != nil {
 			slackErr := postSlackUpdate(slackWebhook, fmt.Sprintf("Failed to execute action (%+v): %s", results, err))
 			if slackErr != nil {
-				log.Println(slackErr)
+				log.Fatal("postSlackUpdate: ", err)
 			}
-			log.Fatal(err)
+			log.Fatal("results.Action: ", err)
 		}
 	}
 }

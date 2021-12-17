@@ -1,18 +1,18 @@
-# Code reviews
+# Pull request reviews
 
-All code should be reviewed and approved by an appropriate teammate before being merged into the `main` branch.
+All contributions to Sourcegraph must be reviewed and approved before being merged into the `main` branch. This includes code changes, documentation changes, and more.
 
-Our goal is to have a code review process and culture that everyone would opt-in to even if code reviews weren't required.
+Our goal is to have a pull request review process and culture that everyone would opt-in to even if reviews weren't required.
 
-## Why do we require peer code reviews?
+## Why do we require peer reviews?
 
-Code reviews are an investment. As an author, it takes extra time and effort to create good PRs, wait for someone to review your code, and address review comments. As a code reviewer, it takes extra time to understand the motivation, design, and implementation of someone else's code so that you can provide valuable feedback. This investment is worth it because it provides benefits to every person on the team and it helps the team as a whole ship features to our customers that are _high quality_ and _maintainable_.
+Reviews are an investment. As an author, it takes extra time and effort to create good PRs, wait for someone to review your contribution, and address review comments. As a reviewer, it takes extra time to understand the motivation, design, and implementation of someone else's contribution so that you can provide valuable feedback. This investment is worth it because it provides benefits to every person on the team and it helps the team as a whole ship features to our customers that are _high quality_ and _maintainable_.
 
 For authors:
 
-- Requesting a code review from one of your peers is motivation to ensure that the quality of your code is high.
+- Requesting a review from one of your peers is motivation to ensure that the quality of your contribution is high.
 - Writing a good PR description (and commit messages) develops your technical communication skills.
-- Receiving code review feedback can give you valuable insight into aspects of your change that you hadn't considered (architectural, performance, etc).
+- Receiving review feedback can give you valuable insight into aspects of your change that you hadn't considered (architectural, performance, etc).
 - Receiving feedback about how your code could be improved helps you learn how to write better code in the future.
 
 For reviewers:
@@ -23,47 +23,30 @@ For reviewers:
 
 For the team:
 
-- Code reviews increase the overall quality of our codebase by catching design and implementation defects before changes ship to customers.
-- Code reviews increase the overall consistency of our codebase by spreading knowledge of best practices and eliminating anti-patterns.
-- Code reviews distribute domain expertise, code knowledge, and ownership across the team so development can continue when people are unavailable (e.g. vacation).
+- reviews increase the overall quality of our codebase by catching design and implementation defects before changes ship to customers.
+- reviews increase the overall consistency of our codebase by spreading knowledge of best practices and eliminating anti-patterns.
+- reviews distribute domain expertise, code knowledge, and ownership across the team so development can continue when people are unavailable (e.g. vacation).
+
+Also see [When is an in-depth review not required?](#when-is-an-in-depth-review-not-required) for edge cases.
 
 ## Review cycles
 
 Once a change is ready for review it may go through a few review cycles, in general it'll look something like this:
 
-1. Ready for review
-1. Reviewers leave feedback
-1. Author addresses feedback, ensuring they have marked each comment as resolved. This can be relaxed if a comment was just a suggestion or a small nit. The goal is to communicate to the reviewer what has changed since they last reviewed.
-1. Author leaves a comment letting the reviewers know it is ready for another pass. Back to step 1.
+1. [Ready for review](#authoring-pull-requests)
+2. [Reviewers leave feedback](#reviewing-pull-requests)
+3. Author addresses feedback, ensuring they have marked each comment as resolved. This can be relaxed if a comment was just a suggestion or a small nit. The goal is to communicate to the reviewer what has changed since they last reviewed.
+4. Author leaves a comment letting the reviewers know it is ready for another pass. Back to step 1.
 
 Use your best judgement when deciding if another review cycle is needed. If your PR has been approved and the only changes you've made are ones that the approver would expect: accepting a suggestion around a name, or fleshing out some documentation, or something else that is low risk and you're comfortable with, you may choose to avoid another cycle and merge. However, you can always ask for more feedback if you're not totally comfortable.
 
-## When is a code review not required?
+### GitHub notifications
 
-We do not technically prevent PRs from being merged before being explicitly approved because there exist PRs that are appropriate to merge without waiting for a review.
+Ensure that you have you [GitHub notification settings](https://handbook.sourcegraph.com/engineering/github-notifications) configured correctly so that you are responsive to comments on PRs that you have authored and to review requests from teammates throughout review cycles.
 
-Some examples:
+## Authoring pull requests
 
-- Reverting a previous change to solve a production issue.
-- Minor documentation changes.
-- Auto-generated changes, such as when performing a version release, where a reviewer would not have anything of substance to review.
-
-It should be obvious to any other engineer on the team from the PR description and/or diff that it was appropriate for you to not wait for approval.
-
-Here are some examples of reasons to skip code review that are NOT acceptable:
-
-- "I promised that I would ship this to $CUSTOMER by $DEADLINE"
-  - The customer expects the feature to work and be maintained. Code review helps ensure both of these things by increasing the quality and distributing ownership.
-- "This code is experimental"
-  - Our goal is to have a code review culture such that engineers who are working on "experimental" code still find code reviews valuable and worth doing (for all the benefits mentioned in the rest of this document).
-  - All code that is in `main` has the potential to impact customers (e.g. by causing a bug) and other developers at Sourcegraph (e.g. by making it harder to refactor code). As such, it is in our interest to ensure a certain quality level on all code whether or not it is considered "experimental".
-  - Assume that we allowed "experimental" code to bypass code review. How would we know when it is no longer experimental and how would it get reviewed? Either it wouldn't get reviewed, or an engineer would have to review all the code after the fact without a nice PR diff to look at or effective way to make comments. Neither of these outcomes would meet our need of reviewing all non-experimental code.
-- "I don't have someone to review this code"
-  - Ask for help to identify someone else on the team with whom you can share your knowledge, context, and ownership.
-
-If we see that there are too many [PRs being merged without approval](https://github.com/pulls?page=1&q=is%3Apr+org%3Asourcegraph+is%3Amerged+review%3Anone+-author%3Aapp%2Frenovate&utf8=%E2%9C%93) that lack an appropriate reason, then we will have to consider an automated solution to enforce code reviews.
-
-## What makes an effective Pull Request (PR)?
+### What makes an effective Pull Request (PR)?
 
 An effective PR minimizes the amount of effort that is required for the reviewer to understand your change so that they can provide high quality feedback in a timely manner. [Further reading](https://www.atlassian.com/blog/git/written-unwritten-guide-pull-requests).
 
@@ -85,14 +68,36 @@ Don't:
 - Submit a PR that would cause the main branch to [non-releaseable](https://handbook.sourcegraph.com/engineering/continuous_releasability).
 - Submit PRs with multiple overlapping concerns. Every PR should have an obvious goals. PRs tackling multiple issues at once should be split into more highly-focused PRs when possible. For example, a necessary refactor for a feature addition should be split into a (prerequisite) refactor PR, followed by a (subsequent) feature addition PR. Highly cohesive PRs enable reviewers to effectively hold the state of the change in their head.
 
-## What makes an effective code review?
+### Who should I get a review from?
+
+You should get a review from the person who's approval will give you the most confidence that your change is high quality. If you are modifying existing code, you can use `git blame` to identify the previous author and the previous reviewer because they probably will have helpful context.
+
+If your change touches multiple parts of our codebase (e.g. Go, TypeScript), then you will need to get approval from multiple peers (e.g. a Go reviewer and a TypeScript reviewer).
+
+GitHub will automatically assign reviewers if there is a matching entry in the [CODEOWNERS](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/.github/CODEOWNERS) file, but that doesn't necessarily mean that you need to wait for an approval from everyone. For example, if you are making a change to the search backend then you only need approval from one person on that team, not all of them.
+
+For small changes across few files assign to the team and request a review.
+
+Use your best judgement and ask if you are uncertain.
+
+In some cases, [reviewers may opt to give an approval without performing an in-depth review](#when-is-an-in-depth-review-not-required).
+
+### When should I use a draft PR?
+
+A draft PR signals that the change is not ready for reviewed. This is useful, for example, if you want to self-review your diff before sending review requests to others. If you are looking for feedback or discussion on your change, then you should mark the PR as ready for review and communicate your intentions in the PR description.
+
+You may also set a ready-for-review PR *back* to a draft state to signal that work is being done that shouldn't be interesting (yet), and that potential reviewers should check back later.
+
+## Reviewing pull requests
+
+### What makes an effective review?
 
 Please read:
 
-- [On code reviews](https://medium.com/@schrockn/on-code-reviews-b1c7c94d868c)
+- [On reviews](https://medium.com/@schrockn/on-code-reviews-b1c7c94d868c)
 - [Code Health: Respectful Reviews == Useful Reviews](https://testing.googleblog.com/2019/11/code-health-respectful-reviews-useful.html)
 
-The code author and code reviewer have a _shared goal_ to bring the PR into a state that meets our quality standards and the needs that motivated the change.
+The code author and reviewer have a _shared goal_ to bring the PR into a state that meets our quality standards and the needs that motivated the change.
 
 Do:
 
@@ -116,26 +121,31 @@ Don't:
 - Take longer than one business day to respond to a PR that is ready for your review (or re-review).
 - Have protracted discussions in PR comments. If it can't be settled quickly in a few review round trips, try discussing in person or on a video call because these mediums are higher bandwidth and encourage empathy. Then summarize the results in the PR discussion after the fact.
 
-## GitHub notifications
-
-Ensure that you have you [GitHub notification settings](https://handbook.sourcegraph.com/engineering/github-notifications) configured correctly so that you are responsive to comments on PRs that you have authored and to review requests from teammates.
-
-## Who should I get a code review from?
-
-You should get a code review from the person who's approval will give you the most confidence that your change is high quality. If you are modifying existing code, you can use `git blame` to identify the previous author and the previous reviewer because they probably will have helpful context.
-
-If your change touches multiple parts of our codebase (e.g. Go, TypeScript), then you will need to get approval from multiple peers (e.g. a Go reviewer and a TypeScript reviewer).
-
-GitHub will automatically assign reviewers if there is a matching entry in the [CODEOWNERS](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/.github/CODEOWNERS) file, but that doesn't necessarily mean that you need to wait for an approval from everyone. For example, if you are making a change to the search backend then you only need approval from one person on that team, not all of them.
-
-For small changes across few files assign to the team and request a review.
-
-Use your best judgement and ask if you are uncertain.
-
-## When should I use a draft PR?
-
-A draft PR signals that the change is not ready for reviewed. This is useful, for example, if you want to self-review your diff before sending review requests to others. If you are looking for feedback or discussion on your change, then you should mark the PR as ready for review and communicate your intentions in the PR description.
-
-## Security
+### Security review
 
 Special care should be taken when reviewing a diff that contains, or is adjacent to, comments that contain the following string: `🚨 SECURITY`. These comments indicate security-sensitive code, the correctness of which is necessary to ensure that no private data is accessed by unauthorized actors. The code owner of any modified security-sensitive code must approve the changeset before it is merged. Please refer to [Security patterns](security_patterns.md) for considerations when touching security-sensitive code.
+
+### When is an in-depth review not required?
+
+We do technically prevent PRs from being merged before being explicitly approved in order to meet security certification compliance requirements. However, there exist PRs that are appropriate to merge without waiting for a full review - in these cases, a reviewer may opt to give an approval without performing an in-depth review, and the author may opt to merge the PR without waiting for a reviewer to provide an in-depth review.
+
+> NOTE: When in doubt, reviewers should prefer to provide an in-depth review, and authors should prefer to wait for an in-depth review.
+
+Some valid examples include:
+
+- Reverting a previous change to solve a production issue.
+- Minor documentation changes.
+- Auto-generated changes, such as when performing a version release, where a reviewer would not have anything of substance to review.
+
+It should be obvious to any other teammate from the PR description and/or diff that it was appropriate for you to not wait for approval.
+
+Here are some examples of reasons to skip review that are NOT acceptable:
+
+- "I promised that I would ship this to $CUSTOMER by $DEADLINE"
+  - The customer expects the feature to work and be maintained. review helps ensure both of these things by increasing the quality and distributing ownership.
+- "This code is experimental"
+  - Our goal is to have a review culture such that engineers who are working on "experimental" code still find reviews valuable and worth doing (for all the benefits mentioned in the rest of this document).
+  - All code that is in `main` has the potential to impact customers (e.g. by causing a bug) and other developers at Sourcegraph (e.g. by making it harder to refactor code). As such, it is in our interest to ensure a certain quality level on all code whether or not it is considered "experimental".
+  - Assume that we allowed "experimental" code to bypass review. How would we know when it is no longer experimental and how would it get reviewed? Either it wouldn't get reviewed, or an engineer would have to review all the code after the fact without a nice PR diff to look at or effective way to make comments. Neither of these outcomes would meet our need of reviewing all non-experimental code.
+- "I don't have someone to review this code"
+  - Ask for help to identify someone else on the team with whom you can share your knowledge, context, and ownership.

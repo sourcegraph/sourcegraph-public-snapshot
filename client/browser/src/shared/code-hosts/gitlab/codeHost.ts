@@ -237,7 +237,6 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         className: 'card hover-overlay--gitlab',
         actionItemClassName: 'btn btn-secondary action-item--gitlab',
         actionItemPressedClassName: 'active',
-        closeButtonClassName: 'btn btn-transparent p-0 btn-icon--gitlab',
         iconClassName: 'square s16',
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
     },

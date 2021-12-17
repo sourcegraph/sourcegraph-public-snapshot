@@ -3,6 +3,8 @@
 `buildchecker` is designed to respond to periods of consecutive build failures on a Buildkite pipeline.
 Owned by the [DevX team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience).
 
+More documentation for Sourcegraph teammates is available in the[CI incidents playbook](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci#scenarios).
+
 ## Usage
 
 ```sh

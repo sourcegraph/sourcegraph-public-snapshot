@@ -20,7 +20,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -48,8 +48,8 @@ func BenchmarkPrometheusFieldName(b *testing.B) {
 }
 
 func TestRepository(t *testing.T) {
-	db := dbmock.NewMockDB()
-	repos := dbmock.NewMockRepoStore()
+	db := database.NewMockDB()
+	repos := database.NewMockRepoStore()
 	repos.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
 	db.ReposFunc.SetDefaultReturn(repos)
 	RunTests(t, []*Test{
@@ -74,7 +74,7 @@ func TestRepository(t *testing.T) {
 }
 
 func TestResolverTo(t *testing.T) {
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	// This test exists purely to remove some non determinism in our tests
 	// run. The To* resolvers are stored in a map in our graphql
 	// implementation => the order we call them is non deterministic =>
@@ -115,14 +115,14 @@ func TestMain(m *testing.M) {
 func TestAffiliatedRepositories(t *testing.T) {
 	resetMocks()
 	rcache.SetupForTest(t)
-	users := dbmock.NewMockUserStore()
+	users := database.NewMockUserStore()
 	users.TagsFunc.SetDefaultReturn(map[string]bool{}, nil)
 	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, userID int32) (*types.User, error) {
 		return &types.User{ID: userID, SiteAdmin: userID == 2}, nil
 	})
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-	externalServices := dbmock.NewMockExternalServiceStore()
+	externalServices := database.NewMockExternalServiceStore()
 	externalServices.ListFunc.SetDefaultReturn(
 		[]*types.ExternalService{
 			{
@@ -160,7 +160,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 		return nil, nil
 	})
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 

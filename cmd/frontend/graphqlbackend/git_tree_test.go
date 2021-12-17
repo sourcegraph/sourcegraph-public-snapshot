@@ -10,7 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -18,7 +18,7 @@ import (
 )
 
 func TestGitTree(t *testing.T) {
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	tests := []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t, db),
@@ -81,11 +81,11 @@ func TestGitTree(t *testing.T) {
 	testGitTree(t, db, tests)
 }
 
-func testGitTree(t *testing.T, db *dbmock.MockDB, tests []*Test) {
-	externalServices := dbmock.NewMockExternalServiceStore()
+func testGitTree(t *testing.T, db *database.MockDB, tests []*Test) {
+	externalServices := database.NewMockExternalServiceStore()
 	externalServices.ListFunc.SetDefaultReturn(nil, nil)
 
-	repos := dbmock.NewMockRepoStore()
+	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
 	repos.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
 

@@ -35,7 +35,6 @@ const authUser: AuthenticatedUser = {
     tags: ['AllowUserExternalServicePublic'],
     viewerCanAdminister: true,
     databaseID: 0,
-    tosAccepted: true,
 }
 
 add(

@@ -20,6 +20,9 @@ type MockStore struct {
 	// LockFunc is an instance of a mock function object controlling the
 	// behavior of the method Lock.
 	LockFunc *StoreLockFunc
+	// TryLockFunc is an instance of a mock function object controlling the
+	// behavior of the method TryLock.
+	TryLockFunc *StoreTryLockFunc
 	// UpFunc is an instance of a mock function object controlling the
 	// behavior of the method Up.
 	UpFunc *StoreUpFunc
@@ -38,6 +41,11 @@ func NewMockStore() *MockStore {
 			},
 		},
 		LockFunc: &StoreLockFunc{
+			defaultHook: func(context.Context) (bool, func(err error) error, error) {
+				return false, nil, nil
+			},
+		},
+		TryLockFunc: &StoreTryLockFunc{
 			defaultHook: func(context.Context) (bool, func(err error) error, error) {
 				return false, nil, nil
 			},
@@ -69,6 +77,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.Lock")
 			},
 		},
+		TryLockFunc: &StoreTryLockFunc{
+			defaultHook: func(context.Context) (bool, func(err error) error, error) {
+				panic("unexpected invocation of MockStore.TryLock")
+			},
+		},
 		UpFunc: &StoreUpFunc{
 			defaultHook: func(context.Context, definition.Definition) error {
 				panic("unexpected invocation of MockStore.Up")
@@ -91,6 +104,9 @@ func NewMockStoreFrom(i Store) *MockStore {
 		},
 		LockFunc: &StoreLockFunc{
 			defaultHook: i.Lock,
+		},
+		TryLockFunc: &StoreTryLockFunc{
+			defaultHook: i.TryLock,
 		},
 		UpFunc: &StoreUpFunc{
 			defaultHook: i.Up,
@@ -311,6 +327,114 @@ func (c StoreLockFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreLockFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// StoreTryLockFunc describes the behavior when the TryLock method of the
+// parent MockStore instance is invoked.
+type StoreTryLockFunc struct {
+	defaultHook func(context.Context) (bool, func(err error) error, error)
+	hooks       []func(context.Context) (bool, func(err error) error, error)
+	history     []StoreTryLockFuncCall
+	mutex       sync.Mutex
+}
+
+// TryLock delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockStore) TryLock(v0 context.Context) (bool, func(err error) error, error) {
+	r0, r1, r2 := m.TryLockFunc.nextHook()(v0)
+	m.TryLockFunc.appendCall(StoreTryLockFuncCall{v0, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the TryLock method of
+// the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreTryLockFunc) SetDefaultHook(hook func(context.Context) (bool, func(err error) error, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// TryLock method of the parent MockStore instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *StoreTryLockFunc) PushHook(hook func(context.Context) (bool, func(err error) error, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *StoreTryLockFunc) SetDefaultReturn(r0 bool, r1 func(err error) error, r2 error) {
+	f.SetDefaultHook(func(context.Context) (bool, func(err error) error, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *StoreTryLockFunc) PushReturn(r0 bool, r1 func(err error) error, r2 error) {
+	f.PushHook(func(context.Context) (bool, func(err error) error, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *StoreTryLockFunc) nextHook() func(context.Context) (bool, func(err error) error, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreTryLockFunc) appendCall(r0 StoreTryLockFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreTryLockFuncCall objects describing the
+// invocations of this function.
+func (f *StoreTryLockFunc) History() []StoreTryLockFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreTryLockFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreTryLockFuncCall is an object that describes an invocation of method
+// TryLock on an instance of MockStore.
+type StoreTryLockFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 func(err error) error
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreTryLockFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreTryLockFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 

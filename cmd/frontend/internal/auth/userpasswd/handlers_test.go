@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 )
 
 func TestCheckEmailAbuse(t *testing.T) {
@@ -55,9 +54,9 @@ func TestCheckEmailAbuse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			userEmails := dbmock.NewMockUserEmailsStore()
+			userEmails := database.NewMockUserEmailsStore()
 			userEmails.GetLatestVerificationSentEmailFunc.SetDefaultReturn(test.mockEmail, test.mockErr)
-			db := dbmock.NewMockDB()
+			db := database.NewMockDB()
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
 			abused, reason, err := checkEmailAbuse(context.Background(), db, "fake@localhost")

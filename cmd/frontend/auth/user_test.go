@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -474,7 +473,7 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 
 	user := &types.User{ID: 1, DisplayName: "", AvatarURL: ""}
 
-	users := dbmock.NewMockUserStore()
+	users := database.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(user, nil)
 	users.UpdateFunc.SetDefaultHook(func(_ context.Context, userID int32, update database.UserUpdate) error {
 		user.DisplayName = *update.DisplayName
@@ -482,10 +481,10 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 		return nil
 	})
 
-	externalAccounts := dbmock.NewMockUserExternalAccountsStore()
+	externalAccounts := database.NewMockUserExternalAccountsStore()
 	externalAccounts.LookupUserAndSaveFunc.SetDefaultReturn(user.ID, nil)
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 
@@ -570,25 +569,25 @@ type mocks struct {
 }
 
 func (m *mocks) DB() database.DB {
-	externalAccounts := dbmock.NewMockUserExternalAccountsStore()
+	externalAccounts := database.NewMockUserExternalAccountsStore()
 	externalAccounts.LookupUserAndSaveFunc.SetDefaultHook(m.LookupUserAndSave)
 	externalAccounts.AssociateUserAndSaveFunc.SetDefaultHook(m.AssociateUserAndSave)
 	externalAccounts.CreateUserAndSaveFunc.SetDefaultHook(m.CreateUserAndSave)
 
-	users := dbmock.NewMockUserStore()
+	users := database.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(m.GetByID)
 	users.GetByVerifiedEmailFunc.SetDefaultHook(m.GetByVerifiedEmail)
 	users.GetByUsernameFunc.SetDefaultHook(m.GetByUsername)
 	users.UpdateFunc.SetDefaultHook(m.Update)
 
-	authzStore := dbmock.NewMockAuthzStore()
+	authzStore := database.NewMockAuthzStore()
 	authzStore.GrantPendingPermissionsFunc.SetDefaultHook(m.GrantPendingPermissions)
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.AuthzFunc.SetDefaultReturn(authzStore)
-	db.EventLogsFunc.SetDefaultReturn(dbmock.NewMockEventLogStore())
+	db.EventLogsFunc.SetDefaultReturn(database.NewMockEventLogStore())
 	return db
 }
 
