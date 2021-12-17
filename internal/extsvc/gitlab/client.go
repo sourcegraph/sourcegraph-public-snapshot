@@ -35,18 +35,20 @@ var (
 
 func init() {
 	go func() {
-		conf.Watch(func() {
-			exp := conf.Get().ExperimentalFeatures
-			if exp == nil {
-				atomic.StoreInt32(&traceEnabled, 0)
-				return
-			}
-			if debugLog := exp.DebugLog; debugLog == nil || !debugLog.ExtsvcGitlab {
-				atomic.StoreInt32(&traceEnabled, 0)
-				return
-			}
-			atomic.StoreInt32(&traceEnabled, 1)
-		})
+		_ = conf.Watch
+		// TODO @jhchabran
+		// conf.Watch(func() {
+		// exp := conf.Get().ExperimentalFeatures
+		// if exp == nil {
+		// 	atomic.StoreInt32(&traceEnabled, 0)
+		// 	return
+		// }
+		// if debugLog := exp.DebugLog; debugLog == nil || !debugLog.ExtsvcGitlab {
+		// 	atomic.StoreInt32(&traceEnabled, 0)
+		// 	return
+		// }
+		// atomic.StoreInt32(&traceEnabled, 1)
+		// })
 	}()
 }
 
