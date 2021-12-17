@@ -1003,11 +1003,11 @@ func TestClient_MergePullRequest(t *testing.T) {
 			name: "not mergeable",
 			pr: func() *PullRequest {
 				pr := *pr
-				pr.ID = 146
-				pr.Version = 1
+				pr.ID = 154
+				pr.Version = 16
 				return &pr
 			},
-			err: "pull request cannot be merged",
+			err: "com.atlassian.bitbucket.pull.PullRequestMergeVetoedException",
 		},
 	} {
 		tc := tc

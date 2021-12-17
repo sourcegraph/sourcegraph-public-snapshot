@@ -99,7 +99,12 @@ export const AuthenticatedBatchChangesArea = withAuthenticatedUser<Authenticated
             <Route
                 path={`${match.url}/executions/:batchSpecID`}
                 render={({ match, ...props }: RouteComponentProps<{ batchSpecID: string }>) => (
-                    <BatchSpecExecutionDetailsPage {...outerProps} {...props} batchSpecID={match.params.batchSpecID} />
+                    <BatchSpecExecutionDetailsPage
+                        {...outerProps}
+                        {...props}
+                        match={match}
+                        batchSpecID={match.params.batchSpecID}
+                    />
                 )}
             />
             <Route component={NotFoundPage} key="hardcoded-key" />

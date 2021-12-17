@@ -131,7 +131,7 @@ export interface OrgAreaPageProps
     onOrganizationUpdate: () => void
 
     /** The currently authenticated user. */
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: AuthenticatedUser
 
     isSourcegraphDotCom: boolean
 }

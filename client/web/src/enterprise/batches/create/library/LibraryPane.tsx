@@ -73,7 +73,7 @@ export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, o
                 </div>
 
                 {/* TODO: This should slide vertically but not on our version of reactstrap. */}
-                <Collapse className={styles.collapseContainer} isOpen={!collapsed} horizontal={false}>
+                <Collapse className={styles.collapseContainer} isOpen={!collapsed}>
                     <ul className="m-0 p-0">
                         {LIBRARY.map(item => (
                             <li className={styles.libraryItem} key={item.name}>

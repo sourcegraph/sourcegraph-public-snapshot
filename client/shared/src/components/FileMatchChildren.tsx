@@ -18,9 +18,9 @@ import {
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import styles from './FileMatchChildren.module.scss'
-import { MatchGroup } from './FileMatchContext'
 import { LastSyncedIcon } from './LastSyncedIcon'
 import { Link } from './Link'
+import { MatchGroup } from './ranking/PerFileResultRanking'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     location: H.Location

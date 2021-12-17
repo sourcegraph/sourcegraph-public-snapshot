@@ -326,6 +326,14 @@ func (r *batchSpecWorkspaceResolver) PlaceInQueue() *int32 {
 	return &i32
 }
 
+func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (*graphqlbackend.ExecutorResolver, error) {
+	if r.execution == nil {
+		return nil, nil
+	}
+
+	return graphqlbackend.ExecutorByHostname(ctx, r.store.DatabaseDB(), r.execution.WorkerHostname)
+}
+
 type batchSpecWorkspaceStagesResolver struct {
 	store     *store.Store
 	execution *btypes.BatchSpecWorkspaceExecutionJob
