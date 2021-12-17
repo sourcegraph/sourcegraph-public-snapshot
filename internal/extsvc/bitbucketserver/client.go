@@ -1386,6 +1386,11 @@ func IsPullRequestOutOfDate(err error) bool {
 	return errors.As(err, &e) && e.PullRequestOutOfDateException()
 }
 
+func IsMergePreconditionFailedException(err error) bool {
+	var e *httpError
+	return errors.As(err, &e) && e.MergePreconditionFailedException()
+}
+
 // ExtractExistingPullRequest will attempt to extract the existing PR returned with an error.
 func ExtractExistingPullRequest(err error) (*PullRequest, error) {
 	var e *httpError
@@ -1437,7 +1442,7 @@ func (e *httpError) NoSuchLabelException() bool {
 }
 
 func (e *httpError) MergePreconditionFailedException() bool {
-	return e.StatusCode == 409
+	return strings.Contains(string(e.Body), bitbucketPullRequestMergeVetoedException)
 }
 
 func (e *httpError) PullRequestOutOfDateException() bool {
@@ -1445,10 +1450,11 @@ func (e *httpError) PullRequestOutOfDateException() bool {
 }
 
 const (
-	bitbucketDuplicatePRException          = "com.atlassian.bitbucket.pull.DuplicatePullRequestException"
-	bitbucketNoSuchLabelException          = "com.atlassian.bitbucket.label.NoSuchLabelException"
-	bitbucketNoSuchPullRequestException    = "com.atlassian.bitbucket.pull.NoSuchPullRequestException"
-	bitbucketPullRequestOutOfDateException = "com.atlassian.bitbucket.pull.PullRequestOutOfDateException"
+	bitbucketDuplicatePRException            = "com.atlassian.bitbucket.pull.DuplicatePullRequestException"
+	bitbucketNoSuchLabelException            = "com.atlassian.bitbucket.label.NoSuchLabelException"
+	bitbucketNoSuchPullRequestException      = "com.atlassian.bitbucket.pull.NoSuchPullRequestException"
+	bitbucketPullRequestOutOfDateException   = "com.atlassian.bitbucket.pull.PullRequestOutOfDateException"
+	bitbucketPullRequestMergeVetoedException = "com.atlassian.bitbucket.pull.PullRequestMergeVetoedException"
 )
 
 // ExtractExistingPullRequest will try to extract a PullRequest from the
@@ -1546,10 +1552,6 @@ func (c *Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest, 
 	return err
 }
 
-// ErrNotMergeable is returned by MergePullRequest when the pull request failed
-// to merge, because a precondition is not met.
-var ErrNotMergeable = errors.New("pull request cannot be merged")
-
 func (c *Client) MergePullRequest(ctx context.Context, pr *PullRequest) error {
 	if pr.ToRef.Repository.Slug == "" {
 		return errors.New("repository slug empty")
@@ -1570,10 +1572,6 @@ func (c *Client) MergePullRequest(ctx context.Context, pr *PullRequest) error {
 
 	_, err := c.send(ctx, "POST", path, qry, nil, pr)
 	if err != nil {
-		var e *httpError
-		if errors.As(err, &e) && e.MergePreconditionFailedException() {
-			return errors.Wrap(ErrNotMergeable, err.Error())
-		}
 		return err
 	}
 	return nil

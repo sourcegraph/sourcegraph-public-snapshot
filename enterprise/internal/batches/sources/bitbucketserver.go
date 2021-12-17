@@ -256,6 +256,8 @@ func (s BitbucketServerSource) ReopenChangeset(ctx context.Context, c *Changeset
 
 // CreateComment posts a comment on the Changeset.
 func (s BitbucketServerSource) CreateComment(ctx context.Context, c *Changeset, text string) error {
+	// Bitbucket Server seems to ignore version conflicts when commenting, but
+	// we use this here anyway.
 	_, err := s.callAndRetryIfOutdated(ctx, c, func(ctx context.Context, pr *bitbucketserver.PullRequest) error {
 		return s.client.CreatePullRequestComment(ctx, pr, text)
 	})
@@ -268,7 +270,7 @@ func (s BitbucketServerSource) CreateComment(ctx context.Context, c *Changeset, 
 func (s BitbucketServerSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
 	merged, err := s.callAndRetryIfOutdated(ctx, c, s.client.MergePullRequest)
 	if err != nil {
-		if errors.Is(err, bitbucketserver.ErrNotMergeable) {
+		if bitbucketserver.IsMergePreconditionFailedException(err) {
 			return &ChangesetNotMergeableError{ErrorMsg: err.Error()}
 		}
 		return err
