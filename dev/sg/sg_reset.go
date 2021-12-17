@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/garyburd/redigo/redis"
 	"github.com/jackc/pgx/v4"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
@@ -24,18 +26,61 @@ import (
 
 var (
 	resetFlagSet          = flag.NewFlagSet("sg reset", flag.ExitOnError)
-	resetDatabaseNameFlag = resetFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance.")
-	resetCommand          = &ffcli.Command{
+	resetPGFlagSet        = flag.NewFlagSet("sg reset pg", flag.ExitOnError)
+	resetDatabaseNameFlag = resetPGFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance.")
+	resetRedisFlagSet     = flag.NewFlagSet("sg reset redis", flag.ExitOnError)
+
+	resetCommand = &ffcli.Command{
 		Name:       "reset",
-		ShortUsage: fmt.Sprintf("sg reset [-db=%s]", db.DefaultDatabase.Name),
-		ShortHelp:  "Drops, recreates and migrates the specified Sourcegraph database.",
-		LongHelp:   `Run 'sg reset' to drop and recreate Sourcegraph databases. If -db is not set, then the "frontend" database is used (what's set as PGDATABASE in env or the sg.config.yaml). If -db is set to "all" then all databases are reset and recreated.`,
-		FlagSet:    resetFlagSet,
-		Exec:       resetExec,
+		ShortUsage: "",
+		LongHelp:   "",
+		Exec: func(ctx context.Context, args []string) error {
+			return flag.ErrHelp
+		},
+		Subcommands: []*ffcli.Command{
+			&ffcli.Command{
+				Name:       "pg",
+				ShortUsage: fmt.Sprintf("sg reset [-db=%s]", db.DefaultDatabase.Name),
+				ShortHelp:  "Drops, recreates and migrates the specified Sourcegraph database.",
+				LongHelp:   `Run 'sg reset' to drop and recreate Sourcegraph databases. If -db is not set, then the "frontend" database is used (what's set as PGDATABASE in env or the sg.config.yaml). If -db is set to "all" then all databases are reset and recreated.`,
+				FlagSet:    resetPGFlagSet,
+				Exec:       resetPGExec,
+			},
+			&ffcli.Command{
+				Name:       "redis",
+				ShortUsage: fmt.Sprintf("sg reset redis [-db=%s]", db.DefaultDatabase.Name), // TODO edit flag
+				ShortHelp:  "Drops, recreates and migrates the specified redis Sourcegraph database.",
+				LongHelp:   `Run 'sg reset redis' to drop and recreate Sourcegraph redis databases. TODO`,
+				FlagSet:    resetRedisFlagSet,
+				Exec:       resetRedisExec,
+			},
+		},
 	}
 )
 
-func resetExec(ctx context.Context, args []string) error {
+func resetRedisExec(ctx context.Context, args []string) error {
+	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
+	}
+
+	endpoint := globalConf.Env["REDIS_ENDPOINT"]
+
+	conn, err := redis.Dial("tcp", endpoint, redis.DialConnectTimeout(5*time.Second))
+	if err != nil {
+		return errors.Wrapf(err, "failed to connect to Redis at %s", endpoint)
+	}
+
+	// Drop everything in redis
+	_, err = conn.Do("flushall")
+	if err != nil {
+		return errors.Wrap(err, "failed to run command on redis")
+	}
+
+	return nil
+}
+
+func resetPGExec(ctx context.Context, args []string) error {
 	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
 	if !ok {
 		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
