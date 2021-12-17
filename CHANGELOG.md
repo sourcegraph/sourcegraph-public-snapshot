@@ -35,6 +35,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Individual batch changes can publish multiple changesets to the same repository by specifying multiple target branches using the [`on.branches`](https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#on-repository) attribute. [#25228](https://github.com/sourcegraph/sourcegraph/issues/25228)
 - Low resource overlay added. NOTE: this is designed for internal-use only. Customers can use the `minikube` overlay to achieve similar results.[#4012](https://github.com/sourcegraph/deploy-sourcegraph/pull/4012)
+- Code Insights has a new insight `Detect and Track` which will generate unique time series from the matches of a pattern specified as a regular expression capture group. This is currently limited to insights scoped to specific repositories. [docs](https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series)
+- Code Insights is persisted entirely in the `codeinsights-db` database. A migration will automatically be performed to move any defined insights and dashboards from your user, org, or global settings files.
+- The GraphQL API for Code Insights has entered beta. [docs](https://docs.sourcegraph.com/code_insights/explanations/code_insights_graphql_api)
 - The `SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND` environment variable to control the egress throughput of gitserver's git service (e.g. used by zoekt-index-server to clone repos to index). Set to -1 for no limit. [#29197](https://github.com/sourcegraph/sourcegraph/pull/29197)
 - More explicit Terms of Service and Privacy Policy consent has been added to Sourcegraph Server. [#28716](https://github.com/sourcegraph/sourcegraph/issues/28716)
 
@@ -46,7 +49,10 @@ All notable changes to Sourcegraph are documented in this file.
 - The sourcegraph-frontend ingress now uses the networking.k8s.io/v1 api. This adds support for k8s v1.22 and later, and deprecates support for versions older than v1.18.x [#4029](https://github.com/sourcegraph/deploy-sourcegraph/pull/4029)
 - Non-bare repositories found on gitserver will be removed by a janitor job. [#28895](https://github.com/sourcegraph/sourcegraph/pull/28895)
 - The search bar is no longer auto-focused when navigating between files. This change means that the keyboard shortcut Cmd+LeftArrow (or Ctrl-LeftArrow) now goes back to the browser's previous page instead of moving the cursor position to the first position of the search bar. [#28943](https://github.com/sourcegraph/sourcegraph/pull/28943)
+- Code Insights series over all repositories can now be edited
+- Code Insights series over all repositories now support a custom time interval and will calculate with 12 points starting at the moment the series is created and working backwards.
 - Minio service upgraded to RELEASE.2021-12-10T23-03-39Z. [#29188](https://github.com/sourcegraph/sourcegraph/pull/29188)
+- Code insights creation UI form query field now supports suggestions and syntax highlighting. [#28130](https://github.com/sourcegraph/sourcegraph/pull/28130)
 - Using `select:repo` in search queries will now stream results incrementally, greatly improving speed and reducing time-to-first-result. [#28920](https://github.com/sourcegraph/sourcegraph/pull/28920)
 
 ### Fixed
@@ -56,6 +62,10 @@ All notable changes to Sourcegraph are documented in this file.
 - Suppresses docker-on-mac warning for Kubernetes, Docker Compose, and Pure Docker deployments. [#28405](https://github.com/sourcegraph/sourcegraph/pull/28821)
 - Fixed an issue where certain regexp syntax for repository searches caused the entire search, including non-repository searches, to fail with a parse error (issue affects only version 3.34). [#28826](https://github.com/sourcegraph/sourcegraph/pull/28826)
 - Modifying changesets on Bitbucket Server could previously fail if the local copy in Batch Changes was out of date. That has been fixed by retrying the operations in case of a 409 response. [#29100](https://github.com/sourcegraph/sourcegraph/pull/29100)
+
+### Removed
+
+- Settings files (user, org, global) as a persistence mechanism for Code Insights are now deprecated.
 
 ## 3.34.2
 
