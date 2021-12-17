@@ -14,24 +14,11 @@ func (r *Runner) Validate(ctx context.Context, schemaNames ...string) error {
 }
 
 func (r *Runner) validateSchema(ctx context.Context, schemaName string, schemaContext schemaContext) error {
-	version, dirty := schemaContext.schemaVersion.version, schemaContext.schemaVersion.dirty
+	// TODO - try early return here first
 
-	for dirty {
-		// While the previous version of the schema we queried was marked as dirty, we
-		// will block until we can acquire the migration lock, then re-check the version.
-		newVersion, newDirty, err := r.lockedVersion(ctx, schemaContext)
-		if err != nil {
-			return err
-		}
-		if newVersion == version {
-			// Version didn't change, no migrator instance was running and we were able
-			// to acquire the lock right away. Break from this loop otherwise we'll just
-			// be busy-querying the same state.
-			break
-		}
-
-		// Version changed, check again
-		version, dirty = newVersion, newDirty
+	version, dirty, err := r.waitForMigration(ctx, schemaName, schemaContext)
+	if err != nil {
+		return err
 	}
 
 	withAllDefinitions := func(f func(definitions []definition.Definition) error) error {
@@ -96,6 +83,30 @@ func (r *Runner) validateSchema(ctx context.Context, schemaName string, schemaCo
 		currentVersion:  version,
 		expectedVersion: definitions[len(definitions)-1].ID,
 	}
+}
+
+func (r *Runner) waitForMigration(ctx context.Context, schemaName string, schemaContext schemaContext) (int, bool, error) {
+	version, dirty := schemaContext.schemaVersion.version, schemaContext.schemaVersion.dirty
+
+	for dirty {
+		// While the previous version of the schema we queried was marked as dirty, we
+		// will block until we can acquire the migration lock, then re-check the version.
+		newVersion, newDirty, err := r.lockedVersion(ctx, schemaContext)
+		if err != nil {
+			return 0, false, err
+		}
+		if newVersion == version {
+			// Version didn't change, no migrator instance was running and we were able
+			// to acquire the lock right away. Break from this loop otherwise we'll just
+			// be busy-querying the same state.
+			break
+		}
+
+		// Version changed, check again
+		version, dirty = newVersion, newDirty
+	}
+
+	return version, dirty, nil
 }
 
 func (r *Runner) lockedVersion(ctx context.Context, schemaContext schemaContext) (_ int, _ bool, err error) {
