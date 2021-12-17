@@ -93,7 +93,10 @@ function createSearchBasedInsight(
                     return of()
                 }
 
-                const createdInsight = createInsightView(data.createLineChartSearchInsight.view)
+                const createdInsight = {
+                    ...createInsightView(data.createLineChartSearchInsight.view),
+                    filters: insight.filters,
+                }
 
                 return updateInsight(
                     apolloClient,
