@@ -69,7 +69,7 @@ func (c *Client) url(repo api.RepoName) (string, error) {
 }
 
 // Search performs a symbol search on the symbols service.
-func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (result *result.Symbols, err error) {
+func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (result result.Symbols, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.Search")
 	defer func() {
 		if err != nil {
