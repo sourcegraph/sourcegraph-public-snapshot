@@ -15,7 +15,9 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -37,9 +39,10 @@ var defaultDoer = func() httpcli.Doer {
 // DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
 // SYMBOLS_URL environment variable.
 var DefaultClient = &Client{
-	URL:         symbolsURL,
-	HTTPClient:  defaultDoer,
-	HTTPLimiter: parallel.NewRun(500),
+	URL:                 symbolsURL,
+	HTTPClient:          defaultDoer,
+	HTTPLimiter:         parallel.NewRun(500),
+	SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
 }
 
 // Client is a symbols service client.
@@ -52,6 +55,11 @@ type Client struct {
 
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter *parallel.Run
+
+	// SubRepoPermsChecker is function to return the checker to use. It needs to be a
+	// function since we expect the client to be set at runtime once we have a
+	// database connection.
+	SubRepoPermsChecker func() authz.SubRepoPermissionChecker
 
 	once     sync.Once
 	endpoint *endpoint.Map
@@ -69,7 +77,7 @@ func (c *Client) url(repo api.RepoName) (string, error) {
 }
 
 // Search performs a symbol search on the symbols service.
-func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (result result.Symbols, err error) {
+func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (symbols result.Symbols, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.Search")
 	defer func() {
 		if err != nil {
@@ -98,8 +106,40 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (res
 		)
 	}
 
-	err = json.NewDecoder(resp.Body).Decode(&result)
-	return result, err
+	err = json.NewDecoder(resp.Body).Decode(&symbols)
+	if err != nil {
+		return symbols, err
+	}
+
+	// 🚨 SECURITY: We have valid results, so we need to apply sub-repo permissions
+	// filtering.
+	if c.SubRepoPermsChecker == nil {
+		return symbols, err
+	}
+
+	checker := c.SubRepoPermsChecker()
+	if checker == nil || !checker.Enabled() {
+		return symbols, err
+	}
+
+	a := actor.FromContext(ctx)
+	// Filter in place
+	filtered := symbols[:0]
+	for _, r := range symbols {
+		rc := authz.RepoContent{
+			Repo: args.Repo,
+			Path: r.Path,
+		}
+		perm, err := authz.ActorPermissions(ctx, checker, a, rc)
+		if err != nil {
+			return nil, errors.Wrap(err, "checking sub-repo permissions")
+		}
+		if perm.Include(authz.Read) {
+			filtered = append(filtered, r)
+		}
+	}
+
+	return filtered, nil
 }
 
 func (c *Client) httpPost(
