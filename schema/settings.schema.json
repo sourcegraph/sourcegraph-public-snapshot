@@ -202,7 +202,10 @@
           "description": "How to rank search results in the client",
           "type": "string",
           "default": "by-line-number",
-          "enum": ["by-line-number", "by-zoekt-ranking"]
+          "examples": ["by-line-number", "by-zoekt-ranking"],
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"
