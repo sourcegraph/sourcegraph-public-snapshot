@@ -1741,7 +1741,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
-			_ = agg.DoSearch(ctx, job, repos, args.Mode)
+			_ = agg.DoSearch(ctx, job, repos)
 		})
 	}
 
