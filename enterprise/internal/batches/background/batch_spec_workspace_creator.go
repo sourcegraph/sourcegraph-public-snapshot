@@ -106,6 +106,12 @@ func (r *batchSpecWorkspaceCreator) process(
 		if spec.NoCache {
 			continue
 		}
+		if !spec.AllowIgnored && w.Ignored {
+			continue
+		}
+		if !spec.AllowUnsupported && w.Unsupported {
+			continue
+		}
 
 		r := batcheslib.Repository{
 			ID:          string(graphqlbackend.MarshalRepositoryID(w.Repo.ID)),

@@ -410,6 +410,66 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 			t.Fatalf("cache entry LastUsedAt updated, but should not be used: %s", reloadedEntry.LastUsedAt)
 		}
 	})
+
+	t.Run("caching enabled but workspace is ignored", func(t *testing.T) {
+		workspace := buildWorkspace("caching-enabled-ignored")
+		workspace.Ignored = true
+
+		batchSpec := createBatchSpec(t, false)
+
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult)
+
+		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
+		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+		if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
+			t.Fatalf("proces failed: %s", err)
+		}
+
+		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
+			UserID: batchSpec.UserID,
+			Keys:   []string{entry.Key},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(reloadedEntries) != 1 {
+			t.Fatal("cache entry not found")
+		}
+		reloadedEntry := reloadedEntries[0]
+		if !reloadedEntry.LastUsedAt.IsZero() {
+			t.Fatalf("cache entry LastUsedAt updated, but should not be used: %s", reloadedEntry.LastUsedAt)
+		}
+	})
+
+	t.Run("caching enabled but workspace is unsupported", func(t *testing.T) {
+		workspace := buildWorkspace("caching-enabled-ignored")
+		workspace.Unsupported = true
+
+		batchSpec := createBatchSpec(t, false)
+
+		entry := createCacheEntry(t, batchSpec, workspace, executionResult)
+
+		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
+		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+		if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
+			t.Fatalf("proces failed: %s", err)
+		}
+
+		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
+			UserID: batchSpec.UserID,
+			Keys:   []string{entry.Key},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(reloadedEntries) != 1 {
+			t.Fatal("cache entry not found")
+		}
+		reloadedEntry := reloadedEntries[0]
+		if !reloadedEntry.LastUsedAt.IsZero() {
+			t.Fatalf("cache entry LastUsedAt updated, but should not be used: %s", reloadedEntry.LastUsedAt)
+		}
+	})
 }
 
 func TestBatchSpecWorkspaceCreatorProcess_Importing(t *testing.T) {
