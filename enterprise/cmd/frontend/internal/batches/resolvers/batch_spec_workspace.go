@@ -8,7 +8,9 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -332,12 +334,24 @@ func (r *batchSpecWorkspaceResolver) PlaceInQueue() *int32 {
 	return &i32
 }
 
-func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (*graphqlbackend.ExecutorResolver, error) {
+func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (*gql.ExecutorResolver, error) {
 	if r.execution == nil {
 		return nil, nil
 	}
 
-	return graphqlbackend.ExecutorByHostname(ctx, r.store.DatabaseDB(), r.execution.WorkerHostname)
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		if err != backend.ErrMustBeSiteAdmin {
+			return nil, err
+		}
+		return nil, nil
+	}
+
+	executor, err := gql.New(r.store.DatabaseDB()).ExecutorByHostname(ctx, r.execution.WorkerHostname)
+	if err != nil {
+		return nil, err
+	}
+
+	return executor, nil
 }
 
 type batchSpecWorkspaceStagesResolver struct {

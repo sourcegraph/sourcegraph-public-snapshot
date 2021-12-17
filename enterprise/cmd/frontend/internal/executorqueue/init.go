@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	executorDB "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/store/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches"
 	codeintelqueue "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/codeintel"
@@ -33,7 +34,8 @@ func Init(
 		batches.QueueOptions(db, accessToken, observationContext),
 	}
 
-	queueHandler, err := newExecutorQueueHandler(db.Executors(), queueOptions, accessToken, codeintelUploadHandler)
+	executorsDB := executorDB.New(db)
+	queueHandler, err := newExecutorQueueHandler(executorsDB, queueOptions, accessToken, codeintelUploadHandler)
 	if err != nil {
 		return err
 	}

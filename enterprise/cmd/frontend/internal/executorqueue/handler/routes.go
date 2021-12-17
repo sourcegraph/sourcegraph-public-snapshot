@@ -11,14 +11,14 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
+	executor "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/store"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // SetupRoutes registers all route handlers required for all configured executor
 // queues with the given router.
-func SetupRoutes(executorStore database.ExecutorStore, queueOptionsMap []QueueOptions, router *mux.Router) {
+func SetupRoutes(executorStore executor.Store, queueOptionsMap []QueueOptions, router *mux.Router) {
 	for _, queueOptions := range queueOptionsMap {
 		h := newHandler(executorStore, queueOptions)
 
