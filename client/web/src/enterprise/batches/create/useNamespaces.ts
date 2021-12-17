@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 import {
     SettingsOrgSubject,
@@ -14,7 +14,8 @@ import { Settings } from '../../../schema/settings.schema'
 export interface UseNamespacesResult {
     userNamespace: SettingsUserSubject
     namespaces: (SettingsUserSubject | SettingsOrgSubject)[]
-    defaultSelectedNamespace: SettingsUserSubject | SettingsOrgSubject
+    selectedNamespace: SettingsUserSubject | SettingsOrgSubject
+    setSelectedNamespace: (namespace: SettingsUserSubject | SettingsOrgSubject) => void
 }
 
 /**
@@ -67,9 +68,15 @@ export const useNamespaces = (
         return userNamespace
     }, [namespaces, initialNamespaceID, userNamespace])
 
+    // State for tracking a user-selected namespace from the set of all available.
+    const [selectedNamespace, setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
+        defaultSelectedNamespace
+    )
+
     return {
         userNamespace,
         namespaces,
-        defaultSelectedNamespace,
+        selectedNamespace,
+        setSelectedNamespace,
     }
 }

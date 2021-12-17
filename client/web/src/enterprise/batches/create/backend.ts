@@ -13,7 +13,13 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
         url
         name
         namespace {
-            id
+            __typename
+            ... on User {
+                ...UserBatchChangeNamespaceFields
+            }
+            ... on Org {
+                ...OrgBatchChangeNamespaceFields
+            }
         }
         description
 
@@ -32,6 +38,20 @@ export const GET_BATCH_CHANGE_TO_EDIT = gql`
         }
 
         state
+    }
+
+    fragment UserBatchChangeNamespaceFields on User {
+        __typename
+        id
+        username
+        displayName
+    }
+
+    fragment OrgBatchChangeNamespaceFields on Org {
+        __typename
+        id
+        name
+        displayName
     }
 `
 
@@ -60,8 +80,8 @@ export const CREATE_EMPTY_BATCH_CHANGE = gql`
 // This mutation is used to move an existing batch change to a new namespace, or give it a
 // different name.
 export const MOVE_BATCH_CHANGE = gql`
-    mutation MoveBatchChange($batchChange: ID!, $namespace: ID!, $name: String!) {
-        moveBatchChange(batchChange: $batchChange, namespace: $namespace, name: $name) {
+    mutation MoveBatchChange($batchChange: ID!, $newNamespace: ID!, $newName: String!) {
+        moveBatchChange(batchChange: $batchChange, newNamespace: $newNamespace, newName: $newName) {
             id
             url
         }

@@ -6,16 +6,12 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { useMutation, useQuery } from '@sourcegraph/shared/src/graphql/apollo'
-import {
-    SettingsCascadeProps,
-    SettingsOrgSubject,
-    SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
-import { Button, Container, Input, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import {
     BatchChangeFields,
@@ -26,16 +22,18 @@ import {
     CreateEmptyBatchChangeResult,
     Scalars,
     BatchSpecWorkspaceResolutionState,
+    MoveBatchChangeResult,
+    MoveBatchChangeVariables,
 } from '../../../graphql-operations'
 import { Settings } from '../../../schema/settings.schema'
 import { BatchChangePage } from '../BatchChangePage'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
-import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
+import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE, MOVE_BATCH_CHANGE } from './backend'
 import styles from './CreateOrEditBatchChangePage.module.scss'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import { LibraryPane } from './library/LibraryPane'
-import { NamespaceSelector } from './NamespaceSelector'
+import { SpecSettings } from './SpecSettings'
 import { useBatchSpecCode } from './useBatchSpecCode'
 import { usePreviewBatchSpec } from './useBatchSpecPreview'
 import { useExecuteBatchSpec } from './useExecuteBatchSpec'
@@ -120,21 +118,12 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
         CreateEmptyBatchChangeVariables
     >(CREATE_EMPTY_BATCH_CHANGE)
 
-    const { namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade, namespaceID)
-
-    // The namespace selected for creating the new batch change under.
-    const [selectedNamespace, setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
-        defaultSelectedNamespace
-    )
-
-    const [nameInput, setNameInput] = useState('')
+    const { namespaces, selectedNamespace, setSelectedNamespace } = useNamespaces(settingsCascade, namespaceID)
 
     const history = useHistory()
-    const handleCancel = (): void => history.goBack()
-    const handleCreate = (): void => {
-        createEmptyBatchChange({
-            variables: { namespace: selectedNamespace.id, name: nameInput },
-        })
+    const onCancel = (): void => history.goBack()
+    const onCreate = (name: string, namespace: Scalars['ID']): void => {
+        createEmptyBatchChange({ variables: { name, namespace } })
             .then(({ data }) => (data ? history.push(`${data.createEmptyBatchChange.url}/edit`) : noop()))
             // We destructure and surface the error from `useMutation` instead.
             .catch(noop)
@@ -143,34 +132,16 @@ const CreatePage: React.FunctionComponent<CreatePageProps> = ({ namespaceID, set
     return (
         <BatchChangePage namespace={selectedNamespace} title="Create batch change">
             <div className={styles.settingsContainer}>
-                <h4>Batch spec settings</h4>
-                <Container>
-                    {error && <ErrorAlert error={error} />}
-                    <NamespaceSelector
-                        namespaces={namespaces}
-                        selectedNamespace={selectedNamespace.id}
-                        onSelect={setSelectedNamespace}
-                    />
-                    <Input
-                        className={styles.nameInput}
-                        label="Batch change name"
-                        value={nameInput}
-                        onChange={event => setNameInput(event.target.value)}
-                        onKeyPress={event => {
-                            if (event.key === 'Enter') {
-                                handleCreate()
-                            }
-                        }}
-                    />
-                </Container>
-                <div className="mt-3 align-self-end">
-                    <Button variant="secondary" outline={true} className="mr-2" onClick={handleCancel}>
-                        Cancel
-                    </Button>
-                    <Button variant="primary" onClick={handleCreate} disabled={loading}>
-                        Create
-                    </Button>
-                </div>
+                <SpecSettings
+                    namespaces={namespaces}
+                    selectedNamespace={selectedNamespace}
+                    setSelectedNamespace={setSelectedNamespace}
+                    onCancel={onCancel}
+                    onConfirm={onCreate}
+                    confirmLoading={loading}
+                    confirmError={error}
+                    confirmButtonText="Create"
+                />
             </div>
         </BatchChangePage>
     )
@@ -192,18 +163,26 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         batchChange
     )
 
-    // TODO: Only needed when edit name/namespace form is open
-    // Get the namespaces this user has access to.
-    const { namespaces: _namespaces, defaultSelectedNamespace } = useNamespaces(
+    const { namespaces, selectedNamespace, setSelectedNamespace } = useNamespaces(
         settingsCascade,
         batchChange.namespace.id
     )
+    const [settingsOpen, setSettingsOpen] = useState(false)
+    const openSettings = useCallback(() => setSettingsOpen(true), [])
+    const closeSettings = useCallback(() => setSettingsOpen(false), [])
 
-    // TODO: Only needed when edit name/namespace form is open
-    // The namespace selected for creating the new batch spec under.
-    const [selectedNamespace, _setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
-        defaultSelectedNamespace
-    )
+    const [moveBatchChange, { loading: moveBatchChangeLoading, error: moveBatchChangeError }] = useMutation<
+        MoveBatchChangeResult,
+        MoveBatchChangeVariables
+    >(MOVE_BATCH_CHANGE)
+
+    const history = useHistory()
+    const onUpdate = (name: string, namespace: Scalars['ID']): void => {
+        moveBatchChange({ variables: { batchChange: batchChange.id, newName: name, newNamespace: namespace } })
+            .then(({ data }) => (data ? history.push(`${data.moveBatchChange.url}/edit`) : noop()))
+            // We destructure and surface the error from `useMutation` instead.
+            .catch(noop)
+    }
 
     const [noCache, setNoCache] = useState<boolean>(false)
 
@@ -277,6 +256,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
     // - We haven't yet submitted the batch spec to the backend yet for a preview.
     // - The batch spec on the backend is stale.
     // - The current workspaces evaluation is not complete.
+    // - The batch spec settings are open.
     const [disableExecution, executionTooltip] = useMemo(() => {
         const disableExecution = Boolean(
             isValid !== true ||
@@ -285,7 +265,8 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                 isExecuting ||
                 !hasPreviewed ||
                 batchSpecStale ||
-                workspacesPreviewResolution?.state !== BatchSpecWorkspaceResolutionState.COMPLETED
+                workspacesPreviewResolution?.state !== BatchSpecWorkspaceResolutionState.COMPLETED ||
+                settingsOpen
         )
         // The execution tooltip only shows if the execute button is disabled, and explains why.
         const executionTooltip =
@@ -297,6 +278,8 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                 ? 'Update your workspaces preview before you run.'
                 : isLoadingPreview || workspacesPreviewResolution?.state !== BatchSpecWorkspaceResolutionState.COMPLETED
                 ? 'Wait for the preview to finish first.'
+                : settingsOpen
+                ? 'Finish updating batch spec settings first.'
                 : undefined
 
         return [disableExecution, executionTooltip]
@@ -308,6 +291,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         isExecuting,
         batchSpecStale,
         workspacesPreviewResolution?.state,
+        settingsOpen,
     ])
 
     const errors =
@@ -321,31 +305,36 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
         ) : null
 
     const buttons = (
-        <>
-            <ButtonTooltip
-                type="button"
-                className="btn btn-primary mb-2"
-                onClick={executeBatchSpec}
-                disabled={disableExecution}
-                tooltip={executionTooltip}
-            >
-                Run batch spec
-            </ButtonTooltip>
-            <BatchSpecDownloadLink name="new-batch-spec" originalInput={code}>
-                or download for src-cli
-            </BatchSpecDownloadLink>
-            <div className="form-group">
-                <label>
-                    <input type="checkbox" className="mr-2" checked={noCache} onChange={onChangeNoCache} />
-                    Disable cache
-                </label>
+        <div className="d-flex align-items-start">
+            <Button variant="secondary" onClick={openSettings}>
+                Settings
+            </Button>
+            <div className="d-flex flex-column align-items-center">
+                <ButtonTooltip
+                    type="button"
+                    className="btn btn-primary mb-2"
+                    onClick={executeBatchSpec}
+                    disabled={disableExecution}
+                    tooltip={executionTooltip}
+                >
+                    Run batch spec
+                </ButtonTooltip>
+                <BatchSpecDownloadLink name="new-batch-spec" originalInput={code}>
+                    or download for src-cli
+                </BatchSpecDownloadLink>
+                <div className="form-group">
+                    <label>
+                        <input type="checkbox" className="mr-2" checked={noCache} onChange={onChangeNoCache} />
+                        Disable cache
+                    </label>
+                </div>
             </div>
-        </>
+        </div>
     )
 
     return (
         <BatchChangePage
-            namespace={selectedNamespace}
+            namespace={batchChange.namespace}
             title={batchChange.name}
             description={batchChange.description}
             actionButtons={buttons}
@@ -353,14 +342,30 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
             <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1')}>
                 <LibraryPane name={batchChange.name} onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
-                    <h4>Batch spec</h4>
-                    <MonacoBatchSpecEditor
-                        batchChangeName={batchChange.name}
-                        className={styles.editor}
-                        isLightTheme={isLightTheme}
-                        value={code}
-                        onChange={clearErrorsAndHandleCodeChange}
-                    />
+                    {settingsOpen ? (
+                        <SpecSettings
+                            namespaces={namespaces}
+                            currentName={batchChange.name}
+                            selectedNamespace={selectedNamespace}
+                            setSelectedNamespace={setSelectedNamespace}
+                            onCancel={closeSettings}
+                            onConfirm={onUpdate}
+                            confirmButtonText="Update"
+                            confirmLoading={moveBatchChangeLoading}
+                            confirmError={moveBatchChangeError}
+                        />
+                    ) : (
+                        <>
+                            <h4>Batch spec</h4>
+                            <MonacoBatchSpecEditor
+                                batchChangeName={batchChange.name}
+                                className={styles.editor}
+                                isLightTheme={isLightTheme}
+                                value={code}
+                                onChange={clearErrorsAndHandleCodeChange}
+                            />
+                        </>
+                    )}
                 </div>
                 <div
                     className={classNames(

@@ -1,11 +1,11 @@
 import React from 'react'
 
-import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../batches/icons'
+import { OrgBatchChangeNamespaceFields, UserBatchChangeNamespaceFields } from '../../graphql-operations'
 
-const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
+const getNamespaceDisplayName = (namespace: UserBatchChangeNamespaceFields | OrgBatchChangeNamespaceFields): string => {
     switch (namespace.__typename) {
         case 'User':
             return namespace.displayName ?? namespace.username
@@ -17,7 +17,9 @@ const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSub
 /** TODO: This duplicates the URL field from the org/user resolvers on the backend, but we
  * don't have access to that from the settings cascade presently. Can we get it included
  * in the cascade instead somehow? */
-const getNamespaceBatchChangesURL = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
+const getNamespaceBatchChangesURL = (
+    namespace: UserBatchChangeNamespaceFields | OrgBatchChangeNamespaceFields
+): string => {
     switch (namespace.__typename) {
         case 'User':
             return '/users/' + namespace.username + '/batch-changes'
@@ -28,7 +30,7 @@ const getNamespaceBatchChangesURL = (namespace: SettingsUserSubject | SettingsOr
 
 interface BatchChangePageProps {
     /** The namespace that should appear in the topmost `PageHeader`. */
-    namespace: SettingsUserSubject | SettingsOrgSubject
+    namespace: UserBatchChangeNamespaceFields | OrgBatchChangeNamespaceFields
     /** The title to use in the topmost `PageHeader`, alongside the `namespaceName`. */
     title: string
     /** The description to use in the topmost `PageHeader` beneath the titles. */
