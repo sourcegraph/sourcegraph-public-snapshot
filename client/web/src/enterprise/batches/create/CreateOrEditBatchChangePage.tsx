@@ -17,6 +17,7 @@ import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 import { PageHeader, Button, Container, Input, LoadingSpinner } from '@sourcegraph/wildcard'
 
+import { BatchChangesIcon } from '../../../batches/icons'
 import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import {
     BatchChangeFields,
@@ -29,8 +30,6 @@ import {
     BatchSpecWorkspaceResolutionState,
 } from '../../../graphql-operations'
 import { Settings } from '../../../schema/settings.schema'
-import { BatchChangesIcon } from '../../batches/icons'
-import { BatchChangePage } from '../BatchChangePage'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { GET_BATCH_CHANGE_TO_EDIT, CREATE_EMPTY_BATCH_CHANGE } from './backend'
