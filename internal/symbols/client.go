@@ -77,7 +77,7 @@ func (c *Client) url(repo api.RepoName) (string, error) {
 }
 
 // Search performs a symbol search on the symbols service.
-func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (symbols *result.Symbols, err error) {
+func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (symbols result.Symbols, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.Search")
 	defer func() {
 		if err != nil {
@@ -124,7 +124,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 
 	var filtered []result.Symbol
 	a := actor.FromContext(ctx)
-	for _, r := range *symbols {
+	for _, r := range symbols {
 		rc := authz.RepoContent{
 			Repo: args.Repo,
 			Path: r.Path,
@@ -138,8 +138,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 		}
 	}
 
-	r := result.Symbols(filtered)
-	return &r, nil
+	return filtered, nil
 }
 
 func (c *Client) httpPost(

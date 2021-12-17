@@ -45,8 +45,8 @@ func TestSearchWithFiltering(t *testing.T) {
 		t.Fatal("nil result")
 	}
 	wantCount := 2
-	if len(*results) != wantCount {
-		t.Fatalf("Want %d results, got %d", wantCount, len(*results))
+	if len(results) != wantCount {
+		t.Fatalf("Want %d results, got %d", wantCount, len(results))
 	}
 
 	// With filtering
@@ -77,7 +77,7 @@ func TestSearchWithFiltering(t *testing.T) {
 		t.Fatal("nil result")
 	}
 	wantCount = 1
-	if len(*results) != wantCount {
-		t.Fatalf("Want %d results, got %d", wantCount, len(*results))
+	if len(results) != wantCount {
+		t.Fatalf("Want %d results, got %d", wantCount, len(results))
 	}
 }
