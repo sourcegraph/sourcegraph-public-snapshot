@@ -46,9 +46,9 @@ const CardBody: React.FunctionComponent<CardBodyProps> = props => {
 }
 
 const CardExampleBlock: React.FunctionComponent = props => (
-    <footer className={classNames(styles.cardFooter, 'text-muted')}>
-        <small>Example use</small>
-        <small>{props.children}</small>
+    <footer className={styles.cardFooter}>
+        <small className="text-muted">Example use</small>
+        <small className={styles.cardExampleBlock}>{props.children}</small>
     </footer>
 )
 
@@ -60,7 +60,7 @@ export const SearchInsightCard: React.FunctionComponent<CardProps> = props => (
             will define <b>manually.</b>
         </CardBody>
 
-        <CardExampleBlock>Redis, PostgreSQL and SQLite database usage.</CardExampleBlock>
+        <CardExampleBlock>Tracking architecture, naming, or language migrations.</CardExampleBlock>
     </Card>
 )
 

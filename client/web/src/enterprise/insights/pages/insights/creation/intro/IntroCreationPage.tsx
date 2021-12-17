@@ -65,7 +65,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     <>
                         Insights analyze your code based on any search query.{' '}
                         <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
-                            Learn more.
+                            Learn more
                         </a>
                     </>
                 }
@@ -94,7 +94,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                         target="_blank"
                         rel="noopener"
                     >
-                        use cases
+                        use cases.
                     </a>
                 </div>
 
