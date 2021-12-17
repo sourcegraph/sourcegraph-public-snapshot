@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { useLocation } from 'react-router'
 
 import {
     SettingsOrgSubject,
@@ -9,6 +8,7 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
+import { Scalars } from '../../../graphql-operations'
 import { Settings } from '../../../schema/settings.schema'
 
 export interface UseNamespacesResult {
@@ -22,10 +22,12 @@ export interface UseNamespacesResult {
  * appropriate default namespace to select for the user.
  *
  * @param settingsCascade The current user's `Settings`.
+ * @param initialNamespaceID The id of the initial namespace to select.
  */
-export const useNamespaces = (settingsCascade: SettingsCascadeOrError<Settings>): UseNamespacesResult => {
-    const location = useLocation()
-
+export const useNamespaces = (
+    settingsCascade: SettingsCascadeOrError<Settings>,
+    initialNamespaceID?: Scalars['ID']
+): UseNamespacesResult => {
     // Gather all the available namespaces from the settings subjects.
     const rawNamespaces: SettingsSubject[] = useMemo(
         () =>
@@ -56,26 +58,14 @@ export const useNamespaces = (settingsCascade: SettingsCascadeOrError<Settings>)
         [userNamespace, organizationNamespaces]
     )
 
-    // Check if there's a namespace parameter in the URL.
-    const defaultNamespace = new URLSearchParams(location.search).get('namespace')
-
-    // The default namespace selected from the dropdown should match whatever was in the
-    // URL parameter, or else default to the user's namespace.
+    // The default namespace selected from the dropdown should match whatever the initial
+    // namespace was, or else default to the user's namespace.
     const defaultSelectedNamespace = useMemo(() => {
-        if (defaultNamespace) {
-            const lowerCaseDefaultNamespace = defaultNamespace.toLowerCase()
-            return (
-                namespaces.find(
-                    namespace =>
-                        namespace.displayName?.toLowerCase() === lowerCaseDefaultNamespace ||
-                        (namespace.__typename === 'User' &&
-                            namespace.username.toLowerCase() === lowerCaseDefaultNamespace) ||
-                        (namespace.__typename === 'Org' && namespace.name.toLowerCase() === lowerCaseDefaultNamespace)
-                ) || userNamespace
-            )
+        if (initialNamespaceID) {
+            return namespaces.find(namespace => namespace.id === initialNamespaceID) || userNamespace
         }
         return userNamespace
-    }, [namespaces, defaultNamespace, userNamespace])
+    }, [namespaces, initialNamespaceID, userNamespace])
 
     return {
         userNamespace,

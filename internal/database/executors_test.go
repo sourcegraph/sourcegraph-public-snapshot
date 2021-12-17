@@ -185,6 +185,67 @@ func TestExecutorsGetByID(t *testing.T) {
 	}
 }
 
+func TestExecutorsGetByHostname(t *testing.T) {
+	db := dbtest.NewDB(t)
+	store := executors(db)
+	ctx := context.Background()
+
+	hostname := "megahost-somuchfast"
+
+	// Executor does not exist initially
+	if _, exists, err := store.GetByHostname(ctx, hostname); err != nil {
+		t.Fatalf("unexpected error getting executor: %s", err)
+	} else if exists {
+		t.Fatal("unexpected record")
+	}
+
+	now := time.Unix(1587396557, 0).UTC()
+	t1 := now.Add(-time.Minute * 15)
+	t2 := now.Add(-time.Minute * 45)
+
+	expected := types.Executor{
+		ID:              1,
+		Hostname:        hostname,
+		QueueName:       "test-queue-name",
+		OS:              "test-os",
+		Architecture:    "test-architecture",
+		DockerVersion:   "test-docker-version",
+		ExecutorVersion: "test-executor-version",
+		GitVersion:      "test-git-version",
+		IgniteVersion:   "test-ignite-version",
+		SrcCliVersion:   "test-src-cli-version",
+		FirstSeenAt:     t1,
+		LastSeenAt:      t2,
+	}
+
+	// update first seen at
+	if err := store.upsertHeartbeat(ctx, expected, t1); err != nil {
+		t.Fatalf("unexpected error inserting heartbeat: %s", err)
+	}
+
+	expected.QueueName += "-changed"
+	expected.OS += "-changed"
+	expected.Architecture += "-changed"
+	expected.DockerVersion += "-changed"
+	expected.ExecutorVersion += "-changed"
+	expected.GitVersion += "-changed"
+	expected.IgniteVersion += "-changed"
+	expected.SrcCliVersion += "-changed"
+
+	// update values as well as last seen at
+	if err := store.upsertHeartbeat(ctx, expected, t2); err != nil {
+		t.Fatalf("unexpected error inserting heartbeat: %s", err)
+	}
+
+	if executor, exists, err := store.GetByHostname(ctx, hostname); err != nil {
+		t.Fatalf("unexpected error getting executor: %s", err)
+	} else if !exists {
+		t.Fatal("expected record to exist")
+	} else if diff := cmp.Diff(expected, executor); diff != "" {
+		t.Errorf("unexpected executor (-want +got):\n%s", diff)
+	}
+}
+
 func TestExecutorsDeleteInactiveHeartbeats(t *testing.T) {
 	db := dbtest.NewDB(t)
 	store := executors(db)

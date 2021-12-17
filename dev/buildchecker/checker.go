@@ -42,6 +42,7 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, builds []buildkite.Bu
 			if err != nil {
 				return nil, fmt.Errorf("unlockBranch: %w", err)
 			}
+			return
 		}
 		if isBuildFailed(b, opts.BuildTimeout) {
 			fmt.Printf("most recent finished build %d failed\n", *b.Number)

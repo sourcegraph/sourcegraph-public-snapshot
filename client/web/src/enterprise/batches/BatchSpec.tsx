@@ -2,11 +2,13 @@ import { kebabCase } from 'lodash'
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import React, { useMemo } from 'react'
 
-import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchChangeFields } from '../../graphql-operations'
+
+import { MonacoBatchSpecEditor } from './create/editor/MonacoBatchSpecEditor'
 
 /** Reports whether `string` is a valid JSON document. */
 const isJSON = (string: string): boolean => {
@@ -20,12 +22,12 @@ const isJSON = (string: string): boolean => {
 
 export const getFileName = (name: string): string => `${kebabCase(name)}.batch.yaml`
 
-export interface BatchSpecProps {
+export interface BatchSpecProps extends ThemeProps {
     originalInput: BatchChangeFields['currentSpec']['originalInput']
     className?: string
 }
 
-export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({ originalInput, className }) => {
+export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({ originalInput, isLightTheme, className }) => {
     // JSON is valid YAML, so the input might be JSON. In that case, we'll highlight and indent it
     // as JSON. This is especially nice when the input is a "minified" (no extraneous whitespace)
     // JSON document that's difficult to read unless indented.
@@ -35,7 +37,7 @@ export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({ originalInp
         originalInput,
     ])
 
-    return <CodeSnippet code={input} language={inputIsJSON ? 'json' : 'yaml'} className={className} />
+    return <MonacoBatchSpecEditor isLightTheme={isLightTheme} value={input} readOnly={true} className={className} />
 }
 
 interface BatchSpecDownloadLinkProps extends BatchSpecProps, Pick<BatchChangeFields, 'name'> {

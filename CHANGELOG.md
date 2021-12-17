@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Individual batch changes can publish multiple changesets to the same repository by specifying multiple target branches using the [`on.branches`](https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#on-repository) attribute. [#25228](https://github.com/sourcegraph/sourcegraph/issues/25228)
 - Low resource overlay added. NOTE: this is designed for internal-use only. Customers can use the `minikube` overlay to achieve similar results.[#4012](https://github.com/sourcegraph/deploy-sourcegraph/pull/4012)
 - The `SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND` environment variable to control the egress throughput of gitserver's git servce (e.g. used by zoekt-index-server to clone repos to index). Set to -1 for no limit.
+- More explicit Terms of Service and Privacy Policy consent has been added to Sourcegraph Server. [#28716](https://github.com/sourcegraph/sourcegraph/issues/28716)
 
 ### Changed
 
@@ -27,6 +28,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The sourcegraph-frontend ingress now uses the networking.k8s.io/v1 api. This adds support for k8s v1.22 and later, and deprecates support for versions older than v1.18.x [#4029](https://github.com/sourcegraph/deploy-sourcegraph/pull/4029)
 - Non-bare repositories found on gitserver will be removed by a janitor job. [#28895](https://github.com/sourcegraph/sourcegraph/pull/28895)
 - The search bar is no longer auto-focused when navigating between files. This change means that the keyboard shortcut Cmd+LeftArrow (or Ctrl-LeftArrow) now goes back to the browser's previous page instead of moving the cursor position to the first position of the search bar. [#28943](https://github.com/sourcegraph/sourcegraph/pull/28943)
+- Minio service upgraded to RELEASE.2021-12-10T23-03-39Z. [#29188](https://github.com/sourcegraph/sourcegraph/pull/29188)
 
 ### Fixed
 

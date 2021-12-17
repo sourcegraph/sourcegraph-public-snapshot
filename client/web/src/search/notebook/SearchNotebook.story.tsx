@@ -53,6 +53,7 @@ add('default', () => (
                 extensionsController={extensionsController}
                 fetchRepository={fetchRepository}
                 resolveRevision={resolveRevision}
+                authenticatedUser={null}
             />
         )}
     </WebStory>
@@ -77,6 +78,7 @@ add('default read-only', () => (
                 extensionsController={extensionsController}
                 fetchRepository={fetchRepository}
                 resolveRevision={resolveRevision}
+                authenticatedUser={null}
             />
         )}
     </WebStory>

@@ -96,6 +96,7 @@ func (r *batchSpecWorkspaceCreator) process(
 			FileMatches:        w.FileMatches,
 			OnlyFetchWorkspace: w.OnlyFetchWorkspace,
 			Steps:              w.Steps,
+			SkippedSteps:       w.SkippedSteps,
 
 			Unsupported: w.Unsupported,
 			Ignored:     w.Ignored,
@@ -140,6 +141,9 @@ func (r *batchSpecWorkspaceCreator) process(
 		stepCacheKeys := make([]string, 0, len(workspace.Steps))
 		// Generate cache keys for all the step results as well.
 		for i := 0; i < len(workspace.Steps)-1; i++ {
+			if workspace.StepSkipped(i) {
+				continue
+			}
 			key := cache.StepsCacheKey{ExecutionKey: &key, StepIndex: i}
 			rawStepKey, err := key.Key()
 			if err != nil {
@@ -203,6 +207,11 @@ func (r *batchSpecWorkspaceCreator) process(
 	// Check for an existing cache entry for each of the workspaces.
 	for rawKey, workspace := range cacheKeyWorkspaces {
 		for idx, key := range workspace.stepCacheKeys {
+			// Ignore statically skipped steps.
+			if workspace.dbWorkspace.StepSkipped(idx) {
+				continue
+			}
+
 			if c, ok := stepEntriesByCacheKey[key]; ok {
 				var res execution.AfterStepResult
 				if err := json.Unmarshal([]byte(c.Value), &res); err != nil {

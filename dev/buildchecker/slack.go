@@ -13,13 +13,15 @@ func slackSummary(locked bool, failedCommits []CommitInfo) string {
 		return ":white_check_mark: Pipeline healthy - branch unlocked!"
 	}
 	message := `:alert: *Consecutive build failures detected - branch has been locked.* :alert:
-The authors of the following failed commits have been granted merge access to investigate and resolve the issue:
+The authors of the following failed commits who are Sourcegraph teammates have been granted merge access to investigate and resolve the issue:
 `
 	for _, commit := range failedCommits {
 		message += fmt.Sprintf("\n- <https://github.com/sourcegraph/sourcegraph/commit/%s|%s> - %s",
 			commit.Commit, commit.Commit, commit.Author)
 	}
-	message += `The branch will automatically be unlocked once a green build is run.
+	message += `
+
+The branch will automatically be unlocked once a green build is run.
 Refer to the <https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci|CI incident playbook> for help.
 If unable to resolve the issue, please start an incident with the '/incident' Slack command.
 
