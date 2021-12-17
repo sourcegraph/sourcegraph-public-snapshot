@@ -5,7 +5,6 @@ import { BrowserRouter } from 'react-router-dom'
 import { NEVER } from 'rxjs'
 import sinon from 'sinon'
 
-import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { SearchPatternType } from './graphql-operations'
@@ -60,16 +59,14 @@ describe('Layout', () => {
         const setParsedSearchQuery = sinon.spy()
 
         render(
-            <MockedTestProvider>
-                <BrowserRouter>
-                    <Layout
-                        {...defaultProps}
-                        history={history}
-                        location={history.location}
-                        setParsedSearchQuery={setParsedSearchQuery}
-                    />
-                </BrowserRouter>
-            </MockedTestProvider>
+            <BrowserRouter>
+                <Layout
+                    {...defaultProps}
+                    history={history}
+                    location={history.location}
+                    setParsedSearchQuery={setParsedSearchQuery}
+                />
+            </BrowserRouter>
         )
 
         sinon.assert.called(setParsedSearchQuery)
@@ -83,16 +80,14 @@ describe('Layout', () => {
         const setParsedSearchQuery = sinon.spy()
 
         render(
-            <MockedTestProvider>
-                <BrowserRouter>
-                    <Layout
-                        {...defaultProps}
-                        history={history}
-                        location={history.location}
-                        setParsedSearchQuery={setParsedSearchQuery}
-                    />
-                </BrowserRouter>
-            </MockedTestProvider>
+            <BrowserRouter>
+                <Layout
+                    {...defaultProps}
+                    history={history}
+                    location={history.location}
+                    setParsedSearchQuery={setParsedSearchQuery}
+                />
+            </BrowserRouter>
         )
 
         sinon.assert.notCalled(setParsedSearchQuery)
@@ -105,16 +100,14 @@ describe('Layout', () => {
         const setParsedSearchQuery = sinon.spy()
 
         render(
-            <MockedTestProvider>
-                <BrowserRouter>
-                    <Layout
-                        {...defaultProps}
-                        history={history}
-                        location={history.location}
-                        setParsedSearchQuery={setParsedSearchQuery}
-                    />
-                </BrowserRouter>
-            </MockedTestProvider>
+            <BrowserRouter>
+                <Layout
+                    {...defaultProps}
+                    history={history}
+                    location={history.location}
+                    setParsedSearchQuery={setParsedSearchQuery}
+                />
+            </BrowserRouter>
         )
 
         sinon.assert.called(setParsedSearchQuery)
@@ -128,17 +121,15 @@ describe('Layout', () => {
         const setPatternTypeSpy = sinon.spy()
 
         render(
-            <MockedTestProvider>
-                <BrowserRouter>
-                    <Layout
-                        {...defaultProps}
-                        history={history}
-                        location={history.location}
-                        patternType={SearchPatternType.literal}
-                        setPatternType={setPatternTypeSpy}
-                    />
-                </BrowserRouter>
-            </MockedTestProvider>
+            <BrowserRouter>
+                <Layout
+                    {...defaultProps}
+                    history={history}
+                    location={history.location}
+                    patternType={SearchPatternType.literal}
+                    setPatternType={setPatternTypeSpy}
+                />
+            </BrowserRouter>
         )
 
         sinon.assert.called(setPatternTypeSpy)
@@ -152,17 +143,15 @@ describe('Layout', () => {
         const setPatternTypeSpy = sinon.spy()
 
         render(
-            <MockedTestProvider>
-                <BrowserRouter>
-                    <Layout
-                        {...defaultProps}
-                        history={history}
-                        location={history.location}
-                        patternType={SearchPatternType.regexp}
-                        setPatternType={setPatternTypeSpy}
-                    />
-                </BrowserRouter>
-            </MockedTestProvider>
+            <BrowserRouter>
+                <Layout
+                    {...defaultProps}
+                    history={history}
+                    location={history.location}
+                    patternType={SearchPatternType.regexp}
+                    setPatternType={setPatternTypeSpy}
+                />
+            </BrowserRouter>
         )
 
         sinon.assert.notCalled(setPatternTypeSpy)
@@ -175,17 +164,15 @@ describe('Layout', () => {
         const setPatternTypeSpy = sinon.spy()
 
         render(
-            <MockedTestProvider>
-                <BrowserRouter>
-                    <Layout
-                        {...defaultProps}
-                        history={history}
-                        location={history.location}
-                        patternType={SearchPatternType.literal}
-                        setPatternType={setPatternTypeSpy}
-                    />
-                </BrowserRouter>
-            </MockedTestProvider>
+            <BrowserRouter>
+                <Layout
+                    {...defaultProps}
+                    history={history}
+                    location={history.location}
+                    patternType={SearchPatternType.literal}
+                    setPatternType={setPatternTypeSpy}
+                />
+            </BrowserRouter>
         )
 
         sinon.assert.notCalled(setPatternTypeSpy)
@@ -198,11 +185,9 @@ describe('Layout', () => {
         useNavbarQueryState.setState({ searchCaseSensitivity: false })
 
         render(
-            <MockedTestProvider>
-                <BrowserRouter>
-                    <Layout {...defaultProps} history={history} location={history.location} />
-                </BrowserRouter>
-            </MockedTestProvider>
+            <BrowserRouter>
+                <Layout {...defaultProps} history={history} location={history.location} />
+            </BrowserRouter>
         )
 
         expect(useNavbarQueryState.getState().searchCaseSensitivity).toBe(true)
@@ -215,11 +200,9 @@ describe('Layout', () => {
         useNavbarQueryState.setState({ searchCaseSensitivity: false })
 
         render(
-            <MockedTestProvider>
-                <BrowserRouter>
-                    <Layout {...defaultProps} history={history} location={history.location} />
-                </BrowserRouter>
-            </MockedTestProvider>
+            <BrowserRouter>
+                <Layout {...defaultProps} history={history} location={history.location} />
+            </BrowserRouter>
         )
 
         expect(useNavbarQueryState.getState().searchCaseSensitivity).toBe(false)

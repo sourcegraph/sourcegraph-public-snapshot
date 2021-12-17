@@ -180,7 +180,6 @@ describe('Extension Registry', () => {
                     displayName: 'test',
                     siteAdmin: true,
                     tags: [],
-                    tosAccepted: true,
                     url: '/users/test',
                     settingsURL: '/users/test/settings',
                     organizations: { nodes: [] },

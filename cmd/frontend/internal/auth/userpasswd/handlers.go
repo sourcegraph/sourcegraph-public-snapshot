@@ -118,7 +118,6 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 		Password:              creds.Password,
 		FailIfNotInitialUser:  failIfNewUserIsNotInitialSiteAdmin,
 		EnforcePasswordLength: true,
-		TosAccepted:           true, // Users created via the signup form are considered to have accepted the Terms of Service.
 	}
 	if failIfNewUserIsNotInitialSiteAdmin {
 		// The email of the initial site admin is considered to be verified.

@@ -188,10 +188,6 @@ type NewUser struct {
 	// EnforcePasswordLength is whether should enforce minimum and maximum password length requirement.
 	// Users created by non-builtin auth providers do not have a password thus no need to check.
 	EnforcePasswordLength bool `json:"-"` // forbid this field being set by JSON, just in case
-
-	// TosAccepted is whether the user is created with the terms of service accepted already.
-	TosAccepted bool `json:"-"` // forbid this field being set by JSON, just in case
-
 }
 
 // Create creates a new user in the database.
@@ -315,8 +311,8 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 	var siteAdmin bool
 	err = u.QueryRow(
 		ctx,
-		sqlf.Sprintf("INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, tos_accepted, site_admin) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
-			info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, invalidatedSessionsAt, info.TosAccepted, !alreadyInitialized)).Scan(&id, &siteAdmin)
+		sqlf.Sprintf("INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, site_admin) VALUES(%s, %s, %s, %s, %s, %s, %s, %s AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
+			info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, invalidatedSessionsAt, !alreadyInitialized)).Scan(&id, &siteAdmin)
 	if err != nil {
 		var e *pgconn.PgError
 		if errors.As(err, &e) {
