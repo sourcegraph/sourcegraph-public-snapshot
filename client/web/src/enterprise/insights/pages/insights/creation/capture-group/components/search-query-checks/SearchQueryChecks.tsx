@@ -19,29 +19,33 @@ interface SearchQueryChecksProps {
 const CheckListItem: React.FunctionComponent<{ valid: true | false | undefined }> = ({ children, valid }) => {
     if (valid === true) {
         return (
-            <span>
-                <Check size={16} className="text-success icon-inline" style={{ top: '3px' }} /> {children}
-            </span>
+            <>
+                <Check className={classNames(styles.icon, 'text-success icon-inline')} />
+                <span className={classNames(styles.valid, 'text-muted')}>{children}</span>
+            </>
         )
     }
+
     if (valid === false) {
         return (
-            <span className="text-dark">
-                <CloseIcon size={16} className="text-danger icon-inline" style={{ top: '3px' }} /> {children}
-            </span>
+            <>
+                <CloseIcon className={classNames(styles.icon, 'text-danger icon-inline')} />
+                <span className="text-muted">{children}</span>
+            </>
         )
     }
 
     return (
-        <span>
-            <RadioboxBlankIcon size={16} className="icon-inline" style={{ top: '3px' }} /> {children}
-        </span>
+        <>
+            <RadioboxBlankIcon className={classNames(styles.icon, styles.smaller, 'icon-inline')} />{' '}
+            <span className="text-muted">{children}</span>
+        </>
     )
 }
 
 export const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> = ({ checks }) => (
-    <div className={classNames(styles.checks)}>
-        <ul className={classNames('text-muted', styles.check)}>
+    <div className={classNames(styles.checksWrapper)}>
+        <ul className={classNames(styles.checks)}>
             <li>
                 <CheckListItem valid={checks.isValidRegex}>
                     Contains a properly formatted regular expression

@@ -131,8 +131,9 @@ export const CaptureGroupCreationForm: React.FunctionComponent<CaptureGroupCreat
                     <SearchQueryChecks checks={searchQueryValidator(query.input.value, query.meta.touched)} />
 
                     <CaptureGroupSeriesInfoBadge>
-                        <b>Name</b> and <b>color</b> of each data series will be generated automatically. Chart will
-                        display <b>up to 20</b> data series.
+                        <b className="font-weight-medium">Name</b> and <b className="font-weight-medium">color</b> of
+                        each data series will be generated automatically. Chart will display{' '}
+                        <b className="font-weight-medium">up to 20</b> data series.
                     </CaptureGroupSeriesInfoBadge>
 
                     <small className="mt-3">
