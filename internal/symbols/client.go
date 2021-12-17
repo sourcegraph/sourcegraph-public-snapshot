@@ -122,8 +122,9 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 		return symbols, err
 	}
 
-	var filtered []result.Symbol
 	a := actor.FromContext(ctx)
+	// Filter in place
+	filtered := symbols[:0]
 	for _, r := range symbols {
 		rc := authz.RepoContent{
 			Repo: args.Repo,
