@@ -690,7 +690,6 @@ func findWorkspaces(
 // stepsForRepo calculates the steps required to run on the given repo.
 func stepsForRepo(spec *batcheslib.BatchSpec, repoName string, fileMatches []string) (steps []batcheslib.Step, skipped []int32, err error) {
 	steps = []batcheslib.Step{}
-	skipped = []int32{}
 
 	for idx, step := range spec.Steps {
 		// If no if condition is given, just go ahead and add the step to the list.

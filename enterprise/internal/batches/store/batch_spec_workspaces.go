@@ -114,6 +114,11 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 				return err
 			}
 
+			skippedSteps := wj.SkippedSteps
+			if skippedSteps == nil {
+				skippedSteps = []int32{}
+			}
+
 			if err := inserter.Insert(
 				ctx,
 				wj.BatchSpecID,
@@ -125,7 +130,7 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 				pq.Array(wj.FileMatches),
 				wj.OnlyFetchWorkspace,
 				marshaledSteps,
-				pq.Array(wj.SkippedSteps),
+				pq.Array(skippedSteps),
 				wj.Unsupported,
 				wj.Ignored,
 				wj.Skipped,
