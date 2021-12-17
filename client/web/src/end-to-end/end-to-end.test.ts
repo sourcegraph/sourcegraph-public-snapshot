@@ -136,16 +136,70 @@ describe('e2e test suite', () => {
                 [...document.querySelectorAll('.test-tooltip-content')].map(content => content.textContent || '')
             )
         }
-        const assertHoverContentContains = async (value: string): Promise<void> => {
-            expect(await getHoverContents()).toEqual(expect.arrayContaining([expect.stringContaining(value)]))
+
+        const hoverOver = async (lineBase1: number, characterBase1: number): Promise<void> => {
+            const codeSelector = `td[data-line="${lineBase1}"] + .code`
+            await driver.page.waitForSelector(codeSelector, { visible: true })
+
+            const findToken = (characterBase1Copy: number, codeSelectorCopy: string): string | undefined => {
+                const recur = (offset: number, selector: string): string | number => {
+                    const element = document.querySelector(selector)
+                    if (element === null) {
+                        return offset
+                    }
+
+                    for (let index = 0; index < element.childNodes.length; index++) {
+                        const child = element.childNodes[index]
+                        const childSelector = `${selector} > :nth-child(${index + 1})`
+                        if (child.nodeType === Node.TEXT_NODE) {
+                            if (child.nodeValue === null) {
+                                continue
+                            }
+
+                            if (offset < child.nodeValue.length) {
+                                return selector
+                            }
+
+                            offset -= child.nodeValue.length
+                        } else if (child.nodeType === Node.ELEMENT_NODE) {
+                            const result = recur(offset, childSelector)
+                            if (typeof result === 'string') {
+                                return result
+                            }
+                            offset = result
+                        } else {
+                            throw new Error(`clickHoverJ2D: unexpected node type ${child.nodeType}`)
+                        }
+                    }
+
+                    return offset
+                }
+
+                const result = recur(characterBase1Copy - 1, codeSelectorCopy)
+                if (typeof result === 'string') {
+                    return result
+                }
+                return undefined
+            }
+
+            const token = await driver.page.evaluate(findToken, characterBase1, codeSelector)
+            if (token === undefined) {
+                throw new Error(`clickHoverJ2D: no token found at line ${lineBase1} and character ${characterBase1}`)
+            }
+
+            await driver.page.hover(token)
         }
 
-        const clickHoverJ2D = async (): Promise<void> => {
-            const selector = '.test-tooltip-go-to-definition'
-            await driver.page.waitForSelector(selector, { visible: true })
-            await clickAnchorElement(selector)
+        const clickHoverJ2D = async (lineBase1: number, characterBase1: number): Promise<void> => {
+            await hoverOver(lineBase1, characterBase1)
+
+            const goToDefinition = '.test-tooltip-go-to-definition'
+            await driver.page.waitForSelector(goToDefinition, { visible: true })
+            await clickAnchorElement(goToDefinition)
         }
-        const clickHoverFindReferences = async (): Promise<void> => {
+        const clickHoverFindReferences = async (lineBase1: number, characterBase1: number): Promise<void> => {
+            await hoverOver(lineBase1, characterBase1)
+
             const selector = '.test-tooltip-find-references'
             await driver.page.waitForSelector(selector, { visible: true })
             await clickAnchorElement(selector)
@@ -520,32 +574,26 @@ describe('e2e test suite', () => {
 
         describe('hovers', () => {
             describe('Blob', () => {
-                test('gets displayed and updates URL when clicking on a token', async () => {
+                test('gets displayed and updates URL when hovering over a token', async () => {
                     await driver.page.goto(
                         sourcegraphBaseUrl +
                             '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go'
                     )
                     await driver.page.waitForSelector(blobTableSelector)
 
-                    const selector = 'td[data-line="24"] + td .hl-storage.hl-type.hl-go:not(.hl-keyword)'
-                    await driver.page.waitForSelector(selector, { visible: true })
-                    await driver.page.click(selector)
+                    await driver.page.waitForSelector('td[data-line="24"]', { visible: true })
+                    await driver.page.evaluate(() => {
+                        document.querySelector('td[data-line="24"]')?.parentElement?.click()
+                    })
 
                     await driver.assertWindowLocation(
-                        '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go?L24:19'
+                        '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go?L24'
                     )
+
+                    await hoverOver(24, 6)
+
                     await getHoverContents() // verify there is a hover
                     await percySnapshot(driver.page, 'Code intel hover tooltip')
-                })
-
-                test('gets displayed when navigating to a URL with a token position', async () => {
-                    await driver.page.goto(
-                        sourcegraphBaseUrl +
-                            '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go?L151:23'
-                    )
-                    await assertHoverContentContains(
-                        'ErrMethodMismatch is returned when the method in the request does not match'
-                    )
                 })
 
                 describe('jump to definition', () => {
@@ -554,7 +602,7 @@ describe('e2e test suite', () => {
                             sourcegraphBaseUrl +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L29:6'
                         )
-                        await clickHoverJ2D()
+                        await clickHoverJ2D(29, 6)
                         await driver.assertWindowLocation(
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L29:6'
                         )
@@ -565,7 +613,7 @@ describe('e2e test suite', () => {
                             sourcegraphBaseUrl +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L25:10'
                         )
-                        await clickHoverJ2D()
+                        await clickHoverJ2D(25, 10)
                         await driver.assertWindowLocation(
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L29:6'
                         )
@@ -576,7 +624,7 @@ describe('e2e test suite', () => {
                             sourcegraphBaseUrl +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/print.go?L13:31'
                         )
-                        await clickHoverJ2D()
+                        await clickHoverJ2D(13, 31)
                         await driver.assertWindowLocation(
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.pb.go?L38:6'
                         )
@@ -597,7 +645,7 @@ describe('e2e test suite', () => {
                             sourcegraphBaseUrl +
                                 '/github.com/sourcegraph/vcsstore@267289226b15e5b03adedc9746317455be96e44c/-/blob/server/diff.go?L27:30'
                         )
-                        await clickHoverJ2D()
+                        await clickHoverJ2D(27, 30)
                         await driver.assertWindowLocation(
                             '/github.com/sourcegraph/go-vcs@aa7c38442c17a3387b8a21f566788d8555afedd0/-/blob/vcs/repository.go?L103:6'
                         )
@@ -612,7 +660,7 @@ describe('e2e test suite', () => {
                             sourcegraphBaseUrl +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L29:6'
                         )
-                        await clickHoverFindReferences()
+                        await clickHoverFindReferences(29, 6)
                         await driver.assertWindowLocation(
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L29:6#tab=references'
                         )

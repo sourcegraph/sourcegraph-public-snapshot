@@ -2,7 +2,6 @@
 // documentation of all the Bootstrap classes we have available in our app, please see refer to the Bootstrap
 // documentation for that. Its primary purpose is to show what Bootstrap's componenents look like with our styling
 // customizations.
-import { Menu, MenuButton, MenuList, MenuLink } from '@reach/menu-button'
 import { action } from '@storybook/addon-actions'
 import { number } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
@@ -379,47 +378,6 @@ ButtonGroups.parameters = {
             'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2514',
     },
 }
-
-export const Dropdowns: Story = () => (
-    <>
-        <h1>Dropdowns</h1>
-        <p>
-            Toggle contextual overlays for displaying lists of links and more with the Bootstrap dropdown component.{' '}
-            <a href="https://getbootstrap.com/docs/4.5/components/dropdowns/">Bootstrap documentation</a>
-        </p>
-        <Menu>
-            <MenuButton className="btn btn-secondary dropdown-toggle">Dropdown button</MenuButton>
-            <MenuList className="dropdown-menu show" style={{ outline: 'none' }}>
-                <h6 className="dropdown-header">Dropdown header</h6>
-                <MenuLink
-                    className="dropdown-item"
-                    href="https://example.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    Action
-                </MenuLink>
-                <MenuLink
-                    className="dropdown-item"
-                    href="https://example.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    Another action
-                </MenuLink>
-                <div className="dropdown-divider" />
-                <MenuLink
-                    className="dropdown-item"
-                    href="https://example.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    Something else here
-                </MenuLink>
-            </MenuList>
-        </Menu>
-    </>
-)
 
 export const InputGroups: Story = () => (
     <>

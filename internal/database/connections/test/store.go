@@ -33,6 +33,10 @@ func (s *memoryStore) Lock(ctx context.Context) (bool, func(err error) error, er
 	return true, func(err error) error { return err }, nil
 }
 
+func (s *memoryStore) TryLock(ctx context.Context) (bool, func(err error) error, error) {
+	return true, func(err error) error { return err }, nil
+}
+
 func (s *memoryStore) Up(ctx context.Context, migration definition.Definition) error {
 	return s.exec(ctx, migration, migration.UpQuery)
 }

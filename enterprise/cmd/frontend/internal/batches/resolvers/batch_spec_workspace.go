@@ -125,6 +125,12 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 			si.Skipped = true
 		}
 
+		// If we have marked the step as to-be-skipped, we have to translate
+		// that here into the workspace step info.
+		if r.workspace.StepSkipped(idx) {
+			si.Skipped = true
+		}
+
 		resolver := &batchSpecWorkspaceStepResolver{
 			index:    idx,
 			step:     step,
@@ -324,6 +330,14 @@ func (r *batchSpecWorkspaceResolver) PlaceInQueue() *int32 {
 
 	i32 := int32(r.execution.PlaceInQueue)
 	return &i32
+}
+
+func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (*graphqlbackend.ExecutorResolver, error) {
+	if r.execution == nil {
+		return nil, nil
+	}
+
+	return graphqlbackend.ExecutorByHostname(ctx, r.store.DatabaseDB(), r.execution.WorkerHostname)
 }
 
 type batchSpecWorkspaceStagesResolver struct {

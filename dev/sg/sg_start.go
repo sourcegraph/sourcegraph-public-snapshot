@@ -86,12 +86,12 @@ Use this to start your Sourcegraph environment!
 func startExec(ctx context.Context, args []string) error {
 	ok, errLine := parseConf(*configFlag, *overwriteConfigFlag)
 	if !ok {
-		out.WriteLine(errLine)
+		stdout.Out.WriteLine(errLine)
 		os.Exit(1)
 	}
 
 	if len(args) > 2 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: too many arguments"))
 		return flag.ErrHelp
 	}
 
@@ -99,14 +99,14 @@ func startExec(ctx context.Context, args []string) error {
 		if globalConf.DefaultCommandset != "" {
 			args = append(args, globalConf.DefaultCommandset)
 		} else {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: No commandset specified and no 'defaultCommandset' specified in sg.config.yaml\n"))
+			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: No commandset specified and no 'defaultCommandset' specified in sg.config.yaml\n"))
 			return flag.ErrHelp
 		}
 	}
 
 	set, ok := globalConf.Commandsets[args[0]]
 	if !ok {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: commandset %q not found :(", args[0]))
+		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: commandset %q not found :(", args[0]))
 		return flag.ErrHelp
 	}
 
@@ -115,31 +115,31 @@ func startExec(ctx context.Context, args []string) error {
 	if set.RequiresDevPrivate {
 		repoRoot, err := root.RepositoryRoot()
 		if err != nil {
-			out.WriteLine(output.Linef("", output.StyleWarning, "Failed to determine repository root location: %s", err))
+			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "Failed to determine repository root location: %s", err))
 			os.Exit(1)
 		}
 
 		devPrivatePath := filepath.Join(repoRoot, "..", "dev-private")
 		exists, err := pathExists(devPrivatePath)
 		if err != nil {
-			out.WriteLine(output.Linef("", output.StyleWarning, "Failed to check whether dev-private repository exists: %s", err))
+			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "Failed to check whether dev-private repository exists: %s", err))
 			os.Exit(1)
 		}
 		if !exists {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: dev-private repository not found!"))
-			out.WriteLine(output.Linef("", output.StyleWarning, "It's expected to exist at: %s", devPrivatePath))
-			out.WriteLine(output.Line("", output.StyleWarning, "If you're not a Sourcegraph employee you probably want to run: sg start oss"))
-			out.WriteLine(output.Line("", output.StyleWarning, "If you're a Sourcegraph employee, see the documentation for how to clone it: https://docs.sourcegraph.com/dev/getting-started/quickstart_2_clone_repository"))
+			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: dev-private repository not found!"))
+			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "It's expected to exist at: %s", devPrivatePath))
+			stdout.Out.WriteLine(output.Line("", output.StyleWarning, "If you're not a Sourcegraph employee you probably want to run: sg start oss"))
+			stdout.Out.WriteLine(output.Line("", output.StyleWarning, "If you're a Sourcegraph employee, see the documentation for how to clone it: https://docs.sourcegraph.com/dev/getting-started/quickstart_2_clone_repository"))
 
-			out.Write("")
+			stdout.Out.Write("")
 			overwritePath := filepath.Join(repoRoot, "sg.config.overwrite.yaml")
-			out.WriteLine(output.Linef("", output.StylePending, "If you know what you're doing and want disable the check, add the following to %s:", overwritePath))
-			out.Write("")
-			out.Write(fmt.Sprintf(`  commandsets:
+			stdout.Out.WriteLine(output.Linef("", output.StylePending, "If you know what you're doing and want disable the check, add the following to %s:", overwritePath))
+			stdout.Out.Write("")
+			stdout.Out.Write(fmt.Sprintf(`  commandsets:
     %s:
       requiresDevPrivate: false
 `, set.Name))
-			out.Write("")
+			stdout.Out.Write("")
 
 			os.Exit(1)
 		}
@@ -149,7 +149,7 @@ func startExec(ctx context.Context, args []string) error {
 	for _, name := range set.Checks {
 		check, ok := globalConf.Checks[name]
 		if !ok {
-			out.WriteLine(output.Linef("", output.StyleWarning, "WARNING: check %s not found in config", name))
+			stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "WARNING: check %s not found in config", name))
 			continue
 		}
 		checks = append(checks, check)
@@ -157,11 +157,11 @@ func startExec(ctx context.Context, args []string) error {
 
 	ok, err := run.Checks(ctx, globalConf.Env, checks...)
 	if err != nil {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks could not be run: %s", err))
+		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks could not be run: %s", err))
 	}
 
 	if !ok {
-		out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks did not pass, aborting start of commandset %s", set.Name))
+		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: checks did not pass, aborting start of commandset %s", set.Name))
 		return nil
 	}
 
@@ -176,7 +176,7 @@ func startExec(ctx context.Context, args []string) error {
 	}
 
 	if len(cmds) == 0 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "WARNING: no commands to run"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "WARNING: no commands to run"))
 	}
 
 	levelOverrides := logLevelOverrides()
@@ -216,7 +216,7 @@ func enrichWithLogLevels(cmd *run.Command, overrides map[string]string) {
 	logLevelVariable := "SRC_LOG_LEVEL"
 
 	if level, ok := overrides[cmd.Name]; ok {
-		out.WriteLine(output.Linef("", output.StylePending, "Setting log level: %s for command %s.", level, cmd.Name))
+		stdout.Out.WriteLine(output.Linef("", output.StylePending, "Setting log level: %s for command %s.", level, cmd.Name))
 		if cmd.Env == nil {
 			cmd.Env = make(map[string]string, 1)
 			cmd.Env[logLevelVariable] = level

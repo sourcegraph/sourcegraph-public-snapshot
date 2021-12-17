@@ -10,50 +10,57 @@ import {
 
 import styles from './InsightCards.module.scss'
 
-interface CardProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    footerText?: string
-}
+interface CardProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
 
 /**
  * Low-level styled component for building insight link card for
  * the creation page gallery.
  */
 const Card: React.FunctionComponent<CardProps> = props => {
-    const { children, footerText, ...otherProps } = props
+    const { children, ...otherProps } = props
 
     return (
         <button {...otherProps} type="button" className={classNames(styles.card, 'card p-3', otherProps.className)}>
             {children}
 
-            {footerText && (
-                <footer className="d-flex flex-column mt-3">
-                    <small className="text-muted">Example use</small>
-                    <span>{footerText}</span>
-                </footer>
-            )}
+            <div className="btn btn-sm btn-secondary mt-3 w-100">Create</div>
         </button>
     )
 }
 
-const CardBody: React.FunctionComponent<{ title: string }> = props => {
-    const { title, children } = props
+interface CardBodyProps {
+    title: string
+    className?: string
+}
+
+const CardBody: React.FunctionComponent<CardBodyProps> = props => {
+    const { title, className, children } = props
 
     return (
-        <div className={classNames(styles.cardBody, 'card-body flex-1')}>
-            <h3 className="mb-3">{title}</h3>
+        <div className={classNames(styles.cardBody, className, 'card-body flex-1')}>
+            <h3 className={styles.cardTitle}>{title}</h3>
 
             <p className="d-flex flex-column text-muted m-0">{children}</p>
         </div>
     )
 }
 
+const CardExampleBlock: React.FunctionComponent = props => (
+    <footer className={styles.cardFooter}>
+        <small className="text-muted">Example use</small>
+        <small className={styles.cardExampleBlock}>{props.children}</small>
+    </footer>
+)
+
 export const SearchInsightCard: React.FunctionComponent<CardProps> = props => (
-    <Card {...props} footerText="Redis, PostgreSQL and SQLite database usage.">
+    <Card {...props}>
         <SearchBasedInsightChart className={styles.chart} />
-        <CardBody title="Track">
+        <CardBody title="Track changes" className="mb-3">
             Insight <b>based on a custom Sourcegraph search query</b> that creates visualization of the data series you
             will define <b>manually.</b>
         </CardBody>
+
+        <CardExampleBlock>Tracking architecture, naming, or language migrations.</CardExampleBlock>
     </Card>
 )
 
@@ -67,14 +74,16 @@ export const LangStatsInsightCard: React.FunctionComponent<CardProps> = props =>
 )
 
 export const CaptureGroupInsightCard: React.FunctionComponent<CardProps> = props => (
-    <Card {...props} footerText="Detecting and tracking language or package versions.">
+    <Card {...props}>
         <CaptureGroupInsightChart className={styles.chart} />
 
-        <CardBody title="Detect and track">
+        <CardBody title="Detect and track patterns" className="mb-3">
             Data series will be generated dynamically for each unique value from the
             <b> regular expression capture group </b> included in the search query. Chart will be updated as new values
             appear in the code base.
         </CardBody>
+
+        <CardExampleBlock>Detecting and tracking language or package versions.</CardExampleBlock>
     </Card>
 )
 

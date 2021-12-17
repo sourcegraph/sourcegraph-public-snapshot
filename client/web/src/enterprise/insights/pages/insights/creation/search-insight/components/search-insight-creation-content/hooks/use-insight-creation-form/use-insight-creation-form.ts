@@ -1,7 +1,11 @@
+import { useContext } from 'react'
+
 import { useAsyncInsightTitleValidator } from '../../../../../../../../components/form/hooks/use-async-insight-title-validator'
 import { useField, useFieldAPI } from '../../../../../../../../components/form/hooks/useField'
 import { Form, FormChangeEvent, SubmissionErrors, useForm } from '../../../../../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../../../../../components/form/validators'
+import { CodeInsightsBackendContext } from '../../../../../../../../core/backend/code-insights-backend-context'
+import { CodeInsightsGqlBackend } from '../../../../../../../../core/backend/gql-api/code-insights-gql-backend'
 import { isUserSubject, SupportedInsightSubject } from '../../../../../../../../core/types/subjects'
 import { CreateInsightFormFields, EditableDataSeries, InsightStep } from '../../../../types'
 import { INITIAL_INSIGHT_VALUES } from '../../initial-insight-values'
@@ -40,6 +44,11 @@ export interface InsightCreationForm {
 export function useInsightCreationForm(props: UseInsightCreationFormProps): InsightCreationForm {
     const { mode, subjects = [], initialValue = {}, onSubmit, onChange } = props
     const isEdit = mode === 'edit'
+    const api = useContext(CodeInsightsBackendContext)
+
+    // We have to know about what exactly api we use to be able switch our UI properly.
+    // TODO [VK]: Remove this condition rendering when we deprecate setting-based api
+    const isGqlBackend = api instanceof CodeInsightsGqlBackend
 
     const form = useForm<CreateInsightFormFields>({
         initialValues: {
@@ -103,7 +112,7 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
     const step = useField({
         name: 'step',
         formApi: form.formAPI,
-        disabled: isAllReposMode,
+        disabled: isGqlBackend ? false : isAllReposMode,
     })
     const stepValue = useField({
         name: 'stepValue',
@@ -112,7 +121,7 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
             // Turn off any validations if we are in all repos mode
             sync: !isAllReposMode ? requiredStepValueField : undefined,
         },
-        disabled: isAllReposMode,
+        disabled: isGqlBackend ? false : isAllReposMode,
     })
 
     return {

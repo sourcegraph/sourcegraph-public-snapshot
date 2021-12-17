@@ -277,6 +277,8 @@ func migrateLangStatSeries(ctx context.Context, insightStore *store.InsightStore
 		SeriesID:           ksuid.New().String(),
 		Repositories:       []string{from.Repository},
 		SampleIntervalUnit: string(types.Month),
+		JustInTime:         true,
+		GenerationMethod:   types.LanguageStats,
 	}
 	var grants []store.InsightViewGrant
 	if from.UserID != nil {

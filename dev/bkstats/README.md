@@ -1,6 +1,7 @@
 # Bkstats
 
 A crude script to compute statistics from our Buildkite pipelines.
+Owned by the [DevX team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience).
 
 ## Usage
 

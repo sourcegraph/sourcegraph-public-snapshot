@@ -2,6 +2,10 @@
     background-color: var(--subtle-bg);
     display: flex;
     padding: 0.75rem;
+    border-radius: 3px;
+    border-style: solid;
+    border-width: 1px;
+    border-color: var(--border-color);
 }
 
 .icon {
