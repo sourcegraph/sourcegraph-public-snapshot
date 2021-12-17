@@ -37,7 +37,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Low resource overlay added. NOTE: this is designed for internal-use only. Customers can use the `minikube` overlay to achieve similar results.[#4012](https://github.com/sourcegraph/deploy-sourcegraph/pull/4012)
 - Code Insights has a new insight `Detect and Track` which will generate unique time series from the matches of a pattern specified as a regular expression capture group. This is currently limited to insights scoped to specific repositories. [docs](https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series)
 - Code Insights is persisted entirely in the `codeinsights-db` database. A migration will automatically be performed to move any defined insights and dashboards from your user, org, or global settings files.
-- The GraphQL API for Code Insights has entered beta. [docs](https://docs.sourcegraph.com/code_insights/explanations/code_insights_graphql_api)
+- The GraphQL API for Code Insights has entered beta. [docs](https://docs.sourcegraph.com/code_insights/references/code_insights_graphql_api)
 - The `SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND` environment variable to control the egress throughput of gitserver's git service (e.g. used by zoekt-index-server to clone repos to index). Set to -1 for no limit. [#29197](https://github.com/sourcegraph/sourcegraph/pull/29197)
 - More explicit Terms of Service and Privacy Policy consent has been added to Sourcegraph Server. [#28716](https://github.com/sourcegraph/sourcegraph/issues/28716)
 
