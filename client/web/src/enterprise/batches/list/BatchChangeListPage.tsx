@@ -11,6 +11,7 @@ import { Page } from '@sourcegraph/web/src/components/Page'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
+import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../components/FilteredConnection'
 import {
@@ -21,6 +22,7 @@ import {
     BatchChangesResult,
     BatchChangesByNamespaceVariables,
 } from '../../../graphql-operations'
+import { Settings } from '../../../schema/settings.schema'
 
 import {
     areBatchChangesLicensed as _areBatchChangesLicensed,
@@ -32,8 +34,6 @@ import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
 import { GettingStarted } from './GettingStarted'
 import { NewBatchChangeButton } from './NewBatchChangeButton'
-import { Settings } from '../../../schema/settings.schema'
-import { isBatchChangesExecutionEnabled } from '../../../batches'
 
 export interface BatchChangeListPageProps
     extends TelemetryProps,
