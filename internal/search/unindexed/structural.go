@@ -156,6 +156,8 @@ type StructuralSearch struct {
 	UseIndex          query.YesNoOnly
 	ContainsRefGlobs  bool
 	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
+
+	IsRequired bool
 }
 
 func (s *StructuralSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
@@ -182,4 +184,8 @@ func (s *StructuralSearch) Run(ctx context.Context, stream streaming.Sender, rep
 
 func (*StructuralSearch) Name() string {
 	return "Structural"
+}
+
+func (s *StructuralSearch) Required() bool {
+	return s.IsRequired
 }
