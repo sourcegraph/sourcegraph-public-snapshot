@@ -9,8 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
-
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -268,11 +266,6 @@ type historicalEnqueuer struct {
 }
 
 func (h *historicalEnqueuer) Handler(ctx context.Context) error {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "historical_enqueuer.Handler")
-	defer span.Finish()
-
-	log15.Info("historical_enqueuer.Handler start", "traceId", trace.IDFromSpan(span))
-
 	h.statistics = make(statistics)
 	// Discover all insights on the instance.
 	log15.Debug("Fetching data series for historical")
