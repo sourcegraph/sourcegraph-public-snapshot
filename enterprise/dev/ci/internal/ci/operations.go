@@ -13,6 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
+var goAthensProxyURL = "http://athens-athens-proxy"
+
 // CoreTestOperationsOptions should be used ONLY to adjust the behaviour of specific steps,
 // e.g. by adding flags, and not as a condition for adding steps or commands.
 type CoreTestOperationsOptions struct {
@@ -270,6 +272,7 @@ var slowGoTestPackages = []string{
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Test",
+		bk.Env("GOPROXY", goAthensProxyURL),
 		bk.Cmd("./dev/ci/go-test.sh exclude "+strings.Join(slowGoTestPackages, " ")),
 		bk.Cmd("dev/ci/codecov.sh -c -F go"))
 
@@ -285,6 +288,7 @@ func addGoTests(pipeline *bk.Pipeline) {
 // Builds the OSS and Enterprise Go commands.
 func addGoBuild(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Build",
+		bk.Env("GOPROXY", goAthensProxyURL),
 		bk.Cmd("./dev/ci/go-build.sh"),
 	)
 }
