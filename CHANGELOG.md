@@ -57,10 +57,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where certain regexp syntax for repository searches caused the entire search, including non-repository searches, to fail with a parse error (issue affects only version 3.34). [#28826](https://github.com/sourcegraph/sourcegraph/pull/28826)
 - Modifying changesets on Bitbucket Server could previously fail if the local copy in Batch Changes was out of date. That has been fixed by retrying the operations in case of a 409 response. [#29100](https://github.com/sourcegraph/sourcegraph/pull/29100)
 
-### Removed
-
--
-
 ## 3.34.2
 
 ### Fixed
