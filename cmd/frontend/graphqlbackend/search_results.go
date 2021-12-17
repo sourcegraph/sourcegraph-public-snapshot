@@ -840,6 +840,32 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 			})
 		}
 	}
+
+	for _, job := range jobs {
+		switch j := job.(type) {
+		case *commit.CommitSearch:
+			if job.Name() == "Diff" {
+				j.IsRequired = (args.ResultTypes.Without(result.TypeDiff) == 0)
+			} else {
+				j.IsRequired = (args.ResultTypes.Without(result.TypeCommit) == 0)
+			}
+		case *symbol.RepoSubsetSymbolSearch:
+			j.IsRequired = (args.ResultTypes.Without(result.TypeSymbol) == 0)
+		case *symbol.RepoUniverseSymbolSearch:
+			j.IsRequired = true
+		case *run.RepoSearch:
+			j.IsRequired = true
+		case *unindexed.RepoSubsetTextSearch:
+			j.IsRequired = true
+		case *unindexed.RepoUniverseTextSearch:
+			j.IsRequired = true
+		case *unindexed.StructuralSearch:
+			j.IsRequired = true
+
+		default:
+			panic(fmt.Sprintf("unknown job type: %q", j))
+		}
+	}
 	return &args, jobs, nil
 }
 
@@ -1708,27 +1734,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		})
 	}
 
-	wgForJob := func(job run.Job) *sync.WaitGroup {
-		switch job.Name() {
-		case "Diff":
-			return waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
-		case "Commit":
-			return waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
-		case "RepoSubsetSymbol":
-			return waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
-		case "RepoUniverseSymbol":
-			return waitGroup(true)
-		case "Repo":
-			return waitGroup(true)
-		case "RepoSubsetText", "RepoUniverseText":
-			return waitGroup(true)
-		case "Structural":
-			return waitGroup(true)
-		default:
-			panic("unknown job name " + job.Name())
-		}
-	}
-
 	repos := &searchrepos.Resolver{
 		Opts: args.RepoOptions,
 		DB:   r.db,
@@ -1737,7 +1742,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	// Start all specific search jobs, if any.
 	for _, job := range jobs {
 		job := job
-		wg := wgForJob(job)
+		wg := waitGroup(job.Required())
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
