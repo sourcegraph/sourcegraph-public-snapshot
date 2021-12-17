@@ -23,7 +23,6 @@ This feature is experimental. In particular, it comes with the following limitat
 - Documentation is minimal and will change a lot before the GA release.
 - Batch change execution is not optimized.
 - Executors can only be deployed using Terraform (AWS or GCP) or using pre-built binaries (see [deploying executors](../../admin/deploy_executors.md)).
-- Step-wise caching is not included server side.
 - Steps cannot include [files](../references/batch_spec_yaml_reference.md#steps-files).
 
 Server-side Batch Changes has been tested to run a simple 20k changeset batch change. Actual performance and setup requirements depend on the complexity of the batch change.

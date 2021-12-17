@@ -1,9 +1,10 @@
 import { useContext, useEffect, useState } from 'react'
 
+import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
-import { ErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+import { isFilterType, isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
+import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { dedupeWhitespace } from '@sourcegraph/shared/src/util/strings'
 
 import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
@@ -49,11 +50,14 @@ export function getInsightDataFromQuery(searchQuery: string): InsightData {
 
     // Generate a string query from tokens without repo: filters for the insight
     // query field.
-    const tokensWithoutRepoFilters = tokens.filter(token => !isRepoFilter(token))
-    const humanReadableQueryString = stringHuman(tokensWithoutRepoFilters)
+    const tokensWithoutRepoFiltersAndContext = tokens.filter(
+        token => !isRepoFilter(token) && !isFilterType(token, FilterType.context)
+    )
+
+    const humanReadableQueryString = stringHuman(tokensWithoutRepoFiltersAndContext)
 
     return {
-        seriesQuery: dedupeWhitespace(humanReadableQueryString),
+        seriesQuery: dedupeWhitespace(humanReadableQueryString.trim()),
         repositories,
     }
 }

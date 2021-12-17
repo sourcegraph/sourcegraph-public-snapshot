@@ -107,7 +107,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 			ShortHelp: "Get the status of the CI run associated with the currently checked out branch",
 			FlagSet:   ciStatusFlagSet,
 			Exec: func(ctx context.Context, args []string) error {
-				client, err := bk.NewClient(ctx, out)
+				client, err := bk.NewClient(ctx, stdout.Out)
 				if err != nil {
 					return err
 				}
@@ -130,7 +130,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				printBuildOverview(build)
 
 				if *ciStatusWaitFlag && build.FinishedAt == nil {
-					pending := out.Pending(output.Linef("", output.StylePending, "Waiting for %d jobs...", len(build.Jobs)))
+					pending := stdout.Out.Pending(output.Linef("", output.StylePending, "Waiting for %d jobs...", len(build.Jobs)))
 					err := statusTicker(ctx, func() (bool, error) {
 						// get the next update
 						build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
@@ -180,14 +180,14 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					}
 					commit = strings.TrimSpace(commit)
 					if commit != *build.Commit {
-						out.WriteLine(output.Linef("⚠️", output.StyleSuggestion,
+						stdout.Out.WriteLine(output.Linef("⚠️", output.StyleSuggestion,
 							"The currently checked out commit %q does not match the commit of the build found, %q.\nHave you pushed your most recent changes yet?",
 							commit, *build.Commit))
 					}
 				}
 
 				if failed {
-					out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleSuggestion,
+					stdout.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleSuggestion,
 						"Some jobs have failed - try using 'sg ci logs' to see what went wrong, or go to the build page: %s", *build.WebURL))
 				}
 
@@ -199,7 +199,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 			ShortHelp: "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks)",
 			LongHelp:  "Manually request a Buildkite build for the currently checked out commit and branch. This is most useful when triggering builds for PRs from forks (such as those from external contributors), which do not trigger Buildkite builds automatically for security reasons (we do not want to run insecure code on our infrastructure by default!)",
 			Exec: func(ctx context.Context, args []string) error {
-				client, err := bk.NewClient(ctx, out)
+				client, err := bk.NewClient(ctx, stdout.Out)
 				if err != nil {
 					return err
 				}
@@ -217,13 +217,13 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					}
 				}
 
-				out.WriteLine(output.Linef("", output.StylePending, "Requesting build for branch %q at %q...", branch, commit))
+				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Requesting build for branch %q at %q...", branch, commit))
 
 				// simple check to see if commit is in origin, this is non blocking but
 				// we ask for confirmation to double check.
 				remoteBranches, err := run.TrimResult(run.GitCmd("branch", "-r", "--contains", commit))
 				if err != nil || len(remoteBranches) == 0 || !allLinesPrefixed(strings.Split(remoteBranches, "\n"), "origin/") {
-					out.WriteLine(output.Linef(output.EmojiWarning, output.StyleReset,
+					stdout.Out.WriteLine(output.Linef(output.EmojiWarning, output.StyleReset,
 						"Commit %q not found in in local 'origin/' branches - you might be triggering a build for a fork. Make sure all code has been reviewed before continuing.",
 						commit))
 					response, err := open.Prompt("Continue? (yes/no)")
@@ -239,7 +239,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				if err != nil {
 					return fmt.Errorf("failed to trigger build for branch %q at %q: %w", branch, commit, err)
 				}
-				out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Created build: %s", *build.WebURL))
+				stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Created build: %s", *build.WebURL))
 				return nil
 			},
 		}, {
@@ -254,7 +254,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 `,
 			FlagSet: ciLogsFlagSet,
 			Exec: func(ctx context.Context, args []string) error {
-				client, err := bk.NewClient(ctx, out)
+				client, err := bk.NewClient(ctx, stdout.Out)
 				if err != nil {
 					return err
 				}
@@ -273,7 +273,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 				if err != nil {
 					return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
 				}
-				out.WriteLine(output.Linef("", output.StylePending, "Fetching logs for %s ...",
+				stdout.Out.WriteLine(output.Linef("", output.StylePending, "Fetching logs for %s ...",
 					*build.WebURL))
 
 				options := bk.ExportLogsOpts{
@@ -285,7 +285,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 					return err
 				}
 				if len(logs) == 0 {
-					out.WriteLine(output.Line("", output.StyleSuggestion,
+					stdout.Out.WriteLine(output.Line("", output.StyleSuggestion,
 						fmt.Sprintf("No logs found matching the given parameters (job: %q, state: %q).", options.JobQuery, options.State)))
 					return nil
 				}
@@ -295,12 +295,12 @@ From there, you can start exploring logs with the Grafana explore panel.
 					// Buildkite's timestamp thingo causes log lines to not render in terminal
 					bkTimestamp := regexp.MustCompile(`\x1b_bk;t=\d{13}\x07`) // \x1b is ESC, \x07 is BEL
 					for _, log := range logs {
-						block := out.Block(output.Linef(output.EmojiInfo, output.StyleUnderline, "%s",
+						block := stdout.Out.Block(output.Linef(output.EmojiInfo, output.StyleUnderline, "%s",
 							*log.JobMeta.Name))
 						block.Write(bkTimestamp.ReplaceAllString(*log.Content, ""))
 						block.Close()
 					}
-					out.WriteLine(output.Linef("", output.StyleSuccess, "Found and output logs for %d jobs.", len(logs)))
+					stdout.Out.WriteLine(output.Linef("", output.StyleSuccess, "Found and output logs for %d jobs.", len(logs)))
 
 				default:
 					lokiURL, err := url.Parse(*ciLogsOutFlag)
@@ -308,13 +308,13 @@ From there, you can start exploring logs with the Grafana explore panel.
 						return fmt.Errorf("invalid Loki target: %w", err)
 					}
 					lokiClient := loki.NewLokiClient(lokiURL)
-					out.WriteLine(output.Linef("", output.StylePending, "Pushing to Loki instance at %q", lokiURL.Host))
+					stdout.Out.WriteLine(output.Linef("", output.StylePending, "Pushing to Loki instance at %q", lokiURL.Host))
 
 					var (
 						pushedEntries int
 						pushedStreams int
 						pushErrs      []string
-						pending       = out.Pending(output.Linef("", output.StylePending, "Processing logs..."))
+						pending       = stdout.Out.Pending(output.Linef("", output.StylePending, "Processing logs..."))
 					)
 					for i, log := range logs {
 						job := log.JobMeta.Job
@@ -360,7 +360,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 
 					if pushErrs != nil {
 						failedStreams := len(logs) - pushedStreams
-						out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning,
+						stdout.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning,
 							"Failed to push %d streams: \n - %s", failedStreams, strings.Join(pushErrs, "\n - ")))
 						if failedStreams == len(logs) {
 							return errors.New("failed to push all logs")
@@ -384,15 +384,15 @@ func allLinesPrefixed(lines []string, match string) bool {
 }
 
 func printBuildOverview(build *buildkite.Build) {
-	out.WriteLine(output.Linef("", output.StyleBold, "Most recent build: %s", *build.WebURL))
-	out.Writef("Commit:\t\t%s\nMessage:\t%s\nAuthor:\t\t%s <%s>",
+	stdout.Out.WriteLine(output.Linef("", output.StyleBold, "Most recent build: %s", *build.WebURL))
+	stdout.Out.Writef("Commit:\t\t%s\nMessage:\t%s\nAuthor:\t\t%s <%s>",
 		*build.Commit, *build.Message, build.Author.Name, build.Author.Email)
 }
 
 func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
-	out.Writef("Started:\t%s", build.StartedAt)
+	stdout.Out.Writef("Started:\t%s", build.StartedAt)
 	if build.FinishedAt != nil {
-		out.Writef("Finished:\t%s (elapsed: %s)", build.FinishedAt, build.FinishedAt.Sub(build.StartedAt.Time))
+		stdout.Out.Writef("Finished:\t%s (elapsed: %s)", build.FinishedAt, build.FinishedAt.Sub(build.StartedAt.Time))
 	}
 
 	// Valid states: running, scheduled, passed, failed, blocked, canceled, canceling, skipped, not_run, waiting
@@ -417,7 +417,7 @@ func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
 	default:
 		style = output.StyleWarning
 	}
-	block := out.Block(output.Linef("", style, "Status:\t\t%s %s", emoji, *build.State))
+	block := stdout.Out.Block(output.Linef("", style, "Status:\t\t%s %s", emoji, *build.State))
 
 	// Inspect jobs individually.
 	failedSummary := []string{"Failed jobs:"}

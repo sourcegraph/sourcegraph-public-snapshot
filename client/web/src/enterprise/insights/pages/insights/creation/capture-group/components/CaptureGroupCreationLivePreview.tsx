@@ -9,6 +9,7 @@ import { getSanitizedRepositories } from '../../../../../components/creation-ui-
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import { useDistinctValue } from '../../../../../hooks/use-distinct-value'
 import { InsightStep } from '../../search-insight/types'
+import { getSanitizedCaptureQuery } from '../utils/capture-group-insight-sanitizer'
 
 export const DEFAULT_MOCK_CHART_CONTENT: LineChartContent<any, string> = {
     chart: 'line' as const,
@@ -59,7 +60,7 @@ export const CaptureGroupCreationLivePreview: React.FunctionComponent<CaptureGro
 
     const settings = useDistinctValue({
         disabled,
-        query,
+        query: getSanitizedCaptureQuery(query.trim()),
         repositories: getSanitizedRepositories(repositories),
         step: { [step]: stepValue },
     })

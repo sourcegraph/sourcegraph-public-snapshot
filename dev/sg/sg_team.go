@@ -7,8 +7,10 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/slack"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 )
 
 var (
@@ -36,7 +38,7 @@ func teammateExec(ctx context.Context, args []string) error {
 		if err != nil {
 			return err
 		}
-		out.Writef(str)
+		stdout.Out.Writef(str)
 		return nil
 	case "handbook":
 		if len(args) < 2 {
