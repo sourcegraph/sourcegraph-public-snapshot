@@ -2,9 +2,7 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -23,8 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -39,18 +35,15 @@ func clock() time.Time {
 }
 
 var (
-	parseSchemaOnce sync.Once
-	parseSchemaErr  error
-	parsedSchema    *graphql.Schema
+	parseSchemaErr error
+	parsedSchema   *graphql.Schema
 )
 
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 
-	parseSchemaOnce.Do(func() {
-		parsedSchema, parseSchemaErr = graphqlbackend.NewSchema(db, nil, nil, nil, NewResolver(db, clock), nil, nil, nil, nil, nil, nil)
-	})
-	if parseSchemaErr != nil {
+	parsedSchema, err := graphqlbackend.NewSchema(db, nil, nil, nil, NewResolver(db, clock), nil, nil, nil, nil, nil, nil)
+	if err != nil {
 		t.Fatal(parseSchemaErr)
 	}
 
@@ -59,15 +52,14 @@ func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 
 func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{}, nil
-		}
-		defer func() {
-			database.Mocks.Users.GetByCurrentAuthUser = nil
-		}()
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{store: edb.PermsWith(basestore.NewWithDB(nil, sql.TxOptions{}), time.Now)}).SetRepositoryPermissionsForUsers(ctx, &graphqlbackend.RepoPermsArgs{})
+		result, err := (&Resolver{db: db}).SetRepositoryPermissionsForUsers(ctx, &graphqlbackend.RepoPermsArgs{})
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
@@ -215,18 +207,15 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 }
 
 func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
-	db := dbtest.NewDB(t)
-
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{}, nil
-		}
-		t.Cleanup(func() {
-			database.Mocks.Users = database.MockUsers{}
-		})
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{store: edb.Perms(db, timeutil.Now)}).ScheduleRepositoryPermissionsSync(ctx, &graphqlbackend.RepositoryIDArgs{})
+		result, err := (&Resolver{db: db}).ScheduleRepositoryPermissionsSync(ctx, &graphqlbackend.RepositoryIDArgs{})
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
@@ -235,15 +224,14 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 		}
 	})
 
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	t.Cleanup(func() {
-		database.Mocks.Users = database.MockUsers{}
-	})
+	users := database.NewStrictMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	db := edb.NewStrictMockEnterpriseDB()
+	db.UsersFunc.SetDefaultReturn(users)
 
 	r := &Resolver{
-		store: edb.Perms(db, timeutil.Now),
+		db: db,
 		repoupdaterClient: &fakeRepoupdaterClient{
 			mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
 				if len(args.RepoIDs) != 1 {
@@ -262,18 +250,15 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 }
 
 func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
-	db := dbtest.NewDB(t)
-
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{}, nil
-		}
-		t.Cleanup(func() {
-			database.Mocks.Users = database.MockUsers{}
-		})
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{store: edb.Perms(db, timeutil.Now)}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserPermissionsSyncArgs{})
+		result, err := (&Resolver{db: db}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserPermissionsSyncArgs{})
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
@@ -282,16 +267,15 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 		}
 	})
 
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	t.Cleanup(func() {
-		database.Mocks.Users = database.MockUsers{}
-	})
+	users := database.NewStrictMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	db := edb.NewStrictMockEnterpriseDB()
+	db.UsersFunc.SetDefaultReturn(users)
 
 	t.Run("queue a user", func(t *testing.T) {
 		r := &Resolver{
-			store: edb.Perms(db, timeutil.Now),
+			db: db,
 			repoupdaterClient: &fakeRepoupdaterClient{
 				mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
 					if len(args.UserIDs) != 1 {
@@ -311,7 +295,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 
 	t.Run("queue a user with options", func(t *testing.T) {
 		r := &Resolver{
-			store: edb.Perms(db, timeutil.Now),
+			db: db,
 			repoupdaterClient: &fakeRepoupdaterClient{
 				mockSchedulePermsSync: func(ctx context.Context, args protocol.PermsSyncRequest) error {
 					if len(args.UserIDs) != 1 {
@@ -344,18 +328,15 @@ func (c *fakeRepoupdaterClient) SchedulePermsSync(ctx context.Context, args prot
 }
 
 func TestResolver_AuthorizedUserRepositories(t *testing.T) {
-	db := dbtest.NewDB(t)
-
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{}, nil
-		}
-		defer func() {
-			database.Mocks.Users.GetByCurrentAuthUser = nil
-		}()
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{store: edb.Perms(db, timeutil.Now)}).AuthorizedUserRepositories(ctx, &graphqlbackend.AuthorizedRepoArgs{})
+		result, err := (&Resolver{db: db}).AuthorizedUserRepositories(ctx, &graphqlbackend.AuthorizedRepoArgs{})
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
@@ -526,18 +507,16 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 }
 
 func TestResolver_UsersWithPendingPermissions(t *testing.T) {
-	db := dbtest.NewDB(t)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{}, nil
-		}
-		defer func() {
-			database.Mocks.Users.GetByCurrentAuthUser = nil
-		}()
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{store: edb.Perms(db, timeutil.Now)}).UsersWithPendingPermissions(ctx)
+		result, err := (&Resolver{db: db}).UsersWithPendingPermissions(ctx)
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
@@ -546,16 +525,15 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 		}
 	})
 
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	edb.Mocks.Perms.ListPendingUsers = func(context.Context) ([]string, error) {
-		return []string{"alice", "bob"}, nil
-	}
-	defer func() {
-		database.Mocks.Users = database.MockUsers{}
-		edb.Mocks.Perms = edb.MockPerms{}
-	}()
+	users := database.NewStrictMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	perms := edb.NewStrictMockPermsStore()
+	perms.ListPendingUsersFunc.SetDefaultReturn([]string{"alice", "bob"}, nil)
+
+	db := edb.NewStrictMockEnterpriseDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.PermsFunc.SetDefaultReturn(perms)
 
 	tests := []struct {
 		name     string
@@ -565,7 +543,7 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 			name: "list pending users with their bind IDs",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				{
 					usersWithPendingPermissions
@@ -591,18 +569,16 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 }
 
 func TestResolver_AuthorizedUsers(t *testing.T) {
-	db := dbtest.NewDB(t)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{}, nil
-		}
-		defer func() {
-			database.Mocks.Users.GetByCurrentAuthUser = nil
-		}()
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{store: edb.Perms(db, timeutil.Now)}).AuthorizedUsers(ctx, &graphqlbackend.RepoAuthorizedUserArgs{})
+		result, err := (&Resolver{db: db}).AuthorizedUsers(ctx, &graphqlbackend.RepoAuthorizedUserArgs{})
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
@@ -681,18 +657,15 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 }
 
 func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
-	db := dbtest.NewDB(t)
-
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{}, nil
-		}
-		t.Cleanup(func() {
-			database.Mocks.Users.GetByCurrentAuthUser = nil
-		})
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{store: edb.Perms(db, timeutil.Now)}).RepositoryPermissionsInfo(ctx, graphqlbackend.MarshalRepositoryID(1))
+		result, err := (&Resolver{db: db}).RepositoryPermissionsInfo(ctx, graphqlbackend.MarshalRepositoryID(1))
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
@@ -701,25 +674,29 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 		}
 	})
 
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	database.Mocks.Repos.GetByName = func(_ context.Context, repo api.RepoName) (*types.Repo, error) {
+	users := database.NewStrictMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	repos := database.NewStrictMockRepoStore()
+	repos.GetByNameFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName) (*types.Repo, error) {
 		return &types.Repo{ID: 1, Name: repo}, nil
-	}
-	database.Mocks.Repos.Get = func(_ context.Context, id api.RepoID) (*types.Repo, error) {
+	})
+	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 		return &types.Repo{ID: id}, nil
-	}
-	edb.Mocks.Perms.LoadRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
+	})
+
+	perms := edb.NewStrictMockPermsStore()
+	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
 		p.UpdatedAt = clock()
 		p.SyncedAt = clock()
 		return nil
-	}
-	defer func() {
-		database.Mocks.Users = database.MockUsers{}
-		database.Mocks.Repos = database.MockRepos{}
-		edb.Mocks.Perms = edb.MockPerms{}
-	}()
+	})
+
+	db := edb.NewStrictMockEnterpriseDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.ReposFunc.SetDefaultReturn(repos)
+	db.PermsFunc.SetDefaultReturn(perms)
+
 	tests := []struct {
 		name     string
 		gqlTests []*gqltesting.Test
@@ -728,7 +705,7 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 			name: "get permissions information",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				{
 					repository(name: "github.com/owner/repo") {
@@ -763,18 +740,15 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 }
 
 func TestResolver_UserPermissionsInfo(t *testing.T) {
-	db := dbtest.NewDB(t)
-
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{}, nil
-		}
-		t.Cleanup(func() {
-			database.Mocks.Users.GetByCurrentAuthUser = nil
-		})
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{store: edb.Perms(db, timeutil.Now)}).UserPermissionsInfo(ctx, graphqlbackend.MarshalRepositoryID(1))
+		result, err := (&Resolver{db: db}).UserPermissionsInfo(ctx, graphqlbackend.MarshalRepositoryID(1))
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
@@ -783,21 +757,29 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 		}
 	})
 
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	users := database.NewStrictMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id}, nil
-	}
-	edb.Mocks.Perms.LoadUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
+	})
+
+	perms := edb.NewStrictMockPermsStore()
+	perms.LoadUserPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.UserPermissions) error {
 		p.UpdatedAt = clock()
 		p.SyncedAt = clock()
 		return nil
-	}
-	defer func() {
-		database.Mocks.Users = database.MockUsers{}
-		edb.Mocks.Perms = edb.MockPerms{}
-	}()
+	})
+
+	repos := database.NewStrictMockRepoStore()
+	repos.GetByNameFunc.SetDefaultHook(func(_ context.Context, name api.RepoName) (*types.Repo, error) {
+		return &types.Repo{Name: name}, nil
+	})
+
+	db := edb.NewStrictMockEnterpriseDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.PermsFunc.SetDefaultReturn(perms)
+	db.ReposFunc.SetDefaultReturn(repos)
+
 	tests := []struct {
 		name     string
 		gqlTests []*gqltesting.Test
@@ -806,7 +788,7 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 			name: "get permissions information",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				{
 					currentUser {
