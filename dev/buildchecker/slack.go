@@ -7,9 +7,30 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/slack-go/slack"
 )
 
-func slackSummary(locked bool, failedCommits []CommitInfo) string {
+func getDisplayName(token string, email string) (string, error) {
+	api := slack.New(token)
+
+	user, err := api.GetUserByEmail(email)
+
+	if err != nil {
+		return "", err
+	}
+	var displayName string
+	// Not all users have a display name configured. If DisplayName is null, slack users the RealName as the user's tag.
+	if user.Profile.DisplayName == "" {
+		displayName = user.Profile.RealName
+	} else {
+		displayName = user.Profile.DisplayName
+	}
+	return displayName, nil
+
+}
+
+func slackSummary(locked bool, failedCommits []CommitInfo, token string) string {
 	if !locked {
 		return ":white_check_mark: Pipeline healthy - branch unlocked!"
 	}
@@ -17,8 +38,9 @@ func slackSummary(locked bool, failedCommits []CommitInfo) string {
 The authors of the following failed commits who are Sourcegraph teammates have been granted merge access to investigate and resolve the issue:
 `
 	for _, commit := range failedCommits {
-		message += fmt.Sprintf("\n- <https://github.com/sourcegraph/sourcegraph/commit/%s|%s> - %s",
-			commit.Commit, commit.Commit, commit.Author)
+		displayName, _ := getDisplayName(token, commit.Author)
+		message += fmt.Sprintf("\n- <https://github.com/sourcegraph/sourcegraph/commit/%s|%s> - @%s",
+			commit.Commit, commit.Commit, displayName)
 	}
 	message += `
 
