@@ -331,3 +331,19 @@ func FilterActorPaths(ctx context.Context, checker SubRepoPermissionChecker, a *
 	}
 	return filtered, nil
 }
+
+func HasAccessToPath(ctx context.Context, checker SubRepoPermissionChecker, repo api.RepoName, path string) (bool, error) {
+	if checker != nil && checker.Enabled() {
+		a := actor.FromContext(ctx)
+		filtered, err := FilterActorPaths(ctx, checker, a, repo, []string{path})
+		if err != nil {
+			return false, errors.Wrap(err, "filtering path")
+		}
+		// Expect to get []string{path} back if user has access to this file, otherwise they don't.
+		if len(filtered) != 1 || filtered[0] != path {
+			return false, nil
+		}
+		return true, nil
+	}
+	return true, nil
+}
