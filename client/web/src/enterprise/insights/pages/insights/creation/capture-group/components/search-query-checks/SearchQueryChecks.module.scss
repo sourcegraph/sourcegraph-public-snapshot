@@ -1,9 +1,9 @@
-.checks {
+.checks-wrapper {
     line-height: 1.6;
     font-size: 0.75rem;
 }
 
-.check {
+.checks {
     list-style: none;
     margin-left: 1.5rem;
     margin-bottom: 0;
@@ -16,6 +16,20 @@
     svg {
         position: absolute;
         left: -24px;
+    }
+
+    .icon {
+        top: 4px;
+        font-size: 0.65rem;
+    }
+
+    .smaller {
+        transform: scale(0.55);
+    }
+
+    .valid {
+        top: 3px;
+        opacity: 0.4;
     }
 }
 

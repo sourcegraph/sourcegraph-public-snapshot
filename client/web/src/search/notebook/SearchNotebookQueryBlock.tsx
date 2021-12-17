@@ -18,6 +18,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
 import { SearchContextProps } from '..'
+import { AuthenticatedUser } from '../../auth'
 import { StreamingSearchResultsList } from '../results/StreamingSearchResultsList'
 import { useQueryDiagnostics } from '../useQueryIntelligence'
 
@@ -42,6 +43,7 @@ interface SearchNotebookQueryBlockProps
     isSourcegraphDotCom: boolean
     sourcegraphSearchLanguageId: string
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+    authenticatedUser: AuthenticatedUser | null
 }
 
 export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQueryBlockProps> = ({
@@ -182,6 +184,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                             telemetryService={telemetryService}
                             settingsCascade={settingsCascade}
+                            authenticatedUser={props.authenticatedUser}
                         />
                     </div>
                 )}

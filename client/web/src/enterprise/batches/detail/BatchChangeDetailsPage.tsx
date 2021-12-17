@@ -5,6 +5,7 @@ import React, { useEffect, useMemo } from 'react'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ErrorMessage } from '@sourcegraph/web/src/components/alerts'
 import { PageHeader } from '@sourcegraph/wildcard'
 
@@ -16,6 +17,7 @@ import {
     BatchChangeByNamespaceVariables,
     BatchChangeFields,
 } from '../../../graphql-operations'
+import { Settings } from '../../../schema/settings.schema'
 import { Description } from '../Description'
 
 import { deleteBatchChange as _deleteBatchChange, BATCH_CHANGE_BY_NAMESPACE } from './backend'
@@ -30,7 +32,7 @@ import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { UnpublishedNotice } from './UnpublishedNotice'
 import { WebhookAlert } from './WebhookAlert'
 
-export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps {
+export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps, SettingsCascadeProps<Settings> {
     /** The namespace ID. */
     namespaceID: Scalars['ID']
     /** The batch change name. */
@@ -126,6 +128,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                         deleteBatchChange={deleteBatchChange}
                         batchChangeNamespaceURL={batchChange.namespace.url}
                         history={history}
+                        settingsCascade={props.settingsCascade}
                     />
                 }
                 className="test-batch-change-details-page mb-3"

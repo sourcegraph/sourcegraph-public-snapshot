@@ -2,24 +2,23 @@ import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter, Keyword } from '@sourcegraph/shared/src/search/query/token'
 
-const regexCheck = (value: string): boolean => {
-    try {
-        new RegExp(value)
-        return true
-    } catch {
-        return false
-    }
-}
-
 export interface Checks {
-    isValidRegex: boolean
-    isValidOperator: boolean
-    isValidPatternType: boolean
-    isNotRepo: boolean
-    isNotCommitOrDiff: boolean
+    isValidOperator: true | false | undefined
+    isValidPatternType: true | false | undefined
+    isNotRepo: true | false | undefined
+    isNotCommitOrDiff: true | false | undefined
 }
 
-export const searchQueryValidator = (value: string): Checks => {
+export const searchQueryValidator = (value: string, touched: boolean): Checks => {
+    if (!touched || !value || value.length === 0) {
+        return {
+            isValidOperator: undefined,
+            isValidPatternType: undefined,
+            isNotRepo: undefined,
+            isNotCommitOrDiff: undefined,
+        }
+    }
+
     const tokens = scanSearchQuery(value)
 
     if (tokens.type === 'success') {
@@ -53,7 +52,6 @@ export const searchQueryValidator = (value: string): Checks => {
         )
 
         return {
-            isValidRegex: regexCheck(value),
             isValidOperator: !hasAnd && !hasOr,
             isValidPatternType: !hasLiteralPattern && !hasStructuralPattern,
             isNotRepo: !hasRepo,
@@ -62,7 +60,6 @@ export const searchQueryValidator = (value: string): Checks => {
     }
 
     return {
-        isValidRegex: false,
         isValidOperator: false,
         isValidPatternType: false,
         isNotRepo: false,

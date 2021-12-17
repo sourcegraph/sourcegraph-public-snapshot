@@ -13,9 +13,6 @@ import (
 const (
 	// headerKeyActorUID is the header key for the actor's user ID.
 	headerKeyActorUID = "X-Sourcegraph-Actor-UID"
-	// headerKeyLegacyActorUID is the old header key used for the actor's user ID.
-	// Prefer headerKeyActorUID where possible.
-	headerKeyLegacyActorUID = "X-Sourcegraph-User-ID"
 )
 
 const (
@@ -50,7 +47,11 @@ var (
 )
 
 // HTTPTransport is a roundtripper that sets actors within request context as headers on
-// outgoing requests.
+// outgoing requests. The attached headers can be picked up and attached to incoming
+// request contexts with actor.HTTPMiddleware.
+//
+// 🚨 SECURITY: Wherever possible, prefer to act in the context of a specific user rather
+// than as an internal actor, which can grant a lot of access in some cases.
 type HTTPTransport struct {
 	RoundTripper http.RoundTripper
 }
@@ -93,33 +94,20 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 func HTTPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
-
 		uidStr := req.Header.Get(headerKeyActorUID)
-		if uidStr == "" {
-			// Check legacy header as a fallback.
-			uidStr = req.Header.Get(headerKeyLegacyActorUID)
-		}
-
 		switch uidStr {
 		// Request associated with internal actor - add internal actor to context
+		//
+		// 🚨 SECURITY: Wherever possible, prefer to set the actor ID explicitly through
+		// actor.HTTPTransport or similar, since assuming internal actor grants a lot of
+		// access in some cases.
 		case headerValueInternalActor:
 			ctx = WithInternalActor(ctx)
 			metricIncomingActors.WithLabelValues(metricActorTypeInternal).Inc()
 
 		// Request not associated with any actor
-		case headerValueNoActor:
+		case "", headerValueNoActor:
 			metricIncomingActors.WithLabelValues(metricActorTypeNone).Inc()
-
-		// Request does not have any actor information provided - for internal requests,
-		// these will likely come from a non-first-party service like Zoekt that will
-		// explicitly want to be treated as an internal user for full access.
-		//
-		// 🚨 SECURITY: Wherever possible, prefer to set the actor ID explicitly through
-		// actor.HTTPTransport or similar, since assuming internal actor grants a lot of
-		// access in some cases.
-		case "":
-			ctx = WithInternalActor(ctx)
-			metricIncomingActors.WithLabelValues(metricActorTypeInternal).Inc()
 
 		// Request associated with authenticated user - add user actor to context
 		default:

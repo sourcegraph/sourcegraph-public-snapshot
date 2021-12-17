@@ -122,9 +122,6 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
     private nextRepositoryCommitPageElement = (element: HTMLElement | null): void =>
         this.repositoryCommitPageElements.next(element)
 
-    /** Emits when the close button was clicked */
-    private closeButtonClicks = new Subject<MouseEvent>()
-    private nextCloseButtonClick = (event: MouseEvent): void => this.closeButtonClicks.next(event)
     private subscriptions = new Subscription()
     private hoverifier: Hoverifier<
         RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec,
@@ -139,7 +136,6 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
             HoverMerged,
             ActionItemAction
         >({
-            closeButtonClicks: this.closeButtonClicks,
             hoverOverlayElements: this.hoverOverlayElements,
             hoverOverlayRerenders: this.componentUpdates.pipe(
                 withLatestFrom(this.hoverOverlayElements, this.repositoryCommitPageElements),
@@ -155,7 +151,6 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
             getDocumentHighlights: hoveredToken =>
                 getDocumentHighlights(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             getActions: context => getHoverActions(this.props, context),
-            pinningEnabled: true,
         })
         this.subscriptions.add(this.hoverifier)
         this.onHandleDiffMode = this.onHandleDiffMode.bind(this)
@@ -304,9 +299,10 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                     <WebHoverOverlay
                         {...this.props}
                         {...this.state.hoverOverlayProps}
+                        nav={url => this.props.history.push(url)}
+                        hoveredTokenElement={this.state.hoveredTokenElement}
                         telemetryService={this.props.telemetryService}
                         hoverRef={this.nextOverlayElement}
-                        onCloseButtonClick={this.nextCloseButtonClick}
                     />
                 )}
             </div>

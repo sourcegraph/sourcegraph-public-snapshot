@@ -24,7 +24,7 @@ import { ActiveDatum, GlyphContent } from './GlyphContent'
 import styles from './LineChartContent.module.scss'
 import { NonActiveBackground } from './NonActiveBackground'
 import { dateTickFormatter, numberFormatter, Tick, getTickXProps, getTickYProps } from './TickComponent'
-import { TooltipContent } from './TooltipContent'
+import { TooltipContent } from './tooltip-content/TooltipContent'
 
 // Chart configuration
 const WIDTH_PER_TICK = 70

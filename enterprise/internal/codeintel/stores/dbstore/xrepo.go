@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -35,7 +36,12 @@ func (s *Store) DefinitionDumps(ctx context.Context, monikers []precise.Qualifie
 		qs = append(qs, sqlf.Sprintf("(%s, %s, %s)", moniker.Scheme, moniker.Name, moniker.Version))
 	}
 
-	dumps, err := scanDumps(s.Query(ctx, sqlf.Sprintf(definitionDumpsQuery, sqlf.Join(qs, ", "), DefinitionDumpsLimit)))
+	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	if err != nil {
+		return nil, err
+	}
+
+	dumps, err := scanDumps(s.Query(ctx, sqlf.Sprintf(definitionDumpsQuery, sqlf.Join(qs, ", "), authzConds, DefinitionDumpsLimit)))
 	if err != nil {
 		return nil, err
 	}
@@ -57,10 +63,12 @@ ranked_uploads AS (
 		` + packageRankingQueryFragment + ` AS rank
 	FROM lsif_uploads u
 	JOIN lsif_packages p ON p.dump_id = u.id
+	JOIN repo ON repo.id = u.repository_id
 	WHERE
 		-- Don't match deleted uploads
 		u.state = 'completed' AND
-		(p.scheme, p.name, p.version) IN (%s)
+		(p.scheme, p.name, p.version) IN (%s) AND
+		%s -- authz conds
 ),
 canonical_uploads AS (
 	SELECT ru.id
@@ -138,11 +146,17 @@ func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, co
 
 	visibleUploadsQuery := makeVisibleUploadsQuery(repositoryID, commit)
 
+	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	if err != nil {
+		return nil, 0, err
+	}
+
 	totalCount, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(
 		referenceIDsAndFiltersCountQuery,
 		visibleUploadsQuery,
 		repositoryID,
 		sqlf.Join(qs, ", "),
+		authzConds,
 	)))
 	if err != nil {
 		return nil, 0, err
@@ -154,6 +168,7 @@ func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, co
 		visibleUploadsQuery,
 		repositoryID,
 		sqlf.Join(qs, ", "),
+		authzConds,
 		limit,
 		offset,
 	))
@@ -177,7 +192,11 @@ visible_uploads AS (
 const referenceIDsAndFiltersBaseQuery = `
 FROM lsif_references r
 LEFT JOIN lsif_dumps u ON u.id = r.dump_id
-WHERE (r.scheme, r.name, r.version) IN (%s) AND r.dump_id IN (SELECT * FROM visible_uploads)
+JOIN repo ON repo.id = u.repository_id
+WHERE
+	(r.scheme, r.name, r.version) IN (%s) AND
+	r.dump_id IN (SELECT * FROM visible_uploads) AND
+	%s -- authz conds
 `
 
 const referenceIDsAndFiltersQuery = referenceIDsAndFiltersCTEDefinitions + `

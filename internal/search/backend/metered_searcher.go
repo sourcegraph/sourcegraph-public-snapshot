@@ -81,6 +81,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			log.Bool("opts.estimate_doc_count", opts.EstimateDocCount),
 			log.Bool("opts.whole", opts.Whole),
 			log.Int("opts.shard_max_match_count", opts.ShardMaxMatchCount),
+			log.Int("opts.shard_repo_max_match_count", opts.ShardRepoMaxMatchCount),
 			log.Int("opts.total_max_match_count", opts.TotalMaxMatchCount),
 			log.Int("opts.shard_max_important_match", opts.ShardMaxImportantMatch),
 			log.Int("opts.total_max_important_match", opts.TotalMaxImportantMatch),

@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -34,7 +33,7 @@ func TestSearchSuggestions(t *testing.T) {
 		t.Skip("TestSearchSuggestions only works in local dev and is not reliable in CI")
 	}
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	getSuggestions := func(t *testing.T, query, version string) []string {
 		t.Helper()
 		r, err := newSchemaResolver(db).Search(context.Background(), &SearchArgs{Query: query, Version: version})
@@ -101,7 +100,7 @@ func TestSearchSuggestions(t *testing.T) {
 		mu := sync.Mutex{}
 		var calledReposListNamesAll, calledReposListFoo bool
 
-		repos := dbmock.NewMockRepoStore()
+		repos := database.NewMockRepoStore()
 		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 			mu.Lock()
 			defer mu.Unlock()
@@ -158,7 +157,7 @@ func TestSearchSuggestions(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		repos := dbmock.NewMockRepoStore()
+		repos := database.NewMockRepoStore()
 		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 			mu.Lock()
 			defer mu.Unlock()
@@ -195,7 +194,7 @@ func TestSearchSuggestions(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		repos := dbmock.NewMockRepoStore()
+		repos := database.NewMockRepoStore()
 		repos.ListFunc.SetDefaultHook(func(ctx context.Context, have database.ReposListOptions) ([]*types.Repo, error) {
 			want := database.ReposListOptions{
 				IncludePatterns: []string{"foo"},
@@ -259,7 +258,7 @@ func TestSearchSuggestions(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		repos := dbmock.NewMockRepoStore()
+		repos := database.NewMockRepoStore()
 		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 			mu.Lock()
 			defer mu.Unlock()
