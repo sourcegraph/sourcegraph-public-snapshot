@@ -48,7 +48,7 @@ const CardBody: React.FunctionComponent<{ title: string }> = props => {
 }
 
 export const SearchInsightCard: React.FunctionComponent<CardProps> = props => (
-    <Card {...props} footerText="Redis, PostgreSQL and SQLite database usage.">
+    <Card {...props} footerText="Tracking architecture, naming, or language migrations.">
         <SearchBasedInsightChart className={styles.chart} />
         <CardBody title="Track">
             Insight <b>based on a custom Sourcegraph search query</b> that creates visualization of the data series you
