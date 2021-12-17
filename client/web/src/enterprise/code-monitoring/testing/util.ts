@@ -19,7 +19,6 @@ export const mockUser: AuthenticatedUser = {
         nodes: [],
     },
     session: { __typename: 'Session', canSignOut: true },
-    tosAccepted: true,
 }
 
 export const mockCodeMonitorFields: CodeMonitorFields = {

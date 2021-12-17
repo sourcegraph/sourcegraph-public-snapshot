@@ -294,6 +294,5 @@ Policies.args = {
             __typename: 'Session',
             canSignOut: true,
         },
-        tosAccepted: true,
     },
 }
