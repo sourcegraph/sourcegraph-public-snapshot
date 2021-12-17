@@ -1,4 +1,4 @@
-package codemonitors
+package database
 
 import (
 	"testing"
