@@ -46,7 +46,7 @@ func constructOpsCmdLongHelp() string {
 	fmt.Fprintf(&out, "Commands used by operations teams to perform common tasks")
 	fmt.Fprintf(&out, "\n")
 	fmt.Fprintf(&out, "Supported subcommands")
-	fmt.Fprintf(&out, "update-images -> Updates images when run from the root of 'deployment' repo")
+	fmt.Fprintf(&out, "update-images -> Updates images when run from the root of a 'deploy-sourcegraph-*' repo")
 	fmt.Fprintf(&out, "\n")
 	fmt.Fprintf(&out, "Supports: deploy-sourcegraph, deploy-sourcegraph-dogfood, deploy-sourcegraph-dot-com")
 
