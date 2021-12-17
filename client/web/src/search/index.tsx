@@ -147,8 +147,11 @@ export interface ParsedSearchQueryProps {
     parsedSearchQuery: string
 }
 
-export interface PatternTypeProps {
+export interface SearchPatternTypeProps {
     patternType: SearchPatternType
+}
+
+export interface SearchPatternTypeMutationProps {
     setPatternType: (patternType: SearchPatternType) => void
 }
 

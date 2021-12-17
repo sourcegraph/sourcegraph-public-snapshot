@@ -41,12 +41,7 @@ import {
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { LayoutRouteProps } from '../routes'
 import { Settings } from '../schema/settings.schema'
-import {
-    PatternTypeProps,
-    ParsedSearchQueryProps,
-    isSearchContextSpecAvailable,
-    SearchContextInputProps,
-} from '../search'
+import { ParsedSearchQueryProps, isSearchContextSpecAvailable, SearchContextInputProps } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
@@ -67,7 +62,6 @@ interface Props
         ExtensionAlertAnimationProps,
         ActivationProps,
         ParsedSearchQueryProps,
-        PatternTypeProps,
         SearchContextInputProps,
         CodeInsightsProps,
         BatchChangesProps {
@@ -101,7 +95,6 @@ interface Props
 export const GlobalNavbar: React.FunctionComponent<Props> = ({
     authRequired,
     showSearchBox,
-    patternType,
     variant,
     isLightTheme,
     branding,
@@ -185,7 +178,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             location={location}
             history={history}
             isLightTheme={isLightTheme}
-            patternType={patternType}
             isSourcegraphDotCom={isSourcegraphDotCom}
             searchContextsEnabled={searchContextsEnabled}
             isRepositoryRelatedPage={isRepositoryRelatedPage}
