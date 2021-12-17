@@ -14,20 +14,19 @@ func (r *Runner) Validate(ctx context.Context, schemaNames ...string) error {
 }
 
 func (r *Runner) validateSchema(ctx context.Context, schemaName string, schemaContext schemaContext) error {
-	// TODO - try early return here first
+	// If database version is strictly newer, then we have a deployment in-process. The current
+	// instance has what it needs to run, so we should be good with that. Do not crash here if
+	// the database is is dirty, as that would cause a troublesome deployment to cause outages
+	// on the old instance (which seems stressful, don't do that).
+	if newer, err := isDatabaseNewer(schemaContext.schemaVersion.version, schemaContext.schema.Definitions); err != nil {
+		return err
+	} else if newer {
+		return nil
+	}
 
 	version, dirty, err := r.waitForMigration(ctx, schemaName, schemaContext)
 	if err != nil {
 		return err
-	}
-
-	withAllDefinitions := func(f func(definitions []definition.Definition) error) error {
-		definitions, err := schemaContext.schema.Definitions.UpFrom(0, 0)
-		if err != nil {
-			return err
-		}
-
-		return f(definitions)
 	}
 
 	// Note: No migrator instances seem to be running indicating that the dirty flag indicates
@@ -40,7 +39,7 @@ func (r *Runner) validateSchema(ctx context.Context, schemaName string, schemaCo
 		// version we expect to be at, we re-query from a "blank" database so that we can take
 		// populate the definitions variable in the error construction in the function below.
 
-		return withAllDefinitions(func(allDefinitions []definition.Definition) error {
+		return withAllDefinitions(schemaContext.schema.Definitions, func(allDefinitions []definition.Definition) error {
 			if len(allDefinitions) == 0 {
 				return err
 			}
@@ -52,30 +51,21 @@ func (r *Runner) validateSchema(ctx context.Context, schemaName string, schemaCo
 			}
 		})
 	}
-	if len(definitions) == 0 {
-		if dirty {
-			// Check to see if the database is dirty but in a schema state farther along then what
-			// we need. In this case, the schema may have been marked dirty during a failed upgrade
-			// from the current running instance, which should not generally have any affect on the
-			// stability of the active instance.
-			//
-			// In these cases, we ignore the dirty flag here. The dirty flag error should be obvious
-			// to a site administrator via the migrator instance during the deploy.
-			return withAllDefinitions(func(allDefinitions []definition.Definition) error {
-				if len(allDefinitions) == 0 || version <= allDefinitions[len(allDefinitions)-1].ID {
-					return errDirtyDatabase
-				}
-
-				return nil
-			})
+	if dirty {
+		// Check again to see if the database is newer and ignore the dirty flag here as wlel.
+		if newer, err := isDatabaseNewer(version, schemaContext.schema.Definitions); err != nil {
+			return err
+		} else if newer {
+			return nil
 		}
 
-		// No migrations to run, up to date
-		return nil
-	}
-	if dirty {
 		// We have migrations to run but won't be able to run them
 		return errDirtyDatabase
+	}
+
+	if len(definitions) == 0 {
+		// No migrations to run, up to date
+		return nil
 	}
 
 	return &SchemaOutOfDateError{
@@ -85,6 +75,9 @@ func (r *Runner) validateSchema(ctx context.Context, schemaName string, schemaCo
 	}
 }
 
+// waitForMigration polls the store for the version while taking an advisory lock. We do
+// this while a migrator seems to be running concurrently so that we do not fail fast on
+// applications that would succeed after the migration finishes.
 func (r *Runner) waitForMigration(ctx context.Context, schemaName string, schemaContext schemaContext) (int, bool, error) {
 	version, dirty := schemaContext.schemaVersion.version, schemaContext.schemaVersion.dirty
 
@@ -119,4 +112,32 @@ func (r *Runner) lockedVersion(ctx context.Context, schemaContext schemaContext)
 	}
 
 	return r.fetchVersion(ctx, schemaContext.schema.Name, schemaContext.store)
+}
+
+func withAllDefinitions(definitions *definition.Definitions, f func(definitions []definition.Definition) error) error {
+	allDefinitions, err := definitions.UpFrom(0, 0)
+	if err != nil {
+		return err
+	}
+
+	return f(allDefinitions)
+}
+
+// isDatabaseNewer returns true if the given version is strictly larger than the maximum migration
+// identifier we expect to have applied. Returns an error only on malformed schema definitions.
+func isDatabaseNewer(version int, definitions *definition.Definitions) (bool, error) {
+	found := false
+	if err := withAllDefinitions(definitions, func(allDefinitions []definition.Definition) error {
+		if len(allDefinitions) != 0 {
+			if expectedMinimumMigration := allDefinitions[len(allDefinitions)-1].ID; expectedMinimumMigration < version {
+				found = true
+			}
+		}
+
+		return nil
+	}); err != nil {
+		return false, err
+	}
+
+	return found, nil
 }
