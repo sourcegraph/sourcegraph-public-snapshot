@@ -73,135 +73,133 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 		config             *schema.PermissionsUserMapping
 		mockVerifiedEmails []*database.UserEmail
 		mockUsers          []*types.User
-		gqlTests           []*gqltesting.Test
+		gqlTests           func(database.DB) []*gqltesting.Test
 		expUserIDs         []uint32
 		expAccounts        *extsvc.Accounts
-	}{
-		{
-			name: "set permissions via email",
-			config: &schema.PermissionsUserMapping{
-				BindID: "email",
-			},
-			mockVerifiedEmails: []*database.UserEmail{
-				{
-					UserID: 1,
-					Email:  "alice@example.com",
-				},
-			},
-			gqlTests: []*gqltesting.Test{
-				{
-					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
-					Query: `
-				mutation {
-					setRepositoryPermissionsForUsers(
-						repository: "UmVwb3NpdG9yeTox",
-						userPermissions: [
-							{ bindID: "alice@example.com"},
-							{ bindID: "bob"}
-						]) {
-						alwaysNil
-					}
-				}
-			`,
-					ExpectedResult: `
-				{
-					"setRepositoryPermissionsForUsers": {
-						"alwaysNil": null
-    				}
-				}
-			`,
-				},
-			},
-			expUserIDs: []uint32{1},
-			expAccounts: &extsvc.Accounts{
-				ServiceType: authz.SourcegraphServiceType,
-				ServiceID:   authz.SourcegraphServiceID,
-				AccountIDs:  []string{"bob"},
+	}{{
+		name: "set permissions via email",
+		config: &schema.PermissionsUserMapping{
+			BindID: "email",
+		},
+		mockVerifiedEmails: []*database.UserEmail{
+			{
+				UserID: 1,
+				Email:  "alice@example.com",
 			},
 		},
-		{
-			name: "set permissions via username",
-			config: &schema.PermissionsUserMapping{
-				BindID: "username",
+		gqlTests: func(db database.DB) []*gqltesting.Test {
+			return []*gqltesting.Test{{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+							mutation {
+								setRepositoryPermissionsForUsers(
+									repository: "UmVwb3NpdG9yeTox",
+									userPermissions: [
+										{ bindID: "alice@example.com"},
+										{ bindID: "bob"}
+									]) {
+									alwaysNil
+								}
+							}
+						`,
+				ExpectedResult: `
+							{
+								"setRepositoryPermissionsForUsers": {
+									"alwaysNil": null
+								}
+							}
+						`,
 			},
-			mockUsers: []*types.User{
-				{
-					ID:       1,
-					Username: "alice",
-				},
-			},
-			gqlTests: []*gqltesting.Test{
-				{
-					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
-					Query: `
-				mutation {
-					setRepositoryPermissionsForUsers(
-						repository: "UmVwb3NpdG9yeTox",
-						userPermissions: [
-							{ bindID: "alice"},
-							{ bindID: "bob"}
-						]) {
-						alwaysNil
-					}
-				}
-			`,
-					ExpectedResult: `
-				{
-					"setRepositoryPermissionsForUsers": {
-						"alwaysNil": null
-					}
-				}
-			`,
-				},
-			},
-			expUserIDs: []uint32{1},
-			expAccounts: &extsvc.Accounts{
-				ServiceType: authz.SourcegraphServiceType,
-				ServiceID:   authz.SourcegraphServiceID,
-				AccountIDs:  []string{"bob"},
+			}
+		},
+		expUserIDs: []uint32{1},
+		expAccounts: &extsvc.Accounts{
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			AccountIDs:  []string{"bob"},
+		},
+	}, {
+		name: "set permissions via username",
+		config: &schema.PermissionsUserMapping{
+			BindID: "username",
+		},
+		mockUsers: []*types.User{
+			{
+				ID:       1,
+				Username: "alice",
 			},
 		},
-	}
+		gqlTests: func(db database.DB) []*gqltesting.Test {
+			return []*gqltesting.Test{{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+						mutation {
+							setRepositoryPermissionsForUsers(
+								repository: "UmVwb3NpdG9yeTox",
+								userPermissions: [
+									{ bindID: "alice"},
+									{ bindID: "bob"}
+								]) {
+								alwaysNil
+							}
+						}
+					`,
+				ExpectedResult: `
+						{
+							"setRepositoryPermissionsForUsers": {
+								"alwaysNil": null
+							}
+						}
+					`,
+			}}
+		},
+		expUserIDs: []uint32{1},
+		expAccounts: &extsvc.Accounts{
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			AccountIDs:  []string{"bob"},
+		},
+	}}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			globals.SetPermissionsUserMapping(test.config)
 
-			database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-				return &types.User{SiteAdmin: true}, nil
-			}
-			database.Mocks.Users.GetByUsernames = func(context.Context, ...string) ([]*types.User, error) {
-				return test.mockUsers, nil
-			}
-			database.Mocks.UserEmails.GetVerifiedEmails = func(context.Context, ...string) ([]*database.UserEmail, error) {
-				return test.mockVerifiedEmails, nil
-			}
-			database.Mocks.Repos.Get = func(_ context.Context, id api.RepoID) (*types.Repo, error) {
+			users := database.NewStrictMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+			users.GetByUsernamesFunc.SetDefaultReturn(test.mockUsers, nil)
+
+			userEmails := database.NewStrictMockUserEmailsStore()
+			userEmails.GetVerifiedEmailsFunc.SetDefaultReturn(test.mockVerifiedEmails, nil)
+
+			repos := database.NewStrictMockRepoStore()
+			repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 				return &types.Repo{ID: id}, nil
-			}
-			edb.Mocks.Perms.Transact = func(_ context.Context) (edb.PermsStore, error) {
-				return edb.Perms(nil, nil), nil
-			}
-			edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
+			})
+
+			perms := edb.NewStrictMockPermsStore()
+			perms.TransactFunc.SetDefaultReturn(perms, nil)
+			perms.DoneFunc.SetDefaultReturn(nil)
+			perms.SetRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, p *authz.RepoPermissions) error {
 				ids := p.UserIDs.ToArray()
 				if diff := cmp.Diff(test.expUserIDs, ids); diff != "" {
 					return errors.Errorf("p.UserIDs: %v", diff)
 				}
 				return nil
-			}
-			edb.Mocks.Perms.SetRepoPendingPermissions = func(_ context.Context, accounts *extsvc.Accounts, _ *authz.RepoPermissions) error {
+			})
+			perms.SetRepoPendingPermissionsFunc.SetDefaultHook(func(_ context.Context, accounts *extsvc.Accounts, _ *authz.RepoPermissions) error {
 				if diff := cmp.Diff(test.expAccounts, accounts); diff != "" {
 					return errors.Errorf("accounts: %v", diff)
 				}
 				return nil
-			}
-			defer func() {
-				database.Mocks.UserEmails = database.MockUserEmails{}
-				database.Mocks.Users = database.MockUsers{}
-				database.Mocks.Repos = database.MockRepos{}
-				edb.Mocks.Perms = edb.MockPerms{}
-			}()
+			})
 
-			gqltesting.RunTests(t, test.gqlTests)
+			db := edb.NewStrictMockEnterpriseDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.UserEmailsFunc.SetDefaultReturn(userEmails)
+			db.ReposFunc.SetDefaultReturn(repos)
+			db.PermsFunc.SetDefaultReturn(perms)
+
+			gqltesting.RunTests(t, test.gqlTests(db))
 		})
 	}
 }
