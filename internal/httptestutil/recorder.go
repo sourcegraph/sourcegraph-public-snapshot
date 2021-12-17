@@ -12,7 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-// NewRecorder returns an HTTP interaction recorder with the given record mode and filters. It strips away the HTTP Authorization and Set-Cookie headers.
+// NewRecorder returns an HTTP interaction recorder with the given record mode and filters.
+// It strips away the HTTP Authorization and Set-Cookie headers.
+//
+// To save interactions, make sure to call .Stop().
 func NewRecorder(file string, record bool, filters ...cassette.Filter) (*recorder.Recorder, error) {
 	mode := recorder.ModeReplaying
 	if record {
