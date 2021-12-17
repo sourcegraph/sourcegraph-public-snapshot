@@ -7,12 +7,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 func TestRepository_BlameFile(t *testing.T) {
@@ -65,11 +62,6 @@ func TestRepository_BlameFile(t *testing.T) {
 		},
 	}
 
-	checker := authz.NewMockSubRepoPermissionChecker()
-	ctx = actor.WithActor(ctx, &actor.Actor{
-		UID: 1,
-	})
-
 	for label, test := range tests {
 		newestCommitID, err := ResolveRevision(ctx, test.repo, string(test.opt.NewestCommit), ResolveRevisionOptions{})
 		if err != nil {
@@ -78,8 +70,12 @@ func TestRepository_BlameFile(t *testing.T) {
 		}
 
 		test.opt.NewestCommit = newestCommitID
-		runBlameFileTest(ctx, t, test.repo, test.path, test.opt, checker, label, test.wantHunks)
+		runBlameFileTest(ctx, t, test.repo, test.path, test.opt, nil, label, test.wantHunks)
 
+		checker := authz.NewMockSubRepoPermissionChecker()
+		ctx = actor.WithActor(ctx, &actor.Actor{
+			UID: 1,
+		})
 		// Sub-repo permissions
 		// Case: user has read access to file, doesn't filter anything
 		checker.EnabledFunc.SetDefaultHook(func() bool {
@@ -104,6 +100,7 @@ func TestRepository_BlameFile(t *testing.T) {
 
 func runBlameFileTest(ctx context.Context, t *testing.T, repo api.RepoName, path string, opt *BlameOptions,
 	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk) {
+	t.Helper()
 	hunks, err := BlameFile(ctx, repo, path, opt, checker)
 	if err != nil {
 		t.Errorf("%s: BlameFile(%s, %+v): %s", label, path, opt, err)
