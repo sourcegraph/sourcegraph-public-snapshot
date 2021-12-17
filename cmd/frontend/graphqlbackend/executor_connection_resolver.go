@@ -7,12 +7,12 @@ import (
 )
 
 type executorConnectionResolver struct {
-	resolvers  []*executorResolver
+	resolvers  []*ExecutorResolver
 	totalCount int
 	nextOffset *int
 }
 
-func (r *executorConnectionResolver) Nodes(ctx context.Context) []*executorResolver {
+func (r *executorConnectionResolver) Nodes(ctx context.Context) []*ExecutorResolver {
 	return r.resolvers
 }
 

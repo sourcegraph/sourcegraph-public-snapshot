@@ -2036,12 +2036,24 @@ type BatchSpecWorkspace implements Node {
     failed.
     """
     diffStat: DiffStat
+
+    """
+    The executor that picked up this job. Null, if the executor has been pruned
+    from the data set or if the job has not started yet.
+    Only available to site-admins.
+    """
+    executor: Executor
 }
 
 """
 Description of one step in the execution of a workspace.
 """
 type BatchSpecWorkspaceStep {
+    """
+    The number of the step.
+    """
+    number: Int!
+
     """
     The command to run.
     """
@@ -2051,6 +2063,11 @@ type BatchSpecWorkspaceStep {
     The docker container image to use to run this command.
     """
     container: String!
+
+    """
+    The if condition, under which the step is executed. Null, if not set.
+    """
+    ifCondition: String
 
     """
     True, if a cached result has been found.
