@@ -20,7 +20,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent = () => (
                             rel="noopener"
                             target="_blank"
                         >
-                            Batch Changes now supports multiple target branches per repository.
+                            Batch Changes now supports multiple base branches per repository.
                         </a>
                     </li>
                     <li>Moving a changeset from draft to open works again on GitLab.</li>
