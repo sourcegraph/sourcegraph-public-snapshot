@@ -166,6 +166,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 </div>
                 <Container>
                     <BatchSpec
+                        name={batchChange.name}
                         originalInput={batchChange.currentSpec.originalInput}
                         isLightTheme={isLightTheme}
                         className={styles.batchSpec}

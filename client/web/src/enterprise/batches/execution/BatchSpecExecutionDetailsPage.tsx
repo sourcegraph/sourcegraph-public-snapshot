@@ -115,7 +115,13 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                 <Route render={() => <Redirect to={`${match.url}/execution`} />} path={match.url} exact={true} />
                 <Route
                     path={`${match.url}/edit`}
-                    render={() => <EditPage content={batchSpec.originalInput} isLightTheme={isLightTheme} />}
+                    render={() => (
+                        <EditPage
+                            name={batchSpec.description.name}
+                            content={batchSpec.originalInput}
+                            isLightTheme={isLightTheme}
+                        />
+                    )}
                     exact={true}
                 />
                 <Route
@@ -317,12 +323,13 @@ const WorkspaceStat: React.FunctionComponent<{ stat: number; label: string; icon
 )
 
 interface EditPageProps extends ThemeProps {
+    name: string
     content: string
 }
 
-const EditPage: React.FunctionComponent<EditPageProps> = ({ content, isLightTheme }) => (
+const EditPage: React.FunctionComponent<EditPageProps> = ({ name, content, isLightTheme }) => (
     <div className={classNames(styles.layoutContainer, 'h-100')}>
-        <BatchSpec originalInput={content} isLightTheme={isLightTheme} className={styles.batchSpec} />
+        <BatchSpec name={name} originalInput={content} isLightTheme={isLightTheme} className={styles.batchSpec} />
     </div>
 )
 
