@@ -218,7 +218,7 @@ const QueryFieldSubtitle: React.FunctionComponent<{ className?: string }> = prop
     <small className={classNames(props.className, 'text-muted', 'd-block', 'font-weight-normal')}>
         Search query must contain a properly formatted regular expression with at least one{' '}
         <a
-            href="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series"
+            href="https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series#regular-expression-capture-group-resources"
             target="_blank"
             rel="noopener"
         >
