@@ -80,6 +80,12 @@ func (s *Store) Version(ctx context.Context) (version int, dirty bool, ok bool, 
 	return 0, false, false, nil
 }
 
+// Lock creates and holds an advisory lock. This method returns a function that should be called
+// once the lock should be released. This method accepts the current function's error output and
+// wraps any additional errors that occur on close.
+//
+// Note that we don't use the internal/database/locker package here as that uses transactionally
+// scoped advisory locks. We want to be able to hold locks outside of transactions for migrations.
 func (s *Store) Lock(ctx context.Context) (_ bool, _ func(err error) error, err error) {
 	key := s.lockKey()
 
@@ -103,6 +109,14 @@ func (s *Store) Lock(ctx context.Context) (_ bool, _ func(err error) error, err 
 	return true, close, nil
 }
 
+// TryLock attempts to create hold an advisory lock. This method returns a function that should be
+// called once the lock should be released. This method accepts the current function's error output
+// and wraps any additional errors that occur on close. Calling this method when the lock was not
+// acquired will return the given error without modification (no-op). If this method returns true,
+// the lock was acquired and false if the lock is currently held by another process.
+//
+// Note that we don't use the internal/database/locker package here as that uses transactionally
+// scoped advisory locks. We want to be able to hold locks outside of transactions for migrations.
 func (s *Store) TryLock(ctx context.Context) (_ bool, _ func(err error) error, err error) {
 	key := s.lockKey()
 

@@ -12,7 +12,12 @@ type Options struct {
 	Up            bool
 	NumMigrations int
 	SchemaNames   []string
-	Parallel      bool
+
+	// Parallel controls whether we run schema migrations concurrently or not. By default,
+	// we run schema migrations sequentially. This is to ensure that in testing, where the
+	// same database can be targetted by multiple schemas, we do not hit errors that occur
+	// when trying to install Postgres extensions concurrently (which do not seem txn-safe).
+	Parallel bool
 }
 
 func (r *Runner) Run(ctx context.Context, options Options) error {
@@ -23,6 +28,8 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 	semaphore := make(chan struct{}, numRoutines)
 
 	return r.forEachSchema(ctx, options.SchemaNames, func(ctx context.Context, schemaName string, schemaContext schemaContext) error {
+		// Block until we can write into this channel. This ensures that we only have at most
+		// the same number of active goroutines as we have slots int he channel's buffer.
 		semaphore <- struct{}{}
 		defer func() { <-semaphore }()
 
@@ -34,7 +41,7 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 	})
 }
 
-func (r *Runner) runSchema(ctx context.Context, options Options, schemaContext schemaContext) error {
+func (r *Runner) runSchema(ctx context.Context, options Options, schemaContext schemaContext) (err error) {
 	// Determine if we are upgrading to the latest schema. There are some properties around
 	// contention which we want to accept on normal "upgrade to latest" behavior, but want to
 	// alert on when a user is downgrading or upgrading to a specific version.

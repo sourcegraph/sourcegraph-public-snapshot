@@ -85,7 +85,6 @@ func (r *Runner) validateSchema(ctx context.Context, schemaName string, schemaCo
 
 		// No migrations to run, up to date
 		return nil
-
 	}
 	if dirty {
 		// We have migrations to run but won't be able to run them
