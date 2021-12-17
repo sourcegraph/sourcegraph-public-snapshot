@@ -19,7 +19,6 @@ import (
 )
 
 // CodeMonitorStore is an interface for interacting with the code monitor tables in the database
-//go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors -i CodeMonitorStore -o mock_store_test.go
 type CodeMonitorStore interface {
 	basestore.ShareableStore
 	Transact(context.Context) (CodeMonitorStore, error)
