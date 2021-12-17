@@ -33,7 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights series over all repositories can now be edited
 - Code Insights series over all repositories now support a custom time interval and will calculate with 12 points starting at the moment the series is created and working backwards.
 - Minio service upgraded to RELEASE.2021-12-10T23-03-39Z. [#29188](https://github.com/sourcegraph/sourcegraph/pull/29188)
-
+- Code insights creation UI form query field now supports suggestions and syntax highlighting. [#28130](https://github.com/sourcegraph/sourcegraph/pull/28130)
 ### Fixed
 
 - Moving a changeset from draft state into published state was broken on GitLab code hosts. [#28239](https://github.com/sourcegraph/sourcegraph/pull/28239)
