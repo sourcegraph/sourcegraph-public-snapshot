@@ -1,6 +1,18 @@
 import { flatMap } from 'lodash'
 
-import { MatchItem } from './FileMatch'
+import { MatchGroup, MatchItem, RankingResult, PerFileResultRanking } from './PerFileResultRanking'
+
+/**
+ * LineRanking orders hunks purely by line number, disregarding the relevance ranking provided by Zoekt.
+ */
+export class LineRanking implements PerFileResultRanking {
+    public collapsedResults(matches: MatchItem[], context: number): RankingResult {
+        return calculateMatchGroupsSorted(matches, 10, context)
+    }
+    public expandedResults(matches: MatchItem[], context: number): RankingResult {
+        return calculateMatchGroupsSorted(matches, 0, context)
+    }
+}
 
 /**
  * Groups highlights that have overlapping or adjacent context. The input must be sorted.
@@ -79,33 +91,6 @@ const calculateGroupPositions = (
 }
 
 /**
- * Describes a single group of matches.
- */
-export interface MatchGroup {
-    blobLines?: string[]
-
-    // The matches in this group to display.
-    matches: {
-        line: number
-        character: number
-        highlightLength: number
-        isInContext: boolean
-    }[]
-
-    // The 1-based position of where the first match in the group.
-    position: {
-        line: number
-        character: number
-    }
-
-    // The 0-based start line of the group (inclusive.)
-    startLine: number
-
-    // The 0-based end line of the group (exclusive.)
-    endLine: number
-}
-
-/**
  * Calculates how to group together matches for display. Takes into account:
  *
  * - Whether or not displaying a subset or all matches is desired
@@ -119,7 +104,7 @@ export interface MatchGroup {
  * @returns The subset of matches that were sorted and chosen for display, as well as that same
  * list of matches grouped together.
  */
-export const calculateMatchGroups = (
+export const calculateMatchGroupsSorted = (
     matches: MatchItem[],
     maxMatches: number,
     context: number

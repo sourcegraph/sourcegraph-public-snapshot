@@ -26,6 +26,7 @@ export interface Settings {
         showSearchContextManagement?: boolean
         fuzzyFinder?: boolean
         fuzzyFinderCaseInsensitiveFileCountThreshold?: number
+        clientSearchResultRanking?: string
     }
     [key: string]: any
 
