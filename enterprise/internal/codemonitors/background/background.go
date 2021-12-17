@@ -9,7 +9,7 @@ import (
 )
 
 func StartBackgroundJobs(ctx context.Context, db database.DB) {
-	codeMonitorsStore := edb.NewStore(db)
+	codeMonitorsStore := edb.CodeMonitors(db)
 
 	triggerMetrics := newMetricsForTriggerQueries()
 	actionMetrics := newActionMetrics()

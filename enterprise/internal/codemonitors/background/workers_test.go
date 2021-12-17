@@ -52,7 +52,7 @@ func TestActionRunner(t *testing.T) {
 			// Create a TestStore.
 			now := time.Now()
 			clock := func() time.Time { return now }
-			s := edb.NewStoreWithClock(db, clock)
+			s := edb.CodeMonitorsWithClock(db, clock)
 			ctx, ts := edb.NewTestStore(t, db)
 
 			_, _, _, userCtx := edb.NewTestUser(ctx, t, db)

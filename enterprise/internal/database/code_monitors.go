@@ -90,14 +90,14 @@ type codeMonitorStore struct {
 
 var _ CodeMonitorStore = (*codeMonitorStore)(nil)
 
-// NewStore returns a new Store backed by the given database.
-func NewStore(db dbutil.DB) *codeMonitorStore {
-	return NewStoreWithClock(db, timeutil.Now)
+// CodeMonitors returns a new Store backed by the given database.
+func CodeMonitors(db dbutil.DB) *codeMonitorStore {
+	return CodeMonitorsWithClock(db, timeutil.Now)
 }
 
-// NewStoreWithClock returns a new Store backed by the given database and
+// CodeMonitorsWithClock returns a new Store backed by the given database and
 // clock for timestamps.
-func NewStoreWithClock(db dbutil.DB, clock func() time.Time) *codeMonitorStore {
+func CodeMonitorsWithClock(db dbutil.DB, clock func() time.Time) *codeMonitorStore {
 	return &codeMonitorStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock}
 }
 
@@ -218,7 +218,7 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*Monit
 func NewTestStore(t *testing.T, db dbutil.DB) (context.Context, *TestStore) {
 	ctx := actor.WithInternalActor(context.Background())
 	now := time.Now().Truncate(time.Microsecond)
-	return ctx, &TestStore{NewStoreWithClock(db, func() time.Time { return now })}
+	return ctx, &TestStore{CodeMonitorsWithClock(db, func() time.Time { return now })}
 }
 
 func NewTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, id int32, namespace graphql.ID, userContext context.Context) {
@@ -240,7 +240,7 @@ func newTestStore(t *testing.T) (context.Context, dbutil.DB, *codeMonitorStore) 
 	ctx := actor.WithInternalActor(context.Background())
 	db := dbtest.NewDB(t)
 	now := time.Now().Truncate(time.Microsecond)
-	return ctx, db, NewStoreWithClock(db, func() time.Time { return now })
+	return ctx, db, CodeMonitorsWithClock(db, func() time.Time { return now })
 }
 
 func newTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, id int32, namespace graphql.ID, userContext context.Context) {

@@ -18,12 +18,12 @@ import (
 
 // NewResolver returns a new Resolver that uses the given database
 func NewResolver(db database.DB) graphqlbackend.CodeMonitorsResolver {
-	return &Resolver{store: edb.NewStore(db)}
+	return &Resolver{store: edb.CodeMonitors(db)}
 }
 
 // newResolverWithClock is used in tests to set the clock manually.
 func newResolverWithClock(db database.DB, clock func() time.Time) graphqlbackend.CodeMonitorsResolver {
-	return &Resolver{store: edb.NewStoreWithClock(db, clock)}
+	return &Resolver{store: edb.CodeMonitorsWithClock(db, clock)}
 }
 
 type Resolver struct {
