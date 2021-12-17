@@ -119,6 +119,26 @@ func ZoektIndexServer() *monitoring.Container {
 							`,
 						},
 					},
+					{
+						{
+							Name:        "indexed_job_results",
+							Description: "aggregate results of index jobs",
+							Query:       "sum by (state) (index_state_count)", // sum up the distinct states across all index-server replicas
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{state}}"),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the outcomes of recently completed indexing jobs:
+
+								Legend:
+								- fail -> the indexing jobs failed
+								- success -> the indexing job succeeded and the index was updated
+								- success_meta -> the indexing job successed, but only metadata was updated
+								- noop -> the indexing job succeed, but we didn't need to update anything
+								- empty -> the indexing job succeeded, but the index was empty (i.e. the repository is empty)
+							`,
+						},
+					},
 				},
 			},
 			{
