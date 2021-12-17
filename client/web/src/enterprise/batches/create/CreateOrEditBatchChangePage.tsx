@@ -219,7 +219,8 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
 
     // Manage the batch spec input YAML code that's being edited.
     const { code, debouncedCode, isValid, handleCodeChange, excludeRepo, errors: codeErrors } = useBatchSpecCode(
-        initialBatchSpecCode
+        initialBatchSpecCode,
+        batchChange.name
     )
 
     // Track whenever the batch spec code that is presently in the editor is newer than
@@ -355,6 +356,7 @@ const EditPage: React.FunctionComponent<EditPageProps> = ({
                 <div className={styles.editorContainer}>
                     <h4>Batch spec</h4>
                     <MonacoBatchSpecEditor
+                        batchChangeName={batchChange.name}
                         className={styles.editor}
                         isLightTheme={isLightTheme}
                         value={code}
