@@ -147,12 +147,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     viewerSubject: LayoutProps['viewerSubject']
 
     /**
-     * The current parsed search query, with all UI-configurable parameters
-     * (eg. pattern type, case sensitivity) removed
-     */
-    parsedSearchQuery: string
-
-    /**
      * The current search pattern type.
      */
     searchPatternType: SearchPatternType
@@ -230,7 +224,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.state = {
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
-            parsedSearchQuery: parsedSearchURL.query || '',
             searchPatternType: urlPatternType,
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
             hasUserAddedRepositories: false,
@@ -242,6 +235,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     }
 
     public componentDidMount(): void {
+        const parsedSearchURL = parseSearchURL(window.location.search)
+        const parsedSearchQuery = parsedSearchURL.query || ''
+
         document.documentElement.classList.add('theme')
 
         getWebGraphQLClient()
@@ -337,13 +333,13 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             })
         )
 
-        if (this.state.parsedSearchQuery && !filterExists(this.state.parsedSearchQuery, FilterType.context)) {
+        if (parsedSearchQuery && !filterExists(parsedSearchQuery, FilterType.context)) {
             // If a context filter does not exist in the query, we have to switch the selected context
             // to global to match the UI with the backend semantics (if no context is specified in the query,
             // the query is run in global context).
             this.setSelectedSearchContextSpec('global')
         }
-        if (!this.state.parsedSearchQuery) {
+        if (!parsedSearchQuery) {
             // If no query is present (e.g. search page, settings page), select the last saved
             // search context from localStorage as currently selected search context.
             const lastSelectedSearchContextSpec = localStorage.getItem(LAST_SEARCH_CONTEXT_KEY) || 'global'
@@ -419,8 +415,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     }
                                                     // Search query
                                                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                                    parsedSearchQuery={this.state.parsedSearchQuery}
-                                                    setParsedSearchQuery={this.setParsedSearchQuery}
                                                     patternType={this.state.searchPatternType}
                                                     setPatternType={this.setPatternType}
                                                     // Extensions
@@ -479,10 +473,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 </ErrorBoundary>
             </ApolloProvider>
         )
-    }
-
-    private setParsedSearchQuery = (query: string): void => {
-        this.setState({ parsedSearchQuery: query })
     }
 
     private setPatternType = (patternType: SearchPatternType): void => {

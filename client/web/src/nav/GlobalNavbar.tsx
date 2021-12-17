@@ -66,7 +66,7 @@ interface Props
         ThemePreferenceProps,
         ExtensionAlertAnimationProps,
         ActivationProps,
-        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        ParsedSearchQueryProps,
         PatternTypeProps,
         SearchContextInputProps,
         CodeInsightsProps,

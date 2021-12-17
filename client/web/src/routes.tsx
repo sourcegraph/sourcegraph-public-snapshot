@@ -10,6 +10,7 @@ import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
 import type { ExtensionAlertProps } from './repo/RepoContainer'
 import { PageRoutes } from './routes.constants'
+import { ParsedSearchQueryProps } from './search'
 import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
@@ -32,6 +33,7 @@ const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
         Omit<LayoutProps, 'match'>,
+        ParsedSearchQueryProps,
         ThemeProps,
         ThemePreferenceProps,
         BreadcrumbsProps,
