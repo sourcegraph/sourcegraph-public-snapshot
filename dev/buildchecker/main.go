@@ -31,6 +31,7 @@ func main() {
 	flag.StringVar(&branch, "branch", "main", "name of the branch to inspect")
 	flag.IntVar(&threshold, "failures.threshold", 3, "failures required to trigger an incident")
 	flag.IntVar(&timeoutMins, "failures.timeout", 40, "duration of a run required to be considered a failure (minutes)")
+	flag.Parse()
 
 	config, err := buildkite.NewTokenConfig(buildkiteToken, false)
 	if err != nil {
