@@ -34,17 +34,12 @@ func clock() time.Time {
 	return time.Unix(0, atomic.LoadInt64(&now))
 }
 
-var (
-	parseSchemaErr error
-	parsedSchema   *graphql.Schema
-)
-
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 
 	parsedSchema, err := graphqlbackend.NewSchema(db, nil, nil, nil, NewResolver(db, clock), nil, nil, nil, nil, nil, nil)
 	if err != nil {
-		t.Fatal(parseSchemaErr)
+		t.Fatal(err)
 	}
 
 	return parsedSchema
