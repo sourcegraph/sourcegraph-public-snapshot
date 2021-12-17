@@ -9,19 +9,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type mockBranchLocker struct{}
+type mockBranchLocker struct {
+	calledUnlock int
+	calledLock   int
+}
 
 func (m *mockBranchLocker) Unlock(context.Context) (func() error, error) {
+	m.calledUnlock += 1
 	return func() error { return nil }, nil
 }
 func (m *mockBranchLocker) Lock(context.Context, []CommitInfo, string) (func() error, error) {
+	m.calledLock += 1
 	return func() error { return nil }, nil
 }
 
 func TestCheckBuilds(t *testing.T) {
 	// Simple end-to-end tests of the buildchecker entrypoint with mostly fixed parameters
 	ctx := context.Background()
-	var lock BranchLocker = &mockBranchLocker{}
 	testOptions := CheckOptions{
 		FailuresThreshold: 2,
 		BuildTimeout:      time.Hour,
@@ -77,11 +81,15 @@ func TestCheckBuilds(t *testing.T) {
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			var lock = &mockBranchLocker{}
 			res, err := CheckBuilds(ctx, lock, tt.builds, testOptions)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.wantLocked, res.LockBranch)
 			// Mock always returns an action, check it's always assigned correctly
 			assert.NotNil(t, res.Action)
+			// Lock/Unlock should not be called repeatedly
+			assert.LessOrEqual(t, lock.calledUnlock, 1, "calledUnlock")
+			assert.LessOrEqual(t, lock.calledLock, 1, "calledLock")
 		})
 	}
 }

@@ -283,3 +283,49 @@ export const hasOnOrImportChangesetsStatement = (spec: string): boolean => {
 
     return hasOnStatement(ast) || hasImportChangesetsStatement(ast)
 }
+
+/**
+ * Checks whether or not the provided raw batch spec YAML string is a minimal batch spec
+ * (i.e. the type auto-created for a brand new draft batch change) or something that the
+ * user has touched. If the spec is not parseable, as it might be for an in-progress draft
+ * batch spec, this function will return `false`.
+ *
+ * @param spec the raw batch spec YAML string to check
+ */
+export const isMinimalBatchSpec = (spec: string): boolean => {
+    const ast = load(spec)
+
+    if (!isYAMLMap(ast) || ast.errors.length > 0) {
+        return false
+    }
+
+    return ast.mappings.length === 1 && ast.mappings[0].key.value === 'name'
+}
+
+/**
+ * Replaces the "name" value of the provided `librarySpec` with the provided `name`. If
+ * `librarySpec` or its "name" is not properly parsable, just returns the original
+ * `librarySpec`.
+ *
+ * @param librarySpec the raw batch spec YAML example code from a library spec
+ * @param name the name of the batch change to be inserted
+ */
+export const insertNameIntoLibraryItem = (librarySpec: string, name: string): string => {
+    const ast = load(librarySpec)
+
+    if (!isYAMLMap(ast) || ast.errors.length > 0) {
+        return librarySpec
+    }
+
+    // Find the `YAMLMapping` node with the key "name"
+    const nameMapping = find(ast.mappings, mapping => mapping.key.value === 'name')
+
+    if (!nameMapping || !isYAMLScalar(nameMapping.value)) {
+        return librarySpec
+    }
+
+    // Stitch the new "name" value into the spec
+    return (
+        librarySpec.slice(0, nameMapping.value.startPosition) + name + librarySpec.slice(nameMapping.value.endPosition)
+    )
+}

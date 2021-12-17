@@ -32,6 +32,7 @@ var batchSpecWorkspaceInsertColumns = []string{
 	"file_matches",
 	"only_fetch_workspace",
 	"steps",
+	"skipped_steps",
 	"unsupported",
 	"ignored",
 	"skipped",
@@ -57,6 +58,7 @@ var BatchSpecWorkspaceColums = SQLColumns{
 	"batch_spec_workspaces.file_matches",
 	"batch_spec_workspaces.only_fetch_workspace",
 	"batch_spec_workspaces.steps",
+	"batch_spec_workspaces.skipped_steps",
 	"batch_spec_workspaces.unsupported",
 	"batch_spec_workspaces.ignored",
 	"batch_spec_workspaces.skipped",
@@ -112,6 +114,11 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 				return err
 			}
 
+			skippedSteps := wj.SkippedSteps
+			if skippedSteps == nil {
+				skippedSteps = []int32{}
+			}
+
 			if err := inserter.Insert(
 				ctx,
 				wj.BatchSpecID,
@@ -123,6 +130,7 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 				pq.Array(wj.FileMatches),
 				wj.OnlyFetchWorkspace,
 				marshaledSteps,
+				pq.Array(skippedSteps),
 				wj.Unsupported,
 				wj.Ignored,
 				wj.Skipped,
@@ -345,6 +353,7 @@ func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s dbutil.Scanner) err
 		pq.Array(&wj.FileMatches),
 		&wj.OnlyFetchWorkspace,
 		&steps,
+		pq.Array(&wj.SkippedSteps),
 		&wj.Unsupported,
 		&wj.Ignored,
 		&wj.Skipped,

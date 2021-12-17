@@ -4601,7 +4601,7 @@ with your code hosts connections or networking issues affecting communication wi
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> zoekt-indexserver: 100+ the number of repositories we failed to get indexing options over 5m for 1m0s
-- <span class="badge badge-critical">critical</span> zoekt-indexserver: 100+ the number of repositories we failed to get indexing options over 5m for 10m0s
+- <span class="badge badge-critical">critical</span> zoekt-indexserver: 100+ the number of repositories we failed to get indexing options over 5m for 20m0s
 
 **Possible solutions**
 

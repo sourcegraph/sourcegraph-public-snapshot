@@ -20,6 +20,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights has a new insight `Detect and Track` which will generate unique time series from the matches of a pattern specified as a regular expression capture group. This is currently limited to insights scoped to specific repositories. [docs](https://docs.sourcegraph.com/code_insights/explanations/automatically_generated_data_series)
 - Code Insights is persisted entirely in the `codeinsights-db` database. A migration will automatically be performed to move any defined insights and dashboards from your user, org, or global settings files.
 - The GraphQL API for Code Insights has entered beta. [docs](https://docs.sourcegraph.com/code_insights/explanations/code_insights_graphql_api)
+- More explicit Terms of Service and Privacy Policy consent has been added to Sourcegraph Server. [#28716](https://github.com/sourcegraph/sourcegraph/issues/28716)
 
 ### Changed
 
@@ -31,6 +32,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The search bar is no longer auto-focused when navigating between files. This change means that the keyboard shortcut Cmd+LeftArrow (or Ctrl-LeftArrow) now goes back to the browser's previous page instead of moving the cursor position to the first position of the search bar. [#28943](https://github.com/sourcegraph/sourcegraph/pull/28943)
 - Code Insights series over all repositories can now be edited
 - Code Insights series over all repositories now support a custom time interval and will calculate with 12 points starting at the moment the series is created and working backwards.
+- Minio service upgraded to RELEASE.2021-12-10T23-03-39Z. [#29188](https://github.com/sourcegraph/sourcegraph/pull/29188)
 
 ### Fixed
 
@@ -38,6 +40,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The shortcuts for toggling the History Panel and Line Wrap were not working on Mac. [#28574](https://github.com/sourcegraph/sourcegraph/pull/28574)
 - Suppresses docker-on-mac warning for Kubernetes, Docker Compose, and Pure Docker deployments. [#28405](https://github.com/sourcegraph/sourcegraph/pull/28821)
 - Fixed an issue where certain regexp syntax for repository searches caused the entire search, including non-repository searches, to fail with a parse error (issue affects only version 3.34). [#28826](https://github.com/sourcegraph/sourcegraph/pull/28826)
+- Modifying changesets on Bitbucket Server could previously fail if the local copy in Batch Changes was out of date. That has been fixed by retrying the operations in case of a 409 response. [#29100](https://github.com/sourcegraph/sourcegraph/pull/29100)
 
 ### Removed
 

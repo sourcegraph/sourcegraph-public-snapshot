@@ -21,6 +21,7 @@ import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SelfHostedCtaLink } from '@sourcegraph/web/src/components/SelfHostedCtaLink'
 import { Container, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
 import {
     SiteAdminRepositoryFields,
@@ -38,6 +39,7 @@ import {
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { Owner } from '../cloud-ga'
+import { OrgUserNeedsCodeHost } from '../codeHosts/OrgUserNeedsCodeHost'
 
 import { UserSettingReposContainer } from './components'
 import { defaultFilters, RepositoriesList } from './RepositoriesList'
@@ -48,6 +50,7 @@ interface Props
         Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'> {
     owner: Owner
     routingPrefix: string
+    authenticatedUser: AuthenticatedUser
 }
 
 type SyncStatusOrError = undefined | 'scheduled' | 'schedule-complete' | ErrorLike
@@ -60,6 +63,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     routingPrefix,
     telemetryService,
     onUserExternalServicesOrRepositoriesUpdate,
+    authenticatedUser,
 }) => {
     const [hasRepos, setHasRepos] = useState(false)
     const [externalServices, setExternalServices] = useState<ExternalServicesResult['externalServices']['nodes']>()
@@ -310,6 +314,14 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             )}
             {!isUserOwner && shouldDisplayContextBanner && owner.name && getSearchContextBanner(owner.name)}
             {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}
+            {!isUserOwner && externalServices && authenticatedUser && owner.name && (
+                <OrgUserNeedsCodeHost
+                    user={authenticatedUser}
+                    orgExternalServices={externalServices}
+                    orgDisplayName={owner.name}
+                />
+            )}
+
             <PageTitle title="Your repositories" />
             <PageHeader
                 headingElement="h2"

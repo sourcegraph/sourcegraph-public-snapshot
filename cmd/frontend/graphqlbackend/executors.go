@@ -53,9 +53,9 @@ func (r *schemaResolver) Executors(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	resolvers := make([]*executorResolver, 0, len(executors))
+	resolvers := make([]*ExecutorResolver, 0, len(executors))
 	for _, executor := range executors {
-		resolvers = append(resolvers, &executorResolver{executor: executor})
+		resolvers = append(resolvers, &ExecutorResolver{executor: executor})
 	}
 
 	return &executorConnectionResolver{
@@ -65,7 +65,7 @@ func (r *schemaResolver) Executors(ctx context.Context, args *struct {
 	}, nil
 }
 
-func executorByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*executorResolver, error) {
+func executorByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*ExecutorResolver, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
@@ -83,5 +83,5 @@ func executorByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*execu
 		return nil, nil
 	}
 
-	return &executorResolver{executor: executor}, nil
+	return &ExecutorResolver{executor: executor}, nil
 }
