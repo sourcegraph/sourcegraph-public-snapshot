@@ -1,0 +1,43 @@
+---
+version: 1
+interactions:
+- request:
+    body: |
+      {"text":"test-comment"}
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/154/comments?version=1
+    method: POST
+  response:
+    body: '{"properties":{"repositoryId":10070},"id":2958,"version":0,"text":"test-comment","author":{"name":"thorsten","emailAddress":"thorsten@sourcegraph.com","id":104,"displayName":"thorsten","active":true,"slug":"thorsten","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/thorsten"}]}},"createdDate":1639737545738,"updatedDate":1639737545738,"comments":[],"tasks":[],"severity":"NORMAL","state":"OPEN","permittedOperations":{"editable":true,"transitionable":true,"deletable":true}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 17 Dec 2021 10:39:05 GMT
+      Location:
+      - https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/154/comments/2958?version=1
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@9KC48Ux639x13415405x0'
+      X-Asessionid:
+      - yecmmv
+      X-Auserid:
+      - "104"
+      X-Ausername:
+      - thorsten
+      X-Content-Type-Options:
+      - nosniff
+    status: 201 Created
+    code: 201
+    duration: ""

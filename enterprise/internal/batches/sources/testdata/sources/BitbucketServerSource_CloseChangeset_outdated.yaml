@@ -1,0 +1,79 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/156/decline?version=1
+    method: POST
+  response:
+    body: '{"errors":[{"context":null,"message":"You are attempting to modify a pull
+      request based on out-of-date information.","exceptionName":"com.atlassian.bitbucket.pull.PullRequestOutOfDateException","currentVersion":3,"expectedVersion":1,"pullRequest":{"id":156,"version":3,"title":"horse
+      horse adfadsfa","state":"OPEN","open":true,"closed":false,"createdDate":1639735227483,"updatedDate":1639735411171,"fromRef":{"id":"refs/heads/batches/test-comment-1","displayId":"batches/test-comment-1","latestCommit":"e1eb87419b73f03cb96201993673d2f43eddb320","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","hierarchyId":"1c17e4711a8a022d0a9a","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sour/automation-testing.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"toRef":{"id":"refs/heads/master","displayId":"master","latestCommit":"433511c512c568a6dbc308c2347879f9d6095849","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","hierarchyId":"1c17e4711a8a022d0a9a","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sour/automation-testing.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"locked":false,"author":{"user":{"name":"thorsten","emailAddress":"thorsten@sourcegraph.com","id":104,"displayName":"thorsten","active":true,"slug":"thorsten","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/thorsten"}]}},"role":"AUTHOR","approved":false,"status":"UNAPPROVED"},"reviewers":[],"participants":[],"links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/156"}]}}}]}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 17 Dec 2021 10:04:11 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@9KC48Ux604x13406783x1'
+      X-Asessionid:
+      - 1rpmfhh
+      X-Auserid:
+      - "104"
+      X-Ausername:
+      - thorsten
+      X-Content-Type-Options:
+      - nosniff
+    status: 409 Conflict
+    code: 409
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/156/decline?version=3
+    method: POST
+  response:
+    body: '{"id":156,"version":4,"title":"horse horse adfadsfa","state":"DECLINED","open":false,"closed":true,"createdDate":1639735227483,"updatedDate":1639735452438,"closedDate":1639735452438,"fromRef":{"id":"refs/heads/batches/test-comment-1","displayId":"batches/test-comment-1","latestCommit":"e1eb87419b73f03cb96201993673d2f43eddb320","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","hierarchyId":"1c17e4711a8a022d0a9a","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sour/automation-testing.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"toRef":{"id":"refs/heads/master","displayId":"master","latestCommit":"433511c512c568a6dbc308c2347879f9d6095849","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","hierarchyId":"1c17e4711a8a022d0a9a","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sour/automation-testing.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"locked":false,"author":{"user":{"name":"thorsten","emailAddress":"thorsten@sourcegraph.com","id":104,"displayName":"thorsten","active":true,"slug":"thorsten","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/thorsten"}]}},"role":"AUTHOR","approved":false,"status":"UNAPPROVED"},"reviewers":[],"participants":[],"links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/156"}]}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 17 Dec 2021 10:04:11 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@9KC48Ux604x13406785x0'
+      X-Asessionid:
+      - s36svp
+      X-Auserid:
+      - "104"
+      X-Ausername:
+      - thorsten
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""

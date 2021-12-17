@@ -1,15 +1,15 @@
 {
-  "id": 154,
-  "version": 6,
-  "title": "This is a new title",
-  "description": "This is a new body",
-  "state": "OPEN",
-  "open": true,
-  "closed": false,
-  "createdDate": 1639582116883,
-  "updatedDate": 1639652359417,
+  "id": 159,
+  "version": 2,
+  "title": "circle-ci.yml edited online with Bitbucket",
+  "description": "",
+  "state": "MERGED",
+  "open": false,
+  "closed": true,
+  "createdDate": 1639735976577,
+  "updatedDate": 1639735991619,
   "fromRef": {
-   "id": "refs/heads/hello-world",
+   "id": "refs/heads/thorsten/circle-ciyml-1639735971065",
    "repository": {
     "id": 10070,
     "slug": "automation-testing",
@@ -48,7 +48,7 @@
   "links": {
    "self": [
     {
-     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/154"
+     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/159"
     }
    ]
   }

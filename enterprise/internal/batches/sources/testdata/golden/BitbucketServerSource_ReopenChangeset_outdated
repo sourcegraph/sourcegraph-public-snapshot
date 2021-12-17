@@ -1,15 +1,15 @@
 {
-  "id": 154,
-  "version": 6,
-  "title": "This is a new title",
-  "description": "This is a new body",
+  "id": 160,
+  "version": 3,
+  "title": "another title",
+  "description": "",
   "state": "OPEN",
   "open": true,
   "closed": false,
-  "createdDate": 1639582116883,
-  "updatedDate": 1639652359417,
+  "createdDate": 1639737710940,
+  "updatedDate": 1639737755125,
   "fromRef": {
-   "id": "refs/heads/hello-world",
+   "id": "refs/heads/thorsten/file3txt-1639737705647",
    "repository": {
     "id": 10070,
     "slug": "automation-testing",
@@ -48,7 +48,7 @@
   "links": {
    "self": [
     {
-     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/154"
+     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/160"
     }
    ]
   }
