@@ -59,7 +59,7 @@ func opsUpdateImage(ctx context.Context, args []string) error {
 		return flag.ErrHelp
 	}
 	if len(args) != 1 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "multiple paths not currently supported"))
+		out.WriteLine(output.Linef("", output.StyleWarning, "Multiple paths not currently supported"))
 		return flag.ErrHelp
 	}
 	return images.Parse(args[0], *verboseFlag)
