@@ -23,7 +23,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { ParsedSearchQueryProps, SearchContextProps } from '..'
+import { SearchContextProps } from '..'
 import { SearchResult } from '../../components/SearchResult'
 
 import { NoResultsPage } from './NoResultsPage'
@@ -32,7 +32,6 @@ import { useItemsToShow } from './use-items-to-show'
 
 export interface StreamingSearchResultsListProps
     extends ThemeProps,
-        ParsedSearchQueryProps,
         SettingsCascadeProps,
         TelemetryProps,
         Pick<SearchContextProps, 'searchContextsEnabled'> {
@@ -44,7 +43,6 @@ export interface StreamingSearchResultsListProps
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
-    parsedSearchQuery,
     results,
     location,
     allExpanded,
@@ -56,7 +54,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     searchContextsEnabled,
 }) => {
     const resultsNumber = results?.results.length || 0
-    const { itemsToShow, handleBottomHit } = useItemsToShow(parsedSearchQuery, resultsNumber)
+    const { itemsToShow, handleBottomHit } = useItemsToShow(location.search, resultsNumber)
 
     const logSearchResultClicked = useCallback(() => telemetryService.log('SearchResultClicked'), [telemetryService])
 
