@@ -353,7 +353,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 
 		searchMatches := []streamhttp.EventMatch{}
 
-		// We want both workspaces, but only one of them has steps
+		// We want both workspaces, but only one of them has steps that need to run
 		ws0 := buildRepoWorkspace(rs[0], "", "", []string{})
 		ws0.Steps = conditionalSteps
 		ws0.SkippedSteps = []int32{0}
