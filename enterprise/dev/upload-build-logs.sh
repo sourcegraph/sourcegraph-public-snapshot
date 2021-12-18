@@ -20,6 +20,8 @@ fi
 
 set -euo pipefail
 
+source /root/.profile
+
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 if hash go 2>/dev/null; then
