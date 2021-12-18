@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/catalog"
 )
 
-func (r *catalogComponentResolver) Owner(ctx context.Context) (*gql.EntityOwnerResolver, error) {
+func (r *componentResolver) Owner(ctx context.Context) (*gql.ComponentOwnerResolver, error) {
 	if r.component.OwnedBy == "" {
 		return nil, nil
 	}
@@ -17,7 +17,7 @@ func (r *catalogComponentResolver) Owner(ctx context.Context) (*gql.EntityOwnerR
 		return nil, nil
 	}
 
-	return &gql.EntityOwnerResolver{
+	return &gql.ComponentOwnerResolver{
 		Group: &groupResolver{group: *group, db: r.db},
 	}, nil
 }

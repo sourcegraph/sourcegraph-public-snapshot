@@ -8,7 +8,7 @@ import AutoSizer from 'react-virtualized-auto-sizer'
 
 import { CatalogGraphFields } from '../../../../graphql-operations'
 import { catalogRelationTypeDisplayName } from '../../core/edges'
-import { CatalogEntityIcon } from '../CatalogEntityIcon'
+import { ComponentIcon } from '../ComponentIcon'
 
 interface Props {
     graph: CatalogGraphFields
@@ -185,7 +185,7 @@ const EntityNodeLabel: React.FunctionComponent<CustomNodeLabelProps> = ({
         to={entity.url}
         className={classNames('d-flex align-items-center text-body text-nowrap', { 'font-weight-bold': isActive })}
     >
-        <CatalogEntityIcon entity={entity} className="icon-inline mr-1" /> {entity.name}
+        <ComponentIcon entity={entity} className="icon-inline mr-1" /> {entity.name}
     </Link>
 )
 

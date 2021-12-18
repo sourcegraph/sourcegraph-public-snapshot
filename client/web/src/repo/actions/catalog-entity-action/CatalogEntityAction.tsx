@@ -4,21 +4,21 @@ import React, { useRef, useState } from 'react'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
-import { CatalogEntityIcon } from '../../../enterprise/catalog/components/CatalogEntityIcon'
+import { ComponentIcon } from '../../../enterprise/catalog/components/ComponentIcon'
 import { OverviewStatusContexts } from '../../../enterprise/catalog/pages/entity-detail/global/OverviewStatusContexts'
-import { CatalogEntityStateIndicator } from '../../../enterprise/catalog/pages/overview/components/entity-state-indicator/EntityStateIndicator'
+import { ComponentStateIndicator } from '../../../enterprise/catalog/pages/overview/components/entity-state-indicator/EntityStateIndicator'
 import { positionBottomRight } from '../../../enterprise/insights/components/context-menu/utils'
 import { Popover } from '../../../enterprise/insights/components/popover/Popover'
 import {
     RepositoryFields,
-    TreeEntryCatalogEntityResult,
-    TreeEntryCatalogEntityVariables,
-    TreeEntryCatalogEntityFields,
+    TreeEntryComponentResult,
+    TreeEntryComponentVariables,
+    TreeEntryComponentFields,
 } from '../../../graphql-operations'
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
 
-import styles from './CatalogEntityAction.module.scss'
+import styles from './ComponentAction.module.scss'
 import { TREE_ENTRY_CATALOG_ENTITY } from './gql'
 
 // TODO(sqs): LICENSE move to enterprise/
@@ -35,8 +35,8 @@ interface Props extends Partial<RevisionSpec>, Partial<FileSpec> {
  * A repository header action that displays the catalog entity associated with the current file
  * path.
  */
-export const CatalogEntityAction: React.FunctionComponent<Props & RepoHeaderContext> = props => {
-    const { data, error, loading } = useQuery<TreeEntryCatalogEntityResult, TreeEntryCatalogEntityVariables>(
+export const ComponentAction: React.FunctionComponent<Props & RepoHeaderContext> = props => {
+    const { data, error, loading } = useQuery<TreeEntryComponentResult, TreeEntryComponentVariables>(
         TREE_ENTRY_CATALOG_ENTITY,
         {
             variables: { repository: props.repo.id, rev: props.revision || 'HEAD', path: props.filePath || '' },
@@ -59,33 +59,33 @@ export const CatalogEntityAction: React.FunctionComponent<Props & RepoHeaderCont
         return null
     }
 
-    const catalogEntities =
-        (data && data.node?.__typename === 'Repository' && data.node.commit?.blob?.catalogEntities) || null
+    const components =
+        (data && data.node?.__typename === 'Repository' && data.node.commit?.blob?.components) || null
 
-    if (!catalogEntities || catalogEntities.length === 0) {
+    if (!components || components.length === 0) {
         return null
     }
 
-    const entity = catalogEntities[0]
+    const entity = components[0]
 
     if (props.actionType === 'dropdown') {
         return (
             <RepoHeaderActionButtonLink to={entity.url} className="btn" file={true}>
-                <CatalogEntityIcon entity={entity} className="icon-inline mr-1" /> {entity.name} (in catalog)
+                <ComponentIcon entity={entity} className="icon-inline mr-1" /> {entity.name} (in catalog)
             </RepoHeaderActionButtonLink>
         )
     }
 
     return (
-        <CatalogEntityActionPopoverButton
+        <ComponentActionPopoverButton
             entity={entity}
             buttonClassName={classNames('btn btn-icon small border border-primary', styles.btn)}
         />
     )
 }
 
-const CatalogEntityActionPopoverButton: React.FunctionComponent<{
-    entity: TreeEntryCatalogEntityFields['catalogEntities'][0]
+const ComponentActionPopoverButton: React.FunctionComponent<{
+    entity: TreeEntryComponentFields['components'][0]
     buttonClassName?: string
 }> = ({ entity, buttonClassName }) => {
     const targetButtonReference = useRef<HTMLButtonElement>(null)
@@ -95,7 +95,7 @@ const CatalogEntityActionPopoverButton: React.FunctionComponent<{
         <>
             <div ref={targetButtonReference}>
                 <RepoHeaderActionButtonLink to={entity.url} className={buttonClassName}>
-                    <CatalogEntityIcon entity={entity} className="icon-inline mr-1" /> {entity.name}
+                    <ComponentIcon entity={entity} className="icon-inline mr-1" /> {entity.name}
                 </RepoHeaderActionButtonLink>
             </div>
             <Popover
@@ -108,8 +108,8 @@ const CatalogEntityActionPopoverButton: React.FunctionComponent<{
                 style={{ maxWidth: '50vw' }}
             >
                 <h3>
-                    <CatalogEntityIcon entity={entity} className="icon-inline mr-1" /> {entity.name}
-                    <CatalogEntityStateIndicator entity={entity} className="ml-1" />
+                    <ComponentIcon entity={entity} className="icon-inline mr-1" /> {entity.name}
+                    <ComponentStateIndicator entity={entity} className="ml-1" />
                 </h3>
                 {entity.description && <p>{entity.description}</p>}
                 <OverviewStatusContexts entity={entity} itemClassName="mb-3" />

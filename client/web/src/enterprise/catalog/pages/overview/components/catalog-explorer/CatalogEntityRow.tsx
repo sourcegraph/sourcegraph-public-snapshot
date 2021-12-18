@@ -5,11 +5,11 @@ import { Link } from 'react-router-dom'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { Timestamp } from '../../../../../../components/time/Timestamp'
-import { CatalogEntityForExplorerFields, CatalogEntityRelationFields } from '../../../../../../graphql-operations'
-import { CatalogEntityIcon } from '../../../../components/CatalogEntityIcon'
+import { ComponentForExplorerFields, ComponentRelationFields } from '../../../../../../graphql-operations'
+import { ComponentIcon } from '../../../../components/ComponentIcon'
 import { EntityOwner } from '../../../../components/entity-owner/EntityOwner'
 import { catalogRelationTypeDisplayName } from '../../../../core/edges'
-import { CatalogEntityStateIndicator } from '../entity-state-indicator/EntityStateIndicator'
+import { ComponentStateIndicator } from '../entity-state-indicator/EntityStateIndicator'
 
 import styles from './CatalogExplorerList.module.scss'
 
@@ -20,11 +20,11 @@ export interface CatalogExplorerRowStyleProps {
 }
 
 interface Props extends CatalogExplorerRowStyleProps {
-    node: CatalogEntityForExplorerFields
+    node: ComponentForExplorerFields
     before?: string
 }
 
-export const CatalogEntityRow: React.FunctionComponent<Props> = ({
+export const ComponentRow: React.FunctionComponent<Props> = ({
     node,
     before,
     itemStartClassName,
@@ -35,14 +35,14 @@ export const CatalogEntityRow: React.FunctionComponent<Props> = ({
         {before && <span className={classNames('text-nowrap', itemStartClassName)}>{before}</span>}
         <h3 className={classNames('h6 font-weight-bold mb-0 d-flex align-items-center', !before && itemStartClassName)}>
             <Link to={node.url} className={classNames('d-block text-truncate')}>
-                <CatalogEntityIcon entity={node} className={classNames('icon-inline mr-1 flex-shrink-0 text-muted')} />
+                <ComponentIcon entity={node} className={classNames('icon-inline mr-1 flex-shrink-0 text-muted')} />
                 {node.name}
             </Link>
-            <CatalogEntityStateIndicator entity={node} className="ml-1" />
+            <ComponentStateIndicator entity={node} className="ml-1" />
         </h3>
         <EntityOwner owner={node.owner} className="text-nowrap" blankIfNone={true} />
         <span className="text-nowrap">{node.lifecycle?.toLowerCase()}</span>
-        {node.__typename === 'CatalogComponent' && node.commits ? (
+        {node.__typename === 'Component' && node.commits ? (
             <Timestamp className="text-nowrap" date={node.commits.nodes[0].author.date} noAbout={true} strict={true} />
         ) : (
             <span />
@@ -52,7 +52,7 @@ export const CatalogEntityRow: React.FunctionComponent<Props> = ({
     </>
 )
 
-export const CatalogEntityRowsHeader: React.FunctionComponent<
+export const ComponentRowsHeader: React.FunctionComponent<
     Pick<CatalogExplorerRowStyleProps, 'itemStartClassName' | 'itemEndClassName'> & {
         before?: string
     }
@@ -77,16 +77,16 @@ export const CatalogEntityRowsHeader: React.FunctionComponent<
     )
 }
 
-export const CatalogEntityRelationRow: React.FunctionComponent<
+export const ComponentRelationRow: React.FunctionComponent<
     CatalogExplorerRowStyleProps & {
-        edge: CatalogEntityRelationFields
+        edge: ComponentRelationFields
     }
 > = ({ edge: { node, type }, ...props }) => (
     <>
-        <CatalogEntityRow {...props} node={node} before={catalogRelationTypeDisplayName(type)} />
+        <ComponentRow {...props} node={node} before={catalogRelationTypeDisplayName(type)} />
     </>
 )
 
-export const CatalogEntityRelationRowsHeader: React.FunctionComponent<
-    Omit<React.ComponentPropsWithoutRef<typeof CatalogEntityRowsHeader>, 'before'>
-> = props => <CatalogEntityRowsHeader {...props} before="Relation" />
+export const ComponentRelationRowsHeader: React.FunctionComponent<
+    Omit<React.ComponentPropsWithoutRef<typeof ComponentRowsHeader>, 'before'>
+> = props => <ComponentRowsHeader {...props} before="Relation" />

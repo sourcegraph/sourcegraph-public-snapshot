@@ -56,7 +56,7 @@ import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
-import { CatalogEntityAction } from './actions/catalog-entity-action/CatalogEntityAction'
+import { ComponentAction } from './actions/catalog-entity-action/ComponentAction'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { InstallBrowserExtensionAlert, isFirefoxCampaignActive } from './actions/InstallBrowserExtensionAlert'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
@@ -450,7 +450,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 {...repoHeaderContributionsLifecycleProps}
             >
                 {({ actionType }) => (
-                    <CatalogEntityAction
+                    <ComponentAction
                         key="catalog-entity"
                         repo={repoOrError}
                         filePath={filePath}

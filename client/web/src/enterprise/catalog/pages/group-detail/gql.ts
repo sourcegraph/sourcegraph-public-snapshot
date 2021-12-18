@@ -1,7 +1,7 @@
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { personLinkFieldsFragment } from '../../../../person/PersonLink'
-import { CATALOG_ENTITY_STATE_FRAGMENT } from '../overview/components/catalog-explorer/gql'
+import { COMPONENT_STATE_FRAGMENT } from '../overview/components/catalog-explorer/gql'
 
 import { GROUP_LINK_FRAGMENT } from './gql2'
 
@@ -52,13 +52,13 @@ const GROUP_OWNED_ENTITIES_FRAGMENT = gql`
             name
             description
             url
-            ... on CatalogComponent {
+            ... on Component {
                 kind
             }
-            ...CatalogEntityStateFields
+            ...ComponentStateFields
         }
     }
-    ${CATALOG_ENTITY_STATE_FRAGMENT}
+    ${COMPONENT_STATE_FRAGMENT}
 `
 
 const GROUP_DETAIL_FRAGMENT = gql`

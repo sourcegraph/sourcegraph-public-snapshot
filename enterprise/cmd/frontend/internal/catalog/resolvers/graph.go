@@ -12,16 +12,14 @@ func makeGraphData(db database.DB, q *queryMatcher, allEdges bool) *catalogGraph
 	var graph catalogGraphResolver
 
 	components, _, edges := catalog.Data()
-	var entities []gql.CatalogEntity
 	for _, c := range components {
-		cr := &catalogComponentResolver{component: c, db: db}
+		cr := &componentResolver{component: c, db: db}
 		if q != nil && q.matchNode(cr) {
-			entities = append(entities, cr)
+			graph.nodes = append(graph.nodes, cr)
 		}
 	}
-	graph.nodes = wrapInCatalogEntityInterfaceType(entities)
 
-	findNodeByName := func(name string) *gql.CatalogEntityResolver {
+	findNodeByName := func(name string) gql.ComponentResolver {
 		for _, node := range graph.nodes {
 			if node.Name() == name {
 				return node
@@ -30,15 +28,15 @@ func makeGraphData(db database.DB, q *queryMatcher, allEdges bool) *catalogGraph
 		return nil
 	}
 
-	// edgeMatches := map[*gql.CatalogEntityResolver]struct{}{}
+	// edgeMatches := map[*gql.ComponentResolver]struct{}{}
 	for _, e := range edges {
 		outNode := findNodeByName(e.Out)
 		inNode := findNodeByName(e.In)
 		if outNode == nil || inNode == nil {
 			continue
 		}
-		edge := &catalogEntityRelationEdgeResolver{
-			type_:   gql.CatalogEntityRelationType(e.Type),
+		edge := &componentRelationEdgeResolver{
+			type_:   gql.ComponentRelationType(e.Type),
 			outNode: outNode,
 			inNode:  inNode,
 		}
@@ -60,7 +58,7 @@ func makeGraphData(db database.DB, q *queryMatcher, allEdges bool) *catalogGraph
 	return &graph
 }
 
-func (r *catalogResolver) Graph(ctx context.Context, args *gql.CatalogGraphArgs) (gql.CatalogGraphResolver, error) {
+func (r *rootResolver) Graph(ctx context.Context, args *gql.CatalogGraphArgs) (gql.CatalogGraphResolver, error) {
 	// TODO(sqs): support literal query search
 	var query string
 	if args.Query != nil {
@@ -71,19 +69,19 @@ func (r *catalogResolver) Graph(ctx context.Context, args *gql.CatalogGraphArgs)
 }
 
 type catalogGraphResolver struct {
-	nodes []*gql.CatalogEntityResolver
-	edges []gql.CatalogEntityRelationEdgeResolver
+	nodes []gql.ComponentResolver
+	edges []gql.ComponentRelationEdgeResolver
 }
 
-func (r *catalogGraphResolver) Nodes() []*gql.CatalogEntityResolver            { return r.nodes }
-func (r *catalogGraphResolver) Edges() []gql.CatalogEntityRelationEdgeResolver { return r.edges }
+func (r *catalogGraphResolver) Nodes() []gql.ComponentResolver             { return r.nodes }
+func (r *catalogGraphResolver) Edges() []gql.ComponentRelationEdgeResolver { return r.edges }
 
-type catalogEntityRelationEdgeResolver struct {
-	type_   gql.CatalogEntityRelationType
-	outNode *gql.CatalogEntityResolver
-	inNode  *gql.CatalogEntityResolver
+type componentRelationEdgeResolver struct {
+	type_   gql.ComponentRelationType
+	outNode gql.ComponentResolver
+	inNode  gql.ComponentResolver
 }
 
-func (r *catalogEntityRelationEdgeResolver) Type() gql.CatalogEntityRelationType { return r.type_ }
-func (r *catalogEntityRelationEdgeResolver) OutNode() *gql.CatalogEntityResolver { return r.outNode }
-func (r *catalogEntityRelationEdgeResolver) InNode() *gql.CatalogEntityResolver  { return r.inNode }
+func (r *componentRelationEdgeResolver) Type() gql.ComponentRelationType { return r.type_ }
+func (r *componentRelationEdgeResolver) OutNode() gql.ComponentResolver  { return r.outNode }
+func (r *componentRelationEdgeResolver) InNode() gql.ComponentResolver   { return r.inNode }

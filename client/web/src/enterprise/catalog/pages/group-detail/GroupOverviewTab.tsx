@@ -13,9 +13,9 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { GroupDetailFields } from '../../../../graphql-operations'
 import { formatPersonName } from '../../../../person/PersonLink'
 import { UserAvatar } from '../../../../user/UserAvatar'
-import { CatalogEntityIcon } from '../../components/CatalogEntityIcon'
+import { ComponentIcon } from '../../components/ComponentIcon'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
-import { CatalogEntityStateIndicator } from '../overview/components/entity-state-indicator/EntityStateIndicator'
+import { ComponentStateIndicator } from '../overview/components/entity-state-indicator/EntityStateIndicator'
 
 import { GroupCatalogExplorer } from './GroupCatalogExplorer'
 import { GroupDetailContentCardProps } from './GroupDetailContent'
@@ -130,12 +130,12 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
                             >
                                 <div className="mb-0 d-flex align-items-center">
                                     <Link to={entity.url} className="d-inline-flex align-items-center stretched-link">
-                                        <CatalogEntityIcon entity={entity} className="icon-inline text-muted mr-1" />
+                                        <ComponentIcon entity={entity} className="icon-inline text-muted mr-1" />
 
                                         {entity.name}
                                     </Link>
-                                    {entity.__typename === 'CatalogComponent' && (
-                                        <CatalogEntityStateIndicator entity={entity} className="ml-1" />
+                                    {entity.__typename === 'Component' && (
+                                        <ComponentStateIndicator entity={entity} className="ml-1" />
                                     )}
                                 </div>
                                 {entity.description && (
@@ -158,11 +158,11 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
                         {group.ownedEntities.map(entity => (
                             <li key={entity.id} className="list-group-item d-flex align-items-center position-relative">
                                 <Link to={entity.url} className="d-flex align-items-center mr-1">
-                                    <CatalogEntityIcon entity={entity} className="icon-inline text-muted mr-1" />
+                                    <ComponentIcon entity={entity} className="icon-inline text-muted mr-1" />
                                     {entity.name}
                                 </Link>
-                                {entity.__typename === 'CatalogComponent' && (
-                                    <CatalogEntityStateIndicator entity={entity} />
+                                {entity.__typename === 'Component' && (
+                                    <ComponentStateIndicator entity={entity} />
                                 )}
                             </li>
                         ))}

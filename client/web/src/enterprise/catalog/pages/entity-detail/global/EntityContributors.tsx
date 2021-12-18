@@ -2,16 +2,16 @@ import React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { CatalogComponentAuthorsFields } from '../../../../../graphql-operations'
+import { ComponentAuthorsFields } from '../../../../../graphql-operations'
 
 import { PersonList } from './PersonList'
 
 interface Props {
-    catalogComponent: CatalogComponentAuthorsFields
+    component: ComponentAuthorsFields
     className?: string
 }
 
-export const EntityContributors: React.FunctionComponent<Props> = ({ catalogComponent: { authors }, className }) => (
+export const EntityContributors: React.FunctionComponent<Props> = ({ component: { authors }, className }) => (
     <PersonList
         title="Contributors"
         listTag="ol"

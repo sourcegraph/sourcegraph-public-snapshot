@@ -2,15 +2,15 @@ import classNames from 'classnames'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-import { CatalogComponentChangesFields, GitCommitFields } from '../../../../../graphql-operations'
+import { ComponentChangesFields, GitCommitFields } from '../../../../../graphql-operations'
 import { GitCommitNodeByline } from '../../../../../repo/commits/GitCommitNodeByline'
 
 interface Props {
-    catalogComponent: CatalogComponentChangesFields
+    component: ComponentChangesFields
     className?: string
 }
 
-export const ComponentCommits: React.FunctionComponent<Props> = ({ catalogComponent: { commits }, className }) => (
+export const ComponentCommits: React.FunctionComponent<Props> = ({ component: { commits }, className }) => (
     <div className={className}>
         {commits && commits.nodes.length > 0 ? (
             <ol className={classNames('list-group list-group-flush')}>

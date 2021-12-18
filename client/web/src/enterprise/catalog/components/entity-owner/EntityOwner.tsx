@@ -1,11 +1,11 @@
 import React from 'react'
 
-import { CatalogEntityOwnerFields } from '../../../../graphql-operations'
+import { ComponentOwnerFields } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
 import { GroupLink } from '../../pages/group-detail/GroupLink'
 
 interface Props {
-    owner: CatalogEntityOwnerFields['owner']
+    owner: ComponentOwnerFields['owner']
     blankIfNone?: boolean
     className?: string
 }

@@ -9,25 +9,25 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { getFileDecorations } from '../../../../../backend/features'
-import { CatalogEntityDetailFields, CatalogComponentSourcesFields } from '../../../../../graphql-operations'
+import { ComponentStateDetailFields, ComponentSourcesFields } from '../../../../../graphql-operations'
 import { TreeEntriesSection } from '../../../../../repo/tree/TreeEntriesSection'
 
 interface Props extends ExtensionsControllerProps, ThemeProps {
-    catalogComponent: CatalogComponentSourcesFields & Pick<CatalogEntityDetailFields, 'url'>
+    component: ComponentSourcesFields & Pick<ComponentStateDetailFields, 'url'>
     className?: string
 }
 
-export const ComponentSources: React.FunctionComponent<Props> = ({ catalogComponent, className, ...props }) => (
+export const ComponentSources: React.FunctionComponent<Props> = ({ component, className, ...props }) => (
     <div className={className}>
-        {catalogComponent.sourceLocations.length > 0 && (
-            <ComponentFiles {...props} sourceLocations={catalogComponent.sourceLocations} />
+        {component.sourceLocations.length > 0 && (
+            <ComponentFiles {...props} sourceLocations={component.sourceLocations} />
         )}
     </div>
 )
 
 const ComponentFiles: React.FunctionComponent<
     {
-        sourceLocations: CatalogComponentSourcesFields['sourceLocations']
+        sourceLocations: ComponentSourcesFields['sourceLocations']
         className?: string
     } & ExtensionsControllerProps &
         ThemeProps

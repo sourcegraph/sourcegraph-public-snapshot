@@ -4,10 +4,8 @@ import { CATALOG_GRAPH_FRAGMENT } from '../../../../components/entity-graph/gql'
 
 export const CATALOG_GRAPH = gql`
     query CatalogGraph($query: String!) {
-        catalog {
-            graph(query: $query) {
-                ...CatalogGraphFields
-            }
+        graph(query: $query) {
+            ...CatalogGraphFields
         }
     }
 

@@ -3,7 +3,7 @@ import React from 'react'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
-import { useCatalogEntityFilters } from '../../core/entity-filters'
+import { useComponentFilters } from '../../core/entity-filters'
 import { CatalogExplorerList } from '../overview/components/catalog-explorer/CatalogExplorerList'
 import { CatalogExplorerViewOptionsRow } from '../overview/components/catalog-explorer/CatalogExplorerViewOptionsRow'
 import { ViewModeToggle, useViewModeTemporarySettings } from '../overview/components/catalog-explorer/ViewModeToggle'
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export const GroupCatalogExplorer: React.FunctionComponent<Props> = ({ group, className }) => {
-    const filtersProps = useCatalogEntityFilters('')
+    const filtersProps = useComponentFilters('')
 
     const [viewMode, setViewMode] = useViewModeTemporarySettings()
 

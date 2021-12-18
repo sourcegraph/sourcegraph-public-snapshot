@@ -2,12 +2,12 @@ import React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { CatalogEntityCodeOwnersFields } from '../../../../../graphql-operations'
+import { ComponentCodeOwnersFields } from '../../../../../graphql-operations'
 
 import { PersonList } from './PersonList'
 
 interface Props {
-    entity: CatalogEntityCodeOwnersFields
+    entity: ComponentCodeOwnersFields
     className?: string
 }
 

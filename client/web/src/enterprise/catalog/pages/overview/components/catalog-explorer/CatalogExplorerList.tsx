@@ -14,17 +14,17 @@ import {
     SummaryContainer,
 } from '../../../../../../components/FilteredConnection/ui'
 import {
-    CatalogEntitiesForExplorerResult,
-    CatalogEntitiesForExplorerVariables,
-    CatalogEntityForExplorerFields,
+    ComponentsForExplorerResult,
+    ComponentsForExplorerVariables,
+    ComponentForExplorerFields,
 } from '../../../../../../graphql-operations'
-import { CatalogEntityFiltersProps } from '../../../../core/entity-filters'
+import { ComponentFiltersProps } from '../../../../core/entity-filters'
 
-import { CatalogEntityRow, CatalogEntityRowsHeader, CatalogExplorerRowStyleProps } from './CatalogEntityRow'
+import { ComponentRow, ComponentRowsHeader, CatalogExplorerRowStyleProps } from './ComponentRow'
 import styles from './CatalogExplorerList.module.scss'
-import { CATALOG_ENTITIES_FOR_EXPLORER } from './gql'
+import { COMPONENTS_FOR_EXPLORER } from './gql'
 
-interface Props extends Pick<CatalogEntityFiltersProps, 'filters'>, CatalogExplorerRowStyleProps {
+interface Props extends Pick<ComponentFiltersProps, 'filters'>, CatalogExplorerRowStyleProps {
     queryScope?: string
     className?: string
 }
@@ -40,11 +40,11 @@ export const CatalogExplorerList: React.FunctionComponent<Props> = ({
     noBottomBorder,
 }) => {
     const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
-        CatalogEntitiesForExplorerResult,
-        CatalogEntitiesForExplorerVariables,
-        CatalogEntityForExplorerFields
+        ComponentsForExplorerResult,
+        ComponentsForExplorerVariables,
+        ComponentForExplorerFields
     >({
-        query: CATALOG_ENTITIES_FOR_EXPLORER,
+        query: COMPONENTS_FOR_EXPLORER,
         variables: {
             query: `${queryScope || ''} ${filters.query || ''}`,
             first: FIRST,
@@ -66,12 +66,12 @@ export const CatalogExplorerList: React.FunctionComponent<Props> = ({
                 {error && <ConnectionError errors={[error.message]} />}
                 {connection?.nodes && connection?.nodes.length > 0 && (
                     <ConnectionList className={classNames(styles.table)} as="div">
-                        <CatalogEntityRowsHeader
+                        <ComponentRowsHeader
                             itemStartClassName={itemStartClassName}
                             itemEndClassName={itemEndClassName}
                         />
                         {connection?.nodes?.map((node, index) => (
-                            <CatalogEntityRow
+                            <ComponentRow
                                 key={node.id}
                                 node={node}
                                 itemStartClassName={itemStartClassName}

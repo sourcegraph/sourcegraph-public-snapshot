@@ -2,48 +2,25 @@ extend type Query {
     """
     [WIP]
     """
-    catalog: Catalog!
-    catalogEntity(type: CatalogEntityType!, name: String!): CatalogEntity
+    component(name: String!): Component
+    components(query: String, first: Int, after: String): ComponentConnection!
+    graph(query: String): CatalogGraph!
     groups: [Group!]!
     group(name: String!): Group
 }
 
-type Catalog {
-    entities(query: String, first: Int, after: String): CatalogEntityConnection!
-    graph(query: String): CatalogGraph!
-}
-
-enum CatalogEntityType {
-    COMPONENT
-    PACKAGE
-}
-
-enum CatalogEntityLifecycle {
+enum ComponentLifecycle {
     PRODUCTION
     EXPERIMENTAL
 }
 
-enum CatalogEntityStatusState {
+enum ComponentStatusState {
     EXPECTED
     ERROR
     FAILURE
     PENDING
     SUCCESS
     INFO
-}
-
-interface CatalogEntity {
-    id: ID!
-    type: CatalogEntityType!
-    name: String!
-    description: String
-    owner: EntityOwner
-    url: String!
-    status: CatalogEntityStatus!
-    # TODO(sqs): some of these dont belong on CatalogEntity.
-    codeOwners: [CatalogEntityCodeOwnerEdge!]
-    relatedEntities(query: String, first: Int, after: String): CatalogEntityRelatedEntityConnection!
-    whoKnows(query: String): [WhoKnowsEdge!]!
 }
 
 union EntityOwner = Person | Group
@@ -59,50 +36,50 @@ type Group implements Node {
     childGroups: [Group!]!
     descendentGroups: [Group!]!
     members: [Person!]!
-    ownedEntities: [CatalogEntity!]!
+    ownedEntities: [Component!]!
 }
 
 type CatalogGraph {
-    nodes: [CatalogEntity!]!
-    edges: [CatalogEntityRelationEdge!]!
+    nodes: [Component!]!
+    edges: [ComponentRelationEdge!]!
 }
 
-type CatalogEntityRelationEdge {
-    type: CatalogEntityRelationType!
-    outNode: CatalogEntity!
-    inNode: CatalogEntity!
+type ComponentRelationEdge {
+    type: ComponentRelationType!
+    outNode: Component!
+    inNode: Component!
 }
 
-type CatalogEntityRelatedEntityConnection {
-    edges: [CatalogEntityRelatedEntityEdge!]!
+type ComponentRelatedEntityConnection {
+    edges: [ComponentRelatedEntityEdge!]!
 }
 
-enum CatalogEntityRelationType {
+enum ComponentRelationType {
     DEPENDS_ON
     DEPENDENCY_OF
     PART_OF
     HAS_PART
 }
 
-type CatalogEntityRelatedEntityEdge {
-    node: CatalogEntity!
-    type: CatalogEntityRelationType!
+type ComponentRelatedEntityEdge {
+    node: Component!
+    type: ComponentRelationType!
 }
 
-type CatalogEntityStatus implements Node {
+type ComponentStatus implements Node {
     id: ID!
-    contexts: [CatalogEntityStatusContext!]!
+    contexts: [ComponentStatusContext!]!
 
     """
     The combined status (from all status contexts).
     """
-    state: CatalogEntityStatusState!
+    state: ComponentStatusState!
 }
 
-type CatalogEntityStatusContext implements Node {
+type ComponentStatusContext implements Node {
     id: ID!
     name: String!
-    state: CatalogEntityStatusState!
+    state: ComponentStatusState!
     title: String!
     description: String
     targetURL: String
@@ -114,104 +91,95 @@ type WhoKnowsEdge {
     score: Float!
 }
 
-type CatalogEntityConnection {
-    nodes: [CatalogEntity!]!
+type ComponentConnection {
+    nodes: [Component!]!
     totalCount: Int!
     pageInfo: PageInfo!
 }
 
-enum CatalogComponentKind {
+enum ComponentKind {
     SERVICE
+    APPLICATION
     WEBSITE
     LIBRARY
     TOOL
     OTHER
 }
 
-type CatalogComponent implements Node & CatalogEntity {
+type Component implements Node {
     id: ID!
-    type: CatalogEntityType!
     name: String!
+    kind: ComponentKind!
     description: String
+    lifecycle: ComponentLifecycle!
     owner: EntityOwner
     url: String!
-    status: CatalogEntityStatus!
-    codeOwners: [CatalogEntityCodeOwnerEdge!]
-    relatedEntities(query: String, first: Int, after: String): CatalogEntityRelatedEntityConnection!
+    status: ComponentStatus!
+    codeOwners: [ComponentCodeOwnerEdge!]
+    relatedEntities(query: String, first: Int, after: String): ComponentRelatedEntityConnection!
     whoKnows(query: String): [WhoKnowsEdge!]!
-
-    kind: CatalogComponentKind!
-    lifecycle: CatalogEntityLifecycle!
-
     sourceLocations: [TreeEntry!]!
     readme: File2
     commits(first: Int): GitCommitConnection
-    authors: [CatalogComponentAuthorEdge!]
-    usage(query: String): CatalogComponentUsage
-    api(query: String): CatalogComponentAPI
+    authors: [ComponentAuthorEdge!]
+    usage(query: String): ComponentUsage
+    api(query: String): ComponentAPI
 }
 
-type CatalogComponentAuthorEdge {
-    component: CatalogComponent!
+type ComponentAuthorEdge {
+    component: Component!
     person: Person!
     authoredLineCount: Int!
     authoredLineProportion: Float!
     lastCommit: GitCommit!
 }
 
-type CatalogEntityCodeOwnerEdge {
+type ComponentCodeOwnerEdge {
     node: Person!
     fileCount: Int!
     fileProportion: Float!
 }
 
-type CatalogComponentUsage {
+type ComponentUsage {
     locations: LocationConnection
-    people: [CatalogComponentUsedByPersonEdge!]!
-    components: [CatalogComponentUsedByComponentEdge!]!
+    people: [ComponentUsedByPersonEdge!]!
+    components: [ComponentUsedByComponentEdge!]!
 }
 
-type CatalogComponentUsedByPersonEdge {
+type ComponentUsedByPersonEdge {
     node: Person!
     locations: LocationConnection!
     authoredLineCount: Int!
     lastCommit: GitCommit!
 }
 
-type CatalogComponentUsedByComponentEdge {
+type ComponentUsedByComponentEdge {
     """
     A component that uses the query parent's component.
     """
-    node: CatalogComponent!
+    node: Component!
     locations: LocationConnection!
 }
 
-type CatalogComponentAPI {
+type ComponentAPI {
     symbols(first: Int): SymbolConnection!
     schema: File2
 }
 
-type Package implements Node & CatalogEntity {
+type Package implements Node {
     id: ID!
-    type: CatalogEntityType!
     name: String!
-    description: String
-    owner: EntityOwner
     url: String!
-    status: CatalogEntityStatus!
-    codeOwners: [CatalogEntityCodeOwnerEdge!]
-    relatedEntities(query: String, first: Int, after: String): CatalogEntityRelatedEntityConnection!
-    whoKnows(query: String): [WhoKnowsEdge!]!
 }
 
 extend interface TreeEntry {
-    catalogEntities: [CatalogEntity!]!
+    components: [Component!]!
 }
 
 extend type GitBlob {
-    catalogEntities: [CatalogEntity!]!
+    components: [Component!]!
 }
 
 extend type GitTree {
-    catalogEntities: [CatalogEntity!]!
+    components: [Component!]!
 }

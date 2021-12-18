@@ -18,18 +18,18 @@ func TestGetPackages(t *testing.T) {
 
 	sort.Slice(pkgs, func(i, j int) bool { return pkgs[i].Name < pkgs[j].Name })
 
-	if len, want := len(pkgs), 3420; len != want {
+	if len, want := len(pkgs), 2795; len != want {
 		t.Errorf("got len %d, want %d", len, want)
 	}
 
 	sample := func(pkgs []Package) []Package {
-		return []Package{pkgs[0], pkgs[1500], pkgs[3157]}
+		return []Package{pkgs[0], pkgs[1500], pkgs[2700]}
 	}
 	got3 := sample(pkgs)
 	want3 := []Package{
 		{Name: "@actions/core"},
-		{Name: "github.com/RoaringBitmap/roaring"},
-		{Name: "ts-dedent"},
+		{Name: "golang.org/x/text"},
+		{Name: "vendors"},
 	}
 	if !reflect.DeepEqual(got3, want3) {
 		t.Errorf("got first 3 %v, want %v", got3, want3)

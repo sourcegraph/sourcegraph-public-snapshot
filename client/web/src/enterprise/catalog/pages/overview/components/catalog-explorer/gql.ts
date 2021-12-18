@@ -1,23 +1,21 @@
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
-import { CATALOG_ENTITY_OWNER_FRAGMENT } from '../../../../components/entity-owner/gql'
+import { COMPONENT_OWNER_FRAGMENT } from '../../../../components/entity-owner/gql'
 
-export const CATALOG_ENTITY_LAST_COMMIT_FRAGMENT = gql`
-    fragment CatalogEntityLastCommitFields on CatalogEntity {
-        ... on CatalogComponent {
-            commits(first: 1) {
-                nodes {
-                    author {
-                        date
-                    }
+export const COMPONENT_LAST_COMMIT_FRAGMENT = gql`
+    fragment ComponentLastCommitFields on Component {
+        commits(first: 1) {
+            nodes {
+                author {
+                    date
                 }
             }
         }
     }
 `
 
-export const CATALOG_ENTITY_STATE_FRAGMENT = gql`
-    fragment CatalogEntityStateFields on CatalogEntity {
+export const COMPONENT_STATE_FRAGMENT = gql`
+    fragment ComponentStateFields on Component {
         status {
             id
             state
@@ -25,36 +23,31 @@ export const CATALOG_ENTITY_STATE_FRAGMENT = gql`
     }
 `
 
-export const CATALOG_ENTITY_FOR_EXPLORER_FRAGMENT = gql`
-    fragment CatalogEntityForExplorerFields on CatalogEntity {
+export const COMPONENT_FOR_EXPLORER_FRAGMENT = gql`
+    fragment ComponentForExplorerFields on Component {
         __typename
         id
-        type
         name
+        kind
         description
+        lifecycle
         url
-        ... on CatalogComponent {
-            kind
-            lifecycle
-        }
-        ...CatalogEntityStateFields
-        ...CatalogEntityOwnerFields
-        ...CatalogEntityLastCommitFields
+        ...ComponentStateFields
+        ...ComponentOwnerFields
+        ...ComponentLastCommitFields
     }
-    ${CATALOG_ENTITY_STATE_FRAGMENT}
-    ${CATALOG_ENTITY_OWNER_FRAGMENT}
-    ${CATALOG_ENTITY_LAST_COMMIT_FRAGMENT}
+    ${COMPONENT_STATE_FRAGMENT}
+    ${COMPONENT_OWNER_FRAGMENT}
+    ${COMPONENT_LAST_COMMIT_FRAGMENT}
 `
 
-export const CATALOG_ENTITIES_FOR_EXPLORER = gql`
-    query CatalogEntitiesForExplorer($query: String, $first: Int, $after: String) {
-        catalog {
-            entities(query: $query, first: $first, after: $after) {
-                nodes {
-                    ...CatalogEntityForExplorerFields
-                }
+export const COMPONENTS_FOR_EXPLORER = gql`
+    query ComponentsForExplorer($query: String, $first: Int, $after: String) {
+        components(query: $query, first: $first, after: $after) {
+            nodes {
+                ...ComponentForExplorerFields
             }
         }
     }
-    ${CATALOG_ENTITY_FOR_EXPLORER_FRAGMENT}
+    ${COMPONENT_FOR_EXPLORER_FRAGMENT}
 `

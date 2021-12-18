@@ -7,9 +7,9 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { CatalogIcon } from '../../../../../catalog'
-import { CatalogEntityDetailFields } from '../../../../../graphql-operations'
+import { ComponentStateDetailFields } from '../../../../../graphql-operations'
 import { CatalogPage } from '../../../components/catalog-area-header/CatalogPage'
-import { catalogEntityIconComponent } from '../../../components/CatalogEntityIcon'
+import { componentIconComponent } from '../../../components/ComponentIcon'
 import { CatalogGroupIcon } from '../../../components/CatalogGroupIcon'
 
 import { ComponentAPI } from './ComponentApi'
@@ -28,7 +28,7 @@ interface Props
         ThemeProps,
         SettingsCascadeProps,
         PlatformContextProps {
-    entity: CatalogEntityDetailFields
+    entity: ComponentStateDetailFields
 }
 
 const TAB_CONTENT_CLASS_NAME = 'flex-1 align-self-stretch overflow-auto'
@@ -43,14 +43,14 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                     text: 'Overview',
                     content: <EntityOverviewTab {...props} entity={entity} className={TAB_CONTENT_CLASS_NAME} />,
                 },
-                entity.__typename === 'CatalogComponent'
+                entity.__typename === 'Component'
                     ? {
                           path: 'code',
                           text: 'Code',
                           content: <EntityCodeTab {...props} entity={entity} className={TAB_CONTENT_CLASS_NAME} />,
                       }
                     : null,
-                entity.__typename === 'CatalogComponent'
+                entity.__typename === 'Component'
                     ? {
                           path: 'relations',
                           text: 'Relations',
@@ -58,48 +58,48 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                       }
                     : null,
 
-                entity.__typename === 'CatalogComponent'
+                entity.__typename === 'Component'
                     ? {
                           path: 'changes',
                           text: 'Changes',
                           content: <EntityChangesTab {...props} entity={entity} className={TAB_CONTENT_CLASS_NAME} />,
                       }
                     : null,
-                false && entity.__typename === 'CatalogComponent'
+                false && entity.__typename === 'Component'
                     ? {
                           path: 'docs',
                           text: 'Docs',
                           content: (
-                              <ComponentDocumentation catalogComponent={entity} className={TAB_CONTENT_CLASS_NAME} />
+                              <ComponentDocumentation component={entity} className={TAB_CONTENT_CLASS_NAME} />
                           ),
                       }
                     : null,
-                false && entity.__typename === 'CatalogComponent'
+                false && entity.__typename === 'Component'
                     ? {
                           path: 'api',
                           text: 'API',
                           content: (
-                              <ComponentAPI {...props} catalogComponent={entity} className={TAB_CONTENT_CLASS_NAME} />
+                              <ComponentAPI {...props} component={entity} className={TAB_CONTENT_CLASS_NAME} />
                           ),
                       }
                     : null,
-                entity.__typename === 'CatalogComponent'
+                entity.__typename === 'Component'
                     ? {
                           path: 'usage',
                           text: 'Usage',
                           content: (
-                              <EntityUsageTab {...props} catalogComponent={entity} className={TAB_CONTENT_CLASS_NAME} />
+                              <EntityUsageTab {...props} component={entity} className={TAB_CONTENT_CLASS_NAME} />
                           ),
                       }
                     : null,
-                entity.__typename === 'CatalogComponent'
+                entity.__typename === 'Component'
                     ? {
                           path: 'who-knows',
                           text: 'Who knows',
                           content: (
                               <EntityWhoKnowsTab
                                   {...props}
-                                  catalogComponent={entity}
+                                  component={entity}
                                   className={TAB_CONTENT_CLASS_NAME}
                               />
                           ),
@@ -118,7 +118,7 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                     to: owner.url,
                 })),
                 {
-                    icon: catalogEntityIconComponent(entity),
+                    icon: componentIconComponent(entity),
                     text: entity.name,
                     to: entity.url,
                 },

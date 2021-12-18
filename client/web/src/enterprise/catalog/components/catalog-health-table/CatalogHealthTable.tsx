@@ -17,19 +17,19 @@ import {
 import {
     CatalogHealthResult,
     CatalogHealthVariables,
-    CatalogEntityHealthFields,
-    CatalogEntityStatusFields,
-    CatalogEntityStatusState,
+    ComponentHealthFields,
+    ComponentStatusFields,
+    ComponentStatusState,
 } from '../../../../graphql-operations'
-import { CatalogEntityFiltersProps } from '../../core/entity-filters'
-import { CatalogEntityStateIndicator } from '../../pages/overview/components/entity-state-indicator/EntityStateIndicator'
-import { CatalogEntityIcon } from '../CatalogEntityIcon'
+import { ComponentFiltersProps } from '../../core/entity-filters'
+import { ComponentStateIndicator } from '../../pages/overview/components/entity-state-indicator/EntityStateIndicator'
+import { ComponentIcon } from '../ComponentIcon'
 import { EntityOwner } from '../entity-owner/EntityOwner'
 
 import styles from './CatalogHealthTable.module.scss'
 import { CATALOG_HEALTH } from './gql'
 
-interface Props extends Pick<CatalogEntityFiltersProps, 'filters'> {
+interface Props extends Pick<ComponentFiltersProps, 'filters'> {
     queryScope?: string
     className?: string
 }
@@ -40,7 +40,7 @@ export const CatalogHealthTable: React.FunctionComponent<Props> = ({ filters, qu
     const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
         CatalogHealthResult,
         CatalogHealthVariables,
-        CatalogEntityHealthFields
+        ComponentHealthFields
     >({
         query: CATALOG_HEALTH,
         variables: {
@@ -99,10 +99,10 @@ export const CatalogHealthTable: React.FunctionComponent<Props> = ({ filters, qu
     )
 }
 
-type StatusContextNameAndTitle = Pick<CatalogEntityStatusFields['status']['contexts'][0], 'name' | 'title'>
+type StatusContextNameAndTitle = Pick<ComponentStatusFields['status']['contexts'][0], 'name' | 'title'>
 
 const CatalogHealthTableContent: React.FunctionComponent<{
-    nodes: CatalogEntityHealthFields[]
+    nodes: ComponentHealthFields[]
     useColor: boolean
 }> = ({ nodes, useColor }) => {
     const statusContextNames = useMemo<StatusContextNameAndTitle[]>(() => {
@@ -165,14 +165,14 @@ const CatalogHealthTableContent: React.FunctionComponent<{
 }
 
 const CatalogHealthTableRow: React.FunctionComponent<{
-    node: CatalogEntityHealthFields
+    node: ComponentHealthFields
     statusContextNames: StatusContextNameAndTitle[]
     useColor: boolean
 }> = ({ node, statusContextNames, useColor }) => {
     const score =
         node.status.contexts.length > 0
             ? node.status.contexts.filter(
-                  ({ state }) => state === CatalogEntityStatusState.SUCCESS || state === CatalogEntityStatusState.INFO
+                  ({ state }) => state === ComponentStatusState.SUCCESS || state === ComponentStatusState.INFO
               ).length / node.status.contexts.length
             : 0
     return (
@@ -180,29 +180,29 @@ const CatalogHealthTableRow: React.FunctionComponent<{
             <td>
                 <h3 className={classNames('h6 font-weight-bold mb-0 d-flex align-items-center')}>
                     <Link to={node.url} className={classNames('d-block text-truncate')}>
-                        <CatalogEntityIcon
+                        <ComponentIcon
                             entity={node}
                             className={classNames('icon-inline mr-1 flex-shrink-0 text-muted')}
                         />
                         {node.name}
                     </Link>
-                    <CatalogEntityStateIndicator entity={node} className="ml-1" />
+                    <ComponentStateIndicator entity={node} className="ml-1" />
                 </h3>
             </td>
             <td className={styles.cellEntityOwner}>
                 <EntityOwner owner={node.owner} className="text-nowrap d-flex" blankIfNone={true} />
             </td>
-            <CatalogEntityStatusStateCell
+            <ComponentStatusStateCell
                 state={node.status.state}
                 targetURL={node.url}
                 description={`Combined status for ${node.name}: ${node.status.state.toLowerCase()}`}
             >
                 {Math.round(100 * score)}%
-            </CatalogEntityStatusStateCell>
+            </ComponentStatusStateCell>
             {statusContextNames.map(({ name: statusContextName }) => {
                 const status = node.status.contexts.find(statusContext => statusContext.name === statusContextName)
                 return (
-                    <CatalogEntityStatusStateCell
+                    <ComponentStatusStateCell
                         key={statusContextName}
                         state={status ? status.state : null}
                         targetURL={status?.targetURL || node.url}
@@ -220,15 +220,15 @@ const CatalogHealthTableRow: React.FunctionComponent<{
                                 {status.state.slice(1).toLowerCase()}
                             </small>
                         ) : null}
-                    </CatalogEntityStatusStateCell>
+                    </ComponentStatusStateCell>
                 )
             })}
         </tr>
     )
 }
 
-const CatalogEntityStatusStateCell: React.FunctionComponent<{
-    state: CatalogEntityStatusState | null
+const ComponentStatusStateCell: React.FunctionComponent<{
+    state: ComponentStatusState | null
     targetURL: string
     description?: string | null
 }> = ({ state, targetURL, description, children }) => (
@@ -247,7 +247,7 @@ const CatalogEntityStatusStateCell: React.FunctionComponent<{
     </td>
 )
 
-const CELL_CLASS_NAME_FOR_STATE: Record<CatalogEntityStatusState, string> = {
+const CELL_CLASS_NAME_FOR_STATE: Record<ComponentStatusState, string> = {
     EXPECTED: styles.stateExpected,
     ERROR: styles.stateError,
     FAILURE: styles.stateFailure,

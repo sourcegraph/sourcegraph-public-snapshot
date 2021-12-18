@@ -1,27 +1,27 @@
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
-import { CATALOG_ENTITY_FOR_EXPLORER_FRAGMENT } from './gql'
+import { COMPONENT_FOR_EXPLORER_FRAGMENT } from './gql'
 
-export const CATALOG_ENTITY_RELATIONS_FOR_EXPLORER = gql`
-    query CatalogEntityRelationsForExplorer($entity: ID!, $query: String, $first: Int, $after: String) {
+export const COMPONENT_RELATIONS_FOR_EXPLORER = gql`
+    query ComponentRelationsForExplorer($entity: ID!, $query: String, $first: Int, $after: String) {
         node(id: $entity) {
             __typename
-            ... on CatalogEntity {
+            ... on Component {
                 relatedEntities(query: $query, first: $first, after: $after) {
                     edges {
-                        ...CatalogEntityRelationFields
+                        ...ComponentRelationFields
                     }
                 }
             }
         }
     }
 
-    fragment CatalogEntityRelationFields on CatalogEntityRelatedEntityEdge {
+    fragment ComponentRelationFields on ComponentRelatedEntityEdge {
         type
         node {
-            ...CatalogEntityForExplorerFields
+            ...ComponentForExplorerFields
         }
     }
 
-    ${CATALOG_ENTITY_FOR_EXPLORER_FRAGMENT}
+    ${COMPONENT_FOR_EXPLORER_FRAGMENT}
 `

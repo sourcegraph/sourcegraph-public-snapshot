@@ -11,45 +11,39 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-type catalogComponentResolver struct {
+type componentResolver struct {
 	component catalog.Component
 	db        database.DB
 }
 
-func (catalogComponentResolver) TagCatalogComponentEntity() {}
-
-func (r *catalogComponentResolver) ID() graphql.ID {
-	return relay.MarshalID("CatalogComponent", r.component.Name) // TODO(sqs)
+func (r *componentResolver) ID() graphql.ID {
+	return relay.MarshalID("Component", r.component.Name) // TODO(sqs)
 }
 
-func (r *catalogComponentResolver) Type() gql.CatalogEntityType {
-	return "COMPONENT"
-}
-
-func (r *catalogComponentResolver) Name() string {
+func (r *componentResolver) Name() string {
 	return r.component.Name
 }
 
-func (r *catalogComponentResolver) Description() *string {
+func (r *componentResolver) Description() *string {
 	if r.component.Description == "" {
 		return nil
 	}
 	return &r.component.Description
 }
 
-func (r *catalogComponentResolver) Lifecycle() gql.CatalogEntityLifecycle {
-	return gql.CatalogEntityLifecycle(r.component.Lifecycle)
+func (r *componentResolver) Lifecycle() gql.ComponentLifecycle {
+	return gql.ComponentLifecycle(r.component.Lifecycle)
 }
 
-func (r *catalogComponentResolver) URL() string {
+func (r *componentResolver) URL() string {
 	return "/catalog/components/" + string(r.Name())
 }
 
-func (r *catalogComponentResolver) Kind() gql.CatalogComponentKind {
-	return gql.CatalogComponentKind(r.component.Kind)
+func (r *componentResolver) Kind() gql.ComponentKind {
+	return gql.ComponentKind(r.component.Kind)
 }
 
-func (r *catalogComponentResolver) sourceRepoResolver(ctx context.Context) (*gql.RepositoryResolver, error) {
+func (r *componentResolver) sourceRepoResolver(ctx context.Context) (*gql.RepositoryResolver, error) {
 	// 🚨 SECURITY: database.Repos.Get uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
 	repo, err := r.db.Repos().GetByName(ctx, r.component.SourceRepo)
@@ -60,7 +54,7 @@ func (r *catalogComponentResolver) sourceRepoResolver(ctx context.Context) (*gql
 	return gql.NewRepositoryResolver(r.db, repo), nil
 }
 
-func (r *catalogComponentResolver) sourceCommitResolver(ctx context.Context) (*gql.GitCommitResolver, error) {
+func (r *componentResolver) sourceCommitResolver(ctx context.Context) (*gql.GitCommitResolver, error) {
 	repoResolver, err := r.sourceRepoResolver(ctx)
 	if err != nil {
 		return nil, err
@@ -68,7 +62,7 @@ func (r *catalogComponentResolver) sourceCommitResolver(ctx context.Context) (*g
 	return gql.NewGitCommitResolver(r.db, repoResolver, api.CommitID(r.component.SourceCommit), nil), nil
 }
 
-func (r *catalogComponentResolver) SourceLocations(ctx context.Context) ([]*gql.GitTreeEntryResolver, error) {
+func (r *componentResolver) SourceLocations(ctx context.Context) ([]*gql.GitTreeEntryResolver, error) {
 	commitResolver, err := r.sourceCommitResolver(ctx)
 	if err != nil {
 		return nil, err

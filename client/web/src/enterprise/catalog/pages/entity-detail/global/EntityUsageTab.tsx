@@ -12,19 +12,19 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
-import { CatalogComponentUsageFields } from '../../../../../graphql-operations'
+import { ComponentUsageFields } from '../../../../../graphql-operations'
 import { fetchHighlightedFileLineRanges } from '../../../../../repo/backend'
-import { CatalogEntityIcon } from '../../../components/CatalogEntityIcon'
+import { ComponentIcon } from '../../../components/ComponentIcon'
 
 import { PersonList } from './PersonList'
 
 interface Props extends SettingsCascadeProps, TelemetryProps {
-    catalogComponent: CatalogComponentUsageFields
+    component: ComponentUsageFields
     className?: string
 }
 
 export const EntityUsageTab: React.FunctionComponent<Props> = ({
-    catalogComponent: { usage },
+    component: { usage },
     className,
     settingsCascade,
     telemetryService,
@@ -90,7 +90,7 @@ export const EntityUsageTab: React.FunctionComponent<Props> = ({
                     {componentEdges.map(edge => (
                         <li key={edge.node.id} className={classNames('list-group-item')}>
                             <Link to={edge.node.url} className="d-flex align-items-center text-body">
-                                <CatalogEntityIcon entity={edge.node} className="icon-inline text-muted mr-2" />
+                                <ComponentIcon entity={edge.node} className="icon-inline text-muted mr-2" />
                                 {edge.node.name}
                             </Link>
                         </li>

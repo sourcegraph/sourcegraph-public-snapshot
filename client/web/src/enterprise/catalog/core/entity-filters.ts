@@ -2,30 +2,30 @@ import * as H from 'history'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
-import { CatalogEntityType } from '@sourcegraph/shared/src/graphql/schema'
+import { ComponentType } from '@sourcegraph/shared/src/graphql/schema'
 
-export interface CatalogEntityFilters {
+export interface ComponentFilters {
     query: string
 }
 
-export interface CatalogEntityFiltersQueryFields {
-    is: CatalogEntityType | undefined
+export interface ComponentFiltersQueryFields {
+    is: ComponentType | undefined
 }
 
-export interface CatalogEntityFiltersProps {
-    filters: CatalogEntityFilters
-    filtersQueryParsed: CatalogEntityFiltersQueryFields
-    onFiltersChange: (newValue: CatalogEntityFilters) => void
+export interface ComponentFiltersProps {
+    filters: ComponentFilters
+    filtersQueryParsed: ComponentFiltersQueryFields
+    onFiltersChange: (newValue: ComponentFilters) => void
     onFiltersQueryFieldChange: <
-        F extends keyof CatalogEntityFiltersQueryFields,
-        T extends CatalogEntityFiltersQueryFields[F]
+        F extends keyof ComponentFiltersQueryFields,
+        T extends ComponentFiltersQueryFields[F]
     >(
         field: F,
         newValue: T
     ) => void
 }
 
-export const useCatalogEntityFilters = (defaultQuery: string): CatalogEntityFiltersProps => {
+export const useComponentFilters = (defaultQuery: string): ComponentFiltersProps => {
     const history = useHistory()
     const location = useLocation()
 
@@ -35,7 +35,7 @@ export const useCatalogEntityFilters = (defaultQuery: string): CatalogEntityFilt
     }, [defaultQuery, location.search])
 
     const onFiltersChange = useCallback(
-        (newValue: CatalogEntityFilters) => {
+        (newValue: ComponentFilters) => {
             history.push({
                 ...location,
                 search: urlSearchParametersFromFilters(newValue, new URLSearchParams(location.search)).toString(),
@@ -54,7 +54,7 @@ export const useCatalogEntityFilters = (defaultQuery: string): CatalogEntityFilt
 
     const filtersQueryParsed = useMemo(() => parseFiltersQuery(filters.query), [filters.query])
 
-    const onFiltersQueryFieldChange = useCallback<CatalogEntityFiltersProps['onFiltersQueryFieldChange']>(
+    const onFiltersQueryFieldChange = useCallback<ComponentFiltersProps['onFiltersQueryFieldChange']>(
         (field, newValue) => {
             onFiltersChange({ ...filters, query: queryWithField(filters.query, field, newValue) })
         },
@@ -64,14 +64,14 @@ export const useCatalogEntityFilters = (defaultQuery: string): CatalogEntityFilt
     return { filters, filtersQueryParsed, onFiltersChange, onFiltersQueryFieldChange }
 }
 
-function filtersFromLocation(locationSearch: H.Location['search']): Partial<CatalogEntityFilters> {
+function filtersFromLocation(locationSearch: H.Location['search']): Partial<ComponentFilters> {
     const parameters = new URLSearchParams(locationSearch)
     return {
         query: parameters.get('q') ?? undefined,
     }
 }
 
-function urlSearchParametersFromFilters(filters: CatalogEntityFilters, base: URLSearchParams): URLSearchParams {
+function urlSearchParametersFromFilters(filters: ComponentFilters, base: URLSearchParams): URLSearchParams {
     const parameters = new URLSearchParams(base)
 
     if (filters.query !== undefined) {
@@ -83,16 +83,16 @@ function urlSearchParametersFromFilters(filters: CatalogEntityFilters, base: URL
     return parameters
 }
 
-function parseFiltersQuery(query: string): CatalogEntityFiltersQueryFields {
-    const parsed: CatalogEntityFiltersQueryFields = {
+function parseFiltersQuery(query: string): ComponentFiltersQueryFields {
+    const parsed: ComponentFiltersQueryFields = {
         is: undefined,
     }
 
     for (const part of query.split(/\s+/g)) {
-        for (const field of Object.keys(parsed) as (keyof CatalogEntityFiltersQueryFields)[]) {
+        for (const field of Object.keys(parsed) as (keyof ComponentFiltersQueryFields)[]) {
             const prefix = `${field}:`
             if (part.startsWith(prefix)) {
-                parsed[field] = part.slice(prefix.length).toUpperCase() as CatalogEntityFiltersQueryFields[typeof field]
+                parsed[field] = part.slice(prefix.length).toUpperCase() as ComponentFiltersQueryFields[typeof field]
             }
         }
     }
@@ -100,7 +100,7 @@ function parseFiltersQuery(query: string): CatalogEntityFiltersQueryFields {
     return parsed
 }
 
-function queryWithField<F extends keyof CatalogEntityFiltersQueryFields, T extends CatalogEntityFiltersQueryFields[F]>(
+function queryWithField<F extends keyof ComponentFiltersQueryFields, T extends ComponentFiltersQueryFields[F]>(
     query: string,
     field: F,
     newValue: T

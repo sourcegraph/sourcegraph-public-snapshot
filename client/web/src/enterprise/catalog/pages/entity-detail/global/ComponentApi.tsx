@@ -10,16 +10,16 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { CatalogComponentAPIFields, SymbolFields } from '../../../../../graphql-operations'
+import { ComponentAPIFields, SymbolFields } from '../../../../../graphql-operations'
 import { fetchHighlightedFileLineRanges } from '../../../../../repo/backend'
 
 interface Props extends SettingsCascadeProps, TelemetryProps {
-    catalogComponent: CatalogComponentAPIFields
+    component: ComponentAPIFields
     className?: string
 }
 
 export const ComponentAPI: React.FunctionComponent<Props> = ({
-    catalogComponent: { api },
+    component: { api },
     className,
     settingsCascade,
     telemetryService,

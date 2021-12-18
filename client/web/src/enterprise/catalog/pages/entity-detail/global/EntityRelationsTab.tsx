@@ -1,12 +1,12 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { CatalogEntityDetailFields } from '../../../../../graphql-operations'
+import { ComponentStateDetailFields } from '../../../../../graphql-operations'
 
 import { EntityCatalogExplorer } from './EntityCatalogExplorer'
 
 interface Props {
-    entity: Pick<CatalogEntityDetailFields, 'id'>
+    entity: Pick<ComponentStateDetailFields, 'id'>
     className?: string
 }
 

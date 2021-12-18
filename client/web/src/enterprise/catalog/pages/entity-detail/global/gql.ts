@@ -2,10 +2,10 @@ import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
 import { gitCommitFragment } from '../../../../../repo/commits/RepositoryCommitsPage'
-import { CATALOG_ENTITY_OWNER_FRAGMENT } from '../../../components/entity-owner/gql'
+import { COMPONENT_OWNER_FRAGMENT } from '../../../components/entity-owner/gql'
 
-const CATALOG_ENTITY_WHO_KNOWS_FRAGMENT = gql`
-    fragment CatalogEntityWhoKnowsFields on CatalogEntity {
+const COMPONENT_WHO_KNOWS_FRAGMENT = gql`
+    fragment ComponentWhoKnowsFields on Component {
         whoKnows {
             node {
                 ...PersonLinkFields
@@ -18,8 +18,8 @@ const CATALOG_ENTITY_WHO_KNOWS_FRAGMENT = gql`
     ${personLinkFieldsFragment}
 `
 
-const CATALOG_ENTITY_CODE_OWNERS_FRAGMENT = gql`
-    fragment CatalogEntityCodeOwnersFields on CatalogEntity {
+const COMPONENT_CODE_OWNERS_FRAGMENT = gql`
+    fragment ComponentCodeOwnersFields on Component {
         codeOwners {
             node {
                 ...PersonLinkFields
@@ -32,8 +32,8 @@ const CATALOG_ENTITY_CODE_OWNERS_FRAGMENT = gql`
     ${personLinkFieldsFragment}
 `
 
-const CATALOG_ENTITY_STATUS_FRAGMENT = gql`
-    fragment CatalogEntityStatusFields on CatalogEntity {
+const COMPONENT_STATUS_FRAGMENT = gql`
+    fragment ComponentStatusFields on Component {
         status {
             id
             contexts {
@@ -48,8 +48,8 @@ const CATALOG_ENTITY_STATUS_FRAGMENT = gql`
     }
 `
 
-const CATALOG_COMPONENT_DOCUMENTATION_FRAGMENT = gql`
-    fragment CatalogComponentDocumentationFields on CatalogComponent {
+const COMPONENT_DOCUMENTATION_FRAGMENT = gql`
+    fragment ComponentDocumentationFields on Component {
         readme {
             name
             richHTML
@@ -58,8 +58,8 @@ const CATALOG_COMPONENT_DOCUMENTATION_FRAGMENT = gql`
     }
 `
 
-const CATALOG_COMPONENT_SOURCES_FRAGMENT = gql`
-    fragment CatalogComponentSourcesFields on CatalogComponent {
+const COMPONENT_SOURCES_FRAGMENT = gql`
+    fragment ComponentSourcesFields on Component {
         sourceLocations {
             path
             isDirectory
@@ -87,8 +87,8 @@ const CATALOG_COMPONENT_SOURCES_FRAGMENT = gql`
     ${gitCommitFragment}
 `
 
-const CATALOG_COMPONENT_CHANGES_FRAGMENT = gql`
-    fragment CatalogComponentChangesFields on CatalogComponent {
+const COMPONENT_CHANGES_FRAGMENT = gql`
+    fragment ComponentChangesFields on Component {
         commits(first: 10) {
             nodes {
                 ...GitCommitFields
@@ -98,8 +98,8 @@ const CATALOG_COMPONENT_CHANGES_FRAGMENT = gql`
     ${gitCommitFragment}
 `
 
-const CATALOG_COMPONENT_AUTHORS_FRAGMENT = gql`
-    fragment CatalogComponentAuthorsFields on CatalogComponent {
+const COMPONENT_AUTHORS_FRAGMENT = gql`
+    fragment ComponentAuthorsFields on Component {
         authors {
             person {
                 ...PersonLinkFields
@@ -118,8 +118,8 @@ const CATALOG_COMPONENT_AUTHORS_FRAGMENT = gql`
     ${personLinkFieldsFragment}
 `
 
-const CATALOG_COMPONENT_USAGE_FRAGMENT = gql`
-    fragment CatalogComponentUsageFields on CatalogComponent {
+const COMPONENT_USAGE_FRAGMENT = gql`
+    fragment ComponentUsageFields on Component {
         usage {
             locations {
                 nodes {
@@ -168,8 +168,8 @@ const CATALOG_COMPONENT_USAGE_FRAGMENT = gql`
     }
 `
 
-const CATALOG_COMPONENT_API_FRAGMENT = gql`
-    fragment CatalogComponentAPIFields on CatalogComponent {
+const COMPONENT_API_FRAGMENT = gql`
+    fragment ComponentAPIFields on Component {
         api {
             symbols {
                 __typename
@@ -223,46 +223,43 @@ const CATALOG_COMPONENT_API_FRAGMENT = gql`
     }
 `
 
-export const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
-    fragment CatalogEntityDetailFields on CatalogEntity {
+export const COMPONENT_DETAIL_FRAGMENT = gql`
+    fragment ComponentStateDetailFields on Component {
         __typename
         id
-        type
         name
+        kind
         description
+        lifecycle
         url
-        ...CatalogEntityOwnerFields
-        ...CatalogEntityStatusFields
-        ...CatalogEntityCodeOwnersFields
-        ...CatalogEntityWhoKnowsFields
-        ... on CatalogComponent {
-            kind
-            lifecycle
-            ...CatalogComponentDocumentationFields
-            ...CatalogComponentSourcesFields
-            ...CatalogComponentChangesFields
-            ...CatalogComponentAuthorsFields
-            ...CatalogComponentUsageFields
-            ...CatalogComponentAPIFields
-        }
+        ...ComponentOwnerFields
+        ...ComponentStatusFields
+        ...ComponentCodeOwnersFields
+        ...ComponentWhoKnowsFields
+        ...ComponentDocumentationFields
+        ...ComponentSourcesFields
+        ...ComponentChangesFields
+        ...ComponentAuthorsFields
+        ...ComponentUsageFields
+        ...ComponentAPIFields
     }
-    ${CATALOG_ENTITY_WHO_KNOWS_FRAGMENT}
-    ${CATALOG_ENTITY_OWNER_FRAGMENT}
-    ${CATALOG_ENTITY_STATUS_FRAGMENT}
-    ${CATALOG_ENTITY_CODE_OWNERS_FRAGMENT}
-    ${CATALOG_COMPONENT_DOCUMENTATION_FRAGMENT}
-    ${CATALOG_COMPONENT_SOURCES_FRAGMENT}
-    ${CATALOG_COMPONENT_CHANGES_FRAGMENT}
-    ${CATALOG_COMPONENT_AUTHORS_FRAGMENT}
-    ${CATALOG_COMPONENT_USAGE_FRAGMENT}
-    ${CATALOG_COMPONENT_API_FRAGMENT}
+    ${COMPONENT_WHO_KNOWS_FRAGMENT}
+    ${COMPONENT_OWNER_FRAGMENT}
+    ${COMPONENT_STATUS_FRAGMENT}
+    ${COMPONENT_CODE_OWNERS_FRAGMENT}
+    ${COMPONENT_DOCUMENTATION_FRAGMENT}
+    ${COMPONENT_SOURCES_FRAGMENT}
+    ${COMPONENT_CHANGES_FRAGMENT}
+    ${COMPONENT_AUTHORS_FRAGMENT}
+    ${COMPONENT_USAGE_FRAGMENT}
+    ${COMPONENT_API_FRAGMENT}
 `
 
-export const CATALOG_ENTITY_BY_NAME = gql`
-    query CatalogEntityByName($type: CatalogEntityType!, $name: String!) {
-        catalogEntity(type: $type, name: $name) {
-            ...CatalogEntityDetailFields
+export const COMPONENT_BY_NAME = gql`
+    query ComponentByName($name: String!) {
+        component(name: $name) {
+            ...ComponentStateDetailFields
         }
     }
-    ${CATALOG_ENTITY_DETAIL_FRAGMENT}
+    ${COMPONENT_DETAIL_FRAGMENT}
 `

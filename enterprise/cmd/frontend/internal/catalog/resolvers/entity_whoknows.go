@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func (r *catalogComponentResolver) WhoKnows(ctx context.Context, args *gql.WhoKnowsArgs) ([]gql.WhoKnowsEdgeResolver, error) {
+func (r *componentResolver) WhoKnows(ctx context.Context, args *gql.WhoKnowsArgs) ([]gql.WhoKnowsEdgeResolver, error) {
 	authors, err := r.Authors(ctx)
 	if err != nil {
 		return nil, err
@@ -22,11 +22,11 @@ func (r *catalogComponentResolver) WhoKnows(ctx context.Context, args *gql.WhoKn
 		return nil, err
 	}
 
-	usage, err := r.Usage(ctx, &gql.CatalogComponentUsageArgs{})
+	usage, err := r.Usage(ctx, &gql.ComponentUsageArgs{})
 	if err != nil {
 		return nil, err
 	}
-	var callers []gql.CatalogComponentUsedByPersonEdgeResolver
+	var callers []gql.ComponentUsedByPersonEdgeResolver
 	if usage != nil {
 		callers, err = usage.People(ctx)
 		if err != nil {
@@ -44,7 +44,7 @@ func (r *catalogComponentResolver) WhoKnows(ctx context.Context, args *gql.WhoKn
 				e = &whoKnowsEdgeResolver{person: author.Person(), db: r.db}
 				byEmail[email] = e
 			}
-			e.authorEdge = author.(*catalogComponentAuthorEdgeResolver)
+			e.authorEdge = author.(*componentAuthorEdgeResolver)
 		}
 	}
 
@@ -56,7 +56,7 @@ func (r *catalogComponentResolver) WhoKnows(ctx context.Context, args *gql.WhoKn
 				e = &whoKnowsEdgeResolver{person: codeOwner.Node(), db: r.db}
 				byEmail[email] = e
 			}
-			e.codeOwnerEdge = codeOwner.(*catalogEntityCodeOwnerEdgeResolver)
+			e.codeOwnerEdge = codeOwner.(*componentCodeOwnerEdgeResolver)
 		}
 	}
 
@@ -68,7 +68,7 @@ func (r *catalogComponentResolver) WhoKnows(ctx context.Context, args *gql.WhoKn
 			e = &whoKnowsEdgeResolver{person: caller.Node(), db: r.db}
 			byEmail[email] = e
 		}
-		e.callerEdge = caller.(*catalogComponentUsedByPersonEdgeResolver)
+		e.callerEdge = caller.(*componentUsedByPersonEdgeResolver)
 
 		if e.callerEdge.data.LineCount > maxCalls {
 			maxCalls = e.callerEdge.data.LineCount
@@ -192,9 +192,9 @@ type whoKnowsEdgeResolver struct {
 	reasons []string
 	score   float64
 
-	authorEdge    *catalogComponentAuthorEdgeResolver
-	codeOwnerEdge *catalogEntityCodeOwnerEdgeResolver
-	callerEdge    *catalogComponentUsedByPersonEdgeResolver
+	authorEdge    *componentAuthorEdgeResolver
+	codeOwnerEdge *componentCodeOwnerEdgeResolver
+	callerEdge    *componentUsedByPersonEdgeResolver
 
 	db database.DB
 }

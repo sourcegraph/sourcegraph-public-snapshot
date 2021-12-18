@@ -24,7 +24,7 @@ func parseQuery(db database.DB, q string) *queryMatcher {
 		switch {
 		case strings.HasPrefix(part, relatedToEntityPrefix):
 			relatedToEntityID := graphql.ID(strings.TrimPrefix(part, relatedToEntityPrefix))
-			match.relatedToEntity = entityByID(db, relatedToEntityID)
+			match.relatedToEntity = componentByID(db, relatedToEntityID)
 
 		case strings.HasPrefix(part, excludeEntityPrefix):
 			match.excludeEntity = graphql.ID(strings.TrimPrefix(part, excludeEntityPrefix))
@@ -38,7 +38,7 @@ func parseQuery(db database.DB, q string) *queryMatcher {
 			}
 
 		case strings.HasPrefix(part, isPrefix):
-			match.isType = gql.CatalogEntityType(strings.ToUpper(strings.TrimPrefix(part, isPrefix)))
+			match.isKind = gql.ComponentKind(strings.ToUpper(strings.TrimPrefix(part, isPrefix)))
 
 		default:
 			match.literal += part
@@ -50,17 +50,17 @@ func parseQuery(db database.DB, q string) *queryMatcher {
 
 type queryMatcher struct {
 	literal         string
-	relatedToEntity *catalogComponentResolver
+	relatedToEntity *componentResolver
 	excludeEntity   graphql.ID
 	groups          []gql.GroupResolver
-	isType          gql.CatalogEntityType
+	isKind          gql.ComponentKind
 
 	once                     sync.Once
 	relatedEntityNamesCached []string
 }
 
-func (q *queryMatcher) matchType(typ gql.CatalogEntityType) bool {
-	return q.isType == "" || q.isType == typ
+func (q *queryMatcher) matchKind(kind gql.ComponentKind) bool {
+	return q.isKind == "" || q.isKind == kind
 }
 
 func (q *queryMatcher) relatedEntityNames() []string {
@@ -83,10 +83,10 @@ func (q *queryMatcher) relatedEntityNames() []string {
 	return q.relatedEntityNamesCached
 }
 
-func (q *queryMatcher) matchNode(c *catalogComponentResolver) bool {
+func (q *queryMatcher) matchNode(c *componentResolver) bool {
 	isLiteralMatch := strings.Contains(c.Name(), q.literal)
 
-	isInAnyGroup := func(c *catalogComponentResolver, groups []gql.GroupResolver) bool {
+	isInAnyGroup := func(c *componentResolver, groups []gql.GroupResolver) bool {
 		for _, g := range groups {
 			if c.component.OwnedBy == g.Name() {
 				return true
@@ -94,7 +94,7 @@ func (q *queryMatcher) matchNode(c *catalogComponentResolver) bool {
 		}
 		return false
 	}
-	isRelatedToEntity := func(c *catalogComponentResolver) bool {
+	isRelatedToEntity := func(c *componentResolver) bool {
 		if c.ID() == q.relatedToEntity.ID() {
 			return true
 		}
@@ -107,20 +107,16 @@ func (q *queryMatcher) matchNode(c *catalogComponentResolver) bool {
 	}
 
 	return isLiteralMatch &&
-		q.matchType("COMPONENT") &&
+		q.matchKind(c.Kind()) &&
 		(q.relatedToEntity == nil || isRelatedToEntity(c)) &&
 		(c.ID() != q.excludeEntity) &&
 		(len(q.groups) == 0 || isInAnyGroup(c, q.groups))
 }
 
-func (q *queryMatcher) matchEdge(e *catalogEntityRelationEdgeResolver) bool {
+func (q *queryMatcher) matchEdge(e *componentRelationEdgeResolver) bool {
 	if q.relatedToEntity != nil && e.outNode.ID() != q.relatedToEntity.ID() && e.inNode.ID() != q.relatedToEntity.ID() {
 		return false
 	}
 
 	return true
-}
-
-func (q *queryMatcher) matchPackage(p catalog.Package) bool {
-	return q.matchType("PACKAGE") && strings.Contains(p.Name, q.literal)
 }

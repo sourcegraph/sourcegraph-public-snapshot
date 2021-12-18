@@ -13,32 +13,22 @@ import (
 
 // CatalogRootResolver is the root resolver.
 type CatalogRootResolver interface {
-	Catalog(context.Context) (CatalogResolver, error)
-	CatalogEntity(context.Context, *CatalogEntityArgs) (*CatalogEntityResolver, error)
-
+	Component(context.Context, *ComponentArgs) (ComponentResolver, error)
+	Components(context.Context, *CatalogComponentsArgs) (ComponentConnectionResolver, error)
+	Graph(context.Context, *CatalogGraphArgs) (CatalogGraphResolver, error)
 	Groups() []GroupResolver
 	Group(context.Context, *GroupArgs) (GroupResolver, error)
 
-	GitTreeEntryCatalogEntities(context.Context, *GitTreeEntryResolver) ([]*CatalogEntityResolver, error)
+	GitTreeEntryComponents(context.Context, *GitTreeEntryResolver) ([]ComponentResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
-type CatalogEntityArgs struct {
-	Type CatalogEntityType
+type ComponentArgs struct {
 	Name string
 }
 
-type GroupArgs struct {
-	Name string
-}
-
-type CatalogResolver interface {
-	Entities(context.Context, *CatalogEntitiesArgs) (CatalogEntityConnectionResolver, error)
-	Graph(context.Context, *CatalogGraphArgs) (CatalogGraphResolver, error)
-}
-
-type CatalogEntitiesArgs struct {
+type CatalogComponentsArgs struct {
 	Query *string
 	First *int32
 	After *string
@@ -48,55 +38,31 @@ type CatalogGraphArgs struct {
 	Query *string
 }
 
+type GroupArgs struct {
+	Name string
+}
+
 type CatalogGraphResolver interface {
-	Nodes() []*CatalogEntityResolver
-	Edges() []CatalogEntityRelationEdgeResolver
+	Nodes() []ComponentResolver
+	Edges() []ComponentRelationEdgeResolver
 }
 
-type CatalogEntityType string
+type ComponentLifecycle string
 
-type CatalogEntityLifecycle string
-
-type CatalogEntity interface {
-	Node
-	Type() CatalogEntityType
-	Name() string
-	Description() *string
-	Owner(context.Context) (*EntityOwnerResolver, error)
-	URL() string
-	Status(context.Context) (CatalogEntityStatusResolver, error)
-	CodeOwners(context.Context) (*[]CatalogEntityCodeOwnerEdgeResolver, error)
-	RelatedEntities(context.Context, *CatalogEntityRelatedEntitiesArgs) (CatalogEntityRelatedEntityConnectionResolver, error)
-	WhoKnows(context.Context, *WhoKnowsArgs) ([]WhoKnowsEdgeResolver, error)
-}
-
-type CatalogEntityRelatedEntitiesArgs struct {
+type ComponentRelatedEntitiesArgs struct {
+	// TODO(sqs): renamed
 	Query *string
 	First *int32
 	After *string
 }
 
-type CatalogEntityResolver struct {
-	CatalogEntity
-}
-
-func (r *CatalogEntityResolver) ToCatalogComponent() (CatalogComponentResolver, bool) {
-	e, ok := r.CatalogEntity.(CatalogComponentResolver)
-	return e, ok
-}
-
-func (r *CatalogEntityResolver) ToPackage() (PackageResolver, bool) {
-	e, ok := r.CatalogEntity.(PackageResolver)
-	return e, ok
-}
-
-type EntityOwnerResolver struct {
+type ComponentOwnerResolver struct {
 	Person *PersonResolver
 	Group  GroupResolver
 }
 
-func (r *EntityOwnerResolver) ToPerson() (*PersonResolver, bool) { return r.Person, r.Person != nil }
-func (r *EntityOwnerResolver) ToGroup() (GroupResolver, bool)    { return r.Group, r.Group != nil }
+func (r *ComponentOwnerResolver) ToPerson() (*PersonResolver, bool) { return r.Person, r.Person != nil }
+func (r *ComponentOwnerResolver) ToGroup() (GroupResolver, bool)    { return r.Group, r.Group != nil }
 
 type GroupResolver interface {
 	Node
@@ -109,41 +75,41 @@ type GroupResolver interface {
 	ChildGroups() []GroupResolver
 	DescendentGroups() []GroupResolver
 	Members() []*PersonResolver
-	OwnedEntities() []*CatalogEntityResolver
+	OwnedEntities() []ComponentResolver
 }
 
-type CatalogEntityStatusResolver interface {
+type ComponentStatusResolver interface {
 	ID() graphql.ID
-	Contexts() []CatalogEntityStatusContextResolver
-	State() CatalogEntityStatusState
+	Contexts() []ComponentStatusContextResolver
+	State() ComponentStatusState
 }
 
-type CatalogEntityStatusState string
+type ComponentStatusState string
 
-type CatalogEntityStatusContextResolver interface {
+type ComponentStatusContextResolver interface {
 	ID() graphql.ID
 	Name() string
-	State() CatalogEntityStatusState
+	State() ComponentStatusState
 	Title() string
 	Description() *string
 	TargetURL() *string
 }
 
-type CatalogEntityRelationType string
+type ComponentRelationType string
 
-type CatalogEntityRelationEdgeResolver interface {
-	Type() CatalogEntityRelationType
-	OutNode() *CatalogEntityResolver
-	InNode() *CatalogEntityResolver
+type ComponentRelationEdgeResolver interface {
+	Type() ComponentRelationType
+	OutNode() ComponentResolver
+	InNode() ComponentResolver
 }
 
-type CatalogEntityRelatedEntityConnectionResolver interface {
-	Edges() []CatalogEntityRelatedEntityEdgeResolver
+type ComponentRelatedEntityConnectionResolver interface {
+	Edges() []ComponentRelatedEntityEdgeResolver
 }
 
-type CatalogEntityRelatedEntityEdgeResolver interface {
-	Node() *CatalogEntityResolver
-	Type() CatalogEntityRelationType
+type ComponentRelatedEntityEdgeResolver interface {
+	Node() ComponentResolver
+	Type() ComponentRelationType
 }
 
 type WhoKnowsArgs struct {
@@ -156,84 +122,93 @@ type WhoKnowsEdgeResolver interface {
 	Score() float64
 }
 
-type CatalogEntityConnectionResolver interface {
-	Nodes(context.Context) ([]*CatalogEntityResolver, error)
+type ComponentConnectionResolver interface {
+	Nodes(context.Context) ([]ComponentResolver, error)
 	TotalCount(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type CatalogComponentResolver interface {
-	CatalogEntity
-	TagCatalogComponentEntity()
+type ComponentResolver interface {
+	ID() graphql.ID
+	Name() string
+	Description() *string
+	Kind() ComponentKind
+	Lifecycle() ComponentLifecycle
+	Owner(context.Context) (*ComponentOwnerResolver, error)
+	URL() string
+	Status(context.Context) (ComponentStatusResolver, error)
 
-	Kind() CatalogComponentKind
-	Lifecycle() CatalogEntityLifecycle
+	CodeOwners(context.Context) (*[]ComponentCodeOwnerEdgeResolver, error)
+	RelatedEntities(context.Context, *ComponentRelatedEntitiesArgs) (ComponentRelatedEntityConnectionResolver, error)
+	WhoKnows(context.Context, *WhoKnowsArgs) ([]WhoKnowsEdgeResolver, error)
 
 	Readme(context.Context) (FileResolver, error)
 	SourceLocations(context.Context) ([]*GitTreeEntryResolver, error)
 	Commits(context.Context, *graphqlutil.ConnectionArgs) (GitCommitConnectionResolver, error)
-	Authors(context.Context) (*[]CatalogComponentAuthorEdgeResolver, error)
-	Usage(context.Context, *CatalogComponentUsageArgs) (CatalogComponentUsageResolver, error)
-	API(context.Context, *CatalogComponentAPIArgs) (CatalogComponentAPIResolver, error)
+	Authors(context.Context) (*[]ComponentAuthorEdgeResolver, error)
+	Usage(context.Context, *ComponentUsageArgs) (ComponentUsageResolver, error)
+	API(context.Context, *ComponentAPIArgs) (ComponentAPIResolver, error)
 }
 
-type CatalogComponentKind string
+type ComponentKind string
 
-type CatalogComponentAuthorEdgeResolver interface {
-	Component() CatalogComponentResolver
+type ComponentAuthorEdgeResolver interface {
+	Component() ComponentResolver
 	Person() *PersonResolver
 	AuthoredLineCount() int32
 	AuthoredLineProportion() float64
 	LastCommit(context.Context) (*GitCommitResolver, error)
 }
 
-type CatalogEntityCodeOwnerEdgeResolver interface {
+type ComponentCodeOwnerEdgeResolver interface {
 	Node() *PersonResolver
 	FileCount() int32
 	FileProportion() float64
 }
 
-type CatalogComponentUsageArgs struct {
+type ComponentUsageArgs struct {
 	Query *string
 }
 
-type CatalogComponentUsageResolver interface {
+type ComponentUsageResolver interface {
 	Locations(context.Context) (LocationConnectionResolver, error)
-	People(context.Context) ([]CatalogComponentUsedByPersonEdgeResolver, error)
-	Components(context.Context) ([]CatalogComponentUsedByComponentEdgeResolver, error)
+	People(context.Context) ([]ComponentUsedByPersonEdgeResolver, error)
+	Components(context.Context) ([]ComponentUsedByComponentEdgeResolver, error)
 }
 
-type CatalogComponentUsedByPersonEdgeResolver interface {
+type ComponentUsedByPersonEdgeResolver interface {
 	Node() *PersonResolver
 	Locations(context.Context) (LocationConnectionResolver, error)
 	AuthoredLineCount() int32
 	LastCommit(context.Context) (*GitCommitResolver, error)
 }
 
-type CatalogComponentUsedByComponentEdgeResolver interface {
-	Node() CatalogComponentResolver
+type ComponentUsedByComponentEdgeResolver interface {
+	Node() ComponentResolver
 	Locations(context.Context) (LocationConnectionResolver, error)
 }
 
-type CatalogComponentAPIArgs struct {
+type ComponentAPIArgs struct {
 	Query *string
 }
 
-type CatalogComponentAPIResolver interface {
-	Symbols(context.Context, *CatalogComponentAPISymbolsArgs) (*SymbolConnectionResolver, error)
+type ComponentAPIResolver interface {
+	Symbols(context.Context, *ComponentAPISymbolsArgs) (*SymbolConnectionResolver, error)
 	Schema(context.Context) (FileResolver, error)
 }
 
-type CatalogComponentAPISymbolsArgs struct {
+type ComponentAPISymbolsArgs struct {
 	graphqlutil.ConnectionArgs
 	Query *string
 }
 
 type PackageResolver interface {
-	CatalogEntity
+	ID() graphql.ID
+	Name() string
+
 	TagPackageEntity()
 }
 
-func (r *GitTreeEntryResolver) CatalogEntities(ctx context.Context) ([]*CatalogEntityResolver, error) {
-	return EnterpriseResolvers.catalogRootResolver.GitTreeEntryCatalogEntities(ctx, r)
+func (r *GitTreeEntryResolver) Components(ctx context.Context) ([]ComponentResolver, error) {
+	return EnterpriseResolvers.catalogRootResolver.GitTreeEntryComponents(ctx, r)
 }

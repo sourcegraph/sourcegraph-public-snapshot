@@ -5,12 +5,12 @@ import { Link } from 'react-router-dom'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
-import { CatalogEntityStatusFields, CatalogEntityStatusState } from '../../../../../graphql-operations'
+import { ComponentStatusFields, ComponentStatusState } from '../../../../../graphql-operations'
 
 import styles from './OverviewStatusContextItem.module.scss'
 
 interface Props {
-    statusContext: Omit<CatalogEntityStatusFields['status']['contexts'][0], 'id'>
+    statusContext: Omit<ComponentStatusFields['status']['contexts'][0], 'id'>
     className?: string
 }
 
@@ -54,7 +54,7 @@ export const OverviewStatusContextItem: React.FunctionComponent<Props> = ({ stat
 }
 
 export const STATE_TO_COLOR: Record<
-    CatalogEntityStatusState,
+    ComponentStatusState,
     'primary' | 'success' | 'warning' | 'danger' | 'info' | 'secondary'
 > = {
     PENDING: 'secondary',

@@ -6,12 +6,12 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { Timestamp } from '../../../../../components/time/Timestamp'
 import {
-    CatalogComponentAuthorsFields,
-    CatalogComponentUsageFields,
-    CatalogEntityDetailFields,
-    CatalogEntityCodeOwnersFields,
-    CatalogEntityStatusFields,
-    CatalogEntityOwnerFields,
+    ComponentAuthorsFields,
+    ComponentUsageFields,
+    ComponentStateDetailFields,
+    ComponentCodeOwnersFields,
+    ComponentStatusFields,
+    ComponentOwnerFields,
 } from '../../../../../graphql-operations'
 import { PersonLink } from '../../../../../person/PersonLink'
 import { EntityOwner } from '../../../components/entity-owner/EntityOwner'
@@ -19,7 +19,7 @@ import { EntityOwner } from '../../../components/entity-owner/EntityOwner'
 import { OverviewStatusContextItem } from './OverviewStatusContextItem'
 
 interface Props {
-    entity: CatalogEntityDetailFields
+    entity: ComponentStateDetailFields
     itemClassName?: string
 }
 
@@ -81,8 +81,8 @@ export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ entity,
 )
 
 const OwnerStatusContext: React.FunctionComponent<{
-    entity: CatalogEntityOwnerFields
-    statusContext: CatalogEntityStatusFields['status']['contexts'][0]
+    entity: ComponentOwnerFields
+    statusContext: ComponentStatusFields['status']['contexts'][0]
     className?: string
 }> = ({ entity, statusContext, className }) => (
     <OverviewStatusContextItem statusContext={statusContext} className={className}>
@@ -91,8 +91,8 @@ const OwnerStatusContext: React.FunctionComponent<{
 )
 
 const CodeOwnersStatusContext: React.FunctionComponent<{
-    entity: CatalogEntityCodeOwnersFields
-    statusContext: CatalogEntityStatusFields['status']['contexts'][0]
+    entity: ComponentCodeOwnersFields
+    statusContext: ComponentStatusFields['status']['contexts'][0]
     className?: string
 }> = ({ entity, statusContext, className }) => (
     <OverviewStatusContextItem statusContext={statusContext} className={className}>
@@ -123,8 +123,8 @@ const CodeOwnersStatusContext: React.FunctionComponent<{
 )
 
 const ContributorsStatusContext: React.FunctionComponent<{
-    entity: CatalogComponentAuthorsFields
-    statusContext: CatalogEntityStatusFields['status']['contexts'][0]
+    entity: ComponentAuthorsFields
+    statusContext: ComponentStatusFields['status']['contexts'][0]
     className?: string
 }> = ({ entity, statusContext, className }) => (
     <OverviewStatusContextItem statusContext={statusContext} className={className}>
@@ -158,8 +158,8 @@ const ContributorsStatusContext: React.FunctionComponent<{
 )
 
 const UsageStatusContext: React.FunctionComponent<{
-    entity: CatalogComponentUsageFields
-    statusContext: CatalogEntityStatusFields['status']['contexts'][0]
+    entity: ComponentUsageFields
+    statusContext: ComponentStatusFields['status']['contexts'][0]
     className?: string
 }> = ({ entity, statusContext, className }) => (
     <OverviewStatusContextItem statusContext={statusContext} className={className}>

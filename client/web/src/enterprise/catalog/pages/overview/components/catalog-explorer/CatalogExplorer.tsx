@@ -3,7 +3,7 @@ import { useLocation, useRouteMatch } from 'react-router'
 import { Switch, Route, NavLink } from 'react-router-dom'
 
 import { CatalogHealthTable } from '../../../../components/catalog-health-table/CatalogHealthTable'
-import { useCatalogEntityFilters } from '../../../../core/entity-filters'
+import { useComponentFilters } from '../../../../core/entity-filters'
 import { OverviewEntityGraph } from '../overview-content/OverviewEntityGraph'
 
 import { CatalogExplorerList } from './CatalogExplorerList'
@@ -12,7 +12,7 @@ import { CatalogExplorerViewOptionsRow } from './CatalogExplorerViewOptionsRow'
 interface Props {}
 
 export const CatalogExplorer: React.FunctionComponent<Props> = () => {
-    const filtersProps = useCatalogEntityFilters('is:component')
+    const filtersProps = useComponentFilters('is:component')
 
     const match = useRouteMatch()
     const location = useLocation()

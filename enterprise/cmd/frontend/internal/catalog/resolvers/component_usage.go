@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
-func (r *catalogComponentResolver) Usage(ctx context.Context, args *gql.CatalogComponentUsageArgs) (gql.CatalogComponentUsageResolver, error) {
+func (r *componentResolver) Usage(ctx context.Context, args *gql.ComponentUsageArgs) (gql.ComponentUsageResolver, error) {
 	if len(r.component.UsagePatterns) == 0 {
 		return nil, nil
 	}
@@ -34,16 +34,16 @@ func (r *catalogComponentResolver) Usage(ctx context.Context, args *gql.CatalogC
 	if err != nil {
 		return nil, err
 	}
-	return &catalogComponentUsageResolver{
+	return &componentUsageResolver{
 		search:    search,
 		component: r,
 		db:        r.db,
 	}, nil
 }
 
-type catalogComponentUsageResolver struct {
+type componentUsageResolver struct {
 	search    gql.SearchImplementer
-	component *catalogComponentResolver
+	component *componentResolver
 	db        database.DB
 
 	resultsOnce sync.Once
@@ -51,7 +51,7 @@ type catalogComponentUsageResolver struct {
 	resultsErr  error
 }
 
-func (r *catalogComponentUsageResolver) cachedResults(ctx context.Context) (*gql.SearchResultsResolver, error) {
+func (r *componentUsageResolver) cachedResults(ctx context.Context) (*gql.SearchResultsResolver, error) {
 	type cacheEntry struct {
 		SearchResults []result.Match
 	}

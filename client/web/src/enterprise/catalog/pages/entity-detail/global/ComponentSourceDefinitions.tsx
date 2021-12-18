@@ -5,16 +5,16 @@ import React from 'react'
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { CatalogComponentSourcesFields } from '../../../../../graphql-operations'
+import { ComponentSourcesFields } from '../../../../../graphql-operations'
 
 interface Props {
-    catalogComponent: CatalogComponentSourcesFields
+    component: ComponentSourcesFields
     listGroupClassName?: string
     className?: string
 }
 
 export const ComponentSourceDefinitions: React.FunctionComponent<Props> = ({
-    catalogComponent: { sourceLocations },
+    component: { sourceLocations },
     listGroupClassName,
     className,
 }) => (

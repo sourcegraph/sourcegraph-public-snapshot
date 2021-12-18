@@ -7,7 +7,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
-func (r *catalogComponentUsageResolver) Locations(ctx context.Context) (gql.LocationConnectionResolver, error) {
+func (r *componentUsageResolver) Locations(ctx context.Context) (gql.LocationConnectionResolver, error) {
 	results, err := r.cachedResults(ctx)
 	if err != nil {
 		return nil, err

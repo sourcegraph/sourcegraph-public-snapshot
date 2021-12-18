@@ -2,13 +2,13 @@ import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 import { Form } from 'reactstrap'
 
-import { CatalogEntityType } from '../../../../../../graphql-operations'
-import { CatalogEntityFiltersProps } from '../../../../core/entity-filters'
+import { ComponentType } from '../../../../../../graphql-operations'
+import { ComponentFiltersProps } from '../../../../core/entity-filters'
 
 import { CatalogExplorerViewOptionInput } from './CatalogExplorerViewOptionInput'
 import styles from './CatalogExplorerViewOptionsRow.module.scss'
 
-interface Props extends CatalogEntityFiltersProps {
+interface Props extends ComponentFiltersProps {
     before?: React.ReactFragment
     toggle: React.ReactFragment
     className?: string
@@ -40,7 +40,7 @@ export const CatalogExplorerViewOptionsRow: React.FunctionComponent<Props> = ({
     )
 
     const onQueryTypeChange = useCallback(
-        (value: CatalogEntityType | undefined): void => {
+        (value: ComponentType | undefined): void => {
             setQueryInput(undefined)
             onFiltersQueryFieldChange('is', value)
         },
@@ -51,9 +51,9 @@ export const CatalogExplorerViewOptionsRow: React.FunctionComponent<Props> = ({
         <Form className={classNames('form-inline', styles.form, className)} onSubmit={onSubmit}>
             {before && <div>{before}</div>}
             {toggle}
-            <CatalogExplorerViewOptionInput<CatalogEntityType>
+            <CatalogExplorerViewOptionInput<ComponentType>
                 label="Type"
-                values={[CatalogEntityType.COMPONENT, CatalogEntityType.PACKAGE]}
+                values={[ComponentType.COMPONENT, ComponentType.PACKAGE]}
                 selected={filtersQueryParsed.is}
                 onChange={onQueryTypeChange}
                 className={classNames('mb-0', styles.inputSelect)}

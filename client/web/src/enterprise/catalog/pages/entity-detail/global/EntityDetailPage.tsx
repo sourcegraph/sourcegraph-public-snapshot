@@ -9,10 +9,10 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { PageTitle } from '../../../../../components/PageTitle'
-import { CatalogEntityByNameResult, CatalogEntityByNameVariables } from '../../../../../graphql-operations'
+import { ComponentByNameResult, ComponentByNameVariables } from '../../../../../graphql-operations'
 
 import { EntityDetailContent } from './EntityDetailContent'
-import { CATALOG_ENTITY_BY_NAME } from './gql'
+import { COMPONENT_BY_NAME } from './gql'
 
 export interface Props
     extends TelemetryProps,
@@ -29,11 +29,11 @@ export interface Props
  */
 export const EntityDetailPage: React.FunctionComponent<Props> = ({ entityName, telemetryService, ...props }) => {
     useEffect(() => {
-        telemetryService.logViewEvent('CatalogEntityDetail')
+        telemetryService.logViewEvent('ComponentDetail')
     }, [telemetryService])
 
-    const { data, error, loading } = useQuery<CatalogEntityByNameResult, CatalogEntityByNameVariables>(
-        CATALOG_ENTITY_BY_NAME,
+    const { data, error, loading } = useQuery<ComponentByNameResult, ComponentByNameVariables>(
+        COMPONENT_BY_NAME,
         {
             variables: { type: 'COMPONENT', name: entityName },
 
@@ -56,19 +56,19 @@ export const EntityDetailPage: React.FunctionComponent<Props> = ({ entityName, t
                         ? 'Error loading entity'
                         : loading && !data
                         ? 'Loading entity...'
-                        : !data || !data.catalogEntity
+                        : !data || !data.component
                         ? 'Entity not found'
-                        : data.catalogEntity.name
+                        : data.component.name
                 }
             />
             {loading && !data ? (
                 <LoadingSpinner className="m-3 icon-inline" />
             ) : error && !data ? (
                 <div className="m-3 alert alert-danger">Error: {error.message}</div>
-            ) : !data || !data.catalogEntity ? (
+            ) : !data || !data.component ? (
                 <div className="m-3 alert alert-danger">Entity not found in catalog</div>
             ) : (
-                <EntityDetailContent {...props} entity={data.catalogEntity} telemetryService={telemetryService} />
+                <EntityDetailContent {...props} entity={data.component} telemetryService={telemetryService} />
             )}
         </>
     )

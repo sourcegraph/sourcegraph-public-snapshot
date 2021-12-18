@@ -3,17 +3,17 @@ import EmailIcon from 'mdi-react/EmailIcon'
 import SlackIcon from 'mdi-react/SlackIcon'
 import React from 'react'
 
-import { CatalogEntityDetailFields, CatalogEntityWhoKnowsFields } from '../../../../../graphql-operations'
+import { ComponentStateDetailFields, ComponentWhoKnowsFields } from '../../../../../graphql-operations'
 
 import { PersonList } from './PersonList'
 
 interface Props {
-    catalogComponent: CatalogEntityWhoKnowsFields & Pick<CatalogEntityDetailFields, 'name' | 'kind'>
+    component: ComponentWhoKnowsFields & Pick<ComponentStateDetailFields, 'name' | 'kind'>
     className?: string
 }
 
 export const EntityWhoKnowsTab: React.FunctionComponent<Props> = ({
-    catalogComponent: { whoKnows, ...entity },
+    component: { whoKnows, ...entity },
     className,
 }) => (
     <div className={classNames(className)}>
@@ -67,6 +67,6 @@ export const EntityWhoKnowsTab: React.FunctionComponent<Props> = ({
     </div>
 )
 
-export function whoKnowsDescription(entity: Pick<CatalogEntityDetailFields, 'name' | 'kind'>): string {
+export function whoKnowsDescription(entity: Pick<ComponentStateDetailFields, 'name' | 'kind'>): string {
     return `Need help with the ${entity.name} ${entity.kind.toLowerCase()}? See who knows about it.`
 }

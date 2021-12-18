@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-func (r *catalogComponentResolver) Commits(ctx context.Context, args *graphqlutil.ConnectionArgs) (gql.GitCommitConnectionResolver, error) {
+func (r *componentResolver) Commits(ctx context.Context, args *graphqlutil.ConnectionArgs) (gql.GitCommitConnectionResolver, error) {
 	// TODO(sqs): how to ensure both follow *and* sorting of results merged from `git log` over
 	// multiple paths? Which sort order (topo or date) and how is that handled when the results are
 	// merged? Follow doesn't work for multiple paths (see `git log --help`, "--follow ... works

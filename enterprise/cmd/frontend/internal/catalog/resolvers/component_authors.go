@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-func (r *catalogComponentResolver) Authors(ctx context.Context) (*[]gql.CatalogComponentAuthorEdgeResolver, error) {
+func (r *componentResolver) Authors(ctx context.Context) (*[]gql.ComponentAuthorEdgeResolver, error) {
 	var allEntries []fs.FileInfo
 	for _, sourcePath := range r.component.SourcePaths {
 		entries, err := git.ReadDir(ctx, r.component.SourceRepo, r.component.SourceCommit, sourcePath, true)
@@ -79,9 +79,9 @@ func (r *catalogComponentResolver) Authors(ctx context.Context) (*[]gql.CatalogC
 		return nil, allErr
 	}
 
-	edges := make([]gql.CatalogComponentAuthorEdgeResolver, 0, len(all))
+	edges := make([]gql.ComponentAuthorEdgeResolver, 0, len(all))
 	for _, a := range all {
-		edges = append(edges, &catalogComponentAuthorEdgeResolver{
+		edges = append(edges, &componentAuthorEdgeResolver{
 			db:             r.db,
 			component:      r,
 			data:           a,
@@ -156,30 +156,30 @@ func getFileBlameAuthorsCached(ctx context.Context, repoName api.RepoName, commi
 	return
 }
 
-type catalogComponentAuthorEdgeResolver struct {
+type componentAuthorEdgeResolver struct {
 	db             database.DB
-	component      *catalogComponentResolver
+	component      *componentResolver
 	data           *blameAuthor
 	totalLineCount int
 }
 
-func (r *catalogComponentAuthorEdgeResolver) Component() gql.CatalogComponentResolver {
+func (r *componentAuthorEdgeResolver) Component() gql.ComponentResolver {
 	return r.component
 }
 
-func (r *catalogComponentAuthorEdgeResolver) Person() *gql.PersonResolver {
+func (r *componentAuthorEdgeResolver) Person() *gql.PersonResolver {
 	return gql.NewPersonResolver(r.db, r.data.Name, r.data.Email, true)
 }
 
-func (r *catalogComponentAuthorEdgeResolver) AuthoredLineCount() int32 {
+func (r *componentAuthorEdgeResolver) AuthoredLineCount() int32 {
 	return int32(r.data.LineCount)
 }
 
-func (r *catalogComponentAuthorEdgeResolver) AuthoredLineProportion() float64 {
+func (r *componentAuthorEdgeResolver) AuthoredLineProportion() float64 {
 	return float64(r.data.LineCount) / float64(r.totalLineCount)
 }
 
-func (r *catalogComponentAuthorEdgeResolver) LastCommit(ctx context.Context) (*gql.GitCommitResolver, error) {
+func (r *componentAuthorEdgeResolver) LastCommit(ctx context.Context) (*gql.GitCommitResolver, error) {
 	repoResolver, err := r.component.sourceRepoResolver(ctx)
 	if err != nil {
 		return nil, err

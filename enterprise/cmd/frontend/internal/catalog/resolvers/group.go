@@ -103,12 +103,12 @@ func (r *groupResolver) Members() []*gql.PersonResolver {
 	return members
 }
 
-func (r *groupResolver) OwnedEntities() []*gql.CatalogEntityResolver {
-	var entities []*gql.CatalogEntityResolver
+func (r *groupResolver) OwnedEntities() []gql.ComponentResolver {
+	var entities []gql.ComponentResolver
 
 	for _, c := range dummyComponents(r.db) {
 		if c.component.OwnedBy == r.group.Name {
-			entities = append(entities, &gql.CatalogEntityResolver{c})
+			entities = append(entities, c)
 		}
 	}
 	for _, childGroup := range r.ChildGroups() {

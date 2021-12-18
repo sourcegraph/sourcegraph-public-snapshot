@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func (r *catalogComponentResolver) API(ctx context.Context, args *gql.CatalogComponentAPIArgs) (gql.CatalogComponentAPIResolver, error) {
+func (r *componentResolver) API(ctx context.Context, args *gql.ComponentAPIArgs) (gql.ComponentAPIResolver, error) {
 	repoResolver, err := r.sourceRepoResolver(ctx)
 	if err != nil {
 		return nil, err
@@ -30,26 +30,26 @@ func (r *catalogComponentResolver) API(ctx context.Context, args *gql.CatalogCom
 		return nil, err
 	}
 
-	return &catalogComponentAPIResolver{
+	return &componentAPIResolver{
 		symbols:   symbols,
 		component: r,
 		db:        r.db,
 	}, nil
 }
 
-type catalogComponentAPIResolver struct {
+type componentAPIResolver struct {
 	symbols *gql.SymbolConnectionResolver
 
-	component *catalogComponentResolver
+	component *componentResolver
 	db        database.DB
 }
 
-func (r *catalogComponentAPIResolver) Symbols(ctx context.Context, args *gql.CatalogComponentAPISymbolsArgs) (*gql.SymbolConnectionResolver, error) {
+func (r *componentAPIResolver) Symbols(ctx context.Context, args *gql.ComponentAPISymbolsArgs) (*gql.SymbolConnectionResolver, error) {
 	// TODO(sqs): args.First is ignored
 	return r.symbols, nil
 }
 
-func (r *catalogComponentAPIResolver) Schema(ctx context.Context) (gql.FileResolver, error) {
+func (r *componentAPIResolver) Schema(ctx context.Context) (gql.FileResolver, error) {
 	if r.component.component.APIDefPath == "" {
 		return nil, nil
 	}

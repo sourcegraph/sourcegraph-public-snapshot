@@ -7,11 +7,11 @@ import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 
 import { CatalogGraphResult, CatalogGraphVariables } from '../../../../../../graphql-operations'
 import { EntityGraph } from '../../../../components/entity-graph/EntityGraph'
-import { CatalogEntityFiltersProps } from '../../../../core/entity-filters'
+import { ComponentFiltersProps } from '../../../../core/entity-filters'
 
 import { CATALOG_GRAPH } from './gql'
 
-interface Props extends Pick<CatalogEntityFiltersProps, 'filters'> {
+interface Props extends Pick<ComponentFiltersProps, 'filters'> {
     highlightID?: Scalars['ID']
     queryScope?: string
     className?: string

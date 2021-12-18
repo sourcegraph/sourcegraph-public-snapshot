@@ -5,13 +5,10 @@ export const CATALOG_GRAPH_FRAGMENT = gql`
         nodes {
             __typename
             id
-            type
             name
+            kind
             description
             url
-            ... on CatalogComponent {
-                kind
-            }
         }
         edges {
             type

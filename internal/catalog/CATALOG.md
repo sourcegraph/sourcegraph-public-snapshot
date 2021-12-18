@@ -2,7 +2,7 @@
 
 ## Components
 
-A component is a service, application, library, tool, or some other logical unit of software.
+A component is a service, application, library, tool, website, or some other logical unit of software.
 
 ### Defining components
 

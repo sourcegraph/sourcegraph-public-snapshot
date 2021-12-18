@@ -14,10 +14,10 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { Timestamp } from '../../../../../components/time/Timestamp'
-import { CatalogEntityDetailFields } from '../../../../../graphql-operations'
+import { ComponentStateDetailFields } from '../../../../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../user/UserAvatar'
-import { CatalogEntityIcon } from '../../../components/CatalogEntityIcon'
+import { ComponentIcon } from '../../../components/ComponentIcon'
 import { EntityOwner } from '../../../components/entity-owner/EntityOwner'
 
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
@@ -27,7 +27,7 @@ import { whoKnowsDescription } from './EntityWhoKnowsTab'
 import { OverviewStatusContexts } from './OverviewStatusContexts'
 
 interface Props extends TelemetryProps, SettingsCascadeProps, PlatformContextProps {
-    entity: CatalogEntityDetailFields
+    entity: ComponentStateDetailFields
     className?: string
 }
 
@@ -42,11 +42,11 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
         <div className="col-md-4 col-lg-3 col-xl-2 border-right p-3">
             {entity.name && (
                 <h2 className="d-flex align-items-center mb-1">
-                    <CatalogEntityIcon entity={entity} className="icon-inline mr-2" /> {entity.name}
+                    <ComponentIcon entity={entity} className="icon-inline mr-2" /> {entity.name}
                 </h2>
             )}
             <div className="text-muted small mb-2">
-                {entity.__typename === 'CatalogComponent' && `${entity.kind[0]}${entity.kind.slice(1).toLowerCase()}`}
+                {entity.__typename === 'Component' && `${entity.kind[0]}${entity.kind.slice(1).toLowerCase()}`}
             </div>
             {entity.description && <p className="mb-3">{entity.description}</p>}
             <div>
@@ -104,7 +104,7 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
         </div>
         <div className="col-md-8 col-lg-9 col-xl-10 p-3">
             <div className="card mb-3">
-                <ComponentSourceDefinitions catalogComponent={entity} listGroupClassName="list-group-flush" />
+                <ComponentSourceDefinitions component={entity} listGroupClassName="list-group-flush" />
                 {entity.commits?.nodes[0] && <LastCommit commit={entity.commits?.nodes[0]} className="card-footer" />}
             </div>
             <OverviewStatusContexts entity={entity} itemClassName="mb-3" />
@@ -135,7 +135,7 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
 )
 
 const LastCommit: React.FunctionComponent<{
-    commit: NonNullable<CatalogEntityDetailFields['commits']>['nodes'][0]
+    commit: NonNullable<ComponentStateDetailFields['commits']>['nodes'][0]
     className?: string
 }> = ({ commit, className }) => (
     <div className={classNames('d-flex align-items-center', className)}>

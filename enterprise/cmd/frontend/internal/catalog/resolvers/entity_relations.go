@@ -4,23 +4,23 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
-type catalogEntityRelatedEntityConnectionResolver struct {
-	edges []gql.CatalogEntityRelatedEntityEdgeResolver
+type componentRelatedEntityConnectionResolver struct {
+	edges []gql.ComponentRelatedEntityEdgeResolver
 }
 
-func (r *catalogEntityRelatedEntityConnectionResolver) Edges() []gql.CatalogEntityRelatedEntityEdgeResolver {
+func (r *componentRelatedEntityConnectionResolver) Edges() []gql.ComponentRelatedEntityEdgeResolver {
 	return r.edges
 }
 
-type catalogEntityRelatedEntityEdgeResolver struct {
-	node  *gql.CatalogEntityResolver
-	type_ gql.CatalogEntityRelationType
+type componentRelatedEntityEdgeResolver struct {
+	node  gql.ComponentResolver
+	type_ gql.ComponentRelationType
 }
 
-func (r *catalogEntityRelatedEntityEdgeResolver) Node() *gql.CatalogEntityResolver {
+func (r *componentRelatedEntityEdgeResolver) Node() gql.ComponentResolver {
 	return r.node
 }
 
-func (r *catalogEntityRelatedEntityEdgeResolver) Type() gql.CatalogEntityRelationType {
+func (r *componentRelatedEntityEdgeResolver) Type() gql.ComponentRelationType {
 	return r.type_
 }

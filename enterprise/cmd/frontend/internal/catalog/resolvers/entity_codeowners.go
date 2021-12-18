@@ -18,7 +18,7 @@ type codeOwnerData struct {
 	FileCount int // count of owned files
 }
 
-func (r *catalogComponentResolver) CodeOwners(ctx context.Context) (*[]gql.CatalogEntityCodeOwnerEdgeResolver, error) {
+func (r *componentResolver) CodeOwners(ctx context.Context) (*[]gql.ComponentCodeOwnerEdgeResolver, error) {
 	var allEntries []fs.FileInfo
 	for _, sourcePath := range r.component.SourcePaths {
 		// TODO(sqs): doesnt check perms? SECURITY
@@ -100,9 +100,9 @@ func (r *catalogComponentResolver) CodeOwners(ctx context.Context) (*[]gql.Catal
 		}
 	}
 
-	edges := make([]gql.CatalogEntityCodeOwnerEdgeResolver, 0, len(byOwner))
+	edges := make([]gql.ComponentCodeOwnerEdgeResolver, 0, len(byOwner))
 	for _, od := range byOwner {
-		edges = append(edges, &catalogEntityCodeOwnerEdgeResolver{
+		edges = append(edges, &componentCodeOwnerEdgeResolver{
 			db:             r.db,
 			data:           od,
 			totalFileCount: totalFileCount,
@@ -120,16 +120,16 @@ func (r *catalogComponentResolver) CodeOwners(ctx context.Context) (*[]gql.Catal
 	return &edges, nil
 }
 
-type catalogEntityCodeOwnerEdgeResolver struct {
+type componentCodeOwnerEdgeResolver struct {
 	db             database.DB
 	data           *codeOwnerData
 	totalFileCount int
 }
 
-func (r *catalogEntityCodeOwnerEdgeResolver) Node() *gql.PersonResolver {
+func (r *componentCodeOwnerEdgeResolver) Node() *gql.PersonResolver {
 	return gql.NewPersonResolver(r.db, strings.TrimPrefix(r.data.Owner, "@"), strings.TrimPrefix(r.data.Owner, "@")+"@sourcegraph.com", false)
 }
-func (r *catalogEntityCodeOwnerEdgeResolver) FileCount() int32 { return int32(r.data.FileCount) }
-func (r *catalogEntityCodeOwnerEdgeResolver) FileProportion() float64 {
+func (r *componentCodeOwnerEdgeResolver) FileCount() int32 { return int32(r.data.FileCount) }
+func (r *componentCodeOwnerEdgeResolver) FileProportion() float64 {
 	return float64(r.data.FileCount) / float64(r.totalFileCount)
 }

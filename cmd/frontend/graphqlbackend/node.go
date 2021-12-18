@@ -251,8 +251,8 @@ func (r *NodeResolver) ToExecutor() (*executorResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToCatalogComponent() (CatalogComponentResolver, bool) {
-	n, ok := r.Node.(CatalogComponentResolver)
+func (r *NodeResolver) ToComponent() (ComponentResolver, bool) {
+	n, ok := r.Node.(ComponentResolver)
 	return n, ok
 }
 
@@ -261,13 +261,13 @@ func (r *NodeResolver) ToGroup() (GroupResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToCatalogEntityStatus() (CatalogEntityStatusResolver, bool) {
-	n, ok := r.Node.(CatalogEntityStatusResolver)
+func (r *NodeResolver) ToComponentStatus() (ComponentStatusResolver, bool) {
+	n, ok := r.Node.(ComponentStatusResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToCatalogEntityStatusContext() (CatalogEntityStatusContextResolver, bool) {
-	n, ok := r.Node.(CatalogEntityStatusContextResolver)
+func (r *NodeResolver) ToComponentStatusContext() (ComponentStatusContextResolver, bool) {
+	n, ok := r.Node.(ComponentStatusContextResolver)
 	return n, ok
 }
 

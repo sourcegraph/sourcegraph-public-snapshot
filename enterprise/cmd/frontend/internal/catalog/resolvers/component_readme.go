@@ -7,7 +7,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
-func (r *catalogComponentResolver) Readme(ctx context.Context) (gql.FileResolver, error) {
+func (r *componentResolver) Readme(ctx context.Context) (gql.FileResolver, error) {
 	sourceLocations, err := r.SourceLocations(ctx)
 	if err != nil {
 		return nil, err

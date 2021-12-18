@@ -6,12 +6,12 @@ import TextureBoxIcon from 'mdi-react/TextureBoxIcon'
 import ToolsIcon from 'mdi-react/ToolsIcon'
 import React from 'react'
 
-import { CatalogComponentKind } from '../../../graphql-operations'
+import { ComponentKind } from '../../../graphql-operations'
 
 type PartialEntity =
     | {
-          __typename: 'CatalogComponent'
-          kind: CatalogComponentKind
+          __typename: 'Component'
+          kind: ComponentKind
       }
     | { __typename: 'Package' }
 
@@ -20,7 +20,7 @@ interface Props {
     className?: string
 }
 
-const CATALOG_COMPONENT_ICON_BY_KIND: Record<CatalogComponentKind, React.ComponentType<{ className?: string }>> = {
+const COMPONENT_ICON_BY_KIND: Record<ComponentKind, React.ComponentType<{ className?: string }>> = {
     SERVICE: ApplicationCogOutlineIcon,
     WEBSITE: ApplicationOutlineIcon,
     LIBRARY: BookMultipleIcon,
@@ -28,10 +28,10 @@ const CATALOG_COMPONENT_ICON_BY_KIND: Record<CatalogComponentKind, React.Compone
     OTHER: TextureBoxIcon,
 }
 
-export function catalogEntityIconComponent(entity: PartialEntity): React.ComponentType<{ className?: string }> {
+export function componentIconComponent(entity: PartialEntity): React.ComponentType<{ className?: string }> {
     switch (entity.__typename) {
-        case 'CatalogComponent':
-            return CATALOG_COMPONENT_ICON_BY_KIND[entity.kind]
+        case 'Component':
+            return COMPONENT_ICON_BY_KIND[entity.kind]
         case 'Package':
             return PackageIcon
         default:
@@ -39,7 +39,7 @@ export function catalogEntityIconComponent(entity: PartialEntity): React.Compone
     }
 }
 
-export const CatalogEntityIcon: React.FunctionComponent<Props> = ({ entity, className }) => {
-    const Icon = catalogEntityIconComponent(entity) || TextureBoxIcon
+export const ComponentIcon: React.FunctionComponent<Props> = ({ entity, className }) => {
+    const Icon = componentIconComponent(entity) || TextureBoxIcon
     return <Icon className={className} />
 }

@@ -3,18 +3,18 @@ import CheckBoldIcon from 'mdi-react/CheckBoldIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 
-import { CatalogEntityStateFields, CatalogEntityStatusState } from '../../../../../../graphql-operations'
+import { ComponentStateFields, ComponentStatusState } from '../../../../../../graphql-operations'
 import { STATE_TO_COLOR } from '../../../entity-detail/global/OverviewStatusContextItem'
 
-export const CatalogEntityStateIndicator: React.FunctionComponent<{
-    entity: CatalogEntityStateFields
+export const ComponentStateIndicator: React.FunctionComponent<{
+    entity: ComponentStateFields
     className?: string
 }> = ({ entity, className }) => (
     <span className={classNames(`text-${STATE_TO_COLOR[entity.status.state]}`, className)}>
-        {entity.status.state === CatalogEntityStatusState.SUCCESS ? (
+        {entity.status.state === ComponentStatusState.SUCCESS ? (
             <CheckBoldIcon className="icon-inline" />
-        ) : entity.status.state === CatalogEntityStatusState.FAILURE ||
-          entity.status.state === CatalogEntityStatusState.ERROR ? (
+        ) : entity.status.state === ComponentStatusState.FAILURE ||
+          entity.status.state === ComponentStatusState.ERROR ? (
             <CloseIcon className="icon-inline" />
         ) : (
             entity.status.state.toLowerCase()

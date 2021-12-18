@@ -6,8 +6,8 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
-func (r *catalogComponentResolver) Status(ctx context.Context) (gql.CatalogEntityStatusResolver, error) {
-	var statusContexts []gql.CatalogEntityStatusContextResolver
+func (r *componentResolver) Status(ctx context.Context) (gql.ComponentStatusResolver, error) {
+	var statusContexts []gql.ComponentStatusContextResolver
 
 	{
 		// Owner
@@ -16,7 +16,7 @@ func (r *catalogComponentResolver) Status(ctx context.Context) (gql.CatalogEntit
 			return nil, err
 		}
 
-		sc := &catalogEntityStatusContextResolver{
+		sc := &componentStatusContextResolver{
 			name:  "owner",
 			title: "Owner",
 		}
@@ -37,7 +37,7 @@ func (r *catalogComponentResolver) Status(ctx context.Context) (gql.CatalogEntit
 		}
 
 		if err == nil {
-			sc := &catalogEntityStatusContextResolver{
+			sc := &componentStatusContextResolver{
 				name:      "codeOwners",
 				title:     "Code owners",
 				targetURL: r.URL() + "/code",
@@ -59,7 +59,7 @@ func (r *catalogComponentResolver) Status(ctx context.Context) (gql.CatalogEntit
 			return nil, err
 		}
 
-		sc := &catalogEntityStatusContextResolver{
+		sc := &componentStatusContextResolver{
 			name:      "contributors",
 			title:     "Contributors",
 			targetURL: r.URL() + "/code",
@@ -75,7 +75,7 @@ func (r *catalogComponentResolver) Status(ctx context.Context) (gql.CatalogEntit
 
 	{
 		// Usage
-		usage, err := r.Usage(ctx, &gql.CatalogComponentUsageArgs{})
+		usage, err := r.Usage(ctx, &gql.ComponentUsageArgs{})
 		if err != nil {
 			return nil, err
 		}
@@ -86,7 +86,7 @@ func (r *catalogComponentResolver) Status(ctx context.Context) (gql.CatalogEntit
 				return nil, err
 			}
 
-			sc := &catalogEntityStatusContextResolver{
+			sc := &componentStatusContextResolver{
 				name:      "usage",
 				title:     "Usage",
 				targetURL: r.URL() + "/usage",
@@ -102,13 +102,13 @@ func (r *catalogComponentResolver) Status(ctx context.Context) (gql.CatalogEntit
 	}
 
 	statusContexts = append(statusContexts,
-		&catalogEntityStatusContextResolver{
+		&componentStatusContextResolver{
 			name:        "deploy",
 			state:       "SUCCESS",
 			title:       "Deploy",
 			description: "Deployed `f38ca7d` to Sourcegraph.com 4 min ago ([monitor](#TODO))",
 		},
-		&catalogEntityStatusContextResolver{
+		&componentStatusContextResolver{
 			name:        "ci",
 			state:       "SUCCESS",
 			title:       "CI",
@@ -117,7 +117,7 @@ func (r *catalogComponentResolver) Status(ctx context.Context) (gql.CatalogEntit
 		},
 	)
 
-	return &catalogEntityStatusResolver{
+	return &componentStatusResolver{
 		contexts: statusContexts,
 		entityID: r.ID(),
 	}, nil

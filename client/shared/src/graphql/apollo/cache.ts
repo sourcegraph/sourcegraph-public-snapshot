@@ -33,7 +33,7 @@ export const generateCache = (): InMemoryCache =>
 
         // https://www.apollographql.com/docs/react/data/fragments/#defining-possibletypes-manually
         possibleTypes: {
-            CatalogEntity: ['CatalogComponent', 'Package'],
+            Component: ['Component', 'Package'],
             TreeEntry: ['GitBlob', 'GitTree'],
         },
     })
