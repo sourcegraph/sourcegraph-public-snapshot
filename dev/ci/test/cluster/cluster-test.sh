@@ -60,7 +60,7 @@ function cluster_setup() {
   popd
   echo "--- wait for ready"
   kubectl get pods -n "$NAMESPACE"
-  time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=20m -n "$NAMESPACE"
+  time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=5m -n "$NAMESPACE"
   set -e
   set -o pipefail
 }
