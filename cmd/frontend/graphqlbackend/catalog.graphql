@@ -40,6 +40,7 @@ interface CatalogEntity {
     owner: EntityOwner
     url: String!
     status: CatalogEntityStatus!
+    # TODO(sqs): some of these dont belong on CatalogEntity.
     codeOwners: [CatalogEntityCodeOwnerEdge!]
     relatedEntities(query: String, first: Int, after: String): CatalogEntityRelatedEntityConnection!
     whoKnows(query: String): [WhoKnowsEdge!]!

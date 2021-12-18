@@ -110,7 +110,7 @@ func getAllGoModules(ctx context.Context) ([]*goModuleInfo, error) {
 }
 
 type npmModuleInfo struct {
-	*YarnLockfileEntry
+	Name string
 }
 
 func getAllNpmModules(ctx context.Context) ([]*npmModuleInfo, error) {
@@ -146,6 +146,7 @@ func getAllNpmModules(ctx context.Context) ([]*npmModuleInfo, error) {
 	}
 
 	var allModules []*npmModuleInfo
+	seen := map[string]struct{}{}
 	for _, yarnLockfile := range yarnLockfiles {
 		data, err := os.ReadFile(yarnLockfile)
 		if err != nil {
@@ -156,7 +157,11 @@ func getAllNpmModules(ctx context.Context) ([]*npmModuleInfo, error) {
 			return nil, err
 		}
 		for _, e := range entries {
-			allModules = append(allModules, &npmModuleInfo{e})
+			if _, seen := seen[e.Name]; seen {
+				continue
+			}
+			seen[e.Name] = struct{}{}
+			allModules = append(allModules, &npmModuleInfo{Name: e.Name})
 		}
 	}
 
