@@ -13,6 +13,10 @@ A component is defined by a file stored in a repository (usually alongside the c
 
 (In the future, this will be configurable to support multiple branches per repository.)
 
+### Tags
+
+Tags can be manually applied in the component definition or dynamically applied based on criteria you set.
+
 ## Scorecards
 
 Scorecards help you define and enforce standards for security, quality, and maturity.

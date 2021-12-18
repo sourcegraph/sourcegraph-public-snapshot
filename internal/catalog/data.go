@@ -17,6 +17,8 @@ type Component struct {
 	UsagePatterns []UsagePattern
 	APIDefPath    string
 
+	Tags []string
+
 	// Edges
 	DependsOn []string
 	OwnedBy   string
@@ -90,6 +92,7 @@ func Data() ([]Component, []Group, []Edge) {
 			APIDefPath: "cmd/frontend/graphqlbackend/schema.graphql",
 			DependsOn:  []string{"gitserver", "client-web", "repo-updater", "executor", "github-proxy", "precise-code-intel-worker", "query-runner", "searcher", "sitemap", "symbols"},
 			OwnedBy:    "search-core",
+			Tags:       []string{"public-api", "ui"},
 		},
 		{
 			Kind:         "SERVICE",
@@ -107,6 +110,7 @@ func Data() ([]Component, []Group, []Edge) {
 			APIDefPath: "internal/gitserver/protocol/gitserver.go",
 			DependsOn:  []string{"repo-updater", "searcher"},
 			OwnedBy:    "repo-mgmt",
+			Tags:       []string{"infra"},
 		},
 		{
 			Kind:         "SERVICE",
@@ -122,6 +126,7 @@ func Data() ([]Component, []Group, []Edge) {
 			},
 			DependsOn: []string{"gitserver", "github-proxy"},
 			OwnedBy:   "repo-mgmt",
+			Tags:      []string{"infra"},
 		},
 		{
 			Kind:         "SERVICE",
@@ -136,6 +141,7 @@ func Data() ([]Component, []Group, []Edge) {
 			},
 			DependsOn: []string{"gitserver"},
 			OwnedBy:   "search-core",
+			Tags:      []string{"search"},
 		},
 		{
 			Kind:         "SERVICE",
@@ -162,6 +168,7 @@ func Data() ([]Component, []Group, []Edge) {
 			},
 			DependsOn: []string{"frontend", "worker"},
 			OwnedBy:   "code-intel",
+			Tags:      []string{"worker"},
 		},
 		{
 			Kind:         "SERVICE",
@@ -184,6 +191,7 @@ func Data() ([]Component, []Group, []Edge) {
 			SourcePaths:  []string{"cmd/query-runner"},
 			DependsOn:    []string{"frontend"},
 			OwnedBy:      "search-product",
+			Tags:         []string{"search"},
 		},
 		{
 			Kind:         "SERVICE",
@@ -193,6 +201,7 @@ func Data() ([]Component, []Group, []Edge) {
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/worker", "enterprise/cmd/worker"},
 			OwnedBy:      "code-intel",
+			Tags:         []string{"worker"},
 		},
 		{
 			Kind:         "SERVICE",
@@ -265,6 +274,7 @@ func Data() ([]Component, []Group, []Edge) {
 			SourcePaths:  []string{"client/web"},
 			DependsOn:    []string{"extension-api", "client-shared", "wildcard", "frontend"},
 			OwnedBy:      "frontend-platform",
+			Tags:         []string{"ui"},
 		},
 		{
 			Kind:         "LIBRARY",
@@ -276,6 +286,7 @@ func Data() ([]Component, []Group, []Edge) {
 			SourcePaths:  []string{"client/browser"},
 			DependsOn:    []string{"extension-api", "client-shared", "wildcard", "frontend"},
 			OwnedBy:      "extensibility",
+			Tags:         []string{"ui"},
 		},
 		{
 			Kind:         "LIBRARY",
@@ -290,6 +301,7 @@ func Data() ([]Component, []Group, []Edge) {
 			},
 			DependsOn: []string{"extension-api", "wildcard", "frontend"},
 			OwnedBy:   "frontend-platform",
+			Tags:      []string{"ui"},
 		},
 		{
 			Kind:         "LIBRARY",
@@ -303,6 +315,7 @@ func Data() ([]Component, []Group, []Edge) {
 				newQueryUsagePattern(`lang:typescript import @sourcegraph/wildcard patterntype:regexp`),
 			},
 			OwnedBy: "frontend-platform",
+			Tags:    []string{"ui"},
 		},
 		{
 			Kind:         "LIBRARY",
@@ -316,6 +329,7 @@ func Data() ([]Component, []Group, []Edge) {
 				newQueryUsagePattern(`lang:typescript import from ['"]sourcegraph['"] patterntype:regexp`),
 			},
 			OwnedBy: "extensibility",
+			Tags:    []string{"public-api"},
 		},
 	}
 	sort.Slice(components, func(i, j int) bool { return components[i].Name < components[j].Name })

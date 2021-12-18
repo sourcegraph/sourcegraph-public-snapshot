@@ -113,6 +113,7 @@ type Component implements Node {
     description: String
     lifecycle: ComponentLifecycle!
     owner: EntityOwner
+    tags: [ComponentTag!]!
     url: String!
     status: ComponentStatus!
     codeOwners: [ComponentCodeOwnerEdge!]
@@ -124,6 +125,11 @@ type Component implements Node {
     authors: [ComponentAuthorEdge!]
     usage(query: String): ComponentUsage
     api(query: String): ComponentAPI
+}
+
+type ComponentTag {
+    name: String!
+    components(first: Int, after: String): ComponentConnection!
 }
 
 type ComponentAuthorEdge {

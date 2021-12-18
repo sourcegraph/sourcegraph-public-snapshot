@@ -135,6 +135,7 @@ type ComponentResolver interface {
 	Kind() ComponentKind
 	Lifecycle() ComponentLifecycle
 	Owner(context.Context) (*ComponentOwnerResolver, error)
+	Tags(context.Context) ([]ComponentTagResolver, error)
 	URL() string
 	Status(context.Context) (ComponentStatusResolver, error)
 
@@ -151,6 +152,16 @@ type ComponentResolver interface {
 }
 
 type ComponentKind string
+
+type ComponentTagResolver interface {
+	Name() string
+	Components(context.Context, *ComponentTagComponentsArgs) (ComponentConnectionResolver, error)
+}
+
+type ComponentTagComponentsArgs struct {
+	First *int32
+	After *string
+}
 
 type ComponentAuthorEdgeResolver interface {
 	Component() ComponentResolver

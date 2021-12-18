@@ -16,6 +16,7 @@ import { componentIconComponent } from '../../components/ComponentIcon'
 import { CodeTab } from './CodeTab'
 import { ComponentAPI } from './ComponentApi'
 import { ComponentDocumentation } from './ComponentDocumentation'
+import { ComponentHeaderActions } from './ComponentHeaderActions'
 import { OverviewTab } from './OverviewTab'
 import { RelationsTab } from './RelationsTab'
 import { UsageTab } from './UsageTab'
@@ -95,7 +96,7 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ compone
                 },
             ].filter(isDefined)}
             tabs={tabs}
-            actions=
+            actions={<ComponentHeaderActions component={component} />}
         />
     )
 }

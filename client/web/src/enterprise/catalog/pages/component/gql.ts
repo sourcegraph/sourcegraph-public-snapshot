@@ -4,6 +4,21 @@ import { personLinkFieldsFragment } from '../../../../person/PersonLink'
 import { gitCommitFragment } from '../../../../repo/commits/RepositoryCommitsPage'
 import { COMPONENT_OWNER_FRAGMENT } from '../../components/entity-owner/gql'
 
+const COMPONENT_TAGS_FRAGMENT = gql`
+    fragment ComponentTagsFields on Component {
+        tags {
+            name
+            components {
+                nodes {
+                    id
+                    name
+                    url
+                }
+            }
+        }
+    }
+`
+
 const COMPONENT_WHO_KNOWS_FRAGMENT = gql`
     fragment ComponentWhoKnowsFields on Component {
         whoKnows {
@@ -232,10 +247,11 @@ export const COMPONENT_DETAIL_FRAGMENT = gql`
         description
         lifecycle
         url
+        ...ComponentTagsFields
+        ...ComponentWhoKnowsFields
         ...ComponentOwnerFields
         ...ComponentStatusFields
         ...ComponentCodeOwnersFields
-        ...ComponentWhoKnowsFields
         ...ComponentDocumentationFields
         ...ComponentSourcesFields
         ...ComponentChangesFields
@@ -243,6 +259,7 @@ export const COMPONENT_DETAIL_FRAGMENT = gql`
         ...ComponentUsageFields
         ...ComponentAPIFields
     }
+    ${COMPONENT_TAGS_FRAGMENT}
     ${COMPONENT_WHO_KNOWS_FRAGMENT}
     ${COMPONENT_OWNER_FRAGMENT}
     ${COMPONENT_STATUS_FRAGMENT}
