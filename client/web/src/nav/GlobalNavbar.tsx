@@ -257,7 +257,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     <NavItem icon={PuzzleOutlineIcon}>
                         <NavLink to="/extensions">Extensions</NavLink>
                     </NavItem>
-                    {props.activation && (
+                    {props.activation && false && (
                         <NavItem>
                             <ActivationDropdown activation={props.activation} history={history} />
                         </NavItem>

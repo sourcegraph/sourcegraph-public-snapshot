@@ -1,8 +1,10 @@
+import classNames from 'classnames'
 import React from 'react'
 import { Route, RouteProps, Switch, useRouteMatch } from 'react-router'
 import { NavLink } from 'react-router-dom'
 
 import { CatalogAreaHeader } from './CatalogAreaHeader'
+import styles from './CatalogPage.module.scss'
 
 interface Tab extends Pick<RouteProps, 'path' | 'exact'> {
     path: string
@@ -28,9 +30,8 @@ export const CatalogPage: React.FunctionComponent<Props> = ({ path, tabs }) => {
                                 <NavLink
                                     to={path ? `${match.url}/${path}` : match.url}
                                     exact={exact}
-                                    className="nav-link px-3"
-                                    // TODO(sqs): hack so that active items when bolded don't shift the ones to the right over by a few px because bold text is wider
-                                    style={{ minWidth: '7rem' }}
+                                    className={classNames('nav-link px-3', styles.tab)}
+                                    data-tab-content={text}
                                 >
                                     {text}
                                 </NavLink>

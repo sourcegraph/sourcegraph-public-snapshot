@@ -27,7 +27,7 @@ export const CatalogAreaHeader: React.FunctionComponent<Props> = ({ path, nav })
                     </React.Fragment>
                 ))}
             </nav>
-            <h1 className={styles.header}>
+            <h1 className={classNames('mr-2', styles.header)}>
                 <PathComponent {...path[path.length - 1]} />
             </h1>
             {nav}

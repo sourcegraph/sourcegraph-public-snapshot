@@ -43,28 +43,22 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ compone
                     text: 'Overview',
                     content: <OverviewTab {...props} entity={component} className={TAB_CONTENT_CLASS_NAME} />,
                 },
-                component.__typename === 'Component'
-                    ? {
-                          path: 'code',
-                          text: 'Code',
-                          content: <CodeTab {...props} entity={component} className={TAB_CONTENT_CLASS_NAME} />,
-                      }
-                    : null,
-                component.__typename === 'Component'
-                    ? {
-                          path: 'relations',
-                          text: 'Relations',
-                          content: <RelationsTab {...props} entity={component} className={TAB_CONTENT_CLASS_NAME} />,
-                      }
-                    : null,
 
-                component.__typename === 'Component'
-                    ? {
-                          path: 'changes',
-                          text: 'Changes',
-                          content: <ChangesTab {...props} entity={component} className={TAB_CONTENT_CLASS_NAME} />,
-                      }
-                    : null,
+                {
+                    path: 'code',
+                    text: 'Code',
+                    content: <CodeTab {...props} entity={component} className={TAB_CONTENT_CLASS_NAME} />,
+                },
+                {
+                    path: 'graph',
+                    text: 'Graph',
+                    content: <RelationsTab {...props} entity={component} className={TAB_CONTENT_CLASS_NAME} />,
+                },
+                {
+                    path: 'changes',
+                    text: 'Changes',
+                    content: <ChangesTab {...props} entity={component} className={TAB_CONTENT_CLASS_NAME} />,
+                },
                 false
                     ? {
                           path: 'docs',
@@ -79,20 +73,17 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ compone
                           content: <ComponentAPI {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
                       }
                     : null,
-                component.__typename === 'Component'
-                    ? {
-                          path: 'usage',
-                          text: 'Usage',
-                          content: <UsageTab {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
-                      }
-                    : null,
-                component.__typename === 'Component'
-                    ? {
-                          path: 'who-knows',
-                          text: 'Who knows',
-                          content: <WhoKnowsTab {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
-                      }
-                    : null,
+                {
+                    path: 'usage',
+                    text: 'Usage',
+                    content: <UsageTab {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
+                },
+
+                {
+                    path: 'who-knows',
+                    text: 'Who knows',
+                    content: <WhoKnowsTab {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
+                },
             ].filter(isDefined),
         [component, props]
     )
