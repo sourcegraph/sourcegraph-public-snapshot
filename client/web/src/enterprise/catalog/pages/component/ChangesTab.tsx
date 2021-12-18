@@ -6,7 +6,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { ComponentStateDetailFields } from '../../../../../graphql-operations'
+import { ComponentStateDetailFields } from '../../../../graphql-operations'
 
 import { ComponentCommits } from './ComponentCommits'
 

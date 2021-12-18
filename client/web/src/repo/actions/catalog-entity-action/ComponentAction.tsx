@@ -5,7 +5,7 @@ import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { ComponentIcon } from '../../../enterprise/catalog/components/ComponentIcon'
-import { OverviewStatusContexts } from '../../../enterprise/catalog/pages/entity-detail/global/OverviewStatusContexts'
+import { OverviewStatusContexts } from '../../../enterprise/catalog/pages/component/OverviewStatusContexts'
 import { ComponentStateIndicator } from '../../../enterprise/catalog/pages/overview/components/entity-state-indicator/EntityStateIndicator'
 import { positionBottomRight } from '../../../enterprise/insights/components/context-menu/utils'
 import { Popover } from '../../../enterprise/insights/components/popover/Popover'

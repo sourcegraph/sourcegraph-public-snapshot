@@ -1,7 +1,7 @@
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { personLinkFieldsFragment } from '../../../../person/PersonLink'
-import { GROUP_LINK_FRAGMENT } from '../../pages/group-detail/gql2'
+import { GROUP_LINK_FRAGMENT } from '../../pages/group/gql2'
 
 export const COMPONENT_OWNER_FRAGMENT = gql`
     fragment ComponentOwnerFields on Component {

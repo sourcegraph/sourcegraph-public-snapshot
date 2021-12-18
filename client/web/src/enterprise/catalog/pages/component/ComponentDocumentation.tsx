@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { ComponentDocumentationFields } from '../../../../../graphql-operations'
+import { ComponentDocumentationFields } from '../../../../graphql-operations'
 
 interface Props {
     component: ComponentDocumentationFields

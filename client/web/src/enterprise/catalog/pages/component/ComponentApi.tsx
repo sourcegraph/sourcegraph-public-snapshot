@@ -10,8 +10,8 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { ComponentAPIFields, SymbolFields } from '../../../../../graphql-operations'
-import { fetchHighlightedFileLineRanges } from '../../../../../repo/backend'
+import { ComponentAPIFields, SymbolFields } from '../../../../graphql-operations'
+import { fetchHighlightedFileLineRanges } from '../../../../repo/backend'
 
 interface Props extends SettingsCascadeProps, TelemetryProps {
     component: ComponentAPIFields

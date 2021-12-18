@@ -1,10 +1,10 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Timestamp } from '../../../../../components/time/Timestamp'
-import { PersonLinkFields } from '../../../../../graphql-operations'
-import { PersonLink } from '../../../../../person/PersonLink'
-import { UserAvatar } from '../../../../../user/UserAvatar'
+import { Timestamp } from '../../../../components/time/Timestamp'
+import { PersonLinkFields } from '../../../../graphql-operations'
+import { PersonLink } from '../../../../person/PersonLink'
+import { UserAvatar } from '../../../../user/UserAvatar'
 
 import styles from './PersonList.module.scss'
 import { ScrollListHorizontal, ScrollListVertical } from './ScrollList'

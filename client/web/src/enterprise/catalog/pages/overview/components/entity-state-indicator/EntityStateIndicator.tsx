@@ -4,7 +4,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 
 import { ComponentStateFields, ComponentStatusState } from '../../../../../../graphql-operations'
-import { STATE_TO_COLOR } from '../../../entity-detail/global/OverviewStatusContextItem'
+import { STATE_TO_COLOR } from '../../../component/OverviewStatusContextItem'
 
 export const ComponentStateIndicator: React.FunctionComponent<{
     entity: ComponentStateFields

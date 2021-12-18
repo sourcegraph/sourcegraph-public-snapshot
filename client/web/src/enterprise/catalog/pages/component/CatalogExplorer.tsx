@@ -3,11 +3,11 @@ import React from 'react'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
-import { useComponentFilters } from '../../../core/entity-filters'
-import { CatalogExplorerRelationList } from '../../overview/components/catalog-explorer/CatalogExplorerRelationList'
-import { CatalogExplorerViewOptionsRow } from '../../overview/components/catalog-explorer/CatalogExplorerViewOptionsRow'
-import { useViewModeTemporarySettings, ViewModeToggle } from '../../overview/components/catalog-explorer/ViewModeToggle'
-import { OverviewEntityGraph } from '../../overview/components/overview-content/OverviewEntityGraph'
+import { useComponentFilters } from '../../core/entity-filters'
+import { CatalogExplorerRelationList } from '../overview/components/catalog-explorer/CatalogExplorerRelationList'
+import { CatalogExplorerViewOptionsRow } from '../overview/components/catalog-explorer/CatalogExplorerViewOptionsRow'
+import { useViewModeTemporarySettings, ViewModeToggle } from '../overview/components/catalog-explorer/ViewModeToggle'
+import { OverviewEntityGraph } from '../overview/components/overview-content/OverviewEntityGraph'
 
 interface Props {
     className?: string

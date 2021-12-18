@@ -2,7 +2,7 @@ import React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { ComponentAuthorsFields } from '../../../../../graphql-operations'
+import { ComponentAuthorsFields } from '../../../../graphql-operations'
 
 import { PersonList } from './PersonList'
 

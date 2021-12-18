@@ -12,9 +12,9 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
-import { ComponentUsageFields } from '../../../../../graphql-operations'
-import { fetchHighlightedFileLineRanges } from '../../../../../repo/backend'
-import { ComponentIcon } from '../../../components/ComponentIcon'
+import { ComponentUsageFields } from '../../../../graphql-operations'
+import { fetchHighlightedFileLineRanges } from '../../../../repo/backend'
+import { ComponentIcon } from '../../components/ComponentIcon'
 
 import { PersonList } from './PersonList'
 

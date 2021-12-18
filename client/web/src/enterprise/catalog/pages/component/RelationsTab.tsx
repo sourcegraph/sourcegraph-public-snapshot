@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { ComponentStateDetailFields } from '../../../../../graphql-operations'
+import { ComponentStateDetailFields } from '../../../../graphql-operations'
 
 import { CatalogExplorer } from './CatalogExplorer'
 

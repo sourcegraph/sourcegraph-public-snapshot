@@ -2,8 +2,8 @@ import classNames from 'classnames'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-import { ComponentChangesFields, GitCommitFields } from '../../../../../graphql-operations'
-import { GitCommitNodeByline } from '../../../../../repo/commits/GitCommitNodeByline'
+import { ComponentChangesFields, GitCommitFields } from '../../../../graphql-operations'
+import { GitCommitNodeByline } from '../../../../repo/commits/GitCommitNodeByline'
 
 interface Props {
     component: ComponentChangesFields

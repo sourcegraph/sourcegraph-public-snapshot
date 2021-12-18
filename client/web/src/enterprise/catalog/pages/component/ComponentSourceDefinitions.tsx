@@ -5,7 +5,7 @@ import React from 'react'
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { ComponentSourcesFields } from '../../../../../graphql-operations'
+import { ComponentSourcesFields } from '../../../../graphql-operations'
 
 interface Props {
     component: ComponentSourcesFields

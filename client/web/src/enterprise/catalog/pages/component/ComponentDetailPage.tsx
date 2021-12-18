@@ -8,8 +8,8 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { PageTitle } from '../../../../../components/PageTitle'
-import { ComponentByNameResult, ComponentByNameVariables } from '../../../../../graphql-operations'
+import { PageTitle } from '../../../../components/PageTitle'
+import { ComponentByNameResult, ComponentByNameVariables } from '../../../../graphql-operations'
 
 import { ComponentDetailContent } from './ComponentDetailContent'
 import { COMPONENT_BY_NAME } from './gql'

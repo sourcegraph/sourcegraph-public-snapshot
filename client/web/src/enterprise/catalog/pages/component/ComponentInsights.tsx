@@ -10,10 +10,10 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { ViewGrid } from '../../../../../views'
-import { SmartInsight } from '../../../../insights/components/insights-view-grid/components/smart-insight/SmartInsight'
-import { CodeInsightsBackendContext } from '../../../../insights/core/backend/code-insights-backend-context'
-import { CodeInsightsSettingsCascadeBackend } from '../../../../insights/core/backend/setting-based-api/code-insights-setting-cascade-backend'
+import { ViewGrid } from '../../../../views'
+import { SmartInsight } from '../../../insights/components/insights-view-grid/components/smart-insight/SmartInsight'
+import { CodeInsightsBackendContext } from '../../../insights/core/backend/code-insights-backend-context'
+import { CodeInsightsSettingsCascadeBackend } from '../../../insights/core/backend/setting-based-api/code-insights-setting-cascade-backend'
 
 interface Props extends TelemetryProps, SettingsCascadeProps, PlatformContextProps {
     entity: Scalars['ID']

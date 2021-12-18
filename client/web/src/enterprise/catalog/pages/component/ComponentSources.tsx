@@ -8,9 +8,9 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { getFileDecorations } from '../../../../../backend/features'
-import { ComponentStateDetailFields, ComponentSourcesFields } from '../../../../../graphql-operations'
-import { TreeEntriesSection } from '../../../../../repo/tree/TreeEntriesSection'
+import { getFileDecorations } from '../../../../backend/features'
+import { ComponentStateDetailFields, ComponentSourcesFields } from '../../../../graphql-operations'
+import { TreeEntriesSection } from '../../../../repo/tree/TreeEntriesSection'
 
 interface Props extends ExtensionsControllerProps, ThemeProps {
     component: ComponentSourcesFields & Pick<ComponentStateDetailFields, 'url'>

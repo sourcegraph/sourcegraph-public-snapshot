@@ -7,11 +7,11 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
-import { CatalogIcon } from '../../../../../catalog'
-import { ComponentStateDetailFields } from '../../../../../graphql-operations'
-import { CatalogPage } from '../../../components/catalog-area-header/CatalogPage'
-import { CatalogGroupIcon } from '../../../components/CatalogGroupIcon'
-import { componentIconComponent } from '../../../components/ComponentIcon'
+import { CatalogIcon } from '../../../../catalog'
+import { ComponentStateDetailFields } from '../../../../graphql-operations'
+import { CatalogPage } from '../../components/catalog-area-header/CatalogPage'
+import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
+import { componentIconComponent } from '../../components/ComponentIcon'
 
 import { ChangesTab } from './ChangesTab'
 import { CodeTab } from './CodeTab'

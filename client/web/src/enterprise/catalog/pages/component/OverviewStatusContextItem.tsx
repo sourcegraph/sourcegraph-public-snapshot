@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
-import { ComponentStatusFields, ComponentStatusState } from '../../../../../graphql-operations'
+import { ComponentStatusFields, ComponentStatusState } from '../../../../graphql-operations'
 
 import styles from './OverviewStatusContextItem.module.scss'
 

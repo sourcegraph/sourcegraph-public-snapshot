@@ -1,8 +1,8 @@
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
-import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
-import { gitCommitFragment } from '../../../../../repo/commits/RepositoryCommitsPage'
-import { COMPONENT_OWNER_FRAGMENT } from '../../../components/entity-owner/gql'
+import { personLinkFieldsFragment } from '../../../../person/PersonLink'
+import { gitCommitFragment } from '../../../../repo/commits/RepositoryCommitsPage'
+import { COMPONENT_OWNER_FRAGMENT } from '../../components/entity-owner/gql'
 
 const COMPONENT_WHO_KNOWS_FRAGMENT = gql`
     fragment ComponentWhoKnowsFields on Component {

@@ -3,7 +3,7 @@ import EmailIcon from 'mdi-react/EmailIcon'
 import SlackIcon from 'mdi-react/SlackIcon'
 import React from 'react'
 
-import { ComponentStateDetailFields, ComponentWhoKnowsFields } from '../../../../../graphql-operations'
+import { ComponentStateDetailFields, ComponentWhoKnowsFields } from '../../../../graphql-operations'
 
 import { PersonList } from './PersonList'
 

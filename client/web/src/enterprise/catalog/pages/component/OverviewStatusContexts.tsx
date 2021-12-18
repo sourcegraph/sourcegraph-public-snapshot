@@ -4,7 +4,7 @@ import React from 'react'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { Timestamp } from '../../../../../components/time/Timestamp'
+import { Timestamp } from '../../../../components/time/Timestamp'
 import {
     ComponentAuthorsFields,
     ComponentUsageFields,
@@ -12,9 +12,9 @@ import {
     ComponentCodeOwnersFields,
     ComponentStatusFields,
     ComponentOwnerFields,
-} from '../../../../../graphql-operations'
-import { PersonLink } from '../../../../../person/PersonLink'
-import { EntityOwner } from '../../../components/entity-owner/EntityOwner'
+} from '../../../../graphql-operations'
+import { PersonLink } from '../../../../person/PersonLink'
+import { EntityOwner } from '../../components/entity-owner/EntityOwner'
 
 import { OverviewStatusContextItem } from './OverviewStatusContextItem'
 
