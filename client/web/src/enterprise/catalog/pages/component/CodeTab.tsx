@@ -9,6 +9,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ComponentStateDetailFields } from '../../../../graphql-operations'
 
 import { EntityCodeOwners } from './CodeOwners'
+import { ComponentCommits } from './ComponentCommits'
 import { ComponentContributors } from './ComponentContributors'
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 import { ComponentSources } from './ComponentSources'
@@ -30,6 +31,8 @@ export const CodeTab: React.FunctionComponent<Props> = ({ component, className, 
 
             <h4 className="sr-only">All files</h4>
             <ComponentSources {...props} component={component} className="mb-3 card p-2" />
+            <h4 className="sr-only">Recent commits</h4>
+            <ComponentCommits component={component} className="mb-3 card p-2" />
         </div>
         <div className="col-md-4 col-lg-3 col-xl-2 border-left p-3">
             <EntityCodeOwners entity={component} className="mb-3" />

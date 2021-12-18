@@ -13,7 +13,6 @@ import { CatalogPage } from '../../components/catalog-area-header/CatalogPage'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 import { componentIconComponent } from '../../components/ComponentIcon'
 
-import { ChangesTab } from './ChangesTab'
 import { CodeTab } from './CodeTab'
 import { ComponentAPI } from './ComponentApi'
 import { ComponentDocumentation } from './ComponentDocumentation'
@@ -44,7 +43,7 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ compone
                 },
 
                 {
-                    path: 'code',
+                    path: ['code', 'commits'],
                     text: 'Code',
                     content: <CodeTab {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
                 },
@@ -52,11 +51,6 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ compone
                     path: 'graph',
                     text: 'Graph',
                     content: <RelationsTab {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
-                },
-                {
-                    path: 'changes',
-                    text: 'Changes',
-                    content: <ChangesTab {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
                 },
                 false
                     ? {

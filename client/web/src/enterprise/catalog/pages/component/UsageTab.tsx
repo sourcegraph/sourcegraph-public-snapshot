@@ -70,6 +70,17 @@ export const UsageTab: React.FunctionComponent<Props> = ({
                 />
             </div>
             <div className="col-md-4 col-lg-3 col-xl-2 border-left p-3">
+                <h4 className="font-weight-bold">From components</h4>
+                <ol className={classNames('list-group mb-3')}>
+                    {componentEdges.map(edge => (
+                        <li key={edge.node.id} className={classNames('list-group-item')}>
+                            <Link to={edge.node.url} className="d-flex align-items-center text-body">
+                                <ComponentIcon component={edge.node} className="icon-inline text-muted mr-2" />
+                                {edge.node.name}
+                            </Link>
+                        </li>
+                    ))}
+                </ol>
                 <PersonList
                     title="Callers"
                     listTag="ol"
@@ -85,17 +96,6 @@ export const UsageTab: React.FunctionComponent<Props> = ({
                     }
                     className="mb-3"
                 />
-                <h4 className="font-weight-bold">From components</h4>
-                <ol className={classNames('list-group mb-3')}>
-                    {componentEdges.map(edge => (
-                        <li key={edge.node.id} className={classNames('list-group-item')}>
-                            <Link to={edge.node.url} className="d-flex align-items-center text-body">
-                                <ComponentIcon component={edge.node} className="icon-inline text-muted mr-2" />
-                                {edge.node.name}
-                            </Link>
-                        </li>
-                    ))}
-                </ol>
             </div>
         </div>
     ) : (
