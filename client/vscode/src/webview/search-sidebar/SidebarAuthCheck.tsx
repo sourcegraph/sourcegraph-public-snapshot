@@ -164,7 +164,7 @@ export const SidebarAuthCheck: React.FunctionComponent<OpenSearchPanelCtaProps> 
                         onClick={() => setHasAccount(true)}
                     >
                         <span className={classNames('my-3', styles.text)}>
-                            ERROR: Failed to verify your Access Token for {instanceHostname}. Please try with a new
+                            ERROR: Unable to verify your Access Token for {instanceHostname}. Please try with a new
                             Access Token or use CORS if you are currently on VS Code Web.
                         </span>
                     </a>

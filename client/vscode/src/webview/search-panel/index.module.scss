@@ -1,5 +1,37 @@
+
 .with-editor-font span {
     font-family: var(--vscode-editor-font-family) !important;
     font-weight: var(--vscode-editor-font-weight) !important;
     font-size: var(--vscode-editor-font-size) !important;
+}
+
+.search-page {
+    justify-content: flex-start;
+    width: 100%;
+    overflow: auto;
+}
+
+.logo {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    width: 20rem;
+    margin-top: 6rem;
+    max-width: 90%;
+
+    /* Reserve the image's height to avoid jitter before it loads. */
+    min-height: 54px;
+}
+
+.search-container {
+    flex: 1 1 auto;
+    margin-top: 2.5rem;
+    width: 100%;
+
+    position: relative;
+
+    &--with-content-below {
+        flex-grow: 0;
+        margin-bottom: 5rem;
+    }
 }
