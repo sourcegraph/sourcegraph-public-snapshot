@@ -52,6 +52,11 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ compone
                     text: 'Graph',
                     content: <RelationsTab {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
                 },
+                {
+                    path: 'events',
+                    text: 'Events',
+                    content: <p>TODO</p>,
+                },
                 false
                     ? {
                           path: 'docs',
