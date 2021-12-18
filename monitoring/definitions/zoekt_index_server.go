@@ -21,6 +21,21 @@ func ZoektIndexServer() *monitoring.Container {
 		Title:                    "Zoekt Index Server",
 		Description:              "Indexes repositories and populates the search index.",
 		NoSourcegraphDebugServer: true,
+		Templates: []sdk.TemplateVar{
+			{
+				Label:      "Shard",
+				Name:       "shard",
+				Type:       "query",
+				Datasource: monitoring.StringPtr("Prometheus"),
+				Query:      "label_values(index_num_assigned, instance)",
+				Multi:      true,
+				Refresh:    sdk.BoolInt{Flag: true, Value: monitoring.Int64Ptr(2)}, // Refresh on time range change
+				Sort:       3,
+				IncludeAll: true,
+				AllValue:   ".*",
+				Current:    sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"},
+			},
+		},
 		Groups: []monitoring.Group{
 			{
 				Title: "General",
@@ -121,19 +136,43 @@ func ZoektIndexServer() *monitoring.Container {
 					},
 					{
 						{
-							Name:        "indexed_job_results",
-							Description: "aggregate results of index jobs",
+							Name:        "indexed_job_results_all_instances",
+							Description: "aggregate results of index jobs (all instances)",
 							Query:       "sum by (state) (index_state_count)", // sum up the distinct states across all index-server replicas
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{state}}"),
-							Owner:       monitoring.ObservableOwnerSearchCore,
+							Panel: monitoring.Panel().LegendFormat("{{state}}").With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner: monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
-								This dashboard shows the outcomes of recently completed indexing jobs:
+								This dashboard shows the outcomes of recently completed indexing jobs across all index-server instances.
 
 								Legend:
 								- fail -> the indexing jobs failed
 								- success -> the indexing job succeeded and the index was updated
-								- success_meta -> the indexing job successed, but only metadata was updated
+								- success_meta -> the indexing job succeeded, but only metadata was updated
+								- noop -> the indexing job succeed, but we didn't need to update anything
+								- empty -> the indexing job succeeded, but the index was empty (i.e. the repository is empty)
+							`,
+						},
+						{
+							Name:        "indexed_job_results_per_instance",
+							Description: "aggregate results of index jobs (per instance)",
+							Query:       "sum by (instance, state) (index_state_count{instance=~`${shard:regex}`})",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{instance}} {{state}}").With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								This dashboard shows the outcomes of recently completed indexing jobs, split out across each index-server instance.
+
+								You can use the "shard" filter at the top of the page to select a particular instance.
+
+								Legend:
+								- fail -> the indexing jobs failed
+								- success -> the indexing job succeeded and the index was updated
+								- success_meta -> the indexing job succeeded, but only metadata was updated
 								- noop -> the indexing job succeed, but we didn't need to update anything
 								- empty -> the indexing job succeeded, but the index was empty (i.e. the repository is empty)
 							`,

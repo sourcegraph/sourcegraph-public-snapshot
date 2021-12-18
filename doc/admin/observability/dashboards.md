@@ -12189,14 +12189,14 @@ Query: `sum(increase(get_index_options_error_total[5m]))`
 
 #### zoekt-indexserver: indexed_job_results
 
-<p class="subtitle">Aggregate results of index jobs</p>
+<p class="subtitle">Aggregate results of index jobs (all instances)</p>
 
 This dashboard shows the outcomes of recently completed indexing jobs:
 
 Legend:
 - fail -> the indexing jobs failed
 - success -> the indexing job succeeded and the index was updated
-- success_meta -> the indexing job successed, but only metadata was updated
+- success_meta -> the indexing job succeeded, but only metadata was updated
 - noop -> the indexing job succeed, but we didn`t need to update anything
 - empty -> the indexing job succeeded, but the index was empty (i.e. the repository is empty)
 
@@ -12210,6 +12210,34 @@ To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver
 <summary>Technical details</summary>
 
 Query: `sum by (state) (index_state_count)`
+
+</details>
+
+<br />
+
+#### zoekt-indexserver: indexed_job_results_by_instance
+
+<p class="subtitle">Aggregate results of index jobs (per instance)</p>
+
+This dashboard shows the outcomes of recently completed indexing jobs:
+
+Legend:
+- fail -> the indexing jobs failed
+- success -> the indexing job succeeded and the index was updated
+- success_meta -> the indexing job succeeded, but only metadata was updated
+- noop -> the indexing job succeed, but we didn`t need to update anything
+- empty -> the indexing job succeeded, but the index was empty (i.e. the repository is empty)
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100031` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (instance, state) (index_state_count{instance=~"${shard:regex}"})`
 
 </details>
 
