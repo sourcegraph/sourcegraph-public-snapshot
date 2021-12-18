@@ -3252,6 +3252,23 @@ type Position {
     character: Int!
 }
 
+type LSIFDocument {
+    content: String!
+    occurrences: [LSIFOccurrence!]!
+}
+
+type LSIFOccurrence {
+    monikerId: String!
+    role: LSIFRole!
+    range: Range!
+}
+
+enum LSIFRole {
+    DEFINITION
+    REFERENCE
+    UNSPECIFIED
+}
+
 """
 A list of diagnostics.
 """
@@ -3687,6 +3704,10 @@ type GitCommit implements Node {
         """
         recursive: Boolean = false
     ): GitTree
+    """
+    The LSIF for the given path
+    """
+    searchBasedLSIF(path: String!): LSIFDocument
     """
     A list of file names in this repository.
     """

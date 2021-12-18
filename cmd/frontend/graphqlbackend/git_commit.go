@@ -4,11 +4,14 @@ import (
 	"context"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -19,6 +22,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed"
+	sb "github.com/sourcegraph/sourcegraph/lib/codeintel/search-based"
+	sbApi "github.com/sourcegraph/sourcegraph/lib/codeintel/search-based/api"
 )
 
 func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, error) {
@@ -242,6 +248,78 @@ func (r *GitCommitResolver) File(ctx context.Context, args *struct {
 	Path string
 }) (*GitTreeEntryResolver, error) {
 	return r.Blob(ctx, args)
+}
+
+func (r *GitCommitResolver) SearchBasedLSIF(ctx context.Context, args *struct {
+	Path string
+}) (*lsifDocumentResolver, error) {
+	e, err := r.Blob(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	content, err := e.Content(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &lsifDocumentResolver{path: e.Path(), content: content}, nil
+}
+
+type lsifDocumentResolver struct {
+	path    string
+	content string
+}
+
+func (r *lsifDocumentResolver) Content() (string, error) {
+	return r.content, nil
+}
+
+type lsifOccurrenceResolver struct {
+	occurrence *lsif_typed.MonikerOccurrence
+}
+
+func (r *lsifDocumentResolver) Occurrences(ctx context.Context) ([]*lsifOccurrenceResolver, error) {
+	for _, indexer := range sb.AllIndexers {
+		for _, extension := range indexer.FileExtensions() {
+			if strings.HasSuffix(r.path, extension) {
+				doc, _ := indexer.Index(ctx, sbApi.NewInput(r.path, []byte(r.content)), &sbApi.IndexingOptions{})
+				if doc != nil {
+					resolvers := make([]*lsifOccurrenceResolver, len(doc.Occurrences))
+					for i, occ := range doc.Occurrences {
+						resolvers[i] = &lsifOccurrenceResolver{occurrence: occ}
+					}
+					return resolvers, nil
+				}
+			}
+		}
+	}
+	return nil, nil
+}
+
+func (r *lsifOccurrenceResolver) MonikerId() (string, error) {
+	return r.occurrence.MonikerId, nil
+}
+
+func (r *lsifOccurrenceResolver) Role() string {
+	switch r.occurrence.Role {
+	case lsif_typed.MonikerOccurrence_ROLE_DEFINITION:
+		return "DEFINITION"
+	case lsif_typed.MonikerOccurrence_ROLE_REFERENCE:
+		return "REFERENCE"
+	}
+	return "UNSPECIFIED"
+}
+
+func (r *lsifOccurrenceResolver) Range() (*rangeResolver, error) {
+	return &rangeResolver{lspRange: lsp.Range{
+		Start: lsp.Position{
+			Line:      int(r.occurrence.Range.Start.Line),
+			Character: int(r.occurrence.Range.Start.Character),
+		},
+		End: lsp.Position{
+			Line:      int(r.occurrence.Range.End.Line),
+			Character: int(r.occurrence.Range.End.Character),
+		}},
+	}, nil
 }
 
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
