@@ -35,6 +35,19 @@ func ZoektIndexServer() *monitoring.Container {
 				AllValue:   ".*",
 				Current:    sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"},
 			},
+			{
+				Label:      "Index state",
+				Name:       "indexState",
+				Type:       "query",
+				Datasource: monitoring.StringPtr("Prometheus"),
+				Query:      "label_values(index_state_count, state)",
+				Multi:      true,
+				Refresh:    sdk.BoolInt{Flag: true, Value: monitoring.Int64Ptr(2)}, // Refresh on time range change
+				Sort:       3,
+				IncludeAll: true,
+				AllValue:   ".*",
+				Current:    sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"},
+			},
 		},
 		Groups: []monitoring.Group{
 			{
@@ -62,18 +75,6 @@ func ZoektIndexServer() *monitoring.Container {
 						},
 					},
 					{
-						{
-							Name:        "repo_index_state",
-							Description: "indexing results over 5m (noop=no changes, empty=no branches to index)",
-							Query:       `sum by (state) (increase(index_repo_seconds_count[5m]))`,
-							NoAlert:     true,
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Panel: monitoring.Panel().LegendFormat("{{state}}").With(func(o monitoring.Observable, p *sdk.Panel) {
-								p.GraphPanel.Yaxes[0].LogBase = 2  // log to show the huge number of "noop" or "empty"
-								p.GraphPanel.Tooltip.Shared = true // show multiple lines simultaneously
-							}),
-							Interpretation: "A persistent failing state indicates some repositories cannot be indexed, perhaps due to size and timeouts.",
-						},
 						{
 							Name:        "repo_index_success_speed",
 							Description: "successful indexing durations",
@@ -134,11 +135,16 @@ func ZoektIndexServer() *monitoring.Container {
 							`,
 						},
 					},
+				},
+			},
+			{
+				Title: "Indexing results",
+				Rows: []monitoring.Row{
 					{
 						{
 							Name:        "indexed_job_results_all_instances",
-							Description: "aggregate results of index jobs (all instances)",
-							Query:       "sum by (state) (index_state_count)", // sum up the distinct states across all index-server replicas
+							Description: "index result state counts (aggregate)",
+							Query:       "sum by (state) (index_state_count{state=~`${indexState:regex}`})", // sum up the distinct states across all index-server replicas
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{state}}").With(func(o monitoring.Observable, p *sdk.Panel) {
 								p.GraphPanel.Legend.RightSide = true
@@ -157,8 +163,8 @@ func ZoektIndexServer() *monitoring.Container {
 						},
 						{
 							Name:        "indexed_job_results_per_instance",
-							Description: "aggregate results of index jobs (per instance)",
-							Query:       "sum by (instance, state) (index_state_count{instance=~`${shard:regex}`})",
+							Description: "index result state counts (per instance)",
+							Query:       "sum by (instance, state) (index_state_count{state=~`${indexState:regex}`,instance=~`${shard:regex}`})",
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{instance}} {{state}}").With(func(o monitoring.Observable, p *sdk.Panel) {
 								p.GraphPanel.Legend.RightSide = true
@@ -176,6 +182,34 @@ func ZoektIndexServer() *monitoring.Container {
 								- noop -> the indexing job succeed, but we didn't need to update anything
 								- empty -> the indexing job succeeded, but the index was empty (i.e. the repository is empty)
 							`,
+						},
+					},
+					{
+						{
+							Name:        "repo_index_state",
+							Description: "index results duration over 5m (aggregate)",
+							Query:       "sum by (state) (increase(index_repo_seconds_count{state=~`${indexState:regex}`}[5m]))",
+							NoAlert:     true,
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Panel: monitoring.Panel().LegendFormat("{{state}}").With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+								p.GraphPanel.Yaxes[0].LogBase = 2  // log to show the huge number of "noop" or "empty"
+								p.GraphPanel.Tooltip.Shared = true // show multiple lines simultaneously
+							}),
+							Interpretation: "A persistent failing state indicates some repositories cannot be indexed, perhaps due to size and timeouts.",
+						},
+						{
+							Name:        "repo_index_state",
+							Description: "index results duration over 5m (per instance)",
+							Query:       "sum by (instance, state) (increase(index_repo_seconds_count{state=~`${indexState:regex}`,instance=~`${shard:regex}`}[5m]))",
+							NoAlert:     true,
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Panel: monitoring.Panel().LegendFormat("{{instance}} {{state}}").With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+								p.GraphPanel.Yaxes[0].LogBase = 2  // log to show the huge number of "noop" or "empty"
+								p.GraphPanel.Tooltip.Shared = true // show multiple lines simultaneously
+							}),
+							Interpretation: "A persistent failing state indicates some repositories cannot be indexed, perhaps due to size and timeouts.",
 						},
 					},
 				},
