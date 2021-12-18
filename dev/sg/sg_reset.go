@@ -15,6 +15,7 @@ import (
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -25,10 +26,13 @@ import (
 )
 
 var (
-	resetFlagSet          = flag.NewFlagSet("sg reset", flag.ExitOnError)
-	resetPGFlagSet        = flag.NewFlagSet("sg reset pg", flag.ExitOnError)
-	resetDatabaseNameFlag = resetPGFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance.")
-	resetRedisFlagSet     = flag.NewFlagSet("sg reset redis", flag.ExitOnError)
+	resetFlagSet             = flag.NewFlagSet("sg reset", flag.ExitOnError)
+	resetPGFlagSet           = flag.NewFlagSet("sg reset pg", flag.ExitOnError)
+	resetDatabaseNameFlag    = resetPGFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance.")
+	resetRedisFlagSet        = flag.NewFlagSet("sg reset redis", flag.ExitOnError)
+	resetAddUserFlagSet      = flag.NewFlagSet("sg reset add-user", flag.ExitOnError)
+	resetAddUserNameFlag     = resetAddUserFlagSet.String("name", "sourcegraph", "User name")
+	resetAddUserPasswordFlag = resetAddUserFlagSet.String("password", "sourcegraph", "User password")
 
 	resetCommand = &ffcli.Command{
 		Name:       "reset",
@@ -38,7 +42,7 @@ var (
 			return flag.ErrHelp
 		},
 		Subcommands: []*ffcli.Command{
-			&ffcli.Command{
+			{
 				Name:       "pg",
 				ShortUsage: fmt.Sprintf("sg reset [-db=%s]", db.DefaultDatabase.Name),
 				ShortHelp:  "Drops, recreates and migrates the specified Sourcegraph database.",
@@ -46,7 +50,7 @@ var (
 				FlagSet:    resetPGFlagSet,
 				Exec:       resetPGExec,
 			},
-			&ffcli.Command{
+			{
 				Name:       "redis",
 				ShortUsage: fmt.Sprintf("sg reset redis [-db=%s]", db.DefaultDatabase.Name), // TODO edit flag
 				ShortHelp:  "Drops, recreates and migrates the specified redis Sourcegraph database.",
@@ -54,9 +58,45 @@ var (
 				FlagSet:    resetRedisFlagSet,
 				Exec:       resetRedisExec,
 			},
+			{
+				Name:       "add-user",
+				ShortUsage: fmt.Sprintf("sg reset add-user [-name=%s -password=%s]", "sourcegraph", "sourcegraphsourcegraph"), // TODO edit flag
+				ShortHelp:  "Create a sourcegraph user",
+				LongHelp:   `TODO`,
+				FlagSet:    resetAddUserFlagSet,
+				Exec:       resetAddUserExec,
+			},
 		},
 	}
 )
+
+func resetAddUserExec(ctx context.Context, args []string) error {
+	conn, err := connections.NewFrontendDB("", "frontend", true, &observation.TestContext)
+	if err != nil {
+		return err
+	}
+	_ = database.NewDB(conn)
+	time.Sleep(5 * time.Second)
+	fmt.Println("fofof|")
+	// _, err = db.Users().Create(ctx, database.NewUser{
+	// 	Username:        *resetAddUserNameFlag,
+	// 	Email:           fmt.Sprintf("%s@sourcegraph.com", *resetDatabaseNameFlag),
+	// 	EmailIsVerified: true,
+	// 	Password:        *resetAddUserPasswordFlag,
+	// })
+	// time.Sleep(5 * time.Second)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// err = db.Users().SetIsSiteAdmin(ctx, user.ID, true)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// fmt.Println(user.ID)
+	return nil
+}
 
 func resetRedisExec(ctx context.Context, args []string) error {
 	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
