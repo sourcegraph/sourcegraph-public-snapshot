@@ -11,7 +11,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { ComponentByNameResult, ComponentByNameVariables } from '../../../../../graphql-operations'
 
-import { EntityDetailContent } from './EntityDetailContent'
+import { ComponentDetailContent } from './ComponentDetailContent'
 import { COMPONENT_BY_NAME } from './gql'
 
 export interface Props
@@ -20,44 +20,41 @@ export interface Props
         ThemeProps,
         SettingsCascadeProps,
         PlatformContextProps {
-    /** The name of the catalog entity. */
-    entityName: string
+    /** The name of the catalog component. */
+    componentName: string
 }
 
 /**
- * The catalog entity detail page.
+ * The catalog component detail page.
  */
-export const EntityDetailPage: React.FunctionComponent<Props> = ({ entityName, telemetryService, ...props }) => {
+export const ComponentDetailPage: React.FunctionComponent<Props> = ({ componentName, telemetryService, ...props }) => {
     useEffect(() => {
         telemetryService.logViewEvent('ComponentDetail')
     }, [telemetryService])
 
-    const { data, error, loading } = useQuery<ComponentByNameResult, ComponentByNameVariables>(
-        COMPONENT_BY_NAME,
-        {
-            variables: { type: 'COMPONENT', name: entityName },
+    const { data, error, loading } = useQuery<ComponentByNameResult, ComponentByNameVariables>(COMPONENT_BY_NAME, {
+        variables: { name: componentName },
 
-            // Cache this data but always re-request it in the background when we revisit
-            // this page to pick up newer changes.
-            fetchPolicy: 'cache-and-network',
+        // Cache this data but always re-request it in the background when we revisit
+        // this page to pick up newer changes.
+        fetchPolicy: 'cache-and-network',
 
-            // For subsequent requests while this page is open, make additional network
-            // requests; this is necessary for `refetch` to actually use the network. (see
-            // https://github.com/apollographql/apollo-client/issues/5515)
-            nextFetchPolicy: 'network-only',
-        }
-    )
+        // For subsequent requests while this page is open, make additional network
+        // requests; this is necessary for `refetch` to actually use the network. (see
+        // https://github.com/apollographql/apollo-client/issues/5515)
+        nextFetchPolicy: 'network-only',
+    })
 
     return (
         <>
             <PageTitle
                 title={
                     error
-                        ? 'Error loading entity'
+                        ? 'Error loading component'
                         : loading && !data
-                        ? 'Loading entity...'
+                        ? 'Loading component...'
                         : !data || !data.component
-                        ? 'Entity not found'
+                        ? 'Component not found'
                         : data.component.name
                 }
             />
@@ -66,9 +63,9 @@ export const EntityDetailPage: React.FunctionComponent<Props> = ({ entityName, t
             ) : error && !data ? (
                 <div className="m-3 alert alert-danger">Error: {error.message}</div>
             ) : !data || !data.component ? (
-                <div className="m-3 alert alert-danger">Entity not found in catalog</div>
+                <div className="m-3 alert alert-danger">Component not found in catalog</div>
             ) : (
-                <EntityDetailContent {...props} entity={data.component} telemetryService={telemetryService} />
+                <ComponentDetailContent {...props} component={data.component} telemetryService={telemetryService} />
             )}
         </>
     )

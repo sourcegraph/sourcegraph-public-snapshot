@@ -20,18 +20,18 @@ import { UserAvatar } from '../../../../../user/UserAvatar'
 import { ComponentIcon } from '../../../components/ComponentIcon'
 import { EntityOwner } from '../../../components/entity-owner/EntityOwner'
 
+import { CatalogExplorer } from './CatalogExplorer'
+import { ComponentInsights } from './ComponentInsights'
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
-import { EntityCatalogExplorer } from './EntityCatalogExplorer'
-import { EntityInsights } from './EntityInsights'
-import { whoKnowsDescription } from './EntityWhoKnowsTab'
 import { OverviewStatusContexts } from './OverviewStatusContexts'
+import { whoKnowsDescription } from './WhoKnowsTab'
 
 interface Props extends TelemetryProps, SettingsCascadeProps, PlatformContextProps {
     entity: ComponentStateDetailFields
     className?: string
 }
 
-export const EntityOverviewTab: React.FunctionComponent<Props> = ({
+export const OverviewTab: React.FunctionComponent<Props> = ({
     entity,
     className,
     telemetryService,
@@ -42,7 +42,7 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
         <div className="col-md-4 col-lg-3 col-xl-2 border-right p-3">
             {entity.name && (
                 <h2 className="d-flex align-items-center mb-1">
-                    <ComponentIcon entity={entity} className="icon-inline mr-2" /> {entity.name}
+                    <ComponentIcon component={entity} className="icon-inline mr-2" /> {entity.name}
                 </h2>
             )}
             <div className="text-muted small mb-2">
@@ -108,9 +108,9 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
                 {entity.commits?.nodes[0] && <LastCommit commit={entity.commits?.nodes[0]} className="card-footer" />}
             </div>
             <OverviewStatusContexts entity={entity} itemClassName="mb-3" />
-            <EntityCatalogExplorer entity={entity.id} className="mb-3" />
+            <CatalogExplorer entity={entity.id} className="mb-3" />
             {false && (
-                <EntityInsights
+                <ComponentInsights
                     entity={entity.id}
                     className="mb-3"
                     telemetryService={telemetryService}

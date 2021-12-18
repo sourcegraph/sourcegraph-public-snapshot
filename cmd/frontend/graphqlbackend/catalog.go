@@ -205,6 +205,7 @@ type ComponentAPISymbolsArgs struct {
 type PackageResolver interface {
 	ID() graphql.ID
 	Name() string
+	URL() string
 
 	TagPackageEntity()
 }

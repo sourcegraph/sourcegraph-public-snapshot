@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 import { Form } from 'reactstrap'
 
-import { ComponentType } from '../../../../../../graphql-operations'
+import { ComponentKind } from '../../../../../../graphql-operations'
 import { ComponentFiltersProps } from '../../../../core/entity-filters'
 
 import { CatalogExplorerViewOptionInput } from './CatalogExplorerViewOptionInput'
@@ -39,8 +39,8 @@ export const CatalogExplorerViewOptionsRow: React.FunctionComponent<Props> = ({
         [filters, onFiltersChange, query]
     )
 
-    const onQueryTypeChange = useCallback(
-        (value: ComponentType | undefined): void => {
+    const onQueryKindChange = useCallback(
+        (value: ComponentKind | undefined): void => {
             setQueryInput(undefined)
             onFiltersQueryFieldChange('is', value)
         },
@@ -51,11 +51,18 @@ export const CatalogExplorerViewOptionsRow: React.FunctionComponent<Props> = ({
         <Form className={classNames('form-inline', styles.form, className)} onSubmit={onSubmit}>
             {before && <div>{before}</div>}
             {toggle}
-            <CatalogExplorerViewOptionInput<ComponentType>
+            <CatalogExplorerViewOptionInput<ComponentKind>
                 label="Type"
-                values={[ComponentType.COMPONENT, ComponentType.PACKAGE]}
+                values={[
+                    ComponentKind.SERVICE,
+                    ComponentKind.APPLICATION,
+                    ComponentKind.LIBRARY,
+                    ComponentKind.TOOL,
+                    ComponentKind.WEBSITE,
+                    ComponentKind.OTHER,
+                ]}
                 selected={filtersQueryParsed.is}
-                onChange={onQueryTypeChange}
+                onChange={onQueryKindChange}
                 className={classNames('mb-0', styles.inputSelect)}
             />
             <div className={classNames('form-group mb-0 flex-grow-1')}>

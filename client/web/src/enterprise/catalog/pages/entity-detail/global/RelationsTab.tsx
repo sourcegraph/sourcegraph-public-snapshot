@@ -3,15 +3,15 @@ import React from 'react'
 
 import { ComponentStateDetailFields } from '../../../../../graphql-operations'
 
-import { EntityCatalogExplorer } from './EntityCatalogExplorer'
+import { CatalogExplorer } from './CatalogExplorer'
 
 interface Props {
     entity: Pick<ComponentStateDetailFields, 'id'>
     className?: string
 }
 
-export const EntityRelationsTab: React.FunctionComponent<Props> = ({ entity, className }) => (
+export const RelationsTab: React.FunctionComponent<Props> = ({ entity, className }) => (
     <div className={classNames('p-3', className)}>
-        <EntityCatalogExplorer entity={entity.id} className="mb-3" />
+        <CatalogExplorer entity={entity.id} className="mb-3" />
     </div>
 )

@@ -185,7 +185,7 @@ const EntityNodeLabel: React.FunctionComponent<CustomNodeLabelProps> = ({
         to={entity.url}
         className={classNames('d-flex align-items-center text-body text-nowrap', { 'font-weight-bold': isActive })}
     >
-        <ComponentIcon entity={entity} className="icon-inline mr-1" /> {entity.name}
+        <ComponentIcon component={entity} className="icon-inline mr-1" /> {entity.name}
     </Link>
 )
 

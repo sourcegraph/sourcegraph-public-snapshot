@@ -3,18 +3,23 @@ import React from 'react'
 import { Switch, Route, useRouteMatch, RouteComponentProps } from 'react-router'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { HeroPage } from '../../components/HeroPage'
 
-import { EntityDetailPage } from './pages/entity-detail/global/EntityDetailPage'
+import { ComponentDetailPage } from './pages/entity-detail/global/ComponentDetailPage'
 import { GroupDetailPage } from './pages/group-detail/GroupDetailPage'
 import { ExplorePage } from './pages/overview/global/ExplorePage'
-import { PackageDetailPage } from './pages/package-detail/PackageDetailPage'
 
-interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {}
+interface Props
+    extends TelemetryProps,
+        ExtensionsControllerProps,
+        ThemeProps,
+        SettingsCascadeProps,
+        PlatformContextProps {}
 
 /**
  * The main entrypoint to the catalog UI.
@@ -26,20 +31,10 @@ export const CatalogArea: React.FunctionComponent<Props> = ({ telemetryService, 
         <Switch>
             <Route path={`${match.url}/components/:name`}>
                 {(matchProps: RouteComponentProps<{ name: string }>) => (
-                    <EntityDetailPage
+                    <ComponentDetailPage
                         key={1}
                         {...props}
-                        entityName={matchProps.match.params.name}
-                        telemetryService={telemetryService}
-                    />
-                )}
-            </Route>
-            <Route path={`${match.url}/packages/:name*`}>
-                {(matchProps: RouteComponentProps<{ name: string }>) => (
-                    <PackageDetailPage
-                        key={1}
-                        {...props}
-                        entityName={matchProps.match.params.name}
+                        componentName={matchProps.match.params.name}
                         telemetryService={telemetryService}
                     />
                 )}

@@ -27,7 +27,7 @@ const INSIGHT_IDS = [
 ]
 const ENTITY_INSIGHTS_PAGE_CONTEXT = {}
 
-export const EntityInsights: React.FunctionComponent<Props> = ({
+export const ComponentInsights: React.FunctionComponent<Props> = ({
     settingsCascade,
     platformContext,
     telemetryService,

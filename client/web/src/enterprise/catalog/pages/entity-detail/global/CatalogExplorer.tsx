@@ -18,7 +18,7 @@ interface Props {
     className?: string
 }
 
-export const EntityCatalogExplorer: React.FunctionComponent<Props> = ({ entity, className }) => {
+export const CatalogExplorer: React.FunctionComponent<Props> = ({ entity, className }) => {
     const filtersProps = useComponentFilters('')
 
     const [viewMode, setViewMode] = useViewModeTemporarySettings()

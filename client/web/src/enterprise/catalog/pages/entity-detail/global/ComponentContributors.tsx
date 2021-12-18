@@ -11,7 +11,7 @@ interface Props {
     className?: string
 }
 
-export const EntityContributors: React.FunctionComponent<Props> = ({ component: { authors }, className }) => (
+export const ComponentContributors: React.FunctionComponent<Props> = ({ component: { authors }, className }) => (
     <PersonList
         title="Contributors"
         listTag="ol"

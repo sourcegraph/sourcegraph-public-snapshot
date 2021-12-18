@@ -130,7 +130,7 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
                             >
                                 <div className="mb-0 d-flex align-items-center">
                                     <Link to={entity.url} className="d-inline-flex align-items-center stretched-link">
-                                        <ComponentIcon entity={entity} className="icon-inline text-muted mr-1" />
+                                        <ComponentIcon component={entity} className="icon-inline text-muted mr-1" />
 
                                         {entity.name}
                                     </Link>
@@ -158,12 +158,10 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
                         {group.ownedEntities.map(entity => (
                             <li key={entity.id} className="list-group-item d-flex align-items-center position-relative">
                                 <Link to={entity.url} className="d-flex align-items-center mr-1">
-                                    <ComponentIcon entity={entity} className="icon-inline text-muted mr-1" />
+                                    <ComponentIcon component={entity} className="icon-inline text-muted mr-1" />
                                     {entity.name}
                                 </Link>
-                                {entity.__typename === 'Component' && (
-                                    <ComponentStateIndicator entity={entity} />
-                                )}
+                                {entity.__typename === 'Component' && <ComponentStateIndicator entity={entity} />}
                             </li>
                         ))}
                     </ul>

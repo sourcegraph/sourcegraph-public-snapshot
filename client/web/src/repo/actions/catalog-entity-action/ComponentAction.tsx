@@ -59,8 +59,7 @@ export const ComponentAction: React.FunctionComponent<Props & RepoHeaderContext>
         return null
     }
 
-    const components =
-        (data && data.node?.__typename === 'Repository' && data.node.commit?.blob?.components) || null
+    const components = (data && data.node?.__typename === 'Repository' && data.node.commit?.blob?.components) || null
 
     if (!components || components.length === 0) {
         return null
@@ -71,7 +70,7 @@ export const ComponentAction: React.FunctionComponent<Props & RepoHeaderContext>
     if (props.actionType === 'dropdown') {
         return (
             <RepoHeaderActionButtonLink to={entity.url} className="btn" file={true}>
-                <ComponentIcon entity={entity} className="icon-inline mr-1" /> {entity.name} (in catalog)
+                <ComponentIcon component={entity} className="icon-inline mr-1" /> {entity.name} (in catalog)
             </RepoHeaderActionButtonLink>
         )
     }
@@ -95,7 +94,7 @@ const ComponentActionPopoverButton: React.FunctionComponent<{
         <>
             <div ref={targetButtonReference}>
                 <RepoHeaderActionButtonLink to={entity.url} className={buttonClassName}>
-                    <ComponentIcon entity={entity} className="icon-inline mr-1" /> {entity.name}
+                    <ComponentIcon component={entity} className="icon-inline mr-1" /> {entity.name}
                 </RepoHeaderActionButtonLink>
             </div>
             <Popover
@@ -108,7 +107,7 @@ const ComponentActionPopoverButton: React.FunctionComponent<{
                 style={{ maxWidth: '50vw' }}
             >
                 <h3>
-                    <ComponentIcon entity={entity} className="icon-inline mr-1" /> {entity.name}
+                    <ComponentIcon component={entity} className="icon-inline mr-1" /> {entity.name}
                     <ComponentStateIndicator entity={entity} className="ml-1" />
                 </h3>
                 {entity.description && <p>{entity.description}</p>}

@@ -54,7 +54,7 @@ export const CatalogHealthTable: React.FunctionComponent<Props> = ({ filters, qu
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
-            return data.catalog.entities
+            return data.components
         },
     })
 
@@ -128,10 +128,10 @@ const CatalogHealthTableContent: React.FunctionComponent<{
             </colgroup>
             <thead>
                 <tr>
-                    <th className={classNames(TH_CLASS_NAME, styles.headerEntityName)} scope="col">
+                    <th className={classNames(TH_CLASS_NAME, styles.headerName)} scope="col">
                         Name
                     </th>
-                    <th className={classNames(TH_CLASS_NAME, styles.headerEntityOwner)} scope="col">
+                    <th className={classNames(TH_CLASS_NAME, styles.headerOwner)} scope="col">
                         Owner
                     </th>
                     <th className={classNames(TH_CLASS_NAME, styles.headerCombinedStatus)} scope="col">
@@ -181,7 +181,7 @@ const CatalogHealthTableRow: React.FunctionComponent<{
                 <h3 className={classNames('h6 font-weight-bold mb-0 d-flex align-items-center')}>
                     <Link to={node.url} className={classNames('d-block text-truncate')}>
                         <ComponentIcon
-                            entity={node}
+                            component={node}
                             className={classNames('icon-inline mr-1 flex-shrink-0 text-muted')}
                         />
                         {node.name}

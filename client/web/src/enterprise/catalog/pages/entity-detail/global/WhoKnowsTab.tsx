@@ -12,10 +12,7 @@ interface Props {
     className?: string
 }
 
-export const EntityWhoKnowsTab: React.FunctionComponent<Props> = ({
-    component: { whoKnows, ...entity },
-    className,
-}) => (
+export const WhoKnowsTab: React.FunctionComponent<Props> = ({ component: { whoKnows, ...entity }, className }) => (
     <div className={classNames(className)}>
         <div className="container my-3">
             <PersonList

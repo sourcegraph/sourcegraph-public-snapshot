@@ -35,7 +35,7 @@ export const ComponentRow: React.FunctionComponent<Props> = ({
         {before && <span className={classNames('text-nowrap', itemStartClassName)}>{before}</span>}
         <h3 className={classNames('h6 font-weight-bold mb-0 d-flex align-items-center', !before && itemStartClassName)}>
             <Link to={node.url} className={classNames('d-block text-truncate')}>
-                <ComponentIcon entity={node} className={classNames('icon-inline mr-1 flex-shrink-0 text-muted')} />
+                <ComponentIcon component={node} className={classNames('icon-inline mr-1 flex-shrink-0 text-muted')} />
                 {node.name}
             </Link>
             <ComponentStateIndicator entity={node} className="ml-1" />

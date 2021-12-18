@@ -23,7 +23,7 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
     className?: string
 }
 
-export const EntityUsageTab: React.FunctionComponent<Props> = ({
+export const UsageTab: React.FunctionComponent<Props> = ({
     component: { usage },
     className,
     settingsCascade,
@@ -90,7 +90,7 @@ export const EntityUsageTab: React.FunctionComponent<Props> = ({
                     {componentEdges.map(edge => (
                         <li key={edge.node.id} className={classNames('list-group-item')}>
                             <Link to={edge.node.url} className="d-flex align-items-center text-body">
-                                <ComponentIcon entity={edge.node} className="icon-inline text-muted mr-2" />
+                                <ComponentIcon component={edge.node} className="icon-inline text-muted mr-2" />
                                 {edge.node.name}
                             </Link>
                         </li>

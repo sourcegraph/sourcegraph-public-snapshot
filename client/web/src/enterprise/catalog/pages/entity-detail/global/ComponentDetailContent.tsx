@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -9,18 +10,17 @@ import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { CatalogIcon } from '../../../../../catalog'
 import { ComponentStateDetailFields } from '../../../../../graphql-operations'
 import { CatalogPage } from '../../../components/catalog-area-header/CatalogPage'
-import { componentIconComponent } from '../../../components/ComponentIcon'
 import { CatalogGroupIcon } from '../../../components/CatalogGroupIcon'
+import { componentIconComponent } from '../../../components/ComponentIcon'
 
+import { ChangesTab } from './ChangesTab'
+import { CodeTab } from './CodeTab'
 import { ComponentAPI } from './ComponentApi'
 import { ComponentDocumentation } from './ComponentDocumentation'
-import { EntityChangesTab } from './EntityChangesTab'
-import { EntityCodeTab } from './EntityCodeTab'
-import { EntityOverviewTab } from './EntityOverviewTab'
-import { EntityUsageTab } from './EntityUsageTab'
-import { EntityWhoKnowsTab } from './EntityWhoKnowsTab'
-import { EntityRelationsTab } from './EntityRelationsTab'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { OverviewTab } from './OverviewTab'
+import { RelationsTab } from './RelationsTab'
+import { UsageTab } from './UsageTab'
+import { WhoKnowsTab } from './WhoKnowsTab'
 
 interface Props
     extends TelemetryProps,
@@ -28,12 +28,12 @@ interface Props
         ThemeProps,
         SettingsCascadeProps,
         PlatformContextProps {
-    entity: ComponentStateDetailFields
+    component: ComponentStateDetailFields
 }
 
 const TAB_CONTENT_CLASS_NAME = 'flex-1 align-self-stretch overflow-auto'
 
-export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ...props }) => {
+export const ComponentDetailContent: React.FunctionComponent<Props> = ({ component, ...props }) => {
     const tabs = useMemo<React.ComponentProps<typeof CatalogPage>['tabs']>(
         () =>
             [
@@ -41,86 +41,74 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                     path: '',
                     exact: true,
                     text: 'Overview',
-                    content: <EntityOverviewTab {...props} entity={entity} className={TAB_CONTENT_CLASS_NAME} />,
+                    content: <OverviewTab {...props} entity={component} className={TAB_CONTENT_CLASS_NAME} />,
                 },
-                entity.__typename === 'Component'
+                component.__typename === 'Component'
                     ? {
                           path: 'code',
                           text: 'Code',
-                          content: <EntityCodeTab {...props} entity={entity} className={TAB_CONTENT_CLASS_NAME} />,
+                          content: <CodeTab {...props} entity={component} className={TAB_CONTENT_CLASS_NAME} />,
                       }
                     : null,
-                entity.__typename === 'Component'
+                component.__typename === 'Component'
                     ? {
                           path: 'relations',
                           text: 'Relations',
-                          content: <EntityRelationsTab {...props} entity={entity} className={TAB_CONTENT_CLASS_NAME} />,
+                          content: <RelationsTab {...props} entity={component} className={TAB_CONTENT_CLASS_NAME} />,
                       }
                     : null,
 
-                entity.__typename === 'Component'
+                component.__typename === 'Component'
                     ? {
                           path: 'changes',
                           text: 'Changes',
-                          content: <EntityChangesTab {...props} entity={entity} className={TAB_CONTENT_CLASS_NAME} />,
+                          content: <ChangesTab {...props} entity={component} className={TAB_CONTENT_CLASS_NAME} />,
                       }
                     : null,
-                false && entity.__typename === 'Component'
+                false
                     ? {
                           path: 'docs',
                           text: 'Docs',
-                          content: (
-                              <ComponentDocumentation component={entity} className={TAB_CONTENT_CLASS_NAME} />
-                          ),
+                          content: <ComponentDocumentation component={component} className={TAB_CONTENT_CLASS_NAME} />,
                       }
                     : null,
-                false && entity.__typename === 'Component'
+                false
                     ? {
                           path: 'api',
                           text: 'API',
-                          content: (
-                              <ComponentAPI {...props} component={entity} className={TAB_CONTENT_CLASS_NAME} />
-                          ),
+                          content: <ComponentAPI {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
                       }
                     : null,
-                entity.__typename === 'Component'
+                component.__typename === 'Component'
                     ? {
                           path: 'usage',
                           text: 'Usage',
-                          content: (
-                              <EntityUsageTab {...props} component={entity} className={TAB_CONTENT_CLASS_NAME} />
-                          ),
+                          content: <UsageTab {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
                       }
                     : null,
-                entity.__typename === 'Component'
+                component.__typename === 'Component'
                     ? {
                           path: 'who-knows',
                           text: 'Who knows',
-                          content: (
-                              <EntityWhoKnowsTab
-                                  {...props}
-                                  component={entity}
-                                  className={TAB_CONTENT_CLASS_NAME}
-                              />
-                          ),
+                          content: <WhoKnowsTab {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
                       }
                     : null,
             ].filter(isDefined),
-        [entity, props]
+        [component, props]
     )
     return (
         <CatalogPage
             path={[
                 { icon: CatalogIcon, to: '/catalog' },
-                ...[...entity.owner.ancestorGroups, entity.owner].map(owner => ({
+                ...[...component.owner.ancestorGroups, component.owner].map(owner => ({
                     icon: CatalogGroupIcon,
                     text: owner.name,
                     to: owner.url,
                 })),
                 {
-                    icon: componentIconComponent(entity),
-                    text: entity.name,
-                    to: entity.url,
+                    icon: componentIconComponent(component),
+                    text: component.name,
+                    to: component.url,
                 },
             ].filter(isDefined)}
             tabs={tabs}

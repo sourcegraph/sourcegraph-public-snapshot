@@ -1,45 +1,41 @@
 import ApplicationCogOutlineIcon from 'mdi-react/ApplicationCogOutlineIcon'
 import ApplicationOutlineIcon from 'mdi-react/ApplicationOutlineIcon'
 import BookMultipleIcon from 'mdi-react/BookMultipleIcon'
-import PackageIcon from 'mdi-react/PackageIcon'
 import TextureBoxIcon from 'mdi-react/TextureBoxIcon'
 import ToolsIcon from 'mdi-react/ToolsIcon'
 import React from 'react'
 
 import { ComponentKind } from '../../../graphql-operations'
 
-type PartialEntity =
-    | {
-          __typename: 'Component'
-          kind: ComponentKind
-      }
-    | { __typename: 'Package' }
+interface PartialComponent {
+    __typename: 'Component'
+    kind: ComponentKind
+}
 
 interface Props {
-    entity: PartialEntity
+    component: PartialComponent
     className?: string
 }
 
 const COMPONENT_ICON_BY_KIND: Record<ComponentKind, React.ComponentType<{ className?: string }>> = {
     SERVICE: ApplicationCogOutlineIcon,
+    APPLICATION: ApplicationCogOutlineIcon,
     WEBSITE: ApplicationOutlineIcon,
     LIBRARY: BookMultipleIcon,
     TOOL: ToolsIcon,
     OTHER: TextureBoxIcon,
 }
 
-export function componentIconComponent(entity: PartialEntity): React.ComponentType<{ className?: string }> {
-    switch (entity.__typename) {
+export function componentIconComponent(component: PartialComponent): React.ComponentType<{ className?: string }> {
+    switch (component.__typename) {
         case 'Component':
-            return COMPONENT_ICON_BY_KIND[entity.kind]
-        case 'Package':
-            return PackageIcon
+            return COMPONENT_ICON_BY_KIND[component.kind]
         default:
             return TextureBoxIcon // TODO(sqs): unexpected case
     }
 }
 
-export const ComponentIcon: React.FunctionComponent<Props> = ({ entity, className }) => {
-    const Icon = componentIconComponent(entity) || TextureBoxIcon
+export const ComponentIcon: React.FunctionComponent<Props> = ({ component, className }) => {
+    const Icon = componentIconComponent(component) || TextureBoxIcon
     return <Icon className={className} />
 }

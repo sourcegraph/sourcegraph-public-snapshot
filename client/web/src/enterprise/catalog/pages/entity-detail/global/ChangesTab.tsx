@@ -8,14 +8,14 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { ComponentStateDetailFields } from '../../../../../graphql-operations'
 
-import { ComponentCommits } from './EntityCommits'
+import { ComponentCommits } from './ComponentCommits'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     entity: ComponentStateDetailFields
     className?: string
 }
 
-export const EntityChangesTab: React.FunctionComponent<Props> = ({ entity, className }) => (
+export const ChangesTab: React.FunctionComponent<Props> = ({ entity, className }) => (
     <div className={classNames('container my-3', className)}>
         <div className="card">
             <ComponentCommits component={entity} />
