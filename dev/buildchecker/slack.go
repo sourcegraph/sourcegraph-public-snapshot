@@ -69,6 +69,10 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 	var errs = &multierror.Error{}
 	var oneSucceeded bool
 	for _, webhook := range webhooks {
+		if len(webhook) == 0 {
+			return false, nil
+		}
+
 		log.Println("posting to ", webhook)
 
 		req, err := http.NewRequest(http.MethodPost, webhook, bytes.NewBuffer(body))
