@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -17,7 +18,7 @@ func main() {
 		ctx            = context.Background()
 		buildkiteToken string
 		githubToken    string
-		slackWebhook   string
+		slackWebhooks  string
 		pipeline       string
 		branch         string
 		threshold      int
@@ -26,7 +27,7 @@ func main() {
 
 	flag.StringVar(&buildkiteToken, "buildkite.token", "", "mandatory buildkite token")
 	flag.StringVar(&githubToken, "github.token", "", "mandatory github token")
-	flag.StringVar(&slackWebhook, "slack.webhook", "", "Slack Webhook URL to post the results on")
+	flag.StringVar(&slackWebhooks, "slack.webhook", "", "Slack Webhook URL to post the results on (comma-delimited for multiple values)")
 	flag.StringVar(&pipeline, "pipeline", "sourcegraph", "name of the pipeline to inspect")
 	flag.StringVar(&branch, "branch", "main", "name of the branch to inspect")
 	flag.IntVar(&threshold, "failures.threshold", 3, "failures required to trigger an incident")
@@ -75,24 +76,33 @@ func main() {
 	// Only post an update if the lock has been modified
 	lockModified := results.Action != nil
 	if lockModified {
-		// Post update first to avoid invisible changes
 		summary := slackSummary(results.LockBranch, results.FailedCommits)
-		if err := postSlackUpdate(slackWebhook, summary); err != nil {
+		webhooks := strings.Split(slackWebhooks, ",")
+
+		// Post update first to avoid invisible changes
+		if oneSucceeded, err := postSlackUpdate(webhooks, summary); !oneSucceeded {
 			// If action is an unlock, try to unlock anyway
 			if !results.LockBranch {
 				log.Println("slack update failed but action is an unlock, trying to unlock branch anyway")
 				goto POST
 			}
 			log.Fatal("postSlackUpdate: ", err)
+		} else if err != nil {
+			// At least one message succeeded, so we just log the error and continue
+			log.Println("postSlackUpdate: ", err)
 		}
 
 	POST:
 		// If post works, do the thing
 		if err := results.Action(); err != nil {
-			slackErr := postSlackUpdate(slackWebhook, fmt.Sprintf("Failed to execute action (%+v): %s", results, err))
-			if slackErr != nil {
-				log.Fatal("postSlackUpdate: ", err)
+			// This is a debug message - just send to the first webhook
+			if len(webhooks) > 0 {
+				_, slackErr := postSlackUpdate(webhooks[:1], fmt.Sprintf("Failed to execute action (%+v): %s", results, err))
+				if slackErr != nil {
+					log.Fatal("postSlackUpdate: ", err)
+				}
 			}
+
 			log.Fatal("results.Action: ", err)
 		}
 	}
