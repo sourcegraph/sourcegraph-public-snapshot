@@ -1,0 +1,134 @@
+// Protobuf schema for the new "LSIF typed" format. See RFC 519 for more details:
+// https://docs.google.com/document/d/1bfAZm4K2KUHCMoZiO4qFV7yZmK7wyYxI8MsEL-I6IJg/edit#heading=h.trqab8y0kufp
+
+// Install the `buf` command-line tool to re-generate the code for this file.
+// The commands to re-generate the code on macOS:
+//   brew tap bufbuild/buf && brew install buf
+//   go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+//   buf generate
+// See https://buf.build/ for more details.
+
+syntax = "proto3";
+
+package lib.codeintel.lsif_typed;
+
+option go_package = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed/";
+
+// LsifValue defines a single LSIF value that. An LSIF index is a stream of values.
+message LsifValues {
+    repeated LsifValue values = 1;
+}
+
+message LsifValue {
+  oneof value {
+    Package package = 1;
+    Document document = 2;
+    Moniker moniker = 3;
+  }
+}
+
+// Position defines a single offset in a source file.
+message Position {
+  // 0-based line number in the source file. Editors typically use 1-based line
+  // numbers so make sure to increment this number before displaying it in a UI.
+  // References the last line in the source if this number exceeds the actual number
+  // of lines in the source file.
+  int32 line = 1;
+  // 0-based column number of the line assuming UTF-8 string encoding.
+  // References the last character in this line if this number exceeds the
+  // actual number of characters in line.
+  int32 character = 2;
+}
+
+// Range defines the slice of a source file between two offset positions.
+message Range {
+  // The beginning of this range.
+  Position start = 1;
+  // The end of this range. Must appear later in the file than the start position.
+  Position end = 2;
+}
+
+// Moniker defines a symbol, such as a function or an interface.
+message Moniker {
+  enum Unique {
+    UNIQUE_UNSPECIFIED = 0;
+    UNIQUE_DOCUMENT = 1;
+    UNIQUE_PROJECT = 2;
+    UNIQUE_WORKSPACE = 3;
+    UNIQUE_SCHEME = 4;
+    UNIQUE_GLOBAL = 5;
+  }
+  // The identifier of this moniker, which can be referenced from
+  // MonikerOccurence. An empty id means this moniker can be ignored.
+  string id = 1;
+  // (optional) the syntax that is used for the scheme. Only relevant when
+  // the `unique` field has value `Unique.SCHEME`.
+  string scheme = 2;
+  // Determines how unique the id field is. For example, it is allowed for two
+  // distinct monikers to have the same ID as long as they origin from different
+  // document/project/workspace/scheme and have the appropriate `unique` field
+  // value. Monikers with different `unique` values must never be compared.
+  Unique unique = 3;
+  // (optional, but strongly recommended) The markdown-formatted documentation
+  // for this moniker. This field is repeated to allow different kinds of
+  // documentation.  For example, it's nice to include both the signature of a
+  // method (parameters and return type) along with the accompanying docstring.
+  repeated string markdown_hover = 4;
+  // (optional) Links to other monikers that this moniker "implements" in some form. For
+  // example, if this moniker represents a function that implements another
+  // function from an interface, then this field would link to the other
+  // moniker.
+  repeated string implementation_monikers = 5;
+  // (optional) Links to the original package that defines this moniker to
+  // enable navigation across different LSIF indexes (whether they come from
+  // different projects or git repositories).
+  string package_id = 6;
+  // "import", "export", or "implementation"
+  string kind = 7;
+}
+
+// MonikerOccurrence describes the appearance of a moniker at a given range in a
+// source file.
+message MonikerOccurrence {
+  enum Role {
+    ROLE_UNSPECIFIED = 0;
+    ROLE_DEFINITION = 1;
+    ROLE_REFERENCE = 2;
+  }
+  // Reference to the `Moniker.id` field.
+  string moniker_id = 1;
+  // The start/end range where this moniker appears.
+  Range range = 2;
+  // Is this the location where the moniker is defined or referenced?
+  Role role = 3;
+  // (optional) Markdown-formatted documentation for this specific range.  If
+  // empty, the `Moniker.markdown_hover` field is used instead. One example
+  // where this field might be useful is when the moniker represents a generic
+  // function (with abstract type parameters such as `List<T>`) and at this
+  // occurrence we know the exact values (such as `List<String>`).
+  repeated string markdown_hover = 4;
+}
+
+// Document defines information about a particular source file.
+message Document {
+  // URI-formatted absolute path of the source file on disk (example "file:///path/to/some/file/on/disk.ts").
+  string uri = 1;
+  // The moniker occurrences that appear in this file.
+  repeated MonikerOccurrence occurrences = 2;
+}
+
+// Package defines a publishable artifact such as an npm package, Docker
+// container, JVM dependency, or a Cargo crate.
+message Package {
+  // The unique identifier of this package that can be referenced from
+  // `Moniker.package_id`.  This ID is not intended to be displayed to humans,
+  // but it's recommended to use a human-readable format to aid with debugging.
+  string id = 1;
+  // The name of this package, for example "@types/react" or "com.google.guava:guava".
+  string name = 2;
+  // The version of this package, for example "0.1.0" or "2.1.5".
+  string version = 3;
+  // The package manager, for example "npm", "maven" or "cargo".
+  string manager = 4;
+}
+
