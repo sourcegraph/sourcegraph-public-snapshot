@@ -41,8 +41,10 @@ export const OverviewTab: React.FunctionComponent<Props> = ({
     <div className={classNames('row no-gutters', className)}>
         <div className="col-md-4 col-lg-3 col-xl-2 border-right p-3">
             {entity.name && (
-                <h2 className="d-flex align-items-center mb-1">
-                    <ComponentIcon component={entity} className="icon-inline mr-2 flex-shrink-0" /> {entity.name}
+                <h2 className="mb-1">
+                    <Link to={entity.url} className="d-flex align-items-center text-body">
+                        <ComponentIcon component={entity} className="icon-inline mr-2 flex-shrink-0" /> {entity.name}
+                    </Link>
                 </h2>
             )}
             <div className="text-muted small mb-2">
