@@ -95,6 +95,7 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ compone
                 },
             ].filter(isDefined)}
             tabs={tabs}
+            actions=
         />
     )
 }

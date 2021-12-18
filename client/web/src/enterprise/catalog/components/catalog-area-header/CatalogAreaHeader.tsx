@@ -13,23 +13,27 @@ interface PathComponent {
 
 interface Props {
     path: PathComponent[]
+    actions?: React.ReactFragment
     nav?: React.ReactFragment
 }
 
-export const CatalogAreaHeader: React.FunctionComponent<Props> = ({ path, nav }) =>
+export const CatalogAreaHeader: React.FunctionComponent<Props> = ({ path, actions, nav }) =>
     path.length > 0 ? (
         <header className={styles.container}>
-            <nav className={styles.ancestors}>
-                {path.slice(0, -1).map(({ to, icon, text }, index) => (
-                    <React.Fragment key={index}>
-                        <PathComponent to={to} icon={icon} text={text} />
-                        <span className={styles.divider}>/</span>
-                    </React.Fragment>
-                ))}
-            </nav>
-            <h1 className={classNames('mr-2', styles.header)}>
-                <PathComponent {...path[path.length - 1]} />
-            </h1>
+            <div className="d-flex flex-wrap w-100">
+                <nav className={styles.ancestors}>
+                    {path.slice(0, -1).map(({ to, icon, text }, index) => (
+                        <React.Fragment key={index}>
+                            <PathComponent to={to} icon={icon} text={text} />
+                            <span className={styles.divider}>/</span>
+                        </React.Fragment>
+                    ))}
+                </nav>
+                <h1 className={classNames('mr-2', styles.header)}>
+                    <PathComponent {...path[path.length - 1]} />
+                </h1>
+                {actions}
+            </div>
             {nav}
         </header>
     ) : null

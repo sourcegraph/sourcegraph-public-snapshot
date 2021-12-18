@@ -1,7 +1,5 @@
 .container {
     width: 100%;
-    display: flex;
-    flex-wrap: wrap;
     padding: 0 calc(1 * var(--spacer));
 
     border-bottom: solid 1px var(--border-color);

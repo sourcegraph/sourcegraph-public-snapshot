@@ -15,9 +15,10 @@ interface Tab extends Pick<RouteProps, 'path' | 'exact'> {
 interface Props {
     path: React.ComponentProps<typeof CatalogAreaHeader>['path']
     tabs: Tab[]
+    actions?: React.ReactFragment
 }
 
-export const CatalogPage: React.FunctionComponent<Props> = ({ path, tabs }) => {
+export const CatalogPage: React.FunctionComponent<Props> = ({ path, tabs, actions }) => {
     const match = useRouteMatch()
     const location = useLocation()
     return (
@@ -48,6 +49,7 @@ export const CatalogPage: React.FunctionComponent<Props> = ({ path, tabs }) => {
                         ))}
                     </ul>
                 }
+                actions={actions}
             />
             <Switch>
                 {tabs.map(({ path, exact, content }) => (
