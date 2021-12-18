@@ -12,7 +12,7 @@ import { CatalogPage } from '../../components/catalog-area-header/CatalogPage'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 
 import { GroupMembersTab } from './GroupMembersTab'
-import { GroupOverviewTab } from './GroupOverviewTab'
+import { GroupOverviewTab } from './OverviewTab'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     group: GroupDetailFields
