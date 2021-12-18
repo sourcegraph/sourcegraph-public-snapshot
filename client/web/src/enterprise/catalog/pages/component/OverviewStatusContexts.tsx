@@ -19,19 +19,19 @@ import { EntityOwner } from '../../components/entity-owner/EntityOwner'
 import { OverviewStatusContextItem } from './OverviewStatusContextItem'
 
 interface Props {
-    entity: ComponentStateDetailFields
+    component: ComponentStateDetailFields
     itemClassName?: string
 }
 
-export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ entity, itemClassName }) => (
+export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ component, itemClassName }) => (
     <>
-        {entity.status.contexts.map(statusContext => {
+        {component.status.contexts.map(statusContext => {
             switch (statusContext.name) {
                 case 'owner':
                     return false ? (
                         <OwnerStatusContext
                             key={statusContext.id}
-                            entity={entity}
+                            entity={component}
                             statusContext={statusContext}
                             className={itemClassName}
                         />
@@ -41,7 +41,7 @@ export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ entity,
                     return (
                         <CodeOwnersStatusContext
                             key={statusContext.id}
-                            entity={entity}
+                            entity={component}
                             statusContext={statusContext}
                             className={itemClassName}
                         />
@@ -51,7 +51,7 @@ export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ entity,
                     return (
                         <ContributorsStatusContext
                             key={statusContext.id}
-                            entity={entity}
+                            entity={component}
                             statusContext={statusContext}
                             className={itemClassName}
                         />
@@ -61,7 +61,7 @@ export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ entity,
                     return (
                         <UsageStatusContext
                             key={statusContext.id}
-                            entity={entity}
+                            entity={component}
                             statusContext={statusContext}
                             className={itemClassName}
                         />

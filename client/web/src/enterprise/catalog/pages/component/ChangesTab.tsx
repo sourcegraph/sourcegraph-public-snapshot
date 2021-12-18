@@ -11,14 +11,14 @@ import { ComponentStateDetailFields } from '../../../../graphql-operations'
 import { ComponentCommits } from './ComponentCommits'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
-    entity: ComponentStateDetailFields
+    component: ComponentStateDetailFields
     className?: string
 }
 
-export const ChangesTab: React.FunctionComponent<Props> = ({ entity, className }) => (
+export const ChangesTab: React.FunctionComponent<Props> = ({ component, className }) => (
     <div className={classNames('container my-3', className)}>
         <div className="card">
-            <ComponentCommits component={entity} />
+            <ComponentCommits component={component} />
         </div>
     </div>
 )

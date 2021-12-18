@@ -10,20 +10,21 @@ import { useViewModeTemporarySettings, ViewModeToggle } from '../overview/compon
 import { OverviewEntityGraph } from '../overview/components/overview-content/OverviewEntityGraph'
 
 interface Props {
+    component: Scalars['ID']
+    useURLForConnectionParams?: boolean
     className?: string
 }
 
-interface Props {
-    entity: Scalars['ID']
-    className?: string
-}
-
-export const CatalogExplorer: React.FunctionComponent<Props> = ({ entity, className }) => {
+export const CatalogExplorer: React.FunctionComponent<Props> = ({
+    component,
+    useURLForConnectionParams,
+    className,
+}) => {
     const filtersProps = useComponentFilters('')
 
     const [viewMode, setViewMode] = useViewModeTemporarySettings()
 
-    const queryScope = `relatedToEntity:${entity}`
+    const queryScope = `relatedToEntity:${component}`
 
     return (
         <div className={classNames('card', className)}>
@@ -35,7 +36,8 @@ export const CatalogExplorer: React.FunctionComponent<Props> = ({ entity, classN
             />
             {viewMode === 'list' ? (
                 <CatalogExplorerRelationList
-                    entity={entity}
+                    component={component}
+                    useURLForConnectionParams={useURLForConnectionParams}
                     filters={filtersProps.filters}
                     queryScope={queryScope}
                     noBottomBorder={true}
@@ -46,7 +48,7 @@ export const CatalogExplorer: React.FunctionComponent<Props> = ({ entity, classN
                 <OverviewEntityGraph
                     filters={filtersProps.filters}
                     queryScope={queryScope}
-                    highlightID={entity}
+                    highlightID={component}
                     errorClassName="p-3"
                 />
             )}

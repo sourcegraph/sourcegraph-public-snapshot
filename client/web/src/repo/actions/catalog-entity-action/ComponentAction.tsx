@@ -111,7 +111,7 @@ const ComponentActionPopoverButton: React.FunctionComponent<{
                     <ComponentStateIndicator entity={entity} className="ml-1" />
                 </h3>
                 {entity.description && <p>{entity.description}</p>}
-                <OverviewStatusContexts entity={entity} itemClassName="mb-3" />
+                <OverviewStatusContexts component={entity} itemClassName="mb-3" />
             </Popover>
         </>
     )

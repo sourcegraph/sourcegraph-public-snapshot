@@ -20,7 +20,6 @@ import { ComponentDocumentation } from './ComponentDocumentation'
 import { OverviewTab } from './OverviewTab'
 import { RelationsTab } from './RelationsTab'
 import { UsageTab } from './UsageTab'
-import { WhoKnowsTab } from './WhoKnowsTab'
 
 interface Props
     extends TelemetryProps,
@@ -38,26 +37,26 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ compone
         () =>
             [
                 {
-                    path: '',
+                    path: ['', 'who-knows'],
                     exact: true,
                     text: 'Overview',
-                    content: <OverviewTab {...props} entity={component} className={TAB_CONTENT_CLASS_NAME} />,
+                    content: <OverviewTab {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
                 },
 
                 {
                     path: 'code',
                     text: 'Code',
-                    content: <CodeTab {...props} entity={component} className={TAB_CONTENT_CLASS_NAME} />,
+                    content: <CodeTab {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
                 },
                 {
                     path: 'graph',
                     text: 'Graph',
-                    content: <RelationsTab {...props} entity={component} className={TAB_CONTENT_CLASS_NAME} />,
+                    content: <RelationsTab {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
                 },
                 {
                     path: 'changes',
                     text: 'Changes',
-                    content: <ChangesTab {...props} entity={component} className={TAB_CONTENT_CLASS_NAME} />,
+                    content: <ChangesTab {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
                 },
                 false
                     ? {
@@ -77,12 +76,6 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ compone
                     path: 'usage',
                     text: 'Usage',
                     content: <UsageTab {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
-                },
-
-                {
-                    path: 'who-knows',
-                    text: 'Who knows',
-                    content: <WhoKnowsTab {...props} component={component} className={TAB_CONTENT_CLASS_NAME} />,
                 },
             ].filter(isDefined),
         [component, props]

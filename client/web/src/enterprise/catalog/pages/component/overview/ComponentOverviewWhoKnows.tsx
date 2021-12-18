@@ -3,17 +3,19 @@ import EmailIcon from 'mdi-react/EmailIcon'
 import SlackIcon from 'mdi-react/SlackIcon'
 import React from 'react'
 
-import { ComponentStateDetailFields, ComponentWhoKnowsFields } from '../../../../graphql-operations'
-
-import { PersonList } from './PersonList'
+import { ComponentStateDetailFields, ComponentWhoKnowsFields } from '../../../../../graphql-operations'
+import { PersonList } from '../PersonList'
 
 interface Props {
     component: ComponentWhoKnowsFields & Pick<ComponentStateDetailFields, 'name' | 'kind'>
     className?: string
 }
 
-export const WhoKnowsTab: React.FunctionComponent<Props> = ({ component: { whoKnows, ...entity }, className }) => (
-    <div className={classNames(className)}>
+export const ComponentOverviewWhoKnows: React.FunctionComponent<Props> = ({
+    component: { whoKnows, ...entity },
+    className,
+}) => (
+    <div className={classNames('w-100', className)}>
         <div className="container my-3">
             <PersonList
                 title={`Who knows about the ${entity.name} ${entity.kind.toLowerCase()}?`}

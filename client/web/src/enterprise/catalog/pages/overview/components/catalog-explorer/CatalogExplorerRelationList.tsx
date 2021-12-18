@@ -21,16 +21,13 @@ import {
 } from '../../../../../../graphql-operations'
 import { ComponentFiltersProps } from '../../../../core/entity-filters'
 
-import {
-    ComponentRelationRow,
-    ComponentRelationRowsHeader,
-    CatalogExplorerRowStyleProps,
-} from './ComponentRow'
 import styles from './CatalogExplorerRelationList.module.scss'
+import { ComponentRelationRow, ComponentRelationRowsHeader, CatalogExplorerRowStyleProps } from './ComponentRow'
 import { COMPONENT_RELATIONS_FOR_EXPLORER } from './gqlForRelation'
 
 interface Props extends Pick<ComponentFiltersProps, 'filters'>, CatalogExplorerRowStyleProps {
-    entity: Scalars['ID']
+    component: Scalars['ID']
+    useURLForConnectionParams?: boolean
     queryScope?: string
     className?: string
 }
@@ -39,7 +36,8 @@ const FIRST = 20
 
 export const CatalogExplorerRelationList: React.FunctionComponent<Props> = ({
     filters,
-    entity,
+    component,
+    useURLForConnectionParams,
     queryScope,
     className,
     itemStartClassName,
@@ -53,13 +51,13 @@ export const CatalogExplorerRelationList: React.FunctionComponent<Props> = ({
     >({
         query: COMPONENT_RELATIONS_FOR_EXPLORER,
         variables: {
-            entity,
+            component,
             query: `${queryScope || ''} ${filters.query || ''}`,
             first: FIRST,
             after: null,
         },
         options: {
-            useURL: true,
+            useURL: useURLForConnectionParams,
             fetchPolicy: 'cache-and-network',
         },
         getConnection: result => {
@@ -73,7 +71,7 @@ export const CatalogExplorerRelationList: React.FunctionComponent<Props> = ({
                 ...data.node.relatedEntities,
                 nodes: [...data.node.relatedEntities.edges]
                     .sort((a, b) => b.type.localeCompare(a.type))
-                    .filter(edge => edge.node.id !== entity),
+                    .filter(edge => edge.node.id !== component),
             }
         },
     })

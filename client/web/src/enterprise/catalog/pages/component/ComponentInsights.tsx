@@ -16,7 +16,7 @@ import { CodeInsightsBackendContext } from '../../../insights/core/backend/code-
 import { CodeInsightsSettingsCascadeBackend } from '../../../insights/core/backend/setting-based-api/code-insights-setting-cascade-backend'
 
 interface Props extends TelemetryProps, SettingsCascadeProps, PlatformContextProps {
-    entity: Scalars['ID']
+    component: Scalars['ID']
     className?: string
 }
 
