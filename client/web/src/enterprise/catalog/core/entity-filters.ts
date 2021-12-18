@@ -2,24 +2,21 @@ import * as H from 'history'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
-import { ComponentType } from '@sourcegraph/shared/src/graphql/schema'
+import { ComponentKind } from '@sourcegraph/shared/src/graphql/schema'
 
 export interface ComponentFilters {
     query: string
 }
 
 export interface ComponentFiltersQueryFields {
-    is: ComponentType | undefined
+    is: ComponentKind | undefined
 }
 
 export interface ComponentFiltersProps {
     filters: ComponentFilters
     filtersQueryParsed: ComponentFiltersQueryFields
     onFiltersChange: (newValue: ComponentFilters) => void
-    onFiltersQueryFieldChange: <
-        F extends keyof ComponentFiltersQueryFields,
-        T extends ComponentFiltersQueryFields[F]
-    >(
+    onFiltersQueryFieldChange: <F extends keyof ComponentFiltersQueryFields, T extends ComponentFiltersQueryFields[F]>(
         field: F,
         newValue: T
     ) => void
@@ -47,7 +44,7 @@ export const useComponentFilters = (defaultQuery: string): ComponentFiltersProps
     // Ensure URL reflects default query (if no ?q=, then update URL to be ?q=defaultQuery).
     useEffect(() => {
         const { query } = filtersFromLocation(location.search)
-        if (query === undefined) {
+        if (query === undefined && defaultQuery !== '') {
             onFiltersChange({ ...filters, query: defaultQuery })
         }
     }, [defaultQuery, filters, location.search, onFiltersChange])
@@ -74,7 +71,7 @@ function filtersFromLocation(locationSearch: H.Location['search']): Partial<Comp
 function urlSearchParametersFromFilters(filters: ComponentFilters, base: URLSearchParams): URLSearchParams {
     const parameters = new URLSearchParams(base)
 
-    if (filters.query !== undefined) {
+    if (filters.query !== '') {
         parameters.set('q', filters.query)
     } else {
         parameters.delete('q')

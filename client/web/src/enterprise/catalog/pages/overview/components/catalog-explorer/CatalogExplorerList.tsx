@@ -20,8 +20,8 @@ import {
 } from '../../../../../../graphql-operations'
 import { ComponentFiltersProps } from '../../../../core/entity-filters'
 
-import { ComponentRow, ComponentRowsHeader, CatalogExplorerRowStyleProps } from './ComponentRow'
 import styles from './CatalogExplorerList.module.scss'
+import { ComponentRow, ComponentRowsHeader, CatalogExplorerRowStyleProps } from './ComponentRow'
 import { COMPONENTS_FOR_EXPLORER } from './gql'
 
 interface Props extends Pick<ComponentFiltersProps, 'filters'>, CatalogExplorerRowStyleProps {
@@ -56,7 +56,7 @@ export const CatalogExplorerList: React.FunctionComponent<Props> = ({
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
-            return data.catalog.entities
+            return data.components
         },
     })
 
@@ -88,8 +88,8 @@ export const CatalogExplorerList: React.FunctionComponent<Props> = ({
                             noSummaryIfAllNodesVisible={true}
                             first={FIRST}
                             connection={connection}
-                            noun="entity"
-                            pluralNoun="entities"
+                            noun="component"
+                            pluralNoun="components"
                             hasNextPage={hasNextPage}
                             emptyElement={<p>No results found</p>}
                         />

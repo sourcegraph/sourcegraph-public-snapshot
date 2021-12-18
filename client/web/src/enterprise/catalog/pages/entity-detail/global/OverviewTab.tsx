@@ -78,7 +78,7 @@ export const OverviewTab: React.FunctionComponent<Props> = ({
                 <dl className="mb-3">
                     <dt>Owner</dt>
                     <dd>
-                        <EntityOwner owner={entity.owner} className="d-block" />
+                        <EntityOwner owner={entity.owner} />
                         <ul className="list-unstyled d-flex flex-wrap">
                             {entity.owner?.__typename === 'Group' &&
                                 entity.owner.members.map(member => (

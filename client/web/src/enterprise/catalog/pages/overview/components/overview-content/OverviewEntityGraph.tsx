@@ -44,13 +44,13 @@ export const OverviewEntityGraph: React.FunctionComponent<Props> = ({
         <div className={classNames('alert alert-error', errorClassName)}>Error loading graph</div>
     ) : loading && !data ? (
         <LoadingSpinner className="icon-inline" />
-    ) : !data || !data.catalog.graph ? (
+    ) : !data || !data.graph ? (
         <div className={classNames('alert alert-error', errorClassName)}>Catalog graph is not available</div>
-    ) : data.catalog.graph.nodes.length > 0 ? (
+    ) : data.graph.nodes.length > 0 ? (
         <EntityGraph
             graph={{
-                ...data.catalog.graph,
-                edges: data.catalog.graph.edges.filter(edge => edge.type === 'DEPENDS_ON'),
+                ...data.graph,
+                edges: data.graph.edges.filter(edge => edge.type === 'DEPENDS_ON'),
             }}
             activeNodeID={highlightID}
             className={className}

@@ -12,7 +12,7 @@ import { CatalogExplorerViewOptionsRow } from './CatalogExplorerViewOptionsRow'
 interface Props {}
 
 export const CatalogExplorer: React.FunctionComponent<Props> = () => {
-    const filtersProps = useComponentFilters('is:component')
+    const filtersProps = useComponentFilters('')
 
     const match = useRouteMatch()
     const location = useLocation()

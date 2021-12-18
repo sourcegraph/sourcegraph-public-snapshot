@@ -239,22 +239,22 @@ func Data() ([]Component, []Group, []Edge) {
 			},
 			OwnedBy: "dev-experience",
 		},
-		{
-			Kind:        "TOOL",
-			Name:        "src-cli",
-			Description: "Sourcegraph CLI",
-			Lifecycle:   LifecycleProduction,
-			// Only the gitlab mirror of this repo is loaded by the default dev-private config.
-			SourceRepo:   "gitlab.sgdev.org/sourcegraph/src-cli",
-			SourceCommit: "4a4341bc1c53fc5306f09bdcb31e8892ee40e6c7",
-			SourcePaths:  []string{"."},
-			UsagePatterns: []UsagePattern{
-				newQueryUsagePattern(`lang:markdown ` + "`" + `src[` + "`" + `\s] patterntype:regexp`),
-				newQueryUsagePattern(`lang:markdown (^|\s*\$ )src\s patterntype:regexp`),
-			},
-			DependsOn: []string{"frontend"},
-			OwnedBy:   "batch-changes",
-		},
+		// {
+		// 	Kind:        "TOOL",
+		// 	Name:        "src-cli",
+		// 	Description: "Sourcegraph CLI",
+		// 	Lifecycle:   LifecycleProduction,
+		// 	// Only the gitlab mirror of this repo is loaded by the default dev-private config.
+		// 	SourceRepo:   "gitlab.sgdev.org/sourcegraph/src-cli",
+		// 	SourceCommit: "4a4341bc1c53fc5306f09bdcb31e8892ee40e6c7",
+		// 	SourcePaths:  []string{"."},
+		// 	UsagePatterns: []UsagePattern{
+		// 		newQueryUsagePattern(`lang:markdown ` + "`" + `src[` + "`" + `\s] patterntype:regexp`),
+		// 		newQueryUsagePattern(`lang:markdown (^|\s*\$ )src\s patterntype:regexp`),
+		// 	},
+		// 	DependsOn: []string{"frontend"},
+		// 	OwnedBy:   "batch-changes",
+		// },
 		{
 			Kind:         "LIBRARY",
 			Name:         "client-web",
