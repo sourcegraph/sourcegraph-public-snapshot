@@ -46,6 +46,12 @@ export interface GitCommitNodeProps {
 
     /** An optional additional css class name to apply this to commit node message subject */
     messageSubjectClassName?: string
+
+    /** Hide the SHA (compact mode only). */
+    hideSHAInCompactMode?: boolean
+
+    /** The HTML tag to use for the outer element. */
+    tag?: 'div' | 'li'
 }
 
 /** Displays a Git commit. */
@@ -60,6 +66,8 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     showSHAAndParentsRow,
     diffMode,
     onHandleDiffMode,
+    hideSHAInCompactMode,
+    tag: Tag = 'div',
 }) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
     const [flashCopiedToClipboardMessage, setFlashCopiedToClipboardMessage] = useState<boolean>(false)
@@ -212,7 +220,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
         </code>
     )
     return (
-        <div
+        <Tag
             key={node.id}
             className={classNames(styles.gitCommitNode, compact && styles.gitCommitNodeCompact, className)}
         >
@@ -273,6 +281,6 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                     </div>
                 )}
             </>
-        </div>
+        </Tag>
     )
 }
