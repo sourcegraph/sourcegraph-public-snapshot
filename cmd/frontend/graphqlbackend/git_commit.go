@@ -207,11 +207,8 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	defer span.Finish()
 	span.SetTag("path", args.Path)
 
-	stat, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), args.Path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
+	stat, err := r.treeEntry(ctx, args.Path)
+	if stat == nil || err != nil {
 		return nil, err
 	}
 	if !stat.Mode().IsDir() {
@@ -226,11 +223,8 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*GitTreeEntryResolver, error) {
-	stat, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), args.Path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
+	stat, err := r.treeEntry(ctx, args.Path)
+	if stat == nil || err != nil {
 		return nil, err
 	}
 	if mode := stat.Mode(); !(mode.IsRegular() || mode.Type()&fs.ModeSymlink != 0) {
@@ -243,6 +237,22 @@ func (r *GitCommitResolver) File(ctx context.Context, args *struct {
 	Path string
 }) (*GitTreeEntryResolver, error) {
 	return r.Blob(ctx, args)
+}
+
+func (r *GitCommitResolver) treeEntry(ctx context.Context, path string) (fs.FileInfo, error) {
+	stat, err := git.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), path)
+	if os.IsNotExist(err) {
+		err = nil
+	}
+	return stat, err
+}
+
+func (r *GitCommitResolver) TreeEntry(ctx context.Context, args *struct{ Path string }) (*GitTreeEntryResolver, error) {
+	stat, err := r.treeEntry(ctx, args.Path)
+	if stat == nil || err != nil {
+		return nil, err
+	}
+	return NewGitTreeEntryResolver(r.db, r, stat), nil
 }
 
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
