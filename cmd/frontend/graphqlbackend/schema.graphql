@@ -3728,6 +3728,10 @@ type GitCommit implements Node {
     """
     file(path: String!): File2
     """
+    The tree entry at the given path for this commit.
+    """
+    treeEntry(path: String!): TreeEntry
+    """
     Lists the programming languages present in the tree at this commit.
     """
     languages: [String!]!
