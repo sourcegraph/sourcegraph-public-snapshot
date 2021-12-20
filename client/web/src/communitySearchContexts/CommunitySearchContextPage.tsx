@@ -40,7 +40,7 @@ export interface CommunitySearchContextPageProps
         ThemePreferenceProps,
         ActivationProps,
         TelemetryProps,
-        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        ParsedSearchQueryProps,
         PatternTypeProps,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand'>,

@@ -30,7 +30,7 @@ export interface SearchPageProps
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
-        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        ParsedSearchQueryProps,
         PatternTypeProps,
         KeyboardShortcutsProps,
         TelemetryProps,

@@ -32,7 +32,7 @@ interface Props
         PatternTypeProps,
         KeyboardShortcutsProps,
         TelemetryProps,
-        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        ParsedSearchQueryProps,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         Pick<SubmitSearchParameters, 'source'>,
         SearchContextInputProps {
