@@ -7,7 +7,7 @@ export function shouldErrorBeReported(error: unknown): boolean {
         return error.status < 500
     }
 
-    if (isWebpackChunkError(error) || isAbortError(error) || isNotAuthenticatedError(error)) {
+    if (isWebpackChunkError(error) || isAbortError(error) || isNotAuthenticatedError(error) || isNetworkError(error)) {
         return false
     }
 
@@ -15,7 +15,7 @@ export function shouldErrorBeReported(error: unknown): boolean {
 }
 
 export function isWebpackChunkError(value: unknown): boolean {
-    return isErrorLike(value) && value.name === 'ChunkLoadError'
+    return isErrorLike(value) && (value.name === 'ChunkLoadError' || /loading css chunk/gi.test(value.message))
 }
 
 function isAbortError(value: unknown): boolean {
@@ -24,4 +24,8 @@ function isAbortError(value: unknown): boolean {
 
 function isNotAuthenticatedError(value: unknown): boolean {
     return isErrorLike(value) && value.message.includes('not authenticated')
+}
+
+function isNetworkError(value: unknown): boolean {
+    return isErrorLike(value) && /(networkerror|failed to fetch|load failed)/gi.test(value.message)
 }
