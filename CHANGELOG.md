@@ -19,6 +19,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.35.1
+
+### Changed
+
+- `src validate` has been updated to work with Sourcegraph 3.35's changed CSRF behaviour. [#673](https://github.com/sourcegraph/src-cli/pull/673)
+
 ## 3.35.0
 
 ### Added
