@@ -58,6 +58,7 @@ import styles from './RepoContainer.module.scss'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevisionContainer, RepoRevisionContainerRoute } from './RepoRevisionContainer'
+import { RepoSidebarViewOptionsProps, useRepoSidebarViewOptions } from './RepoRevisionSidebar'
 import { RepositoriesPopover } from './RepositoriesPopover'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
@@ -85,7 +86,8 @@ export interface RepoContainerContext
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
-        FeatureFlagProps {
+        FeatureFlagProps,
+        RepoSidebarViewOptionsProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -383,6 +385,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         setHasDismissedFirefoxAlert(true)
     }, [onExtensionAlertDismissed, setHasDismissedExtensionAlert, setHasDismissedFirefoxAlert])
 
+    const repoSidebarViewOptionsProps = useRepoSidebarViewOptions(props)
+
     if (!repoOrError) {
         // Render nothing while loading
         return null
@@ -409,6 +413,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         routePrefix: repoMatchURL,
         onDidUpdateExternalLinks: setExternalLinks,
         useActionItemsBar,
+        ...repoSidebarViewOptionsProps,
     }
 
     return (
