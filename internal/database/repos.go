@@ -1172,6 +1172,8 @@ WHERE
 		OR
 		lower(repo.name) LIKE 'src.fedoraproject.org/%%'
 		OR
+		lower(repo.name) LIKE 'maven/%%'
+		OR
 		repo.id IN (
 			SELECT
 				repo_id
