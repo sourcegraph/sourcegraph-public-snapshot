@@ -87,11 +87,12 @@ const COMPONENT_DOCUMENTATION_FRAGMENT = gql`
 const COMPONENT_SOURCES_FRAGMENT = gql`
     fragment ComponentSourcesFields on Component {
         sourceLocations {
-            path
+            repositoryName
             repository {
                 name
                 url
             }
+            path
             treeEntry {
                 __typename
                 isDirectory

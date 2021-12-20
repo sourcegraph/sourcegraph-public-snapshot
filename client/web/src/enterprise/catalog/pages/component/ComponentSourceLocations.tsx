@@ -15,7 +15,7 @@ interface Props {
     className?: string
 }
 
-export const ComponentSourceDefinitions: React.FunctionComponent<Props> = ({
+export const ComponentSourceLocations: React.FunctionComponent<Props> = ({
     component: { sourceLocations },
     listGroupClassName,
     className,
@@ -25,7 +25,7 @@ export const ComponentSourceDefinitions: React.FunctionComponent<Props> = ({
             <ol className={classNames('list-group mb-0', listGroupClassName)}>
                 {sourceLocations.map(sourceLocation => (
                     <ComponentSourceLocation
-                        key={sourceLocation.url}
+                        key={`${sourceLocation.repositoryName}:${sourceLocation.path || ''}`}
                         sourceLocation={sourceLocation}
                         className="list-group-item py-2"
                     />
@@ -43,28 +43,35 @@ const ComponentSourceLocation: React.FunctionComponent<{
     className?: string
 }> = ({ sourceLocation, tag: Tag = 'li', className }) => (
     <Tag className={classNames('d-flex align-items-center', className)}>
-        {sourceLocation.path === '.' ? (
+        {sourceLocation.path === null ? (
             <>
                 <SourceRepositoryIcon className="icon-inline mr-1 text-muted" />
-                <RepoLink repoName={sourceLocation.repository.name} to={sourceLocation.repository.url} />
+                <RepoLink repoName={sourceLocation.repositoryName} to={sourceLocation.repository?.url} />
             </>
         ) : (
             <>
                 <FolderIcon className="icon-inline mr-1 text-muted" />
-                <RepoFileLink
-                    repoName={sourceLocation.repository.name}
-                    repoURL={sourceLocation.repository.url}
-                    filePath={sourceLocation.path}
-                    fileURL={sourceLocation.url}
-                    className="d-inline"
-                />
+                {/* TODO(sqs): properly handle when the repo or tree is not found */}
+                {sourceLocation.repository && sourceLocation.treeEntry ? (
+                    <RepoFileLink
+                        repoName={sourceLocation.repository.name}
+                        repoURL={sourceLocation.repository.url}
+                        filePath={sourceLocation.path}
+                        fileURL={sourceLocation.treeEntry.url}
+                        className="d-inline"
+                    />
+                ) : (
+                    'missing'
+                )}
             </>
         )}
 
-        {'files' in sourceLocation && sourceLocation.files && (
-            <span className="text-muted small ml-2">
-                {sourceLocation.files.length} {pluralize('file', sourceLocation.files.length)}
-            </span>
-        )}
+        {sourceLocation.treeEntry &&
+            sourceLocation.treeEntry.__typename === 'GitTree' &&
+            sourceLocation.treeEntry.files && (
+                <span className="text-muted small ml-2">
+                    {sourceLocation.treeEntry.files.length} {pluralize('file', sourceLocation.treeEntry.files.length)}
+                </span>
+            )}
     </Tag>
 )

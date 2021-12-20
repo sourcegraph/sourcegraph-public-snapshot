@@ -109,6 +109,8 @@ func (r *componentSourceLocationResolver) Path() *string {
 	return &r.path
 }
 
+func (r *componentSourceLocationResolver) IsEntireRepository() bool { return r.path == "" }
+
 func (r *componentSourceLocationResolver) TreeEntry() (*gql.GitTreeEntryResolver, error) {
 	return r.tree, nil
 }

@@ -172,6 +172,7 @@ type ComponentSourceLocationResolver interface {
 	RepositoryName() string
 	Repository() (*RepositoryResolver, error)
 	Path() *string
+	IsEntireRepository() bool
 	TreeEntry() (*GitTreeEntryResolver, error)
 	IsPrimary() bool
 }

@@ -145,6 +145,7 @@ type ComponentSourceLocation {
     repositoryName: String!
     repository: Repository
     path: String
+    isEntireRepository: Boolean!
     treeEntry: TreeEntry
     isPrimary: Boolean!
 }

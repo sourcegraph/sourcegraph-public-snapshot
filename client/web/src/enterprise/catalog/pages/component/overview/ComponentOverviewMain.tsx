@@ -14,7 +14,7 @@ import { PersonLink } from '../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../user/UserAvatar'
 import { CatalogExplorer } from '../CatalogExplorer'
 import { ComponentInsights } from '../ComponentInsights'
-import { ComponentSourceDefinitions } from '../ComponentSourceLocations'
+import { ComponentSourceLocations } from '../ComponentSourceLocations'
 import { OverviewStatusContexts } from '../OverviewStatusContexts'
 
 interface Props extends TelemetryProps, SettingsCascadeProps, PlatformContextProps {
@@ -29,7 +29,7 @@ export const ComponentOverviewMain: React.FunctionComponent<Props> = ({
 }) => (
     <>
         <div className="card mb-3">
-            <ComponentSourceDefinitions component={component} listGroupClassName="list-group-flush" />
+            <ComponentSourceLocations component={component} listGroupClassName="list-group-flush" />
             {component.commits?.nodes[0] && <LastCommit commit={component.commits?.nodes[0]} className="card-footer" />}
         </div>
         <OverviewStatusContexts component={component} itemClassName="mb-3" />

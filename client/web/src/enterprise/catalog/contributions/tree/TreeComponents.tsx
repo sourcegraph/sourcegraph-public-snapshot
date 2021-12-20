@@ -3,6 +3,7 @@ import FolderIcon from 'mdi-react/FolderIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
@@ -78,6 +79,7 @@ const COMPONENTS_FOR_TREE_ENTRY = gql`
                 id
             }
             path
+            isEntireRepository
             treeEntry {
                 url
             }
@@ -177,9 +179,8 @@ const ComponentGridItem: React.FunctionComponent<{
 }> = ({ component, treeRepoID, treePath, tag: Tag = 'li', className, linkBigClickAreaClassName }) => {
     const relevantSourceLocation = component.sourceLocations.find(
         sourceLocation =>
-            sourceLocation.__typename === 'GitTree' &&
-            sourceLocation.repository.id === treeRepoID &&
-            pathHasPrefix(sourceLocation.path, treePath)
+            sourceLocation.repository?.id === treeRepoID &&
+            (sourceLocation.path === null || pathHasPrefix(sourceLocation.path, treePath))
     )
     if (!relevantSourceLocation) {
         throw new Error('unable to determine relevant source location')
@@ -204,15 +205,16 @@ const ComponentGridItem: React.FunctionComponent<{
                 )}
             </div>
             <div className="small mt-1">
-                <Link
+                <LinkOrSpan
                     to={
-                        relevantSourceLocation.url /* TODO(sqs): this takes you away from the current rev back to HEAD */
+                        relevantSourceLocation.treeEntry
+                            ?.url /* TODO(sqs): this takes you away from the current rev back to HEAD */
                     }
                     className={classNames('d-flex align-items-center text-muted', linkBigClickAreaClassName)}
                 >
                     <FolderIcon className="icon-inline mr-1 flex-shrink-0" />{' '}
-                    <span className="text-truncate">{pathRelative(treePath, relevantSourceLocation.path)}</span>
-                </Link>
+                    <span className="text-truncate">{pathRelative(treePath, relevantSourceLocation.path || '/')}</span>
+                </LinkOrSpan>
             </div>
         </Tag>
     )

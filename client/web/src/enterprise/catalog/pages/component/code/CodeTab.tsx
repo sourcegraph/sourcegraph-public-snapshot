@@ -13,7 +13,7 @@ import { ComponentStateDetailFields } from '../../../../../graphql-operations'
 import { ComponentCodeOwners } from './CodeOwners'
 import { ComponentCommits } from '../ComponentCommits'
 import { ComponentContributors } from '../ComponentContributors'
-import { ComponentSourceDefinitions } from '../ComponentSourceLocations'
+import { ComponentSourceLocations } from '../ComponentSourceLocations'
 import { ComponentSources } from '../ComponentSources'
 import { ComponentBranches } from './ComponentBranches'
 
@@ -46,7 +46,7 @@ export const CodeTab: React.FunctionComponent<Props> = ({ component, className, 
                         {component.__typename === 'Component' && (
                             <>
                                 <h4 className="sr-only">Sources</h4>
-                                <ComponentSourceDefinitions component={component} className="mb-3" />
+                                <ComponentSourceLocations component={component} className="mb-3" />
                             </>
                         )}
                         <h4 className="sr-only">All files</h4>
