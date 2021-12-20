@@ -39,7 +39,8 @@ func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, rateLimit
 // visible (i.e. deleted or made private) will be deleted from the DB. Note that this is only being run in Sourcegraph
 // Dot com mode.
 func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *rate.Limiter) error {
-	return s.Store.GitserverReposStore.IterateWithNonemptyLastError(ctx, func(repo types.RepoGitserverStatus) error {
+	reposSynced := float64(0)
+	err := s.Store.GitserverReposStore.IterateWithNonemptyLastError(ctx, func(repo types.RepoGitserverStatus) error {
 		err := rateLimiter.Wait(ctx)
 		if err != nil {
 			return errors.Errorf("error waiting for rate limiter: %s", err)
@@ -48,7 +49,9 @@ func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *rate.
 		if err != nil {
 			log15.Error("error syncing repo", "repo", repo.Name, "err", err)
 		}
-		gauge.Add(1)
+		reposSynced += 1
 		return nil
 	})
+	gauge.Set(reposSynced)
+	return err
 }
