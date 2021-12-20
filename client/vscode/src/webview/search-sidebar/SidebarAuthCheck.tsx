@@ -44,7 +44,7 @@ export const SidebarAuthCheck: React.FunctionComponent<OpenSearchPanelCtaProps> 
                 .hasAccessToken()
                 .then(hasAccessToken => {
                     setHasAccessToken(hasAccessToken)
-                    setHasAccount(true)
+                    setHasAccount(hasAccessToken)
                 })
                 // TODO error handling
                 .catch(() => setHasAccessToken(false))
@@ -109,7 +109,7 @@ export const SidebarAuthCheck: React.FunctionComponent<OpenSearchPanelCtaProps> 
                         <span className={classNames('my-3', styles.text)}>Create an account</span>
                     </a>
                     <p className={classNames('my-3', styles.text)}>
-                        <a href={signInUrl} onClick={() => setHasAccount(true)}>
+                        <a href="{signInUrl}" onClick={() => setHasAccount(true)}>
                             Have an account?
                         </a>
                     </p>
@@ -119,7 +119,11 @@ export const SidebarAuthCheck: React.FunctionComponent<OpenSearchPanelCtaProps> 
                 // eslint-disable-next-line react/forbid-elements
                 <Form onSubmit={onSubmitAccessToken}>
                     <p className={classNames('my-3', styles.text)}>
-                        Sign in by entering an access token created through your user setting on sourcegraph.com.
+                        Sign in by entering an access token created through your{' '}
+                        <a href={signInUrl} onClick={() => setHasAccount(true)}>
+                            user setting
+                        </a>{' '}
+                        on {instanceHostname}.
                     </p>
                     <p className={classNames('my-3', styles.text)}>
                         See our{' '}

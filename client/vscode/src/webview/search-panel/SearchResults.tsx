@@ -29,7 +29,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
     ({ platformContext, theme, sourcegraphVSCodeExtensionAPI, settings, instanceHostname }) => {
         const executedQuery = useQueryState(({ state }) => state.queryToRun.query)
         const searchResults = useQueryState(({ state }) => state.searchResults)
-
+        const searchActions = useQueryState(({ actions }) => actions)
         const fetchHighlightedFileLineRangesWithContext = useCallback(
             (parameters: FetchFileParameters) => fetchHighlightedFileLineRanges({ ...parameters, platformContext }),
             [platformContext]
@@ -75,6 +75,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
                         return sourcegraphVSCodeExtensionAPI.openFile(sourcegraphUri.uri)
                     }
                     case 'repo': {
+                        searchActions.setQuery({ query: `repo:^${result.repository}$` })
                         return sourcegraphVSCodeExtensionAPI.openFile(`sourcegraph://${host}/${result.repository}`)
                     }
                     // TODO ensure component always calls this for VSCE (usually a link)
