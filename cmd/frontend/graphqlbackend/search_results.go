@@ -24,6 +24,7 @@ import (
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -281,7 +282,7 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 		NewestCommit: fm.CommitID,
 		StartLine:    int(lm.LineNumber),
 		EndLine:      int(lm.LineNumber),
-	})
+	}, authz.DefaultSubRepoPermsChecker)
 	if err != nil {
 		return time.Time{}, err
 	}
