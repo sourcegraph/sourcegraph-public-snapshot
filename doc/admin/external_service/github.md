@@ -129,6 +129,10 @@ GitHub connections support the following configuration options, which are specif
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/github.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/github) to see rendered content.</div>
 
+## Default branch
+
+GitHub uses the master branch as the default branch of a repository. This means that searches targeting a synched github repo will automatically default to results from the master branch. If however you'd like search results to be displayed from another repository by default you may [change a repo's default branch on the github repo settings page](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/changing-the-default-branch). If this is not an option consider using [search contexts](https://docs.sourcegraph.com/code_search/how-to/search_contexts) instead. 
+
 ## Troubleshooting
 
 ### Hitting GitHub Search API rate limit with repositoryQuery
