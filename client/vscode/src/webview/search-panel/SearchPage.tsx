@@ -6,7 +6,6 @@ import { catchError, map } from 'rxjs/operators'
 
 import { SearchBox } from '@sourcegraph/branded/src/search/input/SearchBox'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { getAvailableSearchContextSpecOrDefault } from '@sourcegraph/shared/src/search'
 import {
@@ -285,12 +284,12 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                                             monitor, save searches and more.
                                         </div>
                                     </div>
-                                    <Link
+                                    <a
                                         className={classNames('btn', styles.streamingSearchResultsBtn)}
-                                        to="https://sourcegraph.com/sign-up?src=SearchCTA"
+                                        href="https://sourcegraph.com/sign-up?src=SearchCTA"
                                     >
-                                        Create a free account
-                                    </Link>
+                                        <span className={styles.streamingSearchResultsText}>Create a free account</span>
+                                    </a>
                                 </div>
                             )}
                             <SearchResults

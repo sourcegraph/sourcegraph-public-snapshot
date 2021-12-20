@@ -81,12 +81,13 @@
     }
 
     &__btn {
-            font-size: var(--vscode-font-size) !important;
-            background-color: var(--primary);
-            color: var(--white)
-    }
-
-    & a, a:visited, a:hover, a.active {
+        font-size: var(--vscode-font-size) !important;
+        background-color: var(--primary);
         color: var(--white)
     }
+
+    &__text {
+        color: var(--white)
+    }
+
 }

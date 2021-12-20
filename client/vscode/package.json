@@ -53,14 +53,14 @@
         "title": "Sourcegraph: Open File in Browser"
       },
       {
-        "command": "sourcegraph.searchOnSourcegraph",
-        "category": "Sourcegraph",
-        "title": "Sourcegraph: Search Selected Text on Sourcegraph"
-      },
-      {
         "command": "sourcegraph.searchInSourcegraph",
         "category": "Sourcegraph",
-        "title": "Sourcegraph: Search Selected Text in VSCE"
+        "title": "Sourcegraph: Search Selected Text"
+      },
+      {
+        "command": "sourcegraph.searchOnSourcegraph",
+        "category": "Sourcegraph",
+        "title": "Sourcegraph: Search Selected Text in Browser"
       }
     ],
     "viewsContainers": {
