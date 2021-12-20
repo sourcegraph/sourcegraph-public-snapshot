@@ -2747,7 +2747,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10000
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (container_memory_working_set_bytes{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~"${shard:regex}"})`
+Query: `sum by (container_label_io_kubernetes_pod_name) (container_memory_working_set_bytes{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~`${shard:regex}`})`
 
 </details>
 
@@ -2768,7 +2768,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10000
 <details>
 <summary>Technical details</summary>
 
-Query: `go_goroutines{app="gitserver", instance=~"${shard:regex}"}`
+Query: `go_goroutines{app="gitserver", instance=~`${shard:regex}`}`
 
 </details>
 
@@ -2789,7 +2789,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10001
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) ((rate(container_cpu_cfs_throttled_periods_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~"${shard:regex}"}[5m]) / rate(container_cpu_cfs_periods_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~"${shard:regex}"}[5m])) * 100)`
+Query: `sum by (container_label_io_kubernetes_pod_name) ((rate(container_cpu_cfs_throttled_periods_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]) / rate(container_cpu_cfs_periods_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m])) * 100)`
 
 </details>
 
@@ -2810,7 +2810,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10001
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_cpu_usage_seconds_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~"${shard:regex}"}[5m]))`
+Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_cpu_usage_seconds_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))`
 
 </details>
 
@@ -2892,7 +2892,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10004
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_reads_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~"${shard:regex}"}[5m]))`
+Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_reads_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))`
 
 </details>
 
@@ -2913,7 +2913,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10004
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_writes_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~"${shard:regex}"}[5m]))`
+Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_writes_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))`
 
 </details>
 
@@ -2934,7 +2934,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10005
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_reads_bytes_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~"${shard:regex}"}[5m]))`
+Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_reads_bytes_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))`
 
 </details>
 
@@ -2955,7 +2955,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10005
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_writes_bytes_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~"${shard:regex}"}[5m]))`
+Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_writes_bytes_total{container_label_io_kubernetes_container_name="gitserver", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))`
 
 </details>
 
@@ -2976,7 +2976,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10006
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (instance, cmd) (src_gitserver_exec_running{instance=~"${shard:regex}"})`
+Query: `sum by (instance, cmd) (src_gitserver_exec_running{instance=~`${shard:regex}`})`
 
 </details>
 
@@ -3211,7 +3211,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10021
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(src_gitserver_search_latency_seconds_count{instance=~"${shard:regex}"}[5m])`
+Query: `rate(src_gitserver_search_latency_seconds_count{instance=~`${shard:regex}`}[5m])`
 
 </details>
 
@@ -3232,7 +3232,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10021
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (instance) (src_gitserver_search_running{instance=~"${shard:regex}"})`
+Query: `sum by (instance) (src_gitserver_search_running{instance=~`${shard:regex}`})`
 
 </details>
 
