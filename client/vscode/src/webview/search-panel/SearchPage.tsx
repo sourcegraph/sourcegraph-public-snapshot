@@ -207,6 +207,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                         <HomePanels
                             telemetryService={platformContext.telemetryService}
                             isLightTheme={theme === 'theme-light'}
+                            setQuery={searchActions.setQuery}
                         />
                     </div>
                 </div>

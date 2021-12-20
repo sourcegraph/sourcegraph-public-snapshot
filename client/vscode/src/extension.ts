@@ -234,6 +234,13 @@ export function activate(context: vscode.ExtensionContext): void {
             { webviewOptions: { retainContextWhenHidden: true } }
         )
     )
+    // Bring search panel into view.
+    vscode.commands.executeCommand('sourcegraph.search').then(
+        () => {},
+        error => {
+            console.error(error)
+        }
+    )
 
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(

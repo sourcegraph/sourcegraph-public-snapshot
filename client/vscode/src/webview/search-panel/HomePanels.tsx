@@ -4,21 +4,30 @@ import React from 'react'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded/src/components/SyntaxHighlightedSearchQuery'
 import { ModalVideo } from '@sourcegraph/branded/src/search/documentation/ModalVideo'
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { QueryState } from '@sourcegraph/shared/src/search/helpers'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { SearchExample, exampleQueries, fonts } from '@sourcegraph/web/src/search/home//LoggedOutHomepage.constants'
 import { DynamicWebFonts } from '@sourcegraph/web/src/search/home/DynamicWebFonts'
 import styles from '@sourcegraph/web/src/search/home/LoggedOutHomepage.module.scss'
-
-export interface HomePanelsProps extends TelemetryProps, ThemeProps {}
+export interface HomePanelsProps extends TelemetryProps, ThemeProps {
+    setQuery: (newState: QueryState) => void
+}
 interface SearchExamplesProps extends TelemetryProps {
     title: string
     subtitle: string
     examples: SearchExample[]
     icon: JSX.Element
+    setQuery: (newState: QueryState) => void
 }
 
-const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({ title, subtitle, examples, icon }) => (
+const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
+    title,
+    subtitle,
+    examples,
+    icon,
+    setQuery,
+}) => (
     <div className={styles.searchExamplesWrapper}>
         <div className={classNames('d-flex align-items-baseline mb-2', styles.searchExamplesTitleWrapper)}>
             <div className={classNames('mr-2', styles.title, styles.searchExamplesTitle)}>{title}</div>
@@ -27,7 +36,11 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({ title, s
         <div className={styles.searchExamples}>
             {examples.map(example => (
                 <div key={example.query} className={styles.searchExampleCardWrapper}>
-                    <Link to={example.to} className={classNames('card', styles.searchExampleCard)}>
+                    <Link
+                        to={example.to}
+                        className={classNames('card', styles.searchExampleCard)}
+                        onClick={() => setQuery({ query: example.query })}
+                    >
                         <div className={classNames(styles.searchExampleIcon)}>{icon}</div>
                         <div className={styles.searchExampleQueryWrapper}>
                             <div className={styles.searchExampleQuery}>
@@ -35,7 +48,7 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({ title, s
                             </div>
                         </div>
                     </Link>
-                    <Link to={example.to}>{example.label}</Link>
+                    <p>{example.label}</p>
                 </div>
             ))}
         </div>
