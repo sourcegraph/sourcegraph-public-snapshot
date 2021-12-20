@@ -16,6 +16,7 @@
     border-bottom: 1px solid var(--border-color);
     border-top-left-radius: var(--border-radius);
     border-top-right-radius: var(--border-radius);
+    overflow-wrap: break-word;
 }
 
 .header-file-link:not(:hover) {
