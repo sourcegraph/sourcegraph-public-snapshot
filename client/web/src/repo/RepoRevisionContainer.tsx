@@ -27,6 +27,7 @@ import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { PatternTypeProps, SearchContextProps, SearchStreamingProps } from '../search'
@@ -65,6 +66,7 @@ export interface RepoRevisionContainerContext
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
+        FeatureFlagProps,
         CodeInsightsProps {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
