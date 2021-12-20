@@ -6,6 +6,7 @@ import { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Route, Router } from 'react-router'
+import { ScrollManager } from 'react-scroll-manager'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
@@ -395,71 +396,73 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     <ShortcutProvider>
                         <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage}>
                             <SearchResultsCacheProvider>
-                                <Router history={history} key={0}>
-                                    <Route
-                                        path="/"
-                                        render={routeComponentProps => (
-                                            <CodeHostScopeProvider authenticatedUser={authenticatedUser}>
-                                                <LayoutWithActivation
-                                                    {...props}
-                                                    {...routeComponentProps}
-                                                    authenticatedUser={authenticatedUser}
-                                                    viewerSubject={this.state.viewerSubject}
-                                                    settingsCascade={this.state.settingsCascade}
-                                                    batchChangesEnabled={this.props.batchChangesEnabled}
-                                                    batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
-                                                        this.state.settingsCascade
-                                                    )}
-                                                    batchChangesWebhookLogsEnabled={
-                                                        window.context.batchChangesWebhookLogsEnabled
-                                                    }
-                                                    // Search query
-                                                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                                    patternType={this.state.searchPatternType}
-                                                    setPatternType={this.setPatternType}
-                                                    // Extensions
-                                                    platformContext={this.platformContext}
-                                                    extensionsController={this.extensionsController}
-                                                    telemetryService={eventLogger}
-                                                    isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                    searchContextsEnabled={this.props.searchContextsEnabled}
-                                                    hasUserAddedRepositories={this.hasUserAddedRepositories()}
-                                                    hasUserAddedExternalServices={
-                                                        this.state.hasUserAddedExternalServices
-                                                    }
-                                                    selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                                                    setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
-                                                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                                                    fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
-                                                    fetchSearchContexts={fetchSearchContexts}
-                                                    fetchSearchContextBySpec={fetchSearchContextBySpec}
-                                                    fetchSearchContext={fetchSearchContext}
-                                                    createSearchContext={createSearchContext}
-                                                    updateSearchContext={updateSearchContext}
-                                                    deleteSearchContext={deleteSearchContext}
-                                                    isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                                                    defaultSearchContextSpec={this.state.defaultSearchContextSpec}
-                                                    globbing={this.state.globbing}
-                                                    isCodeInsightsGqlApiEnabled={
-                                                        window.context.codeInsightsGqlApiEnabled
-                                                    }
-                                                    fetchSavedSearches={fetchSavedSearches}
-                                                    fetchRecentSearches={fetchRecentSearches}
-                                                    fetchRecentFileViews={fetchRecentFileViews}
-                                                    streamSearch={aggregateStreamingSearch}
-                                                    onUserExternalServicesOrRepositoriesUpdate={
-                                                        this.onUserExternalServicesOrRepositoriesUpdate
-                                                    }
-                                                    onSyncedPublicRepositoriesUpdate={
-                                                        this.onSyncedPublicRepositoriesUpdate
-                                                    }
-                                                    featureFlags={this.state.featureFlags}
-                                                />
-                                            </CodeHostScopeProvider>
-                                        )}
-                                    />
-                                    <SearchStack />
-                                </Router>
+                                <ScrollManager history={history}>
+                                    <Router history={history} key={0}>
+                                        <Route
+                                            path="/"
+                                            render={routeComponentProps => (
+                                                <CodeHostScopeProvider authenticatedUser={authenticatedUser}>
+                                                    <LayoutWithActivation
+                                                        {...props}
+                                                        {...routeComponentProps}
+                                                        authenticatedUser={authenticatedUser}
+                                                        viewerSubject={this.state.viewerSubject}
+                                                        settingsCascade={this.state.settingsCascade}
+                                                        batchChangesEnabled={this.props.batchChangesEnabled}
+                                                        batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
+                                                            this.state.settingsCascade
+                                                        )}
+                                                        batchChangesWebhookLogsEnabled={
+                                                            window.context.batchChangesWebhookLogsEnabled
+                                                        }
+                                                        // Search query
+                                                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                                        patternType={this.state.searchPatternType}
+                                                        setPatternType={this.setPatternType}
+                                                        // Extensions
+                                                        platformContext={this.platformContext}
+                                                        extensionsController={this.extensionsController}
+                                                        telemetryService={eventLogger}
+                                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                                        searchContextsEnabled={this.props.searchContextsEnabled}
+                                                        hasUserAddedRepositories={this.hasUserAddedRepositories()}
+                                                        hasUserAddedExternalServices={
+                                                            this.state.hasUserAddedExternalServices
+                                                        }
+                                                        selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
+                                                        setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                                                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                                                        fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                                                        fetchSearchContexts={fetchSearchContexts}
+                                                        fetchSearchContextBySpec={fetchSearchContextBySpec}
+                                                        fetchSearchContext={fetchSearchContext}
+                                                        createSearchContext={createSearchContext}
+                                                        updateSearchContext={updateSearchContext}
+                                                        deleteSearchContext={deleteSearchContext}
+                                                        isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                                                        defaultSearchContextSpec={this.state.defaultSearchContextSpec}
+                                                        globbing={this.state.globbing}
+                                                        isCodeInsightsGqlApiEnabled={
+                                                            window.context.codeInsightsGqlApiEnabled
+                                                        }
+                                                        fetchSavedSearches={fetchSavedSearches}
+                                                        fetchRecentSearches={fetchRecentSearches}
+                                                        fetchRecentFileViews={fetchRecentFileViews}
+                                                        streamSearch={aggregateStreamingSearch}
+                                                        onUserExternalServicesOrRepositoriesUpdate={
+                                                            this.onUserExternalServicesOrRepositoriesUpdate
+                                                        }
+                                                        onSyncedPublicRepositoriesUpdate={
+                                                            this.onSyncedPublicRepositoriesUpdate
+                                                        }
+                                                        featureFlags={this.state.featureFlags}
+                                                    />
+                                                </CodeHostScopeProvider>
+                                            )}
+                                        />
+                                        <SearchStack />
+                                    </Router>
+                                </ScrollManager>
                                 <Tooltip key={1} />
                                 <Notifications
                                     key={2}
