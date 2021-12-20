@@ -119,7 +119,7 @@ interface State {
     error?: Error
 }
 
-function prettyBytesBigint(bytes: bigint):string {
+function prettyBytesBigint(bytes: bigint): string {
   let unit = 0
   const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
   const threshold = BigInt(1000);
