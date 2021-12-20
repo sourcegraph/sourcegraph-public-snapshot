@@ -17,6 +17,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npmpackages/npm"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -49,7 +50,8 @@ func TestNoMaliciousFilesNPM(t *testing.T) {
 	createMaliciousTgz(t, tgzPath)
 
 	s := NPMPackagesSyncer{
-		Config: &schema.NPMPackagesConnection{Dependencies: []string{}},
+		Config:  &schema.NPMPackagesConnection{Dependencies: []string{}},
+		DBStore: NewMockDBStore(),
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancel now  to prevent any network IO
@@ -83,62 +85,90 @@ func TestNPMCloneCommand(t *testing.T) {
 	assert.Nil(t, err)
 	defer func() { assert.Nil(t, os.RemoveAll(dir)) }()
 
-	createPlaceholderSourcesTgz(t, dir, exampleJSFileContents, exampleJSFilepath, exampleTgz)
-	createPlaceholderSourcesTgz(t, dir, exampleTSFileContents, exampleTSFilepath, exampleTgz2)
+	tgzPath := path.Join(dir, exampleTgz)
+	createTgz(t, tgzPath, []fileInfo{{exampleJSFilepath, []byte(exampleJSFileContents)}})
+	defer func() { assert.Nil(t, os.Remove(tgzPath)) }()
+	tgzPath2 := path.Join(dir, exampleTgz2)
+	createTgz(t, tgzPath2, []fileInfo{{exampleTSFilepath, []byte(exampleTSFileContents)}})
+	defer func() { assert.Nil(t, os.Remove(tgzPath2)) }()
 
 	npm.NPMBinary = npmScript(t, dir)
 	s := NPMPackagesSyncer{
-		Config: &schema.NPMPackagesConnection{Dependencies: []string{}},
+		Config:  &schema.NPMPackagesConnection{Dependencies: []string{}},
+		DBStore: NewMockDBStore(),
 	}
 	bareGitDirectory := path.Join(dir, "git")
 	s.runCloneCommand(t, bareGitDirectory, []string{exampleNPMVersionedPackage})
-	assertCommandOutput(t,
-		exec.Command("git", "tag", "--list"),
-		bareGitDirectory,
-		"v1.0.0\n")
-	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion, exampleJSFilepath)),
-		bareGitDirectory,
-		exampleJSFileContents,
-	)
+	checkSingleTag := func() {
+		assertCommandOutput(t,
+			exec.Command("git", "tag", "--list"),
+			bareGitDirectory,
+			fmt.Sprintf("v%s\n", exampleNPMVersion))
+		assertCommandOutput(t,
+			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion, exampleJSFilepath)),
+			bareGitDirectory,
+			exampleJSFileContents,
+		)
+	}
+	checkSingleTag()
 
 	s.runCloneCommand(t, bareGitDirectory, []string{exampleNPMVersionedPackage, exampleNPMVersionedPackage2})
-
-	assertCommandOutput(t,
-		exec.Command("git", "tag", "--list"),
-		bareGitDirectory,
-		"v1.0.0\nv2.0.0-abc\n", // verify that the v2.0.0 tag got added
-	)
-	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion, exampleJSFilepath)),
-		bareGitDirectory,
-		exampleJSFileContents,
-	)
-
-	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion2, exampleTSFilepath)),
-		bareGitDirectory,
-		exampleTSFileContents,
-	)
+	checkTagAdded := func() {
+		assertCommandOutput(t,
+			exec.Command("git", "tag", "--list"),
+			bareGitDirectory,
+			fmt.Sprintf("v%s\nv%s\n", exampleNPMVersion, exampleNPMVersion2), // verify that a new tag was added
+		)
+		assertCommandOutput(t,
+			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion, exampleJSFilepath)),
+			bareGitDirectory,
+			exampleJSFileContents,
+		)
+		assertCommandOutput(t,
+			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion2, exampleTSFilepath)),
+			bareGitDirectory,
+			exampleTSFileContents,
+		)
+	}
+	checkTagAdded()
 
 	s.runCloneCommand(t, bareGitDirectory, []string{exampleNPMVersionedPackage})
-	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion, exampleJSFilepath)),
-		bareGitDirectory,
-		exampleJSFileContents,
-	)
-	assertCommandOutput(t,
-		exec.Command("git", "tag", "--list"),
-		bareGitDirectory,
-		"v1.0.0\n", // verify that the v2.0.0 tag has been removed.
-	)
-}
+	checkTagRemoved := func() {
+		assertCommandOutput(t,
+			exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleNPMVersion, exampleJSFilepath)),
+			bareGitDirectory,
+			exampleJSFileContents,
+		)
+		assertCommandOutput(t,
+			exec.Command("git", "tag", "--list"),
+			bareGitDirectory,
+			fmt.Sprintf("v%s\n", exampleNPMVersion), // verify that second tag has been removed.
+		)
+	}
+	checkTagRemoved()
 
-func createPlaceholderSourcesTgz(t *testing.T, dir, contents, filename, tgzFilename string) {
-	createTgz(t, path.Join(dir, tgzFilename),
-		[]fileInfo{
-			{filename, []byte(contents)},
-		})
+	// Now run the same tests with the database output instead.
+	mockStore := NewStrictMockDBStore()
+	s.DBStore = mockStore
+
+	mockStore.GetNPMDependencyReposFunc.PushReturn([]dbstore.NPMDependencyRepo{
+		{"example", exampleNPMVersion, 0},
+	}, nil)
+	s.runCloneCommand(t, bareGitDirectory, []string{})
+	checkSingleTag()
+
+	mockStore.GetNPMDependencyReposFunc.PushReturn([]dbstore.NPMDependencyRepo{
+		{"example", exampleNPMVersion, 0},
+		{"example", exampleNPMVersion2, 1},
+	}, nil)
+	s.runCloneCommand(t, bareGitDirectory, []string{})
+	checkTagAdded()
+
+	mockStore.GetNPMDependencyReposFunc.PushReturn([]dbstore.NPMDependencyRepo{
+		{"example", "1.0.0", 0},
+	}, nil)
+	s.runCloneCommand(t, bareGitDirectory, []string{})
+	checkTagRemoved()
 }
 
 func npmScript(t *testing.T, dir string) string {
@@ -158,10 +188,15 @@ if [[ "$CLASSIFIER" =~ "view" ]]; then
     exit 0
   fi
 elif [[ "$CLASSIFIER" =~ "pack" ]]; then
+  # Copy tarball as it will be deleted after npm pack's output is parsed.
   if [[ "$ARG" =~ "%[1]s" ]]; then
-    echo "[{\"filename\": \"%[3]s\"}]"
+    mkdir -p %[7]s
+    cp %[3]s %[5]s
+    echo "[{\"filename\": \"%[5]s\"}]"
   elif [[ "$ARG" =~ "%[2]s" ]]; then
-    echo "[{\"filename\": \"%[4]s\"}]"
+    mkdir -p %[7]s
+    cp %[4]s %[6]s
+    echo "[{\"filename\": \"%[6]s\"}]"
   fi
 else
   echo "invalid arguments for fake npm script: $@"
@@ -170,6 +205,8 @@ fi
 `,
 		exampleNPMVersionedPackage, exampleNPMVersionedPackage2,
 		path.Join(dir, exampleTgz), path.Join(dir, exampleTgz2),
+		path.Join(dir, "tarballs", exampleTgz), path.Join(dir, "tarballs", exampleTgz2),
+		path.Join(dir, "tarballs"),
 	)
 	_, err = npmPath.WriteString(script)
 	assert.Nil(t, err)
