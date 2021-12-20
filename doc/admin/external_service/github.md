@@ -131,7 +131,7 @@ GitHub connections support the following configuration options, which are specif
 
 ## Default branch
 
-GitHub uses the master branch as the default branch of a repository. This means that searches targeting a synched github repo will automatically default to results from the master branch. If however you'd like search results to be displayed from another repository by default you may [change a repo's default branch on the github repo settings page](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/changing-the-default-branch). If this is not an option consider using [search contexts](https://docs.sourcegraph.com/code_search/how-to/search_contexts) instead. 
+GitHub uses the default branch of a repository for searches and the search results will be shown from the default branch. If you'd like the search results to be displayed from another branch by default, you may [change a repo's default branch on the github repo settings page](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/changing-the-default-branch). If this is not an option, consider using [search contexts](https://docs.sourcegraph.com/code_search/how-to/search_contexts) instead. 
 
 ## Troubleshooting
 
