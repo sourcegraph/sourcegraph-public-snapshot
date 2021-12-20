@@ -1,6 +1,6 @@
 # Detect and track patterns with automatically generated data series 
 
-> Note: in Sourcegraph 3.35 this feature is in its earliest version. Stability and additional features coming in following releases. 
+> Note: "Detect and track patterns" insights are available in Sourcegraph 3.35 and above. In Sourcegraph 3.35 this feature is in its earliest version. Stability and additional features coming in following releases.
 
 On Sourcegraph 3.35 or later, Code Insights with automatically generated data series allow you to detect and track versions and patterns within your codebase. You can use these insights to track versions of languages, packages, terraform, docker images, or anything else that can be captured with a [regular expression capture group](#regular-expression-capture-group-resources).
 
@@ -16,11 +16,11 @@ For example, `file:\.pom$ <java\.version>(.*)</java\.version>` will match all of
 <java.version>1.8</java.version>
 ```
 
-Code Insights will find all matches, and then automatically generate a data series and series color for each unique value of the capture group. In this case, the chart would show data series for 1.5, 1.7, and 1.8, with the values being the number of matches for each unique value. 
+Code Insights will find all matches, and then automatically generate a data series and color for each unique value of the capture group. In this case, the chart would show data series for 1.5, 1.7, and 1.8, with the values being the number of matches for each unique value. 
 
-## Automatic updates
+## New matching data gets automatically added 
 
-Capture groups will automatically show new matches when they appear in your codebase; you do not need to update or manually re-create the insights. 
+Capture groups will automatically create new data series for new matches as they appear in your codebase. You do not need to update or manually re-create the insights to track newly added versions or patterns.
 
 For the above example, this means that if `<java.version>1.9</java.version>` was committed to the codebase in the future, it would appear on the insight without any additoinal action, and you would see a series for `1.9`. 
 

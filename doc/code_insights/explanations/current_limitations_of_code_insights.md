@@ -41,7 +41,7 @@ Because these insights need to run dramatically fewer queries than insights over
 
 > NOTE: many of the above-listed features will become available for insights over all repositories as well. The above list is ordererd top-down, where items on the top of the list will arrive roughly sooner than items on the bottom. 
 
-### Limitations specific to automatically generated data series 
+### Limitations specific to "Detect and track patterns" insights (automatically generated data series)
 
 Please see [Current limitations of automatically generated data series](automatically_generated_data_series.md#current-limitations).
 
