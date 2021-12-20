@@ -1,11 +1,10 @@
 import React, { useEffect } from 'react'
 
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useSteps } from '@sourcegraph/wildcard'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { UserCodeHosts } from '../../user/settings/codeHosts/UserCodeHosts'
-import { useSteps } from '../Steps'
 
 interface CodeHostsConnection extends Omit<UserCodeHosts, 'onDidRemove' | 'onDidError' | 'externalServices'> {
     refetch: UserCodeHosts['onDidRemove']

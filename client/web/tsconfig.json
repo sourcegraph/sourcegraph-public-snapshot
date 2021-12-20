@@ -16,6 +16,6 @@
     { "path": "../../schema" },
     { "path": "../storybook" },
   ],
-  "include": ["**/*", ".*", "./src/**/*.json"],
+  "include": ["**/*", ".*", "./src/**/*.json", "../wildcard/src/components/Steps"],
   "exclude": ["../../node_modules", "./node_modules", "./out", "src/end-to-end", "src/regression", "src/integration"],
 }

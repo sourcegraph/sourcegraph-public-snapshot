@@ -5,10 +5,9 @@ import React, { useCallback, useEffect, useState, FunctionComponent, Dispatch, S
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Container, PageSelector } from '@sourcegraph/wildcard'
+import { Container, PageSelector, useSteps } from '@sourcegraph/wildcard'
 
 import { RepoSelectionMode } from '../../../auth/PostSignUpPage'
-import { useSteps } from '../../../auth/Steps'
 import { useAffiliatedRepos } from '../../../auth/useAffiliatedRepos'
 import { useExternalServices } from '../../../auth/useExternalServices'
 import { useSelectedRepos, selectedReposVar, MinSelectedRepo } from '../../../auth/useSelectedRepos'

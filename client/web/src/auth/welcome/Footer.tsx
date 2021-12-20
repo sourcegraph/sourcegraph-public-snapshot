@@ -2,9 +2,9 @@ import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LoaderButton } from '@sourcegraph/web/src/components/LoaderButton'
+import { useSteps } from '@sourcegraph/wildcard'
 
 import { FinishWelcomeFlow } from '../PostSignUpPage'
-import { useSteps } from '../Steps/context'
 
 interface Props {
     onFinish: FinishWelcomeFlow
