@@ -74,13 +74,13 @@ const COMPONENTS_FOR_TREE_ENTRY = gql`
         description
         url
         sourceLocations {
-            ... on GitTree {
-                repository {
-                    id
-                }
+            repository {
+                id
             }
             path
-            url
+            treeEntry {
+                url
+            }
         }
     }
 

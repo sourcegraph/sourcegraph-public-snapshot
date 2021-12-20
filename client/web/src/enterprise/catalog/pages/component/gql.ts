@@ -88,26 +88,24 @@ const COMPONENT_SOURCES_FRAGMENT = gql`
     fragment ComponentSourcesFields on Component {
         sourceLocations {
             path
-            isDirectory
-            url
-            ... on GitTree {
-                repository {
-                    name
-                    url
-                }
-                files(recursive: true) {
-                    path
-                    name
-                    isDirectory
-                    url
+            repository {
+                name
+                url
+            }
+            treeEntry {
+                __typename
+                isDirectory
+                url
+                ... on GitTree {
+                    files(recursive: true) {
+                        path
+                        name
+                        isDirectory
+                        url
+                    }
                 }
             }
-            ... on GitBlob {
-                repository {
-                    name
-                    url
-                }
-            }
+            isPrimary
         }
     }
     ${gitCommitFragment}
