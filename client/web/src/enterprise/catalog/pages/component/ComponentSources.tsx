@@ -33,7 +33,12 @@ const ComponentFiles: React.FunctionComponent<
         ThemeProps
 > = ({ sourceLocations, className, extensionsController, isLightTheme }) => {
     const files = useMemo(
-        () => sourceLocations.flatMap(sourceLocation => ('files' in sourceLocation ? sourceLocation.files : [])),
+        () =>
+            sourceLocations.flatMap(sourceLocation =>
+                sourceLocation.treeEntry && sourceLocation.treeEntry.__typename === 'GitTree'
+                    ? sourceLocation.treeEntry.files
+                    : []
+            ),
         [sourceLocations]
     )
 
