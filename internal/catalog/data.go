@@ -412,7 +412,7 @@ func data() ([]Component, []Group, []Edge, []ComputedLabel) {
 			Kind:            kind,
 			Name:            name,
 			Lifecycle:       LifecycleProduction,
-			SourceLocations: []SourceLocation{{Repo: repo, Paths: []string{"."}}},
+			SourceLocations: []SourceLocation{{Repo: repo, Paths: []string{""}}},
 			OwnedBy:         "",
 			Tags:            []string{"repo"},
 		})
