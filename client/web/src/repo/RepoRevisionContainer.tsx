@@ -44,6 +44,7 @@ import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import styles from './RepoRevisionContainer.module.scss'
+import { RepoSidebarViewOptionsProps } from './RepoRevisionSidebar'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
@@ -103,6 +104,7 @@ interface RepoRevisionContainerProps
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
+        RepoSidebarViewOptionsProps,
         BatchChangesProps,
         CodeInsightsProps {
     routes: readonly RepoRevisionContainerRoute[]
