@@ -21,7 +21,17 @@ import { Tree } from '../tree/Tree'
 import styles from './RepoRevisionSidebar.module.scss'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
-interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps, TelemetryProps {
+export interface RepoSidebarViewOptionsProps {
+    repoSidebarIsVisible: boolean
+    setRepoSidebarIsVisible: (visible: boolean) => void
+}
+
+interface Props
+    extends AbsoluteRepoFile,
+        ExtensionsControllerProps,
+        ThemeProps,
+        TelemetryProps,
+        RepoSidebarViewOptionsProps {
     repoID: Scalars['ID']
     isDir: boolean
     defaultBranch: string
@@ -33,11 +43,8 @@ interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps,
 const SIZE_STORAGE_KEY = 'repo-revision-sidebar'
 const TABS_KEY = 'repo-revision-sidebar-last-tab'
 const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
-/**
- * The sidebar for a specific repo revision that shows the list of files and directories.
- */
-export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
-    const [tabIndex, setTabIndex] = useLocalStorage(TABS_KEY, 0)
+
+export function useRepoSidebarViewOptions(props: TelemetryProps): RepoSidebarViewOptionsProps {
     const [persistedIsVisible, setPersistedIsVisible] = useLocalStorage(
         SIDEBAR_KEY,
         settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
@@ -46,7 +53,6 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     const isWideScreen = useMatchMedia('(min-width: 768px)', false)
     const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
 
-    const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
     const handleSidebarToggle = useCallback(
         (value: boolean) => {
             props.telemetryService.log('FileTreeViewClicked', {
@@ -58,11 +64,27 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
         },
         [setPersistedIsVisible, props.telemetryService]
     )
+
+    return { repoSidebarIsVisible: isVisible, setRepoSidebarIsVisible: handleSidebarToggle }
+}
+
+/**
+ * The sidebar for a specific repo revision that shows the list of files and directories.
+ */
+export const RepoRevisionSidebar: React.FunctionComponent<Props> = ({
+    repoSidebarIsVisible,
+    setRepoSidebarIsVisible,
+    ...props
+}) => {
+    const [tabIndex, setTabIndex] = useLocalStorage(TABS_KEY, 0)
+
+    const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
+
     const handleSymbolClick = useCallback(() => props.telemetryService.log('SymbolTreeViewClicked'), [
         props.telemetryService,
     ])
 
-    if (!isVisible) {
+    if (!repoSidebarIsVisible) {
         return (
             <button
                 type="button"
@@ -70,7 +92,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                     'position-absolute btn btn-icon border-top border-bottom border-right mt-4',
                     styles.toggle
                 )}
-                onClick={() => handleSidebarToggle(true)}
+                onClick={() => setRepoSidebarIsVisible(true)}
                 data-tooltip="Show sidebar"
             >
                 <ChevronDoubleRightIcon className="icon-inline" />
@@ -100,7 +122,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                 </Tab>
                             </TabList>
                             <Button
-                                onClick={() => handleSidebarToggle(false)}
+                                onClick={() => setRepoSidebarIsVisible(false)}
                                 className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
                                 title="Hide sidebar"
                                 data-tooltip="Hide sidebar"
