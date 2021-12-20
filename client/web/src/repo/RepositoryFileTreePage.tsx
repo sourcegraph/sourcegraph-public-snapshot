@@ -91,6 +91,8 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                 repoName={repoName}
                 isDir={objectType === 'tree'}
                 defaultBranch={resolvedRevision?.defaultBranch || 'HEAD'}
+                repoSidebarIsVisible={context.repoSidebarIsVisible}
+                setRepoSidebarIsVisible={context.setRepoSidebarIsVisible}
             />
             {!hideRepoRevisionContent && (
                 // Add `.blob-status-bar__container` because this is the

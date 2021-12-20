@@ -48,6 +48,7 @@ import {
     RepoRevisionContainerContext,
     RepoRevisionContainerRoute,
 } from './RepoRevisionContainer'
+import { RepoSidebarViewOptionsProps, useRepoSidebarViewOptions } from './RepoRevisionSidebar'
 import { commitsPath, compareSpecPath } from './routes'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
@@ -74,7 +75,8 @@ export interface RepoContainerContext
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        RepoSidebarViewOptionsProps {
     repo: RepositoryFields
     repoName: string
     resolvedRevisionOrError: ResolvedRevision | ErrorLike | undefined
@@ -278,6 +280,8 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         return paths.some(path => matchPath(props.match.url, { path: props.match.path + path }))
     }, [props.repoContainerRoutes, props.match])
 
+    const repoSidebarViewOptionsProps = useRepoSidebarViewOptions(props)
+
     if (isErrorLike(repoOrError) || isErrorLike(resolvedRevisionOrError)) {
         const viewerCanAdminister = !!props.authenticatedUser && props.authenticatedUser.siteAdmin
 
@@ -309,6 +313,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         resolvedRevision: resolvedRevisionOrError,
         routePrefix: repoMatchURL,
         useActionItemsBar,
+        ...repoSidebarViewOptionsProps,
     }
 
     /**

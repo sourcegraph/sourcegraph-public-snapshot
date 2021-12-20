@@ -32,6 +32,7 @@ import { RepoRevisionChevronDownIcon, RepoRevisionWrapper } from './components/R
 import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
+import { RepoSidebarViewOptionsProps } from './RepoRevisionSidebar'
 import { RevisionsPopover } from './RevisionsPopover'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
@@ -56,7 +57,8 @@ export interface RepoRevisionContainerContext
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
         Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'>,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        RepoSidebarViewOptionsProps {
     repo: RepositoryFields | undefined
     resolvedRevision: ResolvedRevision | undefined
 
@@ -91,6 +93,7 @@ interface RepoRevisionContainerProps
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
+        RepoSidebarViewOptionsProps,
         BatchChangesProps,
         CodeInsightsProps {
     routes: readonly RepoRevisionContainerRoute[]
