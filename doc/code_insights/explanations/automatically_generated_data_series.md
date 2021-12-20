@@ -1,4 +1,4 @@
-# Automatically generated data series 
+# Detect and track patterns with automatically generated data series 
 
 > Note: in Sourcegraph 3.35 this feature is in its earliest version. Stability and additional features coming in following releases. 
 
