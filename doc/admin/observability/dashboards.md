@@ -12168,11 +12168,13 @@ Query: `sum(increase(get_index_options_error_total[5m]))`
 
 ### Zoekt Index Server: Indexing results
 
-#### zoekt-indexserver: indexed_job_results_all_instances
+#### zoekt-indexserver: repo_index_state_aggregate
 
-<p class="subtitle">Index result state counts (aggregate)</p>
+<p class="subtitle">Index results state counts over 5m (aggregate)</p>
 
 This dashboard shows the outcomes of recently completed indexing jobs across all index-server instances.
+
+A persistent failing state indicates some repositories cannot be indexed, perhaps due to size and timeouts.
 
 Legend:
 - fail -> the indexing jobs failed
@@ -12190,19 +12192,21 @@ To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (state) (index_state_count{state=~`${indexState:regex}`})`
+Query: `sum by (state) (increase(index_repo_seconds_count[5m]))`
 
 </details>
 
 <br />
 
-#### zoekt-indexserver: indexed_job_results_per_instance
+#### zoekt-indexserver: repo_index_state_per_instance
 
-<p class="subtitle">Index result state counts (per instance)</p>
+<p class="subtitle">Index results state counts over 5m (per instance)</p>
 
 This dashboard shows the outcomes of recently completed indexing jobs, split out across each index-server instance.
 
-You can use the "shard" filter at the top of the page to select a particular instance.
+(You can use the "shard" filter at the top of the page to select a particular instance.)
+
+A persistent failing state indicates some repositories cannot be indexed, perhaps due to size and timeouts.
 
 Legend:
 - fail -> the indexing jobs failed
@@ -12220,49 +12224,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (instance, state) (index_state_count{state=~`${indexState:regex}`,instance=~`${shard:regex}`})`
-
-</details>
-
-<br />
-
-#### zoekt-indexserver: repo_index_state
-
-<p class="subtitle">Index results duration over 5m (aggregate)</p>
-
-A persistent failing state indicates some repositories cannot be indexed, perhaps due to size and timeouts.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100110` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (state) (increase(index_repo_seconds_count{state=~`${indexState:regex}`}[5m]))`
-
-</details>
-
-<br />
-
-#### zoekt-indexserver: repo_index_state
-
-<p class="subtitle">Index results duration over 5m (per instance)</p>
-
-A persistent failing state indicates some repositories cannot be indexed, perhaps due to size and timeouts.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100111` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (instance, state) (increase(index_repo_seconds_count{state=~`${indexState:regex}`,instance=~`${shard:regex}`}[5m]))`
+Query: `sum by (instance, state) (increase(index_repo_seconds_count{instance=~`${shard:regex}`}[5m]))`
 
 </details>
 
@@ -12270,9 +12232,9 @@ Query: `sum by (instance, state) (increase(index_repo_seconds_count{state=~`${in
 
 ### Zoekt Index Server: Indexing queue statistics
 
-#### zoekt-indexserver: indexed_queue_size
+#### zoekt-indexserver: indexed_queue_size_aggregate
 
-<p class="subtitle">Number of outstanding index jobs</p>
+<p class="subtitle"># of outstanding index jobs (aggregate)</p>
 
 A queue that is constantly growing could be a leading indicator of a bottleneck or under-provisioning
 
@@ -12286,6 +12248,27 @@ To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver
 <summary>Technical details</summary>
 
 Query: `sum(index_queue_len)`
+
+</details>
+
+<br />
+
+#### zoekt-indexserver: indexed_queue_size_per_instance
+
+<p class="subtitle"># of outstanding index jobs (per instance)</p>
+
+A queue that is constantly growing could be a leading indicator of a bottleneck or under-provisioning
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100201` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `index_queue_len{instance=~`${shard:regex}`}`
 
 </details>
 
@@ -12305,7 +12288,7 @@ If there is a difference between
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100110` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100210` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
