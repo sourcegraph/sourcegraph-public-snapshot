@@ -6,6 +6,7 @@ import { catchError, map } from 'rxjs/operators'
 
 import { SearchBox } from '@sourcegraph/branded/src/search/input/SearchBox'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { getAvailableSearchContextSpecOrDefault } from '@sourcegraph/shared/src/search'
 import {
@@ -19,10 +20,12 @@ import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/setting
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
+import { SearchBetaIcon } from '@sourcegraph/web/src/search/CtaIcons'
 
 import { SearchResult, SearchVariables } from '../../graphql-operations'
 import { WebviewPageProps } from '../platform/context'
 
+import { HomePanels } from './HomePanels'
 import styles from './index.module.scss'
 import { searchQuery } from './queries'
 import { convertGQLSearchToSearchMatches, SearchResults } from './SearchResults'
@@ -43,7 +46,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
     const instanceHostname = useMemo(() => sourcegraphVSCodeExtensionAPI.getInstanceHostname(), [
         sourcegraphVSCodeExtensionAPI,
     ])
-
+    const [hasAccessToken, setHasAccessToken] = useState<boolean | undefined>(undefined)
     const sourcegraphSettings =
         useObservable(
             useMemo(() => wrapRemoteObservable(sourcegraphVSCodeExtensionAPI.getSettings()), [
@@ -64,6 +67,17 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
     )
 
     useEffect(() => {
+        // Check for Access Token to display sign up CTA
+        if (hasAccessToken === undefined) {
+            sourcegraphVSCodeExtensionAPI
+                .hasAccessToken()
+                .then(hasAccessToken => {
+                    setHasAccessToken(hasAccessToken)
+                })
+                // TODO error handling
+                .catch(() => setHasAccessToken(false))
+        }
+
         const subscriptions = new Subscription()
 
         if (queryToRun.query) {
@@ -91,7 +105,16 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         }
 
         return () => subscriptions.unsubscribe()
-    }, [queryToRun, patternType, caseSensitive, selectedSearchContextSpec, searchActions, platformContext])
+    }, [
+        sourcegraphVSCodeExtensionAPI,
+        queryToRun,
+        patternType,
+        caseSensitive,
+        selectedSearchContextSpec,
+        searchActions,
+        platformContext,
+        hasAccessToken,
+    ])
 
     const fetchSuggestions = useCallback(
         (query: string): Observable<SearchMatch[]> =>
@@ -181,8 +204,10 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                         </Form>
                     </div>
                     <div className="flex-grow-1">
-                        {/* TO DO: ADD EXAMPLES */}
-                        <h1>Examples</h1>
+                        <HomePanels
+                            telemetryService={platformContext.telemetryService}
+                            isLightTheme={theme === 'theme-light'}
+                        />
                     </div>
                 </div>
             ) : (
@@ -231,13 +256,50 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                     {loading ? (
                         <p>Loading...</p>
                     ) : (
-                        <SearchResults
-                            platformContext={platformContext}
-                            theme={theme}
-                            sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
-                            settings={sourcegraphSettings}
-                            instanceHostname={instanceHostname}
-                        />
+                        <div className={classNames(styles.streamingSearchResultsContainer)}>
+                            {!hasAccessToken && (
+                                <div className="card my-2 mr-3 d-flex p-3 flex-md-row flex-column align-items-center">
+                                    <div className="mr-md-3">
+                                        <SearchBetaIcon />
+                                    </div>
+                                    <div
+                                        className={classNames(
+                                            'flex-1 my-md-0 my-2',
+                                            styles.streamingSearchResultsCtaContainer
+                                        )}
+                                    >
+                                        <div className={classNames('mb-1', styles.streamingSearchResultsCtaTitle)}>
+                                            <strong>
+                                                Sign up to add your public and private repositories and access other
+                                                features
+                                            </strong>
+                                        </div>
+                                        <div
+                                            className={classNames(
+                                                'text-muted',
+                                                styles.streamingSearchResultsCtaDescription
+                                            )}
+                                        >
+                                            Do all the things editors can’t: search multiple repos & commit history,
+                                            monitor, save searches and more.
+                                        </div>
+                                    </div>
+                                    <Link
+                                        className={classNames('btn', styles.streamingSearchResultsBtn)}
+                                        to="https://sourcegraph.com/sign-up?src=SearchCTA"
+                                    >
+                                        Create a free account
+                                    </Link>
+                                </div>
+                            )}
+                            <SearchResults
+                                platformContext={platformContext}
+                                theme={theme}
+                                sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                                settings={sourcegraphSettings}
+                                instanceHostname={instanceHostname}
+                            />
+                        </div>
                     )}
                 </>
             )}

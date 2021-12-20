@@ -29,10 +29,12 @@ export function endpointPortSetting(): number {
     return port ? parseInt(port, 10) : 443
 }
 
-export function endpointCorsSetting(): string {
-    // has default value = null
-    const corsUrl = readConfiguration().get<string>('corsUrl')!
-    return corsUrl !== '' ? new URL('', corsUrl).origin : ''
+export function endpointCorsSetting(): string | null {
+    const corsUrl = readConfiguration().get<string>('corsUrl')
+    if (corsUrl) {
+        return new URL('', corsUrl).origin
+    }
+    return null
 }
 
 // Check if Access Token is configured in setting

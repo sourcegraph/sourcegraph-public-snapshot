@@ -35,3 +35,58 @@
         margin-bottom: 5rem;
     }
 }
+
+.streaming-search-results {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto 1fr;
+    height: min-content;
+    padding-top: 0.5rem;
+
+    @media (--md-breakpoint-down) {
+        grid-template-columns: auto;
+        grid-template-rows: auto auto 1fr;
+    }
+
+    &__container {
+        // Hack!! Fixes some possible nested scrolling on diff searches
+        // due to size calculations on diff results. The parent will scroll
+        // instead so this doesn't really hide anything.
+        overflow-y: hidden;
+
+        overflow-x: hidden;
+        grid-column: 2;
+        grid-row: 3;
+
+        @media (--md-breakpoint-down) {
+            grid-column: 1;
+            grid-row: 4;
+            padding-left: 1rem;
+        }
+    }
+
+    &__cta {
+        &-container {
+            flex: 1
+        }
+
+        &-title {
+            font-size: 1rem;
+        }
+
+        &-description {
+            font-size: 0.875rem;
+        }
+    }
+
+    &__btn {
+            font-size: var(--vscode-font-size) !important;
+            background-color: var(--primary);
+            color: var(--white)
+    }
+
+    & a, a:visited, a:hover, a.active {
+        color: var(--white)
+    }
+}

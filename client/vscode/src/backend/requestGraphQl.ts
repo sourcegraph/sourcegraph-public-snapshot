@@ -17,6 +17,10 @@ export function invalidateClient(): void {
     invalidated = true
 }
 
+// Check what platform is the user on
+// return 'desktop', 'github.dev', 'codespaces', or 'web'
+export const currentPlatform = vscode.env.appHost
+
 export const requestGraphQLFromVSCode = async <R, V = object>(
     request: string,
     variables: V
@@ -31,7 +35,6 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
     const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
 
     const headers: HeadersInit = []
-
     const sourcegraphURL = endpointSetting()
     const accessToken = accessTokenSetting()
     const corsUrl = endpointCorsSetting()
@@ -39,8 +42,11 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
     if (accessToken) {
         headers.push(['Authorization', `token ${accessToken}`])
     }
+    if(currentPlatform!=='desktop'&&!accessToken && !corsUrl){
+        throw asError('You must have accessToken and corsUrl configured for Sourcegraph Search to work on VS Code Web')
+    }
     try {
-        // Add CORS when available
+        // Add CORS if not on desktop
         const searchUrl = corsUrl
             ? `${new URL('/', corsUrl).href}${new URL(apiURL, sourcegraphURL).href}`
             : new URL(apiURL, sourcegraphURL).href

@@ -44,7 +44,6 @@ export interface SourcegraphVSCodeExtensionAPI
     openLink: (uri: string) => void
     // For search sidebar
     openSearchPanel: () => void
-
     // For extension host sidebar
     // mainThreadAPI methods
 }

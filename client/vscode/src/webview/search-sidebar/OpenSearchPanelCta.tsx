@@ -9,7 +9,10 @@ interface OpenSearchPanelCtaProps extends Pick<WebviewPageProps, 'sourcegraphVSC
     className?: string
 }
 
-export const OpenSearchPanelCta: React.FunctionComponent<OpenSearchPanelCtaProps> = ({ className }) => (
+export const OpenSearchPanelCta: React.FunctionComponent<OpenSearchPanelCtaProps> = ({
+    className,
+    sourcegraphVSCodeExtensionAPI,
+}) => (
     <div className={classNames('d-flex flex-column align-items-left justify-content-center', className)}>
         <p className={classNames('mt-3', styles.title)}>Welcome!</p>
         <p className={classNames('my-3', styles.text)}>
@@ -35,5 +38,12 @@ export const OpenSearchPanelCta: React.FunctionComponent<OpenSearchPanelCtaProps
                 </a>
             </p>
         </div>
+        <button
+            type="button"
+            onClick={() => sourcegraphVSCodeExtensionAPI.openSearchPanel()}
+            className={classNames('mb-3 btn btn-sm w-100 border-0 font-weight-normal', styles.button)}
+        >
+            Open Search Panel
+        </button>
     </div>
 )

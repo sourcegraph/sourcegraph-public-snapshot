@@ -76,7 +76,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
         }
     }, [activeQueryState, useQueryState])
 
-    if (!activeQueryState) {
+    if (!activeQueryState?.queryState.query) {
         // There's no ACTIVE search panel
 
         // We need to add API to query all open search panels
@@ -97,9 +97,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
             </>
         )
     }
-
     // For v1: Add recent/saved searches/files panel(s)
-
     const { caseSensitive, patternType } = activeQueryState
 
     return (

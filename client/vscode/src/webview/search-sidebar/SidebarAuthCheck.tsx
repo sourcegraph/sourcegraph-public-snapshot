@@ -59,11 +59,9 @@ export const SidebarAuthCheck: React.FunctionComponent<OpenSearchPanelCtaProps> 
                     })
                     .toPromise()
                 if (currentUser.data) {
-                    console.log(currentUser)
                     setValidAccessToken(true)
                     await sourcegraphVSCodeExtensionAPI.openSearchPanel()
                 } else {
-                    console.log(currentUser)
                     setValidAccessToken(false)
                 }
             })().catch(error => console.error(error))
@@ -148,15 +146,16 @@ export const SidebarAuthCheck: React.FunctionComponent<OpenSearchPanelCtaProps> 
                     </p>
                 </Form>
             )}
-            {hasAccessToken && validAccessToken ? (
+            {hasAccessToken && validAccessToken && (
                 <button
                     type="button"
                     onClick={() => sourcegraphVSCodeExtensionAPI.openSearchPanel()}
-                    className={classNames('mb-3 btn btn-sm w-100 border-0 font-weight-normal', styles.button)}
+                    className={classNames('mb-3 btn btn-sm w-100 border-0 font-weight-normal disabled', styles.button)}
                 >
-                    Access Token Verified! Click here to start searching!
+                    Access Token Verified!
                 </button>
-            ) : (
+            )}
+            {hasAccessToken && !validAccessToken && (
                 <Form onSubmit={onSubmitAccessToken}>
                     <a
                         href={signInUrl}
