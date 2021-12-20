@@ -82,6 +82,39 @@ Example: do all our tries have catches? This tracks how many do not:
 try {:[_]} catch (:[e]) { } finally {:[_]} lang:java patternType:structural archived:no fork:no
 ```
 
+## Automatic version and pattern tracking
+These examples are all for use with the [automatically generated data series](../explanations/automatically_generated_data_series.md) of "Detect and track" Code Insights, using regular expression capture groups. 
+
+**What Java versions are present or most popular**
+```sgquery
+file:\.pom$ <java\.version>(.*)</java\.version> archived:no fork:no
+```
+
+**What Terraform versions are present or most popular**
+```sgquery
+app.terraform.io/(.*)\n version =(.*)([0-9].[0-9].[0-9]) lang:Terraform archived:no fork:no
+```
+
+**What vulnerable log4j versions are present**
+```sgquery
+lang:gradle org\.apache\.logging\.log4j['"] 2\.([0-9]+)\. archived:no fork:no
+```
+
+**Which python versions are in use or haven't been updated**  
+```sgquery
+#!/usr/bin/env python([0-9]\.[0-9]+) archived:no fork:no
+```
+
+**Which node.js versions are present or most popular**
+```sgquery
+nvm install ([0-9]+\.[0-9]+) archived:no fork:no
+```
+
+**What CSS colors are present or most popular**
+```sgquery
+color:#([0-9a-fA-f]{3,6}) archived:no fork:no
+```
+
 ## Code hygiene and health 
 
 **How many TODOs are in a specific part of the codebase (or all of it)** 
@@ -128,25 +161,6 @@ regexMatchingAPIKey patternType:regexp archived:no fork:no
 **How often we are merging permissions changes**
 ```sgquery
 type:commit perms|permissions patternType:regexp archived:no fork:no
-```
-
-## Version tracking (packages or languages)
-
-**Which package version do parts of the codebase use**
-```sgquery
-// for version 13
-nvm install 13 archived:no fork:no
-// for version 14
-nvm install 14 archived:no fork:no
-// ... so on
-```
-
-**Which language versions are in use most and how we are tracking on updating them**  
-```sgquery
-// python 2.7
-#!/usr/bin/env python2.7 archived:no fork:no
-// python 3
-#!/usr/bin/env python3 archived:no fork:no
 ```
 
 ## Codebase Topline Metrics
