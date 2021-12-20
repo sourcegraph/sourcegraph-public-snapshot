@@ -8,13 +8,13 @@ import (
 )
 
 func (r *componentResolver) Readme(ctx context.Context) (gql.FileResolver, error) {
-	sourceLocations, err := r.SourceLocations(ctx)
+	sourceLocations, err := r.sourceLocations(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, loc := range sourceLocations {
-		file, err := loc.Commit().File(ctx, &struct{ Path string }{Path: path.Join(loc.Path(), "README.md")})
+	for _, sloc := range sourceLocations {
+		file, err := sloc.commit.File(ctx, &struct{ Path string }{Path: path.Join(sloc.path, "README.md")})
 		if file != nil || err != nil {
 			return file, err
 		}

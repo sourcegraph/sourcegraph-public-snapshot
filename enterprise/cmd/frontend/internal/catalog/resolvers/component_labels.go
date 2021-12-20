@@ -107,10 +107,10 @@ func (r *componentResolver) checkIfComponentMatchesLabelValueQuery(ctx context.C
 		}
 
 		var queryParts []string
-		for _, sloc := range slocs {
+		for sloc, paths := range groupSourceLocationsByRepo(slocs) {
 			queryParts = append(queryParts, fmt.Sprintf("repo:%s file:%s %s count:1",
 				"^"+regexp.QuoteMeta(string(sloc.repoName))+"$",
-				joinPathPrefixRegexps(sloc.paths),
+				joinPathPrefixRegexps(paths),
 				labelValueQuery,
 			))
 		}

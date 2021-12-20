@@ -140,6 +140,7 @@ type ComponentResolver interface {
 	Owner(context.Context) (*ComponentOwnerResolver, error)
 	Labels(context.Context) ([]ComponentLabelResolver, error)
 	Tags(context.Context) ([]ComponentTagResolver, error)
+	SourceLocations(context.Context) ([]ComponentSourceLocationResolver, error)
 	URL() string
 	Status(context.Context) (ComponentStatusResolver, error)
 
@@ -148,7 +149,6 @@ type ComponentResolver interface {
 	WhoKnows(context.Context, *WhoKnowsArgs) ([]WhoKnowsEdgeResolver, error)
 
 	Readme(context.Context) (FileResolver, error)
-	SourceLocations(context.Context) ([]*GitTreeEntryResolver, error)
 	Commits(context.Context, *graphqlutil.ConnectionArgs) (GitCommitConnectionResolver, error)
 	Branches(context.Context, *graphqlutil.ConnectionArgs) (GitRefConnectionResolver, error)
 	Authors(context.Context) (*[]ComponentAuthorEdgeResolver, error)
@@ -165,6 +165,15 @@ type ComponentLabelResolver interface {
 type ComponentTagResolver interface {
 	Name() string
 	Components(context.Context, *ComponentTagComponentsArgs) (ComponentConnectionResolver, error)
+}
+
+type ComponentSourceLocationResolver interface {
+	ID() graphql.ID
+	RepositoryName() string
+	Repository() (*RepositoryResolver, error)
+	Path() *string
+	TreeEntry() (*GitTreeEntryResolver, error)
+	IsPrimary() bool
 }
 
 type ComponentTagComponentsArgs struct {

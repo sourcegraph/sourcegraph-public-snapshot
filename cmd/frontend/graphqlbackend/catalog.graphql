@@ -117,12 +117,12 @@ type Component implements Node {
     owner: EntityOwner
     labels: [ComponentLabel!]!
     tags: [ComponentTag!]!
+    sourceLocations: [ComponentSourceLocation!]!
     url: String!
     status: ComponentStatus!
     codeOwners: [ComponentCodeOwnerEdge!]
     relatedEntities(query: String, first: Int, after: String): ComponentRelatedEntityConnection!
     whoKnows(query: String): [WhoKnowsEdge!]!
-    sourceLocations: [TreeEntry!]!
     readme: File2
     commits(first: Int): GitCommitConnection
     branches(first: Int): GitRefConnection!
@@ -130,14 +130,23 @@ type Component implements Node {
     usage(query: String): ComponentUsage
 }
 
+type ComponentLabel {
+    key: String!
+    values: [String!]!
+}
+
 type ComponentTag {
     name: String!
     components(first: Int, after: String): ComponentConnection!
 }
 
-type ComponentLabel {
-    key: String!
-    values: [String!]!
+type ComponentSourceLocation {
+    id: ID!
+    repositoryName: String!
+    repository: Repository
+    path: String
+    treeEntry: TreeEntry
+    isPrimary: Boolean!
 }
 
 type ComponentAuthorEdge {

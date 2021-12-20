@@ -28,23 +28,21 @@ func (r *componentResolver) Commits(ctx context.Context, args *graphqlutil.Conne
 	}
 	var combinedCommits []commitInfo
 	for _, sloc := range slocs {
-		for _, path := range sloc.paths {
-			isDir := true
-			commits, err := git.Commits(ctx, sloc.repoName, git.CommitsOptions{
-				Range:  string(sloc.commitID),
-				Path:   path,
-				Follow: !isDir,
-				N:      uint(args.GetFirst()),
+		isDir := true
+		commits, err := git.Commits(ctx, sloc.repoName, git.CommitsOptions{
+			Range:  string(sloc.commitID),
+			Path:   sloc.path,
+			Follow: !isDir,
+			N:      uint(args.GetFirst()),
+		})
+		if err != nil {
+			return nil, err
+		}
+		for _, commit := range commits {
+			combinedCommits = append(combinedCommits, commitInfo{
+				Commit:       commit,
+				repoResolver: sloc.repo,
 			})
-			if err != nil {
-				return nil, err
-			}
-			for _, commit := range commits {
-				combinedCommits = append(combinedCommits, commitInfo{
-					Commit:       commit,
-					repoResolver: sloc.repo,
-				})
-			}
 		}
 	}
 

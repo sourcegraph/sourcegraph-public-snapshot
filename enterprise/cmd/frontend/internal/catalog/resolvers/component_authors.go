@@ -26,22 +26,20 @@ func (r *componentResolver) allFilesInSourceLocations(ctx context.Context) ([]fi
 
 	var allFiles []fileInfo
 	for _, sloc := range slocs {
-		for _, path := range sloc.paths {
-			// TODO(sqs): doesnt check perms? SECURITY
-			entries, err := git.ReadDir(ctx, sloc.repoName, sloc.commitID, path, true)
-			if err != nil {
-				return nil, err
+		// TODO(sqs): doesnt check perms? SECURITY
+		entries, err := git.ReadDir(ctx, sloc.repoName, sloc.commitID, sloc.path, true)
+		if err != nil {
+			return nil, err
+		}
+		for _, e := range entries {
+			if !e.Mode().IsRegular() {
+				continue // ignore dirs and submodules
 			}
-			for _, e := range entries {
-				if !e.Mode().IsRegular() {
-					continue // ignore dirs and submodules
-				}
-				allFiles = append(allFiles, fileInfo{
-					FileInfo: e,
-					repo:     sloc.repoName,
-					commit:   sloc.commitID,
-				})
-			}
+			allFiles = append(allFiles, fileInfo{
+				FileInfo: e,
+				repo:     sloc.repoName,
+				commit:   sloc.commitID,
+			})
 		}
 	}
 	return allFiles, nil

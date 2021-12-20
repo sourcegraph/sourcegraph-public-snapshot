@@ -39,11 +39,14 @@ import { PatternTypeProps, SearchContextProps } from '../../search'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
+import { RepoSidebarViewOptionsProps } from '../RepoRevisionSidebar'
 
 import { TreeCommits } from './commits/TreeCommits'
 import { RepositoryRootLinks } from './RepositoryRootLinks'
 import { TreeEntriesSection } from './TreeEntriesSection'
 import styles from './TreePage.module.scss'
+
+const showOldTreePageStuff = false
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -57,6 +60,7 @@ interface Props
         BatchChangesProps,
         CodeInsightsProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        RepoSidebarViewOptionsProps,
         BreadcrumbSetters {
     repo: TreePageRepositoryFields
     /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */
@@ -89,6 +93,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
     codeIntelligenceEnabled,
     batchChangesEnabled,
     extensionViews: ExtensionViewsSection,
+    repoSidebarIsVisible,
+    setRepoSidebarIsVisible,
     ...props
 }) => {
     useEffect(() => {
@@ -257,15 +263,27 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             className={classNames('my-3', styles.section)}
                         />
 
-                        <section className={classNames('test-tree-entries mb-3', styles.section)}>
-                            <h2>Files and directories</h2>
-                            <TreeEntriesSection
-                                parentPath={filePath}
-                                entries={treeOrError.entries}
-                                fileDecorationsByPath={fileDecorationsByPath}
-                                isLightTheme={props.isLightTheme}
-                            />
-                        </section>
+                        {showOldTreePageStuff ? (
+                            <section className={classNames('test-tree-entries mb-3', styles.section)}>
+                                <h2>Files and directories</h2>
+                                <TreeEntriesSection
+                                    parentPath={filePath}
+                                    entries={treeOrError.entries}
+                                    fileDecorationsByPath={fileDecorationsByPath}
+                                    isLightTheme={props.isLightTheme}
+                                />
+                            </section>
+                        ) : (
+                            !repoSidebarIsVisible && (
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary mb-3"
+                                    onClick={() => setRepoSidebarIsVisible(true)}
+                                >
+                                    Show files and directories
+                                </button>
+                            )
+                        )}
                         <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
                             {items => (
                                 <section className={styles.section}>
@@ -282,10 +300,17 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             )}
                         </ActionsContainer>
 
-                        <div className={styles.section}>
-                            <h2>Changes</h2>
-                            <TreeCommits repoID={repo.id} commitID={commitID} filePath={filePath} className="mt-2" />
-                        </div>
+                        {showOldTreePageStuff && (
+                            <div className={styles.section}>
+                                <h2>Changes</h2>
+                                <TreeCommits
+                                    repoID={repo.id}
+                                    commitID={commitID}
+                                    filePath={filePath}
+                                    className="mt-2"
+                                />
+                            </div>
+                        )}
                     </>
                 )}
             </Container>

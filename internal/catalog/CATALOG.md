@@ -13,7 +13,7 @@ A component is defined by a file stored in a repository (usually alongside the c
 
 (In the future, this will be configurable to support multiple branches per repository.)
 
-- **Source locations:** Where the code for this component lives, defined as a list of paths inside repositories. Paths may refer to the root (for the entire repository) or subpaths (for a specific directories inside the repository).
+- **Source locations:** Where the code for this component lives, defined as a list of paths inside repositories. Paths may refer to the root (for an entire repository) or subpaths (for a specific directories or files inside a repository). The first source location is the primary source location.
 
 ### Component ownership
 
@@ -23,7 +23,7 @@ A component can be owned by a person or a group.
 
 Permissions for components are based on permissions for repository of the component's first source location.
 
-You have read access to a component if you have read access to the repository of the component's first source location. If you lack read access to the component's other source locations, then you will only see partial information about the component (and an alert will tell you that).
+You have read access to a component if you have read access to the repository of the component's primary source location. If you lack read access to the component's other source locations, then you will only see partial information about the component (and an alert will tell you that).
 
 ### Labels
 
@@ -65,6 +65,11 @@ When viewing a repository or tree, you can easily define a component using sugge
 
 You can run a batch change across specific components first.
 
+## Positioning
+
+- Sourcegraph requires less manual work because it's already integrated with all of your code and knows more about the code (which helps it discover and bootstrap the service catalog).
+- Sourcegraph isn't just a service catalog, it surfaces all software components (including libraries, programs, etc.). After all, you're liable for all code, not just what's running today.
+
 ## TODOs
 
 Data model:
@@ -97,6 +102,15 @@ What does defining a component gain you? Why not just use the implicit component
 What is the default behavior of a repository that hasn't been defined as a component?
 - It's surfaced as a possible component in "component discovery" (or, if it's a monorepo with multiple subprojects, then each subproject is surfaced as one). Until then, it's just a repository.
 - OR...to help bring us into a world where monorepos and manyrepos are treated alike, all repositories are treated as components? TODO: Should there be a `union Project = Repository | Component`? (I think this is right.) And then since "every tree is a potential project", `union ThingThatCanShowAuthorsUsageCodeOwnersWhoKnowsDependenciesAPI = Repository | Component | Tree`.
+
+When you view a tree in a repository that's also a component, you get additional information (the list above).
+
+A component's hierarchy (eg `owner-group1 > owner-group2 > ...`) differs from a component's hierarchy in a monorepo.
+
+Are there 2 different ways to view a component: by navigating to its tree from its repository, and by navigating to it from its component hierarchy (or "as a component")?
+
+- What if a component spans 2 trees, and you're viewing it at one of the trees? Do you see data about that one tree, or data about both trees (i.e., the whole component)? There is a toggle to "view component" or "view tree".
+- What if you're viewing a tree at a non-HEAD rev whose path is also a component at HEAD? Does the component data reflect the rev, or not? There is a link to "view component at HEAD" that takes you to HEAD.
 
 ## DEV
 

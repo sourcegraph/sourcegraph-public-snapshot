@@ -25,8 +25,8 @@ func (r *componentResolver) Branches(ctx context.Context, args *graphqlutil.Conn
 	}
 
 	var allRefs []*gql.GitRefResolver
-	for _, sloc := range slocs {
-		matches, err := getBranchesForRepo(ctx, sloc.repoName, joinPathPrefixRegexps(sloc.paths), limit)
+	for sloc, paths := range groupSourceLocationsByRepo(slocs) {
+		matches, err := getBranchesForRepo(ctx, sloc.repoName, joinPathPrefixRegexps(paths), limit)
 		if err != nil {
 			return nil, err
 		}

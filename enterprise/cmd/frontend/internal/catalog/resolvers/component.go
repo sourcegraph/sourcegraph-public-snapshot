@@ -16,7 +16,7 @@ type componentResolver struct {
 
 	// Cached source locations
 	sourceLocationsOnce   sync.Once
-	sourceLocationsCached []*sourceLocation
+	sourceLocationsCached []*componentSourceLocationResolver
 	sourceLocationsErr    error
 }
 
