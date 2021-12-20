@@ -1,6 +1,10 @@
 .root {
     position: relative;
-    overflow: auto;
+    padding: 0;
+
+    &--with-scroll {
+        overflow: auto;
+    }
 
     &--with-top-fader {
         .fader--top {
@@ -36,5 +40,8 @@
 }
 
 .scrollbox {
-    margin-top: -6rem;
+
+    &--with-scroll {
+        margin-top: -6rem;
+    }
 }
