@@ -3252,17 +3252,41 @@ type Position {
     character: Int!
 }
 
+"""
+LSIF for a single source file.
+"""
 type LSIFDocument {
+    """
+    The text contents of the source file.
+    """
     content: String!
+    """
+    The moniker occurrences that appear in the source file.
+    """
     occurrences: [LSIFOccurrence!]!
 }
 
+"""
+Occurrence of a moniker in a source file.
+"""
 type LSIFOccurrence {
+    """
+    The ID of the moniker.
+    """
     monikerId: String!
+    """
+    What kind of occurrence is this.
+    """
     role: LSIFRole!
+    """
+    The source position of occurrence.
+    """
     range: Range!
 }
 
+"""
+Represents what kind of an occurrence this is.
+"""
 enum LSIFRole {
     DEFINITION
     REFERENCE
@@ -3705,7 +3729,7 @@ type GitCommit implements Node {
         recursive: Boolean = false
     ): GitTree
     """
-    The LSIF for the given path
+    The LSIF (typed) for the given path.
     """
     searchBasedLSIF(path: String!): LSIFDocument
     """

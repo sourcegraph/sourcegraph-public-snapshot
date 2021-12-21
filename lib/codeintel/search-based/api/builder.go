@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed"
 )

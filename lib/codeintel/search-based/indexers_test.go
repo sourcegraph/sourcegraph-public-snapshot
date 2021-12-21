@@ -2,9 +2,9 @@ package search_based
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
+	"github.com/cockroachdb/errors"
 	"github.com/hexops/gotextdiff"
 	"github.com/hexops/gotextdiff/myers"
 	"github.com/hexops/gotextdiff/span"
@@ -83,11 +83,9 @@ func goldenDocument(doc *lsif_typed.Document) (string, error) {
 	})
 	i := 0
 	for lineNumber, line := range strings.Split(string(data), "\n") {
-		if strings.HasSuffix(line, "\r") {
-			line = line[0 : len(line)-1]
-		}
+			line = strings.TrimSuffix(line, "\r")
 		b.WriteString("  ")
-		b.WriteString(strings.Replace(line, "\t", " ", -1))
+		b.WriteString(strings.ReplaceAll(line, "\t", " "))
 		b.WriteString("\n")
 		for i < len(doc.Occurrences) && doc.Occurrences[i].Range.Start.Line == int32(lineNumber) {
 			occ := doc.Occurrences[i]

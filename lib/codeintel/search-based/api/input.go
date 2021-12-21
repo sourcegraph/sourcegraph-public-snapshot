@@ -1,8 +1,9 @@
 package api
 
 import (
-	sitter "github.com/smacker/go-tree-sitter"
 	"strings"
+
+	sitter "github.com/smacker/go-tree-sitter"
 )
 
 type Input struct {
@@ -17,7 +18,7 @@ func NewInput(filename string, textBytes []byte) *Input {
 	return &Input{
 		Filepath: filename,
 		Text:     text,
-		Lines:    strings.Split(strings.Replace(text, "\r\n", "\n", -1), "\n"),
+		Lines:    strings.Split(strings.ReplaceAll(text, "\r\n", "\n"), "\n"),
 		Bytes:    textBytes,
 	}
 }
@@ -45,7 +46,7 @@ func (i *Input) Format(n *sitter.Node) string {
 	if n.StartPoint().Row != n.EndPoint().Row {
 		length = len(line) - character
 	}
-	return strings.Replace(line, "\t", " ", -1) + "\n" + strings.Repeat(" ", character) + strings.Repeat("^", length)
+	return strings.ReplaceAll(line, "\t", " ") + "\n" + strings.Repeat(" ", character) + strings.Repeat("^", length)
 }
 
 func (i *Input) Substring(n *sitter.Node) string {
