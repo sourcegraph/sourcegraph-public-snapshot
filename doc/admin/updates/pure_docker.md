@@ -11,7 +11,7 @@ Each section comprehensively describes the changes needed in Docker images, envi
 ## 3.34.2 -> 3.35
 
 To upgrade, please perform the changes in the following diff:
-[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/d0561e40c5344f3c64556ce6a1e1a2bcfa92363e](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/d0561e40c5344f3c64556ce6a1e1a2bcfa92363e)
+[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/33b076a123c23930cc3339167bdd5502bebc5a3c](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/33b076a123c23930cc3339167bdd5502bebc5a3c)
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.34).*
 
