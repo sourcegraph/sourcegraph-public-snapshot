@@ -247,15 +247,17 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             )}
                         </header>
 
-                        <ExtensionViewsSection
-                            className={classNames('my-3', styles.section)}
-                            telemetryService={props.telemetryService}
-                            settingsCascade={settingsCascade}
-                            platformContext={props.platformContext}
-                            extensionsController={props.extensionsController}
-                            where="directory"
-                            uri={uri}
-                        />
+                        {showOldTreePageStuff && (
+                            <ExtensionViewsSection
+                                className={classNames('my-3', styles.section)}
+                                telemetryService={props.telemetryService}
+                                settingsCascade={settingsCascade}
+                                platformContext={props.platformContext}
+                                extensionsController={props.extensionsController}
+                                where="directory"
+                                uri={uri}
+                            />
+                        )}
 
                         <TreeComponents
                             repoID={repo.id}
@@ -284,21 +286,23 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 </button>
                             )
                         )}
-                        <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
-                            {items => (
-                                <section className={styles.section}>
-                                    <h2>Actions</h2>
-                                    {items.map(item => (
-                                        <ActionItem
-                                            {...props}
-                                            key={item.action.id}
-                                            {...item}
-                                            className="btn btn-secondary mr-1 mb-1"
-                                        />
-                                    ))}
-                                </section>
-                            )}
-                        </ActionsContainer>
+                        {showOldTreePageStuff && (
+                            <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
+                                {items => (
+                                    <section className={styles.section}>
+                                        <h2>Actions</h2>
+                                        {items.map(item => (
+                                            <ActionItem
+                                                {...props}
+                                                key={item.action.id}
+                                                {...item}
+                                                className="btn btn-secondary mr-1 mb-1"
+                                            />
+                                        ))}
+                                    </section>
+                                )}
+                            </ActionsContainer>
+                        )}
 
                         {showOldTreePageStuff && (
                             <div className={styles.section}>
