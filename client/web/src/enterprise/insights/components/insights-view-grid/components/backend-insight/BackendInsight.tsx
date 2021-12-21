@@ -15,9 +15,9 @@ import { BackendInsight, InsightTypePrefix } from '../../../../core/types'
 import { SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
-import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
+import { useInsightData } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
 import { BackendAlertOverlay } from './BackendAlertOverlay'
@@ -67,7 +67,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
     const debouncedFilters = useDebounce(useDistinctValue<SearchBasedBackendFilters>(filters), 500)
 
     // Loading the insight backend data
-    const { data, loading, error } = useParallelRequests(
+    const { data, loading, error, isVisible } = useInsightData(
         useCallback(
             () =>
                 getBackendInsightData({
@@ -75,7 +75,8 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
                     filters: debouncedFilters,
                 }),
             [cachedInsight, debouncedFilters, getBackendInsightData]
-        )
+        ),
+        insightCardReference
     )
 
     // Handle insight delete action
@@ -137,26 +138,28 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
             title={insight.title}
             innerRef={mergedInsightCardReference}
             actions={
-                <>
-                    <DrillDownFiltersAction
-                        isOpen={isFiltersOpen}
-                        popoverTargetRef={insightCardReference}
-                        initialFiltersValue={filters}
-                        originalFiltersValue={originalInsightFilters}
-                        onFilterChange={setFilters}
-                        onFilterSave={handleFilterSave}
-                        onInsightCreate={handleInsightFilterCreation}
-                        onVisibilityChange={setIsFiltersOpen}
-                    />
-                    <InsightContextMenu
-                        insight={insight}
-                        dashboard={dashboard}
-                        menuButtonClassName="ml-1 d-inline-flex"
-                        zeroYAxisMin={zeroYAxisMin}
-                        onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
-                        onDelete={() => handleDelete(insight)}
-                    />
-                </>
+                isVisible && (
+                    <>
+                        <DrillDownFiltersAction
+                            isOpen={isFiltersOpen}
+                            popoverTargetRef={insightCardReference}
+                            initialFiltersValue={filters}
+                            originalFiltersValue={originalInsightFilters}
+                            onFilterChange={setFilters}
+                            onFilterSave={handleFilterSave}
+                            onInsightCreate={handleInsightFilterCreation}
+                            onVisibilityChange={setIsFiltersOpen}
+                        />
+                        <InsightContextMenu
+                            insight={insight}
+                            dashboard={dashboard}
+                            menuButtonClassName="ml-1 d-inline-flex"
+                            zeroYAxisMin={zeroYAxisMin}
+                            onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
+                            onDelete={() => handleDelete(insight)}
+                        />
+                    </>
+                )
             }
             className={classNames('be-insight-card', otherProps.className, {
                 [styles.cardWithFilters]: isFiltersOpen,
@@ -164,7 +167,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
         >
             {resizing ? (
                 <View.Banner>Resizing</View.Banner>
-            ) : loading || isDeleting ? (
+            ) : loading || isDeleting || !isVisible ? (
                 <View.LoadingContent text={isDeleting ? 'Deleting code insight' : 'Loading code insight'} />
             ) : isErrorLike(error) ? (
                 <View.ErrorContent error={error} title={insight.id}>
@@ -193,7 +196,7 @@ export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = 
             {
                 // Passing children props explicitly to render any top-level content like
                 // resize-handler from the react-grid-layout library
-                otherProps.children
+                isVisible && otherProps.children
             }
         </View.Root>
     )
