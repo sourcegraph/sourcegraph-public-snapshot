@@ -12512,7 +12512,7 @@ This number should be consistent if the number of indexed repositories doesn`t c
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100300` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12535,14 +12535,14 @@ This number should be consistent if the number of indexed repositories doesn`t c
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100201` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100301` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(index_number_compound_shards) by (instance)`
+Query: `sum(index_number_compound_shards{instance=~`${instance:regex}`}) by (instance)`
 
 </details>
 
@@ -12559,7 +12559,7 @@ Since the target compound shard size is set on start of zoekt-indexserver, the a
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100210` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100310` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12582,7 +12582,7 @@ This curve should be flat. Any deviation should be investigated.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100211` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100311` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12603,14 +12603,14 @@ Number of errors during shard merging aggregated over all instances.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100220` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100320` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(index_shard_merging_duration_seconds_count{error="true"}) per (app)`
+Query: `sum(index_shard_merging_duration_seconds_count{error="true"}) by (app)`
 
 </details>
 
@@ -12624,14 +12624,14 @@ Number of errors during shard merging per instance.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100221` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100321` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(index_shard_merging_duration_seconds_count{error="true"}) per (instance)`
+Query: `sum(index_shard_merging_duration_seconds_count{instance=~`${instance:regex}`, error=-"true"}) by (instance)`
 
 </details>
 
@@ -12645,7 +12645,7 @@ Set to 1 if shard merging is running.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100230` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100330` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12666,7 +12666,7 @@ Set to 1 if vacuum is running.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100231` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100331` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12697,7 +12697,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12716,7 +12716,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^zoekt-indexserver.
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100401` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12735,7 +12735,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-indexserver.
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100302` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100402` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12757,7 +12757,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100303` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100403` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
@@ -12778,7 +12778,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^zoekt-indexserver.*"
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100400` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100500` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12797,7 +12797,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100401` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100501` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12816,7 +12816,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^z
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100410` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100510` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12835,7 +12835,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^zoek
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100411` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100511` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12856,7 +12856,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^z
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-pods-available-percentage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100500` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100600` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
