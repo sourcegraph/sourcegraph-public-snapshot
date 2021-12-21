@@ -7,34 +7,42 @@ import { ThemePreference } from '../stores/themeState'
 
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
 
-describe('UserNavItem', () => {
-    const USER: UserNavItemProps['authenticatedUser'] = {
-        username: 'alice',
-        displayName: 'alice doe',
-        avatarURL: null,
-        session: { canSignOut: true },
-        settingsURL: '#',
-        siteAdmin: true,
-        organizations: {
-            nodes: [
-                {
-                    id: '0',
-                    name: 'acme',
-                    displayName: 'Acme Corp',
-                    url: '/organizations/acme',
-                    settingsURL: '/organizations/acme/settings',
-                },
-                {
-                    id: '1',
-                    name: 'beta',
-                    displayName: 'Beta Inc',
-                    url: '/organizations/beta',
-                    settingsURL: '/organizations/beta/settings',
-                },
-            ],
-        },
-    }
+const USER: UserNavItemProps['authenticatedUser'] = {
+    username: 'alice',
+    displayName: 'alice doe',
+    avatarURL: null,
+    session: { canSignOut: true },
+    settingsURL: '#',
+    siteAdmin: true,
+    organizations: {
+        nodes: [
+            {
+                id: '0',
+                name: 'acme',
+                displayName: 'Acme Corp',
+                url: '/organizations/acme',
+                settingsURL: '/organizations/acme/settings',
+            },
+            {
+                id: '1',
+                name: 'beta',
+                displayName: 'Beta Inc',
+                url: '/organizations/beta',
+                settingsURL: '/organizations/beta/settings',
+            },
+        ],
+    },
+}
 
+jest.mock('../auth', () => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+    const Rxjs = require('rxjs')
+    return {
+        authenticatedUser: Rxjs.of(USER),
+    }
+})
+
+describe('UserNavItem', () => {
     const history = H.createMemoryHistory({ keyLength: 0 })
 
     test('simple', () => {
