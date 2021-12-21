@@ -37,7 +37,7 @@ The branch will automatically be unlocked once a green build is run.
 Refer to the <https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci|CI incident playbook> for help.
 If unable to resolve the issue, please start an incident with the '/incident' Slack command.
 
-cc: dev-experience-support`
+cc: @dev-experience-support`
 	return message
 }
 
