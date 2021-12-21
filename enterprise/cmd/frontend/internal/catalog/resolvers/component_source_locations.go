@@ -28,7 +28,8 @@ func (r *componentResolver) sourceLocations(ctx context.Context) ([]*componentSo
 			}
 			commitResolver := gql.NewGitCommitResolver(r.db, repoResolver, commit.ID, commit)
 			for j, path := range sloc.Paths {
-				treeResolver := gql.NewGitTreeEntryResolver(r.db, commitResolver, gql.CreateFileInfo(path, true))
+				isDir := true // TODO(sqs): actually compute this
+				treeResolver := gql.NewGitTreeEntryResolver(r.db, commitResolver, gql.CreateFileInfo(path, isDir))
 				slocs = append(slocs, &componentSourceLocationResolver{
 					repo:   repoResolver,
 					commit: commitResolver,

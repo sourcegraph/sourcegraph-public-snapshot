@@ -13,7 +13,7 @@ A component is defined by a file stored in a repository (usually alongside the c
 
 (In the future, this will be configurable to support multiple branches per repository.)
 
-- **Source locations:** Where the code for this component lives, defined as a list of paths inside repositories. Paths may refer to the root (for an entire repository) or subpaths (for a specific directories or files inside a repository). The first source location is the primary source location.
+- **Source locations:** Where the code for this component lives, defined as a list of paths inside repositories. Paths may refer to the root (for an entire repository) or subpaths (for a specific directories or files inside a repository). The first source location is the primary source location. <!-- Q(sqs#component-no-source-locations): Can a component have 0 source locations? Q(sqs#blob-primary-source-location): Can a component have a primary source location that refers to a blob (not a tree)? -->
 
 ### Component ownership
 

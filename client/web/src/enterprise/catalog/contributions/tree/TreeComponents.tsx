@@ -1,6 +1,5 @@
 import classNames from 'classnames'
 import FolderIcon from 'mdi-react/FolderIcon'
-import FolderOutlineIcon from 'mdi-react/FolderOutlineIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -213,7 +212,9 @@ const ComponentGridItem: React.FunctionComponent<{
                 <SourceLocationItem
                     sourceLocation={nearestSourceLocation}
                     treePath={treePath}
-                    linkBigClickAreaClassName={linkBigClickAreaClassName}
+                    linkBigClickAreaClassName={
+                        primarySourceLocation === nearestSourceLocation ? linkBigClickAreaClassName : undefined
+                    }
                 />
                 {primarySourceLocation !== nearestSourceLocation && (
                     <SourceLocationItem
@@ -232,23 +233,18 @@ const SourceLocationItem: React.FunctionComponent<{
     treePath: string
     className?: string
     linkBigClickAreaClassName?: string
-}> = ({ sourceLocation, treePath, className, linkBigClickAreaClassName }) => {
-    const Icon = sourceLocation.isPrimary ? FolderIcon : FolderOutlineIcon
-    return (
-        <li className={className}>
-            <LinkOrSpan
-                to={
-                    sourceLocation.treeEntry?.url /* TODO(sqs): this takes you away from the current rev back to HEAD */
-                }
-                className={classNames('d-flex align-items-center text-muted', linkBigClickAreaClassName)}
-            >
-                <Icon className="icon-inline mr-1 flex-shrink-0" />
-                <span className="text-truncate">
-                    {treePath === sourceLocation.path
-                        ? 'This directory'
-                        : pathRelative(treePath, sourceLocation.path || '/')}
-                </span>
-            </LinkOrSpan>
-        </li>
-    )
-}
+}> = ({ sourceLocation, treePath, className, linkBigClickAreaClassName }) => (
+    <li className={className}>
+        <LinkOrSpan
+            to={sourceLocation.treeEntry?.url /* TODO(sqs): this takes you away from the current rev back to HEAD */}
+            className={classNames('d-flex align-items-center text-muted', linkBigClickAreaClassName)}
+        >
+            <FolderIcon className="icon-inline mr-1 flex-shrink-0" />
+            <span className="text-truncate">
+                {treePath === sourceLocation.path
+                    ? 'This directory'
+                    : pathRelative(treePath, sourceLocation.path || '/')}
+            </span>
+        </LinkOrSpan>
+    </li>
+)

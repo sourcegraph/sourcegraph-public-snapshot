@@ -141,7 +141,7 @@ type ComponentResolver interface {
 	Labels(context.Context) ([]ComponentLabelResolver, error)
 	Tags(context.Context) ([]ComponentTagResolver, error)
 	SourceLocations(context.Context) ([]ComponentSourceLocationResolver, error)
-	URL() string
+	URL(context.Context) (string, error)
 	Status(context.Context) (ComponentStatusResolver, error)
 
 	CodeOwners(context.Context) (*[]ComponentCodeOwnerEdgeResolver, error)

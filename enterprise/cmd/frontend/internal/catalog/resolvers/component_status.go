@@ -7,6 +7,11 @@ import (
 )
 
 func (r *componentResolver) Status(ctx context.Context) (gql.ComponentStatusResolver, error) {
+	url, err := r.URL(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	var statusContexts []gql.ComponentStatusContextResolver
 
 	{
@@ -40,7 +45,7 @@ func (r *componentResolver) Status(ctx context.Context) (gql.ComponentStatusReso
 			sc := &componentStatusContextResolver{
 				name:      "codeOwners",
 				title:     "Code owners",
-				targetURL: r.URL() + "/code",
+				targetURL: url + "/code",
 			}
 			if codeOwners == nil || len(*codeOwners) == 0 {
 				sc.state = "FAILURE"
@@ -62,7 +67,7 @@ func (r *componentResolver) Status(ctx context.Context) (gql.ComponentStatusReso
 		sc := &componentStatusContextResolver{
 			name:      "contributors",
 			title:     "Contributors",
-			targetURL: r.URL() + "/code",
+			targetURL: url + "/code",
 		}
 		if authors == nil || len(*authors) == 0 {
 			sc.state = "FAILURE"
@@ -89,7 +94,7 @@ func (r *componentResolver) Status(ctx context.Context) (gql.ComponentStatusReso
 			sc := &componentStatusContextResolver{
 				name:      "usage",
 				title:     "Usage",
-				targetURL: r.URL() + "/usage",
+				targetURL: url + "/usage",
 			}
 			if usagePeople == nil || len(usagePeople) == 0 {
 				sc.state = "FAILURE"
