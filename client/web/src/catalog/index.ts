@@ -2,6 +2,7 @@ import ApplicationBracketsOutlineIcon from 'mdi-react/ApplicationBracketsOutline
 
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { TreePage } from '../repo/tree/TreePage'
 
 /**
  * Feature guard for catalog.
@@ -22,5 +23,6 @@ export const CatalogIcon = ApplicationBracketsOutlineIcon
  * Common props for components needing to render catalog components.
  */
 export interface CatalogProps {
-    catalogEnabled?: boolean
+    catalogEnabled: boolean
+    catalogTreePage?: typeof TreePage
 }

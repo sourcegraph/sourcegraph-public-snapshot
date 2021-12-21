@@ -22,6 +22,7 @@ import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
+import { CatalogProps } from '../catalog'
 import { CodeIntelligenceProps } from '../codeintel'
 import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
@@ -66,6 +67,7 @@ export interface RepoRevisionContainerContext
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
+        CatalogProps,
         CodeInsightsProps {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
@@ -103,6 +105,7 @@ interface RepoRevisionContainerProps
         CodeIntelligenceProps,
         RepoSidebarViewOptionsProps,
         BatchChangesProps,
+        CatalogProps,
         CodeInsightsProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]

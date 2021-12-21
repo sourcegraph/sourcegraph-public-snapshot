@@ -130,6 +130,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             patternType,
             setPatternType,
             globbing,
+            catalogTreePage: _TreePage = TreePage,
             ...context
         }: RepoRevisionContainerContext &
             RouteComponentProps<{
@@ -215,7 +216,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                                         }
                                     />
                                 ) : (
-                                    <TreePage {...context} {...repoRevisionProps} repo={repo} />
+                                    <_TreePage {...context} {...repoRevisionProps} repo={repo} />
                                 )}
                             </ErrorBoundary>
                         </BlobStatusBarContainer>

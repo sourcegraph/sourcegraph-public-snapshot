@@ -51,5 +51,6 @@ export const OpenSourceWebApp: React.FunctionComponent = () => (
         codeIntelligenceEnabled={false}
         batchChangesEnabled={false}
         searchContextsEnabled={false}
+        catalogEnabled={false}
     />
 )

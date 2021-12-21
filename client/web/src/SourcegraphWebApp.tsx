@@ -107,7 +107,7 @@ export interface SourcegraphWebAppProps
         CodeInsightsProps,
         Pick<BatchChangesProps, 'batchChangesEnabled'>,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
-        Pick<CatalogProps, 'catalogEnabled'>,
+        CatalogProps,
         KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
