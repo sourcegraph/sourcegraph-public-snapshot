@@ -23,8 +23,8 @@ func ZoektIndexServer() *monitoring.Container {
 		NoSourcegraphDebugServer: true,
 		Templates: []sdk.TemplateVar{
 			{
-				Label:      "Shard",
-				Name:       "shard",
+				Label:      "Instance",
+				Name:       "instance",
 				Type:       "query",
 				Datasource: monitoring.StringPtr("Prometheus"),
 				Query:      "label_values(index_num_assigned, instance)",
@@ -130,7 +130,7 @@ func ZoektIndexServer() *monitoring.Container {
 					{
 						{
 							Name:        "repo_index_state_aggregate",
-							Description: "index results state counts over 5m (aggregate)",
+							Description: "index results state count over 5m (aggregate)",
 							Query:       "sum by (state) (increase(index_repo_seconds_count[5m]))",
 							NoAlert:     true,
 							Owner:       monitoring.ObservableOwnerSearchCore,
@@ -154,8 +154,8 @@ func ZoektIndexServer() *monitoring.Container {
 						},
 						{
 							Name:        "repo_index_state_per_instance",
-							Description: "index results state counts over 5m (per instance)",
-							Query:       "sum by (instance, state) (increase(index_repo_seconds_count{instance=~`${shard:regex}`}[5m]))",
+							Description: "index results state count over 5m (per instance)",
+							Query:       "sum by (instance, state) (increase(index_repo_seconds_count{instance=~`${instance:regex}`}[5m]))",
 							NoAlert:     true,
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							Panel: monitoring.Panel().LegendFormat("{{instance}} {{state}}").With(func(o monitoring.Observable, p *sdk.Panel) {
@@ -166,7 +166,7 @@ func ZoektIndexServer() *monitoring.Container {
 							Interpretation: `
 							This dashboard shows the outcomes of recently completed indexing jobs, split out across each index-server instance.
 
-							(You can use the "shard" filter at the top of the page to select a particular instance.)
+							(You can use the "instance" filter at the top of the page to select a particular instance.)
 
 							A persistent failing state indicates some repositories cannot be indexed, perhaps due to size and timeouts.
 
@@ -197,7 +197,7 @@ func ZoektIndexServer() *monitoring.Container {
 						{
 							Name:           "indexed_queue_size_per_instance",
 							Description:    "# of outstanding index jobs (per instance)",
-							Query:          "index_queue_len{instance=~`${shard:regex}`}",
+							Query:          "index_queue_len{instance=~`${instance:regex}`}",
 							NoAlert:        true,
 							Panel:          monitoring.Panel().LegendFormat("{{instance}} jobs"),
 							Owner:          monitoring.ObservableOwnerSearchCore,

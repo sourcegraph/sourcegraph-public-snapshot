@@ -12170,7 +12170,7 @@ Query: `sum(increase(get_index_options_error_total[5m]))`
 
 #### zoekt-indexserver: repo_index_state_aggregate
 
-<p class="subtitle">Index results state counts over 5m (aggregate)</p>
+<p class="subtitle">Index results state count over 5m (aggregate)</p>
 
 This dashboard shows the outcomes of recently completed indexing jobs across all index-server instances.
 
@@ -12200,11 +12200,11 @@ Query: `sum by (state) (increase(index_repo_seconds_count[5m]))`
 
 #### zoekt-indexserver: repo_index_state_per_instance
 
-<p class="subtitle">Index results state counts over 5m (per instance)</p>
+<p class="subtitle">Index results state count over 5m (per instance)</p>
 
 This dashboard shows the outcomes of recently completed indexing jobs, split out across each index-server instance.
 
-(You can use the "shard" filter at the top of the page to select a particular instance.)
+(You can use the "instance" filter at the top of the page to select a particular instance.)
 
 A persistent failing state indicates some repositories cannot be indexed, perhaps due to size and timeouts.
 
@@ -12224,7 +12224,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (instance, state) (increase(index_repo_seconds_count{instance=~`${shard:regex}`}[5m]))`
+Query: `sum by (instance, state) (increase(index_repo_seconds_count{instance=~`${instance:regex}`}[5m]))`
 
 </details>
 
@@ -12268,7 +12268,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver
 <details>
 <summary>Technical details</summary>
 
-Query: `index_queue_len{instance=~`${shard:regex}`}`
+Query: `index_queue_len{instance=~`${instance:regex}`}`
 
 </details>
 
