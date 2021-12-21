@@ -2,6 +2,7 @@ package golang
 
 import (
 	"context"
+
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/golang"
 
