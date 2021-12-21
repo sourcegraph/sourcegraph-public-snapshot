@@ -32,8 +32,7 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 				return nil
 			}
 
-			a := actor.FromContext(ctx)
-			if a.IsAuthenticated() {
+			if a := actor.FromContext(ctx); a.IsAuthenticated() {
 				_, err = r.db.OrgInvitations().GetPending(ctx, org.ID, a.UID)
 				if err == nil {
 					return nil
