@@ -4,12 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/cockroachdb/errors"
-	"github.com/hexops/gotextdiff"
-	"github.com/hexops/gotextdiff/myers"
-	"github.com/hexops/gotextdiff/span"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/search-based/api"
 	"io/fs"
 	"net/url"
 	"os"
@@ -17,6 +11,13 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/cockroachdb/errors"
+	"github.com/hexops/gotextdiff"
+	"github.com/hexops/gotextdiff/myers"
+	"github.com/hexops/gotextdiff/span"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/search-based/api"
 )
 
 var update = flag.Bool("update", false, "update golden files, removing unused if running all tests")
