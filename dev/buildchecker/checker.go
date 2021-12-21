@@ -78,7 +78,8 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, slackUser SlackUserRe
 	for i, info := range results.FailedCommits {
 		results.FailedCommits[i].SlackUserID, err = slackUser.ResolveByCommit(ctx, info.Commit)
 		if err != nil {
-			return nil, fmt.Errorf("authorResolve: %w", err)
+			// If we can't resolve the user, do not interrupt the process.
+			fmt.Println(fmt.Errorf("slackUserResolve: %w", err))
 		}
 	}
 
