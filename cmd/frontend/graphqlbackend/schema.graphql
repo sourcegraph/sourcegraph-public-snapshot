@@ -1295,10 +1295,6 @@ type Query {
     """
     clientConfiguration: ClientConfigurationDetails!
     """
-    Fetch search filter suggestions for autocompletion.
-    """
-    searchFilterSuggestions: SearchFilterSuggestions!
-    """
     Runs a search.
     """
     search(
@@ -1805,29 +1801,11 @@ type Search {
     """
     results: SearchResults!
     """
-    The suggestions.
-    """
-    suggestions(first: Int): [SearchSuggestion!]!
-        @deprecated(
-            reason: "Suggestions now done with streaming search. This field is deprecated and will be removed in a future release."
-        )
-
-    """
     A subset of results (excluding actual search results) which are heavily
     cached and thus quicker to query. Useful for e.g. querying sparkline
     data.
     """
     stats: SearchResultsStats!
-}
-
-"""
-Predefined suggestions for search filters when backfill.
-"""
-type SearchFilterSuggestions {
-    """
-    The suggestions for search filter "repo:".
-    """
-    repo: [String!]!
 }
 
 """
@@ -2039,11 +2017,6 @@ type Language {
     """
     name: String!
 }
-
-"""
-A search suggestion.
-"""
-union SearchSuggestion = Repository | File | Symbol | Language
 
 """
 A search-related alert message.
