@@ -19693,6 +19693,13 @@ react-router@5.2.0, react-router@^5.2.0:
     tiny-invariant "^1.0.2"
     tiny-warning "^1.0.0"
 
+react-scroll-manager@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.npmjs.org/react-scroll-manager/-/react-scroll-manager-1.0.3.tgz#06c4be39a874af0d3852f7961c65de2a30ae03ee"
+  integrity sha512-3eU+IygBqpWczvw0Rvl7TuRcQ53EVUTam+eBwUWS8kqLBB4o4eI3yDNvvLzUJ6iD/6kbyTC/sBb8HGGE0AybKQ==
+  dependencies:
+    prop-types "^15.7.2"
+
 react-select@^3.2.0:
   version "3.2.0"
   resolved "https://registry.npmjs.org/react-select/-/react-select-3.2.0.tgz#de9284700196f5f9b5277c5d850a9ce85f5c72fe"

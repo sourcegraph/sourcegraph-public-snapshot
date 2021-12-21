@@ -40,7 +40,7 @@ import { StreamingSearchResultsList } from './StreamingSearchResultsList'
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
         Pick<ActivationProps, 'activation'>,
-        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        ParsedSearchQueryProps,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         SettingsCascadeProps,

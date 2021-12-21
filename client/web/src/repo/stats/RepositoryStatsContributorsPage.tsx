@@ -223,13 +223,13 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
             !equalOrEmpty(this.state.path, path)
 
         return (
-            <div className="repository-stats-page">
+            <div>
                 <PageTitle title="Contributors" />
-                <div className="card repository-stats-page__card repository-stats-page__card--form">
+                <div className={classNames(styles.card, 'card')}>
                     <div className="card-header">Contributions filter</div>
                     <div className="card-body">
                         <Form onSubmit={this.onSubmit}>
-                            <div className="repository-stats-page__row form-inline">
+                            <div className={classNames(styles.row, 'form-inline')}>
                                 <div className="input-group mb-2 mr-sm-2">
                                     <div className="input-group-prepend">
                                         <label
@@ -254,9 +254,9 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                             <button
                                                 type="button"
                                                 className={classNames(
+                                                    styles.btnNoLeftRoundedCorners,
                                                     'btn btn-secondary',
-                                                    this.state.after === '7 days ago' && 'active',
-                                                    'repository-stats-page__btn-no-left-rounded-corners'
+                                                    this.state.after === '7 days ago' && 'active'
                                                 )}
                                                 onClick={() => this.setStateAfterAndSubmit('7 days ago')}
                                             >
@@ -296,7 +296,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                     </div>
                                 </div>
                             </div>
-                            <div className="repository-stats-page__row form-inline">
+                            <div className={classNames(styles.row, 'form-inline')}>
                                 <div className="input-group mt-2 mr-sm-2">
                                     <div className="input-group-prepend">
                                         <label

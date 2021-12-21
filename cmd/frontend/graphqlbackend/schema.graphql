@@ -2790,7 +2790,7 @@ type RepositoryTextSearchIndexStatus {
     """
     The byte size of the original content.
     """
-    contentByteSize: Int!
+    contentByteSize: BigInt!
     """
     The number of files in the original content.
     """

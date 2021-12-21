@@ -7,6 +7,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { WebStory } from '../../../../components/WebStory'
 import {
     LINE_CHART_CONTENT_MOCK,
+    LINE_CHART_TESTS_CASES_EXAMPLE,
     LINE_CHART_WITH_HUGE_NUMBER_OF_LINES,
     LINE_CHART_WITH_MANY_LINES,
 } from '../../../../views/mocks/charts-content'
@@ -187,7 +188,7 @@ class StoryBackendWithManyLinesCharts extends CodeInsightsSettingsCascadeBackend
                         ? insight.series.length >= 15
                             ? LINE_CHART_WITH_HUGE_NUMBER_OF_LINES
                             : LINE_CHART_WITH_MANY_LINES
-                        : LINE_CHART_CONTENT_MOCK,
+                        : LINE_CHART_TESTS_CASES_EXAMPLE,
                 ],
                 isFetchingHistoricalData: false,
             },

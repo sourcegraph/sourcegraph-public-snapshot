@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { ForwardReferenceComponent } from '../../types'
+
 import { BUTTON_VARIANTS, BUTTON_SIZES } from './constants'
 import { getButtonSize, getButtonStyle } from './utils'
 
@@ -44,7 +46,7 @@ export interface ButtonProps
  * Tips:
  * - Avoid using button styling for links where possible. Buttons should typically trigger an action, links should navigate to places.
  */
-export const Button: React.FunctionComponent<ButtonProps> = React.forwardRef(
+export const Button = React.forwardRef(
     (
         { children, as: Component = 'button', type = 'button', variant, size, outline, className, ...attributes },
         reference
@@ -63,4 +65,4 @@ export const Button: React.FunctionComponent<ButtonProps> = React.forwardRef(
             {children}
         </Component>
     )
-)
+) as ForwardReferenceComponent<'button', ButtonProps>
