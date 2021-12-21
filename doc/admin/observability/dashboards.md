@@ -12259,7 +12259,7 @@ Additionally, a discrepancy between "assigned" and "tracked" could indicate a bu
 Legend:
 - assigned: # of repos assigned to Zoekt
 - indexed: # of repos Zoekt has indexed
-- tracked: # of repos Zoekt is aware of, including those that it has finished processing
+- tracked: # of repos Zoekt is aware of, including those that it has finished indexing
 
 This panel has no related alerts.
 
