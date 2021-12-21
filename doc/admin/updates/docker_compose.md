@@ -12,7 +12,10 @@ Each section comprehensively describes the steps needed to upgrade, and any manu
 
 ## 3.34 -> 3.35
 
-TODO
+The `query-runner` service has been decommissioned in the 3.35.0 release and will be removed during the upgrade.
+
+Follow the [standard upgrade procedure](../install/docker-compose/operations.md#upgrade) to upgrade your deployment.
+To delete the `query-runner` service, specify `--remove-orphans` to your `docker-compose` command.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.34).*
 
