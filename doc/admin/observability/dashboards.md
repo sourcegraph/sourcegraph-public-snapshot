@@ -12500,6 +12500,185 @@ Query: `index_queue_len{instance=~`${instance:regex}`}`
 
 <br />
 
+### Zoekt Index Server: Compound shards
+
+#### zoekt-indexserver: compound_shards_aggregate
+
+<p class="subtitle"># of compound shards (aggregate)</p>
+
+The total number of compound shards aggregated over all instances.
+
+This number should be consistent if the number of indexed repositories doesn`t change.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100200` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(index_number_compound_shards) by (app)`
+
+</details>
+
+<br />
+
+#### zoekt-indexserver: compound_shards_per_instance
+
+<p class="subtitle"># of compound shards (per instance)</p>
+
+The total number of compound shards per instance.
+
+This number should be consistent if the number of indexed repositories doesn`t change.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100201` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(index_number_compound_shards) by (instance)`
+
+</details>
+
+<br />
+
+#### zoekt-indexserver: average_shard_merging_duration_success
+
+<p class="subtitle">Average successful shard merging duration over 1 hour</p>
+
+Average duration of a successful merge over the last hour.
+
+The duration depends on the target compound shard size. The larger the compound shard the longer a merge will take.
+Since the target compound shard size is set on start of zoekt-indexserver, the average duration should be consistent.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100210` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(index_shard_merging_duration_seconds_sum{error="false"}[1h])) / sum(rate(index_shard_merging_duration_seconds_count{error="false"}[1h]))`
+
+</details>
+
+<br />
+
+#### zoekt-indexserver: average_shard_merging_duration_error
+
+<p class="subtitle">Average failed shard merging duration over 1 hour</p>
+
+Average duration of a failed merge over the last hour.
+
+This curve should be flat. Any deviation should be investigated.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100211` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(index_shard_merging_duration_seconds_sum{error="true"}[1h])) / sum(rate(index_shard_merging_duration_seconds_count{error="true"}[1h]))`
+
+</details>
+
+<br />
+
+#### zoekt-indexserver: shard_merging_errors_aggregate
+
+<p class="subtitle">Number of errors during shard merging (aggregate)</p>
+
+Number of errors during shard merging aggregated over all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100220` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(index_shard_merging_duration_seconds_count{error="true"}) per (app)`
+
+</details>
+
+<br />
+
+#### zoekt-indexserver: shard_merging_duration_per_instance
+
+<p class="subtitle">Number of errors during shard merging (per instance)</p>
+
+Number of errors during shard merging per instance.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100221` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(index_shard_merging_duration_seconds_count{error="true"}) per (instance)`
+
+</details>
+
+<br />
+
+#### zoekt-indexserver: shard_merging_merge_running_per_instance
+
+<p class="subtitle">If shard merging is running (per instance)</p>
+
+Set to 1 if shard merging is running.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100230` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (instance) (index_shard_merging_running)`
+
+</details>
+
+<br />
+
+#### zoekt-indexserver: shard_merging_vacuum_running_per_instance
+
+<p class="subtitle">If vacuum is running (per instance)</p>
+
+Set to 1 if vacuum is running.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100231` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (instance) (index_vacuum_running)`
+
+</details>
+
+<br />
+
 ### Zoekt Index Server: Container monitoring (not available on server)
 
 #### zoekt-indexserver: container_missing

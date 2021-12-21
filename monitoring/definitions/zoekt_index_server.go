@@ -285,7 +285,7 @@ func ZoektIndexServer() *monitoring.Container {
 					{
 						{
 							Name:        "average_shard_merging_duration_success",
-							Description: "Average successful shard merging duration over 1 hour",
+							Description: "average successful shard merging duration over 1 hour",
 							Query:       `sum(rate(index_shard_merging_duration_seconds_sum{error="false"}[1h])) / sum(rate(index_shard_merging_duration_seconds_count{error="false"}[1h]))`,
 							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("average").Unit(monitoring.Seconds),
@@ -299,7 +299,7 @@ func ZoektIndexServer() *monitoring.Container {
 						},
 						{
 							Name:        "average_shard_merging_duration_error",
-							Description: "Average failed shard merging duration over 1 hour",
+							Description: "average failed shard merging duration over 1 hour",
 							Query:       `sum(rate(index_shard_merging_duration_seconds_sum{error="true"}[1h])) / sum(rate(index_shard_merging_duration_seconds_count{error="true"}[1h]))`,
 							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
@@ -314,7 +314,7 @@ func ZoektIndexServer() *monitoring.Container {
 					{
 						{
 							Name:        "shard_merging_errors_aggregate",
-							Description: "Number of errors during shard merging (aggregate)",
+							Description: "number of errors during shard merging (aggregate)",
 							Query:       `sum(index_shard_merging_duration_seconds_count{error="true"}) per (app)`,
 							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("aggregate").Unit(monitoring.Number),
@@ -325,7 +325,7 @@ func ZoektIndexServer() *monitoring.Container {
 						},
 						{
 							Name:        "shard_merging_duration_per_instance",
-							Description: "Number of errors during shard merging (per instance)",
+							Description: "number of errors during shard merging (per instance)",
 							Query:       `sum(index_shard_merging_duration_seconds_count{error="true"}) per (instance)`,
 							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
@@ -338,7 +338,7 @@ func ZoektIndexServer() *monitoring.Container {
 					{
 						{
 							Name:        "shard_merging_merge_running_per_instance",
-							Description: "If shard merging is running (per instance)",
+							Description: "if shard merging is running (per instance)",
 							Query:       "max by (instance) (index_shard_merging_running)",
 							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
@@ -349,7 +349,7 @@ func ZoektIndexServer() *monitoring.Container {
 						},
 						{
 							Name:        "shard_merging_vacuum_running_per_instance",
-							Description: "If vacuum is running (per instance)",
+							Description: "if vacuum is running (per instance)",
 							Query:       "max by (instance) (index_vacuum_running)",
 							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
