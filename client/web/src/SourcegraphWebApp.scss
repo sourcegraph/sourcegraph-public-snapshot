@@ -83,6 +83,7 @@ body,
 @import './components/Dialog';
 
 :root {
+    --max-homepage-container-width: 65rem;
     // Skip Reach UI styles. See https://reacttraining.com/reach-ui/styling/.
     --reach-menu-button: 1;
     --reach-accordion: 1;
