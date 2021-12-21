@@ -31,8 +31,10 @@ import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
+import { CatalogProps } from '../catalog'
 import { CodeIntelligenceProps } from '../codeintel'
 import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
@@ -87,6 +89,7 @@ export interface RepoContainerContext
         CodeIntelligenceProps,
         BatchChangesProps,
         RepoSidebarViewOptionsProps,
+        CatalogProps,
         CodeInsightsProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
@@ -129,6 +132,7 @@ interface RepoContainerProps
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
+        CatalogProps,
         CodeInsightsProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
