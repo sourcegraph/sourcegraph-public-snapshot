@@ -212,8 +212,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     </div>
                 ) : isErrorLike(treeOrError) ? (
                     // If the tree is actually a blob, be helpful and redirect to the blob page.
-                    // We don't have error names on GraphQL errors.
-                    /not a directory/i.test(treeOrError.message) ? (
+                    isNotTreeError(treeOrError) ? (
                         <Redirect to={toPrettyBlobURL({ repoName: repo.name, revision, commitID, filePath })} />
                     ) : (
                         <ErrorAlert error={treeOrError} />
@@ -289,4 +288,13 @@ export const TreePage: React.FunctionComponent<Props> = ({
             </Container>
         </div>
     )
+}
+
+/**
+ * Report whether the error is a GraphQL error indicating that the fetched tree entry is not a
+ * directory (and is instead likely a blob).
+ */
+export function isNotTreeError(error: ErrorLike): boolean {
+    // We don't have error names on GraphQL errors.
+    return /not a directory/i.test(error.message)
 }
