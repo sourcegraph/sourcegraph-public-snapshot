@@ -689,11 +689,11 @@ export const isExternalLink = (url: string): boolean =>
 /**
  * Appends the query parameter subtree=true to URLs.
  */
-export const appendSubtreeQueryParameter = (url: string): string => {
-    const newUrl = new URL(url, window.location.href)
+export const appendSubtreeQueryParameter = (url: string): string => url
+// TODO(sqs): why was this needed?
+/* const newUrl = new URL(url, window.location.href)
     newUrl.searchParams.set('subtree', 'true')
-    return newUrl.pathname + `?${formatSearchParameters(newUrl.searchParams)}` + newUrl.hash
-}
+    return newUrl.pathname + `?${formatSearchParameters(newUrl.searchParams)}` + newUrl.hash */
 
 /**
  * Stringifies the provided search parameters, replaces encoded `/` and `:` characters,

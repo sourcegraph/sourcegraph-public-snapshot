@@ -80,6 +80,8 @@ Component discovery:
 - Among what repositories should Sourcegraph search for my components?
 - Is there a risk that 3rd-party repositories in my "working set" would define components that I would not want to be intermingled with my own components?
 
+Code:
+
 ## NOTES
 
 ## Unify repositories, trees, and components
