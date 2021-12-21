@@ -57,7 +57,7 @@ func main() {
 		Branch: "main",
 		// Fix to high page size just in case, default is 30
 		// https://buildkite.com/docs/apis/rest-api#pagination
-		ListOptions: buildkite.ListOptions{PerPage: 10},
+		ListOptions: buildkite.ListOptions{PerPage: 99},
 	})
 	if err != nil {
 		log.Fatal("Builds.ListByPipeline: ", err)

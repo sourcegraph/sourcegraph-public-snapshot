@@ -22,7 +22,6 @@ The authors of the following failed commits who are Sourcegraph teammates have b
 `
 
 	for _, commit := range failedCommits {
-		fmt.Println(commit.Commit, commit.Author, commit.SlackUserID)
 		var mention string
 		if commit.SlackUserID != "" {
 			mention = slackMention(commit.SlackUserID)
