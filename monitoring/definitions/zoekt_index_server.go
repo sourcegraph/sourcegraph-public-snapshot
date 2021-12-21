@@ -251,6 +251,75 @@ func ZoektIndexServer() *monitoring.Container {
 					},
 				},
 			},
+			{
+				Title: "Compound shards",
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "compound_shards_aggregate",
+							Description: "# of compound shards (aggregate)",
+							Query:       "sum(index_number_compound_shards) by (app)",
+							Panel:       monitoring.Panel().LegendFormat("aggregate").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+						},
+						{
+							Name:        "compound_shards_per_instance",
+							Description: "# of compound shards (per instance)",
+							Query:       "sum(index_number_compound_shards) by (instance)",
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+						},
+					},
+					{
+						{
+							Name:        "average_shard_merging_duration_success",
+							Description: "Average successful shard merging duration",
+							Query:       `sum(rate(index_shard_merging_duration_seconds_sum{error="false"}[1h])) / sum(rate(index_shard_merging_duration_seconds_count{error="false"}[1h]))`,
+							Panel:       monitoring.Panel().LegendFormat("average").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+						},
+						{
+							Name:        "average_shard_merging_duration_error",
+							Description: "Average failed shard merging duration",
+							Query:       `sum(rate(index_shard_merging_duration_seconds_sum{error="true"}[1h])) / sum(rate(index_shard_merging_duration_seconds_count{error="true"}[1h]))`,
+							Panel:       monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+						},
+					},
+					{
+						{
+							Name:        "shard_merging_errors_aggregate",
+							Description: "Average successful shard merging duration (aggregate)",
+							Query:       `sum(index_shard_merging_duration_seconds_count{error="true"}) per (app)`,
+							Panel:       monitoring.Panel().LegendFormat("aggregate").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+						},
+						{
+							Name:        "shard_merging_duration_per_instance",
+							Description: "Average failed shard merging duration (per instance)",
+							Query:       `sum(index_shard_merging_duration_seconds_count{error="true"}) per (instance)`,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+						},
+					},
+					{
+						{
+							Name:        "shard_merging_merge_running_per_instance",
+							Description: "If shard merging is running (per instance)",
+							Query:       "max by (instance) (index_shard_merging_running)",
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+						},
+						{
+							Name:        "shard_merging_vacuum_running_per_instance",
+							Description: "If vacuum is running (per instance)",
+							Query:       "max by (instance) (index_vacuum_running)",
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+						},
+					},
+				},
+			},
 
 			// Note:
 			// zoekt_indexserver and zoekt_webserver are deployed together as part of the indexed-search service
