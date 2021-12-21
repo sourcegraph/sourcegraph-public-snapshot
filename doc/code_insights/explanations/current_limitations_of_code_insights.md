@@ -28,14 +28,16 @@ The number of insights you have does not affect the overall speed at which they 
 
 ### Features currently available only on insights over all your repositories
 
-* **[Filtering insights](code_insights_filters.md)**: we do not yet allow filtering for insights that run over explicitly defined lists of repositories. (If you want to filter those insights' repository lists, you can quickly add/remove repositories on the edit screen and results will return equally quickly as filtering an insight over all repositories.) 
+* **[Filtering insights](code_insights_filters.md)**: we do not yet allow filtering for insights that run over explicitly defined lists of repositories, except for "detect and track" insights. 
+
+(If you want to filter other insights' repository lists, you can quickly add/remove repositories on the edit screen and results will return equally quickly.) 
 
 ### Features currently available only on insights over explicitly defined repository lists
 
 Because these insights need to run dramatically fewer queries than insights over thousands of repositories, you will have access to a number of features not _yet_ supported for insights over all repositories. These are: 
 
-* **Dynamic x-axis ranges**: set a custom amount of historical data you care about
-* **Editing data series queries after creation**: for insights over all repositories, you must make a new insight if you wish to run a different query
+* **[Released] Dynamic x-axis ranges**: available in 3.35+ ~~set a custom amount of historical data you care about~~
+* **[Released] Editing data series queries after creation**: available in 3.35+ ~~for insights over all repositories, you must make a new insight if you wish to run a different query~~
 * **Live previews**: showing the preview of your insight in real time
 * **"Diff click"**: click a datapoint on your insight and be taken to a diff search showing any changes contributing to the difference between a datapoint and the prior one
 
