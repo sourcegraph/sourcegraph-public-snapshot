@@ -26,7 +26,7 @@ func (m *mockBranchLocker) Lock(context.Context, []CommitInfo, string) (func() e
 func TestCheckBuilds(t *testing.T) {
 	// Simple end-to-end tests of the buildchecker entrypoint with mostly fixed parameters
 	ctx := context.Background()
-	slackUser := NewMockSlackUserResolver("jhchabran", nil)
+	slackUser := NewMockSlackUserResolver("commit", nil)
 	testOptions := CheckOptions{
 		FailuresThreshold: 2,
 		BuildTimeout:      time.Hour,

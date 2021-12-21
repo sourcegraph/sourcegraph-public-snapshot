@@ -117,7 +117,7 @@ func fetchTeamData(ctx context.Context) (map[string]teamMember, error) {
 }
 
 type mockSlackUserResolver struct {
-	author string
+	commit string
 	err    error
 }
 
@@ -125,12 +125,12 @@ func (r *mockSlackUserResolver) ResolveByCommit(_ context.Context, commit string
 	if r.err != nil {
 		return "", r.err
 	}
-	return r.author, nil
+	return r.commit, nil
 }
 
-func NewMockSlackUserResolver(author string, err error) SlackUserResolver {
+func NewMockSlackUserResolver(commit string, err error) SlackUserResolver {
 	return &mockSlackUserResolver{
-		author: author,
+		commit: commit,
 		err:    err,
 	}
 }
