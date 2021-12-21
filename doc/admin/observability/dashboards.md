@@ -12248,11 +12248,18 @@ Query: `sum by(app) (up{app=~".*syntect-server"}) / count by (app) (up{app=~".*s
 
 To see this dashboard, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver` on your Sourcegraph instance.
 
-#### zoekt-indexserver: repos_assigned
+#### zoekt-indexserver: total_repos_aggregate
 
-<p class="subtitle">Total number of repos</p>
+<p class="subtitle">Total number of repos (aggregate)</p>
 
-Sudden changes should be caused by indexing configuration changes.
+Sudden changes can be caused by indexing configuration changes.
+
+Additionally, a discrepancy between "assigned" and "tracked" could indicate a bug.
+
+Legend:
+- assigned: # of repos assigned to Zoekt
+- indexed: # of repos Zoekt has indexed
+- tracked: # of repos Zoekt is aware of, including those that it has finished indexing
 
 This panel has no related alerts.
 
@@ -12264,6 +12271,34 @@ To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver
 <summary>Technical details</summary>
 
 Query: `sum(index_num_assigned)`
+
+</details>
+
+<br />
+
+#### zoekt-indexserver: total_repos_per_instance
+
+<p class="subtitle">Total number of repos (per instance)</p>
+
+Sudden changes can be caused by indexing configuration changes.
+
+Additionally, a discrepancy between "assigned" and "tracked" could indicate a bug.
+
+Legend:
+- assigned: # of repos assigned to Zoekt
+- indexed: # of repos Zoekt has indexed
+- tracked: # of repos Zoekt is aware of, including those that it has finished processing
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100001` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (instance) (index_num_assigned{instance=~`${instance:regex}`})`
 
 </details>
 
@@ -12460,33 +12495,6 @@ To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver
 <summary>Technical details</summary>
 
 Query: `index_queue_len{instance=~`${instance:regex}`}`
-
-</details>
-
-<br />
-
-#### zoekt-indexserver: indexed_queue_diff_assigned_tracked
-
-<p class="subtitle"># repos assigned - # repos tracked</p>
-
-zoekt-indexserver`s queue keeps track of all of its repositories, including those it has already finished processing.
-
-If there is a difference between
-- the number of repos that has been assigned to Zoekt, and
-- the number of repos that the queue thinks that it`s tracking
-
-, then there is likely _some_ sort of bug.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100210` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `index_num_assigned - index_queue_cap`
 
 </details>
 

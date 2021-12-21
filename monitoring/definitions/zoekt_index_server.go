@@ -42,23 +42,68 @@ func ZoektIndexServer() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "repos_assigned",
-							Description: "total number of repos",
+							Name:        "total_repos_aggregate",
+							Description: "total number of repos (aggregate)",
 							Query:       `sum(index_num_assigned)`,
 							NoAlert:     true,
 							Panel: monitoring.Panel().With(func(o monitoring.Observable, p *sdk.Panel) {
 								p.GraphPanel.Legend.Current = true
+								p.GraphPanel.Legend.RightSide = true
 								p.GraphPanel.Targets = []sdk.Target{{
 									Expr:         o.Query,
 									LegendFormat: "assigned",
 								}, {
-									Expr:         `sum(index_num_indexed)`,
+									Expr:         "sum(index_num_indexed)",
 									LegendFormat: "indexed",
+								}, {
+									Expr:         "sum(index_queue_cap)",
+									LegendFormat: "tracked",
 								}}
 								p.GraphPanel.Tooltip.Shared = true
 							}),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "Sudden changes should be caused by indexing configuration changes.",
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Sudden changes can be caused by indexing configuration changes.
+
+								Additionally, a discrepancy between "assigned" and "tracked" could indicate a bug.
+
+								Legend:
+								- assigned: # of repos assigned to Zoekt
+								- indexed: # of repos Zoekt has indexed
+								- tracked: # of repos Zoekt is aware of, including those that it has finished indexing
+							`,
+						},
+						{
+							Name:        "total_repos_per_instance",
+							Description: "total number of repos (per instance)",
+							Query:       "sum by (instance) (index_num_assigned{instance=~`${instance:regex}`})",
+							NoAlert:     true,
+							Panel: monitoring.Panel().With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.Current = true
+								p.GraphPanel.Legend.RightSide = true
+								p.GraphPanel.Targets = []sdk.Target{{
+									Expr:         o.Query,
+									LegendFormat: "{{instance}} assigned",
+								}, {
+									Expr:         "sum by (instance) (index_num_indexed{instance=~`${instance:regex}`})",
+									LegendFormat: "{{instance}} indexed",
+								}, {
+									Expr:         "sum by (instance) (index_queue_cap{instance=~`${instance:regex}`})",
+									LegendFormat: "{{instance}} tracked",
+								}}
+								p.GraphPanel.Tooltip.Shared = true
+							}),
+							Owner: monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Sudden changes can be caused by indexing configuration changes.
+
+								Additionally, a discrepancy between "assigned" and "tracked" could indicate a bug.
+
+								Legend:
+								- assigned: # of repos assigned to Zoekt
+								- indexed: # of repos Zoekt has indexed
+								- tracked: # of repos Zoekt is aware of, including those that it has finished processing
+							`,
 						},
 					},
 					{
@@ -202,25 +247,6 @@ func ZoektIndexServer() *monitoring.Container {
 							Panel:          monitoring.Panel().LegendFormat("{{instance}} jobs"),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "A queue that is constantly growing could be a leading indicator of a bottleneck or under-provisioning",
-						},
-					},
-					{
-						{
-							Name:        "indexed_queue_diff_assigned_tracked",
-							Description: "# repos assigned - # repos tracked",
-							Query:       "index_num_assigned - index_queue_cap",
-							NoAlert:     true,
-							Panel:       monitoring.Panel().MinAuto().LegendFormat("difference [{{instance}}]"),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								zoekt-indexserver's queue keeps track of all of its repositories, including those it has already finished processing.
-
-								If there is a difference between
-								- the number of repos that has been assigned to Zoekt, and
-								- the number of repos that the queue thinks that it's tracking
-
-								, then there is likely _some_ sort of bug.
-							`,
 						},
 					},
 				},
