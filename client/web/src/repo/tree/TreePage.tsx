@@ -115,27 +115,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         }
     }, [filePath, props.telemetryService])
 
-    useBreadcrumb(
-        useMemo(() => {
-            if (!filePath) {
-                return
-            }
-            return {
-                key: 'treePath',
-                className: 'flex-shrink-past-contents',
-                element: (
-                    <FilePathBreadcrumbs
-                        key="path"
-                        repoName={repoName}
-                        revision={revision}
-                        filePath={filePath}
-                        isDir={true}
-                        telemetryService={props.telemetryService}
-                    />
-                ),
-            }
-        }, [filePath, repoName, revision, props.telemetryService])
-    )
+    useTreePageBreadcrumb({ repoName, revision, filePath, telemetryService: props.telemetryService, useBreadcrumb })
 
     const treeOrError = useObservable(
         useMemo(
@@ -430,4 +410,36 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
 export function isNotTreeError(error: ErrorLike): boolean {
     // We don't have error names on GraphQL errors.
     return /not a directory/i.test(error.message)
+}
+
+export function useTreePageBreadcrumb({
+    repoName,
+    revision,
+    filePath,
+    telemetryService,
+    useBreadcrumb,
+}: Pick<Props, 'repoName' | 'revision' | 'filePath'> &
+    TelemetryProps &
+    Pick<BreadcrumbSetters, 'useBreadcrumb'>): void {
+    useBreadcrumb(
+        useMemo(() => {
+            if (!filePath) {
+                return
+            }
+            return {
+                key: 'treePath',
+                className: 'flex-shrink-past-contents',
+                element: (
+                    <FilePathBreadcrumbs
+                        key="path"
+                        repoName={repoName}
+                        revision={revision}
+                        filePath={filePath}
+                        isDir={true}
+                        telemetryService={telemetryService}
+                    />
+                ),
+            }
+        }, [filePath, repoName, revision, telemetryService])
+    )
 }
