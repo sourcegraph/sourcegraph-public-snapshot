@@ -31,7 +31,6 @@ import { CodeIntelligenceProps } from '../../codeintel'
 import { ErrorAlert } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
-import { TreeComponents } from '../../enterprise/catalog/contributions/tree/TreeComponents'
 import { TreePageRepositoryFields } from '../../graphql-operations'
 import { CodeInsightsProps } from '../../insights/types'
 import { Settings } from '../../schema/settings.schema'
@@ -45,8 +44,6 @@ import { TreeCommits } from './commits/TreeCommits'
 import { RepositoryRootLinks } from './RepositoryRootLinks'
 import { TreeEntriesSection } from './TreeEntriesSection'
 import styles from './TreePage.module.scss'
-
-const showOldTreePageStuff = false
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -247,74 +244,46 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             )}
                         </header>
 
-                        {showOldTreePageStuff && (
-                            <ExtensionViewsSection
-                                className={classNames('my-3', styles.section)}
-                                telemetryService={props.telemetryService}
-                                settingsCascade={settingsCascade}
-                                platformContext={props.platformContext}
-                                extensionsController={props.extensionsController}
-                                where="directory"
-                                uri={uri}
-                            />
-                        )}
-
-                        <TreeComponents
-                            repoID={repo.id}
-                            filePath={filePath}
+                        <ExtensionViewsSection
                             className={classNames('my-3', styles.section)}
+                            telemetryService={props.telemetryService}
+                            settingsCascade={settingsCascade}
+                            platformContext={props.platformContext}
+                            extensionsController={props.extensionsController}
+                            where="directory"
+                            uri={uri}
                         />
 
-                        {showOldTreePageStuff ? (
-                            <section className={classNames('test-tree-entries mb-3', styles.section)}>
-                                <h2>Files and directories</h2>
-                                <TreeEntriesSection
-                                    parentPath={filePath}
-                                    entries={treeOrError.entries}
-                                    fileDecorationsByPath={fileDecorationsByPath}
-                                    isLightTheme={props.isLightTheme}
-                                />
-                            </section>
-                        ) : (
-                            !repoSidebarIsVisible && (
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary mb-3"
-                                    onClick={() => setRepoSidebarIsVisible(true)}
-                                >
-                                    Show files and directories
-                                </button>
-                            )
-                        )}
-                        {showOldTreePageStuff && (
-                            <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
-                                {items => (
-                                    <section className={styles.section}>
-                                        <h2>Actions</h2>
-                                        {items.map(item => (
-                                            <ActionItem
-                                                {...props}
-                                                key={item.action.id}
-                                                {...item}
-                                                className="btn btn-secondary mr-1 mb-1"
-                                            />
-                                        ))}
-                                    </section>
-                                )}
-                            </ActionsContainer>
-                        )}
+                        <section className={classNames('test-tree-entries mb-3', styles.section)}>
+                            <h2>Files and directories</h2>
+                            <TreeEntriesSection
+                                parentPath={filePath}
+                                entries={treeOrError.entries}
+                                fileDecorationsByPath={fileDecorationsByPath}
+                                isLightTheme={props.isLightTheme}
+                            />
+                        </section>
 
-                        {showOldTreePageStuff && (
-                            <div className={styles.section}>
-                                <h2>Changes</h2>
-                                <TreeCommits
-                                    repoID={repo.id}
-                                    commitID={commitID}
-                                    filePath={filePath}
-                                    className="mt-2"
-                                />
-                            </div>
-                        )}
+                        <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
+                            {items => (
+                                <section className={styles.section}>
+                                    <h2>Actions</h2>
+                                    {items.map(item => (
+                                        <ActionItem
+                                            {...props}
+                                            key={item.action.id}
+                                            {...item}
+                                            className="btn btn-secondary mr-1 mb-1"
+                                        />
+                                    ))}
+                                </section>
+                            )}
+                        </ActionsContainer>
+
+                        <div className={styles.section}>
+                            <h2>Changes</h2>
+                            <TreeCommits repoID={repo.id} commitID={commitID} filePath={filePath} className="mt-2" />
+                        </div>
                     </>
                 )}
             </Container>
