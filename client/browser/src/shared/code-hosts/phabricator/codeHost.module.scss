@@ -1,9 +1,9 @@
-.hover-overlay--phabricator {
+.hover-overlay {
     margin: 0;
 }
 
-.btn-icon--phabricator {
-    // Fight Phabricator selector specificity
+.btn-icon {
+    /* Fight Phabricator selector specificity */
     background: transparent !important;
     border: none !important;
     padding: 0 !important;
@@ -13,26 +13,28 @@
     }
 }
 
-// Mimics Phabricator's font icon style
-.icon--phabricator {
+/* Mimics Phabricator's font icon style */
+.icon {
     height: 14px;
     width: 14px;
 }
 
-.action-item--phabricator[data-action-item-pressed='true'] {
-    // Phabricator doesn't seem to have a style for pressed, so we invent one
+.action-item[data-action-item-pressed='true'] {
+    /* Phabricator doesn't seem to have a style for pressed, so we invent one */
     box-shadow: inset 0 0.15em 0.3em #cad2e2;
 }
 
-.hover-overlay-action-item--phabricator {
+.hover-overlay-action-item {
     border-radius: 0 !important;
     border-bottom: none !important;
     border-top: none !important;
     border-right: none !important;
-    .icon--phabricator {
-        vertical-align: middle;
-    }
+
     &:first-child {
         border-left: none !important;
     }
+}
+
+.hover-overlay-action-item-icon {
+    vertical-align: middle;
 }

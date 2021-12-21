@@ -258,7 +258,6 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 disabledClassName={this.props.inactiveClassName}
                 data-action-item-pressed={pressed}
                 className={classNames(
-                    'action-item',
                     'test-action-item',
                     this.props.className,
                     showLoadingSpinner && styles.actionItemLoading,
