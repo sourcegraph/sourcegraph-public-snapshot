@@ -42,7 +42,7 @@ export const requestGraphQLFromVSCode = async <R, V = object>(
     if (accessToken) {
         headers.push(['Authorization', `token ${accessToken}`])
     }
-    if(currentPlatform!=='desktop'&&!accessToken && !corsUrl){
+    if (currentPlatform !== 'desktop' && !accessToken && !corsUrl) {
         throw asError('You must have accessToken and corsUrl configured for Sourcegraph Search to work on VS Code Web')
     }
     try {

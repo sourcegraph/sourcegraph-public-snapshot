@@ -118,6 +118,7 @@
           "type": [
             "string"
           ],
+          "default": "",
           "description": "CORS headers are necessary for the extension to fetch data when using VS Code Web."
         }
       }

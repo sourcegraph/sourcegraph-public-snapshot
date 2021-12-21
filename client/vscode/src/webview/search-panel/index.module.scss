@@ -1,4 +1,3 @@
-
 .with-editor-font span {
     font-family: var(--vscode-editor-font-family) !important;
     font-weight: var(--vscode-editor-font-weight) !important;
@@ -68,7 +67,7 @@
 
     &__cta {
         &-container {
-            flex: 1
+            flex: 1;
         }
 
         &-title {
@@ -83,11 +82,10 @@
     &__btn {
         font-size: var(--vscode-font-size) !important;
         background-color: var(--primary);
-        color: var(--white)
+        color: var(--white);
     }
 
     &__text {
-        color: var(--white)
+        color: var(--white);
     }
-
 }

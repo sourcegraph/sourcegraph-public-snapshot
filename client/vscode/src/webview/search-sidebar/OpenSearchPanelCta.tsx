@@ -3,15 +3,17 @@ import React from 'react'
 
 import { WebviewPageProps } from '../platform/context'
 
-import styles from './OpenSearchPanelCta.module.scss'
+import styles from './SearchSidebar.module.scss'
 
 interface OpenSearchPanelCtaProps extends Pick<WebviewPageProps, 'sourcegraphVSCodeExtensionAPI'> {
     className?: string
+    onDesktop: boolean
 }
 
 export const OpenSearchPanelCta: React.FunctionComponent<OpenSearchPanelCtaProps> = ({
     className,
     sourcegraphVSCodeExtensionAPI,
+    onDesktop,
 }) => (
     <div className={classNames('d-flex flex-column align-items-left justify-content-center', className)}>
         <p className={classNames('mt-3', styles.title)}>Welcome!</p>
@@ -45,5 +47,7 @@ export const OpenSearchPanelCta: React.FunctionComponent<OpenSearchPanelCtaProps
         >
             Open Search Panel
         </button>
+        {/* Display warning if user is using VS Code Web */}
+        {!onDesktop && <p>IMPORTANT: Please add Access Token and CORS to use Sourcegraph on VS Code Web.</p>}
     </div>
 )

@@ -29,18 +29,30 @@ export function endpointPortSetting(): number {
     return port ? parseInt(port, 10) : 443
 }
 
-export function endpointCorsSetting(): string | null {
-    const corsUrl = readConfiguration().get<string>('corsUrl')
-    if (corsUrl) {
-        return new URL('', corsUrl).origin
-    }
-    return null
-}
-
 // Check if Access Token is configured in setting
 export function endpointAccessTokenSetting(): boolean {
     if (readConfiguration().get<string>('accessToken')) {
         return true
     }
     return false
+}
+
+// Check if Cors is configured in setting
+export function endpointCorsSetting(): string {
+    const corsUrl = readConfiguration().get<string>('corsUrl')
+    if (corsUrl) {
+        return new URL('', corsUrl).origin
+    }
+    return ''
+}
+
+// Update Cors in setting
+export async function updateCorsSetting(corsUrl: string): Promise<boolean> {
+    try {
+        const newCorsUrl = new URL('', corsUrl).origin
+        await readConfiguration().update('corsUrl', newCorsUrl, vscode.ConfigurationTarget.Global)
+        return true
+    } catch {
+        return false
+    }
 }

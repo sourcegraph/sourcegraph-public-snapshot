@@ -20,7 +20,13 @@ import { SourcegraphFileSystemProvider } from './file-system/SourcegraphFileSyst
 import { SourcegraphUri } from './file-system/SourcegraphUri'
 import { log } from './log'
 import { updateAccessTokenSetting } from './settings/accessTokenSetting'
-import { endpointHostnameSetting, endpointSetting, endpointAccessTokenSetting } from './settings/endpointSetting'
+import {
+    endpointHostnameSetting,
+    endpointSetting,
+    endpointAccessTokenSetting,
+    endpointCorsSetting,
+    updateCorsSetting,
+} from './settings/endpointSetting'
 import { SourcegraphVSCodeExtensionAPI } from './webview/contract'
 import {
     initializeExtensionHostWebview,
@@ -36,6 +42,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const initialSourcegraphUrl = endpointSetting()
     const instanceHostname = endpointHostnameSetting()
     const accessToken = endpointAccessTokenSetting()
+    const corsSetting = endpointCorsSetting()
 
     vscode.workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('sourcegraph.url')) {
@@ -139,8 +146,14 @@ export function activate(context: vscode.ExtensionContext): void {
         panelInitialized: panelId => initializedPanelIDs.next(panelId),
         // Call from webview's search results
         openFile: (uri: string) => openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri)),
+        // Open Links in Browser
         openLink: (uri: string) => openLinkInBrowser(uri),
         openSearchPanel: () => vscode.commands.executeCommand('sourcegraph.search'),
+        // Check if on VS Code Desktop or VS Code Web
+        onDesktop: () => vscode.env.appHost === 'desktop',
+        // Get Cors from Setting
+        getCorsSetting: () => corsSetting,
+        updateCorsUri: (uri: string) => updateCorsSetting(uri),
     }
 
     // Track current active webview panel to make sure only one panel exists at a time

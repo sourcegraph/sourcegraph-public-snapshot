@@ -44,6 +44,12 @@ export interface SourcegraphVSCodeExtensionAPI
     openLink: (uri: string) => void
     // For search sidebar
     openSearchPanel: () => void
+    // Check if on VS Code Desktop or VS Code Web
+    onDesktop: () => boolean
+    // Get Cors from Setting
+    getCorsSetting: () => string
+    // Update Cors Setting - return true when updated successfully
+    updateCorsUri: (uri: string) => Promise<boolean>
     // For extension host sidebar
     // mainThreadAPI methods
 }
