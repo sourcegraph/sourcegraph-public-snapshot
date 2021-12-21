@@ -24,7 +24,7 @@ To add insights to your own custom dashboard, see [Creating a custom dashboard o
 
 ### Dashboard visibility
 
-A Dashboard's visibility level owns the visibility of code insights on the dashboard. If you add an Insight that was on a private dashboard to an organization or global dashboard, now people with access to that dashboard can view the insight. When you first create an insight, it defaults to appearing on the dashboard from which you clicked the "create" button. TODO::CONFIRM If you create an insight directly on the create page or from the default dashboard, it [seems to appear on the default dashboard? but what is the visibility?]. 
+A Dashboard's visibility level owns the visibility of code insights on the dashboard. If you add an Insight that was on a private dashboard to an organization or global dashboard, now people with access to that dashboard can view the insight. When you first create an insight, it defaults to appearing on the dashboard from which you clicked the "create" button. If you create an insight directly on the create page or from the default dashboard, it will appear on the default dashboard. 
 
 ### Insights still enforce individual permissions regardless of dashboard visibility
 
