@@ -80,14 +80,9 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
             <PageHeader
                 headingElement="h2"
                 path={[{ text: 'Subscriptions' }]}
-                actions={
-                    <Link to={`${props.match.path}/new`} className="btn btn-primary text-nowrap">
-                        New subscription
-                    </Link>
-                }
                 description={
                     <>
-                        Purchase a subscription for a self-hosted Sourcegraph instance. See{' '}
+                        Conatct us to purchase a subscription for a self-hosted Sourcegraph instance. See{' '}
                         <a href="https://about.sourcegraph.com/pricing">pricing</a> for more information.
                     </>
                 }
