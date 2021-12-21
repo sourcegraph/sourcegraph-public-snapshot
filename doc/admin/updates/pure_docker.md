@@ -8,7 +8,7 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-## 3.34.2 -> 3.35
+## 3.34 -> 3.35
 
 The `query-runner` service has been decomissioned in the 3.35.0 release. You can safely remove the `query-runner` service from your installation.
 
