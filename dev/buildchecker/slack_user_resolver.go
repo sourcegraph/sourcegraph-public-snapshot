@@ -59,6 +59,7 @@ func (r *githubSlackUserResolver) getSlackUserIDbyCommit(ctx context.Context, ha
 	for _, member := range r.team {
 		if member.GitHub == handle {
 			email = member.Email
+			break
 		}
 	}
 	if email == "" {

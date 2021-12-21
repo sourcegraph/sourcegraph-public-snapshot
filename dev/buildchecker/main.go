@@ -28,7 +28,7 @@ func main() {
 
 	flag.StringVar(&buildkiteToken, "buildkite.token", "", "mandatory buildkite token")
 	flag.StringVar(&githubToken, "github.token", "", "mandatory github token")
-	flag.StringVar(&slackToken, "slack.token", "", "manadatory slack api token")
+	flag.StringVar(&slackToken, "slack.token", "", "mandatory slack api token")
 	flag.StringVar(&slackWebhook, "slack.webhook", "", "Slack Webhook URL to post the results on")
 	flag.StringVar(&pipeline, "pipeline", "sourcegraph", "name of the pipeline to inspect")
 	flag.StringVar(&branch, "branch", "main", "name of the branch to inspect")
