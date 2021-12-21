@@ -56,6 +56,8 @@ import {
     OrgRepositoriesResult,
     OrgRepositoriesTotalCountVariables,
     UserRepositoriesTotalCountVariables,
+    SetUserTagResult,
+    SetUserTagVariables,
 } from '../graphql-operations'
 
 type UserRepositories = (NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']
@@ -87,6 +89,7 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
                                 name
                             }
                         }
+                        tags
                     }
                     totalCount
                 }
@@ -857,6 +860,26 @@ export function createUser(username: string, email: string | undefined): Observa
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.createUser)
+    )
+}
+
+export function setUserTag(node: string, tag: string, present: boolean = true): Observable<void> {
+    return requestGraphQL<SetUserTagResult, SetUserTagVariables>(
+        gql`
+            mutation SetUserTag($node: ID!, $tag: String!, $present: Boolean!) {
+                setTag(node: $node, tag: $tag, present: $present) {
+                    alwaysNil
+                }
+            }
+        `,
+        { node, tag, present }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.setTag) {
+                throw createInvalidGraphQLMutationResponseError('SetUserTag')
+            }
+        })
     )
 }
 
