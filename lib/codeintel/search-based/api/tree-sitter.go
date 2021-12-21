@@ -15,8 +15,8 @@ func AssertType(n *sitter.Node, expectedType string) {
 }
 
 func ForeachChild(node *sitter.Node, visitor func(i int, child *sitter.Node)) {
-	count := int(node.ChildCount())
+	count := int(node.NamedChildCount())
 	for i := 0; i < count; i++ {
-		visitor(i, node.Child(i))
+		visitor(i, node.NamedChild(i))
 	}
 }

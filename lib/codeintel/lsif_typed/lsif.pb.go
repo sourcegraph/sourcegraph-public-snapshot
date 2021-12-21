@@ -180,7 +180,7 @@ type LsifValue struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Types that are assignable to Value:
+	// ParentTypes that are assignable to Value:
 	//	*LsifValue_Package
 	//	*LsifValue_Document
 	//	*LsifValue_Moniker

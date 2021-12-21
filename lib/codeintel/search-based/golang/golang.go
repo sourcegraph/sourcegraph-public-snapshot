@@ -10,19 +10,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/search-based/api"
 )
 
-type GoIndexer struct{}
+type Indexer struct{}
 
-var _ api.Indexer = GoIndexer{}
+var _ api.Indexer = Indexer{}
 
-func (g GoIndexer) Name() string {
+func (g Indexer) Name() string {
 	return "golang"
 }
 
-func (g GoIndexer) FileExtensions() []string {
+func (g Indexer) FileExtensions() []string {
 	return []string{".go"}
 }
 
-func (g GoIndexer) Index(_ context.Context, input *api.Input, _ *api.IndexingOptions) (*lsif_typed.Document, error) {
+func (g Indexer) Index(_ context.Context, input *api.Input, _ *api.IndexingOptions) (*lsif_typed.Document, error) {
 	parser := sitter.NewParser()
 	parser.SetLanguage(golang.GetLanguage())
 	tree, err := parser.ParseCtx(context.Background(), nil, input.Bytes)

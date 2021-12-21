@@ -149,6 +149,9 @@ func testIndexer(env goldenEnv, relativePath string, t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to index doc %v, err %v", originalPath, err)
 	}
+	if doc == nil {
+		t.Fatalf("indexer returned nil document")
+	}
 	obtainedGolden, err := goldenDocument(doc)
 	if err != nil {
 		t.Fatalf("failed to golden, err %v", err)

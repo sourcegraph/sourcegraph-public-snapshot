@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/go-enry/go-enry/v2"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -111,6 +112,8 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 	if err != nil {
 		return nil, err
 	}
+	languages := enry.GetLanguages(r.Path(), r.content)
+	log15.Info("entry.GetLanguages", "languages", languages)
 	return highlightContent(ctx, args, content, r.Path(), highlight.Metadata{
 		RepoName: r.commit.repoResolver.Name(),
 		Revision: string(r.commit.oid),
