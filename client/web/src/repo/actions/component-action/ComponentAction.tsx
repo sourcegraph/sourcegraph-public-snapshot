@@ -41,7 +41,7 @@ export const ComponentAction: React.FunctionComponent<Props & RepoHeaderContext>
         ComponentsForTreeEntryHeaderActionVariables
     >(COMPONENTS_FOR_TREE_ENTRY_HEADER_ACTION, {
         variables: { repository: props.repo.id, rev: props.revision || 'HEAD', path: props.filePath || '' },
-        fetchPolicy: 'cache-and-network',
+        fetchPolicy: 'cache-first',
     })
 
     if (error) {
@@ -71,7 +71,7 @@ export const ComponentAction: React.FunctionComponent<Props & RepoHeaderContext>
     return (
         <ComponentActionPopoverButton
             component={component}
-            buttonClassName={classNames('btn btn-icon small border border-primary', styles.btn)}
+            buttonClassName={classNames('btn btn-icon small border border-secondary', styles.btn)}
         />
     )
 }

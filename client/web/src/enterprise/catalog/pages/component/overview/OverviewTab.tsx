@@ -19,8 +19,8 @@ import { formatPersonName } from '../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../user/UserAvatar'
 import { ComponentIcon } from '../../../components/ComponentIcon'
 import { EntityOwner } from '../../../components/entity-owner/EntityOwner'
-
 import styles from '../OverviewTab.module.scss'
+
 import { ComponentOverviewMain } from './ComponentOverviewMain'
 import { ComponentOverviewWhoKnows, whoKnowsDescription } from './ComponentOverviewWhoKnows'
 
@@ -105,7 +105,7 @@ export const OverviewTab: React.FunctionComponent<Props> = ({
                         ))}
                     </dl>
                     <Link
-                        to={`${component.url}/who-knows`}
+                        to={`${component.catalogURL}/who-knows`}
                         className="btn btn-outline-secondary mb-3"
                         data-tooltip={whoKnowsDescription(component)}
                     >
@@ -116,7 +116,7 @@ export const OverviewTab: React.FunctionComponent<Props> = ({
             <main className={classNames(styles.main)}>
                 <ErrorBoundary location={location}>
                     <Switch>
-                        <Route path={component.url} exact={true}>
+                        <Route path={component.catalogURL} exact={true}>
                             <ComponentOverviewMain
                                 component={component}
                                 telemetryService={telemetryService}
@@ -124,7 +124,7 @@ export const OverviewTab: React.FunctionComponent<Props> = ({
                                 platformContext={platformContext}
                             />
                         </Route>
-                        <Route path={`${component.url}/who-knows`} exact={true}>
+                        <Route path={`${component.catalogURL}/who-knows`} exact={true}>
                             <ComponentOverviewWhoKnows component={component} />
                         </Route>
                     </Switch>

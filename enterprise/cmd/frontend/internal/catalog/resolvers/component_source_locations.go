@@ -27,6 +27,7 @@ func (r *componentResolver) sourceLocations(ctx context.Context) ([]*componentSo
 				return nil, err
 			}
 			commitResolver := gql.NewGitCommitResolver(r.db, repoResolver, commit.ID, commit)
+			commitResolver.HackSetInputRev("")
 			for j, path := range sloc.Paths {
 				isDir := true // TODO(sqs): actually compute this
 				treeResolver := gql.NewGitTreeEntryResolver(r.db, commitResolver, gql.CreateFileInfo(path, isDir))

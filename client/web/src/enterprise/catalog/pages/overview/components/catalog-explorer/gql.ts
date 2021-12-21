@@ -32,6 +32,7 @@ export const COMPONENT_FOR_EXPLORER_FRAGMENT = gql`
         description
         lifecycle
         url
+        catalogURL
         ...ComponentStateFields
         ...ComponentOwnerFields
         ...ComponentLastCommitFields

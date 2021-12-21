@@ -97,7 +97,7 @@ async function generateGraphQlOperations() {
           plugins: SHARED_PLUGINS,
         },
 
-        /* [path.join(SHARED_FOLDER, './src/graphql-operations.ts')]: {
+        [path.join(SHARED_FOLDER, './src/graphql-operations.ts')]: {
           documents: SHARED_DOCUMENTS_GLOB,
           config: {
             onlyOperationTypes: true,
@@ -105,7 +105,7 @@ async function generateGraphQlOperations() {
             interfaceNameForOperations: 'SharedGraphQlOperations',
           },
           plugins: [...SHARED_PLUGINS, 'typescript-apollo-client-helpers'],
-        }, */
+        },
       },
     },
     true

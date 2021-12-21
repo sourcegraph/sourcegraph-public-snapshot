@@ -142,6 +142,7 @@ type ComponentResolver interface {
 	Tags(context.Context) ([]ComponentTagResolver, error)
 	SourceLocations(context.Context) ([]ComponentSourceLocationResolver, error)
 	URL(context.Context) (string, error)
+	CatalogURL() string
 	Status(context.Context) (ComponentStatusResolver, error)
 
 	CodeOwners(context.Context) (*[]ComponentCodeOwnerEdgeResolver, error)

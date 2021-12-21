@@ -119,6 +119,7 @@ type Component implements Node {
     tags: [ComponentTag!]!
     sourceLocations: [ComponentSourceLocation!]!
     url: String!
+    catalogURL: String!
     status: ComponentStatus!
     codeOwners: [ComponentCodeOwnerEdge!]
     relatedEntities(query: String, first: Int, after: String): ComponentRelatedEntityConnection!

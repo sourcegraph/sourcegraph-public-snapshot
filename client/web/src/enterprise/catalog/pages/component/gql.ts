@@ -219,6 +219,7 @@ export const COMPONENT_DETAIL_FRAGMENT = gql`
         description
         lifecycle
         url
+        catalogURL
         ...ComponentLabelsFields
         ...ComponentTagsFields
         ...ComponentWhoKnowsFields

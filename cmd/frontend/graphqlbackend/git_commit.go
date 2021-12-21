@@ -74,6 +74,12 @@ func NewGitCommitResolver(db database.DB, repo *RepositoryResolver, id api.Commi
 	}
 }
 
+func (r *GitCommitResolver) HackSetInputRev(rev string) {
+	// TODO(sqs): all callers of this should be refactored so that the inputRev lives on the
+	// GitTreeEntryResolver not the GitCommitResovler.
+	r.inputRev = &rev
+}
+
 func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commit, error) {
 	r.commitOnce.Do(func() {
 		if r.commit != nil {

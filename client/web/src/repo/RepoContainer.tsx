@@ -439,22 +439,24 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 extensionsController={props.extensionsController}
                 telemetryService={props.telemetryService}
             />
-            <RepoHeaderContributionPortal
-                position="right"
-                priority={100}
-                id="catalog-component"
-                {...repoHeaderContributionsLifecycleProps}
-            >
-                {({ actionType }) => (
-                    <ComponentAction
-                        key="catalog-component"
-                        repo={repoOrError}
-                        filePath={filePath}
-                        actionType={actionType}
-                        repoName={repoName}
-                    />
-                )}
-            </RepoHeaderContributionPortal>
+            {false && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={100}
+                    id="catalog-component"
+                    {...repoHeaderContributionsLifecycleProps}
+                >
+                    {({ actionType }) => (
+                        <ComponentAction
+                            key="catalog-component"
+                            repo={repoOrError}
+                            filePath={filePath}
+                            actionType={actionType}
+                            repoName={repoName}
+                        />
+                    )}
+                </RepoHeaderContributionPortal>
+            )}
 
             <RepoHeaderContributionPortal
                 position="right"

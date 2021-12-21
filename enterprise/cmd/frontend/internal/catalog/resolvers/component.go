@@ -48,7 +48,7 @@ func (r *componentResolver) URL(ctx context.Context) (string, error) {
 
 	if len(slocs) == 0 {
 		// Fallback URL for components with no source locations. TODO(sqs) #component-no-source-locations
-		return "/catalog/components/" + string(r.Name()), nil
+		return r.CatalogURL(), nil
 	}
 
 	sloc := slocs[0]
@@ -58,6 +58,10 @@ func (r *componentResolver) URL(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return treeURL, nil
+}
+
+func (r *componentResolver) CatalogURL() string {
+	return "/catalog/components/" + string(r.Name())
 }
 
 func (r *componentResolver) Kind() gql.ComponentKind {
