@@ -47,28 +47,17 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 
 	if runAll || changedFiles.AffectsClient() || changedFiles.AffectsGraphQL() {
 		// If there are any Graphql changes, they are impacting the client as well.
-		ops.Append(
-			clientIntegrationTests,
-			clientIntegrationTests,
-			clientIntegrationTests,
-			clientIntegrationTests,
-			clientIntegrationTests,
-			clientIntegrationTests,
-			clientIntegrationTests,
-			clientIntegrationTests,
-			clientIntegrationTests,
-			clientIntegrationTests,
-			clientIntegrationTests,
-			clientIntegrationTests,
-			clientIntegrationTests,
-			clientIntegrationTests,
-			// clientChromaticTests(opts.ChromaticShouldAutoAccept),
-			// frontendTests,   // ~4.5m
-			// addWebApp,       // ~3m
-			// addBrowserExt,   // ~2m
-			// addBrandedTests, // ~1.5m
-			// addTsLint,
-		)
+		for i := 0; i < 20; i++ {
+			ops.Append(
+				clientIntegrationTestsWithKey(strconv.Itoa(i)),
+				// clientChromaticTests(opts.ChromaticShouldAutoAccept),
+				// frontendTests,   // ~4.5m
+				// addWebApp,       // ~3m
+				// addBrowserExt,   // ~2m
+				// addBrandedTests, // ~1.5m
+				// addTsLint,
+			)
+		}
 	}
 
 	if runAll || changedFiles.AffectsGo() || changedFiles.AffectsGraphQL() {
@@ -183,6 +172,56 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::chrome: Test browser extension",
 		bk.Cmd("dev/ci/yarn-test.sh client/browser"),
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+}
+
+func clientIntegrationTestsWithKey(key string) func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		chunkSize := 3
+		prepStepKey := "puppeteer:prep-" + key
+		skipGitCloneStep := bk.Plugin("uber-workflow/run-without-clone", "")
+
+		// Build web application used for integration tests to share it between multiple parallel steps.
+		pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests prep "+key,
+			bk.Key(prepStepKey),
+			bk.Env("ENTERPRISE", "1"),
+			bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-build.sh client/web"),
+			bk.Cmd("dev/ci/create-client-artifact.sh"))
+
+		// Chunk web integration tests to save time via parallel execution.
+		chunkedTestFiles := getChunkedWebIntegrationFileNames(chunkSize)
+		// Percy finalize step should be executed after all integration tests.
+		puppeteerFinalizeDependencies := make([]bk.StepOpt, len(chunkedTestFiles))
+
+		// Add pipeline step for each chunk of web integrations files.
+		for i, chunkTestFiles := range chunkedTestFiles {
+			stepLabel := fmt.Sprintf(":puppeteer::electric_plug: Puppeteer tests chunk #%s", fmt.Sprint(i+1))
+
+			stepKey := fmt.Sprintf("puppeteer:chunk-%s:%s", key, fmt.Sprint(i+1))
+			puppeteerFinalizeDependencies[i] = bk.DependsOn(stepKey)
+
+			pipeline.AddStep(stepLabel,
+				bk.Key(stepKey),
+				bk.DependsOn(prepStepKey),
+				bk.DisableManualRetry("The Percy build is finalized even if one of the concurrent agents fails. To retry correctly, restart the entire pipeline."),
+				bk.Env("PERCY_ON", "true"),
+				bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
+				bk.ArtifactPaths("./puppeteer/*.png"))
+		}
+
+		finalizeSteps := []bk.StepOpt{
+			// Allow to teardown the Percy build even if there was a failure in the earlier Percy steps.
+			bk.AllowDependencyFailure(),
+			// Percy service often fails for obscure reasons. The step is pretty fast, so we
+			// just retry a few times.
+			bk.AutomaticRetry(3),
+			// Finalize just uses a remote package.
+			skipGitCloneStep,
+			bk.Cmd("npx @percy/cli build:finalize"),
+		}
+
+		pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests finalize "+key,
+			append(finalizeSteps, puppeteerFinalizeDependencies...)...)
+	}
 }
 
 func clientIntegrationTests(pipeline *bk.Pipeline) {
