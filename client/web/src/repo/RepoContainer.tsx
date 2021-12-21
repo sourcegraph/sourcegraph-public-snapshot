@@ -5,7 +5,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { UncontrolledPopover } from 'reactstrap'
 import { NEVER, ObservableInput, of } from 'rxjs'
@@ -31,7 +31,6 @@ import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
@@ -484,48 +483,50 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 )}
             </RepoHeaderContributionPortal>
             <ErrorBoundary location={props.location}>
-                <Switch>
-                    {[
-                        '',
-                        ...(rawRevision ? [`@${rawRevision}`] : []), // must exactly match how the revision was encoded in the URL
-                        '/-/blob',
-                        '/-/tree',
-                        '/-/commits',
-                        '/-/docs',
-                    ].map(routePath => (
-                        <Route
-                            path={`${repoMatchURL}${routePath}`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={routePath === ''}
-                            render={routeComponentProps => (
-                                <RepoRevisionContainer
-                                    {...routeComponentProps}
-                                    {...context}
-                                    {...childBreadcrumbSetters}
-                                    routes={props.repoRevisionContainerRoutes}
-                                    revision={revision || ''}
-                                    resolvedRevisionOrError={resolvedRevisionOrError}
-                                    // must exactly match how the revision was encoded in the URL
-                                    routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
-                                    useActionItemsBar={useActionItemsBar}
-                                />
-                            )}
-                        />
-                    ))}
-                    {props.repoContainerRoutes.map(
-                        ({ path, render, exact, condition = () => true }) =>
-                            condition(context) && (
-                                <Route
-                                    path={context.routePrefix + path}
-                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    exact={exact}
-                                    // RouteProps.render is an exception
-                                    render={routeComponentProps => render({ ...context, ...routeComponentProps })}
-                                />
-                            )
-                    )}
-                    <Route key="hardcoded-key" component={RepoPageNotFound} />
-                </Switch>
+                <Suspense fallback={null}>
+                    <Switch>
+                        {[
+                            '',
+                            ...(rawRevision ? [`@${rawRevision}`] : []), // must exactly match how the revision was encoded in the URL
+                            '/-/blob',
+                            '/-/tree',
+                            '/-/commits',
+                            '/-/docs',
+                        ].map(routePath => (
+                            <Route
+                                path={`${repoMatchURL}${routePath}`}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={routePath === ''}
+                                render={routeComponentProps => (
+                                    <RepoRevisionContainer
+                                        {...routeComponentProps}
+                                        {...context}
+                                        {...childBreadcrumbSetters}
+                                        routes={props.repoRevisionContainerRoutes}
+                                        revision={revision || ''}
+                                        resolvedRevisionOrError={resolvedRevisionOrError}
+                                        // must exactly match how the revision was encoded in the URL
+                                        routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
+                                        useActionItemsBar={useActionItemsBar}
+                                    />
+                                )}
+                            />
+                        ))}
+                        {props.repoContainerRoutes.map(
+                            ({ path, render, exact, condition = () => true }) =>
+                                condition(context) && (
+                                    <Route
+                                        path={context.routePrefix + path}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        exact={exact}
+                                        // RouteProps.render is an exception
+                                        render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                                    />
+                                )
+                        )}
+                        <Route key="hardcoded-key" component={RepoPageNotFound} />
+                    </Switch>
+                </Suspense>
             </ErrorBoundary>
         </div>
     )
