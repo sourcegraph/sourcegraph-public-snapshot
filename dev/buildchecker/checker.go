@@ -139,7 +139,7 @@ func checkConsecutiveFailures(builds []buildkite.Build, threshold int, timeout t
 
 		var author string
 		if b.Author != nil {
-			author = b.Author.Name
+			author = fmt.Sprintf("%s (%s)", b.Author.Name, b.Author.Email)
 		}
 
 		consecutiveFailures += 1
