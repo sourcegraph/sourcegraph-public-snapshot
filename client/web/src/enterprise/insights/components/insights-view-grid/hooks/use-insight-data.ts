@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { ObservableInput } from 'rxjs'
 
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
+import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
+import { CodeInsightsGqlBackend } from '../../../core/backend/gql-api/code-insights-gql-backend'
 import { useLazyParallelRequest } from '../../../hooks/use-parallel-requests/use-parallel-request'
 
 export interface UseInsightDataResult<T> {
@@ -25,9 +27,16 @@ export function useInsightData<D>(
     request: () => ObservableInput<D>,
     reference: React.RefObject<HTMLElement>
 ): UseInsightDataResult<D> {
+    const api = useContext(CodeInsightsBackendContext)
+    const isGqlAPI = api instanceof CodeInsightsGqlBackend
+
     const { data, loading, error, query } = useLazyParallelRequest<D>()
-    const [isVisible, setVisibility] = useState<boolean>(false)
-    const [hasIntersected, setHasIntersected] = useState<boolean>(false)
+
+    // All non GQL API implementations do not support partial loading,
+    // allowing insights fetching for these API whether insights are
+    // in a viewport or not.
+    const [isVisible, setVisibility] = useState<boolean>(!isGqlAPI)
+    const [hasIntersected, setHasIntersected] = useState<boolean>(!isGqlAPI)
 
     useEffect(() => {
         if (hasIntersected) {
@@ -43,7 +52,10 @@ export function useInsightData<D>(
     useEffect(() => {
         const element = reference.current
 
-        if (!element) {
+        // Do not observe insights visibility for non GQL based APIs.
+        // Only GQL API supports partial insights fetching based on
+        // insights visibility.
+        if (!element || !isGqlAPI) {
             return
         }
 
@@ -59,10 +71,10 @@ export function useInsightData<D>(
 
         const observer = new IntersectionObserver(handleIntersection)
 
-        observer.observe(reference.current)
+        observer.observe(element)
 
         return () => observer.unobserve(element)
-    }, [reference])
+    }, [isGqlAPI, reference])
 
     return { data, loading, error, isVisible, query }
 }
