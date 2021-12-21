@@ -21,7 +21,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
+import { FileSpec, RevisionSpec, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
@@ -102,28 +102,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
         }
     }, [filePath, props.telemetryService])
 
-    useBreadcrumb(
-        useMemo(() => {
-            if (!filePath) {
-                return
-            }
-            return {
-                key: 'treePath',
-                className: 'flex-shrink-past-contents',
-                element: (
-                    <FilePathBreadcrumbs
-                        key="path"
-                        repoName={repo.name}
-                        revision={revision}
-                        filePath={filePath}
-                        isDir={true}
-                        repoUrl={repo.url}
-                        telemetryService={props.telemetryService}
-                    />
-                ),
-            }
-        }, [repo.name, repo.url, revision, filePath, props.telemetryService])
-    )
+    useTreePageBreadcrumb({ repo, revision, filePath, telemetryService: props.telemetryService, useBreadcrumb })
 
     const treeOrError = useObservable(
         useMemo(
@@ -297,4 +276,38 @@ export const TreePage: React.FunctionComponent<Props> = ({
 export function isNotTreeError(error: ErrorLike): boolean {
     // We don't have error names on GraphQL errors.
     return /not a directory/i.test(error.message)
+}
+
+export function useTreePageBreadcrumb({
+    repo,
+    revision,
+    filePath,
+    telemetryService,
+    useBreadcrumb,
+}: { repo: TreePageRepositoryFields } & TelemetryProps &
+    RevisionSpec &
+    FileSpec &
+    Pick<BreadcrumbSetters, 'useBreadcrumb'>): void {
+    useBreadcrumb(
+        useMemo(() => {
+            if (!filePath) {
+                return
+            }
+            return {
+                key: 'treePath',
+                className: 'flex-shrink-past-contents',
+                element: (
+                    <FilePathBreadcrumbs
+                        key="path"
+                        repoName={repo.name}
+                        revision={revision}
+                        filePath={filePath}
+                        isDir={true}
+                        repoUrl={repo.url}
+                        telemetryService={telemetryService}
+                    />
+                ),
+            }
+        }, [repo.name, repo.url, revision, filePath, telemetryService])
+    )
 }
