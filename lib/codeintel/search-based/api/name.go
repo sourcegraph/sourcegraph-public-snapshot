@@ -19,6 +19,6 @@ func (n *Name) String() string {
 }
 
 func (n *Name) IsEqual(other *Name) bool {
-	return n.Kind == n.Kind &&
+	return n.Kind == other.Kind &&
 		n.Value == other.Value
 }
