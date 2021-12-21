@@ -12,16 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-// This file contains the root resolver for search. It currently has a lot of
-// logic that spans out into all the other search_* files.
-var mockResolveRepositories func() (resolved searchrepos.Resolved, err error)
 
 type SearchArgs struct {
 	Version     string

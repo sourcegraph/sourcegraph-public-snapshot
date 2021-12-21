@@ -246,17 +246,6 @@ func TestCapFirst(t *testing.T) {
 func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 	db := database.NewDB(nil)
 
-	mockResolveRepositories = func() (resolved searchrepos.Resolved, err error) {
-		return searchrepos.Resolved{
-			RepoRevs:        []*search.RepositoryRevisions{},
-			MissingRepoRevs: make([]*search.RepositoryRevisions, 0),
-			OverLimit:       false,
-		}, nil
-	}
-	defer func() {
-		mockResolveRepositories = nil
-	}()
-
 	searchQuery := "context:@user repo:r1 foo"
 	wantAlert := &searchAlert{
 		prometheusType: "no_resolved_repos__context_none_in_common",
