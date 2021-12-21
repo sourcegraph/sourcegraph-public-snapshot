@@ -1,17 +1,9 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import AccountIcon from 'mdi-react/AccountIcon'
-import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
-import BrainIcon from 'mdi-react/BrainIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
-import HistoryIcon from 'mdi-react/HistoryIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import TagIcon from 'mdi-react/TagIcon'
 import React, { useMemo, useEffect } from 'react'
-import { Link, Redirect } from 'react-router-dom'
+import { Redirect } from 'react-router-dom'
 import { EMPTY } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
@@ -29,13 +21,12 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
+import { toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { BatchChangesProps } from '../../batches'
-import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { ErrorAlert } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -44,12 +35,12 @@ import { TreePageRepositoryFields } from '../../graphql-operations'
 import { CodeInsightsProps } from '../../insights/types'
 import { Settings } from '../../schema/settings.schema'
 import { PatternTypeProps, SearchContextProps } from '../../search'
-import { useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 import { TreeCommits } from './commits/TreeCommits'
+import { RepositoryRootLinks } from './RepositoryRootLinks'
 import { TreeEntriesSection } from './TreeEntriesSection'
 import styles from './TreePage.module.scss'
 
@@ -199,9 +190,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
         }
     }, [uri, showCodeInsights, props.extensionsController])
 
-    // eslint-disable-next-line unicorn/prevent-abbreviations
-    const enableAPIDocs = useExperimentalFeatures(features => features.apiDocs)
-
     const getPageTitle = (): string => {
         const repoString = displayRepoName(repo.name)
         if (filePath) {
@@ -236,71 +224,13 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                         className="mb-3 test-tree-page-title"
                                     />
                                     {repo.description && <p>{repo.description}</p>}
-                                    <div className="btn-group">
-                                        {enableAPIDocs && (
-                                            <Link
-                                                className="btn btn-outline-secondary"
-                                                to={`${treeOrError.url}/-/docs`}
-                                            >
-                                                <BookOpenBlankVariantIcon className="icon-inline" /> API docs
-                                            </Link>
-                                        )}
-                                        <Link className="btn btn-outline-secondary" to={`${treeOrError.url}/-/commits`}>
-                                            <SourceCommitIcon className="icon-inline" /> Commits
-                                        </Link>
-                                        <Link
-                                            className="btn btn-outline-secondary"
-                                            to={`/${encodeURIPathComponent(repo.name)}/-/branches`}
-                                        >
-                                            <SourceBranchIcon className="icon-inline" /> Branches
-                                        </Link>
-                                        <Link
-                                            className="btn btn-outline-secondary"
-                                            to={`/${encodeURIPathComponent(repo.name)}/-/tags`}
-                                        >
-                                            <TagIcon className="icon-inline" /> Tags
-                                        </Link>
-                                        <Link
-                                            className="btn btn-outline-secondary"
-                                            to={
-                                                revision
-                                                    ? `/${encodeURIPathComponent(
-                                                          repo.name
-                                                      )}/-/compare/...${encodeURIComponent(revision)}`
-                                                    : `/${encodeURIPathComponent(repo.name)}/-/compare`
-                                            }
-                                        >
-                                            <HistoryIcon className="icon-inline" /> Compare
-                                        </Link>
-                                        <Link
-                                            className="btn btn-outline-secondary"
-                                            to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
-                                        >
-                                            <AccountIcon className="icon-inline" /> Contributors
-                                        </Link>
-                                        {codeIntelligenceEnabled && (
-                                            <Link
-                                                className="btn btn-outline-secondary"
-                                                to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
-                                            >
-                                                <BrainIcon className="icon-inline" /> Code Intelligence
-                                            </Link>
-                                        )}
-                                        {batchChangesEnabled && (
-                                            <RepoBatchChangesButton
-                                                className="btn btn-outline-secondary"
-                                                repoName={repo.name}
-                                            />
-                                        )}
-                                        {repo.viewerCanAdminister && (
-                                            <Link
-                                                className="btn btn-outline-secondary"
-                                                to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
-                                            >
-                                                <SettingsIcon className="icon-inline" /> Settings
-                                            </Link>
-                                        )}
-                                    </div>
+                                    <RepositoryRootLinks
+                                        repo={repo}
+                                        tree={treeOrError}
+                                        revision={revision}
+                                        codeIntelligenceEnabled={codeIntelligenceEnabled}
+                                        batchChangesEnabled={batchChangesEnabled}
+                                    />
                                 </>
                             ) : (
                                 <PageHeader
