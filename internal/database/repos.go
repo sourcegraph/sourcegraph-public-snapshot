@@ -1170,7 +1170,7 @@ WHERE
 	(
 		repo.stars >= %s
 		OR
-		lower(repo.name) LIKE 'src.fedoraproject.org/%%'
+		lower(repo.name) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'
 		OR
 		repo.id IN (
 			SELECT

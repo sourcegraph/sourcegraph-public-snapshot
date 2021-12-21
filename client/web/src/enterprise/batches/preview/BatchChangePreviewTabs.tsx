@@ -99,6 +99,7 @@ export const BatchChangePreviewTabs: React.FunctionComponent<BatchChangePreviewT
                 </div>
                 <Container>
                     <BatchSpec
+                        name={spec.description.name}
                         originalInput={spec.originalInput}
                         isLightTheme={isLightTheme}
                         className={styles.batchSpec}

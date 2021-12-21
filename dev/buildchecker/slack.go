@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 )
@@ -55,6 +56,8 @@ func postSlackUpdate(webhook string, summary string) error {
 	if err != nil {
 		return fmt.Errorf("failed to post on slack: %w", err)
 	}
+	log.Println("slackBody: ", string(body))
+
 	req, err := http.NewRequest(http.MethodPost, webhook, bytes.NewBuffer(body))
 	if err != nil {
 		return fmt.Errorf("failed to post on slack: %w", err)

@@ -37,7 +37,7 @@ import {
 import { NotificationType, HoverAlert } from 'sourcegraph'
 
 import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { ActionItemAction, urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
@@ -291,11 +291,6 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Whether or not code views need to be tokenized. Defaults to false.
      */
     codeViewsRequireTokenization?: boolean
-
-    /**
-     * Whether or not hover tooltips can be pinned.
-     */
-    pinningEnabled?: boolean
 }
 
 /**
@@ -387,9 +382,6 @@ function initCodeIntelligence({
 } {
     const subscription = new Subscription()
 
-    /** Emits when the close button was clicked */
-    const closeButtonClicks = new Subject<MouseEvent>()
-
     /** Emits whenever the ref callback for the hover element is called */
     const hoverOverlayElements = new Subject<HTMLElement | null>()
 
@@ -412,7 +404,6 @@ function initCodeIntelligence({
         HoverMerged,
         ActionItemAction
     >({
-        closeButtonClicks,
         hoverOverlayElements,
         hoverOverlayRerenders: containerComponentUpdates.pipe(
             withLatestFrom(hoverOverlayElements),
@@ -475,7 +466,6 @@ function initCodeIntelligence({
                     hasPrivateCloudError ? of([]) : getHoverActions({ extensionsController, platformContext }, context)
                 )
             ),
-        pinningEnabled: codeHost.pinningEnabled ?? true,
         tokenize: codeHost.codeViewsRequireTokenization,
     })
 
@@ -485,7 +475,6 @@ function initCodeIntelligence({
     > {
         private subscription = new Subscription()
         private nextOverlayElement = hoverOverlayElements.next.bind(hoverOverlayElements)
-        private nextCloseButtonClick = closeButtonClicks.next.bind(closeButtonClicks)
 
         constructor(props: {}) {
             super(props)
@@ -499,6 +488,56 @@ function initCodeIntelligence({
                 hoverifier.hoverStateUpdates.subscribe(update => {
                     this.setState(update)
                 })
+            )
+            this.subscription.add(
+                hoverifier.hoverStateUpdates
+                    .pipe(
+                        switchMap(({ hoveredTokenElement: token, hoverOverlayProps }) => {
+                            if (token === undefined) {
+                                return EMPTY
+                            }
+                            if (hoverOverlayProps === undefined) {
+                                return EMPTY
+                            }
+
+                            const { actionsOrError } = hoverOverlayProps
+                            const definitionAction =
+                                Array.isArray(actionsOrError) &&
+                                actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded' && !a.disabledWhen)
+
+                            const referenceAction =
+                                Array.isArray(actionsOrError) &&
+                                actionsOrError.find(a => a.action.id === 'findReferences' && !a.disabledWhen)
+
+                            const action = definitionAction || referenceAction
+                            if (!action) {
+                                return EMPTY
+                            }
+
+                            const def = urlForClientCommandOpen(action.action, window.location.hash)
+                            if (!def) {
+                                return EMPTY
+                            }
+
+                            const oldCursor = token.style.cursor
+                            token.style.cursor = 'pointer'
+
+                            return fromEvent(token, 'click').pipe(
+                                tap(() => {
+                                    const selection = window.getSelection()
+                                    if (selection !== null && selection.toString() !== '') {
+                                        return
+                                    }
+
+                                    const actionType = action === definitionAction ? 'definition' : 'reference'
+                                    telemetryService.log(`${actionType}CodeHost.click`)
+                                    window.location.href = def
+                                }),
+                                finalize(() => (token.style.cursor = oldCursor))
+                            )
+                        })
+                    )
+                    .subscribe()
             )
             if (codeHost.isLightTheme) {
                 this.subscription.add(
@@ -527,7 +566,6 @@ function initCodeIntelligence({
                     extensionsController={extensionsController}
                     platformContext={platformContext}
                     location={H.createLocation(window.location)}
-                    onCloseButtonClick={this.nextCloseButtonClick}
                     onAlertDismissed={onHoverAlertDismissed}
                     useBrandedLogo={true}
                 />

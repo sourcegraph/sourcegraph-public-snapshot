@@ -135,6 +135,25 @@ func ZoektIndexServer() *monitoring.Container {
 							Interpretation: "A queue that is constantly growing could be a leading indicator of a bottleneck or under-provisioning",
 						},
 					},
+					{
+						{
+							Name:        "indexed_queue_diff_assigned_tracked",
+							Description: "# repos assigned - # repos tracked",
+							Query:       "index_num_assigned - index_queue_cap",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().MinAuto().LegendFormat("difference [{{instance}}]"),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								zoekt-indexserver's queue keeps track of all of its repositories, including those it has already finished processing.
+
+								If there is a difference between
+								- the number of repos that has been assigned to Zoekt, and
+								- the number of repos that the queue thinks that it's tracking
+
+								, then there is likely _some_ sort of bug.
+							`,
+						},
+					},
 				},
 			},
 
