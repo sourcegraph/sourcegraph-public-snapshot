@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"sync"
@@ -48,7 +47,6 @@ func (r *githubSlackUserResolver) ResolveByCommit(ctx context.Context, commit st
 	if err != nil {
 		return "", errors.Wrap(err, "cannot resolve author from commit")
 	}
-	fmt.Println(resp.Author.GetLogin())
 	return r.getSlackUserIDbyCommit(ctx, resp.Author.GetLogin())
 }
 
@@ -63,7 +61,6 @@ func (r *githubSlackUserResolver) getSlackUserIDbyCommit(ctx context.Context, ha
 			email = member.Email
 		}
 	}
-	fmt.Println(email)
 	if email == "" {
 		return "", errors.Newf("cannot find slack user for GitHub handle %s", handle)
 	}
@@ -71,7 +68,6 @@ func (r *githubSlackUserResolver) getSlackUserIDbyCommit(ctx context.Context, ha
 	if err != nil {
 		return "", err
 	}
-	fmt.Println(user.ID)
 	return user.ID, nil
 }
 
