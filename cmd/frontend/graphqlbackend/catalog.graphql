@@ -192,7 +192,7 @@ type Package implements Node {
 }
 
 extend type Repository {
-    components(path: String = "", recursive: Boolean = true): [Component!]!
+    components(path: String = "", primary: Boolean = false, recursive: Boolean = true): [Component!]!
 }
 
 extend interface TreeEntry {

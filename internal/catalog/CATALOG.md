@@ -109,7 +109,7 @@ A component's hierarchy (eg `owner-group1 > owner-group2 > ...`) differs from a 
 
 Are there 2 different ways to view a component: by navigating to its tree from its repository, and by navigating to it from its component hierarchy (or "as a component")?
 
-- What if a component spans 2 trees, and you're viewing it at one of the trees? Do you see data about that one tree, or data about both trees (i.e., the whole component)? There is a toggle to "view component" or "view tree".
+- What if a component spans 2 trees, and you're viewing it at one of the trees? Do you see data about that one tree, or data about both trees (i.e., the whole component)? There is a toggle to "view component" or "view tree". Also, you only see the component "take over" the page at its primary source location; at other source locations, just a pointer is shown.
 - What if you're viewing a tree at a non-HEAD rev whose path is also a component at HEAD? Does the component data reflect the rev, or not? There is a link to "view component at HEAD" that takes you to HEAD.
 
 ## DEV

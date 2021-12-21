@@ -24,10 +24,15 @@ export function pathHasPrefix(path: string, prefix: string): boolean {
 
 /**
  * Returns the path to `to` relative to `from`.
+ *
+ * TODO(sqs): hacky
  */
 export function pathRelative(from: string, to: string): string {
     if (from === '' || from === '.') {
         return to
     }
-    return to.slice(from.length + 1)
+    if (to.startsWith(from + '/')) {
+        return to.slice(from.length + 1)
+    }
+    return '../'.repeat(1 + (from.match(/\//g)?.length || 0)) + to
 }

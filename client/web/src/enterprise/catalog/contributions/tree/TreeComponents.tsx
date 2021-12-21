@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import FolderIcon from 'mdi-react/FolderIcon'
+import FolderOutlineIcon from 'mdi-react/FolderOutlineIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -10,8 +11,8 @@ import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { FileSpec } from '@sourcegraph/shared/src/util/url'
 
 import {
-    DescendentComponentForTreeEntryFields,
-    ExactComponentForTreeEntryFields,
+    OtherComponentForTreeEntryFields,
+    PrimaryComponentForTreeEntryFields,
     ComponentsForTreeEntryResult,
     ComponentsForTreeEntryVariables,
 } from '../../../../graphql-operations'
@@ -44,15 +45,15 @@ const COMPONENTS_FOR_TREE_ENTRY = gql`
     }
 
     fragment ComponentsForTreeEntryFields on Repository {
-        exactComponents: components(path: $path, recursive: false) {
-            ...ExactComponentForTreeEntryFields
+        primaryComponents: components(path: $path, primary: true, recursive: false) {
+            ...PrimaryComponentForTreeEntryFields
         }
-        descendentComponents: components(path: $path, recursive: true) {
-            ...DescendentComponentForTreeEntryFields
+        otherComponents: components(path: $path, recursive: true) {
+            ...OtherComponentForTreeEntryFields
         }
     }
 
-    fragment ExactComponentForTreeEntryFields on Component {
+    fragment PrimaryComponentForTreeEntryFields on Component {
         __typename
         id
         name
@@ -67,7 +68,7 @@ const COMPONENTS_FOR_TREE_ENTRY = gql`
         ...ComponentUsagePeopleFields
     }
 
-    fragment DescendentComponentForTreeEntryFields on Component {
+    fragment OtherComponentForTreeEntryFields on Component {
         __typename
         id
         name
@@ -83,6 +84,7 @@ const COMPONENTS_FOR_TREE_ENTRY = gql`
             treeEntry {
                 url
             }
+            isPrimary
         }
     }
 
@@ -111,31 +113,28 @@ export const TreeComponents: React.FunctionComponent<Props> = ({ repoID, filePat
         return null
     }
 
-    const exactComponents = (data && data.node?.__typename === 'Repository' && data.node.exactComponents) || null
-    const descendentComponents =
+    const primaryComponents = (data && data.node?.__typename === 'Repository' && data.node.primaryComponents) || null
+    const otherComponents =
         (data &&
             data.node?.__typename === 'Repository' &&
-            data.node.descendentComponents.filter(component => component.id !== exactComponents?.[0]?.id)) ||
+            data.node.otherComponents.filter(component => component.id !== primaryComponents?.[0]?.id)) ||
         null
 
-    if (
-        (!descendentComponents || descendentComponents.length === 0) &&
-        (!exactComponents || exactComponents.length === 0)
-    ) {
+    if ((!otherComponents || otherComponents.length === 0) && (!primaryComponents || primaryComponents.length === 0)) {
         return null
     }
 
     return (
         <section className={className}>
-            {exactComponents && exactComponents.length > 0 && (
+            {primaryComponents && primaryComponents.length > 0 && (
                 <ComponentDetail
-                    component={exactComponents[0]}
+                    component={primaryComponents[0]}
                     className={classNames('px-3 pt-3 border border-secondary rounded', styles.componentDetail)}
                 />
             )}
-            {descendentComponents && descendentComponents.length > 0 && (
+            {otherComponents && otherComponents.length > 0 && (
                 <ul className={classNames('list-unstyled', styles.boxGrid)}>
-                    {descendentComponents.map(component => (
+                    {otherComponents.map(component => (
                         <ComponentGridItem
                             key={component.id}
                             component={component}
@@ -152,7 +151,7 @@ export const TreeComponents: React.FunctionComponent<Props> = ({ repoID, filePat
 }
 
 const ComponentDetail: React.FunctionComponent<{
-    component: ExactComponentForTreeEntryFields
+    component: PrimaryComponentForTreeEntryFields
     className?: string
 }> = ({ component, className }) => (
     <div className={className}>
@@ -170,21 +169,27 @@ const ComponentDetail: React.FunctionComponent<{
 )
 
 const ComponentGridItem: React.FunctionComponent<{
-    component: DescendentComponentForTreeEntryFields
+    component: OtherComponentForTreeEntryFields
     treeRepoID: Scalars['ID']
     treePath: string
     tag?: 'li'
     className?: string
     linkBigClickAreaClassName?: string
 }> = ({ component, treeRepoID, treePath, tag: Tag = 'li', className, linkBigClickAreaClassName }) => {
-    const relevantSourceLocation = component.sourceLocations.find(
+    const primarySourceLocation = component.sourceLocations.find(({ isPrimary }) => isPrimary)
+    if (!primarySourceLocation) {
+        throw new Error('unable to determine primary source location')
+    }
+
+    const nearestSourceLocation = component.sourceLocations.find(
         sourceLocation =>
             sourceLocation.repository?.id === treeRepoID &&
             (sourceLocation.path === null || pathHasPrefix(sourceLocation.path, treePath))
     )
-    if (!relevantSourceLocation) {
-        throw new Error('unable to determine relevant source location')
+    if (!nearestSourceLocation) {
+        throw new Error('unable to determine nearest source location')
     }
+
     return (
         <Tag className={classNames('d-flex flex-column', className)}>
             <div className="position-relative flex-1">
@@ -204,18 +209,46 @@ const ComponentGridItem: React.FunctionComponent<{
                     <p className={classNames('my-1 small', styles.boxGridItemBody)}>{component.description}</p>
                 )}
             </div>
-            <div className="small mt-1">
-                <LinkOrSpan
-                    to={
-                        relevantSourceLocation.treeEntry
-                            ?.url /* TODO(sqs): this takes you away from the current rev back to HEAD */
-                    }
-                    className={classNames('d-flex align-items-center text-muted', linkBigClickAreaClassName)}
-                >
-                    <FolderIcon className="icon-inline mr-1 flex-shrink-0" />{' '}
-                    <span className="text-truncate">{pathRelative(treePath, relevantSourceLocation.path || '/')}</span>
-                </LinkOrSpan>
-            </div>
+            <ul className="list-unstyled small mt-1">
+                <SourceLocationItem
+                    sourceLocation={nearestSourceLocation}
+                    treePath={treePath}
+                    linkBigClickAreaClassName={linkBigClickAreaClassName}
+                />
+                {primarySourceLocation !== nearestSourceLocation && (
+                    <SourceLocationItem
+                        sourceLocation={primarySourceLocation}
+                        treePath={treePath}
+                        linkBigClickAreaClassName={linkBigClickAreaClassName}
+                    />
+                )}
+            </ul>
         </Tag>
+    )
+}
+
+const SourceLocationItem: React.FunctionComponent<{
+    sourceLocation: OtherComponentForTreeEntryFields['sourceLocations'][0]
+    treePath: string
+    className?: string
+    linkBigClickAreaClassName?: string
+}> = ({ sourceLocation, treePath, className, linkBigClickAreaClassName }) => {
+    const Icon = sourceLocation.isPrimary ? FolderIcon : FolderOutlineIcon
+    return (
+        <li className={className}>
+            <LinkOrSpan
+                to={
+                    sourceLocation.treeEntry?.url /* TODO(sqs): this takes you away from the current rev back to HEAD */
+                }
+                className={classNames('d-flex align-items-center text-muted', linkBigClickAreaClassName)}
+            >
+                <Icon className="icon-inline mr-1 flex-shrink-0" />
+                <span className="text-truncate">
+                    {treePath === sourceLocation.path
+                        ? 'This directory'
+                        : pathRelative(treePath, sourceLocation.path || '/')}
+                </span>
+            </LinkOrSpan>
+        </li>
     )
 }

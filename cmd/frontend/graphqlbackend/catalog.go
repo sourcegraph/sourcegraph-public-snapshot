@@ -228,6 +228,7 @@ type PackageResolver interface {
 
 type RepositoryComponentsArgs struct {
 	Path      string
+	Primary   bool
 	Recursive bool
 }
 

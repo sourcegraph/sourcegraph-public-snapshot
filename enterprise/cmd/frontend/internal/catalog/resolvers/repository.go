@@ -16,7 +16,11 @@ componentLoop:
 	for _, c := range components {
 		for _, sloc := range c.SourceLocations {
 			if sloc.Repo == repo.RepoName() {
-				for _, p := range sloc.Paths {
+				for i, p := range sloc.Paths {
+					if args.Primary && i > 0 {
+						break
+					}
+
 					var match bool
 					if args.Recursive {
 						pathContainsComponent := pathHasPrefix(p, args.Path)
