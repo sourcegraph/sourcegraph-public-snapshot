@@ -12500,7 +12500,7 @@ Query: `index_queue_len{instance=~`${instance:regex}`}`
 
 <br />
 
-### Zoekt Index Server: Compound shards
+### Zoekt Index Server: Compound shards (experimental)
 
 #### zoekt-indexserver: compound_shards_aggregate
 

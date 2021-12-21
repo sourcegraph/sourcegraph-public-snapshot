@@ -252,7 +252,8 @@ func ZoektIndexServer() *monitoring.Container {
 				},
 			},
 			{
-				Title: "Compound shards",
+				Title:  "Compound shards (experimental)",
+				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						{
