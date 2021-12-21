@@ -479,6 +479,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 	}
 }
 
+// Flaky deployment. See https://github.com/sourcegraph/sourcegraph/issues/25977
 func clusterQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA",
