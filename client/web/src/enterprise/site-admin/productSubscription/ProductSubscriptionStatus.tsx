@@ -123,7 +123,6 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                                 <a
                                     href="https://about.sourcegraph.com/pricing"
                                     className="btn btn-primary btn-sm"
-                                    // eslint-disable-next-line react/jsx-no-target-blank
                                     target="_blank"
                                     rel="noopener"
                                 >
@@ -142,7 +141,6 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                                     <a
                                         href="http://about.sourcegraph.com/contact/sales"
                                         className="btn btn-primary btn-sm"
-                                        // eslint-disable-next-line react/jsx-no-target-blank
                                         target="_blank"
                                         rel="noopener"
                                         data-tooltip="Buy a Sourcegraph Enterprise subscription to get a license key"

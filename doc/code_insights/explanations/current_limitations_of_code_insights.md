@@ -41,6 +41,10 @@ Because these insights need to run dramatically fewer queries than insights over
 
 > NOTE: many of the above-listed features will become available for insights over all repositories as well. The above list is ordererd top-down, where items on the top of the list will arrive roughly sooner than items on the bottom. 
 
+### Limitations specific to "Detect and track patterns" insights (automatically generated data series)
+
+Please see [Current limitations of automatically generated data series](automatically_generated_data_series.md#current-limitations).
+
 ## In certain cases, chart datapoints don't match the result count of a Sourcegraph search
 
 There are currently a few subtle differences in how code insights and Sourcegraph web app searches handle defaults when searching over all repositories. Refer to [Common reasons code insights may not match search results](../references/common_reasons_code_insights_may_not_match_search_results.md). 

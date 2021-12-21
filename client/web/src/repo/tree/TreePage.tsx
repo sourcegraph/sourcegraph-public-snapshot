@@ -399,12 +399,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 <BrainIcon className="icon-inline" /> Code Intelligence
                                             </Link>
                                         )}
-                                        {batchChangesEnabled && (
-                                            <RepoBatchChangesButton
-                                                className="btn btn-outline-secondary"
-                                                repoName={repo.name}
-                                            />
-                                        )}
+                                        {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
                                         {repo.viewerCanAdminister && (
                                             <Link
                                                 className="btn btn-outline-secondary"
