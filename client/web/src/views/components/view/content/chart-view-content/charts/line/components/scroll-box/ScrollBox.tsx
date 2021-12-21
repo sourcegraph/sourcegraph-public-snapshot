@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { useLayoutEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 
@@ -30,7 +30,10 @@ function hasElementScroll(target: HTMLElement): boolean {
     target.style.overflow = 'scroll'
 
     const hasScroll = isFirefox()
-        ? target.scrollHeight > Math.round(target.clientHeight + target.clientHeight / 100)
+        ? // For some reason in Firefox it's possible to get a wrong scrollHeight with 1% ~ 1px
+          // static error. To avoid this "fake" scroll we take into calculation a static error
+          // value which equals to 1% of scrollable container height.
+          target.scrollHeight > Math.round(target.clientHeight + target.clientHeight / 100)
         : target.scrollHeight > target.clientHeight
 
     target.style.overflow = ''
@@ -45,11 +48,10 @@ interface ScrollBoxProps extends React.HTMLAttributes<HTMLDivElement> {
 export const ScrollBox: React.FunctionComponent<ScrollBoxProps> = props => {
     const { children, className, ...otherProps } = props
 
-    const parentElementReference = useRef<HTMLDivElement>(null)
+    const [parentElement, setParentElement] = useState<HTMLDivElement | null>()
     const [hasScroll, setHasScroll] = useState(false)
 
-    useLayoutEffect(() => {
-        const parentElement = parentElementReference.current
+    useEffect(() => {
         if (!parentElement) {
             return
         }
@@ -74,20 +76,24 @@ export const ScrollBox: React.FunctionComponent<ScrollBoxProps> = props => {
 
             const target = entry.target as HTMLElement
 
-            setHasScroll(hasElementScroll(target))
-            addShutterElementsToTarget(parentElement, parentElement)
+            // Delay overflow content measurements while browser renders
+            // parent content
+            requestAnimationFrame(() => {
+                setHasScroll(hasElementScroll(target))
+                addShutterElementsToTarget(parentElement, parentElement)
+            })
         })
 
         return () => {
             parentElement.removeEventListener('scroll', onScroll)
             resizeSubscription.unsubscribe()
         }
-    }, [])
+    }, [parentElement])
 
     return (
         <div
             {...otherProps}
-            ref={parentElementReference}
+            ref={setParentElement}
             className={classNames(styles.root, className, { [styles.rootWithScroll]: hasScroll })}
         >
             {hasScroll && (
@@ -97,7 +103,7 @@ export const ScrollBox: React.FunctionComponent<ScrollBoxProps> = props => {
                 </>
             )}
 
-            <div className={classNames({ [styles.scrollboxWithScroll]: hasScroll })}>{children}</div>
+            {children}
         </div>
     )
 }
