@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed"
 )
 

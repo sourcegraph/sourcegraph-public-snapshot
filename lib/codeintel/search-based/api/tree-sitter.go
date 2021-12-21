@@ -2,7 +2,8 @@ package api
 
 import (
 	"fmt"
-	"github.com/smacker/go-tree-sitter"
+
+	sitter "github.com/smacker/go-tree-sitter"
 )
 
 type RecurseFunc func(n *sitter.Node)

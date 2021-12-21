@@ -83,7 +83,7 @@ func goldenDocument(doc *lsif_typed.Document) (string, error) {
 	})
 	i := 0
 	for lineNumber, line := range strings.Split(string(data), "\n") {
-			line = strings.TrimSuffix(line, "\r")
+		line = strings.TrimSuffix(line, "\r")
 		b.WriteString("  ")
 		b.WriteString(strings.ReplaceAll(line, "\t", " "))
 		b.WriteString("\n")
