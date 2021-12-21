@@ -259,47 +259,80 @@ func ZoektIndexServer() *monitoring.Container {
 							Name:        "compound_shards_aggregate",
 							Description: "# of compound shards (aggregate)",
 							Query:       "sum(index_number_compound_shards) by (app)",
+							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("aggregate").Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								The total number of compound shards aggregated over all instances.
+
+								This number should be consistent if the number of indexed repositories doesn't change.
+							`,
 						},
 						{
 							Name:        "compound_shards_per_instance",
 							Description: "# of compound shards (per instance)",
 							Query:       "sum(index_number_compound_shards) by (instance)",
+							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}}").Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								The total number of compound shards per instance.
+
+								This number should be consistent if the number of indexed repositories doesn't change.
+							`,
 						},
 					},
 					{
 						{
 							Name:        "average_shard_merging_duration_success",
-							Description: "Average successful shard merging duration",
+							Description: "Average successful shard merging duration over 1 hour",
 							Query:       `sum(rate(index_shard_merging_duration_seconds_sum{error="false"}[1h])) / sum(rate(index_shard_merging_duration_seconds_count{error="false"}[1h]))`,
+							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("average").Unit(monitoring.Seconds),
 							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Average duration of a successful merge over the last hour.
+
+								The duration depends on the target compound shard size. The larger the compound shard the longer a merge will take.
+								Since the target compound shard size is set on start of zoekt-indexserver, the average duration should be consistent.
+							`,
 						},
 						{
 							Name:        "average_shard_merging_duration_error",
-							Description: "Average failed shard merging duration",
+							Description: "Average failed shard merging duration over 1 hour",
 							Query:       `sum(rate(index_shard_merging_duration_seconds_sum{error="true"}[1h])) / sum(rate(index_shard_merging_duration_seconds_count{error="true"}[1h]))`,
+							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
 							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Average duration of a failed merge over the last hour.
+
+								This curve should be flat. Any deviation should be investigated.
+							`,
 						},
 					},
 					{
 						{
 							Name:        "shard_merging_errors_aggregate",
-							Description: "Average successful shard merging duration (aggregate)",
+							Description: "Number of errors during shard merging (aggregate)",
 							Query:       `sum(index_shard_merging_duration_seconds_count{error="true"}) per (app)`,
+							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("aggregate").Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Number of errors during shard merging aggregated over all instances.
+							`,
 						},
 						{
 							Name:        "shard_merging_duration_per_instance",
-							Description: "Average failed shard merging duration (per instance)",
+							Description: "Number of errors during shard merging (per instance)",
 							Query:       `sum(index_shard_merging_duration_seconds_count{error="true"}) per (instance)`,
+							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Number of errors during shard merging per instance.
+							`,
 						},
 					},
 					{
@@ -307,15 +340,23 @@ func ZoektIndexServer() *monitoring.Container {
 							Name:        "shard_merging_merge_running_per_instance",
 							Description: "If shard merging is running (per instance)",
 							Query:       "max by (instance) (index_shard_merging_running)",
+							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Set to 1 if shard merging is running.
+							`,
 						},
 						{
 							Name:        "shard_merging_vacuum_running_per_instance",
 							Description: "If vacuum is running (per instance)",
 							Query:       "max by (instance) (index_vacuum_running)",
+							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Set to 1 if vacuum is running.
+							`,
 						},
 					},
 				},
