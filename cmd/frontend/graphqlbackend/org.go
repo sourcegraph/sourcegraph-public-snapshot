@@ -28,12 +28,12 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 	// 🚨 SECURITY: Only org members can get org details on Cloud
 	if envvar.SourcegraphDotComMode() {
 		hasAccess := func() error {
-			err := backend.CheckOrgAccess(ctx, r.db, org.ID)
-			if err == nil {
+			if backend.CheckOrgAccess(ctx, r.db, org.ID) == nil {
 				return nil
 			}
 
-			if a := actor.FromContext(ctx); a.IsAuthenticated() {
+			a := actor.FromContext(ctx)
+			if a.IsAuthenticated() {
 				_, err = r.db.OrgInvitations().GetPending(ctx, org.ID, a.UID)
 				if err == nil {
 					return nil
@@ -45,6 +45,11 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 			return &database.OrgNotFoundError{Message: fmt.Sprintf("name %s", args.Name)}
 		}
 		if err := hasAccess(); err != nil {
+			// site admin can access org ID
+			if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
+				onlyOrgID := &types.Org{ID: org.ID}
+				return &OrgResolver{db: r.db, org: onlyOrgID}, nil
+			}
 			return nil, err
 		}
 	}

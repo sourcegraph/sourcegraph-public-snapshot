@@ -128,9 +128,18 @@ export const SiteAdminOrgsPage: React.FunctionComponent<Props> = ({ telemetrySer
                 organizations.
             </p>
             {window.context.sourcegraphDotComMode ? (
-                <div className="alert alert-info">
-                    Only organization members can view & modify organization settings.
-                </div>
+                <>
+                    <div className="alert alert-info">
+                        Only organization members can view & modify organization settings.
+                    </div>
+                    <h3>Enable early access</h3>
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                        <p>Enable early access for organization code host connections and repositories on Cloud.</p>
+                        <Link to="./organizations/early-access-orgs-code" className="btn btn-outline-primary">
+                            Enable early access
+                        </Link>
+                    </div>
+                </>
             ) : (
                 <FilteredConnection<OrganizationFields, Omit<OrgNodeProps, 'node'>>
                     className="list-group list-group-flush mt-3"
