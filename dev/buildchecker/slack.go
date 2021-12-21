@@ -7,40 +7,30 @@ import (
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/slack-go/slack"
 )
 
-func getDisplayName(token string, email string) (string, error) {
-	api := slack.New(token)
-
-	user, err := api.GetUserByEmail(email)
-
-	if err != nil {
-		return "", err
-	}
-	var displayName string
-	// Not all users have a display name configured. If DisplayName is null, slack users the RealName as the user's tag.
-	if user.Profile.DisplayName == "" {
-		displayName = user.Profile.RealName
-	} else {
-		displayName = user.Profile.DisplayName
-	}
-	return displayName, nil
-
+func slackMention(slackUserID string) string {
+	return fmt.Sprintf("<@%s>", slackUserID)
 }
 
-func slackSummary(locked bool, failedCommits []CommitInfo, token string) string {
+func slackSummary(locked bool, failedCommits []CommitInfo) string {
 	if !locked {
 		return ":white_check_mark: Pipeline healthy - branch unlocked!"
 	}
 	message := `:alert: *Consecutive build failures detected - branch has been locked.* :alert:
 The authors of the following failed commits who are Sourcegraph teammates have been granted merge access to investigate and resolve the issue:
 `
+
 	for _, commit := range failedCommits {
-		displayName, _ := getDisplayName(token, commit.Author)
-		message += fmt.Sprintf("\n- <https://github.com/sourcegraph/sourcegraph/commit/%s|%s> - @%s",
-			commit.Commit, commit.Commit, displayName)
+		fmt.Println(commit.Commit, commit.Author, commit.SlackUserID)
+		var mention string
+		if commit.SlackUserID != "" {
+			mention = slackMention(commit.SlackUserID)
+		} else {
+			mention = ":warning: Cannot find Slack user :warning:"
+		}
+		message += fmt.Sprintf("\n- <https://github.com/sourcegraph/sourcegraph/commit/%s|%s> - %s - %s",
+			commit.Commit, commit.Commit, commit.Author, mention)
 	}
 	message += `
 
@@ -48,7 +38,7 @@ The branch will automatically be unlocked once a green build is run.
 Refer to the <https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci|CI incident playbook> for help.
 If unable to resolve the issue, please start an incident with the '/incident' Slack command.
 
-cc: @dev-experience-support`
+cc: dev-experience-support`
 	return message
 }
 
