@@ -12616,7 +12616,7 @@ Query: `sum(index_shard_merging_duration_seconds_count{error="true"}) by (app)`
 
 <br />
 
-#### zoekt-indexserver: shard_merging_duration_per_instance
+#### zoekt-indexserver: shard_merging_errors_per_instance
 
 <p class="subtitle">Number of errors during shard merging (per instance)</p>
 
