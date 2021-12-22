@@ -38,10 +38,11 @@ RUN apk add --no-cache \
     git-p4 \
     && apk add --no-cache  \
     openssh-client \
-    # We require g++, gcc, perl and make to install openssl
+    # We require g++, gcc, perl and make to install openssl and p4-fusion
     g++ \
     gcc \
 	perl \
+    cmake \
     make \
     python2 \
     python3
@@ -54,6 +55,36 @@ COPY --from=coursier /usr/local/bin/coursier /usr/local/bin/coursier
 # please refer to https://blog.tilander.org/docker-perforce/
 ADD https://github.com/jtilander/p4d/raw/4600d741720f85d77852dcca7c182e96ad613358/lib/lib-x64.tgz /
 RUN tar zxf /lib-x64.tgz --directory /
+
+# p4-fusion installation
+# Fetching p4 sources archive
+RUN wget https://github.com/salesforce/p4-fusion/archive/refs/tags/v1.2.zip && \
+    mv v1.2.zip /usr/local/bin && \
+    unzip /usr/local/bin/v1.2.zip -d /usr/local/bin
+
+# We need a specific version of OpenSSL
+RUN wget https://www.openssl.org/source/openssl-1.0.2t.tar.gz && tar -xzvf openssl-1.0.2t.tar.gz
+
+WORKDIR /openssl-1.0.2t
+
+RUN ./config && make && make install
+
+# We also need Helix Core C++ API to build p4-fusion
+RUN wget https://www.perforce.com/downloads/perforce/r21.1/bin.linux26x86_64/p4api.tgz && \
+    mkdir -p /usr/local/bin/p4-fusion-1.2/vendor/helix-core-api/linux && \
+    mv p4api.tgz /usr/local/bin/p4-fusion-1.2/vendor/helix-core-api/linux && \
+    tar -C /usr/local/bin/p4-fusion-1.2/vendor/helix-core-api/linux -xzvf /usr/local/bin/p4-fusion-1.2/vendor/helix-core-api/linux/p4api.tgz --strip 1
+
+WORKDIR /usr/local/bin/p4-fusion-1.2
+
+# Build p4-fusion
+RUN ./generate_cache.sh Release
+RUN ./build.sh
+
+WORKDIR /usr/local/bin
+# Move exe file to /usr/local/bin where other executives are located
+RUN mv ./p4-fusion-1.2/build/p4-fusion/p4-fusion ./ && rm -rf /usr/local/bin/p4-fusion-1.2
+# p4-fusion installation completed here
 
 RUN mkdir -p /data/repos && chown -R sourcegraph:sourcegraph /data/repos
 USER sourcegraph
