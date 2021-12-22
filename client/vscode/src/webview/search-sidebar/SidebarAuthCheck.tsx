@@ -49,7 +49,7 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
         <div className={classNames('d-flex flex-column align-items-left justify-content-center', className)}>
             <p className={classNames('mt-3', styles.title)}>Search Your Private Code</p>
             {validating && <LoadingSpinner />}
-            {!hasAccessToken && !validAccessToken && !validating && (
+            {!validating && !hasAccessToken && (
                 <>
                     {!hasAccount ? (
                         <div>
@@ -112,9 +112,9 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                 </>
             )}
 
-            {hasAccessToken && !validating && (
+            {!validating && (
                 <>
-                    {!validAccessToken ? (
+                    {!validAccessToken && hasAccessToken ? (
                         <Form onSubmit={onSubmitAccessToken}>
                             <a
                                 href={signInUrl}
@@ -151,7 +151,7 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                                 styles.button
                             )}
                         >
-                            Access Token Verified!
+                            Connected to Sourcegraph!
                         </button>
                     )}
                 </>
