@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -27,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -448,9 +446,7 @@ func TestSearchResultsHydration(t *testing.T) {
 			Query:        p.ToParseTree(),
 			UserSettings: &schema.Settings{},
 		},
-		zoekt:    z,
-		reposMu:  &sync.Mutex{},
-		resolved: &searchrepos.Resolved{},
+		zoekt: z,
 	}
 	results, err := resolver.Results(ctx)
 	if err != nil {
@@ -805,9 +801,7 @@ func TestEvaluateAnd(t *testing.T) {
 					Query:        p.ToParseTree(),
 					UserSettings: &schema.Settings{},
 				},
-				zoekt:    z,
-				reposMu:  &sync.Mutex{},
-				resolved: &searchrepos.Resolved{},
+				zoekt: z,
 			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
@@ -878,10 +872,8 @@ func TestSearchContext(t *testing.T) {
 					Query:        p.ToParseTree(),
 					UserSettings: &schema.Settings{},
 				},
-				reposMu:  &sync.Mutex{},
-				resolved: &searchrepos.Resolved{},
-				zoekt:    mockZoekt,
-				db:       db,
+				zoekt: mockZoekt,
+				db:    db,
 			}
 
 			_, err = resolver.Results(context.Background())

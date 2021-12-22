@@ -87,9 +87,6 @@ func TestResolverTo(t *testing.T) {
 		&RepositoryResolver{db: db},
 		&CommitSearchResultResolver{},
 		&gitRevSpec{},
-		&repositorySuggestionResolver{},
-		&symbolSuggestionResolver{},
-		&languageSuggestionResolver{},
 		&settingsSubject{},
 		&statusMessageResolver{db: db},
 	}

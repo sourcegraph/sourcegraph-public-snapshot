@@ -461,11 +461,8 @@ func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs,
 	}
 }
 
-func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) search.RepoOptions {
+func (r *searchResolver) toRepoOptions(q query.Q) search.RepoOptions {
 	repoFilters, minusRepoFilters := q.Repositories()
-	if opts.effectiveRepoFieldValues != nil {
-		repoFilters = opts.effectiveRepoFieldValues
-	}
 
 	var settingForks, settingArchived bool
 	if v := r.UserSettings.SearchIncludeForks; v != nil {
@@ -503,12 +500,6 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 	commitAfter, _ := q.StringValue(query.FieldRepoHasCommitAfter)
 	searchContextSpec, _ := q.StringValue(query.FieldContext)
 
-	var CacheLookup bool
-	if len(opts.effectiveRepoFieldValues) == 0 && opts.limit == 0 {
-		// indicates resolving repositories should cache DB lookups
-		CacheLookup = true
-	}
-
 	return search.RepoOptions{
 		RepoFilters:       repoFilters,
 		MinusRepoFilters:  minusRepoFilters,
@@ -521,8 +512,6 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 		Visibility:        visibility,
 		CommitAfter:       commitAfter,
 		Query:             q,
-		Limit:             opts.limit,
-		CacheLookup:       CacheLookup,
 	}
 }
 
@@ -659,7 +648,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 		searcherOnly := args.Mode == search.SearcherOnly || (globalSearch && !envvar.SourcegraphDotComMode())
 
 		if globalSearch {
-			repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
+			repoOptions := r.toRepoOptions(args.Query)
 			defaultScope, err := zoektutil.DefaultGlobalQueryScope(repoOptions)
 			if err != nil {
 				return nil, nil, err
@@ -790,7 +779,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 		}
 
 		if args.ResultTypes.Has(result.TypeCommit) || args.ResultTypes.Has(result.TypeDiff) {
-			repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
+			repoOptions := r.toRepoOptions(args.Query)
 
 			diff := args.ResultTypes.Has(result.TypeDiff)
 			jobs = append(jobs, &commit.CommitSearch{
@@ -1023,16 +1012,6 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 	return result, nil
 }
 
-// invalidateCache invalidates the repo cache if we are preparing to evaluate
-// subexpressions that require resolving potentially disjoint repository data.
-func (r *searchResolver) invalidateCache() {
-	if r.invalidateRepoCache {
-		r.resolved.RepoRevs = nil
-		r.resolved.MissingRepoRevs = nil
-		r.repoErr = nil
-	}
-}
-
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
 func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	switch term := q.Pattern.(type) {
@@ -1047,7 +1026,6 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 		case query.Or:
 			return r.evaluateOr(ctx, q)
 		case query.Concat:
-			r.invalidateCache()
 			args, jobs, err := r.toSearchInputs(q.ToParseTree())
 			if err != nil {
 				return &SearchResults{}, err
@@ -1055,7 +1033,6 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 			return r.evaluateLeaf(ctx, args, jobs)
 		}
 	case query.Pattern:
-		r.invalidateCache()
 		args, jobs, err := r.toSearchInputs(q.ToParseTree())
 		if err != nil {
 			return &SearchResults{}, err
@@ -1072,7 +1049,6 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 // evaluate evaluates all expressions of a search query.
 func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchResults, error) {
 	if q.Pattern == nil {
-		r.invalidateCache()
 		args, jobs, err := r.toSearchInputs(query.ToNodes(q.Parameters))
 		if err != nil {
 			return &SearchResults{}, err
@@ -1080,26 +1056,6 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchRe
 		return r.evaluateLeaf(ctx, args, jobs)
 	}
 	return r.evaluatePatternExpression(ctx, q)
-}
-
-// shouldInvalidateRepoCache returns whether resolved repos should be invalidated when
-// evaluating subexpressions. If a query contains more than one repo or revision field,
-// we should invalidate resolved repos, since multiple
-// repos or revisions imply that different repos may need to be
-// resolved.
-func shouldInvalidateRepoCache(plan query.Plan) bool {
-	var seenRepo, seenRevision, seenContext int
-	query.VisitParameter(plan.ToParseTree(), func(field, _ string, _ bool, _ query.Annotation) {
-		switch field {
-		case query.FieldRepo:
-			seenRepo += 1
-		case query.FieldRev:
-			seenRevision += 1
-		case query.FieldContext:
-			seenContext += 1
-		}
-	})
-	return seenRepo > 1 || seenRevision > 1 || seenContext > 1
 }
 
 func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {
@@ -1238,10 +1194,6 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 		tr.Finish()
 	}()
 
-	if shouldInvalidateRepoCache(plan) {
-		r.invalidateRepoCache = true
-	}
-
 	wantCount := defaultMaxSearchResults
 	if count := r.Query.Count(); count != nil {
 		wantCount = *count
@@ -1255,7 +1207,6 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 			r.stream = nil
 			defer func() { r.stream = orig }()
 
-			r.invalidateRepoCache = true
 			plan, err := pred.Plan(q)
 			if err != nil {
 				return nil, err
@@ -1683,7 +1634,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		_, _, _, _ = agg.Get()
 	}()
 
-	args.RepoOptions = r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
+	args.RepoOptions = r.toRepoOptions(args.Query)
 
 	{
 		wg := waitGroup(true)
