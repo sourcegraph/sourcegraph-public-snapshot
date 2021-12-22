@@ -31,6 +31,7 @@ require (
 	github.com/schollz/progressbar/v3 v3.8.5 // indirect
 	github.com/smacker/go-tree-sitter v0.0.0-20211116060328-db7fde9b5e82 // indirect
 	github.com/sourcegraph/go-diff v0.6.1
+	github.com/sourcegraph/gosyntect v0.0.0-20210422223331-645353f16ddc // indirect
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect

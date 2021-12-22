@@ -11,11 +11,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/loov/hrtime"
 	"github.com/schollz/progressbar/v3"
 	sitter "github.com/smacker/go-tree-sitter"
 	"github.com/smacker/go-tree-sitter/golang"
+	"github.com/sourcegraph/gosyntect"
 )
 
 var (
@@ -37,22 +39,34 @@ type Input struct {
 }
 
 func main() {
-	reader, err := kubernetes.openZipReader()
+	benchmarkSyntect()
+}
+func benchmarkSyntect() {
+	client := gosyntect.New("http://127.0.0.1:9238")
+	goInputs, err := kubernetes.goInputs()
 	if err != nil {
 		panic(err)
 	}
-	var goFiles []*Input
-	for _, file := range reader.File {
-		if !strings.HasSuffix(file.Name, ".go") {
-			continue
-		}
+	highlight, err := client.Highlight(context.Background(), goInputs[0].syntectQuery())
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(highlight)
+}
 
-		input, err := readInput(file, reader)
-		if err != nil {
-			panic(err)
-		}
-
-		goFiles = append(goFiles, input)
+func (i *Input) syntectQuery() *gosyntect.Query {
+	return &gosyntect.Query{
+		Code:             string(i.Bytes),
+		Filepath:         i.Filename,
+		StabilizeTimeout: 30 * time.Second,
+		LineLengthLimit:  2_000,
+		CSS:              true,
+	}
+}
+func benchmarkTreeSitter() {
+	goFiles, err := kubernetes.goInputs()
+	if err != nil {
+		panic(err)
 	}
 	fmt.Println("Number of go files:")
 	fmt.Println(len(goFiles))
@@ -98,6 +112,27 @@ func readInput(file *zip.File, reader *zip.Reader) (*Input, error) {
 		Filename: file.Name,
 		Bytes:    data,
 	}, err
+}
+
+func (c *Corpus) goInputs() ([]*Input, error) {
+	reader, err := c.openZipReader()
+	if err != nil {
+		return nil, err
+	}
+	var goFiles []*Input
+	for _, file := range reader.File {
+		if !strings.HasSuffix(file.Name, ".go") {
+			continue
+		}
+
+		input, err := readInput(file, reader)
+		if err != nil {
+			return nil, err
+		}
+
+		goFiles = append(goFiles, input)
+	}
+	return goFiles, nil
 }
 
 func (c *Corpus) openZipReader() (*zip.Reader, error) {
