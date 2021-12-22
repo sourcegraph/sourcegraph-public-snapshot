@@ -30,7 +30,7 @@ var (
 	metricLabels    = []string{"mutation", "route", "success", "source"}
 	requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_graphql_request_duration_seconds",
-		Help:    "The HTTP request latencies in seconds.",
+		Help:    "GraphQL request latencies in seconds.",
 		Buckets: trace.UserLatencyBuckets,
 	}, metricLabels)
 )
