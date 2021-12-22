@@ -39,6 +39,12 @@ export const TREE_OR_COMPONENT_PAGE = gql`
         name
         description
         kind
+        lifecycle
+        labels {
+            key
+            values
+        }
+        catalogURL
         url
         ...ComponentOwnerFields
     }

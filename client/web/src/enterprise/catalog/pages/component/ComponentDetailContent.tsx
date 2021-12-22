@@ -31,7 +31,7 @@ interface Props
     component: ComponentStateDetailFields
 }
 
-const TAB_CONTENT_CLASS_NAME = classNames('flex-1 align-self-stretch', styles.tabContent)
+export const TAB_CONTENT_CLASS_NAME = classNames('flex-1 align-self-stretch', styles.tabContent)
 
 export const ComponentDetailContent: React.FunctionComponent<Props> = ({ component, ...props }) => {
     const tabs = useMemo<React.ComponentProps<typeof CatalogPage>['tabs']>(
