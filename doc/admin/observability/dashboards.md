@@ -12631,7 +12631,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(index_shard_merging_duration_seconds_count{instance=~`${instance:regex}`, error=-"true"}) by (instance)`
+Query: `sum(index_shard_merging_duration_seconds_count{instance=~`${instance:regex}`, error="true"}) by (instance)`
 
 </details>
 

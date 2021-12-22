@@ -316,7 +316,7 @@ func ZoektIndexServer() *monitoring.Container {
 						{
 							Name:        "shard_merging_errors_aggregate",
 							Description: "number of errors during shard merging (aggregate)",
-							Query:       `sum(index_shard_merging_duration_seconds_count{error="true"}) by (app)`,
+							Query:       "sum(index_shard_merging_duration_seconds_count{error=\"true\"}) by (app)",
 							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("aggregate").Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerSearchCore,
@@ -327,7 +327,7 @@ func ZoektIndexServer() *monitoring.Container {
 						{
 							Name:        "shard_merging_errors_per_instance",
 							Description: "number of errors during shard merging (per instance)",
-							Query:       "sum(index_shard_merging_duration_seconds_count{instance=~`${instance:regex}`, error=-\"true\"}) by (instance)",
+							Query:       "sum(index_shard_merging_duration_seconds_count{instance=~`${instance:regex}`, error=\"true\"}) by (instance)",
 							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerSearchCore,
