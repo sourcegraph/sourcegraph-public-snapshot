@@ -83,6 +83,11 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		return nil, errors.New("Structural search is disabled in the site configuration.")
 	}
 
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
+	if err != nil {
+		return Resolved{}, err
+	}
+
 	var plan query.Plan
 	plan, err = query.Pipeline(query.Init(args.Query, searchType))
 	if err != nil {

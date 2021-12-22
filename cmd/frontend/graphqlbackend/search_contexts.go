@@ -43,6 +43,7 @@ type SearchContextResolver interface {
 	Namespace(ctx context.Context) (*NamespaceResolver, error)
 	ViewerCanManage(ctx context.Context) bool
 	Repositories(ctx context.Context) ([]SearchContextRepositoryRevisionsResolver, error)
+	RepositoryQuery() string
 }
 
 type SearchContextConnectionResolver interface {
@@ -57,16 +58,18 @@ type SearchContextRepositoryRevisionsResolver interface {
 }
 
 type SearchContextInputArgs struct {
-	Name        string
-	Description string
-	Public      bool
-	Namespace   *graphql.ID
+	Name            string
+	Description     string
+	Public          bool
+	Namespace       *graphql.ID
+	RepositoryQuery string
 }
 
 type SearchContextEditInputArgs struct {
-	Name        string
-	Description string
-	Public      bool
+	Name            string
+	Description     string
+	Public          bool
+	RepositoryQuery string
 }
 
 type SearchContextRepositoryRevisionsInputArgs struct {
@@ -75,16 +78,14 @@ type SearchContextRepositoryRevisionsInputArgs struct {
 }
 
 type CreateSearchContextArgs struct {
-	SearchContext   SearchContextInputArgs
-	Repositories    []SearchContextRepositoryRevisionsInputArgs
-	RepositoryQuery string
+	SearchContext SearchContextInputArgs
+	Repositories  []SearchContextRepositoryRevisionsInputArgs
 }
 
 type UpdateSearchContextArgs struct {
-	ID              graphql.ID
-	SearchContext   SearchContextEditInputArgs
-	Repositories    []SearchContextRepositoryRevisionsInputArgs
-	RepositoryQuery string
+	ID            graphql.ID
+	SearchContext SearchContextEditInputArgs
+	Repositories  []SearchContextRepositoryRevisionsInputArgs
 }
 
 type DeleteSearchContextArgs struct {

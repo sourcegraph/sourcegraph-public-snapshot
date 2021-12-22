@@ -306,8 +306,8 @@ func (s *searchContextsStore) DeleteSearchContext(ctx context.Context, searchCon
 
 const insertSearchContextFmtStr = `
 INSERT INTO search_contexts
-(name, description, public, namespace_user_id, namespace_org_id)
-VALUES (%s, %s, %s, %s, %s)
+(name, description, public, namespace_user_id, namespace_org_id, repo_query)
+VALUES (%s, %s, %s, %s, %s, %s)
 `
 
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin or has permission to create the search context.
@@ -400,6 +400,7 @@ func createSearchContext(ctx context.Context, s SearchContextsStore, searchConte
 		searchContext.Public,
 		nullInt32Column(searchContext.NamespaceUserID),
 		nullInt32Column(searchContext.NamespaceOrgID),
+		nullStringColumn(searchContext.RepositoryQuery),
 	)
 	_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {

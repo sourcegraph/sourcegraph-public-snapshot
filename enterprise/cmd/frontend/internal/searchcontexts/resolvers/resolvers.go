@@ -83,11 +83,6 @@ func (r *Resolver) CreateSearchContext(ctx context.Context, args graphqlbackend.
 		return nil, err
 	}
 
-	repositoryQuery, err := r.parseRepositoryQuery(ctx, args.RepositoryQuery)
-	if err != nil {
-		return nil, err
-	}
-
 	searchContext, err := searchcontexts.CreateSearchContextWithRepositoryRevisions(
 		ctx,
 		r.db,
@@ -97,9 +92,9 @@ func (r *Resolver) CreateSearchContext(ctx context.Context, args graphqlbackend.
 			Public:          args.SearchContext.Public,
 			NamespaceUserID: namespaceUserID,
 			NamespaceOrgID:  namespaceOrgID,
+			RepositoryQuery: args.SearchContext.RepositoryQuery,
 		},
 		repositoryRevisions,
-		repositoryQuery,
 	)
 	if err != nil {
 		return nil, err
@@ -127,6 +122,7 @@ func (r *Resolver) UpdateSearchContext(ctx context.Context, args graphqlbackend.
 	updated.Name = args.SearchContext.Name
 	updated.Description = args.SearchContext.Description
 	updated.Public = args.SearchContext.Public
+	updated.RepositoryQuery = args.SearchContext.RepositoryQuery
 
 	searchContext, err := searchcontexts.UpdateSearchContextWithRepositoryRevisions(
 		ctx,
@@ -403,6 +399,10 @@ func (r *searchContextResolver) Repositories(ctx context.Context) ([]graphqlback
 		searchContextRepositories[idx] = &searchContextRepositoryRevisionsResolver{graphqlbackend.NewRepositoryResolver(r.db, repoRev.Repo.ToRepo()), repoRev.Revisions}
 	}
 	return searchContextRepositories, nil
+}
+
+func (r *searchContextResolver) RepositoryQuery() string {
+	return r.sc.RepositoryQuery
 }
 
 type searchContextConnectionResolver struct {

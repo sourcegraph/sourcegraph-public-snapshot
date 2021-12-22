@@ -10,12 +10,7 @@ extend type Mutation {
         """
         List of search context repository revisions.
         """
-        repositories: [SearchContextRepositoryRevisionsInput!]
-        """
-        Repository query defining a dynamic set of repos to include in the search context.
-        e.g. "repo:^github\.com/org and (rev:bar or rev:HEAD)"
-        """
-        repositoryQuery: String
+        repositories: [SearchContextRepositoryRevisionsInput!]!
     ): SearchContext!
     """
     Delete search context.
@@ -37,11 +32,6 @@ extend type Mutation {
         List of search context repository revisions.
         """
         repositories: [SearchContextRepositoryRevisionsInput!]!
-        """
-        Repository query defining a dynamic set of repos to include in the search context.
-        e.g. "repo:^github\.com/org and (rev:bar or rev:HEAD)"
-        """
-        repositoryQuery: String
     ): SearchContext!
 }
 
@@ -131,7 +121,7 @@ type SearchContext implements Node {
     The repository query that defines the set of repositories included in the context.
     Alternatively, each repository and revision can be defined explicitly.
     """
-    repositoryQuery: String
+    repositoryQuery: String!
     """
     Repositories and their revisions that will be searched when querying.
     """
@@ -223,6 +213,11 @@ input SearchContextInput {
     Namespace of the search context (user or org). If not set, search context is considered instance-level.
     """
     namespace: ID
+    """
+    Repository query defining a dynamic set of repos to include in the search context.
+    e.g. "repo:^github\.com/org and (rev:bar or rev:HEAD)"
+    """
+    repositoryQuery: String!
 }
 
 """
@@ -248,6 +243,11 @@ input SearchContextEditInput {
     instance-level search contexts are available only to site-admins.
     """
     public: Boolean!
+    """
+    Repository query defining a dynamic set of repos to include in the search context.
+    e.g. "repo:^github\.com/org and (rev:bar or rev:HEAD)"
+    """
+    repositoryQuery: String!
 }
 
 """
