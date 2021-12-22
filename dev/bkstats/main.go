@@ -2,9 +2,11 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"sort"
 	"time"
@@ -16,14 +18,24 @@ var token string
 var date string
 var pipeline string
 var slack string
+var days int
 var shortDateFormat = "2006-01-02"
 var longDateFormat = "2006-01-02 15:04 (MST)"
+var googleOAuthToken string
+var googleOAuthConfig string
+var spreadsheetID string
+var authenticate bool
 
 func init() {
 	flag.StringVar(&token, "token", "", "mandatory buildkite token")
-	flag.StringVar(&date, "date", "", "date for builds")
+	flag.StringVar(&date, "date", "", "date for builds, ex: 2021-12-10")
+	flag.IntVar(&days, "days", 1, "how many days (and thus reports) to include")
 	flag.StringVar(&pipeline, "pipeline", "sourcegraph", "name of the pipeline to inspect")
 	flag.StringVar(&slack, "slack", "", "Slack Webhook URL to post the results on")
+	flag.StringVar(&googleOAuthToken, "google-oauth.token", "", "Google OAuth Token")
+	flag.StringVar(&googleOAuthConfig, "google-oauth.config", "", "Google OAuth Config")
+	flag.StringVar(&spreadsheetID, "spreadsheet.id", "", "Google Spreadsheet ID, (https://docs.google.com/spreadsheets/d/[ID]/edit)")
+	flag.BoolVar(&authenticate, "google-oauth.authenticate", false, "Prompt the user to sign-in to generate a token")
 }
 
 type event struct {
@@ -34,8 +46,10 @@ type event struct {
 }
 
 type report struct {
-	details []string
-	summary string
+	downtime time.Duration
+	t        time.Time
+	details  []string
+	summary  string
 }
 
 type slackBody struct {
@@ -53,31 +67,11 @@ type slackText struct {
 	Text string `json:"text"`
 }
 
-func main() {
-	flag.Parse()
-
-	var t time.Time
-	var err error
-	if date != "" {
-		t, err = time.Parse(shortDateFormat, date)
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		t = time.Now()
-		t = t.Add(-1 * 24 * time.Hour)
-	}
-
-	config, err := buildkite.NewTokenConfig(token, false)
-	if err != nil {
-		panic(err)
-	}
-	client := buildkite.NewClient(config.Client())
-
+func getDownTime(bkc *buildkite.Client, t time.Time) (*report, error) {
 	var builds []buildkite.Build
 	nextPage := 0
 	for {
-		bs, resp, err := client.Builds.ListByPipeline("sourcegraph", pipeline, &buildkite.BuildsListOptions{
+		bs, resp, err := bkc.Builds.ListByPipeline("sourcegraph", pipeline, &buildkite.BuildsListOptions{
 			Branch: "main",
 			// Select all builds that finished on or after the beginning of the day ...
 			FinishedFrom: BoD(t),
@@ -86,7 +80,7 @@ func main() {
 			ListOptions: buildkite.ListOptions{Page: nextPage},
 		})
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		nextPage = resp.NextPage
 		builds = append(builds, bs...)
@@ -97,7 +91,7 @@ func main() {
 	}
 
 	if len(builds) == 0 {
-		panic("no builds")
+		return nil, nil
 	}
 
 	ends := []*event{}
@@ -120,7 +114,10 @@ func main() {
 
 	var lastRed *event
 	red := time.Duration(0)
-	var report report
+	report := report{
+		t: t,
+	}
+
 	for _, event := range ends {
 		buildLink := slackLink(fmt.Sprintf("build %d", event.buildNumber), event.buildURL)
 		if event.state == "failed" {
@@ -140,14 +137,92 @@ func main() {
 	report.summary = fmt.Sprintf("On %s, the pipeline was red for *%s* - see the %s for more details.",
 		t.Format(shortDateFormat), red.Round(time.Second).String(), slackLink("CI dashboard", ciDashboardURL(BoD(t), EoD(t))))
 
-	if slack == "" {
-		// If we're meant to print the results on stdout.
-		for _, detail := range report.details {
-			fmt.Println(detail)
+	report.downtime = red
+
+	return &report, nil
+}
+
+func main() {
+	flag.Parse()
+
+	// If the authenticate flag was passed, start the google OAuth authentication process
+	if authenticate {
+		cfg, err := getOAuthConfig(googleOAuthConfig)
+		if err != nil {
+			log.Fatalf("Invalid OAuth config: %s", err)
 		}
-		fmt.Println(report.summary)
-	} else if err := postOnSlack(&report); err != nil {
+		token := getTokenFromWeb(cfg)
+		jsonToken, _ := json.Marshal(token)
+		fmt.Printf("Please find your token below:\n%s\n", jsonToken)
+		fmt.Printf("You can now use the flag -google-oauth.token=YOUR_TOKEN to automate metrics reporting in %s\n",
+			spreadsheetID,
+		)
+		return
+	}
+
+	// Parse the date flag
+	var t time.Time
+	var err error
+	if date != "" {
+		t, err = time.Parse(shortDateFormat, date)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		t = time.Now()
+		t = t.Add(-1 * 24 * time.Hour)
+	}
+
+	config, err := buildkite.NewTokenConfig(token, false)
+	if err != nil {
 		panic(err)
+	}
+	client := buildkite.NewClient(config.Client())
+
+	reports := []*report{}
+
+	for i := 0; i < days; i++ {
+		report, err := getDownTime(client, t)
+		if err != nil {
+			panic(err)
+		}
+		reports = append(reports, report)
+		t = t.Add(-24 * time.Hour)
+	}
+
+	if googleOAuthToken != "" {
+		for _, report := range reports {
+			if report == nil {
+				continue
+			}
+			// If a google token was passed, update the spreadsheet as well.
+			err := pushReport(context.Background(), googleOAuthConfig, googleOAuthToken, report.t, report.downtime)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+
+	if slack == "" {
+		// If we're meant to print the results on stdout, loop through the results.
+		for _, report := range reports {
+			if report == nil {
+				fmt.Println("no builds, skipping")
+				continue
+			}
+			for _, detail := range report.details {
+				fmt.Println(detail)
+			}
+			fmt.Println(report.summary)
+		}
+	} else {
+		report := reports[len(reports)-1]
+		if report == nil {
+			fmt.Println("no builds, skipping")
+		}
+		if err := postOnSlack(report); err != nil {
+			panic(err)
+		}
 	}
 }
 
