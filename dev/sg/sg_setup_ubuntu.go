@@ -34,12 +34,21 @@ var ubuntuOSDependencies = []dependencyCategory{
 			{name: "comby", check: checkInPath("comby"), instructionsCommands: `bash <(curl -sL get.comby.dev)`},
 			{name: "bash", check: checkCommandOutputContains("bash --version", "version 5"), instructionsCommands: `sudo apt-get -y install bash`},
 			{
-				name:  "docker",
-				check: checkInPath("docker"),
+				name: "docker",
+				check: combineChecks(
+					checkInPath("docker"),
+					// It's possible that the user that installed Docker this way needs sudo to run it, which is not
+					// convenient. The following check diagnose that case.
+					checkCommandOutputContains("docker ps", "CONTAINER")),
+				instructionsComment: `You may need to restart your terminal for the permissions needed for Docker to take effect
+or you can run "newgrp docker" and restart the processe in this terminal.`,
 				instructionsCommandsBuilder: stringCommandBuilder(func(ctx context.Context) string {
 					return fmt.Sprintf(`curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo add-apt-repository "deb [arch=%s] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-sudo apt-get install -y docker-ce docker-ce-cli`, runtime.GOARCH)
+sudo apt-get install -y docker-ce docker-ce-cli
+sudo groupadd docker || true
+sudo usermod -aG docker $USER
+`, runtime.GOARCH)
 				}),
 			},
 		},
