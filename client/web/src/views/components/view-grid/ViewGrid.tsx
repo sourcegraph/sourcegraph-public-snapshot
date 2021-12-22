@@ -133,7 +133,6 @@ export const ViewGrid: React.FunctionComponent<PropsWithChildren<ViewGridProps &
                 margin={[12, 12]}
                 onResizeStart={handleResizeStart}
                 onResizeStop={handleResizeStop}
-                onResize={console.log}
                 onLayoutChange={onLayoutChange}
                 onDragStart={handleDragStart}
             >
