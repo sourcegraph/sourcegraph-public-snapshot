@@ -325,7 +325,7 @@ func ZoektIndexServer() *monitoring.Container {
 							`,
 						},
 						{
-							Name:        "shard_merging_duration_per_instance",
+							Name:        "shard_merging_errors_per_instance",
 							Description: "number of errors during shard merging (per instance)",
 							Query:       "sum(index_shard_merging_duration_seconds_count{instance=~`${instance:regex}`, error=-\"true\"}) by (instance)",
 							NoAlert:     true,
