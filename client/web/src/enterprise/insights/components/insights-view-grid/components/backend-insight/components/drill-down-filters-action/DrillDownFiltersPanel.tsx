@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
-import React, { useRef } from 'react'
+import React, { DOMAttributes, useRef } from 'react'
 
 import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
 import { flipRightPosition } from '../../../../../context-menu/utils'
@@ -22,6 +22,10 @@ interface DrillDownFiltersProps {
     onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
     onVisibilityChange: (open: boolean) => void
 }
+
+// To prevent grid layout position change animation. Attempts to drag
+// the filter panel should not trigger react-grid-layout events.
+const handleMouseDown: DOMAttributes<HTMLElement>['onMouseDown'] = event => event.stopPropagation()
 
 export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersProps> = props => {
     const {
@@ -48,9 +52,7 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                     [styles.filterButtonActive]: isFiltered,
                 })}
                 aria-label={isFiltered ? 'Active filters' : 'Filters'}
-                // To prevent grid layout position change animation. Attempts to drag
-                // the filter panel should not trigger react-grid-layout events.
-                onMouseDown={event => event.stopPropagation()}
+                onMouseDown={handleMouseDown}
             >
                 <FilterOutlineIcon className={styles.filterIcon} size="1rem" />
             </button>
@@ -62,9 +64,7 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 position={flipRightPosition}
                 aria-label="Drill-down filters panel"
                 onVisibilityChange={onVisibilityChange}
-                // To prevent grid layout position change animation. Attempts to drag
-                // the filter panel should not trigger react-grid-layout events.
-                onMouseDown={event => event.stopPropagation()}
+                onMouseDown={handleMouseDown}
             >
                 <DrillDownFiltersPanel
                     initialFiltersValue={initialFiltersValue}
