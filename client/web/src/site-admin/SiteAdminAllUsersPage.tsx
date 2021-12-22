@@ -22,7 +22,16 @@ import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 import { setUserEmailVerified } from '../user/settings/backend'
 
-import { deleteUser, fetchAllUsers, randomizeUserPassword, setUserIsSiteAdmin, invalidateSessionsByID } from './backend'
+import {
+    deleteUser,
+    fetchAllUsers,
+    randomizeUserPassword,
+    setUserIsSiteAdmin,
+    invalidateSessionsByID,
+    setUserTag,
+} from './backend'
+
+const CREATE_ORG_TAG = 'CreateOrg'
 
 interface UserNodeProps {
     /**
@@ -102,6 +111,11 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     }
 
     public render(): JSX.Element | null {
+        const orgCreationLabel =
+            window.context.sourcegraphDotComMode && this.props.node.tags?.includes(CREATE_ORG_TAG)
+                ? 'Disable'
+                : 'Enable'
+
         return (
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
@@ -117,6 +131,19 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         <span className="text-muted">{this.props.node.displayName}</span>
                     </div>
                     <div>
+                        {window.context.sourcegraphDotComMode && (
+                            <>
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-secondary"
+                                    onClick={() => this.toggleOrgCreationTag(orgCreationLabel === 'Enable')}
+                                    disabled={this.state.loading}
+                                    data-tooltip={`${orgCreationLabel} user tag to allow user to create organizations`}
+                                >
+                                    {orgCreationLabel} org creation
+                                </button>{' '}
+                            </>
+                        )}
                         {!window.context.sourcegraphDotComMode && (
                                 <Link
                                     className="btn btn-sm btn-secondary"
@@ -323,6 +350,26 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                 },
                 error => this.setState({ loading: false, errorDescription: asError(error).message })
             )
+    }
+
+    private toggleOrgCreationTag = (newValue: boolean): void => {
+        this.setState({
+            errorDescription: undefined,
+            resetPasswordURL: undefined,
+            loading: true,
+        })
+
+        setUserTag(this.props.node.id, CREATE_ORG_TAG, newValue)
+            .toPromise()
+            .then(() => {
+                this.setState({ loading: false })
+                if (this.props.onDidUpdate) {
+                    this.props.onDidUpdate()
+                }
+            })
+            .catch(error => {
+                this.setState({ loading: false, errorDescription: asError(error).message })
+            })
     }
 }
 
