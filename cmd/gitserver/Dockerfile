@@ -82,7 +82,7 @@ RUN ./generate_cache.sh Release
 RUN ./build.sh
 
 WORKDIR /usr/local/bin
-# Move exe file to /usr/local/bin where other executives are located
+# Move exe file to /usr/local/bin where other executables are located
 RUN mv ./p4-fusion-1.2/build/p4-fusion/p4-fusion ./ && rm -rf /usr/local/bin/p4-fusion-1.2
 # p4-fusion installation completed here
 
