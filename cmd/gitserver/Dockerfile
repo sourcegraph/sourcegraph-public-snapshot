@@ -59,10 +59,10 @@ RUN tar zxf /lib-x64.tgz --directory /
 
 # p4-fusion installation
 # Fetching p4 sources archive
-RUN wget https://github.com/salesforce/p4-fusion/archive/refs/tags/v1.4.tar.gz && \
-    mv v1.4.tar.gz /usr/local/bin && \
+RUN wget https://github.com/salesforce/p4-fusion/archive/refs/tags/v1.5.tar.gz && \
+    mv v1.5.tar.gz /usr/local/bin && \
     mkdir -p /usr/local/bin/p4-fusion-src && \
-    tar -C /usr/local/bin/p4-fusion-src -xzvf /usr/local/bin/v1.4.tar.gz --strip 1
+    tar -C /usr/local/bin/p4-fusion-src -xzvf /usr/local/bin/v1.5.tar.gz --strip 1
 
 # We need a specific version of OpenSSL
 RUN wget https://www.openssl.org/source/openssl-1.0.2t.tar.gz && tar -xzvf openssl-1.0.2t.tar.gz
@@ -80,12 +80,14 @@ RUN wget https://www.perforce.com/downloads/perforce/r21.1/bin.linux26x86_64/p4a
 WORKDIR /usr/local/bin/p4-fusion-src
 
 # Build p4-fusion
-RUN bash -c './generate_cache.sh Release'
+RUN ./generate_cache.sh Release
 RUN ./build.sh
 
 WORKDIR /usr/local/bin
-# Move exe file to /usr/local/bin where other executables are located
-RUN mv /usr/local/bin/p4-fusion-src/build/p4-fusion/p4-fusion /usr/local/bin && rm -rf /usr/local/bin/p4-fusion-src
+# Move exe file to /usr/local/bin where other executables are located; delete src directory and archive
+RUN mv /usr/local/bin/p4-fusion-src/build/p4-fusion/p4-fusion /usr/local/bin && \
+    rm -rf /usr/local/bin/p4-fusion-src && \
+    rm /usr/local/bin/v1.5.tar.gz
 # p4-fusion installation completed here
 
 RUN mkdir -p /data/repos && chown -R sourcegraph:sourcegraph /data/repos
@@ -93,5 +95,5 @@ USER sourcegraph
 
 WORKDIR /
 
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/gitserver"]
-COPY gitserver /usr/local/bin/
+#ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/gitserver"]
+#COPY gitserver /usr/local/bin/
