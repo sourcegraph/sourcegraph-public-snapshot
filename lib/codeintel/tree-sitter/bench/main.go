@@ -18,7 +18,13 @@ import (
 	"github.com/smacker/go-tree-sitter/golang"
 )
 
-var kubernetes = Corpus{Name: "kubernetes", URL: "https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.22.4.zip"}
+var (
+	kubernetes = &Corpus{Name: "kubernetes", URL: "https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.22.4.zip"}
+	megarepo   = &Corpus{
+		Name: "megarepo", URL: "https://github.com/sgtest/megarepo/zipball/11c726fd66bb6252cb8e9c0af8933f5ba0fb1e8d",
+	}
+	all = []*Corpus{kubernetes, megarepo}
+)
 
 type Corpus struct {
 	Name string
@@ -31,6 +37,7 @@ type Input struct {
 }
 
 func main() {
+	megarepo.DownloadUrlAndCache()
 	reader, err := kubernetes.openZipReader()
 	if err != nil {
 		panic(err)

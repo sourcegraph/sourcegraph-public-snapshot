@@ -173,7 +173,10 @@ require (
 	k8s.io/client-go v0.22.4
 )
 
-require github.com/loov/hrtime v1.0.3 // indirect
+require (
+	github.com/loov/hrtime v1.0.3 // indirect
+	github.com/smacker/go-tree-sitter v0.0.0-20211116060328-db7fde9b5e82 // indirect
+)
 
 require (
 	cloud.google.com/go v0.98.0 // indirect
