@@ -62,7 +62,8 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
                 onClick={toggleIsOpen}
                 onKeyDown={onKeyDown}
                 disabled={!skipped.message}
-                color={skipped.severity !== 'info' ? 'outline-danger' : 'outline-primary'}
+                outline={true}
+                variant={skipped.severity !== 'info' ? 'danger' : 'primary'}
             >
                 <h4 className="d-flex align-items-center mb-0 w-100">
                     {skipped.severity === 'info' ? (
@@ -159,7 +160,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                     <Button
                         type="submit"
                         className="mt-2"
-                        color="primary"
+                        variant="primary"
                         disabled={selectedSuggestedSearches.size === 0}
                         data-testid="skipped-popover-form-submit-btn"
                     >
