@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 
-	"github.com/cockroachdb/errors"
 	"github.com/felixge/httpsnoop"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
@@ -252,7 +251,9 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 		// Notify sentry if the status code indicates our system had an error (e.g. 5xx).
 		if m.Code >= 500 {
 			if requestErrorCause == nil {
-				requestErrorCause = errors.WithStack(&httpErr{status: m.Code, method: r.Method, path: r.URL.Path})
+				// This creates loads of events on which we do not have the stack trace and that are barely usable.
+				// requestErrorCause = errors.WithStack(&httpErr{status: m.Code, method: r.Method, path: r.URL.Path})
+				return
 			}
 
 			sentry.CaptureError(requestErrorCause, map[string]string{
