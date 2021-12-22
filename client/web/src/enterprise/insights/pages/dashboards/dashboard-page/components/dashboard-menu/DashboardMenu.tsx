@@ -1,4 +1,5 @@
 import { Menu, MenuButton, MenuItem, MenuItems, MenuPopover } from '@reach/menu-button'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React from 'react'
@@ -39,6 +40,7 @@ export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props 
                 data-placement="right"
                 className={classNames(styles.triggerButton, 'btn btn-icon')}
             >
+                <VisuallyHidden>Dashboard options</VisuallyHidden>
                 <DotsVerticalIcon size={16} />
             </MenuButton>
 
