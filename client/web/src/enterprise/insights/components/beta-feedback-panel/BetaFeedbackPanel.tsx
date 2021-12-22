@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react'
 
-import { Button, ProductStatusBadge } from '@sourcegraph/wildcard/src'
+import { Button, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { FeedbackPromptContent } from '../../../../nav/Feedback/FeedbackPrompt'
 import { flipRightPosition } from '../context-menu/utils'

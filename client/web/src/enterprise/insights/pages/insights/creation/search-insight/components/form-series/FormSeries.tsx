@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard/src'
+import { Button } from '@sourcegraph/wildcard'
 
 import { EditableDataSeries } from '../../types'
 import { FormSeriesInput } from '../form-series-input/FormSeriesInput'
