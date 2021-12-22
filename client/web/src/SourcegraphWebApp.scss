@@ -37,22 +37,6 @@ body,
     background-color: var(--mark-bg);
 }
 
-.app {
-    &__error {
-        > hr {
-            margin-top: 1rem;
-            margin-bottom: 1rem;
-            border-color: #93a9c8;
-        }
-
-        &-text {
-            margin-top: 1rem;
-            background-color: #233043;
-            padding: 1rem;
-        }
-    }
-}
-
 .spacer {
     flex: 1;
 }
@@ -83,6 +67,7 @@ body,
 @import './components/Dialog';
 
 :root {
+    --max-homepage-container-width: 65rem;
     // Skip Reach UI styles. See https://reacttraining.com/reach-ui/styling/.
     --reach-menu-button: 1;
     --reach-accordion: 1;

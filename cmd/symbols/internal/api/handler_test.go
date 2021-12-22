@@ -34,11 +34,7 @@ func TestHandler(t *testing.T) {
 	}
 	defer func() { os.RemoveAll(tmpDir) }()
 
-	cache := &diskcache.Store{
-		Dir:               tmpDir,
-		Component:         "symbols",
-		BackgroundTimeout: 20 * time.Minute,
-	}
+	cache := diskcache.NewStore(tmpDir, "symbols", diskcache.WithBackgroundTimeout(20*time.Minute))
 
 	parserFactory := func() (ctags.Parser, error) {
 		return newMockParser("x", "y"), nil
@@ -127,8 +123,8 @@ func TestHandler(t *testing.T) {
 				if testCase.expected != nil {
 					t.Errorf("unexpected search result. want=%+v, have=nil", testCase.expected)
 				}
-			} else if !reflect.DeepEqual(*result, testCase.expected) {
-				t.Errorf("unexpected search result. want=%+v, have=%+v", testCase.expected, *result)
+			} else if !reflect.DeepEqual(result, testCase.expected) {
+				t.Errorf("unexpected search result. want=%+v, have=%+v", testCase.expected, result)
 			}
 		})
 	}

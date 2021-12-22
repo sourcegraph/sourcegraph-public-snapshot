@@ -14,6 +14,9 @@ func toSnakeCase(s string) string {
 	dist.Grow(len(s) + len(s)/3) // avoid reallocation memory
 	for i := 0; i < len(s); i++ {
 		cur := s[i]
+		if cur == ' ' {
+			continue
+		}
 		// if - or _: write _
 		if cur == '-' || cur == '_' {
 			dist.WriteByte('_')

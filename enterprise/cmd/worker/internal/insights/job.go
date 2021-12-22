@@ -13,28 +13,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-type insightsBaseConfig struct {
-	env.BaseConfig
-
-	enabled bool
-}
-
-func (i *insightsBaseConfig) Load() {
-	i.enabled = insights.IsEnabled()
-}
-
-type insightsJob struct {
-	env.BaseConfig
-}
-
-var insightsConfigInst = &insightsBaseConfig{}
+type insightsJob struct{}
 
 func (s *insightsJob) Config() []env.Config {
-	return []env.Config{insightsConfigInst}
+	return nil
 }
 
 func (s *insightsJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, error) {
-	if !insightsConfigInst.enabled {
+	if !insights.IsEnabled() {
 		log15.Info("Code Insights Disabled.")
 		return []goroutine.BackgroundRoutine{}, nil
 	}

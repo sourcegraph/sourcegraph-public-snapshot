@@ -3,6 +3,7 @@ package server
 import (
 	"io"
 	"os/exec"
+	"strconv"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -10,8 +11,24 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
 )
+
+var gitServiceMaxEgressBytesPerSecond = func() int64 {
+	bps, err := strconv.ParseInt(env.Get(
+		"SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND",
+		"1000000000",
+		"Git service egress rate limit in bytes per second (-1 = no limit, default = 1Gbps)"),
+		10,
+		64,
+	)
+	if err != nil {
+		log15.Error("gitservice: failed parsing SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND. defaulting to 1Gbps", "error", err)
+		bps = 1000 * 1000 * 1000 // 1Gbps
+	}
+	return bps
+}()
 
 // flowrateWriter limits the write rate of w to 1 Gbps.
 //
@@ -27,9 +44,10 @@ import (
 // We play it safe and default to 1 Gbps here (~119 MiB/s), which
 // means we can fetch a 1 GiB archive in ~8.5 seconds.
 func flowrateWriter(w io.Writer) io.Writer {
-	const megabit = int64(1000 * 1000)
-	const limit = 1000 * megabit // 1 Gbps
-	return flowrate.NewWriter(w, limit)
+	if gitServiceMaxEgressBytesPerSecond > 0 {
+		return flowrate.NewWriter(w, gitServiceMaxEgressBytesPerSecond)
+	}
+	return w
 }
 
 func (s *Server) gitServiceHandler() *gitservice.Handler {

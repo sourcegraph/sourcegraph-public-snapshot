@@ -2,6 +2,7 @@
 package gitservice
 
 import (
+	"bytes"
 	"compress/gzip"
 	"net/http"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
 )
 
 var uploadPackArgs = []string{
@@ -122,9 +124,11 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		env = append(env, "GIT_PROTOCOL="+protocol)
 	}
 
+	var stderr bytes.Buffer
 	cmd := exec.CommandContext(r.Context(), "git", args...)
 	cmd.Env = env
 	cmd.Stdout = w
+	cmd.Stderr = &stderr
 	cmd.Stdin = body
 
 	if s.CommandHook != nil {
@@ -134,6 +138,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err = cmd.Run()
 	if err != nil {
 		err = errors.Errorf("error running git service command args=%q: %w", args, err)
+		log15.Error("git-service error", "error", err, "stderr", stderr.String())
 		_, _ = w.Write([]byte("\n" + err.Error() + "\n"))
 	}
 }

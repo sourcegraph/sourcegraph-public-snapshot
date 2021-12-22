@@ -116,7 +116,7 @@ function getQuerySuggestions(query: string, patternType: SearchPatternType): Sug
 }
 
 interface DidYouMeanProps
-    extends Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+    extends ParsedSearchQueryProps,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,

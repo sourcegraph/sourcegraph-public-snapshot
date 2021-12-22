@@ -9,26 +9,20 @@ import { MINIMAL_HORIZONTAL_LAYOUT_WIDTH, MINIMAL_SERIES_FOR_ASIDE_LEGEND } from
 import { LineChartLayoutOrientation, LineChartSettingsContext } from './line-chart-settings-provider'
 import styles from './LineChart.module.scss'
 
-export interface LineChartProps<Datum extends object> extends LineChartContentProps<Datum> {}
+export interface LineChartProps<Datum extends object> extends LineChartContentProps<Datum> {
+    /**
+     * Whenever it is necessary to set size limits of line chart container block.
+     * By default LineChart doesn't require
+     */
+    hasChartParentFixedSize?: boolean
+}
 
 /**
  * Display responsive line chart with legend below the chart.
  */
 export function LineChart<Datum extends object>(props: LineChartProps<Datum>): ReactElement {
-    const { width, height, ...otherProps } = props
+    const { width, height, hasChartParentFixedSize, ...otherProps } = props
     const { layout } = useContext(LineChartSettingsContext)
-    const hasLegend = props.series.every(line => !!line.name)
-
-    if (!hasLegend) {
-        return (
-            // Because we need to catch all events from line chart by ourselves we have to
-            // use this chart's event emitter for override some events handler and bind them
-            // to custom elements within LineChartContent component.
-            <EventEmitterProvider>
-                <LineChartContent {...props} />
-            </EventEmitterProvider>
-        )
-    }
 
     const hasViewManySeries = otherProps.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
@@ -44,34 +38,33 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
             <div
                 aria-label="Line chart"
                 /* eslint-disable-next-line react/forbid-dom-props */
-                style={{ width, height }}
+                style={hasChartParentFixedSize ? { width, height } : undefined}
                 className={classNames(styles.lineChart, { [styles.lineChartHorizontal]: isHorizontal })}
             >
                 {/*
                     In case if we have a legend to render we have to have responsive container for chart
                     just to calculate right sizes for chart content = rootContainerSizes - legendSizes
                 */}
-                <ParentSize className={styles.contentParentSize}>
+                <ParentSize className={styles.contentParentSize} data-line-chart-size-root="">
                     {({ width, height }) => <LineChartContent {...otherProps} width={width} height={height} />}
                 </ParentSize>
 
                 <ScrollBox
-                    as="ul"
-                    scrollEnabled={isHorizontal}
                     aria-hidden={true}
-                    rootClassName={classNames({ [styles.legendHorizontal]: isHorizontal })}
-                    className={classNames(styles.legendContent, { [styles.legendContentHorizontal]: isHorizontal })}
+                    className={classNames(styles.legend, { [styles.legendHorizontal]: isHorizontal })}
                 >
-                    {props.series.map(line => (
-                        <li key={line.dataKey.toString()} className={styles.legendItem}>
-                            <div
-                                /* eslint-disable-next-line react/forbid-dom-props */
-                                style={{ backgroundColor: getLineStroke(line) }}
-                                className={styles.legendMark}
-                            />
-                            {line.name}
-                        </li>
-                    ))}
+                    <ul className={classNames(styles.legendList, { [styles.legendListHorizontal]: isHorizontal })}>
+                        {props.series.map(line => (
+                            <li key={line.dataKey.toString()} className={styles.legendItem}>
+                                <div
+                                    /* eslint-disable-next-line react/forbid-dom-props */
+                                    style={{ backgroundColor: getLineStroke(line) }}
+                                    className={styles.legendMark}
+                                />
+                                {line.name}
+                            </li>
+                        ))}
+                    </ul>
                 </ScrollBox>
             </div>
         </EventEmitterProvider>

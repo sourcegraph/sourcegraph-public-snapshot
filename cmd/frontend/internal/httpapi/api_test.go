@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 )
@@ -21,7 +21,7 @@ func newTest() *httptestutil.Client {
 	rateLimitStore, _ := memstore.New(1024)
 	rateLimiter := graphqlbackend.NewRateLimiteWatcher(rateLimitStore)
 
-	return httptestutil.NewTest(NewHandler(dbmock.NewMockDB(),
+	return httptestutil.NewTest(NewHandler(database.NewMockDB(),
 		router.New(mux.NewRouter()),
 		nil,
 		enterpriseServices.GitHubWebhook,

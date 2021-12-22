@@ -10,7 +10,6 @@ import {
     WidthProvider,
 } from 'react-grid-layout'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 
 import styles from './ViewGrid.module.scss'
@@ -71,13 +70,14 @@ export type ViewGridProps =
           viewIds?: never
       }
 
-interface ViewGridCommonProps extends TelemetryProps {
+interface ViewGridCommonProps {
     /** Custom classname for root element of the grid. */
     className?: string
 
     onLayoutChange?: (currentLayout: Layout[], allLayouts: Layouts) => void
     onResizeStart?: (newItem: Layout) => void
     onResizeStop?: (newItem: Layout) => void
+    onDragStart?: (newItem: Layout) => void
 }
 
 /**
@@ -87,49 +87,27 @@ export const ViewGrid: React.FunctionComponent<PropsWithChildren<ViewGridProps &
     const {
         layouts,
         viewIds = [],
-        telemetryService,
         children,
         className,
         onLayoutChange,
         onResizeStart = noop,
         onResizeStop = noop,
+        onDragStart = noop,
     } = props
 
-    const trackUICustomization = useCallback(
-        (item: Layout) => {
-            try {
-                telemetryService.log(
-                    'InsightUICustomization',
-                    { insightType: item.i.split('.')[0] },
-                    { insightType: item.i.split('.')[0] }
-                )
-            } catch {
-                // noop
-            }
-        },
-        [telemetryService]
-    )
-
     const handleResizeStart: ReactGridLayout.ItemCallback = useCallback(
-        (_layout, item, newItem) => {
-            onResizeStart(newItem)
-            trackUICustomization(item)
-        },
-        [trackUICustomization, onResizeStart]
+        (_layout, item, newItem) => onResizeStart(newItem),
+        [onResizeStart]
     )
 
     const handleResizeStop: ReactGridLayout.ItemCallback = useCallback(
-        (_layout, item, newItem) => {
-            onResizeStop(newItem)
-        },
+        (_layout, item, newItem) => onResizeStop(newItem),
         [onResizeStop]
     )
 
     const handleDragStart: ReactGridLayout.ItemCallback = useCallback(
-        (_layout, item, newItem) => {
-            trackUICustomization(item)
-        },
-        [trackUICustomization]
+        (_layout, item, newItem) => onDragStart(newItem),
+        [onDragStart]
     )
 
     // For Firefox we can't use css transform/translate to put view grid item in right place.

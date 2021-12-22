@@ -1,8 +1,10 @@
 import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
+import classNames from 'classnames'
 import React from 'react'
 
 import browserExtensionStyles from '@sourcegraph/browser/src/app.scss'
+import bitbucketCodeHostStyles from '@sourcegraph/browser/src/shared/code-hosts/bitbucket/codeHost.module.scss'
 
 import { NotificationType } from '../api/extension/extensionHostApi'
 import { registerHighlightContributions } from '../highlight/contributions'
@@ -29,8 +31,7 @@ registerHighlightContributions()
 
 const BITBUCKET_CLASS_PROPS: HoverOverlayClassProps = {
     className: 'aui-dialog',
-    actionItemClassName: 'aui-button hover-action-item--bitbucket-server',
-    closeButtonClassName: 'aui-button btn-icon--bitbucket-server close',
+    actionItemClassName: classNames('aui-button', bitbucketCodeHostStyles.hoverActionItem),
     iconClassName: 'aui-icon',
     getAlertClassName: alertKind => {
         switch (alertKind) {
@@ -56,4 +57,4 @@ export const BitbucketStyles: Story = props => (
 )
 BitbucketStyles.storyName = 'Bitbucket styles'
 
-export const Branded: Story = () => <BitbucketStyles isBranded={true} />
+export const Branded: Story = () => <BitbucketStyles useBrandedLogo={true} />

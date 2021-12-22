@@ -3,6 +3,8 @@ package codeintel
 import (
 	"time"
 
+	"github.com/hashicorp/go-multierror"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
@@ -33,6 +35,10 @@ type janitorConfig struct {
 var janitorConfigInst = &janitorConfig{}
 
 func (c *janitorConfig) Load() {
+	metricsConfig := executorqueue.InitMetricsConfig()
+	metricsConfig.Load()
+	c.MetricsConfig = metricsConfig
+
 	c.UploadTimeout = c.GetInterval("PRECISE_CODE_INTEL_UPLOAD_TIMEOUT", "24h", "The maximum time an upload can be in the 'uploading' state.")
 	c.CleanupTaskInterval = c.GetInterval("PRECISE_CODE_INTEL_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic codeintel cleanup tasks.")
 	c.CommitResolverTaskInterval = c.GetInterval("PRECISE_CODE_INTEL_COMMIT_RESOLVER_TASK_INTERVAL", "10s", "The frequency with which to run the periodic commit resolver task.")
@@ -49,7 +55,11 @@ func (c *janitorConfig) Load() {
 	c.ConfigurationPolicyMembershipBatchSize = c.GetInt("PRECISE_CODE_INTEL_CONFIGURATION_POLICY_MEMBERSHIP_BATCH_SIZE", "100", "The maximum number of policy configurations to update repository membership for at a time.")
 	c.DocumentationSearchCurrentMinimumTimeSinceLastCheck = c.GetInterval("PRECISE_CODE_INTEL_DOCUMENTATION_SEARCH_CURRENT_MINIMUM_TIME_SINCE_LAST_CHECK", "24h", "The minimum time the documentation search current janitor will re-check records for a unique search key.")
 	c.DocumentationSearchCurrentBatchSize = c.GetInt("PRECISE_CODE_INTEL_DOCUMENTATION_SEARCH_CURRENT_BATCH_SIZE", "100", "The maximum number of unique search keys to clean up at a time.")
+}
 
-	c.MetricsConfig = executorqueue.InitMetricsConfig()
-	c.MetricsConfig.Load()
+func (c *janitorConfig) Validate() error {
+	var errs *multierror.Error
+	errs = multierror.Append(errs, c.BaseConfig.Validate())
+	errs = multierror.Append(errs, c.MetricsConfig.Validate())
+	return errs.ErrorOrNil()
 }

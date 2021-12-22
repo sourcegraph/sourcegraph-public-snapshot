@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -17,6 +18,7 @@ type SearchInputs struct {
 	OriginalQuery string     // the raw string of the original search query
 	PatternType   query.SearchType
 	UserSettings  *schema.Settings
+	Features      featureflag.FlagSet
 
 	// DefaultLimit is the default limit to use if not specified in query.
 	DefaultLimit int
@@ -32,6 +34,13 @@ type SearchInputs struct {
 type Job interface {
 	Run(context.Context, streaming.Sender, searchrepos.Pager) error
 	Name() string
+
+	// Required sets whether the results of this job are required. If true,
+	// we must wait for its routines to complete. If false, the job is
+	// optional, expressing that we may cancel the job. We typically run a
+	// set of required and optional jobs concurrently, and cancel optional
+	// jobs once we've guaranteed some required results, or after a timeout.
+	Required() bool
 }
 
 // MaxResults computes the limit for the query.

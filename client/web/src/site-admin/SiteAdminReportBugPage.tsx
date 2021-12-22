@@ -15,6 +15,7 @@ import githubSchemaJSON from '../../../../schema/github.schema.json'
 import gitlabSchemaJSON from '../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../schema/gitolite.schema.json'
 import jvmPackagesSchemaJSON from '../../../../schema/jvm-packages.schema.json'
+import npmPackagesSchemaJSON from '../../../../schema/npm-packages.schema.json'
 import otherExternalServiceSchemaJSON from '../../../../schema/other_external_service.schema.json'
 import pagureSchemaJSON from '../../../../schema/pagure.schema.json'
 import perforceSchemaJSON from '../../../../schema/perforce.schema.json'
@@ -43,6 +44,7 @@ const externalServices: Record<ExternalServiceKind, JSONSchema> = {
     GITLAB: gitlabSchemaJSON,
     GITOLITE: gitoliteSchemaJSON,
     JVMPACKAGES: jvmPackagesSchemaJSON,
+    NPMPACKAGES: npmPackagesSchemaJSON,
     OTHER: otherExternalServiceSchemaJSON,
     PERFORCE: perforceSchemaJSON,
     PHABRICATOR: phabricatorSchemaJSON,

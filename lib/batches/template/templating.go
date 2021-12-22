@@ -89,6 +89,7 @@ type BatchChangeAttributes struct {
 
 type Repository struct {
 	Name        string
+	Branch      string
 	FileMatches []string
 }
 
@@ -172,6 +173,7 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 			return map[string]interface{}{
 				"search_result_paths": stepCtx.Repository.SearchResultPaths(),
 				"name":                stepCtx.Repository.Name,
+				"branch":              stepCtx.Repository.Branch,
 			}
 		},
 		"batch_change": func() map[string]interface{} {
@@ -216,6 +218,7 @@ func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 			return map[string]interface{}{
 				"search_result_paths": tmplCtx.Repository.SearchResultPaths(),
 				"name":                tmplCtx.Repository.Name,
+				"branch":              tmplCtx.Repository.Branch,
 			}
 		},
 		"batch_change": func() map[string]interface{} {

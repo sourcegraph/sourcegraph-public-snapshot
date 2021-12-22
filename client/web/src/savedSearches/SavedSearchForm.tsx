@@ -79,7 +79,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
     const { query, description, notify, notifySlack, slackWebhookURL } = values
 
     return (
-        <div className="saved-search-form">
+        <div className="saved-search-form" data-testid="saved-search-form">
             <PageHeader
                 path={[{ text: props.title }]}
                 headingElement="h2"

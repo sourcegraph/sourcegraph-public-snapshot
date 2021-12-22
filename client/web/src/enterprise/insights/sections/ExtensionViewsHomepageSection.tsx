@@ -53,6 +53,8 @@ export const ExtensionViewsHomepageSection: React.FunctionComponent<ExtensionVie
     )
 }
 
+const DEFAULT_CONTEXT = {}
+
 const ExtensionViewsHomepageSectionContent: React.FunctionComponent<ExtensionViewsSectionCommonProps> = props => {
     const { extensionsController, telemetryService, className } = props
     const { getInsights } = useContext(CodeInsightsBackendContext)
@@ -77,7 +79,7 @@ const ExtensionViewsHomepageSectionContent: React.FunctionComponent<ExtensionVie
     const allViewIds = useMemo(() => [...extensionViews, ...insights].map(view => view.id), [extensionViews, insights])
 
     return (
-        <ViewGrid viewIds={allViewIds} telemetryService={telemetryService} className={className}>
+        <ViewGrid viewIds={allViewIds} className={className}>
             {/* Render extension views for the search page */}
             {extensionViews.map(view => (
                 <StaticView key={view.id} content={view} telemetryService={telemetryService} />
@@ -89,7 +91,7 @@ const ExtensionViewsHomepageSectionContent: React.FunctionComponent<ExtensionVie
                     insight={insight}
                     telemetryService={telemetryService}
                     where="homepage"
-                    context={{}}
+                    context={DEFAULT_CONTEXT}
                 />
             ))}
         </ViewGrid>

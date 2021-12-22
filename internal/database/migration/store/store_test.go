@@ -84,6 +84,46 @@ func TestVersion(t *testing.T) {
 	}
 }
 
+func TestLock(t *testing.T) {
+	db := dbtest.NewDB(t)
+	store := testStore(db)
+	ctx := context.Background()
+
+	t.Run("sanity test", func(t *testing.T) {
+		acquired, close, err := store.Lock(ctx)
+		if err != nil {
+			t.Fatalf("unexpected error acquiring lock: %s", err)
+		}
+		if !acquired {
+			t.Fatalf("expected lock to be acquired")
+		}
+
+		if err := close(nil); err != nil {
+			t.Fatalf("unexpected error releasing lock: %s", err)
+		}
+	})
+}
+
+func TestTryLock(t *testing.T) {
+	db := dbtest.NewDB(t)
+	store := testStore(db)
+	ctx := context.Background()
+
+	t.Run("sanity test", func(t *testing.T) {
+		acquired, close, err := store.TryLock(ctx)
+		if err != nil {
+			t.Fatalf("unexpected error acquiring lock: %s", err)
+		}
+		if !acquired {
+			t.Fatalf("expected lock to be acquired")
+		}
+
+		if err := close(nil); err != nil {
+			t.Fatalf("unexpected error releasing lock: %s", err)
+		}
+	})
+}
+
 func TestUp(t *testing.T) {
 	db := dbtest.NewDB(t)
 	store := testStore(db)
@@ -129,7 +169,7 @@ func TestUp(t *testing.T) {
 	})
 
 	t.Run("unexpected version", func(t *testing.T) {
-		expectedErrorMessage := "wrong expected version"
+		expectedErrorMessage := "expected schema to have version 17, but has version 16"
 
 		if err := store.Up(ctx, definition.Definition{
 			ID: 18,
@@ -197,7 +237,7 @@ func TestDown(t *testing.T) {
 	if err := store.EnsureSchemaTable(ctx); err != nil {
 		t.Fatalf("unexpected error ensuring schema table exists: %s", err)
 	}
-	if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO test_migrations_table VALUES (15, false)`)); err != nil {
+	if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO test_migrations_table VALUES (14, false)`)); err != nil {
 		t.Fatalf("unexpected error setting initial version: %s", err)
 	}
 	if err := store.Exec(ctx, sqlf.Sprintf(`
@@ -242,13 +282,13 @@ func TestDown(t *testing.T) {
 		}
 
 		// Version set to migration ID; not dirty
-		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || dirty || version != 14 {
-			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 14, false, version, dirty, ok, err)
+		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || dirty || version != 13 {
+			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 13, false, version, dirty, ok, err)
 		}
 	})
 
 	t.Run("unexpected version", func(t *testing.T) {
-		expectedErrorMessage := "wrong expected version"
+		expectedErrorMessage := "expected schema to have version 12, but has version 13"
 
 		if err := store.Down(ctx, definition.Definition{
 			ID: 12,
@@ -260,8 +300,8 @@ func TestDown(t *testing.T) {
 		}
 
 		// Version, dirty status unchanged
-		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || dirty || version != 14 {
-			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 14, false, version, dirty, ok, err)
+		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || dirty || version != 13 {
+			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 13, false, version, dirty, ok, err)
 		}
 	})
 
@@ -279,8 +319,8 @@ func TestDown(t *testing.T) {
 		}
 
 		// Version set to migration ID; dirty
-		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || !dirty || version != 13 {
-			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 13, true, version, dirty, ok, err)
+		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || !dirty || version != 12 {
+			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 12, true, version, dirty, ok, err)
 		}
 	})
 
@@ -288,7 +328,7 @@ func TestDown(t *testing.T) {
 		expectedErrorMessage := "dirty database"
 
 		if err := store.Down(ctx, definition.Definition{
-			ID: 13,
+			ID: 12,
 			DownQuery: sqlf.Sprintf(`
 				-- Does not actually run
 			`),
@@ -297,8 +337,8 @@ func TestDown(t *testing.T) {
 		}
 
 		// Version, dirty status unchanged
-		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || !dirty || version != 13 {
-			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 13, true, version, dirty, ok, err)
+		if version, dirty, ok, err := store.Version(ctx); err != nil || !ok || !dirty || version != 12 {
+			t.Fatalf("unexpected version. want=(version=%d, dirty=%v), have=(version=%d, dirty=%v, ok=%v, error=%q)", 12, true, version, dirty, ok, err)
 		}
 	})
 }

@@ -146,7 +146,6 @@ export function quoteIfNeeded(string: string): string {
 
 export interface ParsedSearchQueryProps {
     parsedSearchQuery: string
-    setParsedSearchQuery: (query: string) => void
 }
 
 export interface PatternTypeProps {
@@ -159,14 +158,8 @@ export interface CaseSensitivityProps {
     setCaseSensitivity: (caseSensitive: boolean) => void
 }
 
-export interface OnboardingTourProps {
-    showOnboardingTour: boolean
-}
-
 export interface SearchContextProps {
     searchContextsEnabled: boolean
-    showSearchContext: boolean
-    showSearchContextManagement: boolean
     hasUserAddedRepositories: boolean
     hasUserAddedExternalServices: boolean
     defaultSearchContextSpec: string
@@ -186,10 +179,8 @@ export interface SearchContextProps {
 export type SearchContextInputProps = Pick<
     SearchContextProps,
     | 'searchContextsEnabled'
-    | 'showSearchContext'
     | 'hasUserAddedRepositories'
     | 'hasUserAddedExternalServices'
-    | 'showSearchContextManagement'
     | 'defaultSearchContextSpec'
     | 'selectedSearchContextSpec'
     | 'setSelectedSearchContextSpec'
@@ -199,7 +190,6 @@ export type SearchContextInputProps = Pick<
 >
 
 export interface HomePanelsProps {
-    showEnterpriseHomePanels: boolean
     fetchSavedSearches: () => Observable<ISavedSearch[]>
     fetchRecentSearches: (userId: string, first: number) => Observable<EventLogResult | null>
     fetchRecentFileViews: (userId: string, first: number) => Observable<EventLogResult | null>

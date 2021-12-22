@@ -11,13 +11,13 @@ import * as View from '../../../../../../views'
 import { LineChartSettingsContext } from '../../../../../../views'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
-import { InsightTypePrefix } from '../../../../core/types'
-import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
+import { BackendInsight, InsightTypePrefix } from '../../../../core/types'
+import { SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
-import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
 import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
+import { useInsightData } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
 import { BackendAlertOverlay } from './BackendAlertOverlay'
@@ -29,7 +29,7 @@ import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/u
 interface BackendInsightProps
     extends TelemetryProps,
         React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
-    insight: SearchBackendBasedInsight
+    insight: BackendInsight
 
     innerRef: Ref<HTMLElement>
     resizing?: boolean
@@ -38,7 +38,7 @@ interface BackendInsightProps
 /**
  * Renders BE search based insight. Fetches insight data by gql api handler.
  */
-export const BackendInsight: React.FunctionComponent<BackendInsightProps> = props => {
+export const BackendInsightView: React.FunctionComponent<BackendInsightProps> = props => {
     const { telemetryService, insight, innerRef, resizing, ...otherProps } = props
 
     const { dashboard } = useContext(DashboardInsightsContext)
@@ -67,7 +67,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     const debouncedFilters = useDebounce(useDistinctValue<SearchBasedBackendFilters>(filters), 500)
 
     // Loading the insight backend data
-    const { data, loading, error } = useParallelRequests(
+    const { data, loading, error, isVisible } = useInsightData(
         useCallback(
             () =>
                 getBackendInsightData({
@@ -75,7 +75,8 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                     filters: debouncedFilters,
                 }),
             [cachedInsight, debouncedFilters, getBackendInsightData]
-        )
+        ),
+        insightCardReference
     )
 
     // Handle insight delete action
@@ -83,7 +84,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
 
     const handleFilterSave = async (filters: SearchBasedBackendFilters): Promise<SubmissionErrors> => {
         try {
-            const insightWithNewFilters: SearchBackendBasedInsight = { ...insight, filters }
+            const insightWithNewFilters = { ...insight, filters }
 
             await updateInsight({ oldInsight: insight, newInsight: insightWithNewFilters }).toPromise()
 
@@ -108,7 +109,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         }
 
         try {
-            const newInsight: SearchBackendBasedInsight = {
+            const newInsight = {
                 ...insight,
                 id: `${InsightTypePrefix.search}.${camelCase(insightName)}`,
                 title: insightName,
@@ -137,26 +138,28 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
             title={insight.title}
             innerRef={mergedInsightCardReference}
             actions={
-                <>
-                    <DrillDownFiltersAction
-                        isOpen={isFiltersOpen}
-                        popoverTargetRef={insightCardReference}
-                        initialFiltersValue={filters}
-                        originalFiltersValue={originalInsightFilters}
-                        onFilterChange={setFilters}
-                        onFilterSave={handleFilterSave}
-                        onInsightCreate={handleInsightFilterCreation}
-                        onVisibilityChange={setIsFiltersOpen}
-                    />
-                    <InsightContextMenu
-                        insight={insight}
-                        dashboard={dashboard}
-                        menuButtonClassName="ml-1 d-inline-flex"
-                        zeroYAxisMin={zeroYAxisMin}
-                        onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
-                        onDelete={() => handleDelete(insight)}
-                    />
-                </>
+                isVisible && (
+                    <>
+                        <DrillDownFiltersAction
+                            isOpen={isFiltersOpen}
+                            popoverTargetRef={insightCardReference}
+                            initialFiltersValue={filters}
+                            originalFiltersValue={originalInsightFilters}
+                            onFilterChange={setFilters}
+                            onFilterSave={handleFilterSave}
+                            onInsightCreate={handleInsightFilterCreation}
+                            onVisibilityChange={setIsFiltersOpen}
+                        />
+                        <InsightContextMenu
+                            insight={insight}
+                            dashboard={dashboard}
+                            menuButtonClassName="ml-1 d-inline-flex"
+                            zeroYAxisMin={zeroYAxisMin}
+                            onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
+                            onDelete={() => handleDelete(insight)}
+                        />
+                    </>
+                )
             }
             className={classNames('be-insight-card', otherProps.className, {
                 [styles.cardWithFilters]: isFiltersOpen,
@@ -164,7 +167,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         >
             {resizing ? (
                 <View.Banner>Resizing</View.Banner>
-            ) : loading || isDeleting ? (
+            ) : loading || isDeleting || !isVisible ? (
                 <View.LoadingContent text={isDeleting ? 'Deleting code insight' : 'Loading code insight'} />
             ) : isErrorLike(error) ? (
                 <View.ErrorContent error={error} title={insight.id}>
@@ -178,7 +181,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                         <View.Content
                             telemetryService={telemetryService}
                             content={data.view.content}
-                            viewID={insight.id}
+                            viewTrackingType={insight.viewType}
                             containerClassName="be-insight-card"
                             alert={
                                 <BackendAlertOverlay
@@ -193,7 +196,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
             {
                 // Passing children props explicitly to render any top-level content like
                 // resize-handler from the react-grid-layout library
-                otherProps.children
+                isVisible && otherProps.children
             }
         </View.Root>
     )

@@ -7,19 +7,22 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
+	batchesjanitor "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/janitor"
+	batchesmigrations "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/migrations"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
+	codeintelmigrations "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/migrations"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
+	workerinsights "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
 func main() {
@@ -30,15 +33,17 @@ func main() {
 
 	go setAuthzProviders()
 
-	shared.Start(map[string]job.Job{
+	additionalJobs := map[string]job.Job{
 		"codeintel-commitgraph":    codeintel.NewCommitGraphJob(),
 		"codeintel-janitor":        codeintel.NewJanitorJob(),
 		"codeintel-auto-indexing":  codeintel.NewIndexingJob(),
 		"codehost-version-syncing": versions.NewSyncingJob(),
-		"insights-job":             insights.NewInsightsJob(),
-		"batches-janitor":          batches.NewJanitorJob(),
+		"insights-job":             workerinsights.NewInsightsJob(),
+		"batches-janitor":          batchesjanitor.NewJanitorJob(),
 		"executors-janitor":        executors.NewJanitorJob(),
-	})
+	}
+
+	shared.Start(additionalJobs, registerEnterpriseMigrations)
 }
 
 // setAuthProviders waits for the database to be initialized, then periodically refreshes the
@@ -58,4 +63,20 @@ func setAuthzProviders() {
 		allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(db))
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}
+}
+
+func registerEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+	if err := batchesmigrations.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
+		return err
+	}
+
+	if err := codeintelmigrations.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
+		return err
+	}
+
+	if err := insights.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -5,12 +5,11 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // GetAggregatedCodeIntelStats returns aggregated statistics for code intelligence usage.
-func GetAggregatedCodeIntelStats(ctx context.Context, db dbutil.DB) (*types.NewCodeIntelUsageStatistics, error) {
+func GetAggregatedCodeIntelStats(ctx context.Context, db database.DB) (*types.NewCodeIntelUsageStatistics, error) {
 	eventLogs := database.EventLogs(db)
 
 	codeIntelEvents, err := eventLogs.AggregatedCodeIntelEvents(ctx)

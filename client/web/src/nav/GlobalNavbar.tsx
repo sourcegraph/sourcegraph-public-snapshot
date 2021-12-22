@@ -20,15 +20,15 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { WebCommandListPopoverButton } from '@sourcegraph/web/src/components/shared'
+import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/web/src/nav'
 import { FeedbackPrompt } from '@sourcegraph/web/src/nav/Feedback/FeedbackPrompt'
+import { NavDropdown } from '@sourcegraph/web/src/nav/NavBar/NavDropdown'
 import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNavItem'
-import { ProductStatusBadge, NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard'
-import { NavDropdown } from '@sourcegraph/wildcard/src/components/NavBar/NavDropdown'
+import { ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
-import { CodeMonitoringProps } from '../code-monitoring'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { CodeInsightsProps } from '../insights/types'
@@ -42,15 +42,13 @@ import { LayoutRouteProps } from '../routes'
 import { Settings } from '../schema/settings.schema'
 import {
     PatternTypeProps,
-    CaseSensitivityProps,
-    OnboardingTourProps,
     ParsedSearchQueryProps,
     isSearchContextSpecAvailable,
     getGlobalSearchContextFilter,
     SearchContextInputProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { useNavbarQueryState } from '../stores'
+import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
@@ -68,13 +66,10 @@ interface Props
         ThemePreferenceProps,
         ExtensionAlertAnimationProps,
         ActivationProps,
-        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        ParsedSearchQueryProps,
         PatternTypeProps,
-        CaseSensitivityProps,
         SearchContextInputProps,
-        CodeMonitoringProps,
         CodeInsightsProps,
-        OnboardingTourProps,
         BatchChangesProps {
     history: H.History
     location: H.Location<{ query: string }>
@@ -106,7 +101,6 @@ interface Props
 export const GlobalNavbar: React.FunctionComponent<Props> = ({
     authRequired,
     showSearchBox,
-    caseSensitive,
     patternType,
     variant,
     isLightTheme,
@@ -148,6 +142,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     )
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext)
+    const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring)
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -165,7 +161,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         // If a global search context spec is available to the user, we omit it from the
         // query and move it to the search contexts dropdown
         const finalQuery =
-            globalSearchContextSpec && isSearchContextAvailable && props.showSearchContext
+            globalSearchContextSpec && isSearchContextAvailable && showSearchContext
                 ? omitFilter(query, globalSearchContextSpec.filter)
                 : query
 
@@ -176,7 +172,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         query,
         globalSearchContextSpec,
         isSearchContextAvailable,
-        props.showSearchContext,
+        showSearchContext,
     ])
 
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
@@ -190,7 +186,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             history={history}
             isLightTheme={isLightTheme}
             patternType={patternType}
-            caseSensitive={caseSensitive}
             isSourcegraphDotCom={isSourcegraphDotCom}
             searchContextsEnabled={searchContextsEnabled}
             isRepositoryRelatedPage={isRepositoryRelatedPage}
@@ -224,7 +219,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             },
                         ]}
                     />
-                    {props.enableCodeMonitoring && (
+                    {enableCodeMonitoring && (
                         <NavItem icon={CodeMonitoringLogo}>
                             <NavLink to="/code-monitoring">Monitoring</NavLink>
                         </NavItem>

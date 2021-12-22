@@ -10,7 +10,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container } from '@sourcegraph/wildcard'
+import { Badge, Container } from '@sourcegraph/wildcard'
 
 import { BatchChangeFields } from '../../../graphql-operations'
 import {
@@ -28,6 +28,7 @@ import {
     queryAllChangesetIDs as _queryAllChangesetIDs,
 } from './backend'
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
+import styles from './BatchChangeDetailsTabs.module.scss'
 import { BulkOperationsTab } from './BulkOperationsTab'
 import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
 
@@ -82,9 +83,9 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     <span className="text-content" data-tab-content="Changesets">
                         Changesets
                     </span>{' '}
-                    <span className="badge badge-pill badge-secondary ml-1">
+                    <Badge variant="secondary" pill={true} className="ml-1">
                         {batchChange.changesetsStats.total - batchChange.changesetsStats.archived}
-                    </span>
+                    </Badge>
                 </span>
             </BatchChangeTab>
             <BatchChangeTab index={1} name={TabName.Chart}>
@@ -109,9 +110,9 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     <span className="text-content" data-tab-content="Archived">
                         Archived
                     </span>{' '}
-                    <span className="badge badge-pill badge-secondary ml-1">
+                    <Badge variant="secondary" pill={true} className="ml-1">
                         {batchChange.changesetsStats.archived}
-                    </span>
+                    </Badge>
                 </span>
             </BatchChangeTab>
             <BatchChangeTab index={4} name={TabName.BulkOperations}>
@@ -120,9 +121,9 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     <span className="text-content" data-tab-content="Bulk operations">
                         Bulk operations
                     </span>{' '}
-                    <span className="badge badge-pill badge-secondary ml-1">
+                    <Badge variant="secondary" pill={true} className="ml-1">
                         {batchChange.bulkOperations.totalCount}
-                    </span>
+                    </Badge>
                 </span>
             </BatchChangeTab>
         </BatchChangeTabList>
@@ -159,11 +160,17 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     />
                     <BatchSpecDownloadButton
                         name={batchChange.name}
+                        isLightTheme={isLightTheme}
                         originalInput={batchChange.currentSpec.originalInput}
                     />
                 </div>
                 <Container>
-                    <BatchSpec originalInput={batchChange.currentSpec.originalInput} />
+                    <BatchSpec
+                        name={batchChange.name}
+                        originalInput={batchChange.currentSpec.originalInput}
+                        isLightTheme={isLightTheme}
+                        className={styles.batchSpec}
+                    />
                 </Container>
             </BatchChangeTabPanel>
             <BatchChangeTabPanel index={3}>

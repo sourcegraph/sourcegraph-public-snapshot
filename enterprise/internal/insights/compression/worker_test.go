@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestCommitIndexer_indexAll(t *testing.T) {
@@ -49,7 +48,6 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 		"no-commits": {},
 	}
 	indexer.getCommits = mockCommits(commits)
-	indexer.getRepoID = mockIds(map[string]int{"repo-one": 1, "really-big-repo": 2, "no-commits": 3})
 	indexer.allReposIterator = mockIterator([]string{"repo-one", "really-big-repo", "no-commits"})
 
 	commitStore.GetMetadataFunc.PushReturn(CommitIndexMetadata{
@@ -98,7 +96,7 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 			t.Errorf("got UpsertMetadataStamp invocations: %v want %v", got, want)
 		} else {
 			call := commitStore.UpsertMetadataStampFunc.history[0]
-			if call.Arg1 != 3 {
+			if call.Arg1 != 2 {
 				t.Errorf("unexpected repository for UpsertMetadataStamp repo_id: %v", call.Arg1)
 			}
 		}
@@ -173,10 +171,10 @@ func Test_getMetadata_NoInsertRequired(t *testing.T) {
 }
 
 // mockIterator generates iterator methods given a list of repo names for test scenarios
-func mockIterator(repos []string) func(ctx context.Context, each func(repoName string) error) error {
-	return func(ctx context.Context, each func(repoName string) error) error {
-		for _, repo := range repos {
-			err := each(repo)
+func mockIterator(repos []string) func(ctx context.Context, each func(repoName string, id api.RepoID) error) error {
+	return func(ctx context.Context, each func(repoName string, id api.RepoID) error) error {
+		for i, repo := range repos {
+			err := each(repo, api.RepoID(i))
 			if err != nil {
 				return err
 			}
@@ -198,12 +196,5 @@ func commit(ref string, commitTime string) *gitdomain.Commit {
 func mockCommits(commits map[string][]*gitdomain.Commit) func(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
 	return func(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
 		return commits[(string(name))], nil
-	}
-}
-
-func mockIds(ids map[string]int) func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-	return func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-		id := ids[string(name)]
-		return &types.Repo{ID: api.RepoID(id)}, nil
 	}
 }

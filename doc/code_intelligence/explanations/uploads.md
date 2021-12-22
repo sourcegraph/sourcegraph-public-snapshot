@@ -29,7 +29,7 @@ Processing of a precise code intelligence index file may occur due to malformed 
 
 At any point, the upload record may be deleted. This can happen because the record is being replaced by a newer upload, due to [age of the upload record](../how-to/configure_data_retention.md), or due to explicit deletion by the user. Deleting a record that could be used to resolve to code intelligence queries will first move into the `DELETING` state. Moving temporarily into this state allows Sourcegraph to smoothly transition the set of code intelligence uploads that are visible for query resolution.
 
-The change of an upload into or away from the `COMPLETED` state can be an expensive one, and when is the [repository commit graph](#repository-commit-graph) needs to be refreshed.
+Changing the state of an upload to or from the `COMPLETED` state requires that the [repository commit graph](#repository-commit-graph) be [updated](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/cmd/worker/internal/codeintel/commitgraph/updater%5C.go+func+%28u+*Updater%29+update%28ctx&patternType=literal). This process can be computationally expensive for the worker service and/or postgres database.
 ## Lifecycle of an upload (via UI)
 
 After successful upload of an index file, the Sourcegraph CLI will display a URL on the target instance that shows the progress of that upload.
@@ -48,7 +48,7 @@ Administrators of a Sourcegraph instance can see a global view of precise code i
 
 Sourcegraph keeps a mapping from a commit of a repository to the set of upload records that can resolve a query for that commit. When an upload record moves into or away from the `COMPLETED` state, the set of eligible uploads change and this mapping must be recalculated.
 
-When an upload changes state, we flag the repository as needing to be updated. Then the [`worker` service](http://localhost:5080/admin/workers#codeintel-commitgraph)
+When an upload changes state, we flag the repository as needing to be updated. Then the [`worker` service](https://docs.sourcegraph.com/admin/workers#codeintel-commitgraph)
 will update the commit graph and unset the flag for that repository asynchronously.
 
 While this flag is set, the repository's commit graph is considered _stale_. This simply means that there may be some upload records in a `COMPLETED` state that aren't yet being used to resolve code intelligence queries (as might be expected).

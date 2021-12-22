@@ -21,7 +21,8 @@
           }
         },
         "codeInsightsGqlApi": {
-          "description": "Enables gql api instead of using setting cascade as a main storage fro code insights entities",
+          "deprecated": true,
+          "description": "DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -185,6 +186,23 @@
           "description": "Enables/disables the Batch Changes server side execution feature.",
           "type": "boolean",
           "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "enableSearchStack": {
+          "description": "Enables search stack",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "clientSearchResultRanking": {
+          "description": "How to rank search results in the client",
+          "type": "string",
+          "default": "by-line-number",
+          "examples": ["by-line-number", "by-zoekt-ranking"],
           "!go": {
             "pointer": true
           }

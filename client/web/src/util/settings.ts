@@ -5,13 +5,14 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../auth'
 import { LayoutProps } from '../Layout'
-import { SettingsExperimentalFeatures } from '../schema/settings.schema'
 import { parseSearchURLPatternType } from '../search'
 
 /** A fallback settings subject that can be constructed synchronously at initialization time. */
-export const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> = {
-    id: window.context.siteGQLID,
-    viewerCanAdminister: false,
+export function siteSubjectNoAdmin(): Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> {
+    return {
+        id: window.context.siteGQLID,
+        viewerCanAdminister: false,
+    }
 }
 
 export function viewerSubjectFromSettings(
@@ -24,7 +25,7 @@ export function viewerSubjectFromSettings(
     if (cascade && !isErrorLike(cascade) && cascade.subjects && cascade.subjects.length > 0) {
         return cascade.subjects[0].subject
     }
-    return SITE_SUBJECT_NO_ADMIN
+    return siteSubjectNoAdmin()
 }
 
 export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeOrError): SearchPatternType | undefined {
@@ -55,44 +56,4 @@ export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascad
         return defaultCaseSensitive || false
     }
     return false
-}
-
-export function experimentalFeaturesFromSettings(
-    settingsCascade: SettingsCascadeOrError
-): {
-    showOnboardingTour: boolean
-    showEnterpriseHomePanels: boolean
-    showMultilineSearchConsole: boolean
-    showSearchNotebook: boolean
-    showSearchContext: boolean
-    showSearchContextManagement: boolean
-    enableCodeMonitoring: boolean
-    enableAPIDocs: boolean
-} {
-    const experimentalFeatures: SettingsExperimentalFeatures =
-        (settingsCascade.final && !isErrorLike(settingsCascade.final) && settingsCascade.final.experimentalFeatures) ||
-        {}
-
-    const {
-        showOnboardingTour = true, // Default to true if not set
-        showEnterpriseHomePanels = true, // Default to true if not set
-        showSearchContext = true, // Default to true if not set
-        showSearchContextManagement = true, // Default to true if not set
-        showMultilineSearchConsole = false,
-        showSearchNotebook = false,
-        codeMonitoring = true, // Default to true if not set
-        // eslint-disable-next-line unicorn/prevent-abbreviations
-        apiDocs = true, // Default to true if not set
-    } = experimentalFeatures
-
-    return {
-        showOnboardingTour,
-        showSearchContext,
-        showSearchContextManagement,
-        showEnterpriseHomePanels,
-        showMultilineSearchConsole,
-        showSearchNotebook,
-        enableCodeMonitoring: codeMonitoring,
-        enableAPIDocs: apiDocs,
-    }
 }

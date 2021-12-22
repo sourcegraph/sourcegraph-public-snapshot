@@ -25,8 +25,8 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
 	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
 
-	gh, ghExtSvc := ct.CreateGitHubSSHTestRepos(t, ctx, s.DB(), 1)
-	bbs, _ := ct.CreateBbsSSHTestRepos(t, ctx, s.DB(), 1)
+	gh, ghExtSvc := ct.CreateGitHubSSHTestRepos(t, ctx, s.DatabaseDB(), 1)
+	bbs, _ := ct.CreateBbsSSHTestRepos(t, ctx, s.DatabaseDB(), 1)
 	sshRepos := []*types.Repo{gh[0], bbs[0]}
 
 	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)

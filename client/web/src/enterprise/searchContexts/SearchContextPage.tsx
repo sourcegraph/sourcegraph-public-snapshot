@@ -18,7 +18,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Badge, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { SearchContextProps } from '../../search'
 
@@ -168,14 +168,17 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                             <div className="d-flex align-items-center">
                                                 <span>{searchContextOrError.spec}</span>
                                                 {!searchContextOrError.public && (
-                                                    <div
+                                                    <Badge
+                                                        variant="secondary"
+                                                        pill={true}
                                                         className={classNames(
-                                                            'badge badge-pill badge-secondary ml-2',
+                                                            'ml-2',
                                                             styles.searchContextPagePrivateBadge
                                                         )}
+                                                        as="div"
                                                     >
                                                         Private
-                                                    </div>
+                                                    </Badge>
                                                 )}
                                             </div>
                                         ),

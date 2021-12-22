@@ -1,11 +1,5 @@
 # Administration and security of Code Insights
 
-## Enable Code Insights for all users 
-
-To enable code insights for all users – which will add an "Insights" link in the Sourcegraph navigation bar menu and allow others to create their own insights – add the following to your organization settings at `sourcegraph.example.com/organizations/[your_org]/settings`:
-
-`"experimentalFeatures": { "codeInsights": true }`
-
 ## Code Insights enforce user permissions 
 
 Users can only create code insights that include repositories they have access to. Moreover, when creating code insights, the repository field will *not* validate nor show users repositories they would not have access to otherwise. 
