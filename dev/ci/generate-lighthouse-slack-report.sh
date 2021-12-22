@@ -13,7 +13,7 @@ OUTPUT_FILE=$3
 yarn lhci collect --url="$URL" --no-lighthouserc --settings.preset="desktop" --numberOfRuns=10
 
 # LHCI doesn't an provide a way to easily expose the temporary storage URL, we have to extract it ourselves
-REPORT_URL=$(yarn lhci upload --target=temporary-public-storage | grep -o "https:\/\/storage.googleapis.*.html\+")
+REPORT_URL=$(yarn lhci upload --target=temporary-public-storage --uploadUrlMap | grep -o "https:\/\/googlechrome.github.io.*.html\+")
 # Primary result source, we'll use this to extract the raw audit data.
 yarn lhci upload --target=filesystem
 
