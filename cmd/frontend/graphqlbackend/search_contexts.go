@@ -75,14 +75,16 @@ type SearchContextRepositoryRevisionsInputArgs struct {
 }
 
 type CreateSearchContextArgs struct {
-	SearchContext SearchContextInputArgs
-	Repositories  []SearchContextRepositoryRevisionsInputArgs
+	SearchContext   SearchContextInputArgs
+	Repositories    []SearchContextRepositoryRevisionsInputArgs
+	RepositoryQuery string
 }
 
 type UpdateSearchContextArgs struct {
-	ID            graphql.ID
-	SearchContext SearchContextEditInputArgs
-	Repositories  []SearchContextRepositoryRevisionsInputArgs
+	ID              graphql.ID
+	SearchContext   SearchContextEditInputArgs
+	Repositories    []SearchContextRepositoryRevisionsInputArgs
+	RepositoryQuery string
 }
 
 type DeleteSearchContextArgs struct {

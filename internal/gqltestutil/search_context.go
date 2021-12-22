@@ -26,17 +26,30 @@ type SearchContextRepositoryRevisionsInput struct {
 // It returns the GraphQL node ID of the newly created search context.
 //
 // This method requires the authenticated user to be a site admin.
-func (c *Client) CreateSearchContext(input CreateSearchContextInput, repositories []SearchContextRepositoryRevisionsInput) (string, error) {
+func (c *Client) CreateSearchContext(
+	input CreateSearchContextInput,
+	repositories []SearchContextRepositoryRevisionsInput,
+	repositoryQuery string,
+) (string, error) {
 	const query = `
-mutation CreateSearchContext($input: SearchContextInput!, $repositories: [SearchContextRepositoryRevisionsInput!]!) {
-	createSearchContext(searchContext: $input, repositories: $repositories) {
+mutation CreateSearchContext(
+  $input: SearchContextInput!,
+  $repositories: [SearchContextRepositoryRevisionsInput!],
+  $repositoryQuery: String,
+) {
+	createSearchContext(
+    searchContext: $input,
+    repositories: $repositories,
+    repositoryQuery: $repositoryQuery,
+  ) {
 		id
 	}
 }
 `
 	variables := map[string]interface{}{
-		"input":        input,
-		"repositories": repositories,
+		"input":           input,
+		"repositories":    repositories,
+		"repositoryQuery": repositoryQuery,
 	}
 	var resp struct {
 		Data struct {
@@ -64,6 +77,7 @@ type GetSearchContextResult struct {
 		} `json:"repository"`
 		Revisions []string `json:"revisions"`
 	} `json:"repositories"`
+	RepositoryQuery string `json:"repositoryQuery"`
 }
 
 func (c *Client) GetSearchContext(id string) (*GetSearchContextResult, error) {
@@ -81,6 +95,7 @@ query GetSearchContext($id: ID!) {
 				}
 				revisions
 			}
+      repositoryQuery
 		}
 	}
 }
@@ -101,10 +116,25 @@ query GetSearchContext($id: ID!) {
 	return &resp.Data.Node, nil
 }
 
-func (c *Client) UpdateSearchContext(id string, input UpdateSearchContextInput, repos []SearchContextRepositoryRevisionsInput) (string, error) {
+func (c *Client) UpdateSearchContext(
+	id string,
+	input UpdateSearchContextInput,
+	repos []SearchContextRepositoryRevisionsInput,
+	repositoryQuery string,
+) (string, error) {
 	const query = `
-mutation UpdateSearchContext($id: ID!, $input: SearchContextEditInput!, $repositories: [SearchContextRepositoryRevisionsInput!]!) {
-	updateSearchContext(id: $id, searchContext: $input, repositories: $repositories) {
+mutation UpdateSearchContext(
+  $id: ID!,
+  $input: SearchContextEditInput!,
+  $repositories: [SearchContextRepositoryRevisionsInput!],
+  $repositoryQuery: String,
+) {
+	updateSearchContext(
+    id: $id,
+    searchContext: $input,
+    repositories: $repositories,
+    repositoryQuery: $repositoryQuery,
+  ) {
 		id
 		description
 		spec
@@ -115,13 +145,15 @@ mutation UpdateSearchContext($id: ID!, $input: SearchContextEditInput!, $reposit
 			}
 			revisions
 		}
+    repositoryQuery
 	}
 }
 `
 	variables := map[string]interface{}{
-		"id":           id,
-		"input":        input,
-		"repositories": repos,
+		"id":              id,
+		"input":           input,
+		"repositories":    repos,
+		"repositoryQuery": repositoryQuery,
 	}
 	var resp struct {
 		Data struct {
@@ -212,6 +244,7 @@ query ListSearchContexts(
 				}
 				revisions
 			}
+      repositoryQuery
 		}
 		pageInfo {
 			hasNextPage

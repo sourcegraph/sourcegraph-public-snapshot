@@ -83,6 +83,11 @@ func (r *Resolver) CreateSearchContext(ctx context.Context, args graphqlbackend.
 		return nil, err
 	}
 
+	repositoryQuery, err := r.parseRepositoryQuery(ctx, args.RepositoryQuery)
+	if err != nil {
+		return nil, err
+	}
+
 	searchContext, err := searchcontexts.CreateSearchContextWithRepositoryRevisions(
 		ctx,
 		r.db,
@@ -94,6 +99,7 @@ func (r *Resolver) CreateSearchContext(ctx context.Context, args graphqlbackend.
 			NamespaceOrgID:  namespaceOrgID,
 		},
 		repositoryRevisions,
+		repositoryQuery,
 	)
 	if err != nil {
 		return nil, err

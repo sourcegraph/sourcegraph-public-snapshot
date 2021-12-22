@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -187,7 +188,13 @@ func validateSearchContextDoesNotExist(ctx context.Context, db dbutil.DB, search
 	return err
 }
 
-func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db database.DB, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
+func CreateSearchContextWithRepositoryRevisions(
+	ctx context.Context,
+	db database.DB,
+	searchContext *types.SearchContext,
+	repositoryRevisions []*types.SearchContextRepositoryRevisions,
+	repositoryQuery *types.SearchContextRepositoryQuery,
+) (*types.SearchContext, error) {
 	if IsGlobalSearchContext(searchContext) {
 		return nil, errors.New("cannot override global search context")
 	}
