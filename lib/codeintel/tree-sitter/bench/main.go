@@ -3,6 +3,7 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"crypto/md5"
 	"fmt"
 	"io"
@@ -11,7 +12,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/loov/hrtime"
 	"github.com/schollz/progressbar/v3"
+	sitter "github.com/smacker/go-tree-sitter"
+	"github.com/smacker/go-tree-sitter/golang"
 )
 
 var kubernetes = Corpus{Name: "kubernetes", URL: "https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.22.4.zip"}
@@ -23,7 +27,7 @@ type Corpus struct {
 
 type Input struct {
 	Filename string
-	Text     string
+	Bytes    []byte
 }
 
 func main() {
@@ -46,6 +50,24 @@ func main() {
 	}
 	fmt.Println("Number of go files:")
 	fmt.Println(len(goFiles))
+
+	bench := hrtime.NewBenchmark(len(goFiles))
+	i := 0
+	for bench.Next() {
+		goFiles[i].benchmark()
+		i++
+	}
+	histogram := bench.Histogram(20)
+	fmt.Println(histogram)
+}
+
+func (i *Input) benchmark() {
+	parser := sitter.NewParser()
+	parser.SetLanguage(golang.GetLanguage())
+	_, err := parser.ParseCtx(context.Background(), nil, i.Bytes)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func readInput(file *zip.File, reader *zip.Reader) (*Input, error) {
@@ -60,7 +82,7 @@ func readInput(file *zip.File, reader *zip.Reader) (*Input, error) {
 	if stat.IsDir() {
 		return &Input{
 			Filename: file.Name,
-			Text:     "",
+			Bytes:    []byte{},
 		}, nil
 	}
 
@@ -68,7 +90,7 @@ func readInput(file *zip.File, reader *zip.Reader) (*Input, error) {
 	_, err = io.ReadFull(open, data)
 	return &Input{
 		Filename: file.Name,
-		Text:     string(data),
+		Bytes:    data,
 	}, err
 }
 

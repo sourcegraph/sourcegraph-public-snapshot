@@ -173,6 +173,8 @@ require (
 	k8s.io/client-go v0.22.4
 )
 
+require github.com/loov/hrtime v1.0.3 // indirect
+
 require (
 	cloud.google.com/go v0.98.0 // indirect
 	github.com/Microsoft/go-winio v0.5.1 // indirect
