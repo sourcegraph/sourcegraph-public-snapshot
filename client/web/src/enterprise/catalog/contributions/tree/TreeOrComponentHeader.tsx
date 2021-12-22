@@ -1,18 +1,18 @@
 import FolderIcon from 'mdi-react/FolderIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React from 'react'
-import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { PageHeader } from '@sourcegraph/wildcard'
+
 import {
     PrimaryComponentForTreeFields,
     RepositoryForTreeFields,
-    TreeOrComponentPageResult,
     TreeEntryForTreeFields,
 } from '../../../../graphql-operations'
-import { PageHeader } from '@sourcegraph/wildcard'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-
+import { ComponentAncestorsPath } from '../../components/catalog-area-header/CatalogAreaHeader'
 import { componentIconComponent } from '../../components/ComponentIcon'
-
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { catalogPagePathForComponent } from '../../pages/component/ComponentDetailContent'
 
 interface Props {
     repository: RepositoryForTreeFields
@@ -33,8 +33,9 @@ export const TreeOrComponentHeader: React.FunctionComponent<Props> = ({ reposito
                         ? { icon: FolderIcon, text: tree.path }
                         : { icon: SourceRepositoryIcon, text: displayRepoName(repository.name) },
                 ]}
-                className="mb-3 test-tree-page-title"
+                description={primaryComponent.description}
             />
+            <ComponentAncestorsPath path={catalogPagePathForComponent(primaryComponent).slice(0, -1)} />
         </>
     )
 }

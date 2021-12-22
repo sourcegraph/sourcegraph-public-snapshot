@@ -10,7 +10,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { CatalogIcon } from '../../../../catalog'
-import { ComponentStateDetailFields } from '../../../../graphql-operations'
+import { ComponentKind, ComponentOwnerFields, ComponentStateDetailFields } from '../../../../graphql-operations'
 import { CatalogPage } from '../../components/catalog-area-header/CatalogPage'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 import { componentIconComponent } from '../../components/ComponentIcon'
@@ -66,29 +66,34 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ compone
     )
     return (
         <CatalogPage
-            path={[
-                { icon: CatalogIcon, to: '/catalog' },
-                ...[...(component.owner?.__typename === 'Group' ? component.owner.ancestorGroups : []), component.owner]
-                    .filter(isDefined)
-                    .map(owner =>
-                        owner.__typename === 'Group'
-                            ? {
-                                  icon: CatalogGroupIcon,
-                                  text: owner.name,
-                                  to: owner.url,
-                              }
-                            : owner.__typename === 'Person'
-                            ? { icon: AccountIcon, text: owner.displayName, to: owner.user?.url }
-                            : { text: 'Unknown' }
-                    ),
-                {
-                    icon: componentIconComponent(component),
-                    text: component.name,
-                    to: component.url,
-                },
-            ].filter(isDefined)}
+            path={catalogPagePathForComponent(component)}
             tabs={tabs}
             actions={<ComponentHeaderActions component={component} />}
         />
     )
 }
+
+export const catalogPagePathForComponent = (
+    component: { __typename: 'Component'; name: string; kind: ComponentKind; url: string } & ComponentOwnerFields
+): React.ComponentProps<typeof CatalogPage>['path'] =>
+    [
+        { icon: CatalogIcon, to: '/catalog' },
+        ...[...(component.owner?.__typename === 'Group' ? component.owner.ancestorGroups : []), component.owner]
+            .filter(isDefined)
+            .map(owner =>
+                owner.__typename === 'Group'
+                    ? {
+                          icon: CatalogGroupIcon,
+                          text: owner.name,
+                          to: owner.url,
+                      }
+                    : owner.__typename === 'Person'
+                    ? { icon: AccountIcon, text: owner.displayName, to: owner.user?.url }
+                    : { text: 'Unknown' }
+            ),
+        {
+            icon: componentIconComponent(component),
+            text: component.name,
+            to: component.url,
+        },
+    ].filter(isDefined)
