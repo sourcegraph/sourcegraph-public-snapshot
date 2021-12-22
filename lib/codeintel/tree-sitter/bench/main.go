@@ -37,7 +37,6 @@ type Input struct {
 }
 
 func main() {
-	megarepo.DownloadUrlAndCache()
 	reader, err := kubernetes.openZipReader()
 	if err != nil {
 		panic(err)
