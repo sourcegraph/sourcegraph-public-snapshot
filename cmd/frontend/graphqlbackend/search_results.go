@@ -1047,6 +1047,8 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 				return err
 			}
 
+			defer sem.Release(1)
+
 			new, err := r.evaluatePatternExpression(ctx, q.MapPattern(term))
 			if err != nil || new == nil {
 				return err
