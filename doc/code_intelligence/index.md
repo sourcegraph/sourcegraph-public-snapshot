@@ -34,6 +34,21 @@ Code intelligence provides advanced code navigation features that let developers
   </a>
 </div>
 
+## [Explanations](explanations/index.md)
+
+- [Precise code intelligence](explanations/precise_code_intelligence.md)
+- [Search-based code intelligence](explanations/search_based_code_intelligence.md)
+- [Code navigation features](explanations/features.md)
+  - [Popover](explanations/features.md#popover)
+  - [Go to definition](explanations/features.md#go-to-definition)
+  - [Find references](explanations/features.md#find-references)
+  - [Find implementations](explanations/features.md#find-implementations)
+  - [Symbol search](explanations/features.md#symbol-search)
+- [Precise code intelligence uploads](explanations/uploads.md)
+- [Writing an indexer](explanations/writing_an_indexer.md)
+- <span class="badge badge-experimental">Experimental</span> [Auto-indexing](explanations/auto_indexing.md)
+- <span class="badge badge-experimental">Experimental</span> [Auto-indexing inference](explanations/auto_indexing_inference.md)
+
 
 ## [How-tos](how-to/index.md)
 
@@ -53,19 +68,6 @@ Code intelligence provides advanced code navigation features that let developers
 - [Manually index a popular Go repository](tutorials/indexing_go_repo.md)
 - [Manually index a popular TypeScript repository](tutorials/indexing_ts_repo.md)
 
-## [Explanations](explanations/index.md)
-
-- [Search-based code intelligence](explanations/search_based_code_intelligence.md)
-- [Precise code intelligence](explanations/precise_code_intelligence.md)
-- [Features](explanations/features.md)
-  - [Hover tooltips](explanations/features.md#hover-tooltips-with-documentation-and-type-signatures)
-  - [Go to definition](explanations/features.md#go-to-definition)
-  - [Find references](explanations/features.md#find-references)
-  - [Symbol search](explanations/features.md#symbol-search)
-- [Precise code intelligence uploads](explanations/uploads.md)
-- [Writing an indexer](explanations/writing_an_indexer.md)
-- <span class="badge badge-experimental">Experimental</span> [Auto-indexing](explanations/auto_indexing.md)
-- <span class="badge badge-experimental">Experimental</span> [Auto-indexing inference](explanations/auto_indexing_inference.md)
 
 ## [References](references/index.md)
 
