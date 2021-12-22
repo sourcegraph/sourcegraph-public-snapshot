@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React, { Ref, useContext, useMemo, useRef, useState } from 'react'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { ViewContexts, ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
@@ -25,6 +25,52 @@ interface BuiltInInsightProps<D extends keyof ViewContexts> extends TelemetryPro
     resizing: boolean
 }
 
+function processData(data: ViewProviderResult | undefined): ViewProviderResult | undefined {
+
+    // By possible types here data could be either undefined or error so
+    // these checks should catch non-data and error like data cases
+    if (!data || !data.view || isErrorLike(data.view)) {
+        return data
+    }
+
+    // Here we iterate over all insight card content (usually we have just one
+    // content within a card but by API it possible to have more than one chart within card)
+    // So we Iterate over all content here
+    const processedContent =  data.view.content.map(chartContent => {
+
+        // This like says that if we got chart content (not a markup or custom content)
+        // and this chart has the line type then we need to process this chart somehow
+        if ('chart' in chartContent && chartContent.chart === 'line') {
+
+            // We iterate over list of points here. These points looks like
+            // { x: <timestamp>, [line1DataKey]: 100, [line2DataKey]: 200, ... }
+            const processedData = chartContent.data.map(datum => {
+                const processedDatum = {...datum}
+
+                // We iterate over all series (lines that we have and by line dataKey
+                // we access and change value of point object (datum)
+                for (const line of chartContent.series) {
+                    const { dataKey } = line
+
+                    if (processedDatum[dataKey] !== null) {
+                        processedDatum[dataKey] += 1000
+                    }
+                }
+
+                return processedDatum
+            })
+
+            // Override original data (chartContent.data) with processedData object
+            return { ...chartContent, data: processedData }
+        }
+
+        return chartContent
+    })
+
+    // Override original data.view with view with processed content object here
+    return { ...data, view: { ...data.view, content: processedContent }  }
+}
+
 /**
  * Historically we had a few insights that were worked via extension API
  * search-based, code-stats insight
@@ -37,6 +83,10 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
     const { insight, resizing, telemetryService, where, context, innerRef, ...otherProps } = props
     const { getBuiltInInsightData } = useContext(CodeInsightsBackendContext)
     const { dashboard } = useContext(DashboardInsightsContext)
+
+    // This is how we store any state in components like this
+    // You can reed more about this here https://reactjs.org/docs/hooks-state.html
+    const [isDataProcess, setProcessData] = useState<boolean>(false)
 
     const insightCardReference = useRef<HTMLDivElement>(null)
     const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
@@ -57,6 +107,10 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const { delete: handleDelete, loading: isDeleting } = useDeleteInsight()
 
+    // Here we're looking on our state and if users clicks on menu item and we set our state to
+    // true then we should run processData function otherwise just return the original non-modified data
+    const processedData = isDataProcess ? processData(data) : data
+
     return (
         <View.Root
             {...otherProps}
@@ -73,22 +127,28 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
                         zeroYAxisMin={zeroYAxisMin}
                         onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
                         onDelete={() => handleDelete(insight)}
+                        // Here we're passing state about data processing to context menu component
+                        // to be able to check or uncheck context menu item
+                        processedDataMode={isDataProcess}
+
+                        // Here we're listening clicks on data process mode context menu item
+                        onToggleDataProcessMode={() => setProcessData(state => !state)}
                     />
                 )
             }
         >
             {resizing ? (
                 <View.Banner>Resizing</View.Banner>
-            ) : !data || loading || isDeleting || !isVisible ? (
+            ) : !processedData || loading || isDeleting || !isVisible ? (
                 <View.LoadingContent text={isDeleting ? 'Deleting code insight' : 'Loading code insight'} />
-            ) : isErrorLike(data.view) ? (
-                <View.ErrorContent error={data.view} title={insight.id} />
+            ) : isErrorLike(processedData.view) ? (
+                <View.ErrorContent error={processedData.view} title={insight.id} />
             ) : (
-                data.view && (
+                processedData.view && (
                     <LineChartSettingsContext.Provider value={{ zeroYAxisMin }}>
                         <View.Content
                             telemetryService={telemetryService}
-                            content={data.view.content}
+                            content={processedData?.view.content}
                             viewTrackingType={insight.viewType}
                             containerClassName="extension-insight-card"
                         />

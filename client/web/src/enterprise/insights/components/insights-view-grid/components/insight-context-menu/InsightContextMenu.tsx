@@ -13,16 +13,27 @@ export interface InsightCardMenuProps {
     insight: Insight
     dashboard?: InsightDashboard | null
     zeroYAxisMin: boolean
+    processedDataMode: boolean
     menuButtonClassName?: string
     onDelete: (insightID: string) => void
     onToggleZeroYAxisMin?: () => void
+    onToggleDataProcessMode?: () => void
 }
 
 /**
  * Renders context menu (three dots menu) for particular insight card.
  */
 export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> = props => {
-    const { insight, dashboard, zeroYAxisMin, menuButtonClassName, onDelete, onToggleZeroYAxisMin = noop } = props
+    const {
+        insight,
+        dashboard,
+        zeroYAxisMin,
+        processedDataMode,
+        menuButtonClassName,
+        onDelete,
+        onToggleDataProcessMode = noop,
+        onToggleZeroYAxisMin = noop,
+    } = props
 
     const insightID = insight.id
     const editUrl = dashboard?.id
@@ -80,11 +91,35 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                             )}
 
                             <MenuItem
+                                role="menuitemcheckbox"
+                                className={classNames('d-flex align-items-center justify-content-between', styles.item)}
+                                onSelect={onToggleDataProcessMode}
+                                aria-checked={zeroYAxisMin}
+                            >
+                                <input
+                                    type="checkbox"
+                                    aria-hidden="true"
+                                    checked={processedDataMode}
+                                    onChange={noop}
+                                    tabIndex={-1}
+                                />
+                                <span>Post processed data</span>
+                            </MenuItem>
+
+                            <MenuItem
                                 data-testid="insight-context-menu-delete-button"
                                 onSelect={() => onDelete(insightID)}
                                 className={styles.item}
                             >
                                 Delete
+                            </MenuItem>
+
+                            <MenuItem
+                                data-testid="insight-context-menu-delete-button"
+                                onSelect={() => onDelete(insightID)}
+                                className={styles.item}
+                            >
+                                Show difference between points
                             </MenuItem>
                         </MenuItems>
                     </MenuPopover>
