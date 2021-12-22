@@ -33,7 +33,7 @@ export const isHTTPAuthError = (error: unknown): boolean =>
  * Checks if a given fetch Response has a HTTP 2xx status code and throws an HTTPStatusError otherwise.
  */
 export function checkOk(response: Response): Response {
-    if (!response.ok && response.status != 456) {
+    if (!response.ok) {
         throw new HTTPStatusError(response)
     }
     return response
