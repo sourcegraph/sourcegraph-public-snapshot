@@ -11,6 +11,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -124,11 +125,12 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                     />
                     <div className="d-block d-md-inline">
                         {viewerCanAddUserToOrganization && (
-                            <button
+                            <Button
                                 type="submit"
                                 disabled={loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'}
-                                className="btn btn-primary mr-2"
+                                className="mr-2"
                                 data-tooltip="Add immediately without sending invitation (site admins only)"
+                                variant="primary"
                             >
                                 {loading === 'addUserToOrganization' ? (
                                     <LoadingSpinner className="icon-inline" />
@@ -136,16 +138,13 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                                     <AddIcon className="icon-inline" />
                                 )}{' '}
                                 Add member
-                            </button>
+                            </Button>
                         )}
                         {(emailInvitesEnabled || !viewerCanAddUserToOrganization) && (
-                            <button
+                            <Button
                                 type={viewerCanAddUserToOrganization ? 'button' : 'submit'}
                                 disabled={loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'}
-                                className={classNames(
-                                    'btn',
-                                    viewerCanAddUserToOrganization ? 'btn-secondary' : 'btn-primary'
-                                )}
+                                className={viewerCanAddUserToOrganization ? 'btn-secondary' : 'btn-primary'}
                                 data-tooltip={
                                     emailInvitesEnabled
                                         ? 'Send invitation email with link to join this organization'
@@ -163,7 +162,7 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                                         ? 'Send invitation to join'
                                         : 'Send invitation'
                                     : 'Generate invitation link'}
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </Form>
@@ -276,8 +275,8 @@ const InvitedNotification: React.FunctionComponent<InvitedNotificationProps> = (
             )}
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
-        <button type="button" className="btn btn-icon" title="Dismiss" onClick={onDismiss}>
+        <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
             <CloseIcon className="icon-inline" />
-        </button>
+        </Button>
     </div>
 )

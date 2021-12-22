@@ -12,6 +12,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Button } from '@sourcegraph/wildcard'
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { ErrorAlert } from '../components/alerts'
@@ -358,9 +359,9 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 <div key="remote-dirty" className={classNames('alert alert-warning', styles.alert, styles.alertFlex)}>
                     Server restart is required for the configuration to take effect.
                     {(this.state.site === undefined || this.state.site?.canReloadSite) && (
-                        <button type="button" className="btn btn-primary btn-sm" onClick={this.reloadSite}>
+                        <Button onClick={this.reloadSite} variant="primary" size="sm">
                             Restart server
-                        </button>
+                        </Button>
                     )}
                 </div>
             )

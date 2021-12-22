@@ -9,6 +9,7 @@ import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ALLOW_NAVIGATION } from '@sourcegraph/web/src/components/AwayPrompt'
+import { Button } from '@sourcegraph/wildcard'
 
 import { SearchContextProps } from '../../search'
 
@@ -63,17 +64,12 @@ export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchConte
             </p>
             {(!deleteCompletedOrError || isErrorLike(deleteCompletedOrError)) && (
                 <div className="text-right">
-                    <button type="button" className="btn btn-outline-secondary mr-2" onClick={toggleDeleteModal}>
+                    <Button className="mr-2" onClick={toggleDeleteModal} outline={true} variant="secondary">
                         Cancel
-                    </button>
-                    <button
-                        type="button"
-                        className="btn btn-danger"
-                        data-testid="confirm-delete-search-context"
-                        onClick={onDelete}
-                    >
+                    </Button>
+                    <Button data-testid="confirm-delete-search-context" onClick={onDelete} variant="danger">
                         Yes, delete search context
-                    </button>
+                    </Button>
                     {isErrorLike(deleteCompletedOrError) && (
                         <div className="alert-danger">
                             Error deleting search context: {deleteCompletedOrError.message}

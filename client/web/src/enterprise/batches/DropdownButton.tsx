@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { ProductStatusBadge } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Button } from '@sourcegraph/wildcard'
 
 import styles from './DropdownButton.module.scss'
 
@@ -123,22 +123,22 @@ export const DropdownButton: React.FunctionComponent<Props> = ({
         <>
             {renderedElement}
             <div className="btn-group">
-                <button
-                    type="button"
-                    className="btn btn-primary text-nowrap"
+                <Button
+                    className="text-nowrap"
                     onClick={onTriggerAction}
                     disabled={isDisabled || actions.length === 0 || selectedAction === undefined}
                     data-tooltip={tooltip}
+                    variant="primary"
                 >
                     {label}
-                </button>
+                </Button>
                 {actions.length > 1 && (
                     <>
-                        <button
-                            type="button"
+                        <Button
                             onClick={toggleIsOpen}
                             disabled={isDisabled}
-                            className="btn btn-primary dropdown-toggle dropdown-toggle-split"
+                            className="dropdown-toggle dropdown-toggle-split"
+                            variant="primary"
                         />
                         <div
                             className={classNames(
@@ -177,7 +177,7 @@ const DropdownItem: React.FunctionComponent<DropdownItemProps> = ({ action, setS
     }, [setSelectedType, action.type])
     return (
         <div className="dropdown-item">
-            <button type="button" className="btn text-left" onClick={onClick}>
+            <Button className="text-left" onClick={onClick}>
                 <h4 className="mb-1">
                     {action.dropdownTitle}
                     {action.experimental && (
@@ -190,7 +190,7 @@ const DropdownItem: React.FunctionComponent<DropdownItemProps> = ({ action, setS
                 <p className="text-wrap text-muted mb-0">
                     <small>{action.dropdownDescription}</small>
                 </p>
-            </button>
+            </Button>
         </div>
     )
 }

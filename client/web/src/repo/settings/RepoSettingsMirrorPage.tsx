@@ -10,7 +10,7 @@ import { catchError, switchMap, tap } from 'rxjs/operators'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError } from '@sourcegraph/shared/src/util/errors'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'
 import { FeedbackText } from '../../components/FeedbackText'
@@ -197,14 +197,13 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                 title="Check connection to remote repository"
                 description={<span>Diagnose problems cloning or updating from the remote repository.</span>}
                 action={
-                    <button
-                        type="button"
-                        className="btn btn-primary"
+                    <Button
                         disabled={this.state.loading}
                         onClick={this.checkMirrorRepositoryConnection}
+                        variant="primary"
                     >
                         Check connection
-                    </button>
+                    </Button>
                 }
                 details={
                     <>

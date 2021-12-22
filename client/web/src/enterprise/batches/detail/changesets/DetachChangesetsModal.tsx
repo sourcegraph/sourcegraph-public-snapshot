@@ -4,6 +4,7 @@ import React, { useCallback, useState } from 'react'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
@@ -52,18 +53,19 @@ export const DetachChangesetsModal: React.FunctionComponent<DetachChangesetsModa
             <p className="mb-4">Are you sure you want to detach the selected changesets?</p>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             <div className="d-flex justify-content-end">
-                <button
-                    type="button"
+                <Button
                     disabled={isLoading === true}
-                    className="btn btn-outline-secondary mr-2"
+                    className="mr-2"
                     onClick={onCancel}
+                    outline={true}
+                    variant="secondary"
                 >
                     Cancel
-                </button>
-                <button type="button" onClick={onSubmit} disabled={isLoading === true} className="btn btn-primary">
+                </Button>
+                <Button onClick={onSubmit} disabled={isLoading === true} variant="primary">
                     {isLoading === true && <LoadingSpinner className="icon-inline" />}
                     Detach
-                </button>
+                </Button>
             </div>
         </Dialog>
     )

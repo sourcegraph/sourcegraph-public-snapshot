@@ -13,6 +13,7 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { StripeWrapper } from '../../dotcom/billing/StripeWrapper'
@@ -248,14 +249,14 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                             isLightTheme={isLightTheme}
                         />
                         <div className="form-group mt-3">
-                            <button
+                            <Button
                                 type="submit"
                                 disabled={disableForm || !accountID}
                                 className={classNames(
-                                    'btn btn-lg',
                                     disableForm || !accountID ? 'btn-secondary' : 'btn-success',
                                     'w-100 d-flex align-items-center justify-content-center'
                                 )}
+                                size="lg"
                             >
                                 {paymentToken === LOADING || submissionState === LOADING ? (
                                     <>
@@ -266,7 +267,7 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                                 ) : (
                                     primaryButtonTextNoPaymentRequired
                                 )}
-                            </button>
+                            </Button>
                             {afterPrimaryButton}
                         </div>
                     </div>

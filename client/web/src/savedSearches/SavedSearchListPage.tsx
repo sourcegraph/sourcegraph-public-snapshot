@@ -13,7 +13,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 import { NamespaceProps } from '../namespaces'
@@ -86,15 +86,16 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     >
                         <SettingsIcon className="icon-inline" /> Settings
                     </Link>{' '}
-                    <button
-                        type="button"
-                        className="btn btn-sm btn-danger test-delete-saved-search-button"
+                    <Button
+                        className="test-delete-saved-search-button"
                         onClick={this.onDelete}
                         disabled={this.state.isDeleting}
                         data-tooltip="Delete saved search"
+                        variant="danger"
+                        size="sm"
                     >
                         <DeleteIcon className="icon-inline" />
-                    </button>
+                    </Button>
                 </div>
             </div>
         )

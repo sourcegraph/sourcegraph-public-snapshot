@@ -19,6 +19,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -133,12 +134,14 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
     resolvedRevisionOrError,
     repo,
 }) => (
-    <button
-        type="button"
-        className="btn btn-sm btn-outline-secondary d-flex align-items-center text-nowrap"
+    <Button
+        className="d-flex align-items-center text-nowrap"
         key="repo-revision"
         id="repo-revision-popover"
         aria-label="Change revision"
+        outline={true}
+        variant="secondary"
+        size="sm"
     >
         {(revision && revision === resolvedRevisionOrError.commitID
             ? resolvedRevisionOrError.commitID.slice(0, 7)
@@ -151,7 +154,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
             resolvedRevisionOrError={resolvedRevisionOrError}
             revision={revision}
         />
-    </button>
+    </Button>
 )
 
 interface RepoRevisionContainerPopoverProps extends Pick<RepoRevisionContainerProps, 'repo' | 'revision'> {

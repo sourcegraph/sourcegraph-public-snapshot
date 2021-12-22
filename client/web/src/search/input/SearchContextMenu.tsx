@@ -17,7 +17,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, Button } from '@sourcegraph/wildcard'
 
 import { SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -263,14 +263,13 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         <div onKeyDown={onMenuKeyDown}>
             <div className={styles.title}>
                 <small>Choose search context</small>
-                <button
+                <Button
                     onClick={() => closeMenu()}
-                    type="button"
-                    className={classNames('btn btn-icon', styles.titleClose)}
+                    className={classNames('btn-icon', styles.titleClose)}
                     aria-label="Close"
                 >
                     <CloseIcon className="icon-inline" />
-                </button>
+                </Button>
             </div>
             <div className={classNames('d-flex', styles.header)}>
                 <input
@@ -322,14 +321,15 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                 <div ref={infiniteScrollTrigger} className={styles.infiniteScrollTrigger} />
             </div>
             <div className={styles.footer}>
-                <button
-                    type="button"
+                <Button
                     onClick={reset}
                     onKeyDown={onResetButtonKeyDown}
-                    className={classNames('btn btn-link btn-sm', styles.footerButton)}
+                    className={styles.footerButton}
+                    variant="link"
+                    size="sm"
                 >
                     Reset
-                </button>
+                </Button>
                 <span className="flex-grow-1" />
                 {showSearchContextManagement && (
                     <Link

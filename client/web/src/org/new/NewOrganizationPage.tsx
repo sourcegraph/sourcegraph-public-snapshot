@@ -5,7 +5,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button } from '@sourcegraph/wildcard'
 
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
 import { ErrorAlert } from '../../components/alerts'
@@ -112,14 +112,15 @@ export const NewOrganizationPage: React.FunctionComponent<Props> = ({ history })
                     </div>
                 </Container>
 
-                <button
+                <Button
                     type="submit"
-                    className="btn btn-primary test-create-org-submit-button"
+                    className="test-create-org-submit-button"
                     disabled={loading === true}
+                    variant="primary"
                 >
                     {loading === true && <LoadingSpinner className="icon-inline" />}
                     Create organization
-                </button>
+                </Button>
             </Form>
         </Page>
     )

@@ -6,6 +6,8 @@ import MenuIcon from 'mdi-react/MenuIcon'
 import React, { useEffect, useRef, useState } from 'react'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import navActionStyles from './NavAction.module.scss'
 import navBarStyles from './NavBar.module.scss'
 import navItemStyles from './NavItem.module.scss'
@@ -72,15 +74,10 @@ export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
 
     return (
         <div className={navBarStyles.menu} ref={menuReference}>
-            <button
-                className={classNames('btn', navBarStyles.menuButton)}
-                type="button"
-                onClick={() => setOpen(!open)}
-                aria-label="Sections Navigation"
-            >
+            <Button className={navBarStyles.menuButton} onClick={() => setOpen(!open)} aria-label="Sections Navigation">
                 <MenuIcon className="icon-inline" />
                 {!open ? <ChevronDownIcon className="icon-inline" /> : <ChevronUpIcon className="icon-inline" />}
-            </button>
+            </Button>
             <ul className={classNames(navBarStyles.list, { [navBarStyles.menuClose]: !open })}>{children}</ul>
         </div>
     )

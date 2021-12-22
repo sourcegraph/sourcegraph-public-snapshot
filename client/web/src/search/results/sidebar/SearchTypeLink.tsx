@@ -6,6 +6,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { containsLiteralOrPattern } from '@sourcegraph/shared/src/search/query/validate'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { Button } from '@sourcegraph/wildcard'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
 import { QueryChangeSource, QueryState } from '../../helpers'
@@ -63,14 +64,14 @@ interface SearchTypeButtonProps {
  * triggering a search. This allows users to adjust the query.
  */
 const SearchTypeButton: React.FunctionComponent<SearchTypeButtonProps> = ({ children, onClick }) => (
-    <button
-        className={classNames(styles.sidebarSectionListItem, styles.sidebarSectionButtonLink, 'btn btn-link flex-1')}
-        type="button"
+    <Button
+        className={classNames(styles.sidebarSectionListItem, styles.sidebarSectionButtonLink, 'flex-1')}
         value={children}
         onClick={onClick}
+        variant="link"
     >
         {children}
-    </button>
+    </Button>
 )
 
 /**

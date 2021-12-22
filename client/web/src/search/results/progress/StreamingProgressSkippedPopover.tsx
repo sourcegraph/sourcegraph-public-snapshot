@@ -5,11 +5,12 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useCallback, useState } from 'react'
-import { Button, Collapse, Form, FormGroup, Input, Label } from 'reactstrap'
+import { Collapse, Form, FormGroup, Input, Label } from 'reactstrap'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+import { Button } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from '../../../components/SyntaxHighlightedSearchQuery'
 

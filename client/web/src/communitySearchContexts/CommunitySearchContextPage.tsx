@@ -20,6 +20,7 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/web/src/components/SyntaxHighlightedSearchQuery'
+import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
@@ -143,17 +144,18 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                                         <SyntaxHighlightedSearchQuery query={`${contextQuery} ${example.query}`} />
                                     </small>
                                     <div className="d-flex">
-                                        <button
-                                            className={classNames('btn btn-secondary btn-sm', styles.searchButton)}
-                                            type="button"
+                                        <Button
+                                            className={styles.searchButton}
                                             aria-label="Search"
                                             onClick={onSubmitExample(
                                                 `${contextQuery} ${example.query}`,
                                                 example.patternType
                                             )}
+                                            variant="secondary"
+                                            size="sm"
                                         >
                                             Search
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                             </div>

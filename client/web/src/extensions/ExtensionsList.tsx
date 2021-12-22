@@ -10,6 +10,7 @@ import { mergeSettings, SettingsCascadeProps, SettingsSubject } from '@sourcegra
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 
@@ -216,13 +217,13 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
                     </div>
                     {extensionIDsForCategory.length > 6 && (
                         <div className="d-flex justify-content-center mt-4">
-                            <button
-                                type="button"
-                                className="btn btn-outline-secondary"
+                            <Button
                                 onClick={() => onShowFullCategoryClicked(category)}
+                                outline={true}
+                                variant="secondary"
                             >
                                 Show full category
-                            </button>
+                            </Button>
                         </div>
                     )}
                 </div>

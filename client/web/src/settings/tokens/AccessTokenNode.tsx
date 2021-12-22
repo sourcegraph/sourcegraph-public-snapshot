@@ -5,6 +5,7 @@ import { map, mapTo } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Button } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { ErrorAlert } from '../../components/alerts'
@@ -133,14 +134,14 @@ export const AccessTokenNode: React.FunctionComponent<AccessTokenNodeProps> = ({
                     </small>
                 </div>
                 <div>
-                    <button
-                        type="button"
-                        className="btn btn-danger test-access-token-delete"
+                    <Button
+                        className="test-access-token-delete"
                         onClick={onDeleteAccessToken}
                         disabled={isDeleting === true}
+                        variant="danger"
                     >
                         Delete
-                    </button>
+                    </Button>
                     {isErrorLike(isDeleting) && <ErrorAlert className="mt-2" error={isDeleting} />}
                 </div>
             </div>

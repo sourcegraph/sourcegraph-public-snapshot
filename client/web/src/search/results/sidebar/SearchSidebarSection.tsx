@@ -4,6 +4,8 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import React, { useEffect, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { FilterLink, FilterLinkProps } from './FilterLink'
 import styles from './SearchSidebarSection.module.scss'
 
@@ -91,9 +93,8 @@ export const SearchSidebarSection: React.FunctionComponent<{
 
         return visible ? (
             <div className={classNames(styles.sidebarSection, className)}>
-                <button
-                    type="button"
-                    className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
+                <Button
+                    className={styles.sidebarSectionCollapseButton}
                     onClick={() =>
                         setCollapsed(collapsed => {
                             if (onToggle) {
@@ -103,6 +104,8 @@ export const SearchSidebarSection: React.FunctionComponent<{
                         })
                     }
                     aria-label={collapsed ? 'Expand' : 'Collapse'}
+                    outline={true}
+                    variant="secondary"
                 >
                     <h5 className="flex-grow-1">{header}</h5>
                     {collapsed ? (
@@ -110,7 +113,7 @@ export const SearchSidebarSection: React.FunctionComponent<{
                     ) : (
                         <ChevronDownIcon className="icon-inline mr-1" />
                     )}
-                </button>
+                </Button>
 
                 <Collapse isOpen={!collapsed}>
                     <div className={classNames('pb-4', !searchVisible && 'border-top')}>

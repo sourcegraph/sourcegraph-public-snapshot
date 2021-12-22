@@ -2,6 +2,8 @@ import classNames from 'classnames'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React, { DOMAttributes, useRef } from 'react'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
 import { flipRightPosition } from '../../../../../context-menu/utils'
 import { SubmissionResult } from '../../../../../form/hooks/useForm'
@@ -44,10 +46,9 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
 
     return (
         <>
-            <button
+            <Button
                 ref={targetButtonReference}
-                type="button"
-                className={classNames('btn btn-icon p-1', styles.filterButton, {
+                className={classNames('btn-icon p-1', styles.filterButton, {
                     [styles.filterButtonWithOpenPanel]: isOpen,
                     [styles.filterButtonActive]: isFiltered,
                 })}
@@ -55,7 +56,7 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 onMouseDown={handleMouseDown}
             >
                 <FilterOutlineIcon className={styles.filterIcon} size="1rem" />
-            </button>
+            </Button>
 
             <Popover
                 isOpen={isOpen}

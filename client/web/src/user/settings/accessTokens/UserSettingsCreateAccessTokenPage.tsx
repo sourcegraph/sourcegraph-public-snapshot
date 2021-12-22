@@ -11,7 +11,7 @@ import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -191,10 +191,11 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<Props> =
                     </div>
                 </Container>
                 <div className="mb-3">
-                    <button
+                    <Button
                         type="submit"
                         disabled={creationOrError === 'loading'}
-                        className="btn btn-primary test-create-access-token-submit"
+                        className="test-create-access-token-submit"
+                        variant="primary"
                     >
                         {creationOrError === 'loading' ? (
                             <LoadingSpinner className="icon-inline" />
@@ -202,7 +203,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<Props> =
                             <AddIcon className="icon-inline" />
                         )}{' '}
                         Generate token
-                    </button>
+                    </Button>
                     <Link
                         className="btn btn-secondary ml-2 test-create-access-token-cancel"
                         to={match.url.replace(/\/new$/, '')}

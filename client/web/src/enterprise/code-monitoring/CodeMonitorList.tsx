@@ -7,7 +7,7 @@ import { of } from 'rxjs'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -77,24 +77,24 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
             <div className="row mb-5">
                 <div className="d-flex flex-column col-2 mr-2">
                     <h3>Filters</h3>
-                    <button
-                        type="button"
-                        className={classNames('btn text-left', {
-                            'btn-primary': monitorListFilter === 'all',
+                    <Button
+                        className={classNames('text-left', {
+                            '': monitorListFilter === 'all',
                         })}
                         onClick={() => setMonitorListFilter('all')}
+                        variant="primary"
                     >
                         All
-                    </button>
-                    <button
-                        type="button"
-                        className={classNames('btn text-left', {
-                            'btn-primary': monitorListFilter === 'user',
+                    </Button>
+                    <Button
+                        className={classNames('text-left', {
+                            '': monitorListFilter === 'user',
                         })}
                         onClick={() => setMonitorListFilter('user')}
+                        variant="primary"
                     >
                         Your code monitors
-                    </button>
+                    </Button>
                 </div>
                 <div className="d-flex flex-column w-100 col">
                     <CodeMonitorInfo />

@@ -8,7 +8,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError, isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, Button } from '@sourcegraph/wildcard'
 
 import { querySearchResultsStats } from './backend'
 import { SearchStatsLanguages } from './SearchStatsLanguages'
@@ -78,9 +78,9 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
                         autoComplete="off"
                     />
                     {uncommittedQuery !== query && (
-                        <button type="submit" className="btn btn-primary ml-2 test-stats-query-update">
+                        <Button type="submit" className="ml-2 test-stats-query-update" variant="primary">
                             Update
-                        </button>
+                        </Button>
                     )}
                 </div>
             </Form>
