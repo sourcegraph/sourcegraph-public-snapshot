@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import * as H from 'history'
 import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'

@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import * as React from 'react'
 
 import { Button } from '@sourcegraph/wildcard'

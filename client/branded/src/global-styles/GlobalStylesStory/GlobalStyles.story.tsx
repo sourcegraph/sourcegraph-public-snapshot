@@ -334,7 +334,7 @@ export const ButtonGroups: Story = () => {
                     {(['Left', 'Middle', 'Right'] as const).map(option => (
                         <Button
                             key={option}
-                            className={option === active && 'active'}
+                            className={classNames(option === active && 'active')}
                             onClick={() => setActive(option)}
                             aria-pressed={option === active}
                             outline={true}
@@ -351,7 +351,7 @@ export const ButtonGroups: Story = () => {
                     {(['Left', 'Middle', 'Right'] as const).map(option => (
                         <Button
                             key={option}
-                            className={option === active && 'active'}
+                            className={classNames(option === active && 'active')}
                             onClick={() => setActive(option)}
                             aria-pressed={option === active}
                             outline={true}

@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
@@ -78,20 +77,16 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                 <div className="d-flex flex-column col-2 mr-2">
                     <h3>Filters</h3>
                     <Button
-                        className={classNames('text-left', {
-                            '': monitorListFilter === 'all',
-                        })}
+                        className="text-left"
                         onClick={() => setMonitorListFilter('all')}
-                        variant="primary"
+                        variant={monitorListFilter === 'all' ? 'primary' : undefined}
                     >
                         All
                     </Button>
                     <Button
-                        className={classNames('text-left', {
-                            '': monitorListFilter === 'user',
-                        })}
+                        className="text-left"
                         onClick={() => setMonitorListFilter('user')}
-                        variant="primary"
+                        variant={monitorListFilter === 'user' ? 'primary' : undefined}
                     >
                         Your code monitors
                     </Button>

@@ -263,21 +263,21 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                                 Last 7 days
                                             </Button>
                                             <Button
-                                                className={this.state.after === '30 days ago' && 'active'}
+                                                className={classNames(this.state.after === '30 days ago' && 'active')}
                                                 onClick={() => this.setStateAfterAndSubmit('30 days ago')}
                                                 variant="secondary"
                                             >
                                                 Last 30 days
                                             </Button>
                                             <Button
-                                                className={this.state.after === '1 year ago' && 'active'}
+                                                className={classNames(this.state.after === '1 year ago' && 'active')}
                                                 onClick={() => this.setStateAfterAndSubmit('1 year ago')}
                                                 variant="secondary"
                                             >
                                                 Last year
                                             </Button>
                                             <Button
-                                                className={!this.state.after && 'active'}
+                                                className={classNames(!this.state.after && 'active')}
                                                 onClick={() => this.setStateAfterAndSubmit(null)}
                                                 variant="secondary"
                                             >
