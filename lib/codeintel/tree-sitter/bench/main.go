@@ -47,11 +47,14 @@ func benchmarkSyntect() {
 	if err != nil {
 		panic(err)
 	}
-	highlight, err := client.Highlight(context.Background(), goInputs[0].syntectQuery())
-	if err != nil {
-		panic(err)
+	//goInputs = goInputs[0:1000]
+	bench := hrtime.NewBenchmark(len(goInputs))
+	i := 0
+	for bench.Next() {
+		goInputs[i].benchmarkSyntect(client)
+		i++
 	}
-	fmt.Println(highlight)
+	fmt.Println(bench.Histogram(10))
 }
 
 func (i *Input) syntectQuery() *gosyntect.Query {
@@ -74,14 +77,20 @@ func benchmarkTreeSitter() {
 	bench := hrtime.NewBenchmark(len(goFiles))
 	i := 0
 	for bench.Next() {
-		goFiles[i].benchmark()
+		goFiles[i].benchmarkTreeSitter()
 		i++
 	}
 	histogram := bench.Histogram(20)
 	fmt.Println(histogram)
 }
 
-func (i *Input) benchmark() {
+func (i *Input) benchmarkSyntect(client *gosyntect.Client) {
+	_, err := client.Highlight(context.Background(), i.syntectQuery())
+	if err != nil {
+		panic(err)
+	}
+}
+func (i *Input) benchmarkTreeSitter() {
 	parser := sitter.NewParser()
 	parser.SetLanguage(golang.GetLanguage())
 	_, err := parser.ParseCtx(context.Background(), nil, i.Bytes)
