@@ -107,6 +107,7 @@ import { githubCodeHost } from '../github/codeHost'
 import { gitlabCodeHost } from '../gitlab/codeHost'
 import { phabricatorCodeHost } from '../phabricator/codeHost'
 
+import styles from './codeHost.module.scss'
 import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
 import { ContentView, handleContentViews } from './contentViews'
 import { NotAuthenticatedError, RepoURLParseError } from './errors'
@@ -560,6 +561,7 @@ function initCodeIntelligence({
                 <HoverOverlay
                     {...hoverOverlayProps}
                     {...codeHost.hoverOverlayClassProps}
+                    className={classNames(styles.hoverOverlay, codeHost.hoverOverlayClassProps?.className)}
                     telemetryService={telemetryService}
                     isLightTheme={this.state.isLightTheme}
                     hoverRef={this.nextOverlayElement}

@@ -1,9 +1,9 @@
-.command-list-popover--gitlab {
+.command-list-popover {
     // The navbar has z-index 1000
     z-index: 1001 !important;
 }
 
-.btn-icon--gitlab {
+.btn-icon {
     img {
         // Gitlab applies this to svgs,
         // need to apply it to imgs for consistency too
@@ -19,7 +19,7 @@
     }
 }
 
-.hover-overlay--gitlab {
+.hover-overlay {
     border-color: #e5e5e5;
 
     // Override Gitlab's default styles
@@ -33,105 +33,105 @@
 
     // highlight.js styles
 
-    .hljs {
+    :global(.hljs) {
         display: block;
         overflow-x: auto;
         padding: 0.5em;
         color: #333333;
     }
 
-    .hljs-comment,
-    .hljs-quote {
+    :global(.hljs-comment),
+    :global(.hljs-quote) {
         color: #999988;
     }
 
-    .hljs-keyword,
-    .hljs-selector-tag,
-    .hljs-subst {
+    :global(.hljs-keyword),
+    :global(.hljs-selector-tag),
+    :global(.hljs-subst) {
         color: inherit;
         font-weight: 600;
     }
 
-    .hljs-number,
-    .hljs-literal,
-    .hljs-variable,
-    .hljs-template-variable,
-    .hljs-tag .hljs-attr {
+    :global(.hljs-number),
+    :global(.hljs-literal),
+    :global(.hljs-variable),
+    :global(.hljs-template-variable),
+    :global(.hljs-tag) :global(.hljs-attr) {
         color: #008080;
     }
 
-    .hljs-string,
-    .hljs-doctag {
+    :global(.hljs-string),
+    :global(.hljs-doctag) {
         color: #dd1144;
     }
 
-    .hljs-title,
-    .hljs-section,
-    .hljs-selector-id {
+    :global(.hljs-title),
+    :global(.hljs-section),
+    :global(.hljs-selector-id) {
         color: #333333;
     }
 
-    .hljs-subst {
+    :global(.hljs-subst) {
         font-weight: normal;
     }
 
-    .hljs-type,
-    .hljs-class .hljs-title {
+    :global(.hljs-type),
+    :global(.hljs-class) :global(.hljs-title) {
         color: #445588;
     }
 
-    .hljs-tag,
-    .hljs-name,
-    .hljs-attribute {
+    :global(.hljs-tag),
+    :global(.hljs-name),
+    :global(.hljs-attribute) {
         color: #000080;
         font-weight: normal;
     }
 
-    .hljs-regexp,
-    .hljs-link {
+    :global(.hljs-regexp),
+    :global(.hljs-link) {
         color: #009926;
     }
 
-    .hljs-symbol,
-    .hljs-bullet {
+    :global(.hljs-symbol),
+    :global(.hljs-bullet) {
         color: #990073;
     }
 
-    .hljs-built_in,
-    .hljs-builtin-name {
+    :global(.hljs-built_in),
+    :global(.hljs-builtin-name) {
         color: #0086b3;
     }
 
-    .hljs-meta {
+    :global(.hljs-meta) {
         color: #999999;
         font-weight: bold;
     }
 
-    .hljs-deletion {
+    :global(.hljs-deletion) {
         background: #ffdddd;
     }
 
-    .hljs-addition {
+    :global(.hljs-addition) {
         background: #ddffdd;
     }
 
-    .hljs-emphasis {
+    :global(.hljs-emphasis) {
         font-style: italic;
     }
 
-    .hljs-strong {
+    :global(.hljs-strong) {
         font-weight: bold;
     }
 }
 
-.code-view-toolbar--gitlab {
+.code-view-toolbar {
     display: flex;
 
     // Same style as for Gitlab's svg icons
     img {
         vertical-align: baseline;
     }
-    .btn img {
+    :global(.btn) img {
         height: 15px;
         width: 15px;
         position: relative;

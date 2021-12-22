@@ -13,6 +13,8 @@ import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/sr
 
 import { knownCodeHosts } from '../knownCodeHosts'
 
+import { OptionsPageContainer } from './components/OptionsPageContainer'
+import styles from './OptionsPage.module.scss'
 import { OptionsPageAdvancedSettings } from './OptionsPageAdvancedSettings'
 
 export interface OptionsPageProps {
@@ -96,10 +98,10 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
     }, [onChangeSourcegraphUrl, urlState])
 
     return (
-        <div className={classNames('options-page', isFullPage && 'options-page--full shadow')}>
-            <section className="options-page__section">
+        <OptionsPageContainer className="shadow" isFullPage={isFullPage}>
+            <section className={styles.section}>
                 <div className="d-flex justify-content-between">
-                    <SourcegraphLogo className="options-page__logo" />
+                    <SourcegraphLogo className={styles.logo} />
                     <div>
                         <Toggle
                             value={isActivated}
@@ -109,10 +111,10 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                         />
                     </div>
                 </div>
-                <div className="options-page__version">v{version}</div>
+                <div className={styles.version}>v{version}</div>
             </section>
             <CodeHostsSection currentHost={currentHost} />
-            <section className="options-page__section border-0">
+            <section className={classNames('border-0', styles.section)}>
                 {/* eslint-disable-next-line react/forbid-elements */}
                 <form onSubmit={preventDefault} noValidate={true}>
                     <label htmlFor="sourcegraph-url">Sourcegraph URL</label>
@@ -178,7 +180,7 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             {showSourcegraphCloudAlert && <SourcegraphCloudAlert />}
 
             {showPrivateRepositoryAlert && <PrivateRepositoryAlert />}
-            <section className="options-page__section">
+            <section className={styles.section}>
                 <p className="mb-0">
                     <button type="button" className="btn btn-link btn-sm p-0" onClick={toggleAdvancedSettings}>
                         <small>{showAdvancedSettings ? 'Hide' : 'Show'} advanced settings</small>
@@ -189,20 +191,20 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
                 )}
             </section>
             <section className="d-flex">
-                <div className="options-page__split-section-part">
+                <div className={styles.splitSectionPart}>
                     <a href="https://sourcegraph.com/search" {...linkProps}>
                         <EarthIcon className="icon-inline mr-2" />
                         Sourcegraph Cloud
                     </a>
                 </div>
-                <div className="options-page__split-section-part">
+                <div className={styles.splitSectionPart}>
                     <a href="https://docs.sourcegraph.com" {...linkProps}>
                         <BookOpenPageVariantIcon className="icon-inline mr-2" />
                         Documentation
                     </a>
                 </div>
             </section>
-        </div>
+        </OptionsPageContainer>
     )
 }
 
@@ -217,11 +219,11 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
     icon: Icon,
     onClickGrantPermissions,
 }) => (
-    <section className="options-page__section bg-2">
+    <section className={classNames('bg-2', styles.section)}>
         <h4>
             {Icon && <Icon className="icon-inline mr-2" />} <span>{name}</span>
         </h4>
-        <p className="options-page__permission-text">
+        <p className={styles.permissionText}>
             <strong>Grant permissions</strong> to use the Sourcegraph extension on {name}.
         </p>
         <button type="button" onClick={onClickGrantPermissions} className="btn btn-sm btn-primary">
@@ -231,7 +233,7 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
 )
 
 const PrivateRepositoryAlert: React.FunctionComponent = () => (
-    <section className="options-page__section bg-2">
+    <section className={classNames('bg-2', styles.section)}>
         <h4>
             <LockIcon className="icon-inline mr-2" />
             Private repository
@@ -260,13 +262,13 @@ const PrivateRepositoryAlert: React.FunctionComponent = () => (
 )
 
 const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ currentHost }) => (
-    <section className="options-page__section">
+    <section className={styles.section}>
         <p>Get code intelligence tooltips while browsing files and reading PRs on your code host.</p>
         <div>
             {knownCodeHosts.map(({ host, icon: Icon }) => (
                 <span
                     key={host}
-                    className={classNames('code-hosts-section__icon', {
+                    className={classNames(styles.icon, {
                         // Use `endsWith` in order to match subdomains.
                         'bg-3': currentHost?.endsWith(host),
                     })}
@@ -279,7 +281,7 @@ const CodeHostsSection: React.FunctionComponent<{ currentHost?: string }> = ({ c
 )
 
 const SourcegraphCloudAlert: React.FunctionComponent = () => (
-    <section className="options-page__section bg-2">
+    <section className={classNames('bg-2', styles.section)}>
         <h4>
             <CheckCircleOutlineIcon className="icon-inline mr-2" />
             You're on Sourcegraph Cloud

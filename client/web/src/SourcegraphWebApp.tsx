@@ -85,6 +85,7 @@ import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
+import styles from './SourcegraphWebApp.module.scss'
 import {
     setQueryStateFromSettings,
     setQueryStateFromURL,
@@ -371,14 +372,14 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             }
             if (errorMessage) {
                 subtitle = (
-                    <div className="app__error">
+                    <div className={styles.error}>
                         {subtitle}
                         {subtitle && <hr className="my-3" />}
                         <pre>{errorMessage}</pre>
                     </div>
                 )
             } else {
-                subtitle = <div className="app__error">{subtitle}</div>
+                subtitle = <div className={styles.error}>{subtitle}</div>
             }
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }

@@ -94,7 +94,7 @@ exports[`HoverOverlay actions and hover present 1`] = `
         class="actionsInner"
       >
         <a
-          class="action-item test-action-item action test-tooltip-untitled"
+          class="test-action-item action test-tooltip-untitled"
           href=""
           role="button"
           tabindex="0"
@@ -185,7 +185,7 @@ exports[`HoverOverlay actions present 1`] = `
         class="actionsInner"
       >
         <a
-          class="action-item test-action-item action test-tooltip-some-title"
+          class="test-action-item action test-tooltip-some-title"
           href=""
           role="button"
           tabindex="0"
@@ -224,7 +224,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
         class="actionsInner"
       >
         <a
-          class="action-item test-action-item action test-tooltip-untitled"
+          class="test-action-item action test-tooltip-untitled"
           href=""
           role="button"
           tabindex="0"
@@ -300,7 +300,7 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
         class="actionsInner"
       >
         <a
-          class="action-item test-action-item action test-tooltip-untitled"
+          class="test-action-item action test-tooltip-untitled"
           href=""
           role="button"
           tabindex="0"
@@ -360,7 +360,7 @@ exports[`HoverOverlay hover error, actions present 1`] = `
         class="actionsInner"
       >
         <a
-          class="action-item test-action-item action test-tooltip-untitled"
+          class="test-action-item action test-tooltip-untitled"
           href=""
           role="button"
           tabindex="0"
