@@ -16,7 +16,7 @@ import (
 
 const syncInterval = 5 * time.Minute
 
-var gauge = promauto.NewGauge(prometheus.GaugeOpts{
+var erroredRepoGauge = promauto.NewGauge(prometheus.GaugeOpts{
 	Name: "src_repoupdater_syncer_sync_repos_with_last_error_total",
 	Help: "Counts number of repos with non empty_last errors which have been synced.",
 })
@@ -52,6 +52,6 @@ func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *rate.
 		reposSynced += 1
 		return nil
 	})
-	gauge.Set(reposSynced)
+	erroredRepoGauge.Set(reposSynced)
 	return err
 }
