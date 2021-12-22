@@ -95,5 +95,5 @@ USER sourcegraph
 
 WORKDIR /
 
-#ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/gitserver"]
-#COPY gitserver /usr/local/bin/
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/gitserver"]
+COPY gitserver /usr/local/bin/
