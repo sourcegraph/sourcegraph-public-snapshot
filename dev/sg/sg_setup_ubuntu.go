@@ -26,6 +26,7 @@ var ubuntuOSDependencies = []dependencyCategory{
 			{name: "git", check: checkInPath("git"), instructionsCommands: `sudo apt-get install -y git-all`},
 			{name: "pcre", check: checkUbuntuLib("libpcre3-dev"), instructionsCommands: "sudo apt-get -y install libpcre3-dev"},
 			{name: "sqlite", check: checkUbuntuLib("libsqlite3-dev"), instructionsCommands: "sudo apt-get -y install libsqlite3-dev"},
+			{name: "libev", check: checkUbuntuLib("libev-dev"), instructionsCommands: "sudo apt-get -y install libev-dev"},
 			{name: "pkg-config", check: checkInPath("pkg-config"), instructionsCommands: `sudo apt-get -y install pkg-config`},
 			{name: "jq", check: checkInPath("jq"), instructionsCommands: `sudo apt-get -y install jq`},
 			{name: "curl", check: checkInPath("curl"), instructionsCommands: `sudo apt-get -y install curl`},
