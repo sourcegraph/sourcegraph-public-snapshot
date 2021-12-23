@@ -3,9 +3,11 @@ package searchcontexts
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -16,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -172,8 +175,48 @@ func validateSearchContextRepositoryRevisions(repositoryRevisions []*types.Searc
 }
 
 func validateSearchContextRepositoryQuery(repositoryQuery string) error {
-	// TODO(tsenart): Parse and validate
-	return nil
+	if repositoryQuery == "" {
+		return nil
+	}
+
+	plan, err := query.Pipeline(query.Init(repositoryQuery, query.SearchTypeRegex))
+	if err != nil {
+		return err
+	}
+
+	errs := new(multierror.Error)
+	query.VisitParameter(plan.ToParseTree(), func(field, value string, negated bool, a query.Annotation) {
+		switch field {
+		case query.FieldRepo:
+			// We further validate that the value of the repo field is not a predicate
+			// and that it is a valid regex.
+			if a.Labels.IsSet(query.IsPredicate) {
+				errs = multierror.Append(errs,
+					errors.Errorf("unsupported repo field predicate in repository query: %q", value))
+				return
+			}
+
+			repoRegex, _ := search.ParseRepositoryRevisions(value)
+			_, err := regexp.Compile(repoRegex)
+			if err != nil {
+				errs = multierror.Append(errs,
+					errors.Errorf("repo field regex %q is invalid: %v", value, err))
+				return
+			}
+
+		case query.FieldFork:
+		case query.FieldArchived:
+		case query.FieldVisibility:
+		case query.FieldCase:
+		case query.FieldRev:
+
+		default:
+			errs = multierror.Append(errs,
+				errors.Errorf("unsupported field in repository query: %q", field))
+		}
+	})
+
+	return errs.ErrorOrNil()
 }
 
 func validateSearchContextDoesNotExist(ctx context.Context, db dbutil.DB, searchContext *types.SearchContext) error {
@@ -215,6 +258,14 @@ func CreateSearchContextWithRepositoryRevisions(
 	err = validateSearchContextDescription(searchContext.Description)
 	if err != nil {
 		return nil, err
+	}
+
+	if searchContext.RepositoryQuery != "" && len(repositoryRevisions) > 0 {
+		return nil, errors.New("repository query and repository revisions are mutually exclusive")
+	}
+
+	if searchContext.RepositoryQuery == "" && len(repositoryRevisions) == 0 {
+		return nil, errors.New("either repository query or repository revisions must be defined")
 	}
 
 	err = validateSearchContextRepositoryRevisions(repositoryRevisions)
