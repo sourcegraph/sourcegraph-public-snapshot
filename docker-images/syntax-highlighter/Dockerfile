@@ -5,8 +5,8 @@ FROM rust:1.53.0-alpine3.12@sha256:115f359134b85ce7731218cee9e308dbf228eb1e03e9d
 RUN apk add --no-cache musl-dev=1.1.24-r10
 COPY . /repo
 WORKDIR /repo
-RUN cargo test --release
-RUN cargo rustc --release
+# RUN cargo test --release
+RUN cargo build --release -vv
 RUN ls ./target
 RUN cp ./target/release/syntect_server /syntect_server
 

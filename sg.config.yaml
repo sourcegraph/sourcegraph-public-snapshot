@@ -6,7 +6,7 @@ env:
   PGDATABASE: sourcegraph
   PGSSLMODE: disable
   SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: 'true'
-  
+
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
   SRC_LOG_LEVEL: info
   SRC_LOG_FORMAT: condensed
@@ -28,7 +28,8 @@ env:
   REPO_UPDATER_URL: http://127.0.0.1:3182
   REDIS_ENDPOINT: 127.0.0.1:6379
   SYMBOLS_URL: http://localhost:3184
-  SRC_SYNTECT_SERVER: http://localhost:9238
+    # SRC_SYNTECT_SERVER: http://localhost:9238
+  SRC_SYNTECT_SERVER: http://0.0.0.0:8000
   SRC_FRONTEND_INTERNAL: localhost:3090
   GRAFANA_SERVER_URL: http://localhost:3370
   PROMETHEUS_URL: http://localhost:9090
@@ -339,19 +340,30 @@ commands:
       DOCSITE_VERSION: v1.8.4 # make sure to update all DOCSITE_VERSION
 
   syntax-highlighter:
-    ignoreStdout: true
-    ignoreStderr: true
+    ignoreStdout: false
+    ignoreStderr: false
     cmd: |
-      docker run --name=syntax-highlighter --rm -p9238:9238 \
-      -e WORKERS=1 -e ROCKET_ADDRESS=0.0.0.0 \
-      sourcegraph/syntax-highlighter@sha256:92a5c181dbf2d8aead5171c985139bf38c496bef2ac98afbd64c3612967fe5cc
+      cd docker-images/syntax-highlighter
+      cargo run --release
+      # docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
+      # docker inspect syntax-highlighter >/dev/null 2>&1 && docker rm -f syntax-highlighter || true
+      # docker run --name=syntax-highlighter --rm -p9238:9238 \
+      # -e WORKERS=1 -e ROCKET_ADDRESS=0.0.0.0 \
+      # $IMAGE
+    # sourcegraph/syntax-highlighter@sha256:92a5c181dbf2d8aead5171c985139bf38c496bef2ac98afbd64c3612967fe5cc
     install: |
+      cd docker-images/syntax-highlighter
+      cargo build --release
+      cd -
       # Remove containers by the old name, too.
-      docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
-      docker inspect syntax-highlighter >/dev/null 2>&1 && docker rm -f syntax-highlighter || true
+      # docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
+      # docker inspect syntax-highlighter >/dev/null 2>&1 && docker rm -f syntax-highlighter || true
     env:
       # This is not needed actually
       INSECURE_DEV: 1
+      IMAGE: 6f017ad801d7
+    watch:
+      - docker-images/syntax-highlighter
 
   zoekt-indexserver-template: &zoekt_indexserver_template
     cmd: |

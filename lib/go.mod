@@ -22,18 +22,20 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/klauspost/pgzip v1.2.5
-	github.com/loov/hrtime v1.0.3 // indirect
+	github.com/loov/hrtime v1.0.3
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14
 	github.com/mattn/go-runewidth v0.0.13
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
-	github.com/schollz/progressbar/v3 v3.8.5 // indirect
-	github.com/smacker/go-tree-sitter v0.0.0-20211116060328-db7fde9b5e82 // indirect
+	github.com/opentracing-contrib/go-stdlib v1.0.0 // indirect
+	github.com/opentracing/opentracing-go v1.2.0 // indirect
+	github.com/schollz/progressbar/v3 v3.8.5
+	github.com/smacker/go-tree-sitter v0.0.0-20211116060328-db7fde9b5e82
 	github.com/sourcegraph/go-diff v0.6.1
-	github.com/sourcegraph/gosyntect v0.0.0-20210422223331-645353f16ddc // indirect
+	github.com/sourcegraph/gosyntect v0.0.0-20210422223331-645353f16ddc
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/stretchr/testify v1.7.0 // indirect
+	github.com/stretchr/testify v1.7.0
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e
@@ -44,3 +46,5 @@ require (
 
 // See: https://github.com/ghodss/yaml/pull/65
 replace github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
+
+replace github.com/sourcegraph/gosyntect => ../../gosyntect

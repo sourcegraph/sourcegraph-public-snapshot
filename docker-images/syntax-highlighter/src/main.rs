@@ -34,6 +34,8 @@ lazy_static! {
     static ref THEME_SET: ThemeSet = ThemeSet::load_defaults();
 }
 
+#[derive(Clone)]
+#[derive(Debug)]
 #[derive(Deserialize)]
 struct Query {
     // Deprecated field with a default empty string value, kept for backwards
@@ -65,7 +67,10 @@ fn index(q: Json<Query>) -> JsonValue {
     // and instead Syntect would return Result types when failures occur. This
     // will require some non-trivial work upstream:
     // https://github.com/trishume/syntect/issues/98
-    let result = panic::catch_unwind(|| highlight(q.into_inner()));
+    // eprintln!("Got a request!");
+    let qinner = q.into_inner();
+    let q2 = qinner.clone();
+    let result = panic::catch_unwind(|| highlight(q2));
     match result {
         Ok(v) => v,
         Err(_) => json!({"error": "panic while highlighting code", "code": "panic"}),
@@ -81,6 +86,8 @@ fn highlight(q: Query) -> JsonValue {
         };
 
         if q.css {
+            use std::time::*;
+            let before = Instant::now();
             let output = ClassedTableGenerator::new(
                 &syntax_set,
                 &syntax_def,
@@ -89,10 +96,12 @@ fn highlight(q: Query) -> JsonValue {
                 ClassStyle::SpacedPrefixed { prefix: "hl-" },
             )
             .generate();
+            let delta = Instant::now() - before;
 
             json!({
                 "data": output,
                 "plaintext": syntax_def.name == "Plain Text",
+                "time_ns": delta.as_nanos() as u64,
             })
         } else {
             // TODO(slimsag): return the theme's background color (and other info??) to caller?
@@ -106,10 +115,14 @@ fn highlight(q: Query) -> JsonValue {
                 Some(v) => v,
                 None => return json!({"error": "invalid theme", "code": "invalid_theme"}),
             };
-
+            use std::time::*;
+            let before = Instant::now();
+            let html = highlighted_html_for_string(&q.code, &syntax_set, &syntax_def, theme);
+            let delta = Instant::now() - before;
             json!({
-                "data": highlighted_html_for_string(&q.code, &syntax_set, &syntax_def, theme),
+                "data": html,
                 "plaintext": syntax_def.name == "Plain Text",
+                "time_ns": delta.as_nanos() as u64,
             })
         }
     })
