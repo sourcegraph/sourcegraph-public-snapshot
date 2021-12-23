@@ -36,7 +36,6 @@ export interface DashboardsContentProps extends TelemetryProps {
 
 export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> = props => {
     const { dashboardID, telemetryService } = props
-    console.log('🚀 ~ file: DashboardsContent.tsx ~ line 39 ~ props')
 
     const history = useHistory()
     const { getDashboards, getDashboardSubjects } = useContext(CodeInsightsBackendContext)
@@ -55,13 +54,16 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const user = useObservable(authenticatedUser)
 
     if (dashboards === undefined) {
-        return <LoadingSpinner inline={false} />
+        return (
+            <div data-testid="loading-spinner">
+                <LoadingSpinner inline={false} />
+            </div>
+        )
     }
 
     const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)
 
     const handleSelect = (action: DashboardMenuAction): void => {
-        console.log('🚀 ~ file: DashboardsContent.tsx ~ line 63 ~ handleSelect ~ action', action)
         switch (action) {
             case DashboardMenuAction.Configure: {
                 if (
