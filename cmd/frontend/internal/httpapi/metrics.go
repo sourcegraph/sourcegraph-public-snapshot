@@ -21,12 +21,12 @@ var (
 )
 
 func instrumentGraphQL(data traceData) {
+	duration := time.Since(data.execStart)
 	labels := prometheus.Labels{
 		"route":    data.requestName,
 		"source":   data.requestSource,
 		"success":  strconv.FormatBool(len(data.queryErrors) == 0),
 		"mutation": strconv.FormatBool(strings.Contains(data.queryParams.Query, "mutation")),
 	}
-	duration := time.Since(data.execStart)
 	requestDuration.With(labels).Observe(duration.Seconds())
 }
