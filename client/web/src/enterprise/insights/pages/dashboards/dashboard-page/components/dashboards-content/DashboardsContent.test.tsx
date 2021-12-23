@@ -1,10 +1,9 @@
-import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { createMemoryHistory } from 'history'
 import React from 'react'
-import { Router } from 'react-router-dom'
 import { of } from 'rxjs'
 import sinon from 'sinon'
+
+import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { AuthenticatedUser } from '../../../../../../../auth'
 import { CodeInsightsBackend } from '../../../../../core/backend/code-insights-backend'
@@ -58,24 +57,14 @@ const mockDashboard2: InsightDashboard = {
     scope: InsightsDashboardScope.Global,
 }
 
-const renderWithRouter = (
-    component: React.ReactElement,
-    { route = '/', history = createMemoryHistory({ initialEntries: [route] }), api = {} } = {}
-) => {
+const renderDashboardsContent = (component: React.ReactElement, { api = {} } = {}): RenderWithRouterResult => {
     const mergedApi = {
         getDashboardSubjects: () => of([]),
         getInsights: () => of([]),
         getDashboards: () => of([mockDashboard, mockDashboard2]),
         ...api,
     }
-    return {
-        ...render(
-            <Wrapper api={mergedApi}>
-                <Router history={history}>{component}</Router>
-            </Wrapper>
-        ),
-        history,
-    }
+    return renderWithRouter(<Wrapper api={mergedApi}>{component}</Wrapper>)
 }
 
 beforeEach(() => {
@@ -84,25 +73,31 @@ beforeEach(() => {
 
 describe('DashboardsContent', () => {
     it('renders dashboard not found', () => {
-        renderWithRouter(<DashboardsContent dashboardID="foo" telemetryService={mockTelemetryService} />, {
-            api: {
-                getDashboards: () => of([]),
-            },
-        })
+        const screen = renderDashboardsContent(
+            <DashboardsContent dashboardID="foo" telemetryService={mockTelemetryService} />,
+            {
+                api: {
+                    getDashboards: () => of([]),
+                },
+            }
+        )
 
         screen.getByText("Hmm, the dashboard wasn't found.")
     })
 
     it('renders a dashboard', () => {
-        renderWithRouter(<DashboardsContent dashboardID="foo" telemetryService={mockTelemetryService} />)
+        const screen = renderDashboardsContent(
+            <DashboardsContent dashboardID="foo" telemetryService={mockTelemetryService} />
+        )
 
         screen.getByRole('button', { name: /Global Dashboard/ })
     })
 
     it('redirect to new dashboard page on selection', () => {
-        const { history } = renderWithRouter(
+        const screen = renderDashboardsContent(
             <DashboardsContent dashboardID="foo" telemetryService={mockTelemetryService} />
         )
+        const { history } = screen
 
         const chooseDashboard = screen.getByRole('button', { name: /Choose a dashboard/ })
         userEvent.click(chooseDashboard)
