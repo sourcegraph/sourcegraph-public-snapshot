@@ -30,7 +30,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			_, _ = p.source.CreateChangeset(p.ctx, &Changeset{
-				Repo: &types.Repo{
+				TargetRepo: &types.Repo{
 					Metadata: struct{}{},
 				},
 			})
@@ -128,7 +128,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			_ = p.source.CloseChangeset(p.ctx, &Changeset{
-				Repo: &types.Repo{
+				TargetRepo: &types.Repo{
 					Metadata: struct{}{},
 				},
 			})
@@ -172,7 +172,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			_ = p.source.ReopenChangeset(p.ctx, &Changeset{
-				Repo: &types.Repo{
+				TargetRepo: &types.Repo{
 					Metadata: struct{}{},
 				},
 			})
@@ -218,7 +218,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			p := newGitLabChangesetSourceTestProvider(t)
 
 			_ = p.source.LoadChangeset(p.ctx, &Changeset{
-				Repo: &types.Repo{Metadata: struct{}{}},
+				TargetRepo: &types.Repo{Metadata: struct{}{}},
 			})
 			t.Error("invalid metadata did not panic")
 		})
@@ -230,7 +230,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 					ExternalID: "foo",
 					Metadata:   &gitlab.MergeRequest{},
 				},
-				Repo: &types.Repo{Metadata: &gitlab.Project{}},
+				TargetRepo: &types.Repo{Metadata: &gitlab.Project{}},
 			}); err == nil {
 				t.Error("invalid ExternalID did not result in an error")
 			}
@@ -362,7 +362,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 				{
 					name: "found",
 					cs: &Changeset{
-						Repo: &types.Repo{Metadata: &gitlab.Project{
+						TargetRepo: &types.Repo{Metadata: &gitlab.Project{
 							// sourcegraph/sourcegraph
 							ProjectCommon: gitlab.ProjectCommon{ID: 16606088},
 						}},
@@ -372,7 +372,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 				{
 					name: "not-found",
 					cs: &Changeset{
-						Repo: &types.Repo{Metadata: &gitlab.Project{
+						TargetRepo: &types.Repo{Metadata: &gitlab.Project{
 							// sourcegraph/sourcegraph
 							ProjectCommon: gitlab.ProjectCommon{ID: 16606088},
 						}},
@@ -383,7 +383,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 				{
 					name: "project-not-found",
 					cs: &Changeset{
-						Repo: &types.Repo{Metadata: &gitlab.Project{
+						TargetRepo: &types.Repo{Metadata: &gitlab.Project{
 							ProjectCommon: gitlab.ProjectCommon{ID: 999999999999},
 						}},
 						Changeset: &btypes.Changeset{ExternalID: "100000"},
@@ -675,7 +675,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 			_ = p.source.CreateComment(p.ctx, &Changeset{
-				Repo: &types.Repo{
+				TargetRepo: &types.Repo{
 					Metadata: struct{}{},
 				},
 			}, commentBody)
@@ -733,7 +733,7 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 				ctx := context.Background()
 				cs := &Changeset{
-					Repo: &types.Repo{Metadata: &gitlab.Project{
+					TargetRepo: &types.Repo{Metadata: &gitlab.Project{
 						// sourcegraph/sourcegraph
 						ProjectCommon: gitlab.ProjectCommon{ID: 16606088},
 					}},
@@ -864,12 +864,12 @@ func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTe
 	prov := gitlab.NewClientProvider(&url.URL{}, &panicDoer{})
 	p := &gitLabChangesetSourceTestProvider{
 		changeset: &Changeset{
-			Changeset: &btypes.Changeset{},
-			Repo:      &types.Repo{Metadata: &gitlab.Project{}},
-			HeadRef:   "refs/heads/head",
-			BaseRef:   "refs/heads/base",
-			Title:     "title",
-			Body:      "description",
+			Changeset:  &btypes.Changeset{},
+			TargetRepo: &types.Repo{Metadata: &gitlab.Project{}},
+			HeadRef:    "refs/heads/head",
+			BaseRef:    "refs/heads/base",
+			Title:      "title",
+			Body:       "description",
 		},
 		ctx: context.Background(),
 		mr: &gitlab.MergeRequest{
@@ -901,8 +901,8 @@ func (p *gitLabChangesetSourceTestProvider) testCommonParams(ctx context.Context
 	if ctx != p.ctx {
 		p.t.Errorf("unexpected context: have %+v; want %+v", ctx, p.ctx)
 	}
-	if project != p.changeset.Repo.Metadata.(*gitlab.Project) {
-		p.t.Errorf("unexpected Project: have %+v; want %+v", project, p.changeset.Repo.Metadata)
+	if project != p.changeset.TargetRepo.Metadata.(*gitlab.Project) {
+		p.t.Errorf("unexpected Project: have %+v; want %+v", project, p.changeset.TargetRepo.Metadata)
 	}
 }
 

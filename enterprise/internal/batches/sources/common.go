@@ -37,6 +37,10 @@ type DraftChangesetSource interface {
 	UndraftChangeset(context.Context, *Changeset) error
 }
 
+type ForkableChangesetSource interface {
+	GetChangesetForkRepo(context.Context, *types.Repo) (*types.Repo, error)
+}
+
 // A ChangesetSource can load the latest state of a list of Changesets.
 type ChangesetSource interface {
 	// GitserverPushConfig returns an authenticated push config used for pushing
@@ -97,8 +101,10 @@ type Changeset struct {
 	HeadRef string
 	BaseRef string
 
+	RemoteRepo *types.Repo
+	TargetRepo *types.Repo
+
 	*btypes.Changeset
-	*types.Repo
 }
 
 // IsOutdated returns true when the attributes of the nested

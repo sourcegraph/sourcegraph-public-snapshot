@@ -878,6 +878,30 @@ func (c *Client) RecentRepos(ctx context.Context, pageToken *PageToken) ([]*Repo
 	return repos, next, err
 }
 
+func (c *Client) Forks(ctx context.Context, projectKey, repoSlug string, pageToken *PageToken) ([]*Repo, *PageToken, error) {
+	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s/forks", projectKey, repoSlug)
+
+	var repos []*Repo
+	next, err := c.page(ctx, u, nil, pageToken, &repos)
+	return repos, next, err
+}
+
+type CreateForkInput struct {
+	Name          *string `json:"name"`
+	DefaultBranch *string `json:"defaultBranch"`
+	Project       []struct {
+		Key string `json:"key"`
+	} `json:"project"`
+}
+
+func (c *Client) CreateFork(ctx context.Context, projectKey, repoSlug string, input CreateForkInput) (*Repo, error) {
+	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
+
+	var resp Repo
+	_, err := c.send(ctx, "POST", u, nil, input, &resp)
+	return &resp, err
+}
+
 func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results interface{}) (*PageToken, error) {
 	if qry == nil {
 		qry = make(url.Values)
@@ -1147,6 +1171,7 @@ type Repo struct {
 	Origin        *Repo    `json:"origin"`
 	Project       *Project `json:"project"`
 	Public        bool     `json:"public"`
+	Owner         *User    `json:"owner"`
 	Links         struct {
 		Clone []struct {
 			Href string `json:"href"`
