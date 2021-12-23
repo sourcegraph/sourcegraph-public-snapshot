@@ -3,19 +3,15 @@ package httpapi
 import (
 	"compress/gzip"
 	"encoding/json"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/throttled/throttled/v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -24,15 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-)
-
-var (
-	metricLabels    = []string{"mutation", "route", "success", "source"}
-	requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_graphql_request_duration_seconds",
-		Help:    "GraphQL request latencies in seconds.",
-		Buckets: trace.UserLatencyBuckets,
-	}, metricLabels)
 )
 
 func serveGraphQL(schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
@@ -229,20 +216,4 @@ func getUID(r *http.Request) (uid string, ip bool, anonymous bool) {
 		return ip, true, anonymous
 	}
 	return "unknown", false, anonymous
-}
-
-func instrumentGraphQL(data traceData) {
-	labels := prometheus.Labels{
-		"route":    data.requestName,
-		"source":   data.requestSource,
-		"success":  strconv.FormatBool(len(data.queryErrors) == 0),
-		"mutation": strconv.FormatBool(strings.Contains(data.queryParams.Query, "mutation")),
-	}
-	if strings.Contains(data.queryParams.Query, "mutation") {
-		log.Println("mutation ", data.requestName, ":", data.queryParams.Variables)
-	} else if ns, ok := data.queryParams.Variables["namespace"]; ok {
-		log.Println(data.requestName, ": ", ns)
-	}
-	duration := time.Since(data.execStart)
-	requestDuration.With(labels).Observe(duration.Seconds())
 }
