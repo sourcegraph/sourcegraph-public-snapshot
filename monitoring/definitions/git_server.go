@@ -75,7 +75,7 @@ func GitServer() *monitoring.Container {
 							Name:        "cpu_throttling_time",
 							Description: "container CPU throttling time %",
 							Query:       "sum by (container_label_io_kubernetes_pod_name) ((rate(container_cpu_cfs_throttled_periods_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]) / rate(container_cpu_cfs_periods_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m])) * 100)",
-							NoAlert:     true,
+							Warning:     monitoring.Alert().GreaterOrEqual(70, nil),
 							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").Unit(monitoring.Percentage).With(func(o monitoring.Observable, p *sdk.Panel) {
 								p.GraphPanel.Legend.RightSide = true
 							}),
