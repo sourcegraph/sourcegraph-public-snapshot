@@ -549,6 +549,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		}
+
 		mockOrgRepo = extsvc.Repository{
 			URI: "github.com/org/org-repo",
 			ExternalRepoSpec: api.ExternalRepoSpec{
@@ -557,6 +558,13 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		}
+
+		mockInternalOrgRepo = github.Repository{
+			ID:         "github_repo_id",
+			IsPrivate:  true,
+			Visibility: github.VisibilityInternal,
+		}
+
 		mockListCollaborators = func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) ([]*github.Collaborator, bool, error) {
 			switch page {
 			case 1:
@@ -708,6 +716,76 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
 				t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
 			}
+		})
+
+		t.Run("internal repo in org", func(t *testing.T) {
+			// conf.Mock(&conf.Unified{
+			// 	SiteConfiguration: schema.SiteConfiguration{
+			// 		ExperimentalFeatures: &schema.ExperimentalFeatures{
+			// 			EnableGithubInternalRepoVisibility: true,
+			// 		},
+			// 	},
+			// })
+
+			p := NewProvider("", ProviderOptions{
+				GitHubURL: mustURL(t, "https://github.com"),
+			})
+
+			p.client = &mockClient{
+				MockListRepositoryCollaborators: mockListCollaborators,
+				MockListOrganizationMembers: func(ctx context.Context, owner string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
+					switch page {
+					case 1:
+						return []*github.Collaborator{
+							{DatabaseID: 1234},
+							{DatabaseID: 67471}, // duplicate from collaborators
+						}, true, nil
+					case 2:
+						return []*github.Collaborator{
+							{DatabaseID: 5678},
+						}, false, nil
+					}
+
+					return []*github.Collaborator{}, false, nil
+				},
+				MockGetRepository: func(ctx context.Context, owner, repo string) (*github.Repository, error) {
+					return &mockInternalOrgRepo, nil
+				},
+				MockGetOrganization: func(ctx context.Context, login string) (org *github.OrgDetails, err error) {
+					if login == "org" {
+						return &github.OrgDetails{
+							DefaultRepositoryPermission: "read",
+						}, nil
+					}
+
+					t.Fatalf("unexpected call to GetOrganization with %q", login)
+					return nil, nil
+				},
+			}
+
+			memCache := memGroupsCache()
+			p.groupsCache = memCache
+
+			accountIDs, err := p.FetchRepoPerms(
+				context.Background(), &mockOrgRepo, authz.FetchPermsOptions{},
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			wantAccountIDs := []extsvc.AccountID{
+				// mockListCollaborators members
+				"57463526",
+				"67471",
+				"187831",
+				// dedpulicated MockListOrganizationMembers users
+				"1234",
+				"5678",
+			}
+			if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
+				t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+			}
+
 		})
 
 		t.Run("repo in non-read org but in teams", func(t *testing.T) {
