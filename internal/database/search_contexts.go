@@ -85,7 +85,17 @@ func searchContextsPermissionsCondition(ctx context.Context, db dbutil.DB) (*sql
 }
 
 const listSearchContextsFmtStr = `
-SELECT sc.id, sc.name, sc.description, sc.public, sc.namespace_user_id, sc.namespace_org_id, sc.updated_at, u.username, o.name
+SELECT
+  sc.id,
+  sc.name,
+  sc.description,
+  sc.public,
+  sc.namespace_user_id,
+  sc.namespace_org_id,
+  sc.updated_at,
+  sc.repo_query,
+  u.username,
+  o.name
 FROM search_contexts sc
 LEFT JOIN users u on sc.namespace_user_id = u.id
 LEFT JOIN orgs o on sc.namespace_org_id = o.id
@@ -455,6 +465,7 @@ func scanSearchContexts(rows *sql.Rows) ([]*types.SearchContext, error) {
 			&dbutil.NullInt32{N: &sc.NamespaceUserID},
 			&dbutil.NullInt32{N: &sc.NamespaceOrgID},
 			&sc.UpdatedAt,
+			&dbutil.NullString{S: &sc.RepositoryQuery},
 			&dbutil.NullString{S: &sc.NamespaceUserName},
 			&dbutil.NullString{S: &sc.NamespaceOrgName},
 		)
