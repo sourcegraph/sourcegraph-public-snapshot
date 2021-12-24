@@ -1,5 +1,28 @@
 package main
 
+/*
+Run instructions:
+# current directory is sourcegraph/
+
+# Only needed if you want to run the synhtml-stdin benchmarks
+cd ..
+git clone --branch vg/add-synhtml-stdin https://github.com/varungandhi-src/syntect.git
+cd syntect
+cargo build --release --example synhtml-stdin
+# Somewhere in $PATH
+cp target/release/examples/synhtml-stdin ~/.local/bin/synhtml-stdin
+cd ../sourcegraph
+
+# In separate terminal, for benchmarking syntect-server natively (without Docker)
+cd docker-images/syntax-highlighter
+cargo run --release
+
+git clone --branch vg/time-nanos https://github.com/sourcegraph/gosyntect.git ../gosyntect
+
+cd lib
+go run github.com/sourcegraph/sourcegraph/lib/codeintel/tree-sitter/bench
+*/
+
 import (
 	"archive/zip"
 	"bytes"
@@ -14,6 +37,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -45,6 +69,29 @@ type Input struct {
 const SIZE_LIMIT = 512 * 1024
 const SYNTECT_SERVER_URL = "http://0.0.0.0:8000"
 const TREE_SITTER = "tree-sitter"
+const NPARALLELISM = 8
+
+var extMap = map[string]struct{}{
+	".go": {},
+	".c":  {},
+	".h":  {},
+	".js":   {},
+	".jsx":  {},
+	".cpp":  {},
+	".hpp":  {},
+	".ts":   {},
+	".tsx":  {},
+	".dart": {},
+	".rb":   {},
+	".rs":   {},
+	".java": {},
+	".kt":   {},
+}
+
+func TryHighlightFileWithExtension(extension string) bool {
+	_, exists := extMap[extension]
+	return exists
+}
 
 type TreeSitter struct{}
 
@@ -87,18 +134,49 @@ func benchmarkHistogram(w Workload, inputs []Input) {
 	}
 }
 
+func runParallel(functions []func()) {
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(len(functions))
+	for _, function := range functions {
+		go func(doStuff func()) {
+			doStuff()
+			waitGroup.Done()
+		}(function)
+	}
+	waitGroup.Wait()
+}
+
 func benchmarkPure(w Workload, inputs []Input, outputs []Output) {
 	w.benchmarkSetup()
-	for i, input := range inputs {
-		before := time.Now()
-		highlightDuration := w.benchmark(input)
-		outputs[i].TotalDuration = time.Now().Sub(before)
-		if highlightDuration == -1 {
-			outputs[i].HighlightDuration = outputs[i].TotalDuration
-		} else {
-			outputs[i].HighlightDuration = highlightDuration
+
+	runFunc := func(startIndex int, endIndex int) func() {
+		return func() {
+			for i := startIndex; i < endIndex; i++ {
+				input := inputs[i]
+				before := time.Now()
+				highlightDuration := w.benchmark(input)
+				outputs[i].TotalDuration = time.Now().Sub(before)
+				if highlightDuration == -1 {
+					outputs[i].HighlightDuration = outputs[i].TotalDuration
+				} else {
+					outputs[i].HighlightDuration = highlightDuration
+				}
+			}
 		}
 	}
+	chunkLen := len(inputs) / NPARALLELISM
+	funcs := []func(){}
+	for startIdx := 0; startIdx < len(inputs); startIdx += chunkLen {
+		funcs = append(funcs, runFunc(startIdx, minInt(startIdx+chunkLen, len(inputs))))
+	}
+	runParallel(funcs)
+}
+
+func minInt(a int, b int) int { // Gimme generics
+	if a < b {
+		return a
+	}
+	return b
 }
 
 func createOutputCSV() (*os.File, string) {
@@ -158,7 +236,8 @@ func csvMain(testCorpora []*Corpus, workloads []Workload) {
 }
 
 func main() {
-	testCorpora := []*Corpus{kubernetes}
+	testCorpora := []*Corpus{megarepo}
+	// testCorpora := []*Corpus{kubernetes}
 	workloads := []Workload{TreeSitter{}, &Syntect{} /*&Synhtml{}*/}
 	if len(os.Args) >= 2 && os.Args[1] == "--histogram" {
 		histogramMain(testCorpora, workloads)
@@ -171,9 +250,11 @@ func (self *FullOutput) appendTo(outputCSV *os.File) {
 	w := csv.NewWriter(outputCSV)
 	header := []string{"filesize (bytes)", "extension"}
 	for _, parser := range self.parsers {
-		header = append(header, fmt.Sprintf("%s total time (ns)", parser))
 		if parser != TREE_SITTER {
+			header = append(header, fmt.Sprintf("%s total time (ns)", parser))
 			header = append(header, fmt.Sprintf("%s highlight time (ns)", parser))
+		} else {
+			header = append(header, fmt.Sprintf("%s parse time (ns)", parser))
 		}
 	}
 	pathIdx := len(header)
@@ -276,7 +357,7 @@ func (i *Input) benchmarkTreeSitter() time.Duration {
 }
 
 func readInput(file *zip.File, reader *zip.Reader) (Input, bool, error) {
-	if ext := filepath.Ext(file.Name); ext != ".go" {
+	if ext := filepath.Ext(file.Name); !TryHighlightFileWithExtension(ext) {
 		return Input{}, true, nil
 	}
 	open, err := reader.Open(file.Name)
