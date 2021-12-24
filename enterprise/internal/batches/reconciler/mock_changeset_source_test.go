@@ -1311,9 +1311,12 @@ type MockForkableChangesetSource struct {
 	// CreateCommentFunc is an instance of a mock function object
 	// controlling the behavior of the method CreateComment.
 	CreateCommentFunc *ForkableChangesetSourceCreateCommentFunc
-	// GetChangesetForkRepoFunc is an instance of a mock function object
-	// controlling the behavior of the method GetChangesetForkRepo.
-	GetChangesetForkRepoFunc *ForkableChangesetSourceGetChangesetForkRepoFunc
+	// GetDefaultUserForkFunc is an instance of a mock function object
+	// controlling the behavior of the method GetDefaultUserFork.
+	GetDefaultUserForkFunc *ForkableChangesetSourceGetDefaultUserForkFunc
+	// GetNamespaceForkFunc is an instance of a mock function object
+	// controlling the behavior of the method GetNamespaceFork.
+	GetNamespaceForkFunc *ForkableChangesetSourceGetNamespaceForkFunc
 	// GitserverPushConfigFunc is an instance of a mock function object
 	// controlling the behavior of the method GitserverPushConfig.
 	GitserverPushConfigFunc *ForkableChangesetSourceGitserverPushConfigFunc
@@ -1357,8 +1360,13 @@ func NewMockForkableChangesetSource() *MockForkableChangesetSource {
 				return nil
 			},
 		},
-		GetChangesetForkRepoFunc: &ForkableChangesetSourceGetChangesetForkRepoFunc{
+		GetDefaultUserForkFunc: &ForkableChangesetSourceGetDefaultUserForkFunc{
 			defaultHook: func(context.Context, *types.Repo) (*types.Repo, error) {
+				return nil, nil
+			},
+		},
+		GetNamespaceForkFunc: &ForkableChangesetSourceGetNamespaceForkFunc{
+			defaultHook: func(context.Context, *types.Repo, string) (*types.Repo, error) {
 				return nil, nil
 			},
 		},
@@ -1420,9 +1428,14 @@ func NewStrictMockForkableChangesetSource() *MockForkableChangesetSource {
 				panic("unexpected invocation of MockForkableChangesetSource.CreateComment")
 			},
 		},
-		GetChangesetForkRepoFunc: &ForkableChangesetSourceGetChangesetForkRepoFunc{
+		GetDefaultUserForkFunc: &ForkableChangesetSourceGetDefaultUserForkFunc{
 			defaultHook: func(context.Context, *types.Repo) (*types.Repo, error) {
-				panic("unexpected invocation of MockForkableChangesetSource.GetChangesetForkRepo")
+				panic("unexpected invocation of MockForkableChangesetSource.GetDefaultUserFork")
+			},
+		},
+		GetNamespaceForkFunc: &ForkableChangesetSourceGetNamespaceForkFunc{
+			defaultHook: func(context.Context, *types.Repo, string) (*types.Repo, error) {
+				panic("unexpected invocation of MockForkableChangesetSource.GetNamespaceFork")
 			},
 		},
 		GitserverPushConfigFunc: &ForkableChangesetSourceGitserverPushConfigFunc{
@@ -1477,8 +1490,11 @@ func NewMockForkableChangesetSourceFrom(i sources.ForkableChangesetSource) *Mock
 		CreateCommentFunc: &ForkableChangesetSourceCreateCommentFunc{
 			defaultHook: i.CreateComment,
 		},
-		GetChangesetForkRepoFunc: &ForkableChangesetSourceGetChangesetForkRepoFunc{
-			defaultHook: i.GetChangesetForkRepo,
+		GetDefaultUserForkFunc: &ForkableChangesetSourceGetDefaultUserForkFunc{
+			defaultHook: i.GetDefaultUserFork,
+		},
+		GetNamespaceForkFunc: &ForkableChangesetSourceGetNamespaceForkFunc{
+			defaultHook: i.GetNamespaceFork,
 		},
 		GitserverPushConfigFunc: &ForkableChangesetSourceGitserverPushConfigFunc{
 			defaultHook: i.GitserverPushConfig,
@@ -1840,37 +1856,37 @@ func (c ForkableChangesetSourceCreateCommentFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// ForkableChangesetSourceGetChangesetForkRepoFunc describes the behavior
-// when the GetChangesetForkRepo method of the parent
-// MockForkableChangesetSource instance is invoked.
-type ForkableChangesetSourceGetChangesetForkRepoFunc struct {
+// ForkableChangesetSourceGetDefaultUserForkFunc describes the behavior when
+// the GetDefaultUserFork method of the parent MockForkableChangesetSource
+// instance is invoked.
+type ForkableChangesetSourceGetDefaultUserForkFunc struct {
 	defaultHook func(context.Context, *types.Repo) (*types.Repo, error)
 	hooks       []func(context.Context, *types.Repo) (*types.Repo, error)
-	history     []ForkableChangesetSourceGetChangesetForkRepoFuncCall
+	history     []ForkableChangesetSourceGetDefaultUserForkFuncCall
 	mutex       sync.Mutex
 }
 
-// GetChangesetForkRepo delegates to the next hook function in the queue and
+// GetDefaultUserFork delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockForkableChangesetSource) GetChangesetForkRepo(v0 context.Context, v1 *types.Repo) (*types.Repo, error) {
-	r0, r1 := m.GetChangesetForkRepoFunc.nextHook()(v0, v1)
-	m.GetChangesetForkRepoFunc.appendCall(ForkableChangesetSourceGetChangesetForkRepoFuncCall{v0, v1, r0, r1})
+func (m *MockForkableChangesetSource) GetDefaultUserFork(v0 context.Context, v1 *types.Repo) (*types.Repo, error) {
+	r0, r1 := m.GetDefaultUserForkFunc.nextHook()(v0, v1)
+	m.GetDefaultUserForkFunc.appendCall(ForkableChangesetSourceGetDefaultUserForkFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the GetChangesetForkRepo
+// SetDefaultHook sets function that is called when the GetDefaultUserFork
 // method of the parent MockForkableChangesetSource instance is invoked and
 // the hook queue is empty.
-func (f *ForkableChangesetSourceGetChangesetForkRepoFunc) SetDefaultHook(hook func(context.Context, *types.Repo) (*types.Repo, error)) {
+func (f *ForkableChangesetSourceGetDefaultUserForkFunc) SetDefaultHook(hook func(context.Context, *types.Repo) (*types.Repo, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetChangesetForkRepo method of the parent MockForkableChangesetSource
+// GetDefaultUserFork method of the parent MockForkableChangesetSource
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *ForkableChangesetSourceGetChangesetForkRepoFunc) PushHook(hook func(context.Context, *types.Repo) (*types.Repo, error)) {
+func (f *ForkableChangesetSourceGetDefaultUserForkFunc) PushHook(hook func(context.Context, *types.Repo) (*types.Repo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1878,7 +1894,7 @@ func (f *ForkableChangesetSourceGetChangesetForkRepoFunc) PushHook(hook func(con
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *ForkableChangesetSourceGetChangesetForkRepoFunc) SetDefaultReturn(r0 *types.Repo, r1 error) {
+func (f *ForkableChangesetSourceGetDefaultUserForkFunc) SetDefaultReturn(r0 *types.Repo, r1 error) {
 	f.SetDefaultHook(func(context.Context, *types.Repo) (*types.Repo, error) {
 		return r0, r1
 	})
@@ -1886,13 +1902,13 @@ func (f *ForkableChangesetSourceGetChangesetForkRepoFunc) SetDefaultReturn(r0 *t
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *ForkableChangesetSourceGetChangesetForkRepoFunc) PushReturn(r0 *types.Repo, r1 error) {
+func (f *ForkableChangesetSourceGetDefaultUserForkFunc) PushReturn(r0 *types.Repo, r1 error) {
 	f.PushHook(func(context.Context, *types.Repo) (*types.Repo, error) {
 		return r0, r1
 	})
 }
 
-func (f *ForkableChangesetSourceGetChangesetForkRepoFunc) nextHook() func(context.Context, *types.Repo) (*types.Repo, error) {
+func (f *ForkableChangesetSourceGetDefaultUserForkFunc) nextHook() func(context.Context, *types.Repo) (*types.Repo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1905,28 +1921,28 @@ func (f *ForkableChangesetSourceGetChangesetForkRepoFunc) nextHook() func(contex
 	return hook
 }
 
-func (f *ForkableChangesetSourceGetChangesetForkRepoFunc) appendCall(r0 ForkableChangesetSourceGetChangesetForkRepoFuncCall) {
+func (f *ForkableChangesetSourceGetDefaultUserForkFunc) appendCall(r0 ForkableChangesetSourceGetDefaultUserForkFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// ForkableChangesetSourceGetChangesetForkRepoFuncCall objects describing
-// the invocations of this function.
-func (f *ForkableChangesetSourceGetChangesetForkRepoFunc) History() []ForkableChangesetSourceGetChangesetForkRepoFuncCall {
+// ForkableChangesetSourceGetDefaultUserForkFuncCall objects describing the
+// invocations of this function.
+func (f *ForkableChangesetSourceGetDefaultUserForkFunc) History() []ForkableChangesetSourceGetDefaultUserForkFuncCall {
 	f.mutex.Lock()
-	history := make([]ForkableChangesetSourceGetChangesetForkRepoFuncCall, len(f.history))
+	history := make([]ForkableChangesetSourceGetDefaultUserForkFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// ForkableChangesetSourceGetChangesetForkRepoFuncCall is an object that
-// describes an invocation of method GetChangesetForkRepo on an instance of
+// ForkableChangesetSourceGetDefaultUserForkFuncCall is an object that
+// describes an invocation of method GetDefaultUserFork on an instance of
 // MockForkableChangesetSource.
-type ForkableChangesetSourceGetChangesetForkRepoFuncCall struct {
+type ForkableChangesetSourceGetDefaultUserForkFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1943,13 +1959,129 @@ type ForkableChangesetSourceGetChangesetForkRepoFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c ForkableChangesetSourceGetChangesetForkRepoFuncCall) Args() []interface{} {
+func (c ForkableChangesetSourceGetDefaultUserForkFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c ForkableChangesetSourceGetChangesetForkRepoFuncCall) Results() []interface{} {
+func (c ForkableChangesetSourceGetDefaultUserForkFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ForkableChangesetSourceGetNamespaceForkFunc describes the behavior when
+// the GetNamespaceFork method of the parent MockForkableChangesetSource
+// instance is invoked.
+type ForkableChangesetSourceGetNamespaceForkFunc struct {
+	defaultHook func(context.Context, *types.Repo, string) (*types.Repo, error)
+	hooks       []func(context.Context, *types.Repo, string) (*types.Repo, error)
+	history     []ForkableChangesetSourceGetNamespaceForkFuncCall
+	mutex       sync.Mutex
+}
+
+// GetNamespaceFork delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) GetNamespaceFork(v0 context.Context, v1 *types.Repo, v2 string) (*types.Repo, error) {
+	r0, r1 := m.GetNamespaceForkFunc.nextHook()(v0, v1, v2)
+	m.GetNamespaceForkFunc.appendCall(ForkableChangesetSourceGetNamespaceForkFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetNamespaceFork
+// method of the parent MockForkableChangesetSource instance is invoked and
+// the hook queue is empty.
+func (f *ForkableChangesetSourceGetNamespaceForkFunc) SetDefaultHook(hook func(context.Context, *types.Repo, string) (*types.Repo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetNamespaceFork method of the parent MockForkableChangesetSource
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *ForkableChangesetSourceGetNamespaceForkFunc) PushHook(hook func(context.Context, *types.Repo, string) (*types.Repo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ForkableChangesetSourceGetNamespaceForkFunc) SetDefaultReturn(r0 *types.Repo, r1 error) {
+	f.SetDefaultHook(func(context.Context, *types.Repo, string) (*types.Repo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ForkableChangesetSourceGetNamespaceForkFunc) PushReturn(r0 *types.Repo, r1 error) {
+	f.PushHook(func(context.Context, *types.Repo, string) (*types.Repo, error) {
+		return r0, r1
+	})
+}
+
+func (f *ForkableChangesetSourceGetNamespaceForkFunc) nextHook() func(context.Context, *types.Repo, string) (*types.Repo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ForkableChangesetSourceGetNamespaceForkFunc) appendCall(r0 ForkableChangesetSourceGetNamespaceForkFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ForkableChangesetSourceGetNamespaceForkFuncCall objects describing the
+// invocations of this function.
+func (f *ForkableChangesetSourceGetNamespaceForkFunc) History() []ForkableChangesetSourceGetNamespaceForkFuncCall {
+	f.mutex.Lock()
+	history := make([]ForkableChangesetSourceGetNamespaceForkFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ForkableChangesetSourceGetNamespaceForkFuncCall is an object that
+// describes an invocation of method GetNamespaceFork on an instance of
+// MockForkableChangesetSource.
+type ForkableChangesetSourceGetNamespaceForkFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.Repo
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.Repo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ForkableChangesetSourceGetNamespaceForkFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ForkableChangesetSourceGetNamespaceForkFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

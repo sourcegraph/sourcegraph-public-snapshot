@@ -469,7 +469,7 @@ func loadRemoteRepo(ctx context.Context, css sources.ChangesetSource, targetRepo
 		return nil, errChangesetSourceCannotFork
 	}
 
-	return fss.GetChangesetForkRepo(ctx, targetRepo)
+	return fss.GetDefaultUserFork(ctx, targetRepo)
 }
 
 func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) error {
