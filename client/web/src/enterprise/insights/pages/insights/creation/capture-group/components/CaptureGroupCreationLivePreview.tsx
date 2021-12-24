@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { ChartContent, LineChartContent } from 'sourcegraph'
 
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/common'
 import { useDebounce } from '@sourcegraph/wildcard/src'
 
 import { LivePreviewContainer } from '../../../../../components/creation-ui-kit/live-preview-container/LivePreviewContainer'

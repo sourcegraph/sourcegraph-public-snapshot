@@ -2,8 +2,8 @@ import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { asError, ErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { Scalars, DeleteExternalAccountResult, DeleteExternalAccountVariables } from '../../../graphql-operations'

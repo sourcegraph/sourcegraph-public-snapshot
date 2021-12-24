@@ -1,7 +1,7 @@
 import create from 'zustand'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { SettingsExperimentalFeatures } from '../schema/settings.schema'
 

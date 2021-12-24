@@ -3,9 +3,9 @@ import React, { useEffect, useCallback, useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { queryGraphQL } from '../../backend/graphql'

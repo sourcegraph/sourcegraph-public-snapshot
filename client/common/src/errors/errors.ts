@@ -1,10 +1,6 @@
-export interface ErrorLike {
-    message: string
-    name?: string
-}
-
-export const isErrorLike = (value: unknown): value is ErrorLike =>
-    typeof value === 'object' && value !== null && ('stack' in value || 'message' in value) && !('__typename' in value)
+import { AGGREGATE_ERROR_NAME } from './constants'
+import { AggregateError, ErrorLike } from './types'
+import { isErrorLike } from './utils'
 
 /**
  * Converts an ErrorLike to a proper Error if needed, copying all properties
@@ -19,16 +15,6 @@ export const asError = (value: unknown): Error => {
         return Object.assign(new Error(value.message), value)
     }
     return new Error(String(value))
-}
-
-const AGGREGATE_ERROR_NAME = 'AggregateError'
-
-/**
- * An Error that aggregates multiple errors
- */
-interface AggregateError extends Error {
-    name: typeof AGGREGATE_ERROR_NAME
-    errors: Error[]
 }
 
 /**
@@ -50,14 +36,3 @@ export const createAggregateError = (errors: readonly ErrorLike[] = []): Error =
               name: AGGREGATE_ERROR_NAME,
               errors: errors.map(asError),
           })
-
-/**
- * Run the passed function and return `undefined` if it throws an error.
- */
-export function tryCatch<T>(function_: () => T): T | undefined {
-    try {
-        return function_()
-    } catch {
-        return undefined
-    }
-}

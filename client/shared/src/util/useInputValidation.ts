@@ -3,7 +3,8 @@ import { useMemo, useState, useCallback } from 'react'
 import { combineLatest, concat, EMPTY, Observable, of, ReplaySubject, zip } from 'rxjs'
 import { catchError, map, switchMap, tap, debounceTime } from 'rxjs/operators'
 
-import { asError } from './errors'
+import { asError } from '@sourcegraph/common'
+
 import { useEventObservable } from './useObservable'
 
 /**

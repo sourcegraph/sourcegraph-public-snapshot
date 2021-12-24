@@ -3,8 +3,8 @@ import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import React, { useCallback, useEffect, useState, FunctionComponent, Dispatch, SetStateAction } from 'react'
 
+import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Container, PageSelector } from '@sourcegraph/wildcard'
 
 import { RepoSelectionMode } from '../../../auth/PostSignUpPage'

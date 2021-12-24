@@ -4,8 +4,9 @@ import { Observable } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { Omit } from 'utility-types'
 
+import { createAggregateError } from '@sourcegraph/common'
+
 import { checkOk } from '../backend/fetch'
-import { createAggregateError } from '../util/errors'
 
 import { GRAPHQL_URI } from './constants'
 

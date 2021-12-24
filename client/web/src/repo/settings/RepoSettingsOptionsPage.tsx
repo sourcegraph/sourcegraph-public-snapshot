@@ -4,8 +4,8 @@ import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { asError } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError } from '@sourcegraph/shared/src/util/errors'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'

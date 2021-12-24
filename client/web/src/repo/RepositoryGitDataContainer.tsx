@@ -4,6 +4,7 @@ import * as React from 'react'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
 
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
@@ -11,7 +12,6 @@ import {
 } from '@sourcegraph/shared/src/backend/errors'
 import { RepoQuestionIcon } from '@sourcegraph/shared/src/components/icons'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorMessage } from '../components/alerts'
 import { HeroPage } from '../components/HeroPage'

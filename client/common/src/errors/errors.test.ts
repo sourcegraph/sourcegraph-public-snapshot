@@ -1,4 +1,5 @@
-import { asError, isErrorLike } from './errors'
+import { asError } from './errors'
+import { isErrorLike } from './utils'
 
 describe('isErrorLike', () => {
     test('reports true for Error values', () => expect(isErrorLike(new Error('m'))).toBeTruthy())
