@@ -68,9 +68,7 @@ fn index(q: Json<Query>) -> JsonValue {
     // will require some non-trivial work upstream:
     // https://github.com/trishume/syntect/issues/98
     // eprintln!("Got a request!");
-    let qinner = q.into_inner();
-    let q2 = qinner.clone();
-    let result = panic::catch_unwind(|| highlight(q2));
+    let result = panic::catch_unwind(|| highlight(q.into_inner()));
     match result {
         Ok(v) => v,
         Err(_) => json!({"error": "panic while highlighting code", "code": "panic"}),
