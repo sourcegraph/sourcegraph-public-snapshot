@@ -1,5 +1,6 @@
 import { uniq } from 'lodash'
 
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import {
     EXTENSION_CATEGORIES,
@@ -7,7 +8,6 @@ import {
     ExtensionManifest,
 } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { quoteIfNeeded } from '../../search'
 import { ExtensionCategoryOrAll } from '../ExtensionRegistry'

@@ -1,4 +1,4 @@
-import { isErrorLike } from '../util/errors'
+import { isErrorLike } from '@sourcegraph/common'
 
 const EHTTPSTATUS = 'HTTPStatusError'
 

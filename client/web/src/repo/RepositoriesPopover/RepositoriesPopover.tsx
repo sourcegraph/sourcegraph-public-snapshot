@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react'
 
+import { createAggregateError } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionError,

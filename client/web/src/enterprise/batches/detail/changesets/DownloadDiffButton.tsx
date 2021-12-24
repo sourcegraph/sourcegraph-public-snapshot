@@ -2,8 +2,8 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'
 import React, { useCallback, useState } from 'react'
 
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { getChangesetDiff } from '../backend'
 

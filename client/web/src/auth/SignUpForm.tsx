@@ -9,7 +9,7 @@ import { fromFetch } from 'rxjs/fetch'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/common'
 import {
     useInputValidation,
     ValidationOptions,

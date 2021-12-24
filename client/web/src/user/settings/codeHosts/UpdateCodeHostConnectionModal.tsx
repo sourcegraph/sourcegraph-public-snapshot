@@ -1,10 +1,10 @@
 import Dialog from '@reach/dialog'
 import React, { useState, useCallback } from 'react'
 
+import { asError, ErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 
 import { Form } from '../../../../../branded/src/components/Form'
-import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
 import { updateExternalService } from '../../../components/externalServices/backend'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
