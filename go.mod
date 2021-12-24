@@ -174,11 +174,6 @@ require (
 )
 
 require (
-	github.com/loov/hrtime v1.0.3 // indirect
-	github.com/smacker/go-tree-sitter v0.0.0-20211116060328-db7fde9b5e82 // indirect
-)
-
-require (
 	cloud.google.com/go v0.98.0 // indirect
 	github.com/Microsoft/go-winio v0.5.1 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20211112122917-428f8eabeeb3 // indirect
