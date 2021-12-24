@@ -11,15 +11,23 @@ cd syntect
 cargo build --release --example synhtml-stdin
 # Somewhere in $PATH
 cp target/release/examples/synhtml-stdin ~/.local/bin/synhtml-stdin
-cd ../sourcegraph
-
-# In separate terminal, for benchmarking syntect-server natively (without Docker)
-cd docker-images/syntax-highlighter
-cargo run --release
 
 git clone --branch vg/time-nanos https://github.com/sourcegraph/gosyntect.git ../gosyntect
 
-cd lib
+cd ../sourcegraph/docker-images/syntax-highlighter
+cargo build --release
+
+# In separate pane
+git clone https://github.com/slimsag/http-server-stabilizer.git
+cd http-server-stabilizer
+go build
+# I think ROCKET_WORKERS=N should match concurrency, but not sure.
+# Product of workers * concurrency should probably be NCPUs.
+./http-server-stabilizer -workers 3 -concurrency 4 -listen ":8000" -- env ROCKET_PORT='{{.PORT}} ROCKET_WORKERS=4 ../sourcegraph/docker-images/syntax-highlighter/target/release/syntect_server
+
+# In separate pane
+
+cd ../sourcegraph/lib
 go run github.com/sourcegraph/sourcegraph/lib/codeintel/tree-sitter/bench
 */
 
@@ -69,12 +77,12 @@ type Input struct {
 const SIZE_LIMIT = 512 * 1024
 const SYNTECT_SERVER_URL = "http://0.0.0.0:8000"
 const TREE_SITTER = "tree-sitter"
-const NPARALLELISM = 8
+const NPARALLELISM = 10
 
 var extMap = map[string]struct{}{
-	".go": {},
-	".c":  {},
-	".h":  {},
+	".go":   {},
+	".c":    {},
+	".h":    {},
 	".js":   {},
 	".jsx":  {},
 	".cpp":  {},
@@ -236,8 +244,8 @@ func csvMain(testCorpora []*Corpus, workloads []Workload) {
 }
 
 func main() {
-	testCorpora := []*Corpus{megarepo}
-	// testCorpora := []*Corpus{kubernetes}
+	// testCorpora := []*Corpus{megarepo}
+	testCorpora := []*Corpus{kubernetes}
 	workloads := []Workload{TreeSitter{}, &Syntect{} /*&Synhtml{}*/}
 	if len(os.Args) >= 2 && os.Args[1] == "--histogram" {
 		histogramMain(testCorpora, workloads)
@@ -314,7 +322,11 @@ func (i *Input) syntectQuery() *gosyntect.Query {
 }
 
 func (i *Input) benchmarkSyntect(client *gosyntect.Client) time.Duration {
-	resp, err := client.Highlight(context.Background(), i.syntectQuery())
+	query := i.syntectQuery()
+	resp, err := client.Highlight(context.Background(), query)
+	if errors.Is(err, gosyntect.ErrHSSWorkerTimeout) {
+		return query.StabilizeTimeout
+	}
 	if err != nil {
 		panic(fmt.Sprintf("syntect server failed to highlight code with err = %v", err))
 	}
@@ -396,7 +408,7 @@ func (c *Corpus) testInputs() ([]Input, error) {
 		}
 		inputs = append(inputs, input)
 	}
-	// inputs = inputs[0:100] // Testing
+	// inputs = inputs[0:100] // testing
 	return inputs, nil
 }
 
