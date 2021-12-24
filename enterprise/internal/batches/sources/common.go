@@ -38,6 +38,7 @@ type DraftChangesetSource interface {
 }
 
 type ForkableChangesetSource interface {
+	ChangesetSource
 	GetChangesetForkRepo(context.Context, *types.Repo) (*types.Repo, error)
 }
 
