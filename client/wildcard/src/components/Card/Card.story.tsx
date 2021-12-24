@@ -14,7 +14,7 @@ const config: Meta = {
 
     decorators: [
         story => (
-            <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+            <BrandedStory styles={webStyles}>{() => <div className="container mt-3 pb-3">{story()}</div>}</BrandedStory>
         ),
     ],
 

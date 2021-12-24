@@ -1,14 +1,19 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { ForwardReferenceComponent } from '../../..'
+
 import styles from './CardText.module.scss'
 
-export const CardText: React.FunctionComponent<React.HTMLAttributes<HTMLDivElement>> = ({
-    children,
-    className,
-    ...attributes
-}) => (
-    <p className={classNames(className, styles.cardText)} {...attributes}>
+interface CardTextProps {
+    /**
+     * Used to change the element that is rendered.
+     */
+    as?: React.ElementType
+}
+
+export const CardText = React.forwardRef(({ as: Component = 'p', children, className, ...attributes }, reference) => (
+    <Component ref={reference} className={classNames(styles.cardText, className)} {...attributes}>
         {children}
-    </p>
-)
+    </Component>
+)) as ForwardReferenceComponent<'p', CardTextProps>
