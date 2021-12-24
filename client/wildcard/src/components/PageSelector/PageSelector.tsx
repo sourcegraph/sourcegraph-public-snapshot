@@ -5,7 +5,7 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React from 'react'
 import useResizeObserver from 'use-resize-observer'
 
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { createAggregateError } from '@sourcegraph/common'
 
 import { useOffsetPagination, useDebounce } from '../../hooks'
 

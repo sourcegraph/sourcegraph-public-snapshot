@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react'
 import { ObservableInput } from 'rxjs'
 
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike } from '@sourcegraph/common'
 
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 import { CodeInsightsGqlBackend } from '../../../core/backend/gql-api/code-insights-gql-backend'

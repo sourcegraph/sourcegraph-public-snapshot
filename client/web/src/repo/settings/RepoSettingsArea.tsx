@@ -7,9 +7,9 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser } from '../../auth'

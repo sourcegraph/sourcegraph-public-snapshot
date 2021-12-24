@@ -7,7 +7,7 @@ import { mergeMap, startWith, catchError, tap, filter } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Container } from '@sourcegraph/wildcard'
 

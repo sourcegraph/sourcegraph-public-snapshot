@@ -2,12 +2,12 @@ import { ApolloQueryResult, ObservableQuery } from '@apollo/client'
 import { map, publishReplay, refCount, shareReplay } from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
+import { createAggregateError, asError } from '@sourcegraph/common'
 import { fromObservableQueryPromise, getDocumentNode, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
 import { gqlToCascade } from '@sourcegraph/shared/src/settings/settings'
-import { createAggregateError, asError } from '@sourcegraph/shared/src/util/errors'
 import { LocalStorageSubject } from '@sourcegraph/shared/src/util/LocalStorageSubject'
 import {
     toPrettyBlobURL,

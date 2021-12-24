@@ -4,7 +4,7 @@ import * as React from 'react'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 
 import { HeroPage } from '../components/HeroPage'
 import { checkMirrorRepositoryConnection } from '../site-admin/backend'

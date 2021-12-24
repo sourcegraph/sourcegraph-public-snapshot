@@ -4,8 +4,8 @@ import React, { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { asError } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'

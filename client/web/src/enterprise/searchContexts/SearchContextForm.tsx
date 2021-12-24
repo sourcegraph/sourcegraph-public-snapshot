@@ -5,6 +5,7 @@ import { Form } from 'reactstrap'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
+import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import {
     Scalars,
     SearchContextInput,
@@ -13,7 +14,6 @@ import {
 import { ISearchContext, ISearchContextRepositoryRevisionsInput } from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ALLOW_NAVIGATION, AwayPrompt } from '@sourcegraph/web/src/components/AwayPrompt'
 import { Container } from '@sourcegraph/wildcard'

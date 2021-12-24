@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/common'
 
 import { ErrorAlert } from '../../../components/alerts'
 

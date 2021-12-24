@@ -3,9 +3,9 @@ import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import React, { useState, useCallback, useMemo } from 'react'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { isExtensionEnabled, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
 import { PageHeader, AlertLink } from '@sourcegraph/wildcard'
 
