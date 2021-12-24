@@ -26,12 +26,6 @@ $border-color: var(--border-color);
 $link-color: var(--link-color);
 $link-hover-color: var(--link-hover-color);
 
-// Tooltips
-
-$tooltip-bg: var(--tooltip-bg);
-$tooltip-opacity: 1;
-$tooltip-font-size: 0.75rem;
-
 // Forms
 
 $form-check-input-margin-y: var(--form-check-input-margin-y);
@@ -112,7 +106,6 @@ $spacer: 1rem;
 @import 'bootstrap/scss/utilities';
 @import 'bootstrap/scss/grid';
 @import 'bootstrap/scss/progress';
-@import 'bootstrap/scss/tooltip';
 @import 'bootstrap/scss/transitions';
 
 // Modified in `./buttons.scss`
@@ -145,7 +138,6 @@ $spacer: 1rem;
 @import './forms';
 @import './highlight';
 @import './tabs';
-@import './tooltips';
 @import '@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 * {
