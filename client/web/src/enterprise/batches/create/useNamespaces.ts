@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
 
+import { isErrorLike } from '@sourcegraph/common'
 import {
     SettingsOrgSubject,
     SettingsUserSubject,
     SettingsSubject,
     SettingsCascadeOrError,
 } from '@sourcegraph/shared/src/settings/settings'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { Scalars } from '../../../graphql-operations'
 import { Settings } from '../../../schema/settings.schema'

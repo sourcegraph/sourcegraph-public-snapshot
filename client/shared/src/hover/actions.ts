@@ -16,6 +16,7 @@ import {
     mapTo,
 } from 'rxjs/operators'
 
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/shared/src/codeintellify'
 
@@ -31,7 +32,6 @@ import { HoveredToken } from '../codeintellify/tokenPosition'
 import { getContributedActionItems } from '../contributions/contributions'
 import { Controller, ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContext, PlatformContextProps, URLToFileContext } from '../platform/context'
-import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision, isExternalLink } from '../util/url'
 
 import { HoverContext } from './HoverOverlay'

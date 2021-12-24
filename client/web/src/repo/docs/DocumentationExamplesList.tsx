@@ -5,11 +5,11 @@ import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { RepositoryFields } from '../../graphql-operations'

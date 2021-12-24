@@ -1,6 +1,6 @@
 import { get } from 'lodash'
 
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isErrorLike } from '@sourcegraph/common'
 import { modify, parseJSONCOrError } from '@sourcegraph/shared/src/util/jsonc'
 
 import {

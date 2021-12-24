@@ -2,8 +2,8 @@ import classNames from 'classnames'
 import { snakeCase } from 'lodash'
 import React, { useEffect } from 'react'
 
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
-import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { SourcegraphIconButton, SourcegraphIconButtonProps } from '../../components/SourcegraphIconButton'
 import { getPlatformName, isDefaultSourcegraphUrl } from '../../util/context'

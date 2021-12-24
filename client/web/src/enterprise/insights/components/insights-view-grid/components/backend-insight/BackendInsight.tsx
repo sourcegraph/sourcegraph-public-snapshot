@@ -3,8 +3,8 @@ import { camelCase } from 'lodash'
 import React, { Ref, useCallback, useContext, useRef, useState } from 'react'
 import { useMergeRefs } from 'use-callback-ref'
 
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import * as View from '../../../../../../views'

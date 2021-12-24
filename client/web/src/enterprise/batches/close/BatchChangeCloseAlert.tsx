@@ -1,8 +1,8 @@
 import * as H from 'history'
 import React, { useCallback, useState } from 'react'
 
+import { isErrorLike, asError } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { AlertLink } from '@sourcegraph/wildcard'
 
