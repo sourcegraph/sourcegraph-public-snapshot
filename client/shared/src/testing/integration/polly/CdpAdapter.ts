@@ -6,7 +6,7 @@ import { noop } from 'lodash'
 import Puppeteer from 'puppeteer'
 import { Observable, Subject } from 'rxjs'
 
-import { isErrorLike } from '../../../util/errors'
+import { isErrorLike } from '@sourcegraph/common'
 
 function toBase64(input: string): string {
     return Buffer.from(input).toString('base64')

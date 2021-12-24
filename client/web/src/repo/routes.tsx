@@ -1,8 +1,8 @@
 import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import {
     appendLineRangeQueryParameter,
     isLegacyFragment,

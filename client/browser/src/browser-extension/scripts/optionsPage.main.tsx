@@ -7,10 +7,10 @@ import { from, noop, Observable, combineLatest } from 'rxjs'
 import { catchError, map, mapTo } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
+import { asError } from '@sourcegraph/common'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
-import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { fetchSite } from '../../shared/backend/server'

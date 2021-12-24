@@ -2,9 +2,9 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback, useContext, useState } from 'react'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
 
 import { ErrorAlert } from '../../../components/alerts'

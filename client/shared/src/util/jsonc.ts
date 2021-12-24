@@ -1,7 +1,7 @@
 import { modify as jsoncModify, applyEdits, JSONPath, FormattingOptions } from '@sqs/jsonc-parser'
 import { parse, ParseError, ParseErrorCode, format as jsoncFormat } from '@sqs/jsonc-parser/lib/main'
 
-import { asError, createAggregateError, ErrorLike } from './errors'
+import { asError, createAggregateError, ErrorLike } from '@sourcegraph/common'
 
 /**
  * Parses the JSON input using an error-tolerant "JSONC" parser. If an error occurs, it is returned as a value
