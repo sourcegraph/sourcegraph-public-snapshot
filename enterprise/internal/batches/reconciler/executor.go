@@ -62,25 +62,13 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		return nil
 	}
 
-	// Load the changeset repo.
+	// Load the target repo.
+	//
+	// Note that the remote repo is lazily set when a changeset source is
+	// requested, since it isn't useful outside of that context.
 	e.targetRepo, err = e.tx.Repos().Get(ctx, e.ch.RepoID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load repository")
-	}
-
-	// Load the changeset source.
-	e.css, err = loadChangesetSource(ctx, e.tx, e.sourcer, e.ch, e.targetRepo)
-	if err != nil {
-		return err
-	}
-
-	// Load the remote repo to push to.
-	//
-	// FIXME: This could be optimised by only loading the remote repo if we have
-	// an operation that actually requires it.
-	e.remoteRepo, err = loadRemoteRepo(ctx, e.css, e.targetRepo)
-	if err != nil {
-		return err
 	}
 
 	for _, op := range plan.Ops.ExecutionOrder() {
@@ -413,6 +401,13 @@ func (e *executor) sleep() {
 func (e *executor) changesetSource(ctx context.Context) (sources.ChangesetSource, error) {
 	e.cssOnce.Do(func() {
 		e.css, e.cssErr = loadChangesetSource(ctx, e.tx, e.sourcer, e.ch, e.targetRepo)
+		if e.cssErr != nil {
+			return
+		}
+
+		// Set the remote repo, which may not be the same as the target repo if
+		// forking is enabled.
+		e.remoteRepo, e.cssErr = loadRemoteRepo(ctx, e.css, e.targetRepo)
 	})
 	return e.css, e.cssErr
 }

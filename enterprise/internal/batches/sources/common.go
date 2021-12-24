@@ -101,7 +101,11 @@ type Changeset struct {
 	HeadRef string
 	BaseRef string
 
+	// RemoteRepo is the repository the branch will be pushed to. This must be
+	// the same as TargetRepo if forking is not in use.
 	RemoteRepo *types.Repo
+	// TargetRepo is the repository in which the pull or merge request will be
+	// opened.
 	TargetRepo *types.Repo
 
 	*btypes.Changeset
