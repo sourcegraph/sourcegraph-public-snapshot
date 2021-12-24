@@ -1,7 +1,6 @@
 import { ApolloQueryResult, ObservableQuery } from '@apollo/client'
 import { map, publishReplay, refCount, shareReplay } from 'rxjs/operators'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { createAggregateError, asError } from '@sourcegraph/common'
 import { fromObservableQueryPromise, getDocumentNode, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
@@ -18,6 +17,7 @@ import {
     UIRangeSpec,
     appendSubtreeQueryParameter,
 } from '@sourcegraph/shared/src/util/url'
+import { TooltipController } from '@sourcegraph/wildcard'
 
 import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
 import { ViewerSettingsResult, ViewerSettingsVariables } from '../graphql-operations'
@@ -74,7 +74,7 @@ export function createPlatformContext(): PlatformContext {
         },
         getGraphQLClient: getWebGraphQLClient,
         requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
-        forceUpdateTooltip: () => Tooltip.forceUpdate(),
+        forceUpdateTooltip: () => TooltipController.forceUpdate(),
         createExtensionHost: async () =>
             (await import('@sourcegraph/shared/src/api/extension/worker')).createExtensionHost(),
         urlToFile: toPrettyWebBlobURL,
