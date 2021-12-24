@@ -1,13 +1,13 @@
 import classNames from 'classnames'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import React, { useState, useCallback, useMemo } from 'react'
-import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
+import { NavLink, RouteComponentProps } from 'react-router-dom'
 
 import { isExtensionEnabled, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, AlertLink } from '@sourcegraph/wildcard'
 
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { ExtensionToggle } from '../ExtensionToggle'
@@ -115,9 +115,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                     {showCta && (
                                         <div className={classNames('alert alert-info mb-0 py-1', styles.alert)}>
                                             An account is required to create and configure extensions.{' '}
-                                            <Link to="/sign-up" className="alert-link">
-                                                Register now!
-                                            </Link>
+                                            <AlertLink to="/sign-up">Register now!</AlertLink>
                                         </div>
                                     )}
                                     {/* If site admin, render user toggle and site toggle (both small) */}

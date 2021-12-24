@@ -13,7 +13,7 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (Chrome) 1`] = `
         class="my-0 mr-3"
       >
         <a
-          class="alert-link"
+          class="alertLink"
           href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack"
           rel="noopener noreferrer"
           target="_blank"
@@ -58,7 +58,7 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (native integration) 1`] =
       >
         Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for Bitbucket Server. 
         <a
-          class="alert-link"
+          class="alertLink"
           href="https://docs.sourcegraph.com/integration/browser_extension"
           rel="noopener"
           target="_blank"
@@ -67,7 +67,7 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (native integration) 1`] =
         </a>
          or 
         <a
-          class="alert-link"
+          class="alertLink"
           href=""
           rel="noopener"
           target="_blank"
@@ -111,7 +111,7 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (non-Chrome) 1`] = `
       >
         Get code intelligence while browsing files and reviewing pull requests on Bitbucket Server. 
         <a
-          class="alert-link"
+          class="alertLink"
           href="/help/integration/browser_extension"
           rel="noopener noreferrer"
           target="_blank"
@@ -154,7 +154,7 @@ exports[`InstallBrowserExtensionAlert GITHUB (Chrome) 1`] = `
         class="my-0 mr-3"
       >
         <a
-          class="alert-link"
+          class="alertLink"
           href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack"
           rel="noopener noreferrer"
           target="_blank"
@@ -199,7 +199,7 @@ exports[`InstallBrowserExtensionAlert GITHUB (native integration) 1`] = `
       >
         Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for GitHub. 
         <a
-          class="alert-link"
+          class="alertLink"
           href="https://docs.sourcegraph.com/integration/browser_extension"
           rel="noopener"
           target="_blank"
@@ -208,7 +208,7 @@ exports[`InstallBrowserExtensionAlert GITHUB (native integration) 1`] = `
         </a>
          or 
         <a
-          class="alert-link"
+          class="alertLink"
           href=""
           rel="noopener"
           target="_blank"
@@ -252,7 +252,7 @@ exports[`InstallBrowserExtensionAlert GITHUB (non-Chrome) 1`] = `
       >
         Get code intelligence while browsing files and reviewing pull requests on GitHub. 
         <a
-          class="alert-link"
+          class="alertLink"
           href="/help/integration/browser_extension"
           rel="noopener noreferrer"
           target="_blank"
@@ -295,7 +295,7 @@ exports[`InstallBrowserExtensionAlert GITLAB (Chrome) 1`] = `
         class="my-0 mr-3"
       >
         <a
-          class="alert-link"
+          class="alertLink"
           href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack"
           rel="noopener noreferrer"
           target="_blank"
@@ -340,7 +340,7 @@ exports[`InstallBrowserExtensionAlert GITLAB (native integration) 1`] = `
       >
         Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for GitLab. 
         <a
-          class="alert-link"
+          class="alertLink"
           href="https://docs.sourcegraph.com/integration/browser_extension"
           rel="noopener"
           target="_blank"
@@ -349,7 +349,7 @@ exports[`InstallBrowserExtensionAlert GITLAB (native integration) 1`] = `
         </a>
          or 
         <a
-          class="alert-link"
+          class="alertLink"
           href=""
           rel="noopener"
           target="_blank"
@@ -393,7 +393,7 @@ exports[`InstallBrowserExtensionAlert GITLAB (non-Chrome) 1`] = `
       >
         Get code intelligence while browsing files and reviewing merge requests on GitLab. 
         <a
-          class="alert-link"
+          class="alertLink"
           href="/help/integration/browser_extension"
           rel="noopener noreferrer"
           target="_blank"
@@ -436,7 +436,7 @@ exports[`InstallBrowserExtensionAlert PHABRICATOR (Chrome) 1`] = `
         class="my-0 mr-3"
       >
         <a
-          class="alert-link"
+          class="alertLink"
           href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack"
           rel="noopener noreferrer"
           target="_blank"
@@ -481,7 +481,7 @@ exports[`InstallBrowserExtensionAlert PHABRICATOR (native integration) 1`] = `
       >
         Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for Phabricator. 
         <a
-          class="alert-link"
+          class="alertLink"
           href="https://docs.sourcegraph.com/integration/browser_extension"
           rel="noopener"
           target="_blank"
@@ -490,7 +490,7 @@ exports[`InstallBrowserExtensionAlert PHABRICATOR (native integration) 1`] = `
         </a>
          or 
         <a
-          class="alert-link"
+          class="alertLink"
           href=""
           rel="noopener"
           target="_blank"
@@ -534,7 +534,7 @@ exports[`InstallBrowserExtensionAlert PHABRICATOR (non-Chrome) 1`] = `
       >
         Get code intelligence while browsing and reviewing code on Phabricator. 
         <a
-          class="alert-link"
+          class="alertLink"
           href="/help/integration/browser_extension"
           rel="noopener noreferrer"
           target="_blank"
