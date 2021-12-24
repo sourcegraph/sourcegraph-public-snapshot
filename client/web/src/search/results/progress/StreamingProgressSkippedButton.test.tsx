@@ -195,8 +195,12 @@ describe('StreamingProgressSkippedButton', () => {
 
         // Trigger onSearchAgain event and check for changes
         // Find `archived:yes` checkbox
-        userEvent.click(screen.getAllByTestId('streaming-progress-skipped-suggest-check')[1])
-        userEvent.click(screen.getByTestId('skipped-popover-form-submit-btn'))
+        userEvent.click(screen.getAllByTestId('streaming-progress-skipped-suggest-check')[1], undefined, {
+            skipPointerEventsCheck: true,
+        })
+        userEvent.click(screen.getByTestId('skipped-popover-form-submit-btn'), undefined, {
+            skipPointerEventsCheck: true,
+        })
 
         await waitFor(() => {
             // dropdown is closed

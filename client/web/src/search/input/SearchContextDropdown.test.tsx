@@ -226,7 +226,11 @@ describe('SearchContextDropdown', () => {
 
             // would need some time for animation before the button becomes clickable
             // otherwise we would get `unable to click element as it has or inherits pointer-events set to "none".` error
-            await waitFor(() => userEvent.click(screen.getByRole('button', { name: /Don't show this again/ })))
+            await waitFor(() =>
+                userEvent.click(screen.getByRole('button', { name: /Don't show this again/ }), undefined, {
+                    skipPointerEventsCheck: true,
+                })
+            )
 
             expect(screen.queryByRole('button', { name: /Don't show this again/ })).not.toBeInTheDocument()
             expect(screen.getByRole('searchbox')).toBeInTheDocument()
