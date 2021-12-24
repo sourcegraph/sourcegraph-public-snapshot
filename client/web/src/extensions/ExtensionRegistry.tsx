@@ -1,6 +1,5 @@
 import * as H from 'history'
 import React, { useEffect, useState, useCallback } from 'react'
-import { Link } from 'react-router-dom'
 import { concat, of, timer } from 'rxjs'
 import { debounce, delay, map, switchMap, takeUntil, tap, distinctUntilChanged } from 'rxjs/operators'
 
@@ -14,6 +13,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { AlertLink } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import {
@@ -360,9 +360,7 @@ export const ExtensionRegistry: React.FunctionComponent<Props> = props => {
                             {!authenticatedUser && (
                                 <div className="alert alert-info my-4">
                                     <span>An account is required to create, enable and disable extensions. </span>
-                                    <Link to="/sign-up?returnTo=/extensions">
-                                        <span className="alert-link">Register now!</span>
-                                    </Link>
+                                    <AlertLink to="/sign-up?returnTo=/extensions">Register now!</AlertLink>
                                 </div>
                             )}
                             <ExtensionsList
