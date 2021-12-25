@@ -12,11 +12,11 @@ import (
 )
 
 const (
-	gitRefTypeBranch = "GIT_BRANCH"
-	gitRefTypeTag    = "GIT_TAG"
-	gitRefTypeOther  = "GIT_REF_OTHER"
+	GitRefTypeBranch = "GIT_BRANCH"
+	GitRefTypeTag    = "GIT_TAG"
+	GitRefTypeOther  = "GIT_REF_OTHER"
 
-	gitRefOrderAuthoredOrCommittedAt = "AUTHORED_OR_COMMITTED_AT"
+	GitRefOrderAuthoredOrCommittedAt = "AUTHORED_OR_COMMITTED_AT"
 )
 
 func gitRefPrefix(ref string) string {
@@ -37,12 +37,12 @@ func gitRefPrefix(ref string) string {
 
 func gitRefType(ref string) string {
 	if strings.HasPrefix(ref, "refs/heads/") {
-		return gitRefTypeBranch
+		return GitRefTypeBranch
 	}
 	if strings.HasPrefix(ref, "refs/tags/") {
-		return gitRefTypeTag
+		return GitRefTypeTag
 	}
-	return gitRefTypeOther
+	return GitRefTypeOther
 }
 
 func gitRefDisplayName(ref string) string {
