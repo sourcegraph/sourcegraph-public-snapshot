@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-type refsArgs struct {
+type GitRefConnectionArgs struct {
 	graphqlutil.ConnectionArgs
 	Query       *string
 	Type        *string
@@ -20,21 +20,21 @@ type refsArgs struct {
 	Interactive bool
 }
 
-func (r *RepositoryResolver) Branches(ctx context.Context, args *refsArgs) (*gitRefConnectionResolver, error) {
-	t := gitRefTypeBranch
+func (r *RepositoryResolver) Branches(ctx context.Context, args *GitRefConnectionArgs) (*gitRefConnectionResolver, error) {
+	t := GitRefTypeBranch
 	args.Type = &t
 	return r.GitRefs(ctx, args)
 }
 
-func (r *RepositoryResolver) Tags(ctx context.Context, args *refsArgs) (*gitRefConnectionResolver, error) {
-	t := gitRefTypeTag
+func (r *RepositoryResolver) Tags(ctx context.Context, args *GitRefConnectionArgs) (*gitRefConnectionResolver, error) {
+	t := GitRefTypeTag
 	args.Type = &t
 	return r.GitRefs(ctx, args)
 }
 
-func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitRefConnectionResolver, error) {
+func (r *RepositoryResolver) GitRefs(ctx context.Context, args *GitRefConnectionArgs) (*gitRefConnectionResolver, error) {
 	var branches []*git.Branch
-	if args.Type == nil || *args.Type == gitRefTypeBranch {
+	if args.Type == nil || *args.Type == GitRefTypeBranch {
 		var err error
 		branches, err = git.ListBranches(ctx, r.RepoName(), git.BranchesOptions{
 			// We intentionally do not ask for commits here since it requires
@@ -61,7 +61,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 			branches = filtered
 		}
 
-		if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
+		if args.OrderBy != nil && *args.OrderBy == GitRefOrderAuthoredOrCommittedAt {
 			// Sort branches by most recently committed.
 
 			ok, err := hydrateBranchCommits(ctx, r.RepoName(), args.Interactive, branches)
@@ -101,13 +101,13 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	}
 
 	var tags []*git.Tag
-	if args.Type == nil || *args.Type == gitRefTypeTag {
+	if args.Type == nil || *args.Type == GitRefTypeTag {
 		var err error
 		tags, err = git.ListTags(ctx, r.RepoName())
 		if err != nil {
 			return nil, err
 		}
-		if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
+		if args.OrderBy != nil && *args.OrderBy == GitRefOrderAuthoredOrCommittedAt {
 			// Tags are already sorted by creatordate.
 		} else {
 			// Sort tags by reverse alpha.
