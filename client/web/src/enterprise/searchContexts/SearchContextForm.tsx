@@ -124,6 +124,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
     const [visibility, setVisibility] = useState<SelectedVisibility>(
         searchContext ? searchContextVisibility(searchContext) : 'public'
     )
+    const [repositoryQuery, setRepositoryQuery] = useState(searchContext ? searchContext.repositoryQuery : '')
 
     const isValidName = useMemo(() => name.length === 0 || name.match(VALIDATE_NAME_REGEXP) !== null, [name])
 
@@ -156,6 +157,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
             return (
                 name.length > 0 ||
                 description.length > 0 ||
+                repositoryQuery.length > 0 ||
                 visibility !== 'public' ||
                 selectedNamespace.type !== 'user' ||
                 hasRepositoriesConfigChanged
@@ -164,10 +166,11 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
         return (
             searchContext.name !== name ||
             searchContext.description !== description ||
+            searchContext.repositoryQuery !== repositoryQuery ||
             searchContextVisibility(searchContext) !== visibility ||
             hasRepositoriesConfigChanged
         )
-    }, [description, name, searchContext, selectedNamespace, visibility, hasRepositoriesConfigChanged])
+    }, [description, name, searchContext, selectedNamespace, visibility, repositoryQuery, hasRepositoriesConfigChanged])
 
     const parseRepositories = useCallback(
         (): Observable<RepositoriesParseResult> =>
@@ -231,7 +234,13 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     switchMap(repositoryRevisionsArray =>
                         onSubmit(
                             searchContext?.id,
-                            { name, description, public: visibility === 'public', namespace: selectedNamespace.id },
+                            {
+                                name,
+                                description,
+                                public: visibility === 'public',
+                                namespace: selectedNamespace.id,
+                                repositoryQuery,
+                            },
                             repositoryRevisionsArray
                         ).pipe(
                             startWith(LOADING),
@@ -349,18 +358,37 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     ))}
                 </div>
                 <hr className={classNames('my-4', styles.searchContextFormDivider)} />
-                <div>
-                    <div className="mb-1">Repositories and revisions</div>
-                    <div className="text-muted mb-3">
-                        Define which repositories and revisions should be included in this search context.
+                {window.context?.experimentalFeatures['search.contexts.repositoryQuery'] ? (
+                    <div>
+                        <div className="mb-1">Repository query</div>
+                        <div className="text-muted mb-3">
+                            Define which repositories and revisions should be included in this search context with a
+                            Sourcegraph repository query.
+                        </div>
+                        <textarea
+                            className="form-control w-100"
+                            data-testid="search-context-repositoryQuery-input"
+                            value={repositoryQuery}
+                            rows={5}
+                            onChange={event => {
+                                setRepositoryQuery(event.target.value)
+                            }}
+                        />
                     </div>
-                    <SearchContextRepositoriesFormArea
-                        {...props}
-                        onChange={onRepositoriesConfigChange}
-                        validateRepositories={validateRepositories}
-                        repositories={searchContext?.repositories}
-                    />
-                </div>
+                ) : (
+                    <div>
+                        <div className="mb-1">Repositories and revisions</div>
+                        <div className="text-muted mb-3">
+                            Define which repositories and revisions should be included in this search context.
+                        </div>
+                        <SearchContextRepositoriesFormArea
+                            {...props}
+                            onChange={onRepositoriesConfigChange}
+                            validateRepositories={validateRepositories}
+                            repositories={searchContext?.repositories}
+                        />
+                    </div>
+                )}
             </Container>
             <div className="d-flex">
                 <button
