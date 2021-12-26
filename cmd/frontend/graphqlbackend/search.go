@@ -92,10 +92,12 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 	}
 	tr.LazyPrintf("parsing done")
 
-	// Replace each context in the query with its repository query if any.
-	plan, err = substituteSearchContexts(ctx, db, plan)
-	if err != nil {
-		return alertForQuery(args.Query, err).wrapSearchImplementer(db), nil
+	if conf.ExperimentalFeatures().SearchContextsRepositoryQuery {
+		// Replace each context in the query with its repository query if any.
+		plan, err = substituteSearchContexts(ctx, db, plan)
+		if err != nil {
+			return alertForQuery(args.Query, err).wrapSearchImplementer(db), nil
+		}
 	}
 
 	defaultLimit := defaultMaxSearchResults

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -382,6 +383,7 @@ func GetAutoDefinedSearchContexts(ctx context.Context, db database.DB) ([]*types
 	return searchContexts, nil
 }
 
+// RepoRevs returns all the revisions for the given repo IDs defined across all search contexts.
 func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 	if a := actor.FromContext(ctx); !a.IsInternal() {
 		return nil, errors.New("searchcontexts.RepoRevs can only be accessed by an internal actor")
@@ -392,6 +394,10 @@ func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[ap
 	revs, err := sc.GetAllRevisionsForRepos(ctx, repoIDs)
 	if err != nil {
 		return nil, err
+	}
+
+	if !conf.ExperimentalFeatures().SearchContextsRepositoryQuery {
+		return revs, nil
 	}
 
 	repoQueries, err := sc.GetAllRepositoryQueries(ctx)
@@ -448,11 +454,14 @@ func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[ap
 	return revs, nil
 }
 
+// RepositoryQuery represents a parsed search context repository query.
 type RepositoryQuery struct {
 	database.ReposListOptions
 	RevSpecs []string
 }
 
+// ParseRepositoryQuery parses the given repository query, returning an error
+// in case of failure.
 func ParseRepositoryQuery(repositoryQuery string) ([]RepositoryQuery, error) {
 	plan, err := query.Pipeline(query.Init(repositoryQuery, query.SearchTypeRegex))
 	if err != nil {
