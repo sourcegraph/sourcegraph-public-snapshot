@@ -383,6 +383,10 @@ func GetAutoDefinedSearchContexts(ctx context.Context, db database.DB) ([]*types
 }
 
 func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
+	if a := actor.FromContext(ctx); !a.IsInternal() {
+		return nil, errors.New("searchcontexts.RepoRevs can only be accessed by an internal actor")
+	}
+
 	sc := db.SearchContexts()
 
 	revs, err := sc.GetAllRevisionsForRepos(ctx, repoIDs)

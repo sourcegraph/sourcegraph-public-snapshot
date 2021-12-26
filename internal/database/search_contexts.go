@@ -347,6 +347,7 @@ SET
 	name = %s,
 	description = %s,
 	public = %s,
+	repo_query = %s,
 	updated_at = now()
 WHERE id = %d
 `
@@ -430,6 +431,7 @@ func updateSearchContext(ctx context.Context, s SearchContextsStore, searchConte
 		searchContext.Name,
 		searchContext.Description,
 		searchContext.Public,
+		searchContext.RepositoryQuery,
 		searchContext.ID,
 	)
 	_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
