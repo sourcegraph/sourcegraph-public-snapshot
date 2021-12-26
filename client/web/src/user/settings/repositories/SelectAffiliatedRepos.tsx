@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useState, FunctionComponent, Dispatch, S
 
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageSelector } from '@sourcegraph/wildcard'
+import { Container, PageSelector, RadioButton } from '@sourcegraph/wildcard'
 
 import { RepoSelectionMode } from '../../../auth/PostSignUpPage'
 import { useSteps } from '../../../auth/Steps'
@@ -312,26 +312,37 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
 
     const modeSelect: JSX.Element = (
         <>
-            <label className="d-flex flex-row align-items-baseline">
-                <input type="radio" value="all" checked={selectionState.radio === 'all'} onChange={handleRadioSelect} />
-                <div className="d-flex flex-column ml-2">
-                    <p className="mb-0">Sync all repositories</p>
-                    <p className="font-weight-normal text-muted">
-                        Will sync all current and future public and private repositories
-                    </p>
-                </div>
-            </label>
-            <label className="d-flex flex-row align-items-baseline mb-0">
-                <input
-                    type="radio"
+            <div className="d-flex flex-row align-items-baseline">
+                <RadioButton
+                    id="sync_all_repositories"
+                    name="all_repositories"
+                    value="all"
+                    checked={selectionState.radio === 'all'}
+                    onChange={handleRadioSelect}
+                    label={
+                        <div className="d-flex flex-column ml-2">
+                            <p className="mb-0">Sync all repositories</p>
+                            <p className="font-weight-normal text-muted">
+                                Will sync all current and future public and private repositories
+                            </p>
+                        </div>
+                    }
+                />
+            </div>
+            <div className="d-flex flex-row align-items-baseline mb-0">
+                <RadioButton
+                    id="sync_selected_repositories"
+                    name="selected_repositories"
                     value="selected"
                     checked={selectionState.radio === 'selected'}
                     onChange={handleRadioSelect}
+                    label={
+                        <div className="d-flex flex-column ml-2">
+                            <p className="mb-0">Sync selected repositories</p>
+                        </div>
+                    }
                 />
-                <div className="d-flex flex-column ml-2">
-                    <p className="mb-0">Sync selected repositories</p>
-                </div>
-            </label>
+            </div>
         </>
     )
 
