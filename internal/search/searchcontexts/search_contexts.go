@@ -382,7 +382,7 @@ func GetAutoDefinedSearchContexts(ctx context.Context, db database.DB) ([]*types
 	return searchContexts, nil
 }
 
-func GetAllRevisionsForRepos(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
+func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 	sc := db.SearchContexts()
 
 	revs, err := sc.GetAllRevisionsForRepos(ctx, repoIDs)

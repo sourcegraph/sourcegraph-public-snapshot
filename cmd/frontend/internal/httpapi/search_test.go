@@ -34,9 +34,9 @@ func TestServeConfiguration(t *testing.T) {
 	}}
 	srv := &searchIndexerServer{
 		RepoStore: &fakeRepoStore{Repos: repos},
-		SearchContextsStore: &fakeSearchContextsStore{Revisions: map[api.RepoID][]string{
-			6: {"a", "b"},
-		}},
+		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
+			return map[api.RepoID][]string{6: {"a", "b"}}, nil
+		},
 	}
 
 	git.Mocks.ResolveRevision = func(spec string, _ git.ResolveRevisionOptions) (api.CommitID, error) {

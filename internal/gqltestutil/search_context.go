@@ -5,16 +5,18 @@ import (
 )
 
 type CreateSearchContextInput struct {
-	Name        string  `json:"name"`
-	Namespace   *string `json:"namespace"`
-	Description string  `json:"description"`
-	Public      bool    `json:"public"`
+	Name            string  `json:"name"`
+	Namespace       *string `json:"namespace"`
+	Description     string  `json:"description"`
+	Public          bool    `json:"public"`
+	RepositoryQuery string  `json:"repositoryQuery"`
 }
 
 type UpdateSearchContextInput struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Public      bool   `json:"public"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	Public          bool   `json:"public"`
+	RepositoryQuery string `json:"repositoryQuery"`
 }
 
 type SearchContextRepositoryRevisionsInput struct {
@@ -29,13 +31,11 @@ type SearchContextRepositoryRevisionsInput struct {
 func (c *Client) CreateSearchContext(
 	input CreateSearchContextInput,
 	repositories []SearchContextRepositoryRevisionsInput,
-	repositoryQuery string,
 ) (string, error) {
 	const query = `
 mutation CreateSearchContext(
   $input: SearchContextInput!,
   $repositories: [SearchContextRepositoryRevisionsInput!],
-  $repositoryQuery: String,
 ) {
 	createSearchContext(
     searchContext: $input,
@@ -47,9 +47,8 @@ mutation CreateSearchContext(
 }
 `
 	variables := map[string]interface{}{
-		"input":           input,
-		"repositories":    repositories,
-		"repositoryQuery": repositoryQuery,
+		"input":        input,
+		"repositories": repositories,
 	}
 	var resp struct {
 		Data struct {
@@ -120,20 +119,17 @@ func (c *Client) UpdateSearchContext(
 	id string,
 	input UpdateSearchContextInput,
 	repos []SearchContextRepositoryRevisionsInput,
-	repositoryQuery string,
 ) (string, error) {
 	const query = `
 mutation UpdateSearchContext(
   $id: ID!,
   $input: SearchContextEditInput!,
   $repositories: [SearchContextRepositoryRevisionsInput!],
-  $repositoryQuery: String,
 ) {
 	updateSearchContext(
     id: $id,
     searchContext: $input,
     repositories: $repositories,
-    repositoryQuery: $repositoryQuery,
   ) {
 		id
 		description
@@ -150,10 +146,9 @@ mutation UpdateSearchContext(
 }
 `
 	variables := map[string]interface{}{
-		"id":              id,
-		"input":           input,
-		"repositories":    repos,
-		"repositoryQuery": repositoryQuery,
+		"id":           id,
+		"input":        input,
+		"repositories": repos,
 	}
 	var resp struct {
 		Data struct {
