@@ -17,23 +17,24 @@ import (
 	zoekt "github.com/google/zoekt/query"
 )
 
-// unionRegexp separates values with a | operator to create a string
-// representing a union of regexp patterns.
-func unionRegexp(values []string) string {
-	if len(values) == 0 {
-		// As a regular expression, "()" and "" are equivalent so this
-		// condition wouldn't ordinarily be needed to distinguish these
-		// values. But, our internal search engine assumes that ""
-		// implies "no regexp" (no values), while "()" implies "match
-		// empty regexp" (all values) for file patterns.
+func UnionRegExps(patterns []string) string {
+	if len(patterns) == 0 {
 		return ""
 	}
-	if len(values) == 1 {
-		// Cosmetic format for regexp value, wherever this happens to be
-		// pretty printed.
-		return values[0]
+	if len(patterns) == 1 {
+		return patterns[0]
 	}
-	return "(" + strings.Join(values, ")|(") + ")"
+
+	// We only need to wrap the pattern in parentheses if it contains a "|" because
+	// "|" has the lowest precedence of any operator.
+	patterns2 := make([]string, len(patterns))
+	for i, p := range patterns {
+		if strings.Contains(p, "|") {
+			p = "(" + p + ")"
+		}
+		patterns2[i] = p
+	}
+	return strings.Join(patterns2, "|")
 }
 
 // filenamesFromLanguage is a map of language name to full filenames
@@ -63,7 +64,7 @@ func LangToFileRegexp(lang string) string {
 	for _, filename := range filenamesFromLanguage[lang] {
 		patterns = append(patterns, "^"+regexp.QuoteMeta(filename)+"$")
 	}
-	return unionRegexp(patterns)
+	return UnionRegExps(patterns)
 }
 
 func mapSlice(values []string, f func(string) string) []string {
@@ -164,7 +165,7 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 
 		// Values dependent on parameters.
 		IncludePatterns:              filesInclude,
-		ExcludePattern:               unionRegexp(filesExclude),
+		ExcludePattern:               UnionRegExps(filesExclude),
 		FilePatternsReposMustInclude: filesReposMustInclude,
 		FilePatternsReposMustExclude: filesReposMustExclude,
 		Languages:                    langInclude,

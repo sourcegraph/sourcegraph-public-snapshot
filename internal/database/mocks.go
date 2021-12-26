@@ -26020,6 +26020,9 @@ type MockSearchContextsStore struct {
 	// ExecFunc is an instance of a mock function object controlling the
 	// behavior of the method Exec.
 	ExecFunc *SearchContextsStoreExecFunc
+	// GetAllRepositoryQueriesFunc is an instance of a mock function object
+	// controlling the behavior of the method GetAllRepositoryQueries.
+	GetAllRepositoryQueriesFunc *SearchContextsStoreGetAllRepositoryQueriesFunc
 	// GetAllRevisionsForReposFunc is an instance of a mock function object
 	// controlling the behavior of the method GetAllRevisionsForRepos.
 	GetAllRevisionsForReposFunc *SearchContextsStoreGetAllRevisionsForReposFunc
@@ -26077,6 +26080,11 @@ func NewMockSearchContextsStore() *MockSearchContextsStore {
 		ExecFunc: &SearchContextsStoreExecFunc{
 			defaultHook: func(context.Context, *sqlf.Query) error {
 				return nil
+			},
+		},
+		GetAllRepositoryQueriesFunc: &SearchContextsStoreGetAllRepositoryQueriesFunc{
+			defaultHook: func(context.Context) ([]string, error) {
+				return nil, nil
 			},
 		},
 		GetAllRevisionsForReposFunc: &SearchContextsStoreGetAllRevisionsForReposFunc{
@@ -26152,6 +26160,11 @@ func NewStrictMockSearchContextsStore() *MockSearchContextsStore {
 				panic("unexpected invocation of MockSearchContextsStore.Exec")
 			},
 		},
+		GetAllRepositoryQueriesFunc: &SearchContextsStoreGetAllRepositoryQueriesFunc{
+			defaultHook: func(context.Context) ([]string, error) {
+				panic("unexpected invocation of MockSearchContextsStore.GetAllRepositoryQueries")
+			},
+		},
 		GetAllRevisionsForReposFunc: &SearchContextsStoreGetAllRevisionsForReposFunc{
 			defaultHook: func(context.Context, []api.RepoID) (map[api.RepoID][]string, error) {
 				panic("unexpected invocation of MockSearchContextsStore.GetAllRevisionsForRepos")
@@ -26214,6 +26227,9 @@ func NewMockSearchContextsStoreFrom(i SearchContextsStore) *MockSearchContextsSt
 		},
 		ExecFunc: &SearchContextsStoreExecFunc{
 			defaultHook: i.Exec,
+		},
+		GetAllRepositoryQueriesFunc: &SearchContextsStoreGetAllRepositoryQueriesFunc{
+			defaultHook: i.GetAllRepositoryQueries,
 		},
 		GetAllRevisionsForReposFunc: &SearchContextsStoreGetAllRevisionsForReposFunc{
 			defaultHook: i.GetAllRevisionsForRepos,
@@ -26791,6 +26807,116 @@ func (c SearchContextsStoreExecFuncCall) Args() []interface{} {
 // invocation.
 func (c SearchContextsStoreExecFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// SearchContextsStoreGetAllRepositoryQueriesFunc describes the behavior
+// when the GetAllRepositoryQueries method of the parent
+// MockSearchContextsStore instance is invoked.
+type SearchContextsStoreGetAllRepositoryQueriesFunc struct {
+	defaultHook func(context.Context) ([]string, error)
+	hooks       []func(context.Context) ([]string, error)
+	history     []SearchContextsStoreGetAllRepositoryQueriesFuncCall
+	mutex       sync.Mutex
+}
+
+// GetAllRepositoryQueries delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockSearchContextsStore) GetAllRepositoryQueries(v0 context.Context) ([]string, error) {
+	r0, r1 := m.GetAllRepositoryQueriesFunc.nextHook()(v0)
+	m.GetAllRepositoryQueriesFunc.appendCall(SearchContextsStoreGetAllRepositoryQueriesFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetAllRepositoryQueries method of the parent MockSearchContextsStore
+// instance is invoked and the hook queue is empty.
+func (f *SearchContextsStoreGetAllRepositoryQueriesFunc) SetDefaultHook(hook func(context.Context) ([]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetAllRepositoryQueries method of the parent MockSearchContextsStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *SearchContextsStoreGetAllRepositoryQueriesFunc) PushHook(hook func(context.Context) ([]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *SearchContextsStoreGetAllRepositoryQueriesFunc) SetDefaultReturn(r0 []string, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *SearchContextsStoreGetAllRepositoryQueriesFunc) PushReturn(r0 []string, r1 error) {
+	f.PushHook(func(context.Context) ([]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *SearchContextsStoreGetAllRepositoryQueriesFunc) nextHook() func(context.Context) ([]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SearchContextsStoreGetAllRepositoryQueriesFunc) appendCall(r0 SearchContextsStoreGetAllRepositoryQueriesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SearchContextsStoreGetAllRepositoryQueriesFuncCall objects describing the
+// invocations of this function.
+func (f *SearchContextsStoreGetAllRepositoryQueriesFunc) History() []SearchContextsStoreGetAllRepositoryQueriesFuncCall {
+	f.mutex.Lock()
+	history := make([]SearchContextsStoreGetAllRepositoryQueriesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SearchContextsStoreGetAllRepositoryQueriesFuncCall is an object that
+// describes an invocation of method GetAllRepositoryQueries on an instance
+// of MockSearchContextsStore.
+type SearchContextsStoreGetAllRepositoryQueriesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SearchContextsStoreGetAllRepositoryQueriesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SearchContextsStoreGetAllRepositoryQueriesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // SearchContextsStoreGetAllRevisionsForReposFunc describes the behavior

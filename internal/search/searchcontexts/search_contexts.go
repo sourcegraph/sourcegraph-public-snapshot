@@ -5,14 +5,18 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -188,15 +192,22 @@ func validateSearchContextRepositoryQuery(repositoryQuery string) error {
 	query.VisitParameter(plan.ToParseTree(), func(field, value string, negated bool, a query.Annotation) {
 		switch field {
 		case query.FieldRepo:
-			// We further validate that the value of the repo field is not a predicate
-			// and that it is a valid regex.
 			if a.Labels.IsSet(query.IsPredicate) {
 				errs = multierror.Append(errs,
 					errors.Errorf("unsupported repo field predicate in repository query: %q", value))
 				return
 			}
 
-			repoRegex, _ := search.ParseRepositoryRevisions(value)
+			repoRegex, revs := search.ParseRepositoryRevisions(value)
+
+			for _, rev := range revs {
+				if rev.RevSpec == "" {
+					errs = multierror.Append(errs,
+						errors.Errorf("unsupported rev glob in repository query: %q", value))
+					return
+				}
+			}
+
 			_, err := regexp.Compile(repoRegex)
 			if err != nil {
 				errs = multierror.Append(errs,
@@ -208,7 +219,6 @@ func validateSearchContextRepositoryQuery(repositoryQuery string) error {
 		case query.FieldArchived:
 		case query.FieldVisibility:
 		case query.FieldCase:
-		case query.FieldRev:
 
 		default:
 			errs = multierror.Append(errs,
@@ -310,7 +320,20 @@ func UpdateSearchContextWithRepositoryRevisions(ctx context.Context, db database
 		return nil, err
 	}
 
+	if searchContext.RepositoryQuery != "" && len(repositoryRevisions) > 0 {
+		return nil, errors.New("repository query and repository revisions are mutually exclusive")
+	}
+
+	if searchContext.RepositoryQuery == "" && len(repositoryRevisions) == 0 {
+		return nil, errors.New("either repository query or repository revisions must be defined")
+	}
+
 	err = validateSearchContextRepositoryRevisions(repositoryRevisions)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateSearchContextRepositoryQuery(searchContext.RepositoryQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -357,6 +380,127 @@ func GetAutoDefinedSearchContexts(ctx context.Context, db database.DB) ([]*types
 		searchContexts = append(searchContexts, GetOrganizationSearchContext(org.ID, org.Name, *org.DisplayName))
 	}
 	return searchContexts, nil
+}
+
+func GetAllRevisionsForRepos(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
+	sc := db.SearchContexts()
+
+	revs, err := sc.GetAllRevisionsForRepos(ctx, repoIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	repoQueries, err := sc.GetAllRepositoryQueries(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var rqs []RepositoryQuery
+	for _, q := range repoQueries {
+		qs, err := ParseRepositoryQuery(q)
+		if err != nil {
+			return nil, err
+		}
+		rqs = append(rqs, qs...)
+	}
+
+	repos := db.Repos()
+	sem := semaphore.NewWeighted(4)
+	g, ctx := errgroup.WithContext(ctx)
+	mu := sync.Mutex{}
+
+	for _, q := range rqs {
+		q := q
+		g.Go(func() error {
+			if err := sem.Acquire(ctx, 1); err != nil {
+				return err
+			}
+			defer sem.Release(1)
+
+			opts := q.ReposListOptions
+			opts.IDs = repoIDs
+
+			rs, err := repos.ListMinimalRepos(ctx, opts)
+			if err != nil {
+				return err
+			}
+
+			mu.Lock()
+			defer mu.Unlock()
+
+			for _, r := range rs {
+				revs[r.ID] = append(revs[r.ID], q.RevSpecs...)
+			}
+
+			return nil
+		})
+	}
+
+	err = g.Wait()
+	if err != nil {
+		return nil, err
+	}
+
+	return revs, nil
+}
+
+type RepositoryQuery struct {
+	database.ReposListOptions
+	RevSpecs []string
+}
+
+func ParseRepositoryQuery(repositoryQuery string) ([]RepositoryQuery, error) {
+	plan, err := query.Pipeline(query.Init(repositoryQuery, query.SearchTypeRegex))
+	if err != nil {
+		return nil, err
+	}
+
+	qs := make([]RepositoryQuery, 0, len(plan))
+	for _, p := range plan {
+		q := p.ToParseTree()
+
+		repoFilters, minusRepoFilters := q.Repositories()
+
+		fork := query.No
+		if setFork := q.Fork(); setFork != nil {
+			fork = *setFork
+		}
+
+		archived := query.No
+		if setArchived := q.Archived(); setArchived != nil {
+			archived = *setArchived
+		}
+
+		visibilityStr, _ := q.StringValue(query.FieldVisibility)
+		visibility := query.ParseVisibility(visibilityStr)
+
+		rq := RepositoryQuery{
+			ReposListOptions: database.ReposListOptions{
+				CaseSensitivePatterns: q.IsCaseSensitive(),
+				ExcludePattern:        search.UnionRegExps(minusRepoFilters),
+				OnlyForks:             fork == query.Only,
+				NoForks:               fork == query.No,
+				OnlyArchived:          archived == query.Only,
+				NoArchived:            archived == query.No,
+				NoPrivate:             visibility == query.Public,
+				OnlyPrivate:           visibility == query.Private,
+			},
+		}
+
+		for _, r := range repoFilters {
+			repoFilter, revs := search.ParseRepositoryRevisions(r)
+			for _, rev := range revs {
+				if rev.RevSpec != "" {
+					rq.RevSpecs = append(rq.RevSpecs, rev.RevSpec)
+				}
+			}
+			rq.IncludePatterns = append(rq.IncludePatterns, repoFilter)
+		}
+
+		qs = append(qs, rq)
+	}
+
+	return qs, nil
 }
 
 func GetRepositoryRevisions(ctx context.Context, db database.DB, searchContextID int64) ([]*search.RepositoryRevisions, error) {

@@ -39,6 +39,7 @@ type SearchContextsStore interface {
 	GetSearchContext(context.Context, GetSearchContextOptions) (*types.SearchContext, error)
 	GetSearchContextRepositoryRevisions(context.Context, int64) ([]*types.SearchContextRepositoryRevisions, error)
 	ListSearchContexts(context.Context, ListSearchContextsPageOptions, ListSearchContextsOptions) ([]*types.SearchContext, error)
+	GetAllRepositoryQueries(context.Context) ([]string, error)
 	SetSearchContextRepositoryRevisions(context.Context, int64, []*types.SearchContextRepositoryRevisions) error
 	Transact(context.Context) (SearchContextsStore, error)
 	UpdateSearchContextWithRepositoryRevisions(context.Context, *types.SearchContext, []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error)
@@ -599,4 +600,14 @@ func (s *searchContextsStore) GetAllRevisionsForRepos(ctx context.Context, repoI
 	}
 
 	return revs, nil
+}
+
+func (s *searchContextsStore) GetAllRepositoryQueries(ctx context.Context) (repoQueries []string, _ error) {
+	if a := actor.FromContext(ctx); !a.IsInternal() {
+		return nil, errors.New("GetAllRepositoryQueries can only be accessed by an internal actor")
+	}
+
+	q := sqlf.Sprintf(`SELECT array_agg(repo_query) FROM search_contexts WHERE repo_query IS NOT NULL`)
+
+	return repoQueries, s.QueryRow(ctx, q).Scan(pq.Array(&repoQueries))
 }
