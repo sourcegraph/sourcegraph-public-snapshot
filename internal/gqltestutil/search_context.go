@@ -28,20 +28,10 @@ type SearchContextRepositoryRevisionsInput struct {
 // It returns the GraphQL node ID of the newly created search context.
 //
 // This method requires the authenticated user to be a site admin.
-func (c *Client) CreateSearchContext(
-	input CreateSearchContextInput,
-	repositories []SearchContextRepositoryRevisionsInput,
-) (string, error) {
+func (c *Client) CreateSearchContext(input CreateSearchContextInput, repositories []SearchContextRepositoryRevisionsInput) (string, error) {
 	const query = `
-mutation CreateSearchContext(
-  $input: SearchContextInput!,
-  $repositories: [SearchContextRepositoryRevisionsInput!],
-) {
-	createSearchContext(
-    searchContext: $input,
-    repositories: $repositories,
-    repositoryQuery: $repositoryQuery,
-  ) {
+mutation CreateSearchContext($input: SearchContextInput!, $repositories: [SearchContextRepositoryRevisionsInput!]) {
+	createSearchContext(searchContext: $input, repositories: $repositories) {
 		id
 	}
 }
@@ -94,7 +84,7 @@ query GetSearchContext($id: ID!) {
 				}
 				revisions
 			}
-      repositoryQuery
+			repositoryQuery
 		}
 	}
 }
@@ -115,22 +105,10 @@ query GetSearchContext($id: ID!) {
 	return &resp.Data.Node, nil
 }
 
-func (c *Client) UpdateSearchContext(
-	id string,
-	input UpdateSearchContextInput,
-	repos []SearchContextRepositoryRevisionsInput,
-) (string, error) {
+func (c *Client) UpdateSearchContext(id string, input UpdateSearchContextInput, repos []SearchContextRepositoryRevisionsInput) (string, error) {
 	const query = `
-mutation UpdateSearchContext(
-  $id: ID!,
-  $input: SearchContextEditInput!,
-  $repositories: [SearchContextRepositoryRevisionsInput!],
-) {
-	updateSearchContext(
-    id: $id,
-    searchContext: $input,
-    repositories: $repositories,
-  ) {
+mutation UpdateSearchContext($id: ID!, $input: SearchContextEditInput!, $repositories: [SearchContextRepositoryRevisionsInput!]) {
+	updateSearchContext(id: $id, searchContext: $input, repositories: $repositories) {
 		id
 		description
 		spec
@@ -141,7 +119,7 @@ mutation UpdateSearchContext(
 			}
 			revisions
 		}
-    repositoryQuery
+		repositoryQuery
 	}
 }
 `
@@ -239,7 +217,7 @@ query ListSearchContexts(
 				}
 				revisions
 			}
-      repositoryQuery
+			repositoryQuery
 		}
 		pageInfo {
 			hasNextPage
