@@ -12,6 +12,7 @@ import { SourcegraphContext } from '../../jscontext'
 import { submitTrialRequest } from '../../marketing/backend'
 
 import styles from './SiteInitPage.module.scss'
+import { PageRoutes } from 'src/routes.constants'
 
 const initSite = async (args: SignUpArguments): Promise<void> => {
     const pingUrl = new URL('https://sourcegraph.com/ping-from-self-hosted')
@@ -67,7 +68,7 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
     featureFlags,
 }) => {
     if (!needsSiteInit) {
-        return <Redirect to="/search" />
+        return <Redirect to={PageRoutes.Search} />
     }
 
     return (

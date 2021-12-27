@@ -5,6 +5,7 @@ import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import React, { useEffect, useRef, useState } from 'react'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
+import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 
 import navActionStyles from './NavAction.module.scss'
 import navBarStyles from './NavBar.module.scss'
@@ -57,7 +58,7 @@ const useOutsideClickDetector = (
 export const NavBar = ({ children, logo }: NavBarProps): JSX.Element => (
     <nav aria-label="Main Menu" className={navBarStyles.navbar}>
         <h1 className={navBarStyles.logo}>
-            <RouterLink className="d-flex align-items-center" to="/search">
+            <RouterLink className="d-flex align-items-center" to={PageRoutes.Search}>
                 {logo}
             </RouterLink>
         </h1>

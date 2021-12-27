@@ -8,6 +8,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 
 import styles from './SearchPageFooter.module.scss'
+import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 
 const footerLinkSections: { name: string; links: { name: string; to: string; eventName?: string }[] }[] = [
     {
@@ -74,7 +75,7 @@ export const SearchPageFooter: React.FunctionComponent<
 
     return isSourcegraphDotCom ? (
         <footer className={styles.footer}>
-            <Link to="/search" aria-label="Home" className="flex-shrink-0">
+            <Link to={PageRoutes.Search} aria-label="Home" className="flex-shrink-0">
                 <BrandLogo isLightTheme={isLightTheme} variant="symbol" className={styles.logo} />
             </Link>
 

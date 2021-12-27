@@ -25,6 +25,7 @@ import { useExternalServices } from './useExternalServices'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
 import { Footer } from './welcome/Footer'
 import { StartSearching } from './welcome/StartSearching'
+import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 
 interface PostSignUpPage {
     authenticatedUser: AuthenticatedUser
@@ -141,7 +142,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                             {hasErrors && (
                                 <div className="alert alert-danger mb-4" role="alert">
                                     Sorry, something went wrong. Try refreshing the page or{' '}
-                                    <Link to="/search">skip to code search</Link>.
+                                    <Link to={PageRoutes.Search}>skip to code search</Link>.
                                 </div>
                             )}
                             <h2>Get started with Sourcegraph</h2>
