@@ -539,7 +539,7 @@ query SearchSuggestions($query: String!) {
 }
 
 type SearchStreamClient struct {
-	Client *Client
+	*Client
 }
 
 func (s *SearchStreamClient) SearchRepositories(query string) (SearchRepositoryResults, error) {

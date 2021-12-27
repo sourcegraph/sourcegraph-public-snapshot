@@ -30,7 +30,7 @@ type SearchContextRepositoryRevisionsInput struct {
 // This method requires the authenticated user to be a site admin.
 func (c *Client) CreateSearchContext(input CreateSearchContextInput, repositories []SearchContextRepositoryRevisionsInput) (string, error) {
 	const query = `
-mutation CreateSearchContext($input: SearchContextInput!, $repositories: [SearchContextRepositoryRevisionsInput!]) {
+mutation CreateSearchContext($input: SearchContextInput!, $repositories: [SearchContextRepositoryRevisionsInput!]!) {
 	createSearchContext(searchContext: $input, repositories: $repositories) {
 		id
 	}
@@ -107,7 +107,7 @@ query GetSearchContext($id: ID!) {
 
 func (c *Client) UpdateSearchContext(id string, input UpdateSearchContextInput, repos []SearchContextRepositoryRevisionsInput) (string, error) {
 	const query = `
-mutation UpdateSearchContext($id: ID!, $input: SearchContextEditInput!, $repositories: [SearchContextRepositoryRevisionsInput!]) {
+mutation UpdateSearchContext($id: ID!, $input: SearchContextEditInput!, $repositories: [SearchContextRepositoryRevisionsInput!]!) {
 	updateSearchContext(id: $id, searchContext: $input, repositories: $repositories) {
 		id
 		description
