@@ -6,21 +6,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/distribution/distribution/v3/reference"
 	"github.com/opencontainers/go-digest"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 
 	"sigs.k8s.io/kustomize/kyaml/kio"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
-var verbose bool
-
-func Parse(path string, v bool) error {
-
-	verbose = v
+func Parse(path string) error {
 
 	rw := &kio.LocalPackageReadWriter{
 		KeepReaderAnnotations: false,
@@ -57,9 +53,7 @@ func (imageFilter) Filter(in []*yaml.RNode) ([]*yaml.RNode, error) {
 	for _, r := range in {
 		if err := findImage(r); err != nil {
 			if errors.Is(err, ErrNoImages) || errors.Is(err, ErrNoUpdateNeeded) {
-				if verbose {
-					fmt.Printf("Encountered expected err: %v\n", err)
-				}
+				stdout.Out.Verbosef("Encountered expected err: %v\n", err)
 				continue
 			}
 			return nil, err
@@ -84,9 +78,7 @@ func findImage(r *yaml.RNode) error {
 	}
 	if containers == nil && initContainers == nil {
 
-		if verbose {
-			fmt.Printf("no images founds in %s:%s \n", r.GetKind(), r.GetName())
-		}
+		stdout.Out.Verbosef("no images founds in %s:%s \n", r.GetKind(), r.GetName())
 		return ErrNoImages
 	}
 
@@ -103,12 +95,10 @@ func findImage(r *yaml.RNode) error {
 		if err != nil {
 			return err
 		}
-		if verbose {
-			fmt.Printf("found image %s for container %s in file %s+%s\n Replaced with %s", s, node.GetName(), r.GetKind(), r.GetName(), updatedImage)
-		}
 
-		err = node.PipeE(yaml.Lookup("image"), yaml.Set(yaml.NewStringRNode(updatedImage)))
-		return err
+		stdout.Out.Verbosef("found image %s for container %s in file %s+%s\n Replaced with %s", s, node.GetName(), r.GetKind(), r.GetName(), updatedImage)
+
+		return node.PipeE(yaml.Lookup("image"), yaml.Set(yaml.NewStringRNode(updatedImage)))
 	}
 
 	if err := containers.VisitElements(lookupImage); err != nil {
@@ -172,7 +162,7 @@ func updateImage(rawImage string) (string, error) {
 	}
 
 	latestTag := findLatestTag(tags)
-	if latestTag == imgRef.Tag {
+	if latestTag == imgRef.Tag || latestTag == "" {
 		// do nothing
 		return imgRef.String(), ErrNoUpdateNeeded
 	}
@@ -232,25 +222,35 @@ func (i *imageRepository) fetchAuthToken(registryName string) (string, error) {
 	return result.AccessToken, nil
 }
 
+type SgImageTag struct {
+	buildNum  int
+	date      string
+	shortSHA1 string
+}
+
+func ParseTag(t string) (*SgImageTag, error) {
+	s := SgImageTag{}
+	t = strings.TrimSpace(t)
+	n, err := fmt.Sscanf(t, "%05d_%10s_%7s", &s.buildNum, &s.date, &s.shortSHA1)
+	if n != 3 || err != nil {
+		return nil, fmt.Errorf("unable to convert tag: %s\n", t)
+	}
+	return &s, nil
+}
+
 // Assume we use 'sourcegraph' tag format of :[build_number]_[date]_[short SHA1]
 func findLatestTag(tags []string) string {
 	maxBuildID := 0
 	targetTag := ""
 
 	for _, tag := range tags {
-		s := strings.Split(tag, "_")
-		if len(s) != 3 {
-			continue
-		}
-		b, err := strconv.Atoi(s[0])
+		stag, err := ParseTag(tag)
 		if err != nil {
-			if verbose {
-				fmt.Printf("encountered err converting tag: %v\n", err)
-			}
+			stdout.Out.Verbosef("%v\n", err)
 			continue
 		}
-		if b > maxBuildID {
-			maxBuildID = b
+		if stag.buildNum > maxBuildID {
+			maxBuildID = stag.buildNum
 			targetTag = tag
 		}
 	}
@@ -314,6 +314,7 @@ func (i *imageRepository) fetchAllTags() ([]string, error) {
 		println(b)
 		return nil, err
 	}
+	defer resp.Body.Close()
 	result := struct {
 		Tags []string
 	}{}

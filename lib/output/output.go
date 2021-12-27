@@ -133,6 +133,13 @@ func (o *Output) Lock() {
 	o.w.Write([]byte("\033[?25l"))
 }
 
+func (o *Output) SetVerbose() {
+	o.lock.Lock()
+	defer o.lock.Unlock()
+	o.opts.Verbose = true
+
+}
+
 func (o *Output) Unlock() {
 	// Show the cursor once more.
 	o.w.Write([]byte("\033[?25h"))

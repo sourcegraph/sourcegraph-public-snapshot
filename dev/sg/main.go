@@ -146,6 +146,9 @@ func main() {
 	}
 
 	checkSgVersion()
+	if *verboseFlag {
+		stdout.Out.SetVerbose()
+	}
 
 	// We always try to set this, since we
 	// often want to watch files, start commands, etc...

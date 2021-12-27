@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/images"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/images"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -55,12 +56,12 @@ func constructOpsCmdLongHelp() string {
 
 func opsUpdateImage(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "No path provided"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "No path provided"))
 		return flag.ErrHelp
 	}
 	if len(args) != 1 {
-		out.WriteLine(output.Linef("", output.StyleWarning, "Multiple paths not currently supported"))
+		stdout.Out.WriteLine(output.Linef("", output.StyleWarning, "Multiple paths not currently supported"))
 		return flag.ErrHelp
 	}
-	return images.Parse(args[0], *verboseFlag)
+	return images.Parse(args[0])
 }
