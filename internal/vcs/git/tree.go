@@ -373,7 +373,13 @@ func ListFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, patt
 // ListDirectoryChildren fetches the list of children under the given directory
 // names. The result is a map keyed by the directory names with the list of files
 // under each.
-func ListDirectoryChildren(ctx context.Context, repo api.RepoName, commit api.CommitID, dirnames []string) (map[string][]string, error) {
+func ListDirectoryChildren(
+	ctx context.Context,
+	checker authz.SubRepoPermissionChecker,
+	repo api.RepoName,
+	commit api.CommitID,
+	dirnames []string,
+) (map[string][]string, error) {
 	args := []string{"ls-tree", "--name-only", string(commit), "--"}
 	args = append(args, cleanDirectoriesForLsTree(dirnames)...)
 	cmd := gitserver.DefaultClient.Command("git", args...)
@@ -384,7 +390,14 @@ func ListDirectoryChildren(ctx context.Context, repo api.RepoName, commit api.Co
 		return nil, err
 	}
 
-	return parseDirectoryChildren(dirnames, strings.Split(string(out), "\n")), nil
+	paths := strings.Split(string(out), "\n")
+	if checker.Enabled() {
+		paths, err = authz.FilterActorPaths(ctx, checker, actor.FromContext(ctx), repo, paths)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return parseDirectoryChildren(dirnames, paths), nil
 }
 
 // cleanDirectoriesForLsTree sanitizes the input dirnames to a git ls-tree command. There are a

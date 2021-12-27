@@ -10,6 +10,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -276,7 +277,7 @@ func (c *Client) DirectoryChildren(ctx context.Context, repositoryID int, commit
 		return nil, err
 	}
 
-	children, err := git.ListDirectoryChildren(ctx, repo, api.CommitID(commit), dirnames)
+	children, err := git.ListDirectoryChildren(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), dirnames)
 	if err == nil {
 		return children, err
 	}
