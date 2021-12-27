@@ -8,7 +8,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ProductStatusBadge, Container, PageSelector } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Container, PageSelector, RadioButton } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
 import {
@@ -572,37 +572,43 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const modeSelect: JSX.Element = (
         <Form className="mt-4">
             {!isOrgOwner && (
-                <label className="d-flex flex-row align-items-baseline">
-                    <input
-                        type="radio"
+                <div className="d-flex flex-row align-items-baseline">
+                    <RadioButton
+                        name="all_repositories"
+                        id="sync_all_repositories"
                         value="all"
                         disabled={noCodeHostsOrErrors}
                         checked={selectionState.radio === 'all'}
                         onChange={handleRadioSelect}
+                        label={
+                            <div className="d-flex flex-column ml-2">
+                                <p className="mb-0">Sync all repositories</p>
+                                <p className="font-weight-normal text-muted">
+                                    Will sync all current and future public and private repositories
+                                </p>
+                            </div>
+                        }
                     />
-                    <div className="d-flex flex-column ml-2">
-                        <p className="mb-0">Sync all repositories</p>
-                        <p className="font-weight-normal text-muted">
-                            Will sync all current and future public and private repositories
-                        </p>
-                    </div>
-                </label>
+                </div>
             )}
 
-            <label className="d-flex flex-row align-items-baseline mb-0">
-                <input
-                    type="radio"
+            <div className="d-flex flex-row align-items-baseline mb-0">
+                <RadioButton
+                    name="selected_repositories"
+                    id="sync_selected_repositories"
                     value="selected"
                     checked={selectionState.radio === 'selected'}
                     disabled={noCodeHostsOrErrors}
                     onChange={handleRadioSelect}
+                    label={
+                        <div className="d-flex flex-column ml-2">
+                            <p className={classNames('mb-0', noCodeHostsOrErrors && styles.textDisabled)}>
+                                Sync selected repositories
+                            </p>
+                        </div>
+                    }
                 />
-                <div className="d-flex flex-column ml-2">
-                    <p className={classNames('mb-0', noCodeHostsOrErrors && styles.textDisabled)}>
-                        Sync selected repositories
-                    </p>
-                </div>
-            </label>
+            </div>
         </Form>
     )
 

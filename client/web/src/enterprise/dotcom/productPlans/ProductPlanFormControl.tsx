@@ -8,6 +8,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { RadioButton } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -83,9 +84,8 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
                     <div className="list-group">
                         {plans.map((plan, index) => (
                             <div key={plan.billingPlanID} className="list-group-item p-0">
-                                <label className="p-3 mb-0 d-flex" htmlFor={`product-plan-form-control__plan${index}`}>
-                                    <input
-                                        type="radio"
+                                <div className="p-3 mb-0 d-flex">
+                                    <RadioButton
                                         name="product-plan-form-control__plan"
                                         className="mr-2"
                                         id={`product-plan-form-control__plan${index}`}
@@ -94,14 +94,16 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
                                         required={true}
                                         disabled={disableInputs}
                                         checked={plan.billingPlanID === value}
+                                        label={
+                                            <div>
+                                                <strong>{plan.name}</strong>
+                                                <div className="text-muted">
+                                                    <ProductPlanPrice plan={plan} />
+                                                </div>
+                                            </div>
+                                        }
                                     />
-                                    <div>
-                                        <strong>{plan.name}</strong>
-                                        <div className="text-muted">
-                                            <ProductPlanPrice plan={plan} />
-                                        </div>
-                                    </div>
-                                </label>
+                                </div>
                             </div>
                         ))}
                     </div>
