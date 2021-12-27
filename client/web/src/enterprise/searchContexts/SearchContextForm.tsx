@@ -16,7 +16,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ALLOW_NAVIGATION, AwayPrompt } from '@sourcegraph/web/src/components/AwayPrompt'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, RadioButton } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SearchContextProps } from '../../search'
@@ -324,28 +324,27 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                         </small>
                     </div>
                 </div>
-                <div className="mt-3">
+                <div className={classNames('mt-3', styles.searchContextFormVisibility)}>
                     <div className="mb-3">Visibility</div>
-                    {visibilityRadioButtons.map(radio => (
-                        <label key={radio.visibility} className="d-flex mt-2">
-                            <div className="mr-2">
-                                <input
-                                    className={styles.searchContextFormVisibilityRadio}
-                                    name="visibility"
-                                    type="radio"
-                                    value={radio.visibility}
-                                    checked={visibility === radio.visibility}
-                                    required={true}
-                                    onChange={() => setVisibility(radio.visibility)}
-                                />
-                            </div>
-                            <div>
-                                <strong className={styles.searchContextFormVisibilityTitle}>{radio.title}</strong>
-                                <div className="text-muted">
-                                    <small>{radio.description}</small>
+                    {visibilityRadioButtons.map((radio, index) => (
+                        <RadioButton
+                            key={radio.visibility}
+                            id={`visibility_${index}`}
+                            className={styles.searchContextFormVisibilityRadio}
+                            name="visibility"
+                            value={radio.visibility}
+                            checked={visibility === radio.visibility}
+                            required={true}
+                            onChange={() => setVisibility(radio.visibility)}
+                            label={
+                                <div>
+                                    <strong className={styles.searchContextFormVisibilityTitle}>{radio.title}</strong>
+                                    <div className="text-muted">
+                                        <small>{radio.description}</small>
+                                    </div>
                                 </div>
-                            </div>
-                        </label>
+                            }
+                        />
                     ))}
                 </div>
                 <hr className={classNames('my-4', styles.searchContextFormDivider)} />
