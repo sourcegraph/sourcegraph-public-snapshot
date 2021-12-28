@@ -17,24 +17,23 @@ import (
 	zoekt "github.com/google/zoekt/query"
 )
 
+// UnionRegExps separates values with a | operator to create a string
+// representing a union of regexp patterns.
 func UnionRegExps(patterns []string) string {
 	if len(patterns) == 0 {
+		// As a regular expression, "()" and "" are equivalent so this
+		// condition wouldn't ordinarily be needed to distinguish these
+		// values. But, our internal search engine assumes that ""
+		// implies "no regexp" (no values), while "()" implies "match
+		// empty regexp" (all values) for file patterns.
 		return ""
 	}
 	if len(patterns) == 1 {
+		// Cosmetic format for regexp value, wherever this happens to be
+		// pretty printed.
 		return patterns[0]
 	}
-
-	// We only need to wrap the pattern in parentheses if it contains a "|" because
-	// "|" has the lowest precedence of any operator.
-	patterns2 := make([]string, len(patterns))
-	for i, p := range patterns {
-		if strings.Contains(p, "|") {
-			p = "(" + p + ")"
-		}
-		patterns2[i] = p
-	}
-	return strings.Join(patterns2, "|")
+	return "(" + strings.Join(patterns, ")|(") + ")"
 }
 
 // filenamesFromLanguage is a map of language name to full filenames
