@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 
 import { AuthenticatedUser } from '../../auth'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -16,7 +17,6 @@ import { useRepoCloningStatus } from '../useRepoCloningStatus'
 import { selectedReposVar, useSaveSelectedRepos, MinSelectedRepo } from '../useSelectedRepos'
 
 import styles from './StartSearching.module.scss'
-import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 
 interface StartSearching {
     user: AuthenticatedUser

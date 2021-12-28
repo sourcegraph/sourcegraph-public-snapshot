@@ -4,11 +4,11 @@ import React from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
 
 import styles from './SearchPageFooter.module.scss'
-import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 
 const footerLinkSections: { name: string; links: { name: string; to: string; eventName?: string }[] }[] = [
     {

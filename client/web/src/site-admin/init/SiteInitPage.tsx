@@ -3,6 +3,7 @@ import React from 'react'
 import { Redirect } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 
 import { AuthenticatedUser } from '../../auth'
 import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
@@ -12,7 +13,6 @@ import { SourcegraphContext } from '../../jscontext'
 import { submitTrialRequest } from '../../marketing/backend'
 
 import styles from './SiteInitPage.module.scss'
-import { PageRoutes } from 'src/routes.constants'
 
 const initSite = async (args: SignUpArguments): Promise<void> => {
     const pingUrl = new URL('https://sourcegraph.com/ping-from-self-hosted')

@@ -8,6 +8,7 @@ import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
+import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
@@ -25,7 +26,6 @@ import { useExternalServices } from './useExternalServices'
 import { CodeHostsConnection } from './welcome/CodeHostsConnection'
 import { Footer } from './welcome/Footer'
 import { StartSearching } from './welcome/StartSearching'
-import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 
 interface PostSignUpPage {
     authenticatedUser: AuthenticatedUser

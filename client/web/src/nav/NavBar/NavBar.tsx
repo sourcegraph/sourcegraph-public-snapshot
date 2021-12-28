@@ -5,6 +5,7 @@ import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import React, { useEffect, useRef, useState } from 'react'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
+
 import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 
 import navActionStyles from './NavAction.module.scss'
