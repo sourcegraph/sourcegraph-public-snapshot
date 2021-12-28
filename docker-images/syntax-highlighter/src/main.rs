@@ -98,6 +98,7 @@ fn highlight(q: Query) -> JsonValue {
                 &q.code,
                 q.line_length_limit,
                 ClassStyle::SpacedPrefixed { prefix: "hl-" },
+                q.filepath,
             )
             .generate();
             let delta = Instant::now() - before;

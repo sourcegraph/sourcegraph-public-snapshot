@@ -33,6 +33,7 @@ pub struct ClassedTableGenerator<'a> {
     style: ClassStyle,
     code: &'a str,
     max_line_len: Option<usize>,
+    filepath: String,
 }
 
 impl<'a> ClassedTableGenerator<'a> {
@@ -42,6 +43,7 @@ impl<'a> ClassedTableGenerator<'a> {
         code: &'a str,
         max_line_len: Option<usize>,
         style: ClassStyle,
+        filepath: String,
     ) -> Self {
         ClassedTableGenerator {
             code,
@@ -51,6 +53,7 @@ impl<'a> ClassedTableGenerator<'a> {
             html: String::with_capacity(code.len() * 8), // size is a best guess
             style,
             max_line_len,
+            filepath,
         }
     }
 
@@ -63,7 +66,7 @@ impl<'a> ClassedTableGenerator<'a> {
             if self.max_line_len.map_or(false, |n| line.len() > n) {
                 self.write_escaped_html(&line);
             } else {
-                self.write_spans_for_line(&line);
+                self.write_spans_for_line(&line, i);
             }
             close_row(&mut self.html);
         }
@@ -96,7 +99,7 @@ impl<'a> ClassedTableGenerator<'a> {
         self.html.push_str("</span>");
     }
 
-    fn write_spans_for_line(&mut self, line: &str) {
+    fn write_spans_for_line(&mut self, line: &str, line_number: usize) {
         // Whenever we highlight a new line, the all scopes that are still open
         // from the last line must be created. Since scope spans can't cross table
         // row boundaries, we need to open and close scope spans that are shared
@@ -105,7 +108,9 @@ impl<'a> ClassedTableGenerator<'a> {
         // For example, for a go file, every line should likely start with
         // <span class="hl-source hl-go">
         self.open_current_scopes();
-        let parsed_line = self.parse_state.parse_line_2(line, self.syntax_set, INTERRUPT.clone());
+        let filepath = &self.filepath;
+        let parsed_line = self.parse_state.parse_line_2(line, self.syntax_set,
+            INTERRUPT.clone(), line_number, filepath);
         self.write_spans_for_tokens(line, parsed_line.as_slice());
         self.close_current_scopes();
     }
