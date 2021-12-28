@@ -19,8 +19,8 @@ import (
 
 // UnionRegExps separates values with a | operator to create a string
 // representing a union of regexp patterns.
-func UnionRegExps(patterns []string) string {
-	if len(patterns) == 0 {
+func UnionRegExps(values []string) string {
+	if len(values) == 0 {
 		// As a regular expression, "()" and "" are equivalent so this
 		// condition wouldn't ordinarily be needed to distinguish these
 		// values. But, our internal search engine assumes that ""
@@ -28,12 +28,12 @@ func UnionRegExps(patterns []string) string {
 		// empty regexp" (all values) for file patterns.
 		return ""
 	}
-	if len(patterns) == 1 {
+	if len(values) == 1 {
 		// Cosmetic format for regexp value, wherever this happens to be
 		// pretty printed.
-		return patterns[0]
+		return values[0]
 	}
-	return "(" + strings.Join(patterns, ")|(") + ")"
+	return "(" + strings.Join(values, ")|(") + ")"
 }
 
 // filenamesFromLanguage is a map of language name to full filenames
