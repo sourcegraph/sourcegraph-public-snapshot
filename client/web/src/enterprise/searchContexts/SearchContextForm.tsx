@@ -254,7 +254,17 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     ),
                     catchError(error => [asError(error)])
                 ),
-            [onSubmit, parseRepositories, name, description, visibility, selectedNamespace, history, searchContext]
+            [
+                onSubmit,
+                parseRepositories,
+                name,
+                description,
+                repositoryQuery,
+                visibility,
+                selectedNamespace,
+                history,
+                searchContext,
+            ]
         )
     )
 
