@@ -79,6 +79,8 @@ const SYNTECT_SERVER_URL = "http://0.0.0.0:8000"
 const TREE_SITTER = "tree-sitter"
 const NPARALLELISM = 10
 
+// Based on languages which are popular and are marked "fairly complete"
+// for tree-sitter in https://tree-sitter.github.io/tree-sitter/#available-parsers
 var extMap = map[string]struct{}{
 	".go":   {},
 	".c":    {},
@@ -89,11 +91,9 @@ var extMap = map[string]struct{}{
 	".hpp":  {},
 	".ts":   {},
 	".tsx":  {},
-	".dart": {},
 	".rb":   {},
 	".rs":   {},
 	".java": {},
-	".kt":   {},
 }
 
 func TryHighlightFileWithExtension(extension string) bool {
@@ -188,6 +188,7 @@ func minInt(a int, b int) int { // Gimme generics
 }
 
 func createOutputCSV() (*os.File, string) {
+	fmt.Printf("tempDir = %s\n", os.TempDir())
 	file, err := os.CreateTemp(os.TempDir(), "parse-benchmark")
 	if err != nil {
 		panic(fmt.Sprintf("failed to create temp file for output: %+v", err))
@@ -328,7 +329,7 @@ func (i *Input) benchmarkSyntect(client *gosyntect.Client) time.Duration {
 		return query.StabilizeTimeout
 	}
 	if err != nil {
-		panic(fmt.Sprintf("syntect server failed to highlight code with err = %v", err))
+		panic(fmt.Sprintf("syntect server failed to highlight code with err = %v for query %v", err, query))
 	}
 	return time.Duration(resp.TimeNanos)
 }

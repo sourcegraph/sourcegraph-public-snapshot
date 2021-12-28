@@ -22,6 +22,8 @@ use syntect::{
     html::{highlighted_html_for_string, ClassStyle},
     parsing::SyntaxSet,
 };
+use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 
 mod css_table;
 use css_table::ClassedTableGenerator;
@@ -32,6 +34,10 @@ thread_local! {
 
 lazy_static! {
     static ref THEME_SET: ThemeSet = ThemeSet::load_defaults();
+}
+
+lazy_static! {
+    static ref INTERRUPT: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
 }
 
 #[derive(Clone)]
@@ -268,6 +274,8 @@ fn rocket() -> rocket::Rocket {
         }
         Err(_) => list_features(),
     };
+    signal_hook::flag::register(signal_hook::consts::SIGINT, INTERRUPT.clone())
+    .expect("Failed to set signal hook!");
 
     rocket::ignite()
         .mount("/", routes![index, health])

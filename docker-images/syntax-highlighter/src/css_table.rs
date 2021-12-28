@@ -105,7 +105,7 @@ impl<'a> ClassedTableGenerator<'a> {
         // For example, for a go file, every line should likely start with
         // <span class="hl-source hl-go">
         self.open_current_scopes();
-        let parsed_line = self.parse_state.parse_line(line, self.syntax_set);
+        let parsed_line = self.parse_state.parse_line_2(line, self.syntax_set, INTERRUPT.clone());
         self.write_spans_for_tokens(line, parsed_line.as_slice());
         self.close_current_scopes();
     }
@@ -192,6 +192,8 @@ fn close_row(s: &mut String) {
 }
 
 use std::fmt;
+
+use crate::INTERRUPT;
 
 /// Wrapper struct which will emit the HTML-escaped version of the contained
 /// string when passed to a format string.
