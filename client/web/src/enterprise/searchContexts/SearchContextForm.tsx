@@ -93,6 +93,7 @@ export interface SearchContextFormProps
         TelemetryProps,
         Pick<SearchContextProps, 'deleteSearchContext'> {
     searchContext?: ISearchContext
+    repositoryQuery?: string
     authenticatedUser: AuthenticatedUser
 
     onSubmit: (
@@ -124,7 +125,9 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
     const [visibility, setVisibility] = useState<SelectedVisibility>(
         searchContext ? searchContextVisibility(searchContext) : 'public'
     )
-    const [repositoryQuery, setRepositoryQuery] = useState(searchContext ? searchContext.repositoryQuery : '')
+    const [repositoryQuery, setRepositoryQuery] = useState(
+        searchContext?.repositoryQuery || props.repositoryQuery || ''
+    )
 
     const isValidName = useMemo(() => name.length === 0 || name.match(VALIDATE_NAME_REGEXP) !== null, [name])
 

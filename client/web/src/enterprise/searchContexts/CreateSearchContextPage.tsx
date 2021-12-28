@@ -17,7 +17,7 @@ import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import { SearchContextProps } from '../../search'
+import { parseSearchURLQuery, SearchContextProps } from '../../search'
 
 import { SearchContextForm } from './SearchContextForm'
 
@@ -31,6 +31,9 @@ export interface CreateSearchContextPageProps
 
 export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<CreateSearchContextPageProps> = props => {
     const { authenticatedUser, createSearchContext } = props
+
+    const repositoryQuery = parseSearchURLQuery(props.location.search)
+
     const onSubmit = useCallback(
         (
             id: Scalars['ID'] | undefined,
@@ -76,7 +79,7 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<Creat
                         }
                         className="mb-3"
                     />
-                    <SearchContextForm {...props} onSubmit={onSubmit} />
+                    <SearchContextForm {...props} repositoryQuery={repositoryQuery} onSubmit={onSubmit} />
                 </div>
             </Page>
         </div>
