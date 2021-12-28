@@ -275,10 +275,6 @@ func CreateSearchContextWithRepositoryRevisions(
 		return nil, errors.New("repository query and repository revisions are mutually exclusive")
 	}
 
-	if searchContext.RepositoryQuery == "" && len(repositoryRevisions) == 0 {
-		return nil, errors.New("either repository query or repository revisions must be defined")
-	}
-
 	err = validateSearchContextRepositoryRevisions(repositoryRevisions)
 	if err != nil {
 		return nil, err
@@ -323,10 +319,6 @@ func UpdateSearchContextWithRepositoryRevisions(ctx context.Context, db database
 
 	if searchContext.RepositoryQuery != "" && len(repositoryRevisions) > 0 {
 		return nil, errors.New("repository query and repository revisions are mutually exclusive")
-	}
-
-	if searchContext.RepositoryQuery == "" && len(repositoryRevisions) == 0 {
-		return nil, errors.New("either repository query or repository revisions must be defined")
 	}
 
 	err = validateSearchContextRepositoryRevisions(repositoryRevisions)

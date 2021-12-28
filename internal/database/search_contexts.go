@@ -431,7 +431,7 @@ func updateSearchContext(ctx context.Context, s SearchContextsStore, searchConte
 		searchContext.Name,
 		searchContext.Description,
 		searchContext.Public,
-		searchContext.RepositoryQuery,
+		nullStringColumn(searchContext.RepositoryQuery),
 		searchContext.ID,
 	)
 	_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
