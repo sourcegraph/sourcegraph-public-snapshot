@@ -9,6 +9,7 @@ import {
     Scalars,
     SearchContextInput,
     SearchContextRepositoryRevisionsInput,
+    SearchPatternType,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { ISearchContext, ISearchContextRepositoryRevisionsInput } from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -33,6 +34,7 @@ import {
     SelectedNamespaceType,
 } from './SearchContextOwnerDropdown'
 import { SearchContextRepositoriesFormArea } from './SearchContextRepositoriesFormArea'
+import { LazyMonacoQueryInput } from '../../search/input/LazyMonacoQueryInput'
 
 const MAX_DESCRIPTION_LENGTH = 1024
 const MAX_NAME_LENGTH = 32
@@ -378,15 +380,19 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                             Define which repositories and revisions should be included in this search context with a
                             Sourcegraph repository query.
                         </div>
-                        <textarea
-                            className="form-control w-100"
-                            data-testid="search-context-repositoryQuery-input"
-                            value={repositoryQuery}
-                            rows={5}
-                            onChange={event => {
-                                setRepositoryQuery(event.target.value)
-                            }}
-                        />
+
+                        <div data-search-page-input-container={true}>
+                            <LazyMonacoQueryInput
+                                isLightTheme={props.isLightTheme}
+                                patternType={SearchPatternType.regexp}
+                                isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                caseSensitive={true}
+                                queryState={{ query: repositoryQuery }}
+                                onChange={({ query }) => setRepositoryQuery(query)}
+                                onSubmit={() => {}}
+                                globbing={false}
+                            />
+                        </div>
                     </div>
                 ) : (
                     <div>
