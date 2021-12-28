@@ -28,6 +28,7 @@ const onSubmit = (): Observable<ISearchContext> =>
         autoDefined: false,
         description: 'Repositories on Sourcegraph',
         repositories: [],
+        repositoryQuery: '',
         updatedAt: subDays(new Date(), 1).toISOString(),
         viewerCanManage: true,
     })
@@ -41,6 +42,7 @@ const searchContextToEdit: ISearchContext = {
     public: true,
     autoDefined: false,
     description: 'Repositories on Sourcegraph',
+    repositoryQuery: '',
     repositories: [
         {
             __typename: 'SearchContextRepositoryRevisions',
