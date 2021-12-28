@@ -25,6 +25,7 @@ add(
                     spec="@user/test"
                     searchFilter=""
                     description="Default description"
+                    repositoryQuery=""
                     selected={true}
                     isDefault={true}
                     selectSearchContextSpec={noop}
@@ -45,6 +46,7 @@ add(
                     spec="@user/test"
                     searchFilter="@us/te"
                     description="Default description"
+                    repositoryQuery=""
                     selected={false}
                     isDefault={false}
                     selectSearchContextSpec={noop}
