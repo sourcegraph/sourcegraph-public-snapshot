@@ -15,7 +15,6 @@ export interface AuthProvider {
 
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {
     xhrHeaders: { [key: string]: string }
-    csrfToken: string
     userAgentIsBot: boolean
 
     /**
@@ -108,6 +107,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether global policies are enabled for auto-indexing. */
     codeIntelAutoIndexingAllowGlobalPolicies: boolean
+
+    /** Whether the new gql api for code insights is enabled. */
+    codeInsightsGqlApiEnabled: boolean
 
     /** Whether users are allowed to add their own code and at what permission level. */
     externalServicesUserMode: 'disabled' | 'public' | 'all' | 'unknown'

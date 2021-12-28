@@ -3,10 +3,8 @@ package testutil
 import (
 	"archive/zip"
 	"bytes"
-	"context"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 )
 
@@ -47,22 +45,6 @@ func MockZipFile(data []byte) (*store.ZipFile, error) {
 	// zf.f is intentionally left nil;
 	// this is an indicator that this is a mock ZipFile.
 	return zf, nil
-}
-
-func TempZipFromFiles(files map[string]string) (path string, cleanup func(), err error) {
-	s, cleanup, err := NewStore(files)
-	if err != nil {
-		return "", cleanup, err
-	}
-
-	ctx := context.Background()
-	repo := api.RepoName("foo")
-	var commit api.CommitID = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
-	path, err = s.PrepareZip(ctx, repo, commit)
-	if err != nil {
-		return "", cleanup, err
-	}
-	return path, cleanup, nil
 }
 
 func TempZipFileOnDisk(data []byte) (string, func(), error) {

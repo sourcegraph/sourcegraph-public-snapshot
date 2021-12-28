@@ -4,6 +4,7 @@ package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 import (
 	"container/list"
 	"context"
+	"database/sql"
 	"log"
 	"net"
 	"net/http"
@@ -24,9 +25,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -82,10 +83,11 @@ func main() {
 		log.Fatalf("SRC_REPOS_DESIRED_PERCENT_FREE is out of range: %v", err)
 	}
 
-	db, err := getDB()
+	sqlDB, err := getDB()
 	if err != nil {
 		log.Fatalf("failed to initialize database stores: %v", err)
 	}
+	db := database.NewDB(sqlDB)
 
 	repoStore := database.Repos(db)
 	codeintelDB := codeinteldbstore.NewWithDB(db, &observation.Context{
@@ -139,9 +141,10 @@ func main() {
 	}
 
 	// Create Handler now since it also initializes state
-
 	// TODO: Why do we set server state as a side effect of creating our handler?
-	handler := ot.HTTPMiddleware(trace.HTTPTraceMiddleware(gitserver.Handler(), conf.DefaultClient()))
+	handler := gitserver.Handler()
+	handler = actor.HTTPMiddleware(handler)
+	handler = ot.HTTPMiddleware(trace.HTTPMiddleware(handler, conf.DefaultClient()))
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -257,34 +260,28 @@ func getPercent(p int) (int, error) {
 	return p, nil
 }
 
-// getStores initializes a connection to the database and returns RepoStore and
-// ExternalServiceStore.
-func getDB() (dbutil.DB, error) {
-	//
-	// START FLAILING
-
+// getDB initializes a connection to the database and returns a dbutil.DB
+func getDB() (*sql.DB, error) {
 	// Gitserver is an internal actor. We rely on the frontend to do authz checks for
 	// user requests.
 	//
 	// This call to SetProviders is here so that calls to GetProviders don't block.
 	authz.SetProviders(true, []authz.Provider{})
 
-	// END FLAILING
-	//
-
-	dsn := conf.Get().ServiceConnections().PostgresDSN
-	conf.Watch(func() {
-		newDSN := conf.Get().ServiceConnections().PostgresDSN
-		if dsn != newDSN {
-			// The DSN was changed (e.g. by someone modifying the env vars on
-			// the frontend). We need to respect the new DSN. Easiest way to do
-			// that is to restart our service (kubernetes/docker/goreman will
-			// handle starting us back up).
-			log.Fatalf("Detected repository DSN change, restarting to take effect: %q", newDSN)
-		}
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.PostgresDSN
 	})
-
-	return dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "gitserver"})
+	var (
+		sqlDB *sql.DB
+		err   error
+	)
+	if os.Getenv("NEW_MIGRATIONS") == "" {
+		// CURRENTLY DEPRECATING
+		sqlDB, err = connections.NewFrontendDB(dsn, "gitserver", false, &observation.TestContext)
+	} else {
+		sqlDB, err = connections.EnsureNewFrontendDB(dsn, "gitserver", &observation.TestContext)
+	}
+	return sqlDB, err
 }
 
 func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,
@@ -318,7 +315,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 	switch r.ExternalRepo.ServiceType {
 	case extsvc.TypePerforce:
 		var c schema.PerforceConnection
-		if err := extractOptions(c); err != nil {
+		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
 		return &server.PerforceDepotSyncer{
@@ -328,10 +325,16 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		}, nil
 	case extsvc.TypeJVMPackages:
 		var c schema.JVMPackagesConnection
-		if err := extractOptions(c); err != nil {
+		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
 		return &server.JVMPackagesSyncer{Config: &c, DBStore: codeintelDB}, nil
+	case extsvc.TypeNPMPackages:
+		var c schema.NPMPackagesConnection
+		if err := extractOptions(&c); err != nil {
+			return nil, err
+		}
+		return &server.NPMPackagesSyncer{Config: &c}, nil
 	}
 	return &server.GitRepoSyncer{}, nil
 }

@@ -26,20 +26,6 @@ $border-color: var(--border-color);
 $link-color: var(--link-color);
 $link-hover-color: var(--link-hover-color);
 
-// Badges
-
-$badge-font-size: var(--badge-font-size);
-$badge-font-weight: var(--badge-font-weight);
-$badge-padding-y: var(--badge-padding-y);
-$badge-padding-x: var(--badge-padding-x);
-$badge-border-radius: var(--badge-border-radius);
-
-// Tooltips
-
-$tooltip-bg: var(--tooltip-bg);
-$tooltip-opacity: 1;
-$tooltip-font-size: 0.75rem;
-
 // Forms
 
 $form-check-input-margin-y: var(--form-check-input-margin-y);
@@ -104,7 +90,6 @@ $hr-margin-y: 0.25rem;
 
 // Disable transitions
 $input-transition: none;
-$badge-transition: none; // Avoids setting transitions on badges that aren't links
 
 // Spacer
 $spacer: 1rem;
@@ -121,7 +106,6 @@ $spacer: 1rem;
 @import 'bootstrap/scss/utilities';
 @import 'bootstrap/scss/grid';
 @import 'bootstrap/scss/progress';
-@import 'bootstrap/scss/tooltip';
 @import 'bootstrap/scss/transitions';
 
 // Modified in `./buttons.scss`
@@ -139,7 +123,6 @@ $spacer: 1rem;
 @import 'wildcard/src/global-styles/breakpoints';
 @import 'shared/src/global-styles/icons';
 @import './background';
-@import './badge';
 @import './card';
 @import './dropdown';
 @import './modal';
@@ -155,7 +138,6 @@ $spacer: 1rem;
 @import './forms';
 @import './highlight';
 @import './tabs';
-@import './tooltips';
 @import '@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 * {

@@ -22,11 +22,13 @@ type DB interface {
 	EventLogs() EventLogStore
 	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
+	GitserverRepos() GitserverRepoStore
 	GlobalState() GlobalStateStore
 	Namespaces() NamespaceStore
 	OrgInvitations() OrgInvitationStore
 	OrgMembers() OrgMemberStore
 	Orgs() OrgStore
+	OrgStats() OrgStatsStore
 	Phabricator() PhabricatorStore
 	Repos() RepoStore
 	SavedSearches() SavedSearchStore
@@ -111,6 +113,10 @@ func (d *db) FeatureFlags() FeatureFlagStore {
 	return FeatureFlagsWith(d.Store)
 }
 
+func (d *db) GitserverRepos() GitserverRepoStore {
+	return NewGitserverReposWith(d.Store)
+}
+
 func (d *db) GlobalState() GlobalStateStore {
 	return &globalStateStore{Store: basestore.NewWithHandle(d.Handle())}
 }
@@ -129,6 +135,10 @@ func (d *db) OrgMembers() OrgMemberStore {
 
 func (d *db) Orgs() OrgStore {
 	return OrgsWith(d.Store)
+}
+
+func (d *db) OrgStats() OrgStatsStore {
+	return OrgStatsWith(d.Store)
 }
 
 func (d *db) Phabricator() PhabricatorStore {

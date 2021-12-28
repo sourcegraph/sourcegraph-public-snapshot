@@ -20,7 +20,7 @@
 `,
 	},
 	Children: []precise.DocumentationNodeChild{
-		precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+		{Node: &precise.DocumentationNode{
 			PathID: "/github.com/sourcegraph/lsif-go/internal/index#const",
 			Documentation: protocol.Documentation{
 				Identifier: "const",
@@ -33,7 +33,7 @@
 				Value: "Constants",
 			},
 			Detail: protocol.MarkupContent{Kind: protocol.MarkupKind("plaintext")},
-			Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+			Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 				PathID: "/github.com/sourcegraph/lsif-go/internal/index#LanguageGo",
 				Documentation: protocol.Documentation{
 					Identifier: "LanguageGo",
@@ -54,7 +54,7 @@
 				Children: []precise.DocumentationNodeChild{},
 			}}},
 		}},
-		precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+		{Node: &precise.DocumentationNode{
 			PathID: "/github.com/sourcegraph/lsif-go/internal/index#type",
 			Documentation: protocol.Documentation{
 				Identifier: "type",
@@ -66,7 +66,7 @@
 			},
 			Detail: protocol.MarkupContent{Kind: protocol.MarkupKind("plaintext")},
 			Children: []precise.DocumentationNodeChild{
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/github.com/sourcegraph/lsif-go/internal/index#Indexer",
 					Documentation: protocol.Documentation{
 						Identifier: "Indexer",
@@ -81,7 +81,7 @@
 						Kind:  protocol.MarkupKind("markdown"),
 						Value: "```Go\ntype Indexer interface {\n\tIndex() (*Stats, error)\n}\n```\n\nIndexer reads source files and outputs LSIF data. \n\n",
 					},
-					Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 						PathID: "/github.com/sourcegraph/lsif-go/internal/index#NewIndexer",
 						Documentation: protocol.Documentation{
 							Identifier: "NewIndexer",
@@ -101,7 +101,7 @@
 						Children: []precise.DocumentationNodeChild{},
 					}}},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/github.com/sourcegraph/lsif-go/internal/index#Stats",
 					Documentation: protocol.Documentation{
 						Identifier: "Stats",
@@ -118,7 +118,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/github.com/sourcegraph/lsif-go/internal/index#defInfo",
 					Documentation: protocol.Documentation{
 						Identifier: "defInfo",
@@ -138,7 +138,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/github.com/sourcegraph/lsif-go/internal/index#fileInfo",
 					Documentation: protocol.Documentation{
 						Identifier: "fileInfo",
@@ -158,7 +158,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/github.com/sourcegraph/lsif-go/internal/index#indexer",
 					Documentation: protocol.Documentation{
 						Identifier: "indexer",
@@ -177,7 +177,7 @@
 						Value: "```Go\ntype indexer struct {\n\tprojectRoot    string\n\trepositoryRoot string\n\ttoolInfo       protocol.ToolInfo\n\tw              *protocol.Writer\n\n\t// De-duplication\n\tdefsIndexed      map[string]bool\n\tusesIndexed      map[string]bool\n\tranges           map[string]map[int]string // filename -> offset -> rangeID\n\thoverResultCache map[string]string\n\n\t// Type correlation\n\tfiles   map[string]*fileInfo      // Keys: filename\n\timports map[token.Pos]*defInfo    // Keys: definition position\n\tfuncs   map[string]*defInfo       // Keys: full name (with receiver for methods)\n\tconsts  map[token.Pos]*defInfo    // Keys: definition position\n\tvars    map[token.Pos]*defInfo    // Keys: definition position\n\ttypes   map[string]*defInfo       // Keys: type name\n\tlabels  map[token.Pos]*defInfo    // Keys: definition position\n\trefs    map[string]*refResultInfo // Keys: definition range ID\n\n\t// Monikers\n\tmoduleName            string\n\tmoduleVersion         string\n\tdependencies          map[string]string\n\tpackageInformationIDs map[string]string\n}\n```\n\nindexer keeps track of all information needed to generate an LSIF dump. \n\n",
 					},
 					Children: []precise.DocumentationNodeChild{
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/github.com/sourcegraph/lsif-go/internal/index#indexer.Index",
 							Documentation: protocol.Documentation{
 								Identifier: "indexer.Index",
@@ -197,7 +197,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/github.com/sourcegraph/lsif-go/internal/index#indexer.addImports",
 							Documentation: protocol.Documentation{
 								Identifier: "indexer.addImports",
@@ -217,7 +217,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/github.com/sourcegraph/lsif-go/internal/index#indexer.addMonikers",
 							Documentation: protocol.Documentation{
 								Identifier: "indexer.addMonikers",
@@ -237,7 +237,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/github.com/sourcegraph/lsif-go/internal/index#indexer.emitExportMoniker",
 							Documentation: protocol.Documentation{
 								Identifier: "indexer.emitExportMoniker",
@@ -257,7 +257,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/github.com/sourcegraph/lsif-go/internal/index#indexer.emitImportMoniker",
 							Documentation: protocol.Documentation{
 								Identifier: "indexer.emitImportMoniker",
@@ -277,7 +277,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/github.com/sourcegraph/lsif-go/internal/index#indexer.ensurePackageInformation",
 							Documentation: protocol.Documentation{
 								Identifier: "indexer.ensurePackageInformation",
@@ -297,7 +297,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/github.com/sourcegraph/lsif-go/internal/index#indexer.index",
 							Documentation: protocol.Documentation{
 								Identifier: "indexer.index",
@@ -317,7 +317,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/github.com/sourcegraph/lsif-go/internal/index#indexer.indexDefs",
 							Documentation: protocol.Documentation{
 								Identifier: "indexer.indexDefs",
@@ -337,7 +337,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/github.com/sourcegraph/lsif-go/internal/index#indexer.indexPkgDefs",
 							Documentation: protocol.Documentation{
 								Identifier: "indexer.indexPkgDefs",
@@ -357,7 +357,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/github.com/sourcegraph/lsif-go/internal/index#indexer.indexPkgDocs",
 							Documentation: protocol.Documentation{
 								Identifier: "indexer.indexPkgDocs",
@@ -377,7 +377,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/github.com/sourcegraph/lsif-go/internal/index#indexer.indexPkgUses",
 							Documentation: protocol.Documentation{
 								Identifier: "indexer.indexPkgUses",
@@ -397,7 +397,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/github.com/sourcegraph/lsif-go/internal/index#indexer.indexUses",
 							Documentation: protocol.Documentation{
 								Identifier: "indexer.indexUses",
@@ -417,7 +417,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/github.com/sourcegraph/lsif-go/internal/index#indexer.makeCachedExternalHoverResult",
 							Documentation: protocol.Documentation{
 								Identifier: "indexer.makeCachedExternalHoverResult",
@@ -437,7 +437,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/github.com/sourcegraph/lsif-go/internal/index#indexer.makeCachedHoverResult",
 							Documentation: protocol.Documentation{
 								Identifier: "indexer.makeCachedHoverResult",
@@ -457,7 +457,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/github.com/sourcegraph/lsif-go/internal/index#indexer.makeHoverResult",
 							Documentation: protocol.Documentation{
 								Identifier: "indexer.makeHoverResult",
@@ -477,7 +477,7 @@
 							},
 							Children: []precise.DocumentationNodeChild{},
 						}},
-						precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						{Node: &precise.DocumentationNode{
 							PathID: "/github.com/sourcegraph/lsif-go/internal/index#indexer.packages",
 							Documentation: protocol.Documentation{
 								Identifier: "indexer.packages",
@@ -499,7 +499,7 @@
 						}},
 					},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/github.com/sourcegraph/lsif-go/internal/index#refResultInfo",
 					Documentation: protocol.Documentation{
 						Identifier: "refResultInfo",
@@ -521,7 +521,7 @@
 				}},
 			},
 		}},
-		precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+		{Node: &precise.DocumentationNode{
 			PathID: "/github.com/sourcegraph/lsif-go/internal/index#func",
 			Documentation: protocol.Documentation{
 				Identifier: "func",
@@ -533,7 +533,7 @@
 			},
 			Detail: protocol.MarkupContent{Kind: protocol.MarkupKind("plaintext")},
 			Children: []precise.DocumentationNodeChild{
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/github.com/sourcegraph/lsif-go/internal/index#constructMarkedString",
 					Documentation: protocol.Documentation{
 						Identifier: "constructMarkedString",
@@ -553,7 +553,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/github.com/sourcegraph/lsif-go/internal/index#externalHoverContents",
 					Documentation: protocol.Documentation{
 						Identifier: "externalHoverContents",
@@ -573,7 +573,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/github.com/sourcegraph/lsif-go/internal/index#findComments",
 					Documentation: protocol.Documentation{
 						Identifier: "findComments",
@@ -593,7 +593,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/github.com/sourcegraph/lsif-go/internal/index#findContents",
 					Documentation: protocol.Documentation{
 						Identifier: "findContents",
@@ -613,7 +613,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/github.com/sourcegraph/lsif-go/internal/index#getPackageComment",
 					Documentation: protocol.Documentation{
 						Identifier: "getPackageComment",
@@ -633,7 +633,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/github.com/sourcegraph/lsif-go/internal/index#joinCommentGroups",
 					Documentation: protocol.Documentation{
 						Identifier: "joinCommentGroups",
@@ -653,7 +653,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/github.com/sourcegraph/lsif-go/internal/index#lspRange",
 					Documentation: protocol.Documentation{
 						Identifier: "lspRange",
@@ -673,7 +673,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/github.com/sourcegraph/lsif-go/internal/index#packagePrefixes",
 					Documentation: protocol.Documentation{
 						Identifier: "packagePrefixes",
@@ -693,7 +693,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/github.com/sourcegraph/lsif-go/internal/index#prettyPrintTypesString",
 					Documentation: protocol.Documentation{
 						Identifier: "prettyPrintTypesString",
@@ -713,7 +713,7 @@
 					},
 					Children: []precise.DocumentationNodeChild{},
 				}},
-				precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+				{Node: &precise.DocumentationNode{
 					PathID: "/github.com/sourcegraph/lsif-go/internal/index#typeString",
 					Documentation: protocol.Documentation{
 						Identifier: "typeString",

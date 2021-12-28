@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type DBStore interface {
@@ -13,8 +14,8 @@ type DBStore interface {
 	CalculateVisibleUploads(
 		ctx context.Context,
 		repositoryID int,
-		graph *gitserver.CommitGraph,
-		refDescriptions map[string][]gitserver.RefDescription,
+		graph *gitdomain.CommitGraph,
+		refDescriptions map[string][]gitdomain.RefDescription,
 		maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration,
 		dirtyToken int,
 		now time.Time,
@@ -27,6 +28,6 @@ type Locker interface {
 }
 
 type GitserverClient interface {
-	RefDescriptions(ctx context.Context, repositoryID int) (map[string][]gitserver.RefDescription, error)
-	CommitGraph(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)
+	RefDescriptions(ctx context.Context, repositoryID int) (map[string][]gitdomain.RefDescription, error)
+	CommitGraph(ctx context.Context, repositoryID int, options git.CommitGraphOptions) (*gitdomain.CommitGraph, error)
 }

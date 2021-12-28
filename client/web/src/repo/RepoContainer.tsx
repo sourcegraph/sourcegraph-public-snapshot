@@ -11,6 +11,7 @@ import { UncontrolledPopover } from 'reactstrap'
 import { NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import {
     isCloneInProgressErrorLike,
     isRepoNotFoundErrorLike,
@@ -26,7 +27,6 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
@@ -44,13 +44,7 @@ import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { IS_CHROME } from '../marketing/util'
 import { Settings } from '../schema/settings.schema'
-import {
-    CaseSensitivityProps,
-    PatternTypeProps,
-    SearchContextProps,
-    searchQueryForRepoRevision,
-    SearchStreamingProps,
-} from '../search'
+import { PatternTypeProps, SearchContextProps, searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { useNavbarQueryState } from '../stores'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
@@ -84,8 +78,7 @@ export interface RepoContainerContext
         TelemetryProps,
         ActivationProps,
         PatternTypeProps,
-        CaseSensitivityProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled' | 'showSearchContext'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         BreadcrumbSetters,
         ActionItemsBarProps,
         SearchStreamingProps,
@@ -104,8 +97,6 @@ export interface RepoContainerContext
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 
     globbing: boolean
-
-    showSearchNotebook: boolean
 
     isMacPlatform: boolean
 
@@ -129,8 +120,7 @@ interface RepoContainerProps
         ThemeProps,
         ExtensionAlertProps,
         PatternTypeProps,
-        CaseSensitivityProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled' | 'showSearchContext'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         BreadcrumbSetters,
         BreadcrumbsProps,
         SearchStreamingProps,
@@ -146,7 +136,6 @@ interface RepoContainerProps
     authenticatedUser: AuthenticatedUser | null
     history: H.History
     globbing: boolean
-    showSearchNotebook: boolean
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
 }

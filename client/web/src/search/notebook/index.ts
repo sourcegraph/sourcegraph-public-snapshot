@@ -3,8 +3,10 @@ import { Observable } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
+import { asError } from '@sourcegraph/common'
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/graphql/schema'
 import {
@@ -12,10 +14,8 @@ import {
     AggregateStreamingSearchResults,
     emptyAggregateResults,
 } from '@sourcegraph/shared/src/search/stream'
-import { asError } from '@sourcegraph/shared/src/util/errors'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
-import { fetchHighlightedFileLineRanges } from '../../repo/backend'
 import { LATEST_VERSION } from '../results/StreamingSearchResults'
 
 export type BlockType = 'md' | 'query' | 'file'
@@ -70,6 +70,7 @@ export interface BlockProps {
 
 export interface BlockDependencies {
     extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
 export class Notebook {
@@ -146,18 +147,20 @@ export class Notebook {
             case 'file':
                 this.blocks.set(block.id, {
                     ...block,
-                    output: fetchHighlightedFileLineRanges({
-                        repoName: block.input.repositoryName,
-                        commitID: block.input.revision || 'HEAD',
-                        filePath: block.input.filePath,
-                        ranges: block.input.lineRange
-                            ? [block.input.lineRange]
-                            : [{ startLine: 0, endLine: 2147483647 }], // entire file,
-                        disableTimeout: false,
-                    }).pipe(
-                        map(ranges => ranges[0]),
-                        catchError(() => [asError('File not found')])
-                    ),
+                    output: this.dependencies
+                        .fetchHighlightedFileLineRanges({
+                            repoName: block.input.repositoryName,
+                            commitID: block.input.revision || 'HEAD',
+                            filePath: block.input.filePath,
+                            ranges: block.input.lineRange
+                                ? [block.input.lineRange]
+                                : [{ startLine: 0, endLine: 2147483647 }], // entire file,
+                            disableTimeout: false,
+                        })
+                        .pipe(
+                            map(ranges => ranges[0]),
+                            catchError(() => [asError('File not found')])
+                        ),
                 })
                 break
         }

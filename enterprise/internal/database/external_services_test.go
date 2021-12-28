@@ -14,7 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -22,7 +22,7 @@ import (
 // This test lives in cmd/enterprise because it tests a proprietary
 // super-set of the validation performed by the OSS version.
 func TestExternalServices_ValidateConfig(t *testing.T) {
-	d := dbtesting.GetDB(t)
+	d := dbtest.NewDB(t)
 
 	// Assertion helpers
 	equals := func(want ...string) func(testing.TB, []string) {

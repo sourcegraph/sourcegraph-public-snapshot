@@ -2,11 +2,11 @@ import React, { useCallback, useMemo } from 'react'
 import { from } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 import { wrapRemoteObservable } from '../../api/client/api/common'
 import { Link } from '../../components/Link'
-import { asError, isErrorLike } from '../../util/errors'
 import { useObservable } from '../../util/useObservable'
 
 import { ExtensionsDevelopmentToolsProps } from '.'

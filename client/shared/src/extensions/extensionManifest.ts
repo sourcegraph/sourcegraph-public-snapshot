@@ -1,7 +1,8 @@
 import { isPlainObject } from 'lodash'
 
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+
 import { ExtensionManifest as ExtensionManifestSchema, EXTENSION_HEADER_COLORS } from '../schema/extensionSchema'
-import { ErrorLike, isErrorLike } from '../util/errors'
 import { parseJSONCOrError } from '../util/jsonc'
 import { isDefined } from '../util/types'
 

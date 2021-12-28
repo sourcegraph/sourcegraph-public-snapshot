@@ -43,6 +43,7 @@ add('default', () => (
             <SearchNotebookQueryBlock
                 {...props}
                 {...noopBlockCallbacks}
+                authenticatedUser={null}
                 id="query-block-1"
                 input="query"
                 type="query"
@@ -52,7 +53,6 @@ add('default', () => (
                 isOtherBlockSelected={false}
                 isMacPlatform={true}
                 isSourcegraphDotCom={true}
-                showSearchContext={true}
                 searchContextsEnabled={true}
                 sourcegraphSearchLanguageId="sourcegraphSearch"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -78,12 +78,12 @@ add('selected', () => (
                 isReadOnly={false}
                 isMacPlatform={true}
                 isSourcegraphDotCom={true}
-                showSearchContext={true}
                 searchContextsEnabled={true}
                 sourcegraphSearchLanguageId="sourcegraphSearch"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
+                authenticatedUser={null}
             />
         )}
     </WebStory>
@@ -104,12 +104,12 @@ add('read-only selected', () => (
                 isOtherBlockSelected={false}
                 isMacPlatform={true}
                 isSourcegraphDotCom={true}
-                showSearchContext={true}
                 searchContextsEnabled={true}
                 sourcegraphSearchLanguageId="sourcegraphSearch"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
+                authenticatedUser={null}
             />
         )}
     </WebStory>

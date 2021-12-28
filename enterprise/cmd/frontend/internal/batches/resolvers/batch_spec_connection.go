@@ -38,7 +38,8 @@ func (r *batchSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 
 func (r *batchSpecConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	count, err := r.store.CountBatchSpecs(ctx, store.CountBatchSpecsOpts{
-		BatchChangeID: r.opts.BatchChangeID,
+		BatchChangeID:                       r.opts.BatchChangeID,
+		ExcludeCreatedFromRawNotOwnedByUser: r.opts.ExcludeCreatedFromRawNotOwnedByUser,
 	})
 	return int32(count), err
 }

@@ -1,6 +1,6 @@
 import React, { ReactNode, useCallback, useContext } from 'react'
 
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/common'
 
 import { ErrorAlert } from '../../../../../../../components/alerts'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'

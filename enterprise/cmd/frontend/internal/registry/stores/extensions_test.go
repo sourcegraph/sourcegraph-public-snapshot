@@ -14,7 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -42,10 +42,7 @@ var registryExtensionNamesForTests = []struct {
 }
 
 func TestRegistryExtensions_validNames(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	s := Extensions(db)
@@ -74,10 +71,7 @@ func TestRegistryExtensions_validNames(t *testing.T) {
 }
 
 func TestRegistryExtensions(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	releases := Releases(db)
@@ -335,10 +329,7 @@ func TestRegistryExtensions(t *testing.T) {
 }
 
 func TestRegistryExtensions_ListCount(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	releases := Releases(db)
@@ -427,10 +418,7 @@ func TestRegistryExtensions_ListCount(t *testing.T) {
 }
 
 func TestFeaturedExtensions(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	releases := Releases(db)

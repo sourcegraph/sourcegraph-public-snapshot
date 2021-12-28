@@ -3,15 +3,14 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { EMPTY, Observable } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
-import { Badge } from '@sourcegraph/web/src/components/Badge'
 import { queryExternalServices } from '@sourcegraph/web/src/components/externalServices/backend'
 import {
     FilteredConnectionFilter,
@@ -20,8 +19,9 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SelfHostedCtaLink } from '@sourcegraph/web/src/components/SelfHostedCtaLink'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
 import {
     SiteAdminRepositoryFields,
@@ -39,6 +39,7 @@ import {
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { Owner } from '../cloud-ga'
+import { OrgUserNeedsCodeHost } from '../codeHosts/OrgUserNeedsCodeHost'
 
 import { UserSettingReposContainer } from './components'
 import { defaultFilters, RepositoriesList } from './RepositoriesList'
@@ -49,6 +50,7 @@ interface Props
         Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'> {
     owner: Owner
     routingPrefix: string
+    authenticatedUser: AuthenticatedUser
 }
 
 type SyncStatusOrError = undefined | 'scheduled' | 'schedule-complete' | ErrorLike
@@ -61,6 +63,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     routingPrefix,
     telemetryService,
     onUserExternalServicesOrRepositoriesUpdate,
+    authenticatedUser,
 }) => {
     const [hasRepos, setHasRepos] = useState(false)
     const [externalServices, setExternalServices] = useState<ExternalServicesResult['externalServices']['nodes']>()
@@ -311,6 +314,14 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             )}
             {!isUserOwner && shouldDisplayContextBanner && owner.name && getSearchContextBanner(owner.name)}
             {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}
+            {!isUserOwner && externalServices && authenticatedUser && owner.name && (
+                <OrgUserNeedsCodeHost
+                    user={authenticatedUser}
+                    orgExternalServices={externalServices}
+                    orgDisplayName={owner.name}
+                />
+            )}
+
             <PageTitle title="Your repositories" />
             <PageHeader
                 headingElement="h2"
@@ -319,7 +330,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                         text: (
                             <div className="d-flex">
                                 {isUserOwner ? 'Your repositories' : 'Repositories'}{' '}
-                                <Badge status="beta" className="ml-2" useLink={true} />
+                                <ProductStatusBadge status="beta" className="ml-2" linkToDocs={true} />
                             </div>
                         ),
                     },

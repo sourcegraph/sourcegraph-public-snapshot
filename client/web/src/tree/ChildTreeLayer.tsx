@@ -60,6 +60,7 @@ export const ChildTreeLayer: React.FunctionComponent<ChildTreeLayerProps> = (pro
                                     childrenEntries={props.singleChildTreeEntry.children}
                                     fileDecorationsByPath={props.fileDecorationsByPath}
                                     fileDecorations={props.fileDecorationsByPath[props.singleChildTreeEntry.path]}
+                                    telemetryService={props.telemetryService}
                                 />
                             ) : (
                                 props.entries.map((item, index) => (
@@ -71,6 +72,7 @@ export const ChildTreeLayer: React.FunctionComponent<ChildTreeLayerProps> = (pro
                                         parentPath={item.path}
                                         entryInfo={item}
                                         fileDecorations={props.fileDecorationsByPath[item.path]}
+                                        telemetryService={props.telemetryService}
                                     />
                                 ))
                             )}

@@ -99,21 +99,21 @@ const getTemplates = () => {
     const releaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
-        path: 'content/product-engineering/engineering/releases/release_issue_template.md',
+        path: 'content/departments/product-engineering/engineering/process/releases/release_issue_template.md',
         titleSuffix: IssueTitleSuffix.RELEASE_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.RELEASE],
     }
     const patchReleaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
-        path: 'content/product-engineering/engineering/releases/patch_release_issue_template.md',
+        path: 'content/departments/product-engineering/engineering/process/releases/patch_release_issue_template.md',
         titleSuffix: IssueTitleSuffix.PATCH_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.PATCH],
     }
     const upgradeManagedInstanceIssue: IssueTemplate = {
         owner: 'sourcegraph',
         repo: 'handbook',
-        path: 'content/product-engineering/engineering/releases/upgrade_managed_issue_template.md',
+        path: 'content/departments/product-engineering/engineering/process/releases/upgrade_managed_issue_template.md',
         titleSuffix: IssueTitleSuffix.MANAGED_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED],
     }

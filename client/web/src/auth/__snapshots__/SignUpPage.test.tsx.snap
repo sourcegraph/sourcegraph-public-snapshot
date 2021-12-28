@@ -55,9 +55,10 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
               class="d-flex align-items-center"
             >
               <span
-                class="badge badge-info text-uppercase mr-1"
+                class="badge info productStatusBadge text-uppercase mr-1"
+                status="beta"
               >
-                Beta
+                beta
               </span>
                Search across all your public and private repositories
             </div>

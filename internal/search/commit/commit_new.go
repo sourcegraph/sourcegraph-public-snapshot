@@ -33,6 +33,8 @@ type CommitSearch struct {
 	Limit         int
 
 	Db database.DB
+
+	IsRequired bool
 }
 
 func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
@@ -107,6 +109,10 @@ func (j CommitSearch) Name() string {
 		return "Diff"
 	}
 	return "Commit"
+}
+
+func (j CommitSearch) Required() bool {
+	return j.IsRequired
 }
 
 func (j *CommitSearch) ExpandUsernames(ctx context.Context, db dbutil.DB) (err error) {

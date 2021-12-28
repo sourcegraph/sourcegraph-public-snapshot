@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -58,7 +58,7 @@ func TestFindClosestDumpsInfersClosestUploads(t *testing.T) {
 	mockGitserverClient := NewMockGitserverClient()
 	commitChecker := newCachedCommitChecker(mockGitserverClient)
 
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		"d",
 		"c",
 		"b d",

@@ -218,6 +218,10 @@ type Mutation {
     """
     createPassword(newPassword: String!): EmptyResponse
     """
+    Sets the current user to accept the site's Terms of Service and Privacy Policy.
+    """
+    setTosAccepted: EmptyResponse!
+    """
     Creates an access token that grants the privileges of the specified user (referred to as the access token's
     "subject" user after token creation). The result is the access token value, which the caller is responsible
     for storing (it is not accessible by Sourcegraph after creation).
@@ -1098,7 +1102,7 @@ type Query {
         uri: String
     ): Repository
     """
-    Looks up a repository by either name or cloneURL. When the repository does not exist on the server
+    Looks up a repository by either name or cloneURL or hashedName. When the repository does not exist on the server
     and "disablePublicRepoRedirects" is "false" in the site configuration, it returns a Redirect to
     an external Sourcegraph URL that may have this repository instead. Otherwise, this query returns
     null.
@@ -1114,6 +1118,12 @@ type Query {
         Will not actually check the code host to see if the repository actually exists.
         """
         cloneURL: String
+        """
+        Query the repository by hashed name.
+        Hashed name is a SHA256 checksum of the absolute repo name in lower case,
+        for example "github.com/sourcegraph/sourcegraph" -> "a6c905ceb7dec9a565945ceded8c7fa4154250df8b928fb40673b535d9a24c2f"
+        """
+        hashedName: String
     ): RepositoryRedirect
     """
     Lists external services under given namespace.
@@ -1284,10 +1294,6 @@ type Query {
     The configuration for clients.
     """
     clientConfiguration: ClientConfigurationDetails!
-    """
-    Fetch search filter suggestions for autocompletion.
-    """
-    searchFilterSuggestions: SearchFilterSuggestions!
     """
     Runs a search.
     """
@@ -1795,29 +1801,11 @@ type Search {
     """
     results: SearchResults!
     """
-    The suggestions.
-    """
-    suggestions(first: Int): [SearchSuggestion!]!
-        @deprecated(
-            reason: "Suggestions now done with streaming search. This field is deprecated and will be removed in a future release."
-        )
-
-    """
     A subset of results (excluding actual search results) which are heavily
     cached and thus quicker to query. Useful for e.g. querying sparkline
     data.
     """
     stats: SearchResultsStats!
-}
-
-"""
-Predefined suggestions for search filters when backfill.
-"""
-type SearchFilterSuggestions {
-    """
-    The suggestions for search filter "repo:".
-    """
-    repo: [String!]!
 }
 
 """
@@ -2031,11 +2019,6 @@ type Language {
 }
 
 """
-A search suggestion.
-"""
-union SearchSuggestion = Repository | File | Symbol | Language
-
-"""
 A search-related alert message.
 """
 type SearchAlert {
@@ -2221,6 +2204,7 @@ enum ExternalServiceKind {
     GITLAB
     GITOLITE
     JVMPACKAGES
+    NPMPACKAGES
     OTHER
     PAGURE
     PERFORCE
@@ -2779,7 +2763,7 @@ type RepositoryTextSearchIndexStatus {
     """
     The byte size of the original content.
     """
-    contentByteSize: Int!
+    contentByteSize: BigInt!
     """
     The number of files in the original content.
     """
@@ -4553,6 +4537,10 @@ type User implements Node & SettingsSubject & Namespace {
     Only the user and site admins can access this field.
     """
     tags: [String!]!
+    """
+    Whether the user has already accepted the terms of service or not.
+    """
+    tosAccepted: Boolean!
     """
     The user's usage statistics on Sourcegraph.
     """

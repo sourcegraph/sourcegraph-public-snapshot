@@ -72,11 +72,27 @@ repo:^github\.com/sgtest/megarepo$ patterntype:structural strings.ToUpper(...) r
 # mono_symbol_small
 repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion
 
-# mono_rev_symbol_small
-repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion rev:main
+## This query has been disabled due to it causing the symbols service to
+## degrade. We want to enable it again, tracked at
+## https://github.com/sourcegraph/sourcegraph/issues/28457
+##
+## # mono_rev_symbol_small
+## repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion rev:main
 
 # mono_diff_small
 repo:^github\.com/sgtest/megarepo$ type:diff   author:camden before:"february 1 2021"
 
 # mono_commit_small
 repo:^github\.com/sgtest/megarepo$ type:commit author:camden before:"february 1 2021"
+
+# literal_small_select_repo
+patterntype:literal --exclude-task=test select:repo
+
+# literal_large_select_repo
+patterntype:literal lang:go -file:vendor/ count:1000 cfssl select:repo
+
+# and_regex
+patterntype:regexp \beven\b and \bintelligence\b and \bdream\b and \bsimplest\b
+
+# or_regex
+patterntype:regexp \bdeadbeeeeef\b or \bdeadbeeeeeef\b or \bdeadBEEEEEF\b or \bdeadbeeeeef\b or \bdeadbeeeeeef\b or \bdeadBEEEEEF\b or \bdoResults\b

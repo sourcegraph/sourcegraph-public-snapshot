@@ -224,8 +224,6 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                     props.onClose()
                 }
                 break
-            case event.key === 'p' && (event.metaKey || event.ctrlKey):
-                event.preventDefault()
             default:
         }
     }

@@ -13,6 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
+var goAthensProxyURL = "http://athens-athens-proxy"
+
 // CoreTestOperationsOptions should be used ONLY to adjust the behaviour of specific steps,
 // e.g. by adding flags, and not as a condition for adding steps or commands.
 type CoreTestOperationsOptions struct {
@@ -144,23 +146,18 @@ func addWebApp(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-// We provide our own Chromium instance that is installed through the `download-puppeteer-browser` script
-var percyBrowserExecutableEnv = bk.Env("PERCY_BROWSER_EXECUTABLE", "node_modules/puppeteer/.local-chromium/linux-901812/chrome-linux/chrome")
-
 // Builds and tests the browser extension.
 func addBrowserExt(pipeline *bk.Pipeline) {
 	// Browser extension integration tests
 	for _, browser := range []string{"chrome"} {
 		pipeline.AddStep(
 			fmt.Sprintf(":%s: Puppeteer tests for %s extension", browser, browser),
-			percyBrowserExecutableEnv,
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-			bk.Env("RECORD", "false"), // ensure that we use existing recordings
+			bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn --cwd client/shared run download-puppeteer-browser"),
 			bk.Cmd("yarn --cwd client/browser -s run build"),
 			bk.Cmd("yarn run cover-browser-integration"),
 			bk.Cmd("yarn nyc report -r json"),
@@ -203,7 +200,6 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 			bk.Key(stepKey),
 			bk.DependsOn(prepStepKey),
 			bk.DisableManualRetry("The Percy build is finalized even if one of the concurrent agents fails. To retry correctly, restart the entire pipeline."),
-			percyBrowserExecutableEnv,
 			bk.Env("PERCY_ON", "true"),
 			bk.Cmd(fmt.Sprintf(`dev/ci/yarn-web-integration.sh "%s"`, chunkTestFiles)),
 			bk.ArtifactPaths("./puppeteer/*.png"))
@@ -261,25 +257,26 @@ func addBrandedTests(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
+// This is a bandage solution to speed up the go tests by running the slowest ones
+// concurrently. As a results, the PR time affecting only Go code is divided by two.
+var slowGoTestPackages = []string{
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore",   // 224s
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore", // 122s
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                   // 82+162s
+	"github.com/sourcegraph/sourcegraph/internal/database",                              // 253s
+	"github.com/sourcegraph/sourcegraph/internal/repos",                                 // 106s
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches",                    // 52 + 60
+	"github.com/sourcegraph/sourcegraph/cmd/frontend",                                   // 100s
+}
+
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
-	// This is a bandage solution to speed up the go tests by running the slowest ones
-	// concurrently. As a results, the PR time affecting only Go code is divided by two.
-	slowPackages := []string{
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore",   // 224s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore", // 122s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                   // 82+162s
-		"github.com/sourcegraph/sourcegraph/internal/database",                              // 253s
-		"github.com/sourcegraph/sourcegraph/internal/repos",                                 // 106s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/batches",                    // 52 + 60
-		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                   // 100s
-	}
-
 	pipeline.AddStep(":go: Test",
-		bk.Cmd("./dev/ci/go-test.sh exclude "+strings.Join(slowPackages, " ")),
+		bk.Env("GOPROXY", goAthensProxyURL),
+		bk.Cmd("./dev/ci/go-test.sh exclude "+strings.Join(slowGoTestPackages, " ")),
 		bk.Cmd("dev/ci/codecov.sh -c -F go"))
 
-	for _, slowPkg := range slowPackages {
+	for _, slowPkg := range slowGoTestPackages {
 		// Trim the package name for readability
 		name := strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", "")
 		pipeline.AddStep(":go: Test ("+name+")",
@@ -291,6 +288,7 @@ func addGoTests(pipeline *bk.Pipeline) {
 // Builds the OSS and Enterprise Go commands.
 func addGoBuild(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Build",
+		bk.Env("GOPROXY", goAthensProxyURL),
 		bk.Cmd("./dev/ci/go-build.sh"),
 	)
 }
@@ -320,13 +318,11 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome"} {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s: E2E for %s extension", browser, browser),
-			percyBrowserExecutableEnv,
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn --cwd client/shared run download-puppeteer-browser"),
 			bk.Cmd("pushd client/browser"),
 			bk.Cmd("yarn -s run build"),
 			bk.Cmd("yarn -s mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts"),
@@ -427,7 +423,7 @@ func serverE2E(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd(".buildkite/vagrant-run.sh sourcegraph-e2e"),
+			bk.Cmd("./dev/ci/test/e2e/test.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -453,7 +449,7 @@ func serverQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd(".buildkite/vagrant-run.sh sourcegraph-qa-test"),
+			bk.Cmd("./dev/ci/test/qa/test.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -478,7 +474,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd(".buildkite/vagrant-run.sh sourcegraph-upgrade"),
+			bk.Cmd("./dev/ci/test/upgrade/test.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -486,20 +482,17 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 // Flaky deployment. See https://github.com/sourcegraph/sourcegraph/issues/25977
 // func clusterQA(candidateTag string) operations.Operation {
 // 	return func(p *bk.Pipeline) {
-// 		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
-// 			bk.Agent("queue", "baremetal"),
+// 		p.AddStep(":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA",
+// 			bk.DependsOn(candidateImageStepKey("frontend")),
 // 			bk.Env("CANDIDATE_VERSION", candidateTag),
 // 			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
-//
-// 			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
-// 			bk.Env("VAGRANT_RUN_ENV", "CI"),
-//
+// 			bk.Env("NO_CLEANUP", "false"),
 // 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 // 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
 // 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 // 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 // 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-// 			bk.Cmd(".buildkite/vagrant-run.sh sourcegraph-qa-test"),
+// 			bk.Cmd("./dev/ci/test/cluster/cluster-test.sh"),
 // 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 // 	}
 // }

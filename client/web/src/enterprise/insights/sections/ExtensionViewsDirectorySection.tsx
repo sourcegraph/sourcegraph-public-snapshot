@@ -124,7 +124,7 @@ const ExtensionViewsDirectorySectionContent: React.FunctionComponent<ExtensionVi
     }
 
     return (
-        <ViewGrid viewIds={allViewIds} telemetryService={props.telemetryService} className={className}>
+        <ViewGrid viewIds={allViewIds} className={className}>
             {/* Render extension views for the directory page */}
             {extensionViews.map(view => (
                 <StaticView key={view.id} content={view} telemetryService={props.telemetryService} />

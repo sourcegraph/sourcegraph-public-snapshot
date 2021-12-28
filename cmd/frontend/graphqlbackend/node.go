@@ -67,6 +67,16 @@ func (r *NodeResolver) ToMonitorEmail() (MonitorEmailResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToMonitorWebhook() (MonitorWebhookResolver, bool) {
+	n, ok := r.Node.(MonitorWebhookResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorSlackWebhook() (MonitorSlackWebhookResolver, bool) {
+	n, ok := r.Node.(MonitorSlackWebhookResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToMonitorActionEvent() (MonitorActionEventResolver, bool) {
 	n, ok := r.Node.(MonitorActionEventResolver)
 	return n, ok
@@ -196,6 +206,11 @@ func (r *NodeResolver) ToSearchContext() (SearchContextResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToNotebook() (NotebookResolver, bool) {
+	n, ok := r.Node.(NotebookResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	n, ok := r.Node.(*siteResolver)
 	return n, ok
@@ -246,7 +261,7 @@ func (r *NodeResolver) ToWebhookLog() (*webhookLogResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToExecutor() (*executorResolver, bool) {
-	n, ok := r.Node.(*executorResolver)
+func (r *NodeResolver) ToExecutor() (*ExecutorResolver, bool) {
+	n, ok := r.Node.(*ExecutorResolver)
 	return n, ok
 }

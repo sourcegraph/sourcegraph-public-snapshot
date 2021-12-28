@@ -55,7 +55,7 @@ func init() {
 
 func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) (sourceCodeJarPath string, err error) {
 	ctx, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("dependency", dependency.CoursierSyntax()),
+		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -91,7 +91,7 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 		// arguments appears at a specific index.
 		"fetch",
 		"--quiet", "--quiet",
-		"--intransitive", dependency.CoursierSyntax(),
+		"--intransitive", dependency.PackageManagerSyntax(),
 		"--classifier", "sources",
 	)
 	if err != nil {
@@ -119,7 +119,7 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 		// arguments appears at a specific index.
 		"fetch",
 		"--quiet", "--quiet",
-		"--intransitive", dependency.CoursierSyntax(),
+		"--intransitive", dependency.PackageManagerSyntax(),
 	)
 	if err != nil {
 		return "", err
@@ -135,7 +135,7 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 
 func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) (exists bool, err error) {
 	ctx, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("dependency", dependency.CoursierSyntax()),
+		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -148,7 +148,7 @@ func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependenc
 		config,
 		"resolve",
 		"--quiet", "--quiet",
-		"--intransitive", dependency.CoursierSyntax(),
+		"--intransitive", dependency.PackageManagerSyntax(),
 	)
 	return err == nil, err
 }
@@ -157,7 +157,7 @@ func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnectio
 	ctx, cancel := context.WithTimeout(ctx, invocTimeout)
 	defer cancel()
 
-	ctx, traceLog, endObservation := operations.runCommand.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
+	ctx, trace, endObservation := operations.runCommand.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("repositories", strings.Join(config.Maven.Repositories, "|")),
 		otlog.String("args", strings.Join(args, ", ")),
 	}})
@@ -183,7 +183,7 @@ func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnectio
 	if err := cmd.Run(); err != nil {
 		return nil, errors.Wrapf(err, "coursier command %q failed with stderr %q and stdout %q", cmd, stderr, &stdout)
 	}
-	traceLog(otlog.String("stdout", stdout.String()), otlog.String("stderr", stderr.String()))
+	trace.Log(otlog.String("stdout", stdout.String()), otlog.String("stderr", stderr.String()))
 
 	if stdout.String() == "" {
 		return []string{}, nil

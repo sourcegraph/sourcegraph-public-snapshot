@@ -38,7 +38,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
@@ -212,7 +211,7 @@ type Server struct {
 	Hostname string
 
 	// shared db handle
-	DB dbutil.DB
+	DB database.DB
 
 	// CloneQueue is a threadsafe queue used by DoBackgroundClones to process incoming clone
 	// requests asynchronously.
@@ -960,13 +959,13 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		Observe(time.Since(searchStart).Seconds())
 
 	if honey.Enabled() || traceLogs {
-		actor := r.Header.Get("X-Sourcegraph-Actor")
+		act := actor.FromContext(ctx)
 		ev := honey.NewEvent("gitserver-search")
-		ev.SetSampleRate(honeySampleRate("", actor == "internal"))
+		ev.SetSampleRate(honeySampleRate("", act.IsInternal()))
 		ev.AddField("repo", args.Repo)
 		ev.AddField("revisions", args.Revisions)
 		ev.AddField("include_diff", args.IncludeDiff)
-		ev.AddField("actor", actor)
+		ev.AddField("actor", act.UIDString())
 		ev.AddField("query", args.Query.String())
 		ev.AddField("limit", args.Limit)
 		ev.AddField("duration_ms", time.Since(searchStart).Milliseconds())
@@ -1193,13 +1192,13 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			isSlow := cmdDuration > shortGitCommandSlow(req.Args)
 			isSlowFetch := fetchDuration > 10*time.Second
 			if honey.Enabled() || traceLogs || isSlow || isSlowFetch {
-				actor := r.Header.Get("X-Sourcegraph-Actor")
+				act := actor.FromContext(ctx)
 				ev := honey.NewEvent("gitserver-exec")
-				ev.SetSampleRate(honeySampleRate(cmd, actor == "internal"))
+				ev.SetSampleRate(honeySampleRate(cmd, act.IsInternal()))
 				ev.AddField("repo", req.Repo)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
-				ev.AddField("actor", actor)
+				ev.AddField("actor", act.UIDString())
 				ev.AddField("ensure_revision", req.EnsureRevision)
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
 				ev.AddField("client", r.UserAgent())
@@ -1430,13 +1429,13 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 
 			isSlow := cmdDuration > 30*time.Second
 			if honey.Enabled() || traceLogs || isSlow {
-				actor := r.Header.Get("X-Sourcegraph-Actor")
+				act := actor.FromContext(ctx)
 				ev := honey.NewEvent("gitserver-p4exec")
-				ev.SetSampleRate(honeySampleRate(cmd, actor == "internal"))
+				ev.SetSampleRate(honeySampleRate(cmd, act.IsInternal()))
 				ev.AddField("p4port", req.P4Port)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
-				ev.AddField("actor", actor)
+				ev.AddField("actor", act.UIDString())
 				ev.AddField("client", r.UserAgent())
 				ev.AddField("duration_ms", duration.Milliseconds())
 				ev.AddField("stdout_size", stdoutN)
@@ -2002,6 +2001,11 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 	span, ctx := ot.StartSpanFromContext(ctx, "Server.doRepoUpdate")
 	span.SetTag("repo", repo)
 	defer span.Finish()
+
+	if msg, ok := isPaused(filepath.Join(s.ReposDir, string(protocol.NormalizeRepo(repo)))); ok {
+		log15.Warn("doRepoUpdate paused", "repo", repo, "reason", msg)
+		return nil
+	}
 
 	s.repoUpdateLocksMu.Lock()
 	l, ok := s.repoUpdateLocks[repo]

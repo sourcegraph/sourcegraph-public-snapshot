@@ -27,6 +27,13 @@ type ExecutorStore interface {
 	// (e.g., a site-admin).
 	GetByID(ctx context.Context, id int) (types.Executor, bool, error)
 
+	// GetByHostname returns an executor activity record by the worker hostname. If no such record
+	// exists, a false-valued flag is returned.
+	//
+	// 🚨 SECURITY: The caller must ensure that the actor is permitted to view executor details
+	// (e.g., a site-admin).
+	GetByHostname(ctx context.Context, hostname string) (types.Executor, bool, error)
+
 	// UpsertHeartbeat updates or creates an executor activity record for a particular executor instance.
 	UpsertHeartbeat(ctx context.Context, executor types.Executor) error
 
@@ -229,6 +236,29 @@ SELECT
 	h.last_seen_at
 FROM executor_heartbeats h
 WHERE h.id = %s
+`
+
+func (s *executorStore) GetByHostname(ctx context.Context, hostname string) (types.Executor, bool, error) {
+	return scanFirstExecutor(s.Query(ctx, sqlf.Sprintf(executorStoreGetByHostnameQuery, hostname)))
+}
+
+const executorStoreGetByHostnameQuery = `
+-- source: internal/database/executors.go:GetByHostname
+SELECT
+	h.id,
+	h.hostname,
+	h.queue_name,
+	h.os,
+	h.architecture,
+	h.docker_version,
+	h.executor_version,
+	h.git_version,
+	h.ignite_version,
+	h.src_cli_version,
+	h.first_seen_at,
+	h.last_seen_at
+FROM executor_heartbeats h
+WHERE h.hostname = %s
 `
 
 func (s *executorStore) UpsertHeartbeat(ctx context.Context, executor types.Executor) error {

@@ -9,5 +9,5 @@ pg_sg_migration:
   master: true
   metrics:
     - status:
-        usage: GAUGE"
+        usage: "GAUGE"
         description: Whether the migration applied successfully

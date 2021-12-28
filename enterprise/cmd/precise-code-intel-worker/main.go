@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	smithyhttp "github.com/aws/smithy-go/transport/http"
@@ -21,8 +22,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -121,15 +123,19 @@ func main() {
 }
 
 func mustInitializeDB() *sql.DB {
-	postgresDSN := conf.Get().ServiceConnections().PostgresDSN
-	conf.Watch(func() {
-		if newDSN := conf.Get().ServiceConnections().PostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("Detected database DSN change, restarting to take effect: %s", newDSN)
-		}
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.PostgresDSN
 	})
-
-	opts := dbconn.Opts{DSN: postgresDSN, DBName: "frontend", AppName: "precise-code-intel-worker"}
-	sqlDB, err := dbconn.New(opts)
+	var (
+		sqlDB *sql.DB
+		err   error
+	)
+	if os.Getenv("NEW_MIGRATIONS") == "" {
+		// CURRENTLY DEPRECATING
+		sqlDB, err = connections.NewFrontendDB(dsn, "precise-code-intel-worker", false, &observation.TestContext)
+	} else {
+		sqlDB, err = connections.EnsureNewFrontendDB(dsn, "precise-code-intel-worker", &observation.TestContext)
+	}
 	if err != nil {
 		log.Fatalf("Failed to connect to frontend database: %s", err)
 	}
@@ -152,20 +158,21 @@ func mustInitializeDB() *sql.DB {
 }
 
 func mustInitializeCodeIntelDB() *sql.DB {
-	postgresDSN := conf.Get().ServiceConnections().CodeIntelPostgresDSN
-	conf.Watch(func() {
-		if newDSN := conf.Get().ServiceConnections().CodeIntelPostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("Detected codeintel database DSN change, restarting to take effect: %s", newDSN)
-		}
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.CodeIntelPostgresDSN
 	})
-
-	db, err := dbconn.New(dbconn.Opts{DSN: postgresDSN, DBName: "codeintel", AppName: "precise-code-intel-worker"})
+	var (
+		db  *sql.DB
+		err error
+	)
+	if os.Getenv("NEW_MIGRATIONS") == "" {
+		// CURRENTLY DEPRECATING
+		db, err = connections.NewCodeIntelDB(dsn, "precise-code-intel-worker", true, &observation.TestContext)
+	} else {
+		db, err = connections.EnsureNewCodeIntelDB(dsn, "precise-code-intel-worker", &observation.TestContext)
+	}
 	if err != nil {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
-	}
-
-	if _, err := dbconn.MigrateDB(db, dbconn.CodeIntel); err != nil {
-		log.Fatalf("Failed to perform codeintel database migration: %s", err)
 	}
 
 	return db

@@ -577,6 +577,8 @@ type ExperimentalFeatures struct {
 	EventLogging string `json:"eventLogging,omitempty"`
 	// JvmPackages description: Allow adding JVM packages code host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
+	// NpmPackages description: Allow adding NPM packages code host connections
+	NpmPackages string `json:"npmPackages,omitempty"`
 	// Pagure description: Allow adding Pagure code host connections
 	Pagure string `json:"pagure,omitempty"`
 	// Perforce description: Allow adding Perforce code host connections
@@ -1000,6 +1002,25 @@ type MountedEncryptionKey struct {
 	Version    string `json:"version,omitempty"`
 }
 
+// NPMPackagesConnection description: Configuration for a connection to an NPM packages repository.
+// TODO: [npm-package-support-credentials] Add a credential field to NPMConfig.
+type NPMPackagesConnection struct {
+	// Dependencies description: An array of "(@scope/)?packageName@version" strings specifying which NPM packages to mirror on Sourcegraph.
+	Dependencies []string `json:"dependencies,omitempty"`
+	// RateLimit description: Rate limit applied when making background API requests to the NPM registry.
+	RateLimit *NPMRateLimit `json:"rateLimit,omitempty"`
+	// Registry description: The URL at which the NPM registry can be found.
+	Registry string `json:"registry"`
+}
+
+// NPMRateLimit description: Rate limit applied when making background API requests to the NPM registry.
+type NPMRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
+	RequestsPerHour float64 `json:"requestsPerHour"`
+}
+
 // NoOpEncryptionKey description: This encryption key is a no op, leaving your data in plaintext (not recommended).
 type NoOpEncryptionKey struct {
 	Type string `json:"type"`
@@ -1142,8 +1163,10 @@ type OnQuery struct {
 
 // OnRepository description: A specific repository (and branch) that is added to the list of repositories that the batch change will be run on.
 type OnRepository struct {
-	// Branch description: The branch on the repository to propose changes to. If unset, the repository's default branch is used.
+	// Branch description: The repository branch to propose changes to. If unset, the repository's default branch is used. If this field is defined, branches cannot be.
 	Branch string `json:"branch,omitempty"`
+	// Branches description: The repository branches to propose changes to. If unset, the repository's default branch is used. If this field is defined, branch cannot be.
+	Branches []string `json:"branches,omitempty"`
 	// Repository description: The name of the repository (as it is known to Sourcegraph).
 	Repository string `json:"repository"`
 }
@@ -1409,6 +1432,8 @@ type SearchScope struct {
 type Sentry struct {
 	// BackendDSN description: Sentry Data Source Name (DSN) for backend errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.
 	BackendDSN string `json:"backendDSN,omitempty"`
+	// CodeIntelDSN description: Sentry Data Source Name (DSN) for code intel errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.
+	CodeIntelDSN string `json:"codeIntelDSN,omitempty"`
 	// Dsn description: Sentry Data Source Name (DSN). Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.
 	Dsn string `json:"dsn,omitempty"`
 }
@@ -1433,6 +1458,8 @@ type Settings struct {
 	Extensions map[string]bool `json:"extensions,omitempty"`
 	// ExtensionsActiveLoggers description: The Sourcegraph extensions, by ID (e.g. `my/extension`), whose logs should be visible in the console.
 	ExtensionsActiveLoggers []string `json:"extensions.activeLoggers,omitempty"`
+	// FileSidebarVisibleByDefault description: Whether the sidebar on the repo view should be open by default.
+	FileSidebarVisibleByDefault bool `json:"fileSidebarVisibleByDefault,omitempty"`
 	// Insights description: EXPERIMENTAL: Code Insights
 	Insights []*Insight `json:"insights,omitempty"`
 	// InsightsAllrepos description: EXPERIMENTAL: Backend-based Code Insights
@@ -1492,11 +1519,13 @@ type SettingsExperimentalFeatures struct {
 	ApiDocs *bool `json:"apiDocs,omitempty"`
 	// BatchChangesExecution description: Enables/disables the Batch Changes server side execution feature.
 	BatchChangesExecution *bool `json:"batchChangesExecution,omitempty"`
+	// ClientSearchResultRanking description: How to rank search results in the client
+	ClientSearchResultRanking *string `json:"clientSearchResultRanking,omitempty"`
 	// CodeInsights description: Enables code insights on directory pages.
 	CodeInsights *bool `json:"codeInsights,omitempty"`
 	// CodeInsightsAllRepos description: DEPRECATED: Enables the experimental ability to run an insight over all repositories on the instance.
 	CodeInsightsAllRepos *bool `json:"codeInsightsAllRepos,omitempty"`
-	// CodeInsightsGqlApi description: Enables gql api instead of using setting cascade as a main storage fro code insights entities
+	// CodeInsightsGqlApi description: DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities
 	CodeInsightsGqlApi *bool `json:"codeInsightsGqlApi,omitempty"`
 	// CodeMonitoring description: Enables code monitoring.
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
@@ -1504,6 +1533,8 @@ type SettingsExperimentalFeatures struct {
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
 	EnableFastResultLoading *bool `json:"enableFastResultLoading,omitempty"`
+	// EnableSearchStack description: Enables search stack
+	EnableSearchStack *bool `json:"enableSearchStack,omitempty"`
 	// EnableSmartQuery description: REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
 	// FuzzyFinder description: Enables fuzzy finder with keyboard shortcut `t`.

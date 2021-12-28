@@ -13,7 +13,7 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Badge, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ExecutorFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -83,8 +83,8 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
                     <a href="https://docs.sourcegraph.com/code_intelligence/explanations/auto_indexing" rel="noopener">
                         auto-indexing for Code Intelligence
                     </a>{' '}
-                    and {/* TODO: Adjust this link */}
-                    <a href="https://docs.sourcegraph.com/batches/server_side" rel="noopener">
+                    and{' '}
+                    <a href="https://docs.sourcegraph.com/batch_changes/explanations/server_side" rel="noopener">
                         server-side Batch Changes
                     </a>
                     . In order to use those features,{' '}
@@ -138,12 +138,12 @@ export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => 
                                 />
                             )}
                             {node.hostname}{' '}
-                            <span
-                                className="badge badge-secondary"
-                                data-tooltip={`The executor is configured to pull data from the queue "${node.queueName}"`}
+                            <Badge
+                                variant="secondary"
+                                tooltip={`The executor is configured to pull data from the queue "${node.queueName}"`}
                             >
                                 {node.queueName}
-                            </span>
+                            </Badge>
                         </h4>
                     </div>
                     <span>

@@ -16,6 +16,7 @@ import { Link, Redirect } from 'react-router-dom'
 import { Observable, EMPTY } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
@@ -30,7 +31,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
@@ -49,7 +49,8 @@ import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
 import { CodeInsightsProps } from '../../insights/types'
 import { Settings } from '../../schema/settings.schema'
-import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../../search'
+import { PatternTypeProps, SearchContextProps } from '../../search'
+import { useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
@@ -115,7 +116,6 @@ interface Props
         TelemetryProps,
         ActivationProps,
         PatternTypeProps,
-        CaseSensitivityProps,
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
@@ -147,7 +147,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
     revision,
     filePath,
     patternType,
-    caseSensitive,
     settingsCascade,
     useBreadcrumb,
     codeIntelligenceEnabled,
@@ -266,8 +265,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     }, [uri, showCodeInsights, props.extensionsController])
 
     // eslint-disable-next-line unicorn/prevent-abbreviations
-    const enableAPIDocs =
-        !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.apiDocs !== false
+    const enableAPIDocs = useExperimentalFeatures(features => features.apiDocs)
 
     const getPageTitle = (): string => {
         const repoString = displayRepoName(repo.name)
@@ -401,12 +399,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 <BrainIcon className="icon-inline" /> Code Intelligence
                                             </Link>
                                         )}
-                                        {batchChangesEnabled && (
-                                            <RepoBatchChangesButton
-                                                className="btn btn-outline-secondary"
-                                                repoName={repo.name}
-                                            />
-                                        )}
+                                        {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
                                         {repo.viewerCanAdminister && (
                                             <Link
                                                 className="btn btn-outline-secondary"

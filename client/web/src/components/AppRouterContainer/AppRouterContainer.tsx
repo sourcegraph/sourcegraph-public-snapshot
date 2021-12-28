@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import React, { HTMLAttributes } from 'react'
+import { ElementScroller } from 'react-scroll-manager'
 
 import styles from './AppRouterContainer.module.scss'
 
@@ -10,7 +11,9 @@ export const AppRouterContainer: React.FunctionComponent<AppRouterContainerProps
     className,
     ...rest
 }) => (
-    <div className={classNames(styles.appRouterContainer, className)} {...rest}>
-        {children}
-    </div>
+    <ElementScroller scrollKey="app-router-container">
+        <div className={classNames(styles.appRouterContainer, className)} {...rest}>
+            {children}
+        </div>
+    </ElementScroller>
 )

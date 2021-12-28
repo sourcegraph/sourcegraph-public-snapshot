@@ -12,11 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -245,18 +242,7 @@ func TestCapFirst(t *testing.T) {
 }
 
 func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
-	mockResolveRepositories = func() (resolved searchrepos.Resolved, err error) {
-		return searchrepos.Resolved{
-			RepoRevs:        []*search.RepositoryRevisions{},
-			MissingRepoRevs: make([]*search.RepositoryRevisions, 0),
-			OverLimit:       false,
-		}, nil
-	}
-	defer func() {
-		mockResolveRepositories = nil
-	}()
+	db := database.NewDB(nil)
 
 	searchQuery := "context:@user repo:r1 foo"
 	wantAlert := &searchAlert{

@@ -1,9 +1,9 @@
 import { Observable } from 'rxjs'
 import { map, mapTo } from 'rxjs/operators'
 
+import { createAggregateError, isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { createAggregateError, isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {

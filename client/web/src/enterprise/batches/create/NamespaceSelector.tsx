@@ -3,7 +3,7 @@ import React, { useCallback } from 'react'
 
 import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
 
-import styles from './NewCreateBatchChangePage.module.scss'
+import styles from './NamespaceSelector.module.scss'
 
 const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
     switch (namespace.__typename) {
@@ -39,9 +39,9 @@ export const NamespaceSelector: React.FunctionComponent<NamespaceSelectorProps> 
     )
 
     return (
-        <div className="form-group d-flex align-items-center">
-            <label className="text-nowrap mr-2 mb-0" htmlFor={NAMESPACE_SELECTOR_ID}>
-                <strong>Change namespace:</strong>
+        <div className="form-group">
+            <label className="text-nowrap mb-2" htmlFor={NAMESPACE_SELECTOR_ID}>
+                <strong>Namespace:</strong>
             </label>
             <select
                 className={classNames(styles.namespaceSelector, 'form-control')}

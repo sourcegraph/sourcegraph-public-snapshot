@@ -18,6 +18,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -25,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -48,6 +50,10 @@ func main() {
 	tracer.Init(conf.DefaultClient())
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
+
+	if err := profiler.Init(); err != nil {
+		log.Fatalf("failed to start Google Cloud profiler: %s", err)
+	}
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -75,7 +81,8 @@ func main() {
 	service.Store.Start()
 
 	// Set up handler middleware
-	handler := trace.HTTPTraceMiddleware(service, conf.DefaultClient())
+	handler := actor.HTTPMiddleware(service)
+	handler = trace.HTTPMiddleware(handler, conf.DefaultClient())
 	handler = ot.HTTPMiddleware(handler)
 
 	host := ""
@@ -98,10 +105,12 @@ func main() {
 		}),
 	}
 
-	log15.Info("searcher: listening", "addr", server.Addr)
-	if err := server.ListenAndServe(); err != http.ErrServerClosed {
-		log.Fatal(err)
-	}
+	go func() {
+		log15.Info("searcher: listening", "addr", server.Addr)
+		if err := server.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
 
 	// Listen for shutdown signals. When we receive one attempt to clean up,
 	// but do an insta-shutdown if we receive more than one signal.

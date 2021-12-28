@@ -4,7 +4,7 @@ import { Observable } from 'rxjs'
 import { delay, startWith, tap, mergeMap, catchError } from 'rxjs/operators'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser } from '../../../auth'

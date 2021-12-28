@@ -22,6 +22,9 @@ type MockExecutorStore struct {
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *ExecutorStoreDoneFunc
+	// GetByHostnameFunc is an instance of a mock function object
+	// controlling the behavior of the method GetByHostname.
+	GetByHostnameFunc *ExecutorStoreGetByHostnameFunc
 	// GetByIDFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByID.
 	GetByIDFunc *ExecutorStoreGetByIDFunc
@@ -54,6 +57,11 @@ func NewMockExecutorStore() *MockExecutorStore {
 		DoneFunc: &ExecutorStoreDoneFunc{
 			defaultHook: func(error) error {
 				return nil
+			},
+		},
+		GetByHostnameFunc: &ExecutorStoreGetByHostnameFunc{
+			defaultHook: func(context.Context, string) (types.Executor, bool, error) {
+				return types.Executor{}, false, nil
 			},
 		},
 		GetByIDFunc: &ExecutorStoreGetByIDFunc{
@@ -103,6 +111,11 @@ func NewStrictMockExecutorStore() *MockExecutorStore {
 				panic("unexpected invocation of MockExecutorStore.Done")
 			},
 		},
+		GetByHostnameFunc: &ExecutorStoreGetByHostnameFunc{
+			defaultHook: func(context.Context, string) (types.Executor, bool, error) {
+				panic("unexpected invocation of MockExecutorStore.GetByHostname")
+			},
+		},
 		GetByIDFunc: &ExecutorStoreGetByIDFunc{
 			defaultHook: func(context.Context, int) (types.Executor, bool, error) {
 				panic("unexpected invocation of MockExecutorStore.GetByID")
@@ -146,6 +159,9 @@ func NewMockExecutorStoreFrom(i database.ExecutorStore) *MockExecutorStore {
 		},
 		DoneFunc: &ExecutorStoreDoneFunc{
 			defaultHook: i.Done,
+		},
+		GetByHostnameFunc: &ExecutorStoreGetByHostnameFunc{
+			defaultHook: i.GetByHostname,
 		},
 		GetByIDFunc: &ExecutorStoreGetByIDFunc{
 			defaultHook: i.GetByID,
@@ -378,6 +394,118 @@ func (c ExecutorStoreDoneFuncCall) Args() []interface{} {
 // invocation.
 func (c ExecutorStoreDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// ExecutorStoreGetByHostnameFunc describes the behavior when the
+// GetByHostname method of the parent MockExecutorStore instance is invoked.
+type ExecutorStoreGetByHostnameFunc struct {
+	defaultHook func(context.Context, string) (types.Executor, bool, error)
+	hooks       []func(context.Context, string) (types.Executor, bool, error)
+	history     []ExecutorStoreGetByHostnameFuncCall
+	mutex       sync.Mutex
+}
+
+// GetByHostname delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockExecutorStore) GetByHostname(v0 context.Context, v1 string) (types.Executor, bool, error) {
+	r0, r1, r2 := m.GetByHostnameFunc.nextHook()(v0, v1)
+	m.GetByHostnameFunc.appendCall(ExecutorStoreGetByHostnameFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetByHostname method
+// of the parent MockExecutorStore instance is invoked and the hook queue is
+// empty.
+func (f *ExecutorStoreGetByHostnameFunc) SetDefaultHook(hook func(context.Context, string) (types.Executor, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetByHostname method of the parent MockExecutorStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ExecutorStoreGetByHostnameFunc) PushHook(hook func(context.Context, string) (types.Executor, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ExecutorStoreGetByHostnameFunc) SetDefaultReturn(r0 types.Executor, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, string) (types.Executor, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ExecutorStoreGetByHostnameFunc) PushReturn(r0 types.Executor, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, string) (types.Executor, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *ExecutorStoreGetByHostnameFunc) nextHook() func(context.Context, string) (types.Executor, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorStoreGetByHostnameFunc) appendCall(r0 ExecutorStoreGetByHostnameFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorStoreGetByHostnameFuncCall objects
+// describing the invocations of this function.
+func (f *ExecutorStoreGetByHostnameFunc) History() []ExecutorStoreGetByHostnameFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorStoreGetByHostnameFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorStoreGetByHostnameFuncCall is an object that describes an
+// invocation of method GetByHostname on an instance of MockExecutorStore.
+type ExecutorStoreGetByHostnameFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 types.Executor
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorStoreGetByHostnameFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorStoreGetByHostnameFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // ExecutorStoreGetByIDFunc describes the behavior when the GetByID method

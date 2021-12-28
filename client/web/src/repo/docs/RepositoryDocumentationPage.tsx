@@ -8,17 +8,16 @@ import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
+import { asError, ErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, ProductStatusBadge } from '@sourcegraph/wildcard'
 
-import { Badge } from '../../components/Badge'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
@@ -213,7 +212,11 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                         <h1>
                             <BookOpenBlankVariantIcon className="icon-inline mr-1" />
                             API docs
-                            <Badge status="experimental" className="text-uppercase ml-2" useLink={true} />
+                            <ProductStatusBadge
+                                status="experimental"
+                                className="text-uppercase ml-2"
+                                linkToDocs={true}
+                            />
                         </h1>
                         <p>API documentation generated for all your code</p>
                         <Container>

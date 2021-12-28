@@ -1,4 +1,5 @@
-import { isErrorLike } from './errors'
+import { isErrorLike } from '@sourcegraph/common'
+
 import { modify, parseJSONCOrError } from './jsonc'
 
 describe('parseJSONCOrError', () => {

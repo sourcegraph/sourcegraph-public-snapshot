@@ -16,8 +16,8 @@ import (
 // If no rev is specified, HEAD is used.
 // Error cases:
 // * Repo does not exist: gitdomain.RepoNotExistError
-// * Commit does not exist: git.RevisionNotFoundError
-// * Empty repository: git.RevisionNotFoundError
+// * Commit does not exist: gitdomain.RevisionNotFoundError
+// * Empty repository: gitdomain.RevisionNotFoundError
 // * The user does not have permission: errcode.IsNotFound
 // * Other unexpected errors.
 func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (commitID api.CommitID, err error) {

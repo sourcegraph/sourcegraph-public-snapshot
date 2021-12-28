@@ -87,3 +87,19 @@ type Signature struct {
 	Email string    `json:"Email,omitempty"`
 	Date  time.Time `json:"Date"`
 }
+
+type RefType int
+
+const (
+	RefTypeUnknown RefType = iota
+	RefTypeBranch
+	RefTypeTag
+)
+
+// RefDescription describes a commit at the head of a branch or tag.
+type RefDescription struct {
+	Name            string
+	Type            RefType
+	IsDefaultBranch bool
+	CreatedDate     time.Time
+}

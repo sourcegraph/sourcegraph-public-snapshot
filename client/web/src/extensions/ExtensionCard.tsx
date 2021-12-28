@@ -3,6 +3,7 @@ import WarningIcon from 'mdi-react/WarningIcon'
 import React, { useState, useCallback, useMemo, memo } from 'react'
 import { Link } from 'react-router-dom'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { ConfiguredRegistryExtension, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -13,7 +14,6 @@ import {
 } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
 import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
 

@@ -11,11 +11,12 @@ import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
+import { fetchRepository, resolveRevision } from '../../repo/backend'
 import { StreamingSearchResultsListProps } from '../results/StreamingSearchResultsList'
 
 import { SearchNotebook } from './SearchNotebook'
 import styles from './SearchNotebookPage.module.scss'
-import { deserializeBlockInput, serializeBlockInput } from './serialize'
+import { serializeBlocks, deserializeBlockInput } from './serialize'
 
 import { Block, BlockInput } from '.'
 
@@ -36,17 +37,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
     const location = useLocation()
 
     const onSerializeBlocks = useCallback(
-        (blocks: Block[]) => {
-            const serializedBlocks = blocks
-                .map(
-                    block =>
-                        `${encodeURIComponent(block.type)}:${encodeURIComponent(
-                            serializeBlockInput(block, window.location.origin)
-                        )}`
-                )
-                .join(',')
-            history.replace({ hash: serializedBlocks })
-        },
+        (blocks: Block[]) => history.replace({ hash: serializeBlocks(blocks, window.location.origin) }),
         [history]
     )
 
@@ -80,7 +71,13 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
                     path={[{ text: 'Search Notebook' }]}
                 />
                 <hr className="mt-2 mb-1 mx-3" />
-                <SearchNotebook {...props} blocks={blocks} onSerializeBlocks={onSerializeBlocks} />
+                <SearchNotebook
+                    {...props}
+                    blocks={blocks}
+                    onSerializeBlocks={onSerializeBlocks}
+                    resolveRevision={resolveRevision}
+                    fetchRepository={fetchRepository}
+                />
             </Page>
         </div>
     )

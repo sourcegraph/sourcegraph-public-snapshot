@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gorilla/csrf"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -52,7 +50,6 @@ type JSContext struct {
 	AppRoot        string            `json:"appRoot,omitempty"`
 	ExternalURL    string            `json:"externalURL,omitempty"`
 	XHRHeaders     map[string]string `json:"xhrHeaders"`
-	CSRFToken      string            `json:"csrfToken"`
 	UserAgentIsBot bool              `json:"userAgentIsBot"`
 	AssetsRoot     string            `json:"assetsRoot"`
 	Version        string            `json:"version"`
@@ -95,6 +92,8 @@ type JSContext struct {
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
 	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
 
+	CodeInsightsGQLApiEnabled bool `json:"codeInsightsGqlApiEnabled"`
+
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
@@ -115,9 +114,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	if cc := req.Header.Get("cache-control"); strings.Contains(cc, "no-cache") || strings.Contains(cc, "max-age=0") {
 		headers["Cache-Control"] = "no-cache"
 	}
-
-	csrfToken := csrf.Token(req)
-	headers["X-Csrf-Token"] = csrfToken
 
 	siteID := siteid.Get()
 
@@ -153,7 +149,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	return JSContext{
 		ExternalURL:         globals.ExternalURL().String(),
 		XHRHeaders:          headers,
-		CSRFToken:           csrfToken,
 		UserAgentIsBot:      isBot(req.UserAgent()),
 		AssetsRoot:          assetsutil.URL("").String(),
 		Version:             version.Version(),
@@ -196,6 +191,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
+
+		CodeInsightsGQLApiEnabled: conf.CodeInsightsGQLApiEnabled(),
 
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 

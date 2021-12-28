@@ -5,9 +5,9 @@ import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import React, { useState, useCallback } from 'react'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { TooltipController } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { GitCommitFields } from '../../graphql-operations'
@@ -74,10 +74,10 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
         eventLogger.log('CommitSHACopiedToClipboard')
         copy(oid)
         setFlashCopiedToClipboardMessage(true)
-        Tooltip.forceUpdate()
+        TooltipController.forceUpdate()
         setTimeout(() => {
             setFlashCopiedToClipboardMessage(false)
-            Tooltip.forceUpdate()
+            TooltipController.forceUpdate()
         }, 1500)
     }, [])
 
@@ -192,10 +192,10 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
             <Link
                 className="btn btn-sm btn-outline-secondary align-center d-inline-flex"
                 to={node.tree.canonicalURL}
-                data-tooltip="View files at this commit"
+                data-tooltip="Browse files in the repository at this point in history"
             >
                 <FileDocumentIcon className="icon-inline mr-1" />
-                View files in commit
+                Browse files at @{node.abbreviatedOID}
             </Link>
             {diffModeSelector()}
         </div>

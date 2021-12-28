@@ -1,14 +1,17 @@
 package types
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 // BatchChangeState defines the possible states of a BatchChange
 type BatchChangeState string
 
 const (
-	BatchChangeStateAny    BatchChangeState = "ANY"
 	BatchChangeStateOpen   BatchChangeState = "OPEN"
 	BatchChangeStateClosed BatchChangeState = "CLOSED"
+	BatchChangeStateDraft  BatchChangeState = "DRAFT"
 )
 
 // A BatchChange of changesets over multiple Repos over time.
@@ -19,9 +22,9 @@ type BatchChange struct {
 
 	BatchSpecID int64
 
-	InitialApplierID int32
-	LastApplierID    int32
-	LastAppliedAt    time.Time
+	CreatorID     int32
+	LastApplierID int32
+	LastAppliedAt time.Time
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32
@@ -40,3 +43,11 @@ func (c *BatchChange) Clone() *BatchChange {
 
 // Closed returns true when the ClosedAt timestamp has been set.
 func (c *BatchChange) Closed() bool { return !c.ClosedAt.IsZero() }
+
+// IsDraft returns true when the BatchChange is a draft ("shallow") Batch
+// Change, i.e. it's associated with a BatchSpec but it hasn't been applied
+// yet.
+func (c *BatchChange) IsDraft() bool { return c.LastAppliedAt.IsZero() }
+
+// ToGraphQL returns the GraphQL representation of the state.
+func (s BatchChangeState) ToGraphQL() string { return strings.ToUpper(string(s)) }

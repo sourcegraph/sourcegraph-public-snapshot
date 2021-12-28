@@ -15,22 +15,21 @@ interface ButtonVariantsProps extends Pick<ButtonProps, 'size' | 'outline' | 'as
 export const ButtonVariants: React.FunctionComponent<ButtonVariantsProps> = ({
     variants,
     size,
-    as,
     outline,
     icon: Icon,
 }) => (
     <div className={styles.grid}>
         {variants.map(variant => (
             <React.Fragment key={variant}>
-                <Button as={as} variant={variant} size={size} outline={outline} onClick={console.log}>
+                <Button variant={variant} size={size} outline={outline} onClick={console.log}>
                     {Icon && <Icon className="icon-inline mr-1" />}
                     {startCase(variant)}
                 </Button>
-                <Button as={as} variant={variant} size={size} outline={outline} onClick={console.log} className="focus">
+                <Button variant={variant} size={size} outline={outline} onClick={console.log} className="focus">
                     {Icon && <Icon className="icon-inline mr-1" />}
                     Focus
                 </Button>
-                <Button as={as} variant={variant} size={size} outline={outline} onClick={console.log} disabled={true}>
+                <Button variant={variant} size={size} outline={outline} onClick={console.log} disabled={true}>
                     {Icon && <Icon className="icon-inline mr-1" />}
                     Disabled
                 </Button>

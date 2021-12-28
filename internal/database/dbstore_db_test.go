@@ -2,20 +2,18 @@ package database
 
 import (
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func TestPassword(t *testing.T) {
 	// By default we use fast mocks for our password in tests. This ensures
 	// our actual implementation is correct.
-	oldHash := dbtesting.MockHashPassword
-	oldValid := dbtesting.MockValidPassword
-	dbtesting.MockHashPassword = nil
-	dbtesting.MockValidPassword = nil
+	oldHash := MockHashPassword
+	oldValid := MockValidPassword
+	MockHashPassword = nil
+	MockValidPassword = nil
 	defer func() {
-		dbtesting.MockHashPassword = oldHash
-		dbtesting.MockValidPassword = oldValid
+		MockHashPassword = oldHash
+		MockValidPassword = oldValid
 	}()
 
 	h, err := hashPassword("correct-password")

@@ -30,37 +30,50 @@ type CodeMonitorStore interface {
 	ListMonitors(context.Context, ListMonitorsOpts) ([]*Monitor, error)
 	CountMonitors(ctx context.Context, userID int32) (int32, error)
 
-	CreateQueryTrigger(ctx context.Context, monitorID int64, query string) error
+	CreateQueryTrigger(ctx context.Context, monitorID int64, query string) (*QueryTrigger, error)
 	UpdateQueryTrigger(ctx context.Context, id int64, query string) error
 	GetQueryTriggerForMonitor(ctx context.Context, monitorID int64) (*QueryTrigger, error)
 	ResetQueryTriggerTimestamps(ctx context.Context, queryID int64) error
 	SetQueryTriggerNextRun(ctx context.Context, triggerQueryID int64, next time.Time, latestResults time.Time) error
-	GetQueryTriggerForJob(ctx context.Context, jobID int) (*QueryTrigger, error)
-	EnqueueQueryTriggerJobs(context.Context) error
+	GetQueryTriggerForJob(ctx context.Context, triggerJob int32) (*QueryTrigger, error)
+	EnqueueQueryTriggerJobs(context.Context) ([]*TriggerJob, error)
 	ListQueryTriggerJobs(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error)
 	CountQueryTriggerJobs(ctx context.Context, queryID int64) (int32, error)
 
 	DeleteObsoleteTriggerJobs(ctx context.Context) error
-	UpdateTriggerJobWithResults(ctx context.Context, queryString string, numResults int, recordID int) error
+	UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, numResults int) error
 	DeleteOldTriggerJobs(ctx context.Context, retentionInDays int) error
 
 	UpdateEmailAction(_ context.Context, id int64, _ *EmailActionArgs) (*EmailAction, error)
 	CreateEmailAction(ctx context.Context, monitorID int64, _ *EmailActionArgs) (*EmailAction, error)
 	DeleteEmailActions(ctx context.Context, actionIDs []int64, monitorID int64) error
-	CountEmailActions(ctx context.Context, monitorID int64) (int32, error)
 	GetEmailAction(ctx context.Context, emailID int64) (*EmailAction, error)
 	ListEmailActions(context.Context, ListActionsOpts) ([]*EmailAction, error)
 
-	CreateRecipient(ctx context.Context, emailID int64, userID, orgID *int32) error
+	UpdateWebhookAction(_ context.Context, id int64, enabled bool, url string) (*WebhookAction, error)
+	CreateWebhookAction(ctx context.Context, monitorID int64, enabled bool, url string) (*WebhookAction, error)
+	DeleteWebhookActions(ctx context.Context, monitorID int64, ids ...int64) error
+	CountWebhookActions(ctx context.Context, monitorID int64) (int, error)
+	GetWebhookAction(ctx context.Context, id int64) (*WebhookAction, error)
+	ListWebhookActions(context.Context, ListActionsOpts) ([]*WebhookAction, error)
+
+	UpdateSlackWebhookAction(_ context.Context, id int64, enabled bool, url string) (*SlackWebhookAction, error)
+	CreateSlackWebhookAction(ctx context.Context, monitorID int64, enabled bool, url string) (*SlackWebhookAction, error)
+	DeleteSlackWebhookActions(ctx context.Context, monitorID int64, ids ...int64) error
+	CountSlackWebhookActions(ctx context.Context, monitorID int64) (int, error)
+	GetSlackWebhookAction(ctx context.Context, id int64) (*SlackWebhookAction, error)
+	ListSlackWebhookActions(context.Context, ListActionsOpts) ([]*SlackWebhookAction, error)
+
+	CreateRecipient(ctx context.Context, emailID int64, userID, orgID *int32) (*Recipient, error)
 	DeleteRecipients(ctx context.Context, emailID int64) error
 	ListRecipients(context.Context, ListRecipientsOpts) ([]*Recipient, error)
 	CountRecipients(ctx context.Context, emailID int64) (int32, error)
 
 	ListActionJobs(context.Context, ListActionJobsOpts) ([]*ActionJob, error)
 	CountActionJobs(context.Context, ListActionJobsOpts) (int, error)
-	GetActionJobMetadata(ctx context.Context, recordID int) (*ActionJobMetadata, error)
-	GetActionJob(ctx context.Context, recordID int) (*ActionJob, error)
-	EnqueueActionJobsForQuery(ctx context.Context, queryID int64, triggerEventID int) error
+	GetActionJobMetadata(ctx context.Context, jobID int32) (*ActionJobMetadata, error)
+	GetActionJob(ctx context.Context, jobID int32) (*ActionJob, error)
+	EnqueueActionJobsForMonitor(ctx context.Context, monitorID int64, triggerJob int32) ([]*ActionJob, error)
 }
 
 // codeMonitorStore exposes methods to read and write codemonitors domain models

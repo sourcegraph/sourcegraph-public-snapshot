@@ -7,6 +7,7 @@ import { Redirect } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
+import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -14,7 +15,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
@@ -25,7 +25,9 @@ import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { SearchContextProps, SearchStreamingProps } from '../../search'
 import { StreamingSearchResultsListProps } from '../../search/results/StreamingSearchResultsList'
+import { useSearchStack, useExperimentalFeatures } from '../../stores'
 import { toTreeURL } from '../../util/url'
+import { fetchRepository, resolveRevision } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -55,7 +57,7 @@ interface Props
         HoverThresholdProps,
         BreadcrumbSetters,
         SearchStreamingProps,
-        Pick<SearchContextProps, 'searchContextsEnabled' | 'showSearchContext'>,
+        Pick<SearchContextProps, 'searchContextsEnabled'>,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
     location: H.Location
     history: H.History
@@ -64,7 +66,6 @@ interface Props
     globbing: boolean
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
-    showSearchNotebook: boolean
     repoUrl: string
 }
 
@@ -72,11 +73,33 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(props.location)
     const { repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode, repoUrl } = props
+    const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
+    const lineOrRange = useMemo(() => parseQueryAndHash(props.location.search, props.location.hash), [
+        props.location.search,
+        props.location.hash,
+    ])
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
         props.telemetryService.logViewEvent('Blob', { repoName, filePath })
     }, [repoName, commitID, filePath, renderMode, props.telemetryService])
+
+    useSearchStack(
+        useMemo(
+            () => ({
+                type: 'file',
+                path: filePath,
+                repo: repoName,
+                revision,
+                // Need to subtract 1 because IHighlightLineRange is 0-based but
+                // line information in the URL is 1-based.
+                lineRange: lineOrRange.line
+                    ? { startLine: lineOrRange.line - 1, endLine: (lineOrRange.endLine ?? lineOrRange.line + 1) - 1 }
+                    : null,
+            }),
+            [filePath, repoName, revision, lineOrRange.line, lineOrRange.endLine]
+        )
+    )
 
     useBreadcrumb(
         useMemo(() => {
@@ -175,17 +198,14 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
         blobInfoOrError &&
         !isErrorLike(blobInfoOrError) &&
         blobInfoOrError.filePath.endsWith(SEARCH_NOTEBOOK_FILE_EXTENSION) &&
-        props.showSearchNotebook
+        showSearchNotebook
 
     // If url explicitly asks for a certain rendering mode, renderMode is set to that mode, else it checks:
     // - If file contains richHTML and url does not include a line number: We render in richHTML.
     // - If file does not contain richHTML or the url includes a line number: We render in code view.
     if (!renderMode) {
         renderMode =
-            blobInfoOrError &&
-            !isErrorLike(blobInfoOrError) &&
-            blobInfoOrError.richHTML &&
-            !parseQueryAndHash(props.location.search, props.location.hash).line
+            blobInfoOrError && !isErrorLike(blobInfoOrError) && blobInfoOrError.richHTML && !lineOrRange.line
                 ? 'rendered'
                 : 'code'
     }
@@ -300,7 +320,12 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 </RepoHeaderContributionPortal>
             )}
             {isSearchNotebook && renderMode === 'rendered' && (
-                <RenderedSearchNotebookMarkdown {...props} markdown={blobInfoOrError.content} />
+                <RenderedSearchNotebookMarkdown
+                    {...props}
+                    markdown={blobInfoOrError.content}
+                    resolveRevision={resolveRevision}
+                    fetchRepository={fetchRepository}
+                />
             )}
             {!isSearchNotebook && blobInfoOrError.richHTML && renderMode === 'rendered' && (
                 <RenderedFile dangerousInnerHTML={blobInfoOrError.richHTML} location={props.location} />

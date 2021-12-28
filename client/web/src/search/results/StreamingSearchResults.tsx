@@ -3,6 +3,7 @@ import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
+import { asError } from '@sourcegraph/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -15,22 +16,15 @@ import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError } from '@sourcegraph/shared/src/util/errors'
 
-import {
-    CaseSensitivityProps,
-    PatternTypeProps,
-    SearchStreamingProps,
-    ParsedSearchQueryProps,
-    SearchContextProps,
-} from '..'
+import { PatternTypeProps, SearchStreamingProps, ParsedSearchQueryProps, SearchContextProps } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { CodeMonitoringProps } from '../../code-monitoring'
 import { PageTitle } from '../../components/PageTitle'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
+import { useExperimentalFeatures, useNavbarQueryState, useSearchStack } from '../../stores'
 import { SearchBetaIcon } from '../CtaIcons'
 import { getSubmittedSearchesCount, submitSearch } from '../helpers'
 
@@ -46,16 +40,14 @@ import { StreamingSearchResultsList } from './StreamingSearchResultsList'
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
         Pick<ActivationProps, 'activation'>,
-        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        ParsedSearchQueryProps,
         Pick<PatternTypeProps, 'patternType'>,
-        Pick<CaseSensitivityProps, 'caseSensitive'>,
-        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled' | 'showSearchContext'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         SettingsCascadeProps,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         ThemeProps,
-        CodeMonitoringProps,
         CodeInsightsProps,
         FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
@@ -78,7 +70,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const {
         parsedSearchQuery: query,
         patternType,
-        caseSensitive,
         streamSearch,
         location,
         authenticatedUser,
@@ -87,6 +78,9 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         isSourcegraphDotCom,
         extensionsController: { extHostAPI: extensionHostAPI },
     } = props
+
+    const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
+    const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
 
     // Log view event on first load
     useEffect(
@@ -169,6 +163,22 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         }
     }, [results, telemetryService])
 
+    useSearchStack(
+        useMemo(
+            () =>
+                results?.state === 'complete'
+                    ? {
+                          type: 'search',
+                          query,
+                          caseSensitive,
+                          patternType,
+                          searchContext: props.selectedSearchContextSpec,
+                      }
+                    : null,
+            [results, query, patternType, caseSensitive, props.selectedSearchContextSpec]
+        )
+    )
+
     const [allExpanded, setAllExpanded] = useState(false)
     const onExpandAllResultsToggle = useCallback(() => {
         setAllExpanded(oldValue => !oldValue)
@@ -192,11 +202,12 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             telemetryService.log('SearchSkippedResultsAgainClicked')
             submitSearch({
                 ...props,
+                caseSensitive,
                 query: applyAdditionalFilters(query, additionalFilters),
                 source: 'excludedResults',
             })
         },
-        [query, telemetryService, props]
+        [query, telemetryService, caseSensitive, props]
     )
     const [showSidebar, setShowSidebar] = useState(false)
 
@@ -223,7 +234,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
             <SearchSidebar
                 activation={props.activation}
-                caseSensitive={props.caseSensitive}
+                caseSensitive={caseSensitive}
                 patternType={props.patternType}
                 settingsCascade={props.settingsCascade}
                 telemetryService={props.telemetryService}
@@ -237,8 +248,10 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
             <SearchResultsInfoBar
                 {...props}
+                caseSensitive={caseSensitive}
                 query={query}
                 enableCodeInsights={codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)}
+                enableCodeMonitoring={enableCodeMonitoring}
                 resultsFound={resultsFound}
                 className={classNames('flex-grow-1', styles.streamingSearchResultsInfobar)}
                 allExpanded={allExpanded}
@@ -259,7 +272,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 telemetryService={props.telemetryService}
                 parsedSearchQuery={props.parsedSearchQuery}
                 patternType={props.patternType}
-                caseSensitive={props.caseSensitive}
+                caseSensitive={caseSensitive}
                 selectedSearchContextSpec={props.selectedSearchContextSpec}
             />
 

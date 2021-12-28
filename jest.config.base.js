@@ -55,13 +55,12 @@ const config = {
     // Needed for reusing API functions that use fetch
     // Neither NodeJS nor JSDOM have fetch + AbortController yet
     require.resolve('abort-controller/polyfill'),
+    path.join(__dirname, 'client/shared/dev/mockPopper.ts'),
     path.join(__dirname, 'client/shared/dev/fetch'),
     path.join(__dirname, 'client/shared/dev/setLinkComponentForTest.ts'),
     path.join(__dirname, 'client/shared/dev/mockResizeObserver.ts'),
     path.join(__dirname, 'client/shared/dev/mockUniqueId.ts'),
     path.join(__dirname, 'client/shared/dev/mockSentryBrowser.ts'),
-    // Enzyme setup file
-    path.join(__dirname, 'client/shared/dev/enzymeSetup.js'),
   ],
   setupFilesAfterEnv: [
     require.resolve('core-js/stable'),
@@ -69,7 +68,6 @@ const config = {
     require.resolve('@testing-library/jest-dom'),
   ],
   globalSetup: path.join(__dirname, 'client/shared/dev/jestGlobalSetup.js'),
-  snapshotSerializers: [path.join(__dirname, 'client/shared/dev/enzymeSerializer.js')],
 }
 
 module.exports = config

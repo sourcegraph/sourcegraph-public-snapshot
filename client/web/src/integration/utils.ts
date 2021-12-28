@@ -42,6 +42,33 @@ const ColorSchemeToMonacoEditorClassName: Record<ColorScheme, string> = {
     dark: 'vs-dark',
     light: 'vs',
 }
+/**
+ * Percy couldn't capture <img /> since they have `src` values with testing domain name.
+ * We need to call this function before asking Percy to take snapshots,
+ * <img /> with base64 data would be visible on Percy snapshot
+ */
+export const convertImgSourceHttpToBase64 = async (page: Page): Promise<void> => {
+    await page.evaluate(() => {
+        // Skip images with data-skip-percy
+        // See https://github.com/sourcegraph/sourcegraph/issues/28949
+        const imgs = document.querySelectorAll<HTMLImageElement>('img:not([data-skip-percy])')
+
+        for (const img of imgs) {
+            if (img.src.startsWith('data:image')) {
+                continue
+            }
+
+            const canvas = document.createElement('canvas')
+            canvas.width = img.width
+            canvas.height = img.height
+
+            const context = canvas.getContext('2d')
+            context?.drawImage(img, 0, 0)
+
+            img.src = canvas.toDataURL('image/png')
+        }
+    })
+}
 
 /**
  * Update all theme styling on the Sourcegraph webapp to match a color scheme.
@@ -68,7 +95,7 @@ export const setColorScheme = async (
     try {
         // Check Monaco editor is styled correctly
         await page.waitForFunction(
-            expectedClassName =>
+            (expectedClassName: string) =>
                 document.querySelector('#monaco-query-input .monaco-editor') &&
                 document.querySelector('#monaco-query-input .monaco-editor')?.classList.contains(expectedClassName),
             { timeout: 1000 },
@@ -109,10 +136,12 @@ export const percySnapshotWithVariants = async (
 
     // Theme-light
     await setColorScheme(page, 'light', config?.waitForCodeHighlighting)
+    await convertImgSourceHttpToBase64(page)
     await percySnapshot(page, `${name} - light theme`)
 
     // Theme-dark
     await setColorScheme(page, 'dark', config?.waitForCodeHighlighting)
+    await convertImgSourceHttpToBase64(page)
     await percySnapshot(page, `${name} - dark theme`)
 
     // Reset to light theme

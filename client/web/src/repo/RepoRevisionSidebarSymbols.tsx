@@ -5,7 +5,6 @@ import * as React from 'react'
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -20,7 +19,7 @@ import {
     SummaryContainer,
     ShowMoreButton,
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
-import { useDebounce } from '@sourcegraph/wildcard'
+import { useDebounce, Tooltip } from '@sourcegraph/wildcard'
 
 import { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
@@ -44,9 +43,10 @@ const symbolIsActiveFalse = (): boolean => false
 interface SymbolNodeProps {
     node: SymbolNodeFields
     location: H.Location
+    onHandleClick: () => void
 }
 
-const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location }) => {
+const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location, onHandleClick }) => {
     const isActiveFunc = symbolIsActive(node.url, location) ? symbolIsActiveTrue : symbolIsActiveFalse
     return (
         <li className={styles.repoRevisionSidebarSymbolsNode} data-tooltip={node.location.resource.path}>
@@ -55,6 +55,7 @@ const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location }
                 isActive={isActiveFunc}
                 className={classNames('test-symbol-link', styles.link)}
                 activeClassName={styles.linkActive}
+                onClick={onHandleClick}
             >
                 <SymbolIcon kind={node.kind} className="icon-inline mr-1 test-symbol-icon" />
                 <span className={classNames('test-symbol-name', styles.name)}>{node.name}</span>
@@ -123,12 +124,14 @@ export interface RepoRevisionSidebarSymbolsProps extends Partial<RevisionSpec> {
     repoID: Scalars['ID']
     /** The path of the file or directory currently shown in the content area */
     activePath: string
+    onHandleSymbolClick: () => void
 }
 
 export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSidebarSymbolsProps> = ({
     repoID,
     revision = '',
     activePath,
+    onHandleSymbolClick,
 }) => {
     const location = useLocation()
     const [searchValue, setSearchValue] = useState('')
@@ -197,7 +200,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSid
                 <ConnectionList compact={true}>
                     <Tooltip />
                     {connection.nodes.map((node, index) => (
-                        <SymbolNode key={index} node={node} location={location} />
+                        <SymbolNode key={index} node={node} location={location} onHandleClick={onHandleSymbolClick} />
                     ))}
                 </ConnectionList>
             )}

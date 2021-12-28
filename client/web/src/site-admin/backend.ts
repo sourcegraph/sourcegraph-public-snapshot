@@ -2,6 +2,7 @@ import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import { Observable } from 'rxjs'
 import { map, tap, mapTo } from 'rxjs/operators'
 
+import { createAggregateError } from '@sourcegraph/common'
 import {
     createInvalidGraphQLMutationResponseError,
     dataOrThrowErrors,
@@ -10,7 +11,6 @@ import {
 } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { resetAllMemoizationCaches } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 
@@ -56,6 +56,8 @@ import {
     OrgRepositoriesResult,
     OrgRepositoriesTotalCountVariables,
     UserRepositoriesTotalCountVariables,
+    SetUserTagResult,
+    SetUserTagVariables,
 } from '../graphql-operations'
 
 type UserRepositories = (NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']
@@ -87,6 +89,7 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
                                 name
                             }
                         }
+                        tags
                     }
                     totalCount
                 }
@@ -857,6 +860,26 @@ export function createUser(username: string, email: string | undefined): Observa
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.createUser)
+    )
+}
+
+export function setUserTag(node: string, tag: string, present: boolean = true): Observable<void> {
+    return requestGraphQL<SetUserTagResult, SetUserTagVariables>(
+        gql`
+            mutation SetUserTag($node: ID!, $tag: String!, $present: Boolean!) {
+                setTag(node: $node, tag: $tag, present: $present) {
+                    alwaysNil
+                }
+            }
+        `,
+        { node, tag, present }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.setTag) {
+                throw createInvalidGraphQLMutationResponseError('SetUserTag')
+            }
+        })
     )
 }
 

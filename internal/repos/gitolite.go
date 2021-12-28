@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"net/http"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -40,12 +39,12 @@ func NewGitoliteSource(svc *types.ExternalService, cf *httpcli.Factory) (*Gitoli
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
 
-	hc, err := cf.Doer(func(c *http.Client) error {
-		if tr, ok := c.Transport.(*http.Transport); ok {
-			tr.MaxIdleConnsPerHost = 500
-		}
-		return nil
-	})
+	gitserverDoer, err := cf.Doer(
+		httpcli.NewMaxIdleConnsPerHostOpt(500),
+		// The provided httpcli.Factory is one used for external services - however,
+		// GitoliteSource asks gitserver to communicate to gitolite instead, so we
+		// have to ensure that the actor transport used for internal clients is provided.
+		httpcli.ActorTransportOpt)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +62,7 @@ func NewGitoliteSource(svc *types.ExternalService, cf *httpcli.Factory) (*Gitoli
 	return &GitoliteSource{
 		svc:     svc,
 		conn:    &c,
-		cli:     gitserver.NewClient(hc),
+		cli:     gitserver.NewClient(gitserverDoer),
 		exclude: exclude,
 	}, nil
 }

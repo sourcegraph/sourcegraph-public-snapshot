@@ -81,6 +81,8 @@ the following:
 
 ### Updating blue-green deployments
 
+**_Warning:_** The following instructions make use of the `Sourcegraph Server Gen` script. This script is in need of update to account for the addition of new databases since its implementation. Currently the script will not create a dump for the `codeintel-db` database. 
+
 Some users may wish to opt for running two separate Sourcegraph clusters running in a
 [blue-green](https://martinfowler.com/bliki/BlueGreenDeployment.html) deployment. Such a setup makes
 the update step more complex, but it can still be done with the `sourcegraph-server-gen snapshot`

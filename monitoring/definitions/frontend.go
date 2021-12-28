@@ -149,6 +149,7 @@ func Frontend() *monitoring.Container {
 								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 								- **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the 'indexed-search.Deployment.yaml' if regularly hitting max CPU utilization.
 								- **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing 'cpus:' of the zoekt-webserver container in 'docker-compose.yml' if regularly hitting max CPU utilization.
+								- This alert may indicate that your instance is struggling to process symbols queries on a monorepo, [learn more here](../how-to/monorepo-issues.md).
 							`,
 						},
 						{
@@ -164,6 +165,7 @@ func Frontend() *monitoring.Container {
 								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
 								- **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the 'indexed-search.Deployment.yaml' if regularly hitting max CPU utilization.
 								- **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing 'cpus:' of the zoekt-webserver container in 'docker-compose.yml' if regularly hitting max CPU utilization.
+								- This alert may indicate that your instance is struggling to process symbols queries on a monorepo, [learn more here](../how-to/monorepo-issues.md).
 							`,
 						},
 					},
@@ -430,9 +432,102 @@ func Frontend() *monitoring.Container {
 					},
 				},
 			},
-
 			{
-				Title:  "Cloud KMS",
+				Title:  "Authentication API requests",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:           "sign_in_rate",
+							Description:    "rate of API requests to sign-in",
+							Query:          `sum(irate(src_http_request_duration_seconds_count{route="sign-in",method="post"}[5m]))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `Rate (QPS) of requests to sign-in`,
+						},
+						{
+							Name:           "sign_in_latency_p99",
+							Description:    "99 percentile of sign-in latency",
+							Query:          `histogram_quantile(0.99, sum(rate(src_http_request_duration_seconds_bucket{route="sign-in",method="post"}[5m])) by (le))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `99% percentile of sign-in latency`,
+						},
+						{
+							Name:           "sign_in_error_rate",
+							Description:    "percentage of sign-in requests by http code",
+							Query:          `sum by (code)(irate(src_http_request_duration_seconds_count{route="sign-in",method="post"}[5m]))/ ignoring (code) group_left sum(irate(src_http_request_duration_seconds_count{route="sign-in",method="post"}[5m]))*100`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `Percentage of sign-in requests grouped by http code`,
+						},
+					},
+					{
+						{
+							Name:        "sign_up_rate",
+							Description: "rate of API requests to sign-up",
+							Query:       `sum(irate(src_http_request_duration_seconds_count{route="sign-up",method="post"}[5m]))`,
+
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `Rate (QPS) of requests to sign-up`,
+						},
+						{
+							Name:        "sign_up_latency_p99",
+							Description: "99 percentile of sign-up latency",
+
+							Query:          `histogram_quantile(0.99, sum(rate(src_http_request_duration_seconds_bucket{route="sign-up",method="post"}[5m])) by (le))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `99% percentile of sign-up latency`,
+						},
+						{
+							Name:           "sign_up_code_percentage",
+							Description:    "percentage of sign-up requests by http code",
+							Query:          `sum by (code)(irate(src_http_request_duration_seconds_count{route="sign-up",method="post"}[5m]))/ ignoring (code) group_left sum(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))*100`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `Percentage of sign-up requests grouped by http code`,
+						},
+					},
+					{
+						{
+							Name:           "sign_out_rate",
+							Description:    "rate of API requests to sign-out",
+							Query:          `sum(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `Rate (QPS) of requests to sign-out`,
+						},
+						{
+							Name:           "sign_out_latency_p99",
+							Description:    "99 percentile of sign-out latency",
+							Query:          `histogram_quantile(0.99, sum(rate(src_http_request_duration_seconds_bucket{route="sign-out"}[5m])) by (le))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `99% percentile of sign-out latency`,
+						},
+						{
+							Name:           "sign_out_error_rate",
+							Description:    "percentage of sign-out requests that return non-303 http code",
+							Query:          ` sum by (code)(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))/ ignoring (code) group_left sum(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))*100`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `Percentage of sign-out requests grouped by http code`,
+						},
+					},
+				}},
+			{
+				Title:  "Cloud KMS and cache",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
@@ -446,6 +541,28 @@ func Frontend() *monitoring.Container {
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
 								- Revert recent commits that cause extensive listing from "external_services" and/or "user_external_accounts" tables.
+							`,
+						},
+						{
+							Name:        "encryption_cache_hit_ratio",
+							Description: "average encryption cache hit ratio per workload",
+							Query:       `min by (kubernetes_name) (src_encryption_cache_hit_total/(src_encryption_cache_hit_total+src_encryption_cache_miss_total))`,
+							NoAlert:     true,
+							Panel:       monitoring.Panel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `
+								- Encryption cache hit ratio (hits/(hits+misses)) - minimum across all instances of a workload.
+							`,
+						},
+						{
+							Name:        "encryption_cache_evictions",
+							Description: "rate of encryption cache evictions - sum across all instances of a given workload",
+							Query:       `sum by (kubernetes_name) (irate(src_encryption_cache_eviction_total[5m]))`,
+							NoAlert:     true,
+							Panel:       monitoring.Panel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerCoreApplication,
+							Interpretation: `
+								- Rate of encryption cache evictions (caused by cache exceeding its maximum size) - sum across all instances of a workload
 							`,
 						},
 					},

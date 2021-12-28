@@ -7,11 +7,10 @@ import { Button } from '@sourcegraph/wildcard/src'
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../../components/form/hooks/useForm'
+import { MonacoField } from '../../../../../../components/form/monaco-field/MonacoField'
 import { createRequiredValidator } from '../../../../../../components/form/validators'
 import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
-
-import { DataSeriesQueryField } from './DataSeriesQueryField'
 
 const requiredNameField = createRequiredValidator('Name is a required field for data series.')
 const validQuery = createRequiredValidator('Query is a required field for data series.')
@@ -138,13 +137,14 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
             <FormInput
                 title="Search query"
                 required={true}
-                as={DataSeriesQueryField}
+                as={MonacoField}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                 description={
                     <span>
                         {!isSearchQueryDisabled ? (
                             <>
-                                Do not include the <code>repo:</code> filter; if needed, it will be added automatically.
+                                Do not include the <code>context:</code> or <code>repo:</code> filter; if needed,{' '}
+                                <code>repo:</code> will be added automatically.
                                 <br />
                                 Tip: include <code>archived:no</code> and <code>fork:no</code> if you don't want results
                                 from archived or forked repos.

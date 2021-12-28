@@ -108,18 +108,6 @@ func (s *codeMonitorStore) DeleteEmailActions(ctx context.Context, actionIDs []i
 	return s.Exec(ctx, q)
 }
 
-const totalCountActionEmailsFmtStr = `
-SELECT COUNT(*)
-FROM cm_emails
-WHERE monitor = %s;
-`
-
-func (s *codeMonitorStore) CountEmailActions(ctx context.Context, monitorID int64) (int32, error) {
-	var count int32
-	err := s.QueryRow(ctx, sqlf.Sprintf(totalCountActionEmailsFmtStr, monitorID)).Scan(&count)
-	return count, err
-}
-
 const actionEmailByIDFmtStr = `
 SELECT %s -- EmailsColumns
 FROM cm_emails
@@ -141,7 +129,7 @@ type ListActionsOpts struct {
 	// MonitorID, if set, will constrain the listed actions to only
 	// those that are defined as part of the given monitor.
 	// References cm_monitors(id)
-	MonitorID *int
+	MonitorID *int64
 
 	// First, if set, limits the number of actions returned
 	// to the first n.

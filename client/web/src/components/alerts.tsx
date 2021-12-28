@@ -2,8 +2,8 @@ import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 import React, { HTMLAttributes } from 'react'
 
+import { asError } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { asError } from '@sourcegraph/shared/src/util/errors'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 export const renderError = (error: unknown): string =>

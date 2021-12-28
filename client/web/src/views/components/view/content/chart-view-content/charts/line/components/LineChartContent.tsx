@@ -24,7 +24,7 @@ import { ActiveDatum, GlyphContent } from './GlyphContent'
 import styles from './LineChartContent.module.scss'
 import { NonActiveBackground } from './NonActiveBackground'
 import { dateTickFormatter, numberFormatter, Tick, getTickXProps, getTickYProps } from './TickComponent'
-import { TooltipContent } from './TooltipContent'
+import { TooltipContent } from './tooltip-content/TooltipContent'
 
 // Chart configuration
 const WIDTH_PER_TICK = 70
@@ -117,9 +117,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
 
     // callbacks
     const renderTooltip = useCallback(
-        (renderProps: RenderTooltipParams<Point>) => (
-            <TooltipContent {...renderProps} series={seriesWithData} className={styles.tooltipContent} />
-        ),
+        (renderProps: RenderTooltipParams<Point>) => <TooltipContent {...renderProps} series={seriesWithData} />,
         [seriesWithData]
     )
 
@@ -364,6 +362,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                             snapTooltipToDatumY={false}
                             showDatumGlyph={false}
                             showSeriesGlyphs={false}
+                            verticalCrosshairStyle={{ strokeWidth: 2, stroke: 'var(--secondary)' }}
                             renderTooltip={renderTooltip}
                         />
                     </XYChart>

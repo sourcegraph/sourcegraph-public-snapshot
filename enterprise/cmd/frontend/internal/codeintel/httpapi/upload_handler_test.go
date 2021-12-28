@@ -24,8 +24,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -72,11 +73,15 @@ func TestHandleEnqueueSinglePayload(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	h := &UploadHandler{
-		dbStore:     mockDBStore,
-		uploadStore: mockUploadStore,
-	}
-	h.handleEnqueue(w, r)
+	NewUploadHandler(
+		database.NewDB(nil),
+		mockDBStore,
+		mockUploadStore,
+		true,
+		nil,
+		NewOperations(&observation.TestContext),
+		nil,
+	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusAccepted {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusAccepted, w.Code)
@@ -160,11 +165,15 @@ func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	h := &UploadHandler{
-		dbStore:     mockDBStore,
-		uploadStore: mockUploadStore,
-	}
-	h.handleEnqueue(w, r)
+	NewUploadHandler(
+		database.NewDB(nil),
+		mockDBStore,
+		mockUploadStore,
+		true,
+		nil,
+		NewOperations(&observation.TestContext),
+		nil,
+	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusAccepted {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusAccepted, w.Code)
@@ -218,11 +227,15 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	h := &UploadHandler{
-		dbStore:     mockDBStore,
-		uploadStore: mockUploadStore,
-	}
-	h.handleEnqueue(w, r)
+	NewUploadHandler(
+		database.NewDB(nil),
+		mockDBStore,
+		mockUploadStore,
+		true,
+		nil,
+		NewOperations(&observation.TestContext),
+		nil,
+	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusAccepted {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusAccepted, w.Code)
@@ -251,6 +264,8 @@ func TestHandleEnqueueMultipartSetup(t *testing.T) {
 }
 
 func TestHandleEnqueueMultipartUpload(t *testing.T) {
+	setupRepoMocks(t)
+
 	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -284,11 +299,15 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	h := &UploadHandler{
-		dbStore:     mockDBStore,
-		uploadStore: mockUploadStore,
-	}
-	h.handleEnqueue(w, r)
+	NewUploadHandler(
+		database.NewDB(nil),
+		mockDBStore,
+		mockUploadStore,
+		true,
+		nil,
+		NewOperations(&observation.TestContext),
+		nil,
+	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusNoContent {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusNoContent, w.Code)
@@ -326,6 +345,8 @@ func TestHandleEnqueueMultipartUpload(t *testing.T) {
 }
 
 func TestHandleEnqueueMultipartFinalize(t *testing.T) {
+	setupRepoMocks(t)
+
 	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -353,11 +374,15 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 		t.Fatalf("unexpected error constructing request: %s", err)
 	}
 
-	h := &UploadHandler{
-		dbStore:     mockDBStore,
-		uploadStore: mockUploadStore,
-	}
-	h.handleEnqueue(w, r)
+	NewUploadHandler(
+		database.NewDB(nil),
+		mockDBStore,
+		mockUploadStore,
+		true,
+		nil,
+		NewOperations(&observation.TestContext),
+		nil,
+	).ServeHTTP(w, r)
 
 	if w.Code != http.StatusNoContent {
 		t.Errorf("unexpected status code. want=%d have=%d", http.StatusNoContent, w.Code)
@@ -392,6 +417,8 @@ func TestHandleEnqueueMultipartFinalize(t *testing.T) {
 }
 
 func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
+	setupRepoMocks(t)
+
 	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -420,6 +447,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 	h := &UploadHandler{
 		dbStore:     mockDBStore,
 		uploadStore: mockUploadStore,
+		operations:  NewOperations(&observation.TestContext),
 	}
 	h.handleEnqueue(w, r)
 
@@ -431,7 +459,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 func TestHandleEnqueueAuth(t *testing.T) {
 	setupRepoMocks(t)
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	mockDBStore := NewMockDBStore()
 	mockUploadStore := uploadstoremocks.NewMockStore()
 
@@ -501,20 +529,24 @@ func TestHandleEnqueueAuth(t *testing.T) {
 			r = r.WithContext(actor.WithActor(r.Context(), actor.FromUser(userID)))
 		}
 
-		h := &UploadHandler{
-			db:          db,
-			dbStore:     mockDBStore,
-			uploadStore: mockUploadStore,
-			validators: map[string]func(context.Context, *http.Request, string) (int, error){
-				"github": func(context.Context, *http.Request, string) (int, error) {
-					if user.name != "owning-user" {
-						return http.StatusUnauthorized, errors.New("sample text import cycle")
-					}
-					return 200, nil
-				},
+		authValidators := AuthValidatorMap{
+			"github": func(context.Context, url.Values, string) (int, error) {
+				if user.name != "owning-user" {
+					return http.StatusUnauthorized, errors.New("sample text import cycle")
+				}
+				return 200, nil
 			},
 		}
-		h.handleEnqueue(w, r)
+
+		NewUploadHandler(
+			db,
+			mockDBStore,
+			mockUploadStore,
+			false,
+			authValidators,
+			NewOperations(&observation.TestContext),
+			nil,
+		).ServeHTTP(w, r)
 
 		if w.Code != user.statusCode {
 			t.Errorf("unexpected status code for user %s. want=%d have=%d", user.name, user.statusCode, w.Code)
@@ -543,7 +575,7 @@ func setupRepoMocks(t testing.TB) {
 	}
 }
 
-func insertTestUser(t *testing.T, db dbutil.DB, name string, isAdmin bool) (userID int32) {
+func insertTestUser(t *testing.T, db database.DB, name string, isAdmin bool) (userID int32) {
 	t.Helper()
 
 	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)

@@ -4,18 +4,7 @@ import * as H from 'history'
 import iterate from 'iterare'
 import { isEqual } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-    BehaviorSubject,
-    combineLatest,
-    merge,
-    EMPTY,
-    from,
-    fromEvent,
-    of,
-    ReplaySubject,
-    Subject,
-    Subscription,
-} from 'rxjs'
+import { BehaviorSubject, combineLatest, merge, EMPTY, from, fromEvent, of, ReplaySubject, Subscription } from 'rxjs'
 import {
     catchError,
     concatMap,
@@ -31,6 +20,7 @@ import {
 } from 'rxjs/operators'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -49,7 +39,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 import {
     AbsoluteRepoFile,
@@ -245,15 +234,11 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         }
     }, [blobInfo, nextBlobInfoChange, viewerUpdates])
 
-    const closeButtonClicks = useMemo(() => new Subject<MouseEvent>(), [])
-    const nextCloseButtonClick = useCallback((click: MouseEvent) => closeButtonClicks.next(click), [closeButtonClicks])
-
     const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | undefined>()
 
     const hoverifier = useMemo(
         () =>
             createHoverifier<HoverContext, HoverMerged, ActionItemAction>({
-                closeButtonClicks,
                 hoverOverlayElements,
                 hoverOverlayRerenders: rerenders.pipe(
                     withLatestFrom(hoverOverlayElements, blobElements),
@@ -275,7 +260,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                         { extensionsController }
                     ),
                 getActions: context => getHoverActions({ extensionsController, platformContext }, context),
-                pinningEnabled: true,
             }),
         [
             // None of these dependencies are likely to change
@@ -284,7 +268,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             hoverOverlayElements,
             blobElements,
             rerenders,
-            closeButtonClicks,
         ]
     )
 
@@ -326,12 +309,16 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                             query = toPositionOrRangeQueryParameter({ position })
                         }
 
-                        props.history.push({
-                            ...location,
-                            search: formatSearchParameters(
-                                addLineRangeQueryParameter(new URLSearchParams(location.search), query)
-                            ),
-                        })
+                        if (position && !('character' in position)) {
+                            // Only change the URL when clicking on blank space on the line (not on
+                            // characters). Otherwise, this would interfere with go to definition.
+                            props.history.push({
+                                ...location,
+                                search: formatSearchParameters(
+                                    addLineRangeQueryParameter(new URLSearchParams(location.search), query)
+                                ),
+                            })
+                        }
                     }),
                     mapTo(undefined)
                 ),
@@ -339,12 +326,15 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         )
     )
 
+    // Trigger line highlighting after React has finished putting new lines into the DOM via
+    // `dangerouslySetInnerHTML`.
+    useEffect(() => codeViewElements.next(codeViewReference.current))
+
     // Line highlighting when position in hash changes
     useObservable(
         useMemo(
             () =>
-                locationPositions.pipe(
-                    withLatestFrom(codeViewElements.pipe(filter(isDefined))),
+                combineLatest([locationPositions, codeViewElements.pipe(filter(isDefined))]).pipe(
                     tap(([position, codeView]) => {
                         const codeCells = getCodeElementsInRange({
                             codeView,
@@ -611,8 +601,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                     <WebHoverOverlay
                         {...props}
                         {...hoverState.hoverOverlayProps}
+                        nav={url => props.history.push(url)}
+                        hoveredTokenElement={hoverState.hoveredTokenElement}
                         hoverRef={nextOverlayElement}
-                        onCloseButtonClick={nextCloseButtonClick}
                         extensionsController={extensionsController}
                     />
                 )}

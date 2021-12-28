@@ -7,26 +7,27 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
+
+	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 // TestJobQueue tests that EnqueueJob and dequeueJob work mutually to transfer jobs to/from the
 // database.
 func TestJobQueue(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	//t.Parallel() // TODO: dbtesting.GetDB is not parallel-safe, yuck.
+	t.Parallel()
+	mainAppDB := dbtest.NewDB(t)
 
 	ctx := actor.WithInternalActor(context.Background())
 
-	mainAppDB := dbtesting.GetDB(t)
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
 
 	// Check we get no dequeued job first.
@@ -73,12 +74,10 @@ func TestJobQueue(t *testing.T) {
 }
 
 func TestJobQueueDependencies(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+	t.Parallel()
+	mainAppDB := dbtest.NewDB(t)
 
 	ctx := actor.WithInternalActor(context.Background())
-	mainAppDB := dbtesting.GetDB(t)
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
 
 	t.Run("enqueue without dependencies, get none back", func(t *testing.T) {
@@ -119,6 +118,28 @@ func TestJobQueueDependencies(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+}
+
+func TestQueryExecution_ToQueueJob(t *testing.T) {
+	bTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	t.Run("test to job with dependents", func(t *testing.T) {
+		var exec compression.QueryExecution
+		exec.RecordingTime = bTime
+		exec.Revision = "asdf1234"
+		exec.SharedRecordings = append(exec.SharedRecordings, bTime.Add(time.Hour*24))
+
+		got := ToQueueJob(&exec, "series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
+		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+	t.Run("test to job without dependents", func(t *testing.T) {
+		var exec compression.QueryExecution
+		exec.RecordingTime = bTime
+		exec.Revision = "asdf1234"
+
+		got := ToQueueJob(&exec, "series1", "sourcegraphquery1", priority.Cost(500), priority.Low)
 		autogold.Equal(t, got, autogold.ExportedOnly())
 	})
 }

@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/golang/gddo/httputil"
@@ -25,8 +26,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -36,6 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -53,7 +56,7 @@ var stateHTMLTemplate string
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(db *sql.DB, store *repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
+type EnterpriseInit func(db database.DB, store *repos.Store, keyring keyring.Ring, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
 
 func Main(enterpriseInit EnterpriseInit) {
 	// NOTE: Internal actor is required to have full visibility of the repo table
@@ -108,23 +111,23 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	clock := func() time.Time { return time.Now().UTC() }
 
-	dsn := conf.Get().ServiceConnections().PostgresDSN
-	conf.Watch(func() {
-		newDSN := conf.Get().ServiceConnections().PostgresDSN
-		if dsn != newDSN {
-			// The DSN was changed (e.g. by someone modifying the env vars on
-			// the frontend). We need to respect the new DSN. Easiest way to do
-			// that is to restart our service (kubernetes/docker/goreman will
-			// handle starting us back up).
-			log.Fatalf("Detected repository DSN change, restarting to take effect: %q", newDSN)
-		}
-	})
-
 	if err := keyring.Init(ctx); err != nil {
 		log.Fatalf("error initialising encryption keyring: %v", err)
 	}
 
-	sqlDB, err := dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "repo-updater"})
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.PostgresDSN
+	})
+	var (
+		sqlDB *sql.DB
+		err   error
+	)
+	if os.Getenv("NEW_MIGRATIONS") == "" {
+		// CURRENTLY DEPRECATING
+		sqlDB, err = connections.NewFrontendDB(dsn, "repo-updater", false, &observation.TestContext)
+	} else {
+		sqlDB, err = connections.EnsureNewFrontendDB(dsn, "repo-updater", &observation.TestContext)
+	}
 	if err != nil {
 		log.Fatalf("failed to initialize database store: %v", err)
 	}
@@ -174,7 +177,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	// All dependencies ready
 	var debugDumpers []debugserver.Dumper
 	if enterpriseInit != nil {
-		debugDumpers = enterpriseInit(sqlDB, store, keyring.Default(), cf, server)
+		debugDumpers = enterpriseInit(db, store, keyring.Default(), cf, server)
 	}
 
 	syncer := &repos.Syncer{
@@ -339,7 +342,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.HTTPMiddleware(trace.HTTPTraceMiddleware(authzBypass(handler), conf.DefaultClient())),
+		Handler:      ot.HTTPMiddleware(trace.HTTPMiddleware(authzBypass(handler), conf.DefaultClient())),
 	})
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }

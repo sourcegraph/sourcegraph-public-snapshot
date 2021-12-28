@@ -30,19 +30,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
@@ -96,39 +96,29 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
 func InitDB() (*sql.DB, error) {
-	opts := dbconn.Opts{DSN: "", DBName: "frontend", AppName: "frontend"}
-	sqlDB, err := dbconn.New(opts)
+	var (
+		sqlDB *sql.DB
+		err   error
+	)
+	if os.Getenv("NEW_MIGRATIONS") == "" {
+		// CURRENTLY DEPRECATING
+		sqlDB, err = connections.NewFrontendDB("", "frontend", true, &observation.TestContext)
+	} else {
+		sqlDB, err = connections.EnsureNewFrontendDB("", "frontend", &observation.TestContext)
+	}
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
-	ctx := context.Background()
-	migrate := true
-
-	for {
-		// We need this loop so that we handle the missing versions table,
-		// which would be added by running the migrations. Once we detect that
-		// it's missing, we run the migrations and try to update the version again.
-
-		err := backend.UpdateServiceVersion(ctx, database.NewDB(sqlDB), "frontend", version.Version())
-		if err != nil && !dbutil.IsPostgresError(err, "42P01") {
-			return nil, err
-		}
-
-		if !migrate {
-			return sqlDB, nil
-		}
-
-		if _, err := dbconn.MigrateDB(sqlDB, dbconn.Frontend); err != nil {
-			return nil, err
-		}
-
-		migrate = false
+	if err := backend.UpdateServiceVersion(context.Background(), database.NewDB(sqlDB), "frontend", version.Version()); err != nil {
+		return nil, err
 	}
+
+	return sqlDB, nil
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
+func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable) enterprise.Services) error {
 	ctx := context.Background()
 
 	log.SetFlags(0)
@@ -177,33 +167,8 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
-	// Create an out-of-band migration runner onto which each enterprise init function
-	// can register migration routines to run in the background while they still have
-	// work remaining.
-	outOfBandMigrationRunner := newOutOfBandMigrationRunner(ctx, db)
-
-	// Run a background job to handle encryption of external service configuration.
-	extsvcMigrator := oobmigration.NewExternalServiceConfigMigratorWithDB(db)
-	extsvcMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
-	if err := outOfBandMigrationRunner.Register(extsvcMigrator.ID(), extsvcMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-		log.Fatalf("failed to run external service encryption job: %v", err)
-	}
-	// Run a background job to handle encryption of external service configuration.
-	extAccMigrator := oobmigration.NewExternalAccountsMigratorWithDB(db)
-	extAccMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
-	if err := outOfBandMigrationRunner.Register(extAccMigrator.ID(), extAccMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-		log.Fatalf("failed to run user external account encryption job: %v", err)
-	}
-
-	// Run a background job to calculate the has_webhooks field on external
-	// service records.
-	webhookMigrator := oobmigration.NewExternalServiceWebhookMigratorWithDB(db)
-	if err := outOfBandMigrationRunner.Register(webhookMigrator.ID(), webhookMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-		log.Fatalf("failed to run external service webhook job: %v", err)
-	}
-
 	// Run enterprise setup hook
-	enterprise := enterpriseSetupHook(db, conf.DefaultClient(), outOfBandMigrationRunner)
+	enterprise := enterpriseSetupHook(db, conf.DefaultClient())
 
 	ui.InitRouter(db, enterprise.CodeIntelResolver)
 
@@ -265,6 +230,11 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { updatecheck.Start(db) })
 
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
+	if err != nil {
+		log.Fatalf("Failed to create sub-repo client: %v", err)
+	}
+
 	schema, err := graphqlbackend.NewSchema(db,
 		enterprise.BatchChangesResolver,
 		enterprise.CodeIntelResolver,
@@ -275,6 +245,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 		enterprise.DotcomResolver,
 		enterprise.SearchContextsResolver,
 		enterprise.OrgRepositoryResolver,
+		enterprise.NotebooksResolver,
 	)
 	if err != nil {
 		return err
@@ -295,10 +266,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 		return err
 	}
 
-	routines := []goroutine.BackgroundRoutine{
-		server,
-		outOfBandMigrationRunner,
-	}
+	routines := []goroutine.BackgroundRoutine{server}
 	if internalAPI != nil {
 		routines = append(routines, internalAPI)
 	}

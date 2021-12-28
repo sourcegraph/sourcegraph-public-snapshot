@@ -12,9 +12,10 @@ import (
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -22,12 +23,12 @@ func TestTransformRecord(t *testing.T) {
 	accessToken := "thisissecret-dont-tell-anyone"
 	var accessTokenID int64 = 1234
 
-	accessTokens := dbmock.NewMockAccessTokenStore()
+	accessTokens := database.NewMockAccessTokenStore()
 	accessTokens.CreateInternalFunc.SetDefaultReturn(accessTokenID, accessToken, nil)
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	db.AccessTokensFunc.SetDefaultReturn(accessTokens)
-	repos := dbmock.NewMockRepoStore()
+	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return &types.Repo{ID: id, Name: "github.com/sourcegraph/sourcegraph"}, nil
 	})
@@ -58,14 +59,20 @@ func TestTransformRecord(t *testing.T) {
 		},
 		FileMatches:        []string{"a/b/c/foobar.go"},
 		OnlyFetchWorkspace: true,
+		StepCacheResults: map[int]btypes.StepCacheResult{
+			1: {
+				Key: "testcachekey",
+				Value: &execution.AfterStepResult{
+					Diff: "123",
+				},
+			},
+		},
 	}
 
 	workspaceExecutionJob := &btypes.BatchSpecWorkspaceExecutionJob{
 		ID:                   42,
 		BatchSpecWorkspaceID: workspace.ID,
 	}
-
-	entry := &btypes.BatchSpecExecutionCacheEntry{Value: "cachevalue"}
 
 	store := NewMockBatchesStore()
 	store.GetBatchSpecFunc.SetDefaultReturn(batchSpec, nil)
@@ -76,7 +83,6 @@ func TestTransformRecord(t *testing.T) {
 		return nil
 	})
 	store.DatabaseDBFunc.SetDefaultReturn(db)
-	store.ListBatchSpecExecutionCacheEntriesFunc.SetDefaultReturn([]*btypes.BatchSpecExecutionCacheEntry{entry}, nil)
 
 	wantInput := batcheslib.WorkspacesExecutionInput{
 		Spec: batchSpec.Spec,
@@ -110,8 +116,8 @@ func TestTransformRecord(t *testing.T) {
 		expected := apiclient.Job{
 			ID: int(workspaceExecutionJob.ID),
 			VirtualMachineFiles: map[string]string{
-				"input.json":                         string(marshaledInput),
-				"eKWXvCxV2S3H8it3CVL-Iw-step-1.json": "cachevalue",
+				"input.json":        string(marshaledInput),
+				"testcachekey.json": `{"stepIndex":0,"diff":"123","outputs":null,"previousStepResult":{"Files":null,"Stdout":null,"Stderr":null}}`,
 			},
 			CliSteps: []apiclient.CliStep{
 				{

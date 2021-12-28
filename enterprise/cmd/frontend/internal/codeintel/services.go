@@ -4,12 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"net/http"
+	"os"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/repoupdater"
@@ -19,9 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -31,12 +35,17 @@ type Services struct {
 	repoStore   database.RepoStore
 	uploadStore uploadstore.Store
 
+	// shared with executorqueue
+	InternalUploadHandler http.Handler
+	ExternalUploadHandler http.Handler
+
 	locker          *locker.Locker
 	gitserverClient *gitserver.Client
 	indexEnqueuer   *enqueuer.IndexEnqueuer
+	hub             *sentry.Hub
 }
 
-func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db database.DB) (*Services, error) {
+func NewServices(ctx context.Context, siteConfig conftypes.WatchableSiteConfig, db database.DB) (*Services, error) {
 	if err := config.UploadStoreConfig.Validate(); err != nil {
 		return nil, errors.Errorf("failed to load config: %s", err)
 	}
@@ -47,6 +56,9 @@ func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
+
+	// Initialize sentry hub
+	hub := mustInitializeSentryHub(siteConfig)
 
 	// Connect to database
 	codeIntelDB := mustInitializeCodeIntelDB()
@@ -59,6 +71,22 @@ func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db
 	if err != nil {
 		log.Fatalf("Failed to initialize upload store: %s", err)
 	}
+
+	// Initialize http endpoints
+	operations := httpapi.NewOperations(observationContext)
+	newUploadHandler := func(internal bool) http.Handler {
+		return httpapi.NewUploadHandler(
+			db,
+			&httpapi.DBStoreShim{Store: dbStore},
+			uploadStore,
+			internal,
+			httpapi.DefaultValidatorByCodeHost,
+			operations,
+			hub,
+		)
+	}
+	internalUploadHandler := newUploadHandler(true)
+	externalUploadHandler := newUploadHandler(false)
 
 	// Initialize gitserver client
 	gitserverClient := gitserver.New(dbStore, observationContext)
@@ -73,28 +101,47 @@ func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db
 		repoStore:   database.ReposWith(dbStore.Store),
 		uploadStore: uploadStore,
 
+		InternalUploadHandler: internalUploadHandler,
+		ExternalUploadHandler: externalUploadHandler,
+
 		locker:          locker,
 		gitserverClient: gitserverClient,
 		indexEnqueuer:   indexEnqueuer,
+		hub:             hub,
 	}, nil
 }
 
 func mustInitializeCodeIntelDB() *sql.DB {
-	postgresDSN := conf.Get().ServiceConnections().CodeIntelPostgresDSN
-	conf.Watch(func() {
-		if newDSN := conf.Get().ServiceConnections().CodeIntelPostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("Detected database DSN change, restarting to take effect: %s", newDSN)
-		}
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.CodeIntelPostgresDSN
 	})
-
-	db, err := dbconn.New(dbconn.Opts{DSN: postgresDSN, DBName: "codeintel", AppName: "frontend"})
+	var (
+		db  *sql.DB
+		err error
+	)
+	if os.Getenv("NEW_MIGRATIONS") == "" {
+		// CURRENTLY DEPRECATING
+		db, err = connections.NewCodeIntelDB(dsn, "frontend", true, &observation.TestContext)
+	} else {
+		db, err = connections.EnsureNewCodeIntelDB(dsn, "frontend", &observation.TestContext)
+	}
 	if err != nil {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}
+	return db
+}
 
-	if _, err := dbconn.MigrateDB(db, dbconn.CodeIntel); err != nil {
-		log.Fatalf("Failed to perform codeintel database migration: %s", err)
+func mustInitializeSentryHub(c conftypes.WatchableSiteConfig) *sentry.Hub {
+	getDsn := func(c conftypes.SiteConfigQuerier) string {
+		if c.SiteConfig().Log != nil && c.SiteConfig().Log.Sentry != nil {
+			return c.SiteConfig().Log.Sentry.CodeIntelDSN
+		}
+		return ""
 	}
 
-	return db
+	hub, err := sentry.NewWithDsn(getDsn(c), c, getDsn)
+	if err != nil {
+		log.Fatalf("Failed to initialize sentry hub: %s", err)
+	}
+	return hub
 }

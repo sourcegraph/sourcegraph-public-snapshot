@@ -6,9 +6,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/lib/pq"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights"
+	"github.com/lib/pq"
 
 	"github.com/cockroachdb/errors"
 
@@ -126,6 +126,31 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
+type InsightsOnDashboardQueryArgs struct {
+	DashboardID int
+	After       string
+	Limit       int
+}
+
+// GetAllOnDashboard returns a page of insights on a dashboard
+func (s *InsightStore) GetAllOnDashboard(ctx context.Context, args InsightsOnDashboardQueryArgs) ([]types.InsightViewSeries, error) {
+	where := make([]*sqlf.Query, 0, 2)
+	var limit *sqlf.Query
+
+	where = append(where, sqlf.Sprintf("dbiv.dashboard_id = %s", args.DashboardID))
+	if args.After != "" {
+		where = append(where, sqlf.Sprintf("dbiv.id > %s", args.After))
+	}
+	if args.Limit > 0 {
+		limit = sqlf.Sprintf("LIMIT %s", args.Limit)
+	} else {
+		limit = sqlf.Sprintf("")
+	}
+
+	q := sqlf.Sprintf(getInsightsByDashboardSql, sqlf.Join(where, "AND"), limit)
+	return scanInsightViewSeries(s.Query(ctx, q))
+}
+
 // visibleViewsQuery generates the SQL query for filtering insight views based on granted permissions.
 // This returns a query that will generate a set of insight_view.id that the provided context can see.
 func visibleViewsQuery(userIDs, orgIDs []int) *sqlf.Query {
@@ -176,11 +201,12 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 	results := make([]types.Insight, 0, len(mapped))
 	for _, seriesSet := range mapped {
 		results = append(results, types.Insight{
-			ViewID:      seriesSet[0].ViewID,
-			UniqueID:    seriesSet[0].UniqueID,
-			Title:       seriesSet[0].Title,
-			Description: seriesSet[0].Description,
-			Series:      seriesSet,
+			ViewID:          seriesSet[0].ViewID,
+			DashboardViewId: seriesSet[0].DashboardViewID,
+			UniqueID:        seriesSet[0].UniqueID,
+			Title:           seriesSet[0].Title,
+			Description:     seriesSet[0].Description,
+			Series:          seriesSet,
 			Filters: types.InsightViewFilters{
 				IncludeRepoRegex: seriesSet[0].DefaultFilterIncludeRepoRegex,
 				ExcludeRepoRegex: seriesSet[0].DefaultFilterExcludeRepoRegex,
@@ -193,7 +219,6 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].ViewID < results[j].ViewID
 	})
-
 	return results
 }
 
@@ -311,7 +336,7 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 		preds = append(preds, sqlf.Sprintf("series_id = %s", args.SeriesID))
 	}
 	if args.GlobalOnly {
-		preds = append(preds, sqlf.Sprintf("repositories IS NULL OR CARDINALITY(repositories) = 0"))
+		preds = append(preds, sqlf.Sprintf("(repositories IS NULL OR CARDINALITY(repositories) = 0)"))
 	}
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
@@ -340,6 +365,9 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			&temp.Enabled,
 			&temp.SampleIntervalUnit,
 			&temp.SampleIntervalValue,
+			&temp.GeneratedFromCaptureGroups,
+			&temp.JustInTime,
+			&temp.GenerationMethod,
 		); err != nil {
 			return []types.InsightSeries{}, err
 		}
@@ -359,6 +387,7 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 		var temp types.InsightViewSeries
 		if err := rows.Scan(
 			&temp.ViewID,
+			&temp.DashboardViewID,
 			&temp.UniqueID,
 			&temp.Title,
 			&temp.Description,
@@ -380,6 +409,9 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.DefaultFilterExcludeRepoRegex,
 			&temp.OtherThreshold,
 			&temp.PresentationType,
+			&temp.GeneratedFromCaptureGroups,
+			&temp.JustInTime,
+			&temp.GenerationMethod,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
@@ -568,11 +600,19 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 	if series.CreatedAt.IsZero() {
 		series.CreatedAt = s.Now()
 	}
+	interval := timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
+		Value: series.SampleIntervalValue,
+	}
+	if !interval.IsValid() {
+		interval = timeseries.DefaultInterval
+	}
+
 	if series.NextRecordingAfter.IsZero() {
-		series.NextRecordingAfter = s.Now()
+		series.NextRecordingAfter = interval.StepForwards(s.Now())
 	}
 	if series.NextSnapshotAfter.IsZero() {
-		series.NextSnapshotAfter = s.Now()
+		series.NextSnapshotAfter = NextSnapshot(s.Now())
 	}
 	if series.OldestHistoricalAt.IsZero() {
 		// TODO(insights): this value should probably somewhere more discoverable / obvious than here
@@ -590,6 +630,9 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		pq.Array(series.Repositories),
 		series.SampleIntervalUnit,
 		series.SampleIntervalValue,
+		series.GeneratedFromCaptureGroups,
+		series.JustInTime,
+		series.GenerationMethod,
 	))
 	var id int
 	err := row.Scan(&id)
@@ -618,7 +661,10 @@ type InsightMetadataStore interface {
 // StampRecording will update the recording metadata for this series and return the InsightSeries struct with updated values.
 func (s *InsightStore) StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
 	current := s.Now()
-	next := insights.NextRecording(current)
+	next := timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
+		Value: series.SampleIntervalValue,
+	}.StepForwards(current)
 	if err := s.Exec(ctx, sqlf.Sprintf(stampRecordingSql, current, next, series.ID)); err != nil {
 		return types.InsightSeries{}, err
 	}
@@ -627,10 +673,15 @@ func (s *InsightStore) StampRecording(ctx context.Context, series types.InsightS
 	return series, nil
 }
 
+func NextSnapshot(current time.Time) time.Time {
+	year, month, day := current.In(time.UTC).Date()
+	return time.Date(year, month, day+1, 0, 0, 0, 0, time.UTC)
+}
+
 // StampSnapshot will update the recording metadata for this series and return the InsightSeries struct with updated values.
 func (s *InsightStore) StampSnapshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
 	current := s.Now()
-	next := insights.NextSnapshot(current)
+	next := NextSnapshot(current)
 	if err := s.Exec(ctx, sqlf.Sprintf(stampSnapshotSql, current, next, series.ID)); err != nil {
 		return types.InsightSeries{}, err
 	}
@@ -660,15 +711,16 @@ func (s *InsightStore) SetSeriesEnabled(ctx context.Context, seriesId string, en
 }
 
 type MatchSeriesArgs struct {
-	Query             string
-	StepIntervalUnit  string
-	StepIntervalValue int
+	Query                     string
+	StepIntervalUnit          string
+	StepIntervalValue         int
+	GenerateFromCaptureGroups bool
 }
 
 func (s *InsightStore) FindMatchingSeries(ctx context.Context, args MatchSeriesArgs) (_ types.InsightSeries, found bool, _ error) {
 	where := sqlf.Sprintf(
-		"(repositories = '{}' OR repositories is NULL) AND query = %s AND sample_interval_unit = %s AND sample_interval_value = %s",
-		args.Query, args.StepIntervalUnit, args.StepIntervalValue,
+		"(repositories = '{}' OR repositories is NULL) AND query = %s AND sample_interval_unit = %s AND sample_interval_value = %s AND generated_from_capture_groups = %s",
+		args.Query, args.StepIntervalUnit, args.StepIntervalValue, args.GenerateFromCaptureGroups,
 	)
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, where)
@@ -763,17 +815,18 @@ const createInsightSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateSeries
 INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
                             next_recording_after, last_snapshot_at, next_snapshot_after, repositories,
-							sample_interval_unit, sample_interval_value)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+							sample_interval_unit, sample_interval_value, generated_from_capture_groups,
+							just_in_time, generation_method)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id;`
 
 const getInsightByViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:Get
-SELECT iv.id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
+SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
-iv.other_threshold, iv.presentation_type
+iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method
 FROM (%s) iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -781,21 +834,38 @@ WHERE %s
 ORDER BY iv.id, i.series_id
 `
 
+const getInsightsByDashboardSql = `
+SELECT iv.id, dbiv.id as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
+i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
+i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
+i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
+iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method
+FROM dashboard_insight_view as dbiv
+		 JOIN insight_view iv ON iv.id = dbiv.insight_view_id
+         JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
+         JOIN insight_series i ON ivs.insight_series_id = i.id
+WHERE %s
+ORDER BY dbiv.id
+%s;
+`
+
 const getInsightDataSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDataSeries
 select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after,
 last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
-sample_interval_unit, sample_interval_value from insight_series
+sample_interval_unit, sample_interval_value, generated_from_capture_groups,
+just_in_time, generation_method
+from insight_series
 WHERE %s
 `
 
 const getInsightsVisibleToUserSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetAllInsights
-SELECT iv.id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
+SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
        i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
        i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
-	   iv.other_threshold, iv.presentation_type
+	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method
 FROM (%s) iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id

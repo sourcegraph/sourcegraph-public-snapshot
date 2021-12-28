@@ -12,14 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	internalauth "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	internalhttpapi "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
@@ -50,8 +48,8 @@ func newExternalHTTPHandler(db database.DB, schema *graphql.Schema, gitHubWebhoo
 	}
 	apiHandler = featureflag.Middleware(database.FeatureFlags(db), apiHandler)
 	apiHandler = authMiddlewares.API(apiHandler) // 🚨 SECURITY: auth middleware
-	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication (except those with the
-	// X-Requested-With header). Doing so would open it up to CSRF attacks.
+	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication, except from trusted
+	// origins, to avoid CSRF attacks. See session.CookieMiddlewareWithCSRFSafety for details.
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(db, apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
 	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, apiHandler)                                // API accepts access tokens
 	apiHandler = gziphandler.GzipHandler(apiHandler)
@@ -69,9 +67,6 @@ func newExternalHTTPHandler(db database.DB, schema *graphql.Schema, gitHubWebhoo
 		appHandler = hooks.PostAuthMiddleware(appHandler)
 	}
 	appHandler = featureflag.Middleware(database.FeatureFlags(db), appHandler)
-	appHandler = handlerutil.CSRFMiddleware(appHandler, func() bool {
-		return globals.ExternalURL().Scheme == "https"
-	}) // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
 	appHandler = authMiddlewares.App(appHandler)                           // 🚨 SECURITY: auth middleware
 	appHandler = session.CookieMiddleware(db, appHandler)                  // app accepts cookies
 	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, appHandler) // app accepts access tokens
@@ -100,7 +95,7 @@ func newExternalHTTPHandler(db database.DB, schema *graphql.Schema, gitHubWebhoo
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = internalauth.ForbidAllRequestsMiddleware(h)
 	h = internalauth.OverrideAuthMiddleware(db, h)
-	h = tracepkg.HTTPTraceMiddleware(h, conf.DefaultClient())
+	h = tracepkg.HTTPMiddleware(h, conf.DefaultClient())
 	h = ot.HTTPMiddleware(h)
 
 	return h, nil
@@ -123,18 +118,20 @@ func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntel
 	internalMux := http.NewServeMux()
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
 		actor.HTTPMiddleware(
-			internalhttpapi.NewInternalHandler(
-				router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
-				db,
-				schema,
-				newCodeIntelUploadHandler,
-				rateLimitWatcher,
+			featureflag.Middleware(database.FeatureFlags(db),
+				internalhttpapi.NewInternalHandler(
+					router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
+					db,
+					schema,
+					newCodeIntelUploadHandler,
+					rateLimitWatcher,
+				),
 			),
 		),
 	))
 	h := http.Handler(internalMux)
 	h = gcontext.ClearHandler(h)
-	h = tracepkg.HTTPTraceMiddleware(h, conf.DefaultClient())
+	h = tracepkg.HTTPMiddleware(h, conf.DefaultClient())
 	h = ot.HTTPMiddleware(h)
 	return h
 }
@@ -245,7 +242,18 @@ func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOrigi
 
 	if r.Method == "OPTIONS" {
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization, X-Sourcegraph-Should-Trace")
+		// Only trusted origins are allowed to send the secure X-Requested-With and X-Sourcegraph-Client
+		// headers, which indicate the client passed CORS AND is a trusted origin.
+		//
+		// In the future, untrusted origins will be allowed to send cross-origin requests with
+		// authentication, but we will only respect session authentication iff the secure header
+		// X-Requested-With is present, indicating the request came from a trusted origin or a
+		// client that does not respect CORS (e.g. curl.)
+		if isTrustedOrigin(r) {
+			w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization, X-Sourcegraph-Should-Trace")
+		} else {
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Sourcegraph-Should-Trace")
+		}
 		w.WriteHeader(http.StatusOK)
 		return true // we handled the request
 	}

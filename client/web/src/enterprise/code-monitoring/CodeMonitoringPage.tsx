@@ -4,11 +4,11 @@ import React, { useMemo, useEffect, useState } from 'react'
 import { of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard'
 
@@ -83,7 +83,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
     const showList = userHasCodeMonitors !== 'loading' && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
 
     return (
-        <div className="code-monitoring-page">
+        <div className="code-monitoring-page" data-testid="code-monitoring-page">
             <PageTitle title="Code Monitoring" />
             <PageHeader
                 path={[

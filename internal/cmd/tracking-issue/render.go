@@ -11,16 +11,17 @@ import (
 // RenderTrackingIssue renders the work section of the given tracking issue.
 func RenderTrackingIssue(context IssueContext) string {
 	assignees := findAssignees(context.Match(NewMatcher(
-		nonTrackingLabels(context.trackingIssue.Labels),
+		context.trackingIssue.IdentifyingLabels(),
 		context.trackingIssue.Milestone,
 		"",
 		false,
 	)))
 
 	var parts []string
+
 	for _, assignee := range assignees {
 		assigneeContext := context.Match(NewMatcher(
-			nonTrackingLabels(context.trackingIssue.Labels),
+			context.trackingIssue.IdentifyingLabels(),
 			context.trackingIssue.Milestone,
 			assignee,
 			assignee == "",
@@ -545,7 +546,7 @@ func estimateFromLabelSets(labels [][]string) (days float64) {
 	return days
 }
 
-// estimateFromLabelSet returns the value of a `estimate/` lables in the given label set.
+// estimateFromLabelSet returns the value of a `estimate/` labels in the given label set.
 func estimateFromLabelSet(labels []string) float64 {
 	for _, label := range labels {
 		if strings.HasPrefix(label, "estimate/") {
