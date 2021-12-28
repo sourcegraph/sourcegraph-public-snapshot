@@ -225,14 +225,6 @@ func (f *fakeRepoStore) StreamMinimalRepos(ctx context.Context, opt database.Rep
 	return nil
 }
 
-type fakeSearchContextsStore struct {
-	Revisions map[api.RepoID][]string
-}
-
-func (f *fakeSearchContextsStore) GetAllRevisionsForRepos(context.Context, []api.RepoID) (map[api.RepoID][]string, error) {
-	return f.Revisions, nil
-}
-
 // suffixIndexers mocks Indexers. ReposSubset will return all repoNames with
 // the suffix of hostname.
 type suffixIndexers bool
