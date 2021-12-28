@@ -1471,6 +1471,27 @@ type Query {
         """
         after: String
     ): ExecutorConnection!
+    """
+    Retrieve metadata for a webpage from <meta> tags.
+    """
+    linkMetadata(url: String!): LinkMetadata
+}
+
+type LinkMetadata {
+    """
+    URL of image
+    """
+    imageURL: String
+
+    """
+    TODO
+    """
+    title: String
+
+    """
+    TODO
+    """
+    description: String
 }
 
 """
