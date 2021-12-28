@@ -189,8 +189,10 @@ func validateSearchContextRepositoryQuery(repositoryQuery string) error {
 		return err
 	}
 
+	q := plan.ToParseTree()
 	errs := new(multierror.Error)
-	query.VisitParameter(plan.ToParseTree(), func(field, value string, negated bool, a query.Annotation) {
+
+	query.VisitParameter(q, func(field, value string, negated bool, a query.Annotation) {
 		switch field {
 		case query.FieldRepo:
 			if a.Labels.IsSet(query.IsPredicate) {
@@ -224,6 +226,13 @@ func validateSearchContextRepositoryQuery(repositoryQuery string) error {
 		default:
 			errs = multierror.Append(errs,
 				errors.Errorf("unsupported field in repository query: %q", field))
+		}
+	})
+
+	query.VisitPattern(q, func(value string, negated bool, a query.Annotation) {
+		if value != "" {
+			errs = multierror.Append(errs,
+				errors.Errorf("unsupported pattern in repository query: %q", value))
 		}
 	})
 

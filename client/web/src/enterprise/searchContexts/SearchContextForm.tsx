@@ -381,16 +381,17 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                             Sourcegraph repository query.
                         </div>
 
-                        <div data-search-page-input-container={true}>
+                        <div className="form-control text-code w-100" style={{ height: '5rem' }}>
                             <LazyMonacoQueryInput
                                 isLightTheme={props.isLightTheme}
                                 patternType={SearchPatternType.regexp}
-                                isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                isSourcegraphDotCom={!!window.context.sourcegraphDotComMode}
                                 caseSensitive={true}
                                 queryState={{ query: repositoryQuery }}
                                 onChange={({ query }) => setRepositoryQuery(query)}
                                 onSubmit={() => {}}
                                 globbing={false}
+                                preventNewLine={false}
                             />
                         </div>
                     </div>

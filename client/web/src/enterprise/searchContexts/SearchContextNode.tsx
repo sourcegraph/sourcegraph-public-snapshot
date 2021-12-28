@@ -7,6 +7,7 @@ import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Badge } from '@sourcegraph/wildcard'
 
 import { SearchContextFields } from '../../graphql-operations'
+import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 
 import styles from './SearchContextNode.module.scss'
 
@@ -32,7 +33,7 @@ export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> 
                 )}
             </div>
             {node.repositoryQuery.length > 0 && (
-                <div className={classNames('text-muted mt-1')}>{node.repositoryQuery}</div>
+                <SyntaxHighlightedSearchQuery query={node.repositoryQuery} key={node.name} />
             )}
 
             {node.description.length > 0 && (
