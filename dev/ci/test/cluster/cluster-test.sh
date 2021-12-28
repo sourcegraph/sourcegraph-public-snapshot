@@ -23,7 +23,7 @@ function cluster_capture_state() {
   kubectl logs deployment/sourcegraph-frontend --all-containers >"$root_dir/frontend_logs.log" 2>&1
 }
 
-# Cleanup the cluster
+# Cleanup the cluster!
 function cluster_cleanup() {
   cluster_capture_state
   kubectl delete namespace "$NAMESPACE"
