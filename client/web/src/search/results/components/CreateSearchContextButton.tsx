@@ -26,8 +26,11 @@ export const CreateSearchContextButton: React.FunctionComponent<CreateSearchCont
     }
 
     const contextFilter = findFilter(props.query, FilterType.context, FilterKind.Global)
-    const repositoryQuery = contextFilter ? omitFilter(props.query, contextFilter) : props.query
+    if (!contextFilter || contextFilter.value?.value != 'global') {
+        return null
+    }
 
+    const repositoryQuery = omitFilter(props.query, contextFilter)
     const searchParameters = new URLSearchParams()
     searchParameters.set('q', repositoryQuery)
     const toURL = `/contexts/new?${searchParameters.toString()}`
