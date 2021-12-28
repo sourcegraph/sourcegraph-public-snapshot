@@ -517,7 +517,9 @@ func (ar *AssigneeRenderer) doRenderIssue(issue *Issue, milestone string) string
 
 // renderPullRequest returns the given pull request rendered in markdown.
 func renderPullRequest(pullRequest *PullRequest) string {
-	emojis := Emojis(pullRequest.SafeLabels(), pullRequest.Repository, pullRequest.Body, map[string]string{})
+	emojis := Emojis(pullRequest.SafeLabels(), pullRequest.Repository, pullRequest.Body, map[string]string{
+		"pull-request": ":shipit:",
+	})
 
 	if pullRequest.Done() {
 		return fmt.Sprintf(
