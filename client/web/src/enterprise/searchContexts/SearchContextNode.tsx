@@ -31,13 +31,16 @@ export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> 
                     </Badge>
                 )}
             </div>
+            {node.repositoryQuery.length > 0 && (
+                <div className={classNames('text-muted mt-1')}>{node.repositoryQuery}</div>
+            )}
 
             {node.description.length > 0 && (
                 <div className={classNames('text-muted mt-1', styles.leftDescription)}>{node.description}</div>
             )}
         </div>
         <div className={classNames('text-muted d-flex', styles.right)}>
-            <div className="mr-2">{node.repositories.length} repositories</div>
+            {node.repositories.length > 0 && <div className="mr-2">{node.repositories.length} repositories</div>}
             <div>
                 Updated <Timestamp date={node.updatedAt} noAbout={true} />
             </div>

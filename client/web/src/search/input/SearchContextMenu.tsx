@@ -30,16 +30,29 @@ import styles from './SearchContextMenu.module.scss'
 export const SearchContextMenuItem: React.FunctionComponent<{
     spec: string
     description: string
+    repositoryQuery: string
     selected: boolean
     isDefault: boolean
     selectSearchContextSpec: (spec: string) => void
     searchFilter: string
     onKeyDown: (key: string) => void
-}> = ({ spec, description, selected, isDefault, selectSearchContextSpec, searchFilter, onKeyDown }) => {
+}> = ({
+    spec,
+    description,
+    repositoryQuery,
+    selected,
+    isDefault,
+    selectSearchContextSpec,
+    searchFilter,
+    onKeyDown,
+}) => {
     const setContext = useCallback(() => {
         eventLogger.log('SearchContextSelected')
         selectSearchContextSpec(spec)
     }, [selectSearchContextSpec, spec])
+
+    const descriptionOrRepositoryQuery = description.length > 0 ? description : repositoryQuery
+
     return (
         <DropdownItem
             data-testid="search-context-menu-item"
@@ -56,8 +69,8 @@ export const SearchContextMenuItem: React.FunctionComponent<{
             >
                 <HighlightedSearchContextSpec spec={spec} searchFilter={searchFilter} />
             </small>{' '}
-            <small className={styles.itemDescription} title={description}>
-                {description}
+            <small className={styles.itemDescription} title={descriptionOrRepositoryQuery}>
+                {descriptionOrRepositoryQuery}
             </small>
             {isDefault && (
                 <Badge variant="secondary" className={classNames('text-uppercase', styles.itemDefault)}>
@@ -291,6 +304,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                             key={context.id}
                             spec={context.spec}
                             description={context.description}
+                            repositoryQuery={context.repositoryQuery}
                             isDefault={context.spec === defaultSearchContextSpec}
                             selected={context.spec === selectedSearchContextSpec}
                             selectSearchContextSpec={selectSearchContextSpec}
