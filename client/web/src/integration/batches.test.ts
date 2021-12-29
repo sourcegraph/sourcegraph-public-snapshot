@@ -200,6 +200,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                     externalURL: {
                         url: 'http://test.test/123',
                     },
+                    forkNamespace: null,
                     id: 'changeset123',
                     labels: [
                         {
@@ -222,6 +223,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                         type: ChangesetSpecType.BRANCH,
                         description: {
                             __typename: 'GitBranchChangesetDescription',
+                            baseRef: 'my-branch',
                             headRef: 'my-branch',
                         },
                     },
