@@ -118,8 +118,8 @@ type SearchContext implements Node {
     """
     autoDefined: Boolean!
     """
-    The repository query that defines the set of repositories included in the context.
-    Alternatively, each repository and revision can be defined explicitly.
+    Sourcegraph search query that defines the search context.
+    e.g. "r:^github\.com/org (rev:bar or rev:HEAD) file:^sub/dir"
     """
     query: String!
     """
