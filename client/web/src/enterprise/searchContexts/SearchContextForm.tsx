@@ -371,7 +371,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     ))}
                 </div>
                 <hr className={classNames('my-4', styles.searchContextFormDivider)} />
-                {window.context?.experimentalFeatures['search.contexts.query'] ? (
+                {window?.context?.experimentalFeatures['search.contexts.query'] ? (
                     <div>
                         <div className="mb-1">Query</div>
                         <div className="text-muted mb-3">
