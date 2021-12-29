@@ -27,7 +27,6 @@ import (
 )
 
 var (
-	dbFlagSet             = flag.NewFlagSet("sg db", flag.ExitOnError)
 	dbResetPGFlagSet      = flag.NewFlagSet("sg db reset-pg", flag.ExitOnError)
 	dbDatabaseNameFlag    = dbResetPGFlagSet.String("db", db.DefaultDatabase.Name, "The target database instance.")
 	dbRedisFlagSet        = flag.NewFlagSet("sg db reset-redis", flag.ExitOnError)
