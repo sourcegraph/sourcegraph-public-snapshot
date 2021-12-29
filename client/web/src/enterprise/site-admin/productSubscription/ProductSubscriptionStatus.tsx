@@ -1,6 +1,5 @@
 import { parseISO } from 'date-fns'
 import React, { useMemo } from 'react'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
@@ -10,6 +9,7 @@ import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -165,7 +165,7 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                     license.userCount - actualUserCount < 0 && (
                         <div className="alert alert-warning">
                             You have exceeded your licensed users.{' '}
-                            <Link to="/site-admin/license">View your license details</Link> or{' '}
+                            <RouterLink to="/site-admin/license">View your license details</RouterLink> or{' '}
                             {/* eslint-disable-next-line react/jsx-no-target-blank */}
                             <a href="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener">
                                 upgrade your license

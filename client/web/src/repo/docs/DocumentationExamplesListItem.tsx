@@ -7,12 +7,12 @@ import { catchError, map, startWith } from 'rxjs/operators'
 import { asError } from '@sourcegraph/common'
 import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
 import { CodeExcerpt, FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { RepositoryFields } from '../../graphql-operations'
@@ -105,9 +105,9 @@ export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
                 {blameHunks !== LOADING && !isErrorLike(blameHunks) && blameHunks.length > 0 && (
                     <span className="float-right text-muted">
                         by <PersonLink person={blameHunks[0].author.person} />{' '}
-                        <Link to={blameHunks[0].commit.url}>
+                        <RouterLink to={blameHunks[0].commit.url}>
                             <Timestamp date={blameHunks[0].author.date} />
-                        </Link>
+                        </RouterLink>
                     </span>
                 )}
             </div>

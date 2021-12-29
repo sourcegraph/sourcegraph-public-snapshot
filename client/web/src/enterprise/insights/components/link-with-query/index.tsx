@@ -1,5 +1,7 @@
 import React from 'react'
-import { Link, LinkProps, useLocation } from 'react-router-dom'
+import { LinkProps, useLocation } from 'react-router-dom'
+
+import { RouterLink } from '@sourcegraph/wildcard'
 
 export interface LinkWithQueryProps extends Omit<LinkProps, 'to'> {
     to: string
@@ -13,8 +15,8 @@ export const LinkWithQuery: React.FunctionComponent<LinkWithQueryProps> = props 
     const { search } = useLocation()
 
     return (
-        <Link to={to + search} {...otherProps}>
+        <RouterLink to={to + search} {...otherProps}>
             {children}
-        </Link>
+        </RouterLink>
     )
 }

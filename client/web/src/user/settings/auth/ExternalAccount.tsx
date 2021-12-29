@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
 import { AuthProvider } from '../../../jscontext'
@@ -50,9 +50,9 @@ export const ExternalAccount: React.FunctionComponent<Props> = ({ account, authP
                     {account.external ? (
                         <>
                             {account.external.userName} (
-                            <Link to={account.external.userUrl} target="_blank" rel="noopener noreferrer">
+                            <RouterLink to={account.external.userUrl} target="_blank" rel="noopener noreferrer">
                                 @{account.external.userLogin}
-                            </Link>
+                            </RouterLink>
                             )
                         </>
                     ) : (

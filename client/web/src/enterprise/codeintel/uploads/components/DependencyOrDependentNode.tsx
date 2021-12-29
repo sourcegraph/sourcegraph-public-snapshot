@@ -1,7 +1,8 @@
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { FunctionComponent } from 'react'
-import { Link } from 'react-router-dom'
+
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { LsifUploadFields } from '../../../../graphql-operations'
 import { CodeIntelState } from '../../shared/components/CodeIntelState'
@@ -40,9 +41,9 @@ export const DependencyOrDependentNode: FunctionComponent<DependencyOrDependentN
             <CodeIntelState node={node} className="d-flex flex-column align-items-center" />
         </span>
         <span>
-            <Link to={`./${node.id}`}>
+            <RouterLink to={`./${node.id}`}>
                 <ChevronRightIcon />
-            </Link>
+            </RouterLink>
         </span>
     </>
 )

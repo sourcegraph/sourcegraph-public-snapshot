@@ -4,13 +4,14 @@ import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import SearchStackIcon from 'mdi-react/LayersSearchIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useCallback, useState } from 'react'
-import { Link, useHistory } from 'react-router-dom'
+import { useHistory } from 'react-router-dom'
 
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from '../components/SyntaxHighlightedSearchQuery'
 import { PageRoutes } from '../routes.constants'
@@ -121,7 +122,7 @@ function renderSearchEntry(entry: SearchStackEntry): React.ReactChild {
     switch (entry.type) {
         case 'search':
             return (
-                <Link
+                <RouterLink
                     to={{
                         pathname: '/search',
                         search: buildSearchURLQuery(
@@ -135,11 +136,11 @@ function renderSearchEntry(entry: SearchStackEntry): React.ReactChild {
                 >
                     <SearchIcon className="icon-inline text-muted mr-1" />
                     <SyntaxHighlightedSearchQuery query={entry.query} />
-                </Link>
+                </RouterLink>
             )
         case 'file':
             return (
-                <Link
+                <RouterLink
                     to={{
                         pathname: toPrettyBlobURL({
                             repoName: entry.repo,
@@ -157,7 +158,7 @@ function renderSearchEntry(entry: SearchStackEntry): React.ReactChild {
                         <RepoIcon repoName={entry.repo} className="icon-inline text-muted mr-1" />
                         {entry.repo}
                     </small>
-                </Link>
+                </RouterLink>
             )
     }
 }

@@ -1,0 +1,9 @@
+// use this kind of styles to override default `anchor-link` styles with `list-group-item-action` styles
+.action-link {
+    color: inherit;
+
+    &:hover {
+        color: inherit;
+        text-decoration: inherit;
+    }
+}

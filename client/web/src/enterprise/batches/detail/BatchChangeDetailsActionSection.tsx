@@ -5,8 +5,8 @@ import PencilIcon from 'mdi-react/PencilIcon'
 import React, { useCallback, useState } from 'react'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { Scalars } from '../../../graphql-operations'
@@ -64,17 +64,17 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<BatchChang
     return (
         <div className="d-flex">
             {showEditButton && (
-                <Link to={`${location.pathname}/edit`} className="mr-2 btn btn-secondary">
+                <RouterLink to={`${location.pathname}/edit`} className="mr-2 btn btn-secondary">
                     <PencilIcon className="icon-inline" /> Edit
-                </Link>
+                </RouterLink>
             )}
-            <Link
+            <RouterLink
                 to={`${location.pathname}/close`}
                 className="btn btn-outline-danger test-batches-close-btn"
                 data-tooltip="View a preview of all changes that will happen when you close this batch change."
             >
                 <DeleteIcon className="icon-inline" /> Close
-            </Link>
+            </RouterLink>
         </div>
     )
 }

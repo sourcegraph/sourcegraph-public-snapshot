@@ -2,11 +2,10 @@ import React, { useCallback, useState, useEffect } from 'react'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isDefined, keyExistsIn } from '@sourcegraph/shared/src/util/types'
 import { SelfHostedCta } from '@sourcegraph/web/src/components/SelfHostedCta'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { RouterLink, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { queryExternalServices } from '../../../components/externalServices/backend'
@@ -166,13 +165,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 <h4 className="align-middle mb-1">Connected with {services.join(', ')}</h4>
                 <p className="align-middle mb-0">
                     Next,{' '}
-                    <Link
+                    <RouterLink
                         className="font-weight-normal"
                         to={`${routingPrefix}/repositories/manage`}
                         onClick={logAddRepositoriesClicked('banner')}
                     >
                         add repositories
-                    </Link>{' '}
+                    </RouterLink>{' '}
                     to search with Sourcegraph.
                 </p>
             </div>
@@ -292,12 +291,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 description={
                     <span className="text-muted">
                         Connect with {owner.name ? owner.name + "'s" : 'your'} code hosts. Then,{' '}
-                        <Link
+                        <RouterLink
                             to={`${routingPrefix}/repositories/manage`}
                             onClick={logAddRepositoriesClicked('description')}
                         >
                             add repositories
-                        </Link>{' '}
+                        </RouterLink>{' '}
                         to search with Sourcegraph.
                     </span>
                 }

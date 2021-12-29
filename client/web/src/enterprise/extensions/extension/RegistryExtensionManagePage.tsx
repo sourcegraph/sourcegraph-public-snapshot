@@ -3,7 +3,6 @@ import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
@@ -12,6 +11,7 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegr
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -193,12 +193,12 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                     <div className={classNames('card mt-5', styles.otherActions)}>
                         <div className="card-header">Other actions</div>
                         <div className="card-body">
-                            <Link
+                            <RouterLink
                                 to={`${this.props.extension.registryExtension.url}/-/releases/new`}
                                 className="btn btn-success mr-2"
                             >
                                 Publish new release
-                            </Link>
+                            </RouterLink>
                             <RegistryExtensionDeleteButton
                                 extension={this.props.extension.registryExtension}
                                 onDidUpdate={this.onDidDelete}

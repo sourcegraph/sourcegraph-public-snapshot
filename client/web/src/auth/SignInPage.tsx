@@ -3,7 +3,9 @@ import * as H from 'history'
 import { partition } from 'lodash'
 import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useEffect, useState } from 'react'
-import { Link, Redirect } from 'react-router-dom'
+import { Redirect } from 'react-router-dom'
+
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
@@ -87,7 +89,7 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                 </div>
                 {props.context.allowSignup ? (
                     <p>
-                        New to Sourcegraph? <Link to={`/sign-up${location.search}`}>Sign up</Link>
+                        New to Sourcegraph? <RouterLink to={`/sign-up${location.search}`}>Sign up</RouterLink>
                     </p>
                 ) : (
                     <p className="text-muted">Need an account? Contact your site admin</p>

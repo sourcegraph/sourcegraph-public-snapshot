@@ -3,14 +3,13 @@ import * as H from 'history'
 import LockIcon from 'mdi-react/LockIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { interval, Subject, Subscription } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { RouterLink, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'
 import { FeedbackText } from '../../components/FeedbackText'
@@ -318,7 +317,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                         {this.state.repo.viewerCanAdminister && (
                             <small className="form-text text-muted">
                                 Configure repository mirroring in{' '}
-                                <Link to="/site-admin/external-services">external services</Link>.
+                                <RouterLink to="/site-admin/external-services">external services</RouterLink>.
                             </small>
                         )}
                     </div>
@@ -351,16 +350,18 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                                         <strong>No ECDSA host key is known ... Host key verification failed?</strong>
                                     </code>{' '}
                                     See{' '}
-                                    <Link to="/help/admin/repo/auth#ssh-authentication-config-keys-known-hosts">
+                                    <RouterLink to="/help/admin/repo/auth#ssh-authentication-config-keys-known-hosts">
                                         SSH repository authentication documentation
-                                    </Link>{' '}
+                                    </RouterLink>{' '}
                                     for how to provide an SSH <code>known_hosts</code> file with the remote host's SSH
                                     host key.
                                 </li>
                                 <li className={styles.step}>
                                     Consult{' '}
-                                    <Link to="/help/admin/repo/add">Sourcegraph repositories documentation</Link> for
-                                    resolving other authentication issues (such as HTTPS certificates and SSH keys).
+                                    <RouterLink to="/help/admin/repo/add">
+                                        Sourcegraph repositories documentation
+                                    </RouterLink>{' '}
+                                    for resolving other authentication issues (such as HTTPS certificates and SSH keys).
                                 </li>
                                 <li className={styles.step}>
                                     <FeedbackText headerText="Questions?" />

@@ -5,7 +5,7 @@ import SettingsIcon from 'mdi-react/SettingsIcon'
 import React, { useCallback, useState } from 'react'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
@@ -53,19 +53,19 @@ export const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodePro
                     {node.namespace && (
                         <>
                             <AccountIcon className="icon-inline" />
-                            <Link to={node.namespace.url}>{node.namespace.namespaceName}</Link>{' '}
+                            <RouterLink to={node.namespace.url}>{node.namespace.namespaceName}</RouterLink>{' '}
                         </>
                     )}
                     {node.displayName}
                 </div>
                 <div>
-                    <Link
+                    <RouterLink
                         className="btn btn-secondary btn-sm test-edit-external-service-button"
                         to={`${routingPrefix}/external-services/${node.id}`}
                         data-tooltip="External service settings"
                     >
                         <SettingsIcon className="icon-inline" /> Edit
-                    </Link>{' '}
+                    </RouterLink>{' '}
                     <button
                         type="button"
                         className="btn btn-sm btn-danger test-delete-external-service-button"

@@ -4,9 +4,9 @@ import { noop } from 'lodash'
 import React, { useCallback, AnchorHTMLAttributes } from 'react'
 import { Key } from 'ts-key-enum'
 
-import { isDefined } from '../util/types'
+import { RouterLink, AnchorLink } from '@sourcegraph/wildcard'
 
-import { Link } from './Link'
+import { isDefined } from '../util/types'
 
 const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>
     event.key === Key.Enter && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey
@@ -118,8 +118,8 @@ export const ButtonLink: React.FunctionComponent<ButtonLinkProps> = ({
             // Use onAuxClick so that middle-clicks are caught.
             // Ideally this should a <button> but we can't guarantee we have the .btn-link class here.
             // eslint-disable-next-line jsx-a11y/anchor-is-valid
-            <a
-                href=""
+            <AnchorLink
+                to=""
                 {...commonProps}
                 onClick={onClickPreventDefault}
                 onAuxClick={onClickPreventDefault}
@@ -128,13 +128,20 @@ export const ButtonLink: React.FunctionComponent<ButtonLinkProps> = ({
                 data-content={dataContent}
             >
                 {children}
-            </a>
+            </AnchorLink>
         )
     }
 
     return (
-        <Link {...commonProps} to={to} target={target} rel={rel} ref={buttonLinkReference} data-content={dataContent}>
+        <RouterLink
+            {...commonProps}
+            to={to}
+            target={target}
+            rel={rel}
+            ref={buttonLinkReference}
+            data-content={dataContent}
+        >
             {children}
-        </Link>
+        </RouterLink>
     )
 }

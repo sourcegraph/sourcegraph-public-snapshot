@@ -32,7 +32,7 @@ exports[`CommunitySearchContextPanel renders correctly 1`] = `
             class="d-flex flex-column"
           >
             <a
-              class="mb-1"
+              class="anchorLink mb-1"
               href="/cncf"
             >
               Cloud Native Computing Foundation (CNCF)
@@ -51,7 +51,7 @@ exports[`CommunitySearchContextPanel renders correctly 1`] = `
             class="d-flex flex-column"
           >
             <a
-              class="mb-1"
+              class="anchorLink mb-1"
               href="/temporal"
             >
               Temporal
@@ -70,7 +70,7 @@ exports[`CommunitySearchContextPanel renders correctly 1`] = `
             class="d-flex flex-column"
           >
             <a
-              class="mb-1"
+              class="anchorLink mb-1"
               href="/o3de"
             >
               O3DE
@@ -89,7 +89,7 @@ exports[`CommunitySearchContextPanel renders correctly 1`] = `
             class="d-flex flex-column"
           >
             <a
-              class="mb-1"
+              class="anchorLink mb-1"
               href="/stackstorm"
             >
               StackStorm
@@ -108,7 +108,7 @@ exports[`CommunitySearchContextPanel renders correctly 1`] = `
             class="d-flex flex-column"
           >
             <a
-              class="mb-1"
+              class="anchorLink mb-1"
               href="/kubernetes"
             >
               Kubernetes
@@ -127,7 +127,7 @@ exports[`CommunitySearchContextPanel renders correctly 1`] = `
             class="d-flex flex-column"
           >
             <a
-              class="mb-1"
+              class="anchorLink mb-1"
               href="/stanford"
             >
               Stanford University

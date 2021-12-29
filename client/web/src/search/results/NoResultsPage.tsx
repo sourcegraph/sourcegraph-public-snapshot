@@ -3,11 +3,11 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React, { useCallback, useEffect } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { SearchContextProps } from '..'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
@@ -109,12 +109,12 @@ const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
     if (runnable) {
         const builtURLQuery = buildSearchURLQuery(query, patternType, false, 'global')
         return (
-            <Link onClick={onRun} to={{ pathname: '/search', search: builtURLQuery }}>
+            <RouterLink onClick={onRun} to={{ pathname: '/search', search: builtURLQuery }}>
                 <div className={styles.searchInputExample}>
                     {example}
                     <span className="ml-2 text-nowrap">Run Search</span>
                 </div>
-            </Link>
+            </RouterLink>
         )
     }
     return <div className={styles.searchInputExample}>{example}</div>
@@ -306,12 +306,12 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                             />
                             <p>
                                 <small>
-                                    <Link
+                                    <RouterLink
                                         target="blank"
                                         to="https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet#searching-an-organizations-repository"
                                     >
                                         Learn more <ExternalLinkIcon className="icon-inline" />
-                                    </Link>
+                                    </RouterLink>
                                 </small>
                             </p>
 
@@ -344,21 +344,21 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                             Sourcegraph.
                         </p>
                         <p>
-                            <Link
+                            <RouterLink
                                 onClick={() => telemetryService.log('NoResultsMore', { link: 'Learn site' })}
                                 target="blank"
                                 to="https://learn.sourcegraph.com/"
                             >
                                 Sourcegraph Learn <ExternalLinkIcon className="icon-inline" />
-                            </Link>
+                            </RouterLink>
                             <br />
-                            <Link
+                            <RouterLink
                                 onClick={() => telemetryService.log('NoResultsMore', { link: 'Cheat sheet' })}
                                 target="blank"
                                 to="https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet"
                             >
                                 Sourcegraph cheat sheet <ExternalLinkIcon className="icon-inline" />
-                            </Link>
+                            </RouterLink>
                         </p>
                     </Container>
 

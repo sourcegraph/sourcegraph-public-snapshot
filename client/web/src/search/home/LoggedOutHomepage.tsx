@@ -2,9 +2,9 @@ import classNames from 'classnames'
 import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import React, { useCallback } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
@@ -49,7 +49,7 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
             <div className={styles.searchExamples}>
                 {examples.map(example => (
                     <div key={example.query} className={styles.searchExampleCardWrapper}>
-                        <Link
+                        <RouterLink
                             to={example.to}
                             className={classNames('card', styles.searchExampleCard)}
                             onClick={searchExampleClicked(example.trackEventName)}
@@ -60,10 +60,10 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
                                     <SyntaxHighlightedSearchQuery query={example.query} />
                                 </div>
                             </div>
-                        </Link>
-                        <Link to={example.to} onClick={searchExampleClicked(example.trackEventName)}>
+                        </RouterLink>
+                        <RouterLink to={example.to} onClick={searchExampleClicked(example.trackEventName)}>
                             {example.label}
-                        </Link>
+                        </RouterLink>
                     </div>
                 ))}
             </div>
@@ -137,12 +137,12 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                                 src={communitySearchContext.homepageIcon}
                                 alt={`${communitySearchContext.spec} icon`}
                             />
-                            <Link
+                            <RouterLink
                                 to={communitySearchContext.url}
                                 className={classNames(styles.loggedOutHomepageCommunitySearchContextsListingTitle)}
                             >
                                 {communitySearchContext.title}
-                            </Link>
+                            </RouterLink>
                         </div>
                     ))}
                 </div>

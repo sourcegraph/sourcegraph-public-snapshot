@@ -62,12 +62,14 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   class="ml-1"
                 >
                   <a
+                    class="anchorLink"
                     href="/github.com/foo/bar"
                   >
                     foo/bar
                   </a>
                    › 
                   <a
+                    class="anchorLink"
                     href="/github.com/foo/bar/-/blob/?subtree=true"
                   >
                     <strong />
@@ -90,7 +92,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   class="test-file-match-children-item-wrapper itemCodeWrapper"
                 >
                   <a
-                    class="test-file-match-children-item item itemClickable"
+                    class="anchorLink test-file-match-children-item item itemClickable"
                     data-testid="file-match-children-item"
                     href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
                   >
@@ -284,12 +286,14 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   class="ml-1"
                 >
                   <a
+                    class="anchorLink"
                     href="/github.com/foo/bar"
                   >
                     foo/bar
                   </a>
                    › 
                   <a
+                    class="anchorLink"
                     href="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
                   >
                     <strong>
@@ -314,7 +318,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   class="test-file-match-children-item-wrapper itemCodeWrapper"
                 >
                   <a
-                    class="test-file-match-children-item item itemClickable"
+                    class="anchorLink test-file-match-children-item item itemClickable"
                     data-testid="file-match-children-item"
                     href="/github.com/foo/bar/-/blob/file1.txt?L2:1&subtree=true"
                   >
@@ -461,12 +465,14 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   class="ml-1"
                 >
                   <a
+                    class="anchorLink"
                     href="/github.com/foo/bar"
                   >
                     foo/bar
                   </a>
                    › 
                   <a
+                    class="anchorLink"
                     href="/github.com/foo/bar/-/blob/?subtree=true"
                   >
                     <strong />
@@ -489,7 +495,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   class="test-file-match-children-item-wrapper itemCodeWrapper"
                 >
                   <a
-                    class="test-file-match-children-item item itemClickable"
+                    class="anchorLink test-file-match-children-item item itemClickable"
                     data-testid="file-match-children-item"
                     href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
                   >

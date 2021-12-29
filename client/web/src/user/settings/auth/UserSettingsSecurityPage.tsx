@@ -5,9 +5,8 @@ import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike, asError } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { RouterLink, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
@@ -190,9 +189,9 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                 {this.props.authenticatedUser.id !== this.props.user.id && (
                     <div className="alert alert-danger">
                         Only the user may change their password. Site admins may{' '}
-                        <Link to={`/site-admin/users?query=${encodeURIComponent(this.props.user.username)}`}>
+                        <RouterLink to={`/site-admin/users?query=${encodeURIComponent(this.props.user.username)}`}>
                             reset a user's password
-                        </Link>
+                        </RouterLink>
                         .
                     </div>
                 )}

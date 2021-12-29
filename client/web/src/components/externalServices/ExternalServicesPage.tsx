@@ -7,8 +7,8 @@ import { tap } from 'rxjs/operators'
 
 import { isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { ListExternalServiceFields, Scalars, ExternalServicesResult } from '../../graphql-operations'
@@ -89,12 +89,12 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2 className="mb-0">Manage code hosts</h2>
                 {!isManagingOtherUser && (
-                    <Link
+                    <RouterLink
                         className="btn btn-primary test-goto-add-external-service-page"
                         to={`${routingPrefix}/external-services/new`}
                     >
                         <AddIcon className="icon-inline" /> Add code host
-                    </Link>
+                    </RouterLink>
                 )}
             </div>
             <p className="mt-2">Manage code host connections to sync repositories.</p>

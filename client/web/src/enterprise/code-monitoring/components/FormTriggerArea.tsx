@@ -6,11 +6,11 @@ import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { Tooltip } from 'reactstrap'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 
@@ -280,7 +280,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 </ul>
                             </div>
                             <div className={classNames('p-2 my-2', styles.queryInputPreviewLink)}>
-                                <Link
+                                <RouterLink
                                     to={`/search?${buildSearchURLQuery(
                                         queryState.value,
                                         SearchPatternType.literal,
@@ -294,7 +294,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     <OpenInNewIcon
                                         className={classNames('ml-1 icon-inline', styles.queryInputPreviewLinkIcon)}
                                     />
-                                </Link>
+                                </RouterLink>
                             </div>
                         </div>
                     </div>

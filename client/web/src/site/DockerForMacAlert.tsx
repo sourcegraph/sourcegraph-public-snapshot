@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
 
@@ -21,8 +21,8 @@ export const DockerForMacAlert: React.FunctionComponent<{ className?: string }> 
             access, search performance and cloning repositories on Sourcegraph will be much slower.
         </span>
         <span className={styles.right}>
-            <Link to="/help/admin">Run Sourcegraph on a different platform or deploy it to a server</Link> for much
-            faster performance.
+            <RouterLink to="/help/admin">Run Sourcegraph on a different platform or deploy it to a server</RouterLink>{' '}
+            for much faster performance.
         </span>
     </DismissibleAlert>
 )

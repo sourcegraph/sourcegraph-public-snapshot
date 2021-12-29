@@ -3,14 +3,13 @@ import React, { useCallback, useMemo } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { catchError } from 'rxjs/operators'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionFilterValue,
 } from '@sourcegraph/web/src/components/FilteredConnection'
-import { Badge } from '@sourcegraph/wildcard'
+import { RouterLink, Badge } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import {
@@ -167,9 +166,9 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                     {autoDefinedSearchContexts?.map(context => (
                         <div key={context.spec} className="card p-3">
                             <div>
-                                <Link to={`/contexts/${context.spec}`}>
+                                <RouterLink to={`/contexts/${context.spec}`}>
                                     <strong>{context.spec}</strong>
-                                </Link>
+                                </RouterLink>
                                 <Badge
                                     variant="secondary"
                                     pill={true}

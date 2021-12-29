@@ -1,7 +1,7 @@
 import React, { ChangeEvent } from 'react'
-import { Link } from 'react-router-dom'
 
 import { SettingsSiteSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import {
     isGlobalSubject,
@@ -57,7 +57,7 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
             subtitle={
                 <span>
                     This insight will be always displayed in the{' '}
-                    <Link to="/insights/dashboards/all">‘All Insights’ dashboard</Link> by default
+                    <RouterLink to="/insights/dashboards/all">‘All Insights’ dashboard</RouterLink> by default
                 </span>
             }
             className="mb-0 mt-4"

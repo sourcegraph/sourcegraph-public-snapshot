@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import { escapeRegExp, isEqual } from 'lodash'
 import * as React from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+import { RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -13,6 +13,7 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -70,18 +71,18 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
                     {commit && (
                         <>
                             <Timestamp date={commit.author.date} />:{' '}
-                            <Link
+                            <RouterLink
                                 to={commit.url}
                                 className="repository-contributor-node__commit-subject"
                                 data-tooltip="Most recent commit by contributor"
                             >
                                 {commit.subject}
-                            </Link>
+                            </RouterLink>
                         </>
                     )}
                 </div>
                 <div className={styles.count}>
-                    <Link
+                    <RouterLink
                         to={`/search?${buildSearchURLQuery(query, patternType, false)}`}
                         className="font-weight-bold"
                         data-tooltip={
@@ -90,7 +91,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
                         }
                     >
                         {numberWithCommas(node.count)} {pluralize('commit', node.count)}
-                    </Link>
+                    </RouterLink>
                 </div>
             </div>
         </div>

@@ -10,9 +10,9 @@ import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { useCallback, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { BatchSpecListFields } from '../../../graphql-operations'
 
@@ -51,11 +51,11 @@ export const BatchSpecNode: React.FunctionComponent<BatchSpecNodeProps> = ({ nod
             </div>
             <div className="px-2 pb-1">
                 <h3 className="pr-2">
-                    <Link className="text-muted" to={`${node.namespace.url}/batch-changes`}>
+                    <RouterLink className="text-muted" to={`${node.namespace.url}/batch-changes`}>
                         {node.namespace.namespaceName}
-                    </Link>
+                    </RouterLink>
                     <span className="text-muted d-inline-block mx-1">/</span>
-                    <Link to={`/batch-changes/executions/${node.id}`}>{node.description.name || '-'}</Link>
+                    <RouterLink to={`/batch-changes/executions/${node.id}`}>{node.description.name || '-'}</RouterLink>
                 </h3>
                 <small className="text-muted d-block">
                     Executed by <strong>{node.creator?.username}</strong> <Timestamp date={node.createdAt} now={now} />

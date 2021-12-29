@@ -6,10 +6,9 @@ import TextAreaAutosize from 'react-textarea-autosize'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { gql, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { Button, LoadingSpinner, useAutoFocus } from '@sourcegraph/wildcard'
+import { RouterLink, Button, LoadingSpinner, useAutoFocus } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
@@ -122,9 +121,9 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                             <>
                                 {' '}
                                 Want to help keep making Sourcegraph better?{' '}
-                                <Link to="/user/settings/product-research" onClick={closePrompt}>
+                                <RouterLink to="/user/settings/product-research" onClick={closePrompt}>
                                     Join us for occasional user research
-                                </Link>{' '}
+                                </RouterLink>{' '}
                                 and share your feedback on our latest features and ideas.
                             </>
                         )}

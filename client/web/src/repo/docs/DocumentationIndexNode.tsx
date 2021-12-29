@@ -5,9 +5,9 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CircleMediumIcon from 'mdi-react/CircleMediumIcon'
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
@@ -187,9 +187,9 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
                         </button>
                     )}
                     {node.detail.value !== '' && (
-                        <Link id={'index-' + hash} to={thisPage} onClick={scrollToFast} className="pr-3">
+                        <RouterLink id={'index-' + hash} to={thisPage} onClick={scrollToFast} className="pr-3">
                             {node.label.value}
-                        </Link>
+                        </RouterLink>
                     )}
                 </span>
                 {expanded && (

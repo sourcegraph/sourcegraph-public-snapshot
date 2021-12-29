@@ -2,8 +2,8 @@ import { kebabCase } from 'lodash'
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import React, { useMemo } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchChangeFields } from '../../graphql-operations'
@@ -91,7 +91,7 @@ export const BatchSpecMeta: React.FunctionComponent<BatchSpecMetaProps> = ({
     lastAppliedAt,
 }) => (
     <p className="mb-2">
-        {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'A deleted user'}{' '}
+        {lastApplier ? <RouterLink to={lastApplier.url}>{lastApplier.username}</RouterLink> : 'A deleted user'}{' '}
         {createdAt === lastAppliedAt ? 'created' : 'updated'} this batch change{' '}
         <Timestamp date={lastAppliedAt ?? createdAt} /> by applying the following batch spec:
     </p>

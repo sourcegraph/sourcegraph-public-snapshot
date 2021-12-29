@@ -9,6 +9,10 @@
     user-select: none;
 
     a {
-        color: inherit;
+        color: inherit !important;
+
+        &:hover {
+            color: inherit !important;
+        }
     }
 }

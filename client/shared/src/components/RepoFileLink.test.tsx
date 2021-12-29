@@ -1,11 +1,12 @@
-import { render } from '@testing-library/react'
 import React from 'react'
+
+import { renderWithRouter } from '../testing/render-with-router'
 
 import { RepoFileLink } from './RepoFileLink'
 
 describe('RepoFileLink', () => {
     test('renders', () => {
-        const component = render(
+        const component = renderWithRouter(
             <RepoFileLink
                 repoName="example.com/my/repo"
                 repoURL="https://example.com"

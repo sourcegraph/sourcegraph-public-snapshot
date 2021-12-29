@@ -3,7 +3,6 @@ import * as H from 'history'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { useCallback, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Observable, timer } from 'rxjs'
 import { filter, first, mapTo, switchMap } from 'rxjs/operators'
 
@@ -13,7 +12,7 @@ import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/feature
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge } from '@sourcegraph/wildcard'
+import { RouterLink, Badge } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -134,9 +133,9 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                               <div className={classNames('ml-2', styles.item)}>
                                   <small className="text-muted">
                                       No information from extensions available.{' '}
-                                      <Link to="/extensions">
+                                      <RouterLink to="/extensions">
                                           Find extensions in the Sourcegraph extension registry
-                                      </Link>
+                                      </RouterLink>
                                   </small>
                               </div>
                           )}

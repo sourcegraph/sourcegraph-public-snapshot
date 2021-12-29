@@ -6,11 +6,10 @@ import { catchError, map, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { RouterLink, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
@@ -97,10 +96,10 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     userHasCodeMonitors !== 'loading' &&
                     !isErrorLike(userHasCodeMonitors) &&
                     authenticatedUser && (
-                        <Link to="/code-monitoring/new" className="btn btn-primary">
+                        <RouterLink to="/code-monitoring/new" className="btn btn-primary">
                             <PlusIcon className="icon-inline" />
                             Create
-                        </Link>
+                        </RouterLink>
                     )
                 }
                 description={

@@ -2,8 +2,8 @@ import classNames from 'classnames'
 import React, { useCallback, useEffect, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { CloudSignUpSource } from '../../auth/CloudSignUpPage'
 
@@ -77,13 +77,13 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
                         <div className={classNames('text-muted', styles.copyText)}>{copyText}</div>
                     </div>
                 </div>
-                <Link
+                <RouterLink
                     className="btn btn-primary"
                     to={`/sign-up?src=${source}&returnTo=${encodeURIComponent(returnTo)}`}
                     onClick={onClick}
                 >
                     Sign up for Sourcegraph
-                </Link>
+                </RouterLink>
             </DropdownMenu>
         </ButtonDropdown>
     )

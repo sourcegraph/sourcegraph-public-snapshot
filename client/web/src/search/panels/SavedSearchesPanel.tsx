@@ -4,11 +4,11 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ISavedSearch, SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 
@@ -56,14 +56,14 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                 Use saved searches to alert you to uses of a favorite API, or changes to code you need to monitor.
             </small>
             {authenticatedUser && (
-                <Link
+                <RouterLink
                     to={`/users/${authenticatedUser.username}/searches/add`}
                     onClick={logEvent('SavedSearchesPanelCreateButtonClicked', { source: 'empty view' })}
                     className="btn btn-secondary mt-2 align-self-center"
                 >
                     <PlusIcon className="icon-inline" />
                     Create a saved search
-                </Link>
+                </RouterLink>
             )}
         </EmptyPanelContainer>
     )
@@ -82,29 +82,29 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                         <dd key={search.id} className="text-monospace test-saved-search-entry">
                             <div className="d-flex justify-content-between">
                                 <small>
-                                    <Link
+                                    <RouterLink
                                         to={'/search?' + buildSearchURLQuery(search.query, patternType, false)}
                                         className=" p-0"
                                         onClick={logEvent('SavedSearchesPanelSearchClicked')}
                                     >
                                         {search.description}
-                                    </Link>
+                                    </RouterLink>
                                 </small>
                                 {authenticatedUser &&
                                     (search.namespace.__typename === 'User' ? (
-                                        <Link
+                                        <RouterLink
                                             to={`/users/${search.namespace.namespaceName}/searches/${search.id}`}
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
                                         >
                                             <PencilOutlineIcon className="icon-inline" />
-                                        </Link>
+                                        </RouterLink>
                                     ) : (
-                                        <Link
+                                        <RouterLink
                                             to={`/organizations/${search.namespace.namespaceName}/searches/${search.id}`}
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
                                         >
                                             <PencilOutlineIcon className="icon-inline" />
-                                        </Link>
+                                        </RouterLink>
                                     ))}
                             </div>
                         </dd>
@@ -113,13 +113,13 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
             {authenticatedUser && (
                 <FooterPanel className="p-1">
                     <small>
-                        <Link
+                        <RouterLink
                             to={`/users/${authenticatedUser.username}/searches`}
                             className=" text-left"
                             onClick={logEvent('SavedSearchesPanelViewAllClicked')}
                         >
                             View saved searches
-                        </Link>
+                        </RouterLink>
                     </small>
                 </FooterPanel>
             )}
@@ -130,13 +130,13 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
         <ActionButtonGroup>
             <div className="btn-group btn-group-sm">
                 {authenticatedUser && (
-                    <Link
+                    <RouterLink
                         to={`/users/${authenticatedUser.username}/searches/add`}
                         className="btn btn-outline-secondary mr-2"
                         onClick={logEvent('SavedSearchesPanelCreateButtonClicked', { source: 'toolbar' })}
                     >
                         +
-                    </Link>
+                    </RouterLink>
                 )}
             </div>
             <div className="btn-group btn-group-sm">

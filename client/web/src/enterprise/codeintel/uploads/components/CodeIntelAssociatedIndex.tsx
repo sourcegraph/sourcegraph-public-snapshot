@@ -1,7 +1,8 @@
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { FunctionComponent } from 'react'
-import { Link } from 'react-router-dom'
+
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { LsifUploadFields } from '../../../../graphql-operations'
 import { CodeIntelState } from '../../shared/components/CodeIntelState'
@@ -38,11 +39,11 @@ export const CodeIntelAssociatedIndex: FunctionComponent<CodeIntelAssociatedInde
                         <CodeIntelState node={node.associatedIndex} className="d-flex flex-column align-items-center" />
                     </span>
                     <span>
-                        <Link
+                        <RouterLink
                             to={`/${node.projectRoot.repository.name}/-/code-intelligence/indexes/${node.associatedIndex.id}`}
                         >
                             <ChevronRightIcon />
-                        </Link>
+                        </RouterLink>
                     </span>
 
                     <span className={styles.separator} />

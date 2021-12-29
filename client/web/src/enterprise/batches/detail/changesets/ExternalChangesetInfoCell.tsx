@@ -1,8 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { Badge } from '@sourcegraph/wildcard'
+import { RouterLink, Badge } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, ChangesetState } from '../../../../graphql-operations'
 
@@ -49,9 +48,9 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
             </div>
             <div>
                 <span className="mr-2 d-block">
-                    <Link to={node.repository.url} target="_blank" rel="noopener noreferrer">
+                    <RouterLink to={node.repository.url} target="_blank" rel="noopener noreferrer">
                         {node.repository.name}
-                    </Link>{' '}
+                    </RouterLink>{' '}
                     {hasHeadReference(node) && (
                         <div className="d-block d-sm-inline-block">
                             <Badge variant="secondary" className="text-monospace">

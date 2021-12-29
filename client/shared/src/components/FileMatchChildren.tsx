@@ -5,6 +5,7 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/common'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { IHighlightLineRange } from '../graphql/schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
@@ -20,7 +21,6 @@ import {
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import styles from './FileMatchChildren.module.scss'
 import { LastSyncedIcon } from './LastSyncedIcon'
-import { Link } from './Link'
 import { MatchGroup } from './ranking/PerFileResultRanking'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
@@ -104,7 +104,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
 
             {/* Symbols */}
             {((result.type === 'symbol' && result.symbols) || []).map(symbol => (
-                <Link
+                <RouterLink
                     to={symbol.url}
                     className={classNames('test-file-match-children-item', styles.item)}
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
@@ -115,7 +115,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                         {symbol.name}{' '}
                         {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
                     </code>
-                </Link>
+                </RouterLink>
             ))}
 
             {/* Line matches */}
@@ -128,7 +128,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                             }`}
                             className={classNames('test-file-match-children-item-wrapper', styles.itemCodeWrapper)}
                         >
-                            <Link
+                            <RouterLink
                                 to={createCodeExcerptLink(group)}
                                 className={classNames(
                                     'test-file-match-children-item',
@@ -149,7 +149,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                     isFirst={index === 0}
                                     blobLines={group.blobLines}
                                 />
-                            </Link>
+                            </RouterLink>
                         </div>
                     ))}
                 </div>

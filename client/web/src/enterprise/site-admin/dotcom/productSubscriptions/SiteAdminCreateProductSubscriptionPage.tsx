@@ -2,7 +2,6 @@ import * as H from 'history'
 import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { merge, of, Observable } from 'rxjs'
 import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
 
@@ -11,6 +10,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
@@ -82,7 +82,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscription
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
-                        <Link to={`/users/${props.node.username}`}>{props.node.username}</Link>{' '}
+                        <RouterLink to={`/users/${props.node.username}`}>{props.node.username}</RouterLink>{' '}
                         <span className="text-muted">
                             ({props.node.emails.filter(({ isPrimary }) => isPrimary).map(({ email }) => email)})
                         </span>

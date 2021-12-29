@@ -1,10 +1,10 @@
 import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { map, mapTo } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { ErrorAlert } from '../../components/alerts'
@@ -105,7 +105,7 @@ export const AccessTokenNode: React.FunctionComponent<AccessTokenNodeProps> = ({
                     {showSubject ? (
                         <>
                             <strong>
-                                <Link to={userURL(node.subject.username)}>{node.subject.username}</Link>
+                                <RouterLink to={userURL(node.subject.username)}>{node.subject.username}</RouterLink>
                             </strong>{' '}
                             &mdash; {note}
                         </>
@@ -127,7 +127,7 @@ export const AccessTokenNode: React.FunctionComponent<AccessTokenNodeProps> = ({
                         {node.subject.username !== node.creator.username && (
                             <>
                                 {' '}
-                                by <Link to={userURL(node.creator.username)}>{node.creator.username}</Link>
+                                by <RouterLink to={userURL(node.creator.username)}>{node.creator.username}</RouterLink>
                             </>
                         )}
                     </small>

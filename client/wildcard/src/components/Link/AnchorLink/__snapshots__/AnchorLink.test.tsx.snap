@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AnchorLink renders anchor link correctly 1`] = `
+<DocumentFragment>
+  <a
+    class="anchorLink"
+    href="#"
+  >
+     Link to docs 
+  </a>
+</DocumentFragment>
+`;

@@ -8,9 +8,9 @@ import { map } from 'rxjs/operators'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -171,8 +171,9 @@ export const InviteForm: React.FunctionComponent<Props> = ({
             {authenticatedUser?.siteAdmin && !emailInvitesEnabled && (
                 <DismissibleAlert className="alert-info" partialStorageKey="org-invite-email-config">
                     <p className=" mb-0">
-                        Set <code>email.smtp</code> in <Link to="/site-admin/configuration">site configuration</Link> to
-                        send email notifications about invitations.
+                        Set <code>email.smtp</code> in{' '}
+                        <RouterLink to="/site-admin/configuration">site configuration</RouterLink> to send email
+                        notifications about invitations.
                     </p>
                 </DismissibleAlert>
             )}

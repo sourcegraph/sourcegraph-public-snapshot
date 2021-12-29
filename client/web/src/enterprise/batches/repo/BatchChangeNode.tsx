@@ -2,8 +2,8 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React, { useState, useEffect } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../components/time/Timestamp'
 import { RepoBatchChange } from '../../../graphql-operations'
@@ -44,9 +44,14 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                         {node.changesets.totalCount} changesets total (showing first {MAX_CHANGESETS_COUNT})
                     </span>
                 </small>
-                <Link className="d-block btn btn-sm btn-link" to={node.url} target="_blank" rel="noopener noreferrer">
+                <RouterLink
+                    className="d-block btn btn-sm btn-link"
+                    to={node.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
                     See all
-                </Link>
+                </RouterLink>
             </div>
         ) : null
 
@@ -57,24 +62,24 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                 <div className="mt-1 mb-2 d-md-flex d-block align-items-baseline">
                     <h2 className="m-0 d-md-inline-block d-block">
                         <div className="d-md-inline-block d-block">
-                            <Link
+                            <RouterLink
                                 className="text-muted test-batches-namespace-link"
                                 to={`${node.namespace.url}/batch-changes`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
                                 {node.namespace.namespaceName}
-                            </Link>
+                            </RouterLink>
                             <span className="text-muted d-inline-block mx-1">/</span>
                         </div>
-                        <Link
+                        <RouterLink
                             className="test-batches-link mr-2"
                             to={node.url}
                             target="_blank"
                             rel="noopener noreferrer"
                         >
                             {node.name}
-                        </Link>
+                        </RouterLink>
                     </h2>
                     <small className="text-muted d-sm-block">
                         created <Timestamp date={node.createdAt} now={now} />

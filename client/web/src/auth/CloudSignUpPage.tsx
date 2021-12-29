@@ -1,11 +1,11 @@
 import classNames from 'classnames'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import React from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ProductStatusBadge } from '@sourcegraph/wildcard'
+import { RouterLink, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
@@ -90,7 +90,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
             {signUpForm}
             <div className={classNames('d-flex justify-content-center', styles.helperText)}>
                 <span className="mr-1">Have an account?</span>
-                <Link to={`/sign-in${location.search}`}>Log in</Link>
+                <RouterLink to={`/sign-in${location.search}`}>Log in</RouterLink>
             </div>
 
             <OrDivider className="mt-4 mb-4 text-lowercase" />
@@ -115,7 +115,10 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
             />
 
             <div className="mb-4">
-                Or, <Link to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}>continue with email</Link>
+                Or,{' '}
+                <RouterLink to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}>
+                    continue with email
+                </RouterLink>
             </div>
         </>
     )
@@ -123,13 +126,13 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
     const renderEmailAuthForm = (): JSX.Element => (
         <>
             <small className="d-block mt-3">
-                <Link
+                <RouterLink
                     className="d-flex align-items-center"
                     to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
                 >
                     <ChevronLeftIcon className={classNames('icon-inline', styles.backIcon)} />
                     Go back
-                </Link>
+                </RouterLink>
             </small>
 
             {signUpForm}
@@ -200,7 +203,8 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                             <hr className={styles.separator} />
 
                             <div>
-                                Already have an account? <Link to={`/sign-in${location.search}`}>Log in</Link>
+                                Already have an account?{' '}
+                                <RouterLink to={`/sign-in${location.search}`}>Log in</RouterLink>
                             </div>
                         </>
                     )}

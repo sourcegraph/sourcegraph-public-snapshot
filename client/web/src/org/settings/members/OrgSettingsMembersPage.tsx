@@ -2,14 +2,13 @@ import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { RouterLink, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { queryGraphQL } from '../../../backend/graphql'
@@ -114,9 +113,9 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             >
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
-                        <Link to={userURL(this.props.node.username)}>
+                        <RouterLink to={userURL(this.props.node.username)}>
                             <strong>{this.props.node.username}</strong>
-                        </Link>
+                        </RouterLink>
                         {this.props.node.displayName && (
                             <>
                                 <br />

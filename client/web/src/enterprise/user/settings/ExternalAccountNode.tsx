@@ -1,11 +1,10 @@
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { Badge } from '@sourcegraph/wildcard'
+import { RouterLink, Badge } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -126,9 +125,9 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                         {this.props.showUser && (
                             <>
                                 <strong>
-                                    <Link to={userURL(this.props.node.user.username)}>
+                                    <RouterLink to={userURL(this.props.node.user.username)}>
                                         {this.props.node.user.username}
-                                    </Link>
+                                    </RouterLink>
                                 </strong>{' '}
                                 &mdash;{' '}
                             </>

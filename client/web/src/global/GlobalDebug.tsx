@@ -2,10 +2,10 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ExtensionDevelopmentToolsPopover } from '@sourcegraph/shared/src/extensions/devtools'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
 
@@ -18,7 +18,7 @@ interface Props extends ExtensionsControllerProps, PlatformContextProps {
 const SHOW_DEBUG = localStorage.getItem('debug') !== null
 
 const ExtensionLink: React.FunctionComponent<{ id: string }> = props => (
-    <Link to={`/extensions/${props.id}`}>{props.id}</Link>
+    <RouterLink to={`/extensions/${props.id}`}>{props.id}</RouterLink>
 )
 
 const ExtensionDevelopmentToolsError = (error: Error): JSX.Element => (

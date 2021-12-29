@@ -3,9 +3,9 @@ import FileCodeIcon from 'mdi-react/FileCodeIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { EventLogResult } from '../backend'
@@ -84,9 +84,9 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
                 {processedResults?.map((recentFile, index) => (
                     <dd key={index} className="text-monospace">
                         <small>
-                            <Link to={recentFile.url} onClick={logFileClicked} data-testid="recent-files-item">
+                            <RouterLink to={recentFile.url} onClick={logFileClicked} data-testid="recent-files-item">
                                 {recentFile.repoName} › {recentFile.filePath}
-                            </Link>
+                            </RouterLink>
                         </small>
                     </dd>
                 ))}

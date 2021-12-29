@@ -3,8 +3,6 @@ import '../../shared/polyfills'
 import { fromEvent, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
 
-import { setLinkComponent, AnchorLink } from '@sourcegraph/shared/src/components/Link'
-
 import { determineCodeHost } from '../../shared/code-hosts/shared/codeHost'
 import { injectCodeIntelligence } from '../../shared/code-hosts/shared/inject'
 import {
@@ -26,8 +24,6 @@ assertEnvironment('CONTENT')
 
 const codeHost = determineCodeHost()
 initSentry('content', codeHost?.type)
-
-setLinkComponent(AnchorLink)
 
 const IS_EXTENSION = true
 

@@ -1,8 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { Badge } from '@sourcegraph/wildcard'
+import { RouterLink, Badge } from '@sourcegraph/wildcard'
 
 import { DiffStat } from '../../../components/diff/DiffStat'
 import {
@@ -63,7 +62,7 @@ interface WorkspaceNodeProps {
 
 const WorkspaceNode: React.FunctionComponent<WorkspaceNodeProps> = ({ node, selectedNode }) => (
     <li className={classNames('list-group-item', node.id === selectedNode && styles.workspaceSelected)}>
-        <Link to={`?workspace=${node.id}`}>
+        <RouterLink to={`?workspace=${node.id}`}>
             <div className={classNames(styles.workspaceRepo, 'd-flex justify-content-between mb-1')}>
                 <span>
                     <WorkspaceStateIcon
@@ -76,6 +75,6 @@ const WorkspaceNode: React.FunctionComponent<WorkspaceNodeProps> = ({ node, sele
                 {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
             </div>
             <Badge variant="secondary">{node.branch.abbrevName}</Badge>
-        </Link>
+        </RouterLink>
     </li>
 )

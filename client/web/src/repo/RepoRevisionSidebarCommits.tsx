@@ -2,12 +2,12 @@ import classNames from 'classnames'
 import * as H from 'history'
 import FileIcon from 'mdi-react/FileIcon'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createInvalidGraphQLQueryResponseError, dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -37,13 +37,13 @@ const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, location }
             node={node}
             hideExpandCommitMessageBody={true}
             afterElement={
-                <Link
+                <RouterLink
                     to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid)}
                     className={classNames(styles.fileIcon, 'ml-2')}
                     title="View current file at this commit"
                 >
                     <FileIcon className="icon-inline" />
-                </Link>
+                </RouterLink>
             }
         />
     </li>

@@ -3,9 +3,8 @@ import React, { useMemo, useState } from 'react'
 import { Omit } from 'utility-types'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Container, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { RouterLink, Container, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
@@ -150,9 +149,9 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                                     <strong>New:</strong> Watch your code for changes with code monitoring to get
                                     notifications.
                                 </div>
-                                <Link to={codeMonitoringUrl} className="btn btn-primary">
+                                <RouterLink to={codeMonitoringUrl} className="btn btn-primary">
                                     Go to code monitoring →
-                                </Link>
+                                </RouterLink>
                             </div>
                         </div>
                     )}
@@ -207,7 +206,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                         <ProductStatusBadge status="new" className="mr-3" />
                         <span>
                             Watch for changes to your code and trigger email notifications, webhooks, and more with{' '}
-                            <Link to="/code-monitoring">code monitoring →</Link>
+                            <RouterLink to="/code-monitoring">code monitoring →</RouterLink>
                         </span>
                     </Container>
                 )}

@@ -12,10 +12,10 @@ import { startWith } from 'rxjs/operators'
 import { isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '..'
 import blockStyles from '../SearchNotebookBlock.module.scss'
@@ -259,9 +259,9 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
                     <div className={styles.header} data-testid="file-block-header">
                         <FileDocumentIcon className="icon-inline mr-2" />
                         {areInputsValid ? (
-                            <Link className={styles.headerFileLink} to={fileURL}>
+                            <RouterLink className={styles.headerFileLink} to={fileURL}>
                                 {getFileHeader(input)}
-                            </Link>
+                            </RouterLink>
                         ) : (
                             <span>{getFileHeader(input)}</span>
                         )}

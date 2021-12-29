@@ -7,7 +7,6 @@ import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -18,7 +17,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Badge, Container, PageHeader } from '@sourcegraph/wildcard'
+import { RouterLink, Badge, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { SearchContextProps } from '../../search'
 
@@ -67,7 +66,9 @@ const SearchContextRepositories: React.FunctionComponent<{ repositories: ISearch
                 className={classNames(styles.searchContextPageRepoRevsRow, 'd-flex')}
             >
                 <div className={classNames(styles.searchContextPageRepoRevsRowRepo, 'w-50')}>
-                    <Link to={`/${repositoryRevisions.repository.name}`}>{repositoryRevisions.repository.name}</Link>
+                    <RouterLink to={`/${repositoryRevisions.repository.name}`}>
+                        {repositoryRevisions.repository.name}
+                    </RouterLink>
                 </div>
                 <div className="w-50">
                     {repositoryRevisions.revisions.map(revision => (
@@ -75,7 +76,9 @@ const SearchContextRepositories: React.FunctionComponent<{ repositories: ISearch
                             key={`${repositoryRevisions.repository.name}-${revision}`}
                             className={styles.searchContextPageRepoRevsRowRev}
                         >
-                            <Link to={`/${repositoryRevisions.repository.name}@${revision}`}>{revision}</Link>
+                            <RouterLink to={`/${repositoryRevisions.repository.name}@${revision}`}>
+                                {revision}
+                            </RouterLink>
                         </div>
                     ))}
                 </div>
@@ -186,13 +189,13 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                 ]}
                                 actions={
                                     searchContextOrError.viewerCanManage && (
-                                        <Link
+                                        <RouterLink
                                             to={`/contexts/${searchContextOrError.spec}/edit`}
                                             className="btn btn-secondary"
                                             data-testid="edit-search-context-link"
                                         >
                                             Edit
-                                        </Link>
+                                        </RouterLink>
                                     )
                                 }
                             />

@@ -3,7 +3,7 @@
 exports[`QuickLink should have correct links when quicklinks present 1`] = `
 <DocumentFragment>
   <a
-    class="sidebarSectionListItem"
+    class="anchorLink sidebarSectionListItem"
     data-placement="right"
     href="/"
   >
@@ -21,7 +21,7 @@ exports[`QuickLink should have correct links when quicklinks present 1`] = `
     Home
   </a>
   <a
-    class="sidebarSectionListItem"
+    class="anchorLink sidebarSectionListItem"
     data-placement="right"
     data-tooltip="Example QuickLink"
     href="http://example.com"

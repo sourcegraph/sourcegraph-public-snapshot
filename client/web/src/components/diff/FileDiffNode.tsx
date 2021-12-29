@@ -7,9 +7,8 @@ import React, { useState, useCallback } from 'react'
 import { Observable } from 'rxjs'
 
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Badge } from '@sourcegraph/wildcard'
+import { RouterLink, Badge } from '@sourcegraph/wildcard'
 
 import { FileDiffFields } from '../../graphql-operations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
@@ -124,20 +123,23 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                             </Badge>
                         )}
                         {stat}
-                        <Link to={{ ...location, hash: anchor }} className={classNames('ml-2', styles.headerPath)}>
+                        <RouterLink
+                            to={{ ...location, hash: anchor }}
+                            className={classNames('ml-2', styles.headerPath)}
+                        >
                             {path}
-                        </Link>
+                        </RouterLink>
                     </div>
                     <div className={styles.headerActions}>
                         {/* We only have a 'view' component for GitBlobs, but not for `VirtualFile`s. */}
                         {node.mostRelevantFile.__typename === 'GitBlob' && (
-                            <Link
+                            <RouterLink
                                 to={node.mostRelevantFile.url}
                                 className="btn btn-sm btn-link"
                                 data-tooltip="View file at revision"
                             >
                                 View
-                            </Link>
+                            </RouterLink>
                         )}
                     </div>
                 </div>

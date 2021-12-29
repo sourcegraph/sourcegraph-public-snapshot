@@ -3,12 +3,12 @@ import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import React, { useEffect, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import {
     FilteredConnection,
@@ -50,18 +50,18 @@ const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node }) 
             </div>
             <div className="repository-node__actions">
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
-                    <Link className="btn btn-sm btn-secondary" to={node.url}>
+                    <RouterLink className="btn btn-sm btn-secondary" to={node.url}>
                         <CloudDownloadIcon className="icon-inline" /> Clone now
-                    </Link>
+                    </RouterLink>
                 )}{' '}
                 {
-                    <Link
+                    <RouterLink
                         className="btn btn-secondary btn-sm"
                         to={`/${node.name}/-/settings`}
                         data-tooltip="Repository settings"
                     >
                         <SettingsIcon className="icon-inline" /> Settings
-                    </Link>
+                    </RouterLink>
                 }{' '}
             </div>
         </div>
@@ -148,9 +148,12 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<Props> = ({ hist
             <h2>Repositories</h2>
             <p>
                 Repositories are synced from connected{' '}
-                <Link to="/site-admin/external-services" data-testid="test-repositories-code-host-connections-link">
+                <RouterLink
+                    to="/site-admin/external-services"
+                    data-testid="test-repositories-code-host-connections-link"
+                >
                     code host connections
-                </Link>
+                </RouterLink>
                 .
             </p>
             <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>

@@ -5,9 +5,8 @@ import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Container } from '@sourcegraph/wildcard'
+import { RouterLink, Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -33,10 +32,10 @@ const CodeMonitorEmptyList: React.FunctionComponent<{ authenticatedUser: Authent
     <div className="text-center">
         <h2 className="text-muted mb-2">No code monitors have been created.</h2>
         {authenticatedUser ? (
-            <Link to="/code-monitoring/new" className="btn btn-primary">
+            <RouterLink to="/code-monitoring/new" className="btn btn-primary">
                 <PlusIcon className="icon-inline" />
                 Create a code monitor
-            </Link>
+            </RouterLink>
         ) : (
             <CodeMonitorSignUpLink eventName="SignUpPLGMonitor_EmptyList" text="Sign up to create a code monitor" />
         )}

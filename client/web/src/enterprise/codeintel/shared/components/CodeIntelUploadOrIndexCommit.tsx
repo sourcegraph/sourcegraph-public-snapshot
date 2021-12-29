@@ -1,6 +1,6 @@
 import React, { FunctionComponent } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { LsifIndexFields, LsifUploadFields } from '../../../../graphql-operations'
 
@@ -15,9 +15,9 @@ export const CodeIntelUploadOrIndexCommit: FunctionComponent<CodeIntelUploadOrIn
 }) => (
     <code>
         {node.projectRoot ? (
-            <Link to={node.projectRoot.commit.url}>
+            <RouterLink to={node.projectRoot.commit.url}>
                 <code>{abbreviated ? node.projectRoot.commit.abbreviatedOID : node.projectRoot.commit.oid}</code>
-            </Link>
+            </RouterLink>
         ) : (
             <span>{abbreviated ? node.inputCommit.slice(0, 7) : node.inputCommit}</span>
         )}

@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
-import { Link } from 'react-router-dom'
+
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import {
     CaptureGroupInsightChart,
@@ -112,7 +113,8 @@ export const ExtensionInsightsCard: React.FunctionComponent<CardProps> = props =
 
         <CardBody title="Based on Sourcegraph extensions">
             Enable the extension and go to the README.md to learn how to set up code insights for selected Sourcegraph
-            extensions. <Link to="/extensions?query=category:Insights&experimental=true">Explore the extensions</Link>
+            extensions.{' '}
+            <RouterLink to="/extensions?query=category:Insights&experimental=true">Explore the extensions</RouterLink>
         </CardBody>
     </Card>
 )

@@ -1,11 +1,12 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+import { RouteComponentProps } from 'react-router-dom'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
@@ -54,7 +55,7 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                         <p className="text-left mb-0">Check your email for a link to reset your password.</p>
                     </div>
                     <span className="form-text text-muted">
-                        <Link to="/sign-in">Return to sign in</Link>
+                        <RouterLink to="/sign-in">Return to sign in</RouterLink>
                     </span>
                 </>
             )
@@ -104,7 +105,7 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                     </button>
                 </Form>
                 <span className="form-text text-muted">
-                    <Link to="/sign-in">Return to sign in</Link>
+                    <RouterLink to="/sign-in">Return to sign in</RouterLink>
                 </span>
             </>
         )
@@ -174,7 +175,8 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
         if (this.state.submitOrError === null) {
             return (
                 <div className="alert alert-success">
-                    Your password was reset. <Link to="/sign-in">Sign in with your new password</Link> to continue.
+                    Your password was reset. <RouterLink to="/sign-in">Sign in with your new password</RouterLink> to
+                    continue.
                 </div>
             )
         }

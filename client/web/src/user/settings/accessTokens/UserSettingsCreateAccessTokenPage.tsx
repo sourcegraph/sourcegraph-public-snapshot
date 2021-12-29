@@ -7,11 +7,10 @@ import { catchError, concatMap, map, tap } from 'rxjs/operators'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { RouterLink, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -203,12 +202,12 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<Props> =
                         )}{' '}
                         Generate token
                     </button>
-                    <Link
+                    <RouterLink
                         className="btn btn-secondary ml-2 test-create-access-token-cancel"
                         to={match.url.replace(/\/new$/, '')}
                     >
                         Cancel
-                    </Link>
+                    </RouterLink>
                 </div>
             </Form>
 

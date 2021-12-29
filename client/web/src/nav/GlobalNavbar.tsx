@@ -11,7 +11,6 @@ import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationDropdown } from '@sourcegraph/shared/src/components/activation/ActivationDropdown'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -24,7 +23,7 @@ import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sour
 import { FeedbackPrompt } from '@sourcegraph/web/src/nav/Feedback/FeedbackPrompt'
 import { NavDropdown } from '@sourcegraph/web/src/nav/NavBar/NavDropdown'
 import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNavItem'
-import { ProductStatusBadge } from '@sourcegraph/wildcard'
+import { RouterLink, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -246,20 +245,20 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     {!props.authenticatedUser && (
                         <>
                             <NavAction>
-                                <Link className={styles.link} to="https://about.sourcegraph.com">
+                                <RouterLink className={styles.link} to="https://about.sourcegraph.com">
                                     About <span className="d-none d-sm-inline">Sourcegraph</span>
-                                </Link>
+                                </RouterLink>
                             </NavAction>
 
                             {showDotComMarketing && (
                                 <NavAction>
-                                    <Link
+                                    <RouterLink
                                         className={classNames('font-weight-medium', styles.link)}
                                         to="/help"
                                         target="_blank"
                                     >
                                         Docs
-                                    </Link>
+                                    </RouterLink>
                                 </NavAction>
                             )}
                         </>
@@ -298,12 +297,12 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         <>
                             <NavAction>
                                 <div>
-                                    <Link className="btn btn-sm btn-outline-secondary mr-1" to="/sign-in">
+                                    <RouterLink className="btn btn-sm btn-outline-secondary mr-1" to="/sign-in">
                                         Log in
-                                    </Link>
-                                    <Link className={classNames('btn btn-sm', styles.signUp)} to="/sign-up">
+                                    </RouterLink>
+                                    <RouterLink className={classNames('btn btn-sm', styles.signUp)} to="/sign-up">
                                         Sign up
-                                    </Link>
+                                    </RouterLink>
                                 </div>
                             </NavAction>
                         </>
