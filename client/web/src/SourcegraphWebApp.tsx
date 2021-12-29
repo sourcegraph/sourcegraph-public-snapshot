@@ -10,7 +10,7 @@ import { ScrollManager } from 'react-scroll-manager'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
 import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -29,7 +29,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Tooltip } from '@sourcegraph/wildcard'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
@@ -85,6 +85,7 @@ import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
+import styles from './SourcegraphWebApp.module.scss'
 import {
     setQueryStateFromSettings,
     setQueryStateFromURL,
@@ -371,14 +372,14 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             }
             if (errorMessage) {
                 subtitle = (
-                    <div className="app__error">
+                    <div className={styles.error}>
                         {subtitle}
                         {subtitle && <hr className="my-3" />}
                         <pre>{errorMessage}</pre>
                     </div>
                 )
             } else {
-                subtitle = <div className="app__error">{subtitle}</div>
+                subtitle = <div className={styles.error}>{subtitle}</div>
             }
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }

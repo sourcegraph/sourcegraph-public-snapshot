@@ -1,7 +1,7 @@
 import { isEqual } from 'lodash'
 
+import { isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { Settings } from '../schema/settings.schema'
 

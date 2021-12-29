@@ -3,6 +3,7 @@ import { CodeHost } from '../shared/codeHost'
 import { CodeView } from '../shared/codeViews'
 import { ViewResolver } from '../shared/views'
 
+import styles from './codeHost.module.scss'
 import { getContext } from './context'
 import { commitDOMFunctions, pullRequestDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getFileInfoForCommit, getFileInfoForPullRequest, getFileInfoFromSingleFileSourceCodeView } from './fileInfo'
@@ -86,7 +87,7 @@ function getCommitToolbarMount(codeView: HTMLElement): HTMLElement {
         throw new Error('Unable to find mount location')
     }
 
-    diffActions.classList.add('code-view-toolbar__commit-container--bitbucket-cloud')
+    diffActions.classList.add(styles.commitContainer)
     const mount = document.createElement('div')
     mount.classList.add('sg-toolbar-mount')
 
@@ -141,8 +142,6 @@ function getViewContextOnSourcegraphMount(container: HTMLElement): HTMLElement |
     return mount
 }
 
-const suffix = (className: string): string => className + '--bitbucket-cloud'
-
 export const bitbucketCloudCodeHost: CodeHost = {
     type: 'bitbucket-cloud',
     name: 'Bitbucket Cloud',
@@ -151,23 +150,22 @@ export const bitbucketCloudCodeHost: CodeHost = {
     getViewContextOnSourcegraphMount,
     check: checkIsBitbucketCloud,
     viewOnSourcegraphButtonClassProps: {
-        className: suffix('open-on-sourcegraph'),
-        iconClassName: suffix('icon'),
+        className: styles.openOnSourcegraph,
+        iconClassName: styles.icon,
     },
     codeViewToolbarClassProps: {
-        className: suffix('code-view-toolbar'),
-        listItemClass: suffix('code-view-toolbar__list-item'),
-        actionItemClass: suffix('code-view-toolbar__action-item'),
-        actionItemPressedClass: suffix('pressed'),
-        actionItemIconClass: suffix('icon'),
+        className: styles.codeViewToolbar,
+        listItemClass: styles.listItem,
+        actionItemClass: styles.codeViewToolbarActionItem,
+        actionItemPressedClass: styles.pressed,
+        actionItemIconClass: styles.icon,
     },
     hoverOverlayClassProps: {
-        className: suffix('hover-overlay'),
-        badgeClassName: suffix('hover-overlay__badge'),
-        actionItemClassName: suffix('hover-overlay__action-item'),
-        actionItemPressedClassName: suffix('hover-overlay__action-item-pressed'),
-        iconClassName: suffix('icon'),
-        contentClassName: suffix('hover-overlay__content'),
+        className: styles.hoverOverlay,
+        badgeClassName: styles.badge,
+        actionItemClassName: styles.hoverOverlayActionItem,
+        iconClassName: styles.icon,
+        contentClassName: styles.content,
     },
     notificationClassNames: { 1: '', 2: '', 3: '', 4: '', 5: '' },
     codeViewsRequireTokenization: true,

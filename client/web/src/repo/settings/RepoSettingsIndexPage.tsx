@@ -7,11 +7,11 @@ import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 
+import { createAggregateError } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
@@ -119,6 +119,19 @@ interface State {
     error?: Error
 }
 
+function prettyBytesBigint(bytes: bigint): string {
+    let unit = 0
+    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+    const threshold = BigInt(1000)
+
+    while (bytes >= threshold) {
+        bytes /= threshold
+        unit += 1
+    }
+
+    return bytes.toString() + ' ' + units[unit]
+}
+
 /**
  * The repository settings index page.
  */
@@ -197,7 +210,9 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                                 <tr>
                                                     <th>Content size</th>
                                                     <td>
-                                                        {prettyBytes(this.state.textSearchIndex.status.contentByteSize)}{' '}
+                                                        {prettyBytesBigint(
+                                                            BigInt(this.state.textSearchIndex.status.contentByteSize)
+                                                        )}{' '}
                                                         ({this.state.textSearchIndex.status.contentFilesCount}{' '}
                                                         {pluralize(
                                                             'file',
