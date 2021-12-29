@@ -412,7 +412,7 @@ func createSearchContext(ctx context.Context, s SearchContextsStore, searchConte
 		searchContext.Public,
 		nullInt32Column(searchContext.NamespaceUserID),
 		nullInt32Column(searchContext.NamespaceOrgID),
-		nullStringColumn(searchContext.RepositoryQuery),
+		nullStringColumn(searchContext.Query),
 	)
 	_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -431,7 +431,7 @@ func updateSearchContext(ctx context.Context, s SearchContextsStore, searchConte
 		searchContext.Name,
 		searchContext.Description,
 		searchContext.Public,
-		nullStringColumn(searchContext.RepositoryQuery),
+		nullStringColumn(searchContext.Query),
 		searchContext.ID,
 	)
 	_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
@@ -468,7 +468,7 @@ func scanSearchContexts(rows *sql.Rows) ([]*types.SearchContext, error) {
 			&dbutil.NullInt32{N: &sc.NamespaceUserID},
 			&dbutil.NullInt32{N: &sc.NamespaceOrgID},
 			&sc.UpdatedAt,
-			&dbutil.NullString{S: &sc.RepositoryQuery},
+			&dbutil.NullString{S: &sc.Query},
 			&dbutil.NullString{S: &sc.NamespaceUserName},
 			&dbutil.NullString{S: &sc.NamespaceOrgName},
 		)

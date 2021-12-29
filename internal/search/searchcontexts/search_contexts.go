@@ -179,12 +179,12 @@ func validateSearchContextRepositoryRevisions(repositoryRevisions []*types.Searc
 	return nil
 }
 
-func validateSearchContextRepositoryQuery(repositoryQuery string) error {
-	if repositoryQuery == "" {
+func validateSearchContextQuery(contextQuery string) error {
+	if contextQuery == "" {
 		return nil
 	}
 
-	plan, err := query.Pipeline(query.Init(repositoryQuery, query.SearchTypeRegex))
+	plan, err := query.Pipeline(query.Init(contextQuery, query.SearchTypeRegex))
 	if err != nil {
 		return err
 	}
@@ -281,7 +281,7 @@ func CreateSearchContextWithRepositoryRevisions(
 		return nil, err
 	}
 
-	if searchContext.RepositoryQuery != "" && len(repositoryRevisions) > 0 {
+	if searchContext.Query != "" && len(repositoryRevisions) > 0 {
 		return nil, errors.New("repository query and repository revisions are mutually exclusive")
 	}
 
@@ -290,7 +290,7 @@ func CreateSearchContextWithRepositoryRevisions(
 		return nil, err
 	}
 
-	err = validateSearchContextRepositoryQuery(searchContext.RepositoryQuery)
+	err = validateSearchContextQuery(searchContext.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -327,7 +327,7 @@ func UpdateSearchContextWithRepositoryRevisions(ctx context.Context, db database
 		return nil, err
 	}
 
-	if searchContext.RepositoryQuery != "" && len(repositoryRevisions) > 0 {
+	if searchContext.Query != "" && len(repositoryRevisions) > 0 {
 		return nil, errors.New("repository query and repository revisions are mutually exclusive")
 	}
 
@@ -336,7 +336,7 @@ func UpdateSearchContextWithRepositoryRevisions(ctx context.Context, db database
 		return nil, err
 	}
 
-	err = validateSearchContextRepositoryQuery(searchContext.RepositoryQuery)
+	err = validateSearchContextQuery(searchContext.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -398,7 +398,7 @@ func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[ap
 		return nil, err
 	}
 
-	if !conf.ExperimentalFeatures().SearchContextsRepositoryQuery {
+	if !conf.ExperimentalFeatures().SearchContextsQuery {
 		return revs, nil
 	}
 
@@ -407,9 +407,9 @@ func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[ap
 		return nil, err
 	}
 
-	var rqs []RepositoryQuery
+	var rqs []Query
 	for _, q := range repoQueries {
-		qs, err := ParseRepositoryQuery(q)
+		qs, err := ParseQuery(q)
 		if err != nil {
 			return nil, err
 		}
@@ -456,21 +456,21 @@ func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[ap
 	return revs, nil
 }
 
-// RepositoryQuery represents a parsed search context repository query.
-type RepositoryQuery struct {
+// Query represents a parsed search context repository query.
+type Query struct {
 	database.ReposListOptions
 	RevSpecs []string
 }
 
-// ParseRepositoryQuery parses the given repository query, returning an error
+// ParseQuery parses the given repository query, returning an error
 // in case of failure.
-func ParseRepositoryQuery(repositoryQuery string) ([]RepositoryQuery, error) {
-	plan, err := query.Pipeline(query.Init(repositoryQuery, query.SearchTypeRegex))
+func ParseQuery(contextQuery string) ([]Query, error) {
+	plan, err := query.Pipeline(query.Init(contextQuery, query.SearchTypeRegex))
 	if err != nil {
 		return nil, err
 	}
 
-	qs := make([]RepositoryQuery, 0, len(plan))
+	qs := make([]Query, 0, len(plan))
 	for _, p := range plan {
 		q := p.ToParseTree()
 
@@ -489,7 +489,7 @@ func ParseRepositoryQuery(repositoryQuery string) ([]RepositoryQuery, error) {
 		visibilityStr, _ := q.StringValue(query.FieldVisibility)
 		visibility := query.ParseVisibility(visibilityStr)
 
-		rq := RepositoryQuery{
+		rq := Query{
 			ReposListOptions: database.ReposListOptions{
 				CaseSensitivePatterns: q.IsCaseSensitive(),
 				ExcludePattern:        search.UnionRegExps(minusRepoFilters),

@@ -164,7 +164,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	// Filter by search context repository revisions only if this search context doesn't have
 	// a repository query, which is replaced by the context:foo term at query parsing time.
-	if searchContext.RepositoryQuery == "" {
+	if searchContext.Query == "" {
 		options.SearchContextID = searchContext.ID
 		options.UserID = searchContext.NamespaceUserID
 		options.OrgID = searchContext.NamespaceOrgID
@@ -210,7 +210,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	tr.LazyPrintf("Associate/validate revs - start")
 
 	var searchContextRepositoryRevisions map[api.RepoID]*search.RepositoryRevisions
-	if !searchcontexts.IsAutoDefinedSearchContext(searchContext) && searchContext.RepositoryQuery == "" {
+	if !searchcontexts.IsAutoDefinedSearchContext(searchContext) && searchContext.Query == "" {
 		scRepoRevs, err := searchcontexts.GetRepositoryRevisions(ctx, r.DB, searchContext.ID)
 		if err != nil {
 			return Resolved{}, err

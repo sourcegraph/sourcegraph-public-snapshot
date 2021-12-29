@@ -20,7 +20,7 @@ interface SearchContextFields {
         | { __typename: 'User'; id: string; namespaceName: string }
         | { __typename: 'Org'; id: string; namespaceName: string }
     >
-    repositoryQuery: string
+    query: string
     repositories: {
         __typename: 'SearchContextRepositoryRevisions'
         revisions: string[]
@@ -48,7 +48,7 @@ export function mockFetchAutoDefinedSearchContexts(numberContexts = 0): () => Ob
                 viewerCanManage: false,
                 description: 'Repositories on Sourcegraph',
                 repositories: [],
-                repositoryQuery: '',
+                query: '',
                 updatedAt: subDays(new Date(), 1).toISOString(),
             })) as ISearchContext[]
         )

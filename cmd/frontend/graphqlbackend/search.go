@@ -92,7 +92,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 	}
 	tr.LazyPrintf("parsing done")
 
-	if conf.ExperimentalFeatures().SearchContextsRepositoryQuery {
+	if conf.ExperimentalFeatures().SearchContextsQuery {
 		// Replace each context in the query with its repository query if any.
 		plan, err = substituteSearchContexts(ctx, db, plan)
 		if err != nil {
@@ -205,17 +205,17 @@ func substituteSearchContexts(ctx context.Context, db database.DB, plan query.Pl
 			return p
 		}
 
-		if sc.RepositoryQuery == "" {
+		if sc.Query == "" {
 			return p
 		}
 
-		repositoryQuery, err := query.Pipeline(query.Init(sc.RepositoryQuery, query.SearchTypeRegex))
+		contextQuery, err := query.Pipeline(query.Init(sc.Query, query.SearchTypeRegex))
 		if err != nil {
 			errs = multierror.Append(errs, err)
 			return p
 		}
 
-		return repositoryQuery.ToParseTree()[0]
+		return contextQuery.ToParseTree()[0]
 	}))
 
 	if err := errs.ErrorOrNil(); err != nil {

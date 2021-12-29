@@ -32,7 +32,7 @@ export interface CreateSearchContextPageProps
 export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<CreateSearchContextPageProps> = props => {
     const { authenticatedUser, createSearchContext } = props
 
-    const repositoryQuery = parseSearchURLQuery(props.location.search)
+    const query = parseSearchURLQuery(props.location.search)
 
     const onSubmit = useCallback(
         (
@@ -79,7 +79,7 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<Creat
                         }
                         className="mb-3"
                     />
-                    <SearchContextForm {...props} repositoryQuery={repositoryQuery} onSubmit={onSubmit} />
+                    <SearchContextForm {...props} query={query} onSubmit={onSubmit} />
                 </div>
             </Page>
         </div>

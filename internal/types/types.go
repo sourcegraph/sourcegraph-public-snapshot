@@ -1236,9 +1236,9 @@ type SearchContext struct {
 	// NamespaceOrgName is the name of the org if NamespaceOrgID is present.
 	NamespaceOrgName string
 
-	// RepositoryQuery is the Sourcegraph repository query that defines the dynamic set of
+	// Query is the Sourcegraph repository query that defines the dynamic set of
 	// repos included in the search context. e.g. repo:^github\.com/org rev:bar archive:no
-	RepositoryQuery string
+	Query string
 }
 
 // SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions

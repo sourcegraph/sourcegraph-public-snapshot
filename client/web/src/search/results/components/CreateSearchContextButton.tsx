@@ -18,7 +18,7 @@ interface CreateSearchContextButtonProps {
 
 export const CreateSearchContextButton: React.FunctionComponent<CreateSearchContextButtonProps> = props => {
     if (
-        !window.context.experimentalFeatures['search.contexts.repositoryQuery'] ||
+        !window.context.experimentalFeatures['search.contexts.query'] ||
         !props.query ||
         !props.authenticatedUser
     ) {
@@ -30,9 +30,9 @@ export const CreateSearchContextButton: React.FunctionComponent<CreateSearchCont
         return null
     }
 
-    const repositoryQuery = omitFilter(props.query, contextFilter)
+    const query = omitFilter(props.query, contextFilter)
     const searchParameters = new URLSearchParams()
-    searchParameters.set('q', repositoryQuery)
+    searchParameters.set('q', query)
     const toURL = `/contexts/new?${searchParameters.toString()}`
 
     return (

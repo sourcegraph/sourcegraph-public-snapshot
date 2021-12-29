@@ -284,8 +284,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
-	t.Run("context: search repository query", func(t *testing.T) {
-		// Update site configuration to enable "search.contexts.repositoryQuery".
+	t.Run("context: search query", func(t *testing.T) {
+		// Update site configuration to enable "search.contexts.query".
 		siteConfig, err := client.SiteConfiguration()
 		if err != nil {
 			t.Fatal(err)
@@ -298,7 +298,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			}
 		}(*siteConfig)
 
-		siteConfig.ExperimentalFeatures.SearchContextsRepositoryQuery = true
+		siteConfig.ExperimentalFeatures.SearchContextsQuery = true
 		err = client.UpdateSiteConfiguration(siteConfig)
 		if err != nil {
 			t.Fatal(err)
@@ -312,10 +312,10 @@ func testSearchClient(t *testing.T, client searchClient) {
 		namespace := client.AuthenticatedUserID()
 		searchContextID, err := client.CreateSearchContext(
 			gqltestutil.CreateSearchContextInput{
-				Name:            "SearchContextV2",
-				Namespace:       &namespace,
-				Public:          true,
-				RepositoryQuery: `r:^github\.com/sgtest/(java-langserver|jsonrpc2)`,
+				Name:      "SearchContextV2",
+				Namespace: &namespace,
+				Public:    true,
+				Query:     `r:^github\.com/sgtest/(java-langserver|jsonrpc2) f:drop`,
 			}, []gqltestutil.SearchContextRepositoryRevisionsInput{})
 		require.NoError(t, err)
 

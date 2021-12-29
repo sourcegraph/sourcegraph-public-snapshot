@@ -53,7 +53,7 @@ const searchContextFragment = gql`
         autoDefined
         updatedAt
         viewerCanManage
-        repositoryQuery
+        query
         repositories {
             __typename
             repository {

@@ -43,7 +43,7 @@ const mockContext: ISearchContext = {
     public: true,
     autoDefined: false,
     description: 'Repositories on Sourcegraph',
-    repositoryQuery: '',
+    query: '',
     repositories,
     updatedAt: subDays(new Date(), 1).toISOString(),
     viewerCanManage: true,

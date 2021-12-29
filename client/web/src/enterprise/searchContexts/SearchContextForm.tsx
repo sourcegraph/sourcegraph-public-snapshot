@@ -95,7 +95,7 @@ export interface SearchContextFormProps
         TelemetryProps,
         Pick<SearchContextProps, 'deleteSearchContext'> {
     searchContext?: ISearchContext
-    repositoryQuery?: string
+    query?: string
     authenticatedUser: AuthenticatedUser
 
     onSubmit: (
@@ -127,9 +127,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
     const [visibility, setVisibility] = useState<SelectedVisibility>(
         searchContext ? searchContextVisibility(searchContext) : 'public'
     )
-    const [repositoryQuery, setRepositoryQuery] = useState(
-        searchContext?.repositoryQuery || props.repositoryQuery || ''
-    )
+    const [query, setQuery] = useState(searchContext?.query || props.query || '')
 
     const isValidName = useMemo(() => name.length === 0 || name.match(VALIDATE_NAME_REGEXP) !== null, [name])
 
@@ -162,7 +160,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
             return (
                 name.length > 0 ||
                 description.length > 0 ||
-                repositoryQuery.length > 0 ||
+                query.length > 0 ||
                 visibility !== 'public' ||
                 selectedNamespace.type !== 'user' ||
                 hasRepositoriesConfigChanged
@@ -171,11 +169,11 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
         return (
             searchContext.name !== name ||
             searchContext.description !== description ||
-            searchContext.repositoryQuery !== repositoryQuery ||
+            searchContext.query !== query ||
             searchContextVisibility(searchContext) !== visibility ||
             hasRepositoriesConfigChanged
         )
-    }, [description, name, searchContext, selectedNamespace, visibility, repositoryQuery, hasRepositoriesConfigChanged])
+    }, [description, name, searchContext, selectedNamespace, visibility, query, hasRepositoriesConfigChanged])
 
     const parseRepositories = useCallback(
         (): Observable<RepositoriesParseResult> =>
@@ -244,7 +242,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                                 description,
                                 public: visibility === 'public',
                                 namespace: selectedNamespace.id,
-                                repositoryQuery,
+                                query,
                             },
                             repositoryRevisionsArray
                         ).pipe(
@@ -264,7 +262,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                 parseRepositories,
                 name,
                 description,
-                repositoryQuery,
+                query,
                 visibility,
                 selectedNamespace,
                 history,
@@ -373,12 +371,12 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     ))}
                 </div>
                 <hr className={classNames('my-4', styles.searchContextFormDivider)} />
-                {window.context?.experimentalFeatures['search.contexts.repositoryQuery'] ? (
+                {window.context?.experimentalFeatures['search.contexts.query'] ? (
                     <div>
-                        <div className="mb-1">Repository query</div>
+                        <div className="mb-1">Query</div>
                         <div className="text-muted mb-3">
-                            Define which repositories and revisions should be included in this search context with a
-                            Sourcegraph repository query.
+                            Define which repositories, revisions and file paths are included in this search context with
+                            a Sourcegraph query.
                         </div>
 
                         <div className="form-control text-code w-100" style={{ height: '5rem' }}>
@@ -387,8 +385,8 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                                 patternType={SearchPatternType.regexp}
                                 isSourcegraphDotCom={!!window.context.sourcegraphDotComMode}
                                 caseSensitive={true}
-                                queryState={{ query: repositoryQuery }}
-                                onChange={({ query }) => setRepositoryQuery(query)}
+                                queryState={{ query: query }}
+                                onChange={({ query }) => setQuery(query)}
                                 onSubmit={() => {}}
                                 globbing={false}
                                 preventNewLine={false}

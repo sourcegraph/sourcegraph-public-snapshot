@@ -23,7 +23,7 @@ export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> 
     <div className={classNames('py-3 d-flex align-items-center', styles.searchContextNode)}>
         <div className={classNames('flex-grow-1', styles.left)}>
             <div>
-                <Link to={(node.repositoryQuery && `/contexts/${node.spec}/edit`) || `/contexts/${node.spec}`}>
+                <Link to={(node.query && `/contexts/${node.spec}/edit`) || `/contexts/${node.spec}`}>
                     <strong>{node.spec}</strong>
                 </Link>
                 {!node.public && (
@@ -32,8 +32,8 @@ export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> 
                     </Badge>
                 )}
             </div>
-            {node.repositoryQuery.length > 0 && (
-                <SyntaxHighlightedSearchQuery query={node.repositoryQuery} key={node.name} />
+            {node.query.length > 0 && (
+                <SyntaxHighlightedSearchQuery query={node.query} key={node.name} />
             )}
 
             {node.description.length > 0 && (

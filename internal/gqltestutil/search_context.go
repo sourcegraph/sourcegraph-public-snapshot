@@ -9,14 +9,14 @@ type CreateSearchContextInput struct {
 	Namespace       *string `json:"namespace"`
 	Description     string  `json:"description"`
 	Public          bool    `json:"public"`
-	RepositoryQuery string  `json:"repositoryQuery"`
+	Query string  `json:"query"`
 }
 
 type UpdateSearchContextInput struct {
 	Name            string `json:"name"`
 	Description     string `json:"description"`
 	Public          bool   `json:"public"`
-	RepositoryQuery string `json:"repositoryQuery"`
+	Query string `json:"query"`
 }
 
 type SearchContextRepositoryRevisionsInput struct {
@@ -66,7 +66,7 @@ type GetSearchContextResult struct {
 		} `json:"repository"`
 		Revisions []string `json:"revisions"`
 	} `json:"repositories"`
-	RepositoryQuery string `json:"repositoryQuery"`
+	Query string `json:"query"`
 }
 
 func (c *Client) GetSearchContext(id string) (*GetSearchContextResult, error) {
@@ -84,7 +84,7 @@ query GetSearchContext($id: ID!) {
 				}
 				revisions
 			}
-			repositoryQuery
+			query
 		}
 	}
 }
@@ -119,7 +119,7 @@ mutation UpdateSearchContext($id: ID!, $input: SearchContextEditInput!, $reposit
 			}
 			revisions
 		}
-		repositoryQuery
+		query
 	}
 }
 `
@@ -217,7 +217,7 @@ query ListSearchContexts(
 				}
 				revisions
 			}
-			repositoryQuery
+			query
 		}
 		pageInfo {
 			hasNextPage
