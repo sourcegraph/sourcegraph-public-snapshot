@@ -2,7 +2,6 @@ package trace
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -273,6 +272,17 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 	}))
 }
 
+// Associated with the above comment aobut the load of events.
+// type httpErr struct {
+// 	status int
+// 	method string
+// 	path   string
+// }
+//
+// func (e *httpErr) Error() string {
+// 	return fmt.Sprintf("HTTP status %d, %s %s", e.status, e.method, e.path)
+// }
+
 func Route(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		if p, ok := r.Context().Value(routeNameKey).(*string); ok {
@@ -305,14 +315,4 @@ func SetRouteName(r *http.Request, routeName string) {
 	if p, ok := r.Context().Value(routeNameKey).(*string); ok {
 		*p = routeName
 	}
-}
-
-type httpErr struct {
-	status int
-	method string
-	path   string
-}
-
-func (e *httpErr) Error() string {
-	return fmt.Sprintf("HTTP status %d, %s %s", e.status, e.method, e.path)
 }
