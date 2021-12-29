@@ -1085,23 +1085,23 @@ func TestLoadRemoteRepo(t *testing.T) {
 			t.Run("success", func(t *testing.T) {
 				want := &types.Repo{}
 				css := NewMockForkableChangesetSource()
-				css.GetDefaultUserForkFunc.SetDefaultReturn(want, nil)
+				css.GetUserForkFunc.SetDefaultReturn(want, nil)
 
 				have, err := loadRemoteRepo(ctx, css, targetRepo)
 				assert.Nil(t, err)
 				assert.Same(t, want, have)
-				mockassert.CalledOnce(t, css.GetDefaultUserForkFunc)
+				mockassert.CalledOnce(t, css.GetUserForkFunc)
 			})
 
 			t.Run("error from the source", func(t *testing.T) {
 				want := errors.New("source error")
 				css := NewMockForkableChangesetSource()
-				css.GetDefaultUserForkFunc.SetDefaultReturn(nil, want)
+				css.GetUserForkFunc.SetDefaultReturn(nil, want)
 
 				repo, err := loadRemoteRepo(ctx, css, targetRepo)
 				assert.Nil(t, repo)
 				assert.Same(t, want, err)
-				mockassert.CalledOnce(t, css.GetDefaultUserForkFunc)
+				mockassert.CalledOnce(t, css.GetUserForkFunc)
 			})
 		})
 	})
