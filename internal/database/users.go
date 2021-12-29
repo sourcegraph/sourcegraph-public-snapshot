@@ -297,7 +297,6 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 	if err != nil {
 		return nil, err
 	}
-
 	if alreadyInitialized && info.FailIfNotInitialUser {
 		return nil, errCannotCreateUser{"site_already_initialized"}
 	}
