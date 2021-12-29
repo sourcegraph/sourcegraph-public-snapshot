@@ -61,9 +61,9 @@ var (
 			},
 			{
 				Name:       "add-user",
-				ShortUsage: fmt.Sprintf("sg reset add-user [-name=%s -password=%s]", "sourcegraph", "sourcegraphsourcegraph"), // TODO edit flag
-				ShortHelp:  "Create a sourcegraph user",
-				LongHelp:   `TODO`,
+				ShortUsage: fmt.Sprintf("sg reset add-user [-name=%s -password=%s]", "sourcegraph", "sourcegraphsourcegraph"),
+				ShortHelp:  "Create an admin sourcegraph user",
+				LongHelp:   `Run 'sg reset add-user -name bob' to create an admin user whose email is bob@sourcegraph.com. The password will be printed if the operation succeeds`,
 				FlagSet:    resetAddUserFlagSet,
 				Exec:       resetAddUserExec,
 			},
@@ -106,37 +106,21 @@ func resetAddUserExec(ctx context.Context, args []string) error {
 	// If we detect CONFIGURATION_MODE to be different than "empty", force its value to empty.
 	forceConfigurationMode()
 
+	// Read the configuration.
 	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
 	if !ok {
-		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
+		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
 	}
 
-	getEnv := func(key string) string {
-		// First look into process env, emulating the logic in makeEnv used
-		// in internal/run/run.go
-		val, ok := os.LookupEnv(key)
-		if ok {
-			return val
-		}
-		// Otherwise check in globalConf.Env and *expand* the key, because a value might refer to another env var.
-		return os.Expand(globalConf.Env[key], func(lookup string) string {
-			if lookup == key {
-				return os.Getenv(lookup)
-			}
-
-			if e, ok := globalConf.Env[lookup]; ok {
-				return e
-			}
-			return os.Getenv(lookup)
-		})
-	}
-
+	// Connect to the database.
 	conn, err := connections.NewFrontendDB(postgresdsn.New("", "", getEnv), "frontend", true, &observation.TestContext)
 	if err != nil {
 		return err
 	}
-	email := fmt.Sprintf("%s@sourcegraph.com", *resetAddUserNameFlag)
 	db := database.NewDB(conn)
+
+	// Create the user, generating an email based on the username.
+	email := fmt.Sprintf("%s@sourcegraph.com", *resetAddUserNameFlag)
 	user, err := db.Users().Create(ctx, database.NewUser{
 		Username:        *resetAddUserNameFlag,
 		Email:           email,
@@ -147,11 +131,13 @@ func resetAddUserExec(ctx context.Context, args []string) error {
 		return err
 	}
 
+	// Make the user site admin.
 	err = db.Users().SetIsSiteAdmin(ctx, user.ID, true)
 	if err != nil {
 		return err
 	}
 
+	// Report back the new user informations.
 	writeFingerPointingLinef(
 		"User %s%s%s (%s%s%s) has been created and its password is %s%s%s.",
 		output.StyleOrange,
@@ -164,17 +150,19 @@ func resetAddUserExec(ctx context.Context, args []string) error {
 		*resetAddUserPasswordFlag,
 		output.StyleReset,
 	)
+
 	return nil
 }
 
 func resetRedisExec(ctx context.Context, args []string) error {
+	// Read the configuration.
 	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
 	if !ok {
-		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
+		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
 	}
 
-	endpoint := globalConf.Env["REDIS_ENDPOINT"]
-
+	// Connect to the redis database.
+	endpoint := getEnv("REDIS_ENDPOINT")
 	conn, err := redis.Dial("tcp", endpoint, redis.DialConnectTimeout(5*time.Second))
 	if err != nil {
 		return errors.Wrapf(err, "failed to connect to Redis at %s", endpoint)
@@ -190,29 +178,10 @@ func resetRedisExec(ctx context.Context, args []string) error {
 }
 
 func resetPGExec(ctx context.Context, args []string) error {
+	// Read the configuration.
 	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
 	if !ok {
 		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
-	}
-
-	getEnv := func(key string) string {
-		// First look into process env, emulating the logic in makeEnv used
-		// in internal/run/run.go
-		val, ok := os.LookupEnv(key)
-		if ok {
-			return val
-		}
-		// Otherwise check in globalConf.Env and *expand* the key, because a value might refer to another env var.
-		return os.Expand(globalConf.Env[key], func(lookup string) string {
-			if lookup == key {
-				return os.Getenv(lookup)
-			}
-
-			if e, ok := globalConf.Env[lookup]; ok {
-				return e
-			}
-			return os.Getenv(lookup)
-		})
 	}
 
 	var (
@@ -273,4 +242,24 @@ func resetPGExec(ctx context.Context, args []string) error {
 	}
 
 	return connections.RunnerFromDSNs(dsnMap, "sg", storeFactory).Run(ctx, options)
+}
+
+func getEnv(key string) string {
+	// First look into process env, emulating the logic in makeEnv used
+	// in internal/run/run.go
+	val, ok := os.LookupEnv(key)
+	if ok {
+		return val
+	}
+	// Otherwise check in globalConf.Env and *expand* the key, because a value might refer to another env var.
+	return os.Expand(globalConf.Env[key], func(lookup string) string {
+		if lookup == key {
+			return os.Getenv(lookup)
+		}
+
+		if e, ok := globalConf.Env[lookup]; ok {
+			return e
+		}
+		return os.Getenv(lookup)
+	})
 }
