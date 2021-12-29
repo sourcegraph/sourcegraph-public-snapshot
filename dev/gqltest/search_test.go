@@ -298,6 +298,10 @@ func testSearchClient(t *testing.T, client searchClient) {
 			}
 		}(*siteConfig)
 
+		if siteConfig.ExperimentalFeatures == nil {
+			siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{}
+		}
+
 		siteConfig.ExperimentalFeatures.SearchContextsQuery = true
 		err = client.UpdateSiteConfiguration(siteConfig)
 		if err != nil {
