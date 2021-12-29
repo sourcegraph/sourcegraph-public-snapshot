@@ -353,6 +353,7 @@ Referenced by:
  worker_hostname          | text                                         |           | not null | ''::text
  ui_publication_state     | batch_changes_changeset_ui_publication_state |           |          | 
  last_heartbeat_at        | timestamp with time zone                     |           |          | 
+ external_fork_namespace  | citext                                       |           |          | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -2781,6 +2782,8 @@ Foreign-key constraints:
  external_title           | text                                         |           |          | 
  worker_hostname          | text                                         |           |          | 
  ui_publication_state     | batch_changes_changeset_ui_publication_state |           |          | 
+ last_heartbeat_at        | timestamp with time zone                     |           |          | 
+ external_fork_namespace  | citext                                       |           |          | 
 
 ```
 
@@ -2822,7 +2825,9 @@ Foreign-key constraints:
     c.syncer_error,
     c.external_title,
     c.worker_hostname,
-    c.ui_publication_state
+    c.ui_publication_state,
+    c.last_heartbeat_at,
+    c.external_fork_namespace
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1
