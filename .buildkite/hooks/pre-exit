@@ -10,7 +10,7 @@ if [[ "$BUILDKITE_PIPELINE_NAME" != "sourcegraph" ]]; then
     exit 0
 fi
 
-if [ "$BUILDKITE_BRANCH" == "main" ]; then
+# if [ "$BUILDKITE_BRANCH" == "main" ]; then
     if [ "$BUILDKITE_COMMAND_EXIT_STATUS" -eq 0 ]; then
         # If the job exit code is either 0 or a soft failt exit code defined by that step, do nothing.
         exit 0
@@ -27,4 +27,4 @@ if [ "$BUILDKITE_BRANCH" == "main" ]; then
 
     # Non-zero exit code and not a soft fail: upload the logs.
     ./enterprise/dev/upload-build-logs.sh
-fi
+# fi
