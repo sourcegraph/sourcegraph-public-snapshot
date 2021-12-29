@@ -21,12 +21,13 @@ type TestChangesetOpts struct {
 	PreviousSpec int64
 	BatchChanges []btypes.BatchChangeAssoc
 
-	ExternalServiceType string
-	ExternalID          string
-	ExternalBranch      string
-	ExternalState       btypes.ChangesetExternalState
-	ExternalReviewState btypes.ChangesetReviewState
-	ExternalCheckState  btypes.ChangesetCheckState
+	ExternalServiceType   string
+	ExternalID            string
+	ExternalBranch        string
+	ExternalForkNamespace string
+	ExternalState         btypes.ChangesetExternalState
+	ExternalReviewState   btypes.ChangesetReviewState
+	ExternalCheckState    btypes.ChangesetCheckState
 
 	DiffStatAdded   int32
 	DiffStatChanged int32
@@ -111,6 +112,10 @@ func BuildChangeset(opts TestChangesetOpts) *btypes.Changeset {
 		changeset.ExternalBranch = git.EnsureRefPrefix(opts.ExternalBranch)
 	}
 
+	if opts.ExternalForkNamespace != "" {
+		changeset.ExternalForkNamespace = opts.ExternalForkNamespace
+	}
+
 	if opts.FailureMessage != "" {
 		changeset.FailureMessage = &opts.FailureMessage
 	}
@@ -131,18 +136,19 @@ func BuildChangeset(opts TestChangesetOpts) *btypes.Changeset {
 }
 
 type ChangesetAssertions struct {
-	Repo               api.RepoID
-	CurrentSpec        int64
-	PreviousSpec       int64
-	OwnedByBatchChange int64
-	ReconcilerState    btypes.ReconcilerState
-	PublicationState   btypes.ChangesetPublicationState
-	UiPublicationState *btypes.ChangesetUiPublicationState
-	ExternalState      btypes.ChangesetExternalState
-	ExternalID         string
-	ExternalBranch     string
-	DiffStat           *diff.Stat
-	Closing            bool
+	Repo                  api.RepoID
+	CurrentSpec           int64
+	PreviousSpec          int64
+	OwnedByBatchChange    int64
+	ReconcilerState       btypes.ReconcilerState
+	PublicationState      btypes.ChangesetPublicationState
+	UiPublicationState    *btypes.ChangesetUiPublicationState
+	ExternalState         btypes.ChangesetExternalState
+	ExternalID            string
+	ExternalBranch        string
+	ExternalForkNamespace string
+	DiffStat              *diff.Stat
+	Closing               bool
 
 	Title string
 	Body  string
@@ -204,6 +210,10 @@ func AssertChangeset(t *testing.T, c *btypes.Changeset, a ChangesetAssertions) {
 
 	if have, want := c.ExternalBranch, a.ExternalBranch; have != want {
 		t.Fatalf("changeset ExternalBranch wrong. want=%s, have=%s", want, have)
+	}
+
+	if have, want := c.ExternalForkNamespace, a.ExternalForkNamespace; have != want {
+		t.Fatalf("changeset ExternalForkNamespace wrong. want=%s, have=%s", want, have)
 	}
 
 	if want, have := a.FailureMessage, c.FailureMessage; want == nil && have != nil {
@@ -310,6 +320,10 @@ func AssertChangeset(t *testing.T, c *btypes.Changeset, a ChangesetAssertions) {
 
 	if have, want := c.ExternalBranch, a.ExternalBranch; have != want {
 		t.Fatalf("changeset ExternalBranch wrong. want=%s, have=%s", want, have)
+	}
+
+	if have, want := c.ExternalForkNamespace, a.ExternalForkNamespace; have != want {
+		t.Fatalf("changeset ExternalForkNamespace wrong. want=%s, have=%s", want, have)
 	}
 
 	if want := a.Title; want != "" {
