@@ -1176,15 +1176,19 @@ type Project struct {
 	} `json:"links"`
 }
 
+type ProjectKey struct {
+	Key string `json:"key"`
+}
+
+type RefRepository struct {
+	ID      int        `json:"id"`
+	Slug    string     `json:"slug"`
+	Project ProjectKey `json:"project"`
+}
+
 type Ref struct {
-	ID         string `json:"id"`
-	Repository struct {
-		ID      int    `json:"id"`
-		Slug    string `json:"slug"`
-		Project struct {
-			Key string `json:"key"`
-		} `json:"project"`
-	} `json:"repository"`
+	ID         string        `json:"id"`
+	Repository RefRepository `json:"repository"`
 }
 
 type PullRequest struct {
