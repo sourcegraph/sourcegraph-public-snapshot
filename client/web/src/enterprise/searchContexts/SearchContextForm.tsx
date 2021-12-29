@@ -21,6 +21,7 @@ import { Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SearchContextProps } from '../../search'
+import { LazyMonacoQueryInput } from '../../search/input/LazyMonacoQueryInput'
 
 import { fetchRepositoriesByNames } from './backend'
 import { DeleteSearchContextModal } from './DeleteSearchContextModal'
@@ -34,7 +35,6 @@ import {
     SelectedNamespaceType,
 } from './SearchContextOwnerDropdown'
 import { SearchContextRepositoriesFormArea } from './SearchContextRepositoriesFormArea'
-import { LazyMonacoQueryInput } from '../../search/input/LazyMonacoQueryInput'
 
 const MAX_DESCRIPTION_LENGTH = 1024
 const MAX_NAME_LENGTH = 32
@@ -379,13 +379,13 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                             a Sourcegraph query.
                         </div>
 
-                        <div className="form-control text-code w-100" style={{ height: '5rem' }}>
+                        <div className="form-control text-code w-100">
                             <LazyMonacoQueryInput
                                 isLightTheme={props.isLightTheme}
                                 patternType={SearchPatternType.regexp}
                                 isSourcegraphDotCom={!!window.context.sourcegraphDotComMode}
                                 caseSensitive={true}
-                                queryState={{ query: query }}
+                                queryState={{ query }}
                                 onChange={({ query }) => setQuery(query)}
                                 onSubmit={() => {}}
                                 globbing={false}

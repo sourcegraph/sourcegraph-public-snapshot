@@ -1,12 +1,12 @@
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import React from 'react'
 
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
+import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/validate'
-import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 
 import { AuthenticatedUser } from '../../../auth'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
 
 interface CreateSearchContextButtonProps {
     /** Search query string. */
@@ -22,7 +22,7 @@ export const CreateSearchContextButton: React.FunctionComponent<CreateSearchCont
     }
 
     const contextFilter = findFilter(props.query, FilterType.context, FilterKind.Global)
-    if (!contextFilter || contextFilter.value?.value != 'global') {
+    if (!contextFilter || contextFilter.value?.value !== 'global') {
         return null
     }
 

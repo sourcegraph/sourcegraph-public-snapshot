@@ -35,8 +35,8 @@ import {
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
 import { CreateCodeInsightButton } from './components/CreateCodeInsightButton'
-import styles from './SearchResultsInfoBar.module.scss'
 import { CreateSearchContextButton } from './components/CreateSearchContextButton'
+import styles from './SearchResultsInfoBar.module.scss'
 
 function getFeatureTourElementFn(isAuthenticatedUser: boolean): (onClose: () => void) => HTMLElement {
     return (onClose: () => void): HTMLElement => {
