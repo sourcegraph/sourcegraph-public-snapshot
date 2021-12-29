@@ -684,7 +684,7 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 	})
 }
 
-func TestBitbucketServerSource_GetDefaultUserFork(t *testing.T) {
+func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
 		// The test fixtures and golden files were generated with
@@ -737,7 +737,7 @@ func TestBitbucketServerSource_GetDefaultUserFork(t *testing.T) {
 		bbsSrc, err := NewBitbucketServerSource(svc, cf)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetDefaultUserFork(ctx, newBitbucketServerRepo("SOUR", "read-only", 10103))
+		fork, err := bbsSrc.GetUserFork(ctx, newBitbucketServerRepo("SOUR", "read-only", 10103))
 		assert.Nil(t, fork)
 		assert.NotNil(t, err)
 		assert.Contains(t, err.Error(), "getting username")
@@ -756,7 +756,7 @@ func TestBitbucketServerSource_GetDefaultUserFork(t *testing.T) {
 		bbsSrc, err := NewBitbucketServerSource(svc, cf)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetDefaultUserFork(ctx, target)
+		fork, err := bbsSrc.GetUserFork(ctx, target)
 		assert.Nil(t, fork)
 		assert.ErrorIs(t, err, errNotAFork)
 	})
@@ -774,7 +774,7 @@ func TestBitbucketServerSource_GetDefaultUserFork(t *testing.T) {
 		bbsSrc, err := NewBitbucketServerSource(svc, cf)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetDefaultUserFork(ctx, target)
+		fork, err := bbsSrc.GetUserFork(ctx, target)
 		assert.Nil(t, fork)
 		assert.ErrorIs(t, err, errNotForkedFromParent)
 	})
@@ -793,7 +793,7 @@ func TestBitbucketServerSource_GetDefaultUserFork(t *testing.T) {
 		user, err := bbsSrc.client.AuthenticatedUsername(ctx)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetDefaultUserFork(ctx, target)
+		fork, err := bbsSrc.GetUserFork(ctx, target)
 		assert.Nil(t, err)
 		assert.NotNil(t, fork)
 		assert.Equal(t, "~"+strings.ToUpper(user), fork.Metadata.(*bitbucketserver.Repo).Project.Key)
@@ -815,7 +815,7 @@ func TestBitbucketServerSource_GetDefaultUserFork(t *testing.T) {
 		user, err := bbsSrc.client.AuthenticatedUsername(ctx)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetDefaultUserFork(ctx, target)
+		fork, err := bbsSrc.GetUserFork(ctx, target)
 		assert.Nil(t, err)
 		assert.NotNil(t, fork)
 		assert.Equal(t, "~"+strings.ToUpper(user), fork.Metadata.(*bitbucketserver.Repo).Project.Key)

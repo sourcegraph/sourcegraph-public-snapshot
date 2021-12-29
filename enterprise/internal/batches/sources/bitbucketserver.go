@@ -317,7 +317,7 @@ func (s BitbucketServerSource) callAndRetryIfOutdated(ctx context.Context, c *Ch
 	return newestPR, nil
 }
 
-func (s BitbucketServerSource) GetDefaultUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
+func (s BitbucketServerSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
 	parent := targetRepo.Metadata.(*bitbucketserver.Repo)
 
 	// Ascertain the user name for the token we're using.
