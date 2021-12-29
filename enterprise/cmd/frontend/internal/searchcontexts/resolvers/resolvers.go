@@ -92,7 +92,7 @@ func (r *Resolver) CreateSearchContext(ctx context.Context, args graphqlbackend.
 			Public:          args.SearchContext.Public,
 			NamespaceUserID: namespaceUserID,
 			NamespaceOrgID:  namespaceOrgID,
-			Query: args.SearchContext.Query,
+			Query:           args.SearchContext.Query,
 		},
 		repositoryRevisions,
 	)

@@ -58,18 +58,18 @@ type SearchContextRepositoryRevisionsResolver interface {
 }
 
 type SearchContextInputArgs struct {
-	Name            string
-	Description     string
-	Public          bool
-	Namespace       *graphql.ID
-	Query string
+	Name        string
+	Description string
+	Public      bool
+	Namespace   *graphql.ID
+	Query       string
 }
 
 type SearchContextEditInputArgs struct {
-	Name            string
-	Description     string
-	Public          bool
-	Query string
+	Name        string
+	Description string
+	Public      bool
+	Query       string
 }
 
 type SearchContextRepositoryRevisionsInputArgs struct {

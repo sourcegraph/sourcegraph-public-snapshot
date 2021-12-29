@@ -5,18 +5,18 @@ import (
 )
 
 type CreateSearchContextInput struct {
-	Name            string  `json:"name"`
-	Namespace       *string `json:"namespace"`
-	Description     string  `json:"description"`
-	Public          bool    `json:"public"`
-	Query string  `json:"query"`
+	Name        string  `json:"name"`
+	Namespace   *string `json:"namespace"`
+	Description string  `json:"description"`
+	Public      bool    `json:"public"`
+	Query       string  `json:"query"`
 }
 
 type UpdateSearchContextInput struct {
-	Name            string `json:"name"`
-	Description     string `json:"description"`
-	Public          bool   `json:"public"`
-	Query string `json:"query"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Public      bool   `json:"public"`
+	Query       string `json:"query"`
 }
 
 type SearchContextRepositoryRevisionsInput struct {

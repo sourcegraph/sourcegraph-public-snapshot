@@ -36,16 +36,7 @@ export const SearchContextMenuItem: React.FunctionComponent<{
     selectSearchContextSpec: (spec: string) => void
     searchFilter: string
     onKeyDown: (key: string) => void
-}> = ({
-    spec,
-    description,
-    query,
-    selected,
-    isDefault,
-    selectSearchContextSpec,
-    searchFilter,
-    onKeyDown,
-}) => {
+}> = ({ spec, description, query, selected, isDefault, selectSearchContextSpec, searchFilter, onKeyDown }) => {
     const setContext = useCallback(() => {
         eventLogger.log('SearchContextSelected')
         selectSearchContextSpec(spec)

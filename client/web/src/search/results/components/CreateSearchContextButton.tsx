@@ -17,11 +17,7 @@ interface CreateSearchContextButtonProps {
 }
 
 export const CreateSearchContextButton: React.FunctionComponent<CreateSearchContextButtonProps> = props => {
-    if (
-        !window.context.experimentalFeatures['search.contexts.query'] ||
-        !props.query ||
-        !props.authenticatedUser
-    ) {
+    if (!window.context.experimentalFeatures['search.contexts.query'] || !props.query || !props.authenticatedUser) {
         return null
     }
 
