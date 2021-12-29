@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -56,7 +57,7 @@ func output(ctx context.Context, fragment string, matchPattern MatchPattern, rep
 func resultContent(ctx context.Context, r result.Match) (string, bool, error) {
 	switch m := r.(type) {
 	case *result.FileMatch:
-		contentBytes, err := git.ReadFile(ctx, m.Repo.Name, m.CommitID, m.Path, 0)
+		contentBytes, err := git.ReadFile(ctx, m.Repo.Name, m.CommitID, m.Path, 0, authz.DefaultSubRepoPermsChecker)
 		if err != nil {
 			return "", false, err
 		}
