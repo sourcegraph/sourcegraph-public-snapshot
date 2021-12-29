@@ -40,9 +40,9 @@ type DraftChangesetSource interface {
 type ForkableChangesetSource interface {
 	ChangesetSource
 
-	// GetDefaultUserFork returns a repo pointing to a fork of the given repo in
-	// the currently authenticated user's namespace.
-	GetDefaultUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error)
+	// GetUserFork returns a repo pointing to a fork of the given repo in the
+	// currently authenticated user's namespace.
+	GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error)
 }
 
 // A ChangesetSource can load the latest state of a list of Changesets.
