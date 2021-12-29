@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+echo "^^^ JH QA"
+exit 1
+
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 root_dir=$(pwd)
 set -ex
