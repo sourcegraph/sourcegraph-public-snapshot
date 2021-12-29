@@ -181,7 +181,7 @@ func resetPGExec(ctx context.Context, args []string) error {
 	// Read the configuration.
 	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
 	if !ok {
-		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
+		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
 	}
 
 	var (
