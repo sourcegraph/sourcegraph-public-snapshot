@@ -9,6 +9,7 @@ import { ExternalChangesetFields, ChangesetState } from '../../../../graphql-ope
 import { ChangesetLabel } from './ChangesetLabel'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
 import { ExternalChangesetTitle } from './ExternalChangesetTitle'
+import SourceForkIcon from 'mdi-react/SourceForkIcon'
 
 export interface ExternalChangesetInfoCellProps {
     node: ExternalChangesetFields
@@ -53,11 +54,11 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                         {node.repository.name}
                     </Link>{' '}
                     {hasHeadReference(node) && (
-                        <div className="d-block d-sm-inline-block">
-                            <Badge variant="secondary" className="text-monospace">
-                                {headReference(node)}
-                            </Badge>
-                        </div>
+                        <ExternalBranch
+                            baseRef={node.currentSpec.description.baseRef}
+                            forkNamespace={node.forkNamespace}
+                            headRef={node.currentSpec.description.headRef}
+                        />
                     )}
                 </span>
                 {![
@@ -82,19 +83,39 @@ function importingFailed(node: ExternalChangesetFields): boolean {
     return node.state === ChangesetState.FAILED && !hasHeadReference(node)
 }
 
-function headReference(node: ExternalChangesetFields): string | undefined {
-    if (hasHeadReference(node)) {
-        return node.currentSpec.description.headRef
-    }
-    return undefined
-}
-
-function hasHeadReference(
-    node: ExternalChangesetFields
-): node is ExternalChangesetFields & {
+function hasHeadReference(node: ExternalChangesetFields): node is ExternalChangesetFields & {
     currentSpec: typeof node.currentSpec & {
         description: { __typename: 'GitBranchChangesetDescription' }
     }
 } {
     return node.currentSpec?.description.__typename === 'GitBranchChangesetDescription'
+}
+
+interface ExternalBranchProps {
+    baseRef: string
+    forkNamespace?: string
+    headRef: string
+}
+
+const ExternalBranch: React.FunctionComponent<ExternalBranchProps> = ({ baseRef, forkNamespace, headRef }) => {
+    return (
+        <div className="d-block d-sm-inline-block">
+            <Badge variant="secondary" className="text-monospace">
+                {baseRef}
+            </Badge>
+            <span className="p-2">&larr;</span>
+            {forkNamespace ? (
+                <>
+                    <Badge variant="secondary" className="text-monospace">
+                        <SourceForkIcon className="icon-inline mr-1" />
+                        {forkNamespace}:{headRef}
+                    </Badge>
+                </>
+            ) : (
+                <Badge variant="secondary" className="text-monospace">
+                    {headRef}
+                </Badge>
+            )}
+        </div>
+    )
 }
