@@ -118,9 +118,10 @@ type SearchContext implements Node {
     """
     autoDefined: Boolean!
     """
-    The Sourcegraph search query that defines this search context. Alternative to repositories.
+    The repository query that defines the set of repositories included in the context.
+    Alternatively, each repository and revision can be defined explicitly.
     """
-    query: String
+    query: String!
     """
     Repositories and their revisions that will be searched when querying.
     """
@@ -213,10 +214,10 @@ input SearchContextInput {
     """
     namespace: ID
     """
-    Sourcegraph search query that defines the search context.
-    e.g. "r:^github\.com/org (rev:bar or rev:HEAD) file:^sub/dir"
+    Repository query defining a dynamic set of repos to include in the search context.
+    e.g. "repo:^github\.com/org and (rev:bar or rev:HEAD)"
     """
-    query: String
+    query: String!
 }
 
 """
@@ -243,10 +244,10 @@ input SearchContextEditInput {
     """
     public: Boolean!
     """
-    Sourcegraph search query that defines the search context.
-    e.g. "r:^github\.com/org (rev:bar or rev:HEAD) file:^sub/dir"
+    Repository query defining a dynamic set of repos to include in the search context.
+    e.g. "repo:^github\.com/org and (rev:bar or rev:HEAD)"
     """
-    query: String
+    query: String!
 }
 
 """

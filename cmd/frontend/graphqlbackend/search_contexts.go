@@ -43,7 +43,7 @@ type SearchContextResolver interface {
 	Namespace(ctx context.Context) (*NamespaceResolver, error)
 	ViewerCanManage(ctx context.Context) bool
 	Repositories(ctx context.Context) ([]SearchContextRepositoryRevisionsResolver, error)
-	Query() *string
+	Query() string
 }
 
 type SearchContextConnectionResolver interface {
@@ -62,14 +62,14 @@ type SearchContextInputArgs struct {
 	Description string
 	Public      bool
 	Namespace   *graphql.ID
-	Query       *string
+	Query       string
 }
 
 type SearchContextEditInputArgs struct {
 	Name        string
 	Description string
 	Public      bool
-	Query       *string
+	Query       string
 }
 
 type SearchContextRepositoryRevisionsInputArgs struct {
