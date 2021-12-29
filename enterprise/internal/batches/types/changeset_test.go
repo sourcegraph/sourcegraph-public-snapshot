@@ -98,15 +98,24 @@ func TestChangeset_SetMetadata(t *testing.T) {
 	}{
 		"bitbucketserver": {
 			meta: &bitbucketserver.PullRequest{
-				ID:          12345,
-				FromRef:     bitbucketserver.Ref{ID: "refs/heads/branch"},
+				ID: 12345,
+				FromRef: bitbucketserver.Ref{
+					ID: "refs/heads/branch",
+					Repository: bitbucketserver.RefRepository{
+						ID: 23456,
+						Project: bitbucketserver.ProjectKey{
+							Key: "upstream",
+						},
+					},
+				},
 				UpdatedDate: 10 * 1000,
 			},
 			want: &Changeset{
-				ExternalID:          "12345",
-				ExternalServiceType: extsvc.TypeBitbucketServer,
-				ExternalBranch:      "refs/heads/branch",
-				ExternalUpdatedAt:   time.Unix(10, 0),
+				ExternalID:            "12345",
+				ExternalServiceType:   extsvc.TypeBitbucketServer,
+				ExternalBranch:        "refs/heads/branch",
+				ExternalForkNamespace: "upstream",
+				ExternalUpdatedAt:     time.Unix(10, 0),
 			},
 		},
 		"GitHub": {
