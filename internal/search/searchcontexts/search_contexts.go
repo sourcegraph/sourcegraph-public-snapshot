@@ -222,6 +222,7 @@ func validateSearchContextRepositoryQuery(repositoryQuery string) error {
 		case query.FieldArchived:
 		case query.FieldVisibility:
 		case query.FieldCase:
+		case query.FieldFile:
 
 		default:
 			errs = multierror.Append(errs,
