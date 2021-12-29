@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -70,31 +71,99 @@ var (
 	}
 )
 
+// We currently cannot override the CONFIGURATION_MODE at runtime, which by
+// defaults trigger calls to the frontend application and will prevent database calls
+// to succeed unless the front-end is running.
+//
+// This function forces the configuration mode by restarting the current process
+// with an updated environment that forces the configuration mode.
+//
+// See https://github.com/sourcegraph/sourcegraph/issues/29222
+func forceConfigurationMode() {
+	mode, ok := os.LookupEnv("CONFIGURATION_MODE")
+	if !ok || mode != "empty" {
+		fmt.Println("restarting")
+		path, err := os.Executable()
+		if err != nil {
+			panic(err)
+		}
+		env := os.Environ()
+		overridenEnv := make([]string, 0, len(env))
+		for _, e := range env {
+			if !strings.HasPrefix(e, "CONFIGURATION_MODE=") {
+				overridenEnv = append(overridenEnv, e)
+			}
+		}
+		overridenEnv = append(overridenEnv, "CONFIGURATION_MODE=empty")
+
+		if err := syscall.Exec(path, os.Args, overridenEnv); err != nil {
+			panic(err)
+		}
+	}
+}
+
 func resetAddUserExec(ctx context.Context, args []string) error {
-	conn, err := connections.NewFrontendDB("", "frontend", true, &observation.TestContext)
+	// If we detect CONFIGURATION_MODE to be different than "empty", force its value to empty.
+	forceConfigurationMode()
+
+	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
+	if !ok {
+		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
+	}
+
+	getEnv := func(key string) string {
+		// First look into process env, emulating the logic in makeEnv used
+		// in internal/run/run.go
+		val, ok := os.LookupEnv(key)
+		if ok {
+			return val
+		}
+		// Otherwise check in globalConf.Env and *expand* the key, because a value might refer to another env var.
+		return os.Expand(globalConf.Env[key], func(lookup string) string {
+			if lookup == key {
+				return os.Getenv(lookup)
+			}
+
+			if e, ok := globalConf.Env[lookup]; ok {
+				return e
+			}
+			return os.Getenv(lookup)
+		})
+	}
+
+	conn, err := connections.NewFrontendDB(postgresdsn.New("", "", getEnv), "frontend", true, &observation.TestContext)
 	if err != nil {
 		return err
 	}
-	_ = database.NewDB(conn)
-	time.Sleep(5 * time.Second)
-	fmt.Println("fofof|")
-	// _, err = db.Users().Create(ctx, database.NewUser{
-	// 	Username:        *resetAddUserNameFlag,
-	// 	Email:           fmt.Sprintf("%s@sourcegraph.com", *resetDatabaseNameFlag),
-	// 	EmailIsVerified: true,
-	// 	Password:        *resetAddUserPasswordFlag,
-	// })
-	// time.Sleep(5 * time.Second)
-	// if err != nil {
-	// 	return err
-	// }
+	email := fmt.Sprintf("%s@sourcegraph.com", *resetAddUserNameFlag)
+	db := database.NewDB(conn)
+	user, err := db.Users().Create(ctx, database.NewUser{
+		Username:        *resetAddUserNameFlag,
+		Email:           email,
+		EmailIsVerified: true,
+		Password:        *resetAddUserPasswordFlag,
+	})
+	if err != nil {
+		return err
+	}
 
-	// err = db.Users().SetIsSiteAdmin(ctx, user.ID, true)
-	// if err != nil {
-	// 	return err
-	// }
+	err = db.Users().SetIsSiteAdmin(ctx, user.ID, true)
+	if err != nil {
+		return err
+	}
 
-	// fmt.Println(user.ID)
+	writeFingerPointingLinef(
+		"User %s%s%s (%s%s%s) has been created and its password is %s%s%s.",
+		output.StyleOrange,
+		*resetAddUserNameFlag,
+		output.StyleReset,
+		output.StyleOrange,
+		email,
+		output.StyleReset,
+		output.StyleOrange,
+		*resetAddUserPasswordFlag,
+		output.StyleReset,
+	)
 	return nil
 }
 

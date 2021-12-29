@@ -16,6 +16,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
+	"github.com/inconshreveable/log15"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -218,7 +219,7 @@ func (u *userStore) Create(ctx context.Context, info NewUser) (newUser *types.Us
 	defer func() { err = tx.Done(err) }()
 	newUser, err = tx.CreateInTransaction(ctx, info)
 	if err == nil {
-		// logAccountCreatedEvent(ctx, u.Handle().DB(), newUser, "")
+		logAccountCreatedEvent(ctx, u.Handle().DB(), newUser, "")
 	}
 	return newUser, err
 }
@@ -253,11 +254,11 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 		return nil, errors.New("must run within a transaction")
 	}
 
-	// if info.EnforcePasswordLength {
-	// 	if err := CheckPasswordLength(info.Password); err != nil {
-	// 		return nil, err
-	// 	}
-	// }
+	if info.EnforcePasswordLength {
+		if err := CheckPasswordLength(info.Password); err != nil {
+			return nil, err
+		}
+	}
 
 	if info.Email != "" && info.EmailVerificationCode == "" && !info.EmailIsVerified {
 		return nil, errors.New("no email verification code provided for new user with unverified email")
@@ -292,23 +293,21 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 	// creation and site initialization operations occur atomically (to guarantee to the legitimate
 	// site admin that if they successfully initialize the server, then no attacker's account could
 	// have been created as a site admin).
-	// alreadyInitialized, err := GlobalStateWith(u).EnsureInitialized(ctx)
+	alreadyInitialized, err := GlobalStateWith(u).EnsureInitialized(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO
-	alreadyInitialized := true
 	if alreadyInitialized && info.FailIfNotInitialUser {
 		return nil, errCannotCreateUser{"site_already_initialized"}
 	}
 
 	// Run BeforeCreateUser hook.
-	// if BeforeCreateUser != nil {
-	// 	if err := BeforeCreateUser(ctx, NewDB(u.Store.Handle().DB())); err != nil {
-	// 		return nil, errors.Wrap(err, "pre create user hook")
-	// 	}
-	// }
+	if BeforeCreateUser != nil {
+		if err := BeforeCreateUser(ctx, NewDB(u.Store.Handle().DB())); err != nil {
+			return nil, errors.Wrap(err, "pre create user hook")
+		}
+	}
 
 	var siteAdmin bool
 	err = u.QueryRow(
@@ -320,7 +319,6 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 		if errors.As(err, &e) {
 			switch e.ConstraintName {
 			case "users_username":
-				fmt.Println("are we here")
 				return nil, errCannotCreateUser{errorCodeUsernameExists}
 			case "users_username_max_length", "users_username_valid_chars", "users_display_name_max_length":
 				return nil, errCannotCreateUser{e.ConstraintName}
@@ -338,31 +336,31 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 		return nil, errCannotCreateUser{errorCodeUsernameExists}
 	}
 
-	// if info.Email != "" {
-	// 	// We don't allow adding a new user with an email address that has already been
-	// 	// verified by another user.
-	// 	exists, _, err := basestore.ScanFirstBool(u.Query(ctx, sqlf.Sprintf("SELECT TRUE WHERE EXISTS (SELECT FROM user_emails where email = %s AND verified_at IS NOT NULL)", info.Email)))
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	if exists {
-	// 		return nil, errCannotCreateUser{errorCodeEmailExists}
-	// 	}
+	if info.Email != "" {
+		// We don't allow adding a new user with an email address that has already been
+		// verified by another user.
+		exists, _, err := basestore.ScanFirstBool(u.Query(ctx, sqlf.Sprintf("SELECT TRUE WHERE EXISTS (SELECT FROM user_emails where email = %s AND verified_at IS NOT NULL)", info.Email)))
+		if err != nil {
+			return nil, err
+		}
+		if exists {
+			return nil, errCannotCreateUser{errorCodeEmailExists}
+		}
 
-	// 	// The first email address added should be their primary
-	// 	if info.EmailIsVerified {
-	// 		err = u.Exec(ctx, sqlf.Sprintf("INSERT INTO user_emails(user_id, email, verified_at, is_primary) VALUES (%s, %s, now(), true)", id, info.Email))
-	// 	} else {
-	// 		err = u.Exec(ctx, sqlf.Sprintf("INSERT INTO user_emails(user_id, email, verification_code, is_primary) VALUES (%s, %s, %s, true)", id, info.Email, info.EmailVerificationCode))
-	// 	}
-	// 	if err != nil {
-	// 		var e *pgconn.PgError
-	// 		if errors.As(err, &e) && e.ConstraintName == "user_emails_unique_verified_email" {
-	// 			return nil, errCannotCreateUser{errorCodeEmailExists}
-	// 		}
-	// 		return nil, err
-	// 	}
-	// }
+		// The first email address added should be their primary
+		if info.EmailIsVerified {
+			err = u.Exec(ctx, sqlf.Sprintf("INSERT INTO user_emails(user_id, email, verified_at, is_primary) VALUES (%s, %s, now(), true)", id, info.Email))
+		} else {
+			err = u.Exec(ctx, sqlf.Sprintf("INSERT INTO user_emails(user_id, email, verification_code, is_primary) VALUES (%s, %s, %s, true)", id, info.Email, info.EmailVerificationCode))
+		}
+		if err != nil {
+			var e *pgconn.PgError
+			if errors.As(err, &e) && e.ConstraintName == "user_emails_unique_verified_email" {
+				return nil, errCannotCreateUser{errorCodeEmailExists}
+			}
+			return nil, err
+		}
+	}
 
 	user := &types.User{
 		ID:                    id,
@@ -382,20 +380,20 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 		// adding random calls here.
 
 		// Ensure the user (all users, actually) is joined to the orgs specified in auth.userOrgMap.
-		// orgs, errs := orgsForAllUsersToJoin(conf.Get().AuthUserOrgMap)
-		// for _, err := range errs {
-		// 	log15.Warn(err.Error())
-		// }
-		// if err := OrgMembersWith(u).CreateMembershipInOrgsForAllUsers(ctx, orgs); err != nil {
-		// 	return nil, err
-		// }
+		orgs, errs := orgsForAllUsersToJoin(conf.Get().AuthUserOrgMap)
+		for _, err := range errs {
+			log15.Warn(err.Error())
+		}
+		if err := OrgMembersWith(u).CreateMembershipInOrgsForAllUsers(ctx, orgs); err != nil {
+			return nil, err
+		}
 
 		// Run AfterCreateUser hook
-		// if AfterCreateUser != nil {
-		// 	if err := AfterCreateUser(ctx, NewDB(u.Store.Handle().DB()), user); err != nil {
-		// 		return nil, errors.Wrap(err, "after create user hook")
-		// 	}
-		// }
+		if AfterCreateUser != nil {
+			if err := AfterCreateUser(ctx, NewDB(u.Store.Handle().DB()), user); err != nil {
+				return nil, errors.Wrap(err, "after create user hook")
+			}
+		}
 	}
 
 	return user, nil
