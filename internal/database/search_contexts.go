@@ -39,7 +39,7 @@ type SearchContextsStore interface {
 	GetSearchContext(context.Context, GetSearchContextOptions) (*types.SearchContext, error)
 	GetSearchContextRepositoryRevisions(context.Context, int64) ([]*types.SearchContextRepositoryRevisions, error)
 	ListSearchContexts(context.Context, ListSearchContextsPageOptions, ListSearchContextsOptions) ([]*types.SearchContext, error)
-	GetAllRepositoryQueries(context.Context) ([]string, error)
+	GetAllQueries(context.Context) ([]string, error)
 	SetSearchContextRepositoryRevisions(context.Context, int64, []*types.SearchContextRepositoryRevisions) error
 	Transact(context.Context) (SearchContextsStore, error)
 	UpdateSearchContextWithRepositoryRevisions(context.Context, *types.SearchContext, []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error)
@@ -94,7 +94,7 @@ SELECT
   sc.namespace_user_id,
   sc.namespace_org_id,
   sc.updated_at,
-  sc.repo_query,
+  sc.query,
   u.username,
   o.name
 FROM search_contexts sc
@@ -317,7 +317,7 @@ func (s *searchContextsStore) DeleteSearchContext(ctx context.Context, searchCon
 
 const insertSearchContextFmtStr = `
 INSERT INTO search_contexts
-(name, description, public, namespace_user_id, namespace_org_id, repo_query)
+(name, description, public, namespace_user_id, namespace_org_id, query)
 VALUES (%s, %s, %s, %s, %s, %s)
 `
 
@@ -347,7 +347,7 @@ SET
 	name = %s,
 	description = %s,
 	public = %s,
-	repo_query = %s,
+	query = %s,
 	updated_at = now()
 WHERE id = %d
 `
@@ -604,12 +604,12 @@ func (s *searchContextsStore) GetAllRevisionsForRepos(ctx context.Context, repoI
 	return revs, nil
 }
 
-func (s *searchContextsStore) GetAllRepositoryQueries(ctx context.Context) (repoQueries []string, _ error) {
+func (s *searchContextsStore) GetAllQueries(ctx context.Context) (qs []string, _ error) {
 	if a := actor.FromContext(ctx); !a.IsInternal() {
-		return nil, errors.New("GetAllRepositoryQueries can only be accessed by an internal actor")
+		return nil, errors.New("GetAllQueries can only be accessed by an internal actor")
 	}
 
-	q := sqlf.Sprintf(`SELECT array_agg(repo_query) FROM search_contexts WHERE repo_query IS NOT NULL`)
+	q := sqlf.Sprintf(`SELECT array_agg(query) FROM search_contexts WHERE query IS NOT NULL`)
 
-	return repoQueries, s.QueryRow(ctx, q).Scan(pq.Array(&repoQueries))
+	return qs, s.QueryRow(ctx, q).Scan(pq.Array(&qs))
 }

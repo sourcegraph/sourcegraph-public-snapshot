@@ -403,13 +403,13 @@ func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[ap
 		return revs, nil
 	}
 
-	repoQueries, err := sc.GetAllRepositoryQueries(ctx)
+	contextQueries, err := sc.GetAllQueries(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	var rqs []Query
-	for _, q := range repoQueries {
+	for _, q := range contextQueries {
 		qs, err := ParseQuery(q)
 		if err != nil {
 			return nil, err
