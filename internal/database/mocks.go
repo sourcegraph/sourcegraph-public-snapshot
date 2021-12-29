@@ -26809,9 +26809,9 @@ func (c SearchContextsStoreExecFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// SearchContextsStoreGetAllQueriesFunc describes the behavior
-// when the GetAllQueries method of the parent
-// MockSearchContextsStore instance is invoked.
+// SearchContextsStoreGetAllQueriesFunc describes the behavior when the
+// GetAllQueries method of the parent MockSearchContextsStore instance is
+// invoked.
 type SearchContextsStoreGetAllQueriesFunc struct {
 	defaultHook func(context.Context) ([]string, error)
 	hooks       []func(context.Context) ([]string, error)
@@ -26819,26 +26819,26 @@ type SearchContextsStoreGetAllQueriesFunc struct {
 	mutex       sync.Mutex
 }
 
-// GetAllQueries delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
+// GetAllQueries delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
 func (m *MockSearchContextsStore) GetAllQueries(v0 context.Context) ([]string, error) {
 	r0, r1 := m.GetAllQueriesFunc.nextHook()(v0)
 	m.GetAllQueriesFunc.appendCall(SearchContextsStoreGetAllQueriesFuncCall{v0, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the
-// GetAllQueries method of the parent MockSearchContextsStore
-// instance is invoked and the hook queue is empty.
+// SetDefaultHook sets function that is called when the GetAllQueries method
+// of the parent MockSearchContextsStore instance is invoked and the hook
+// queue is empty.
 func (f *SearchContextsStoreGetAllQueriesFunc) SetDefaultHook(hook func(context.Context) ([]string, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetAllQueries method of the parent MockSearchContextsStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
+// GetAllQueries method of the parent MockSearchContextsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
 func (f *SearchContextsStoreGetAllQueriesFunc) PushHook(hook func(context.Context) ([]string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
@@ -26880,9 +26880,8 @@ func (f *SearchContextsStoreGetAllQueriesFunc) appendCall(r0 SearchContextsStore
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// SearchContextsStoreGetAllQueriesFuncCall objects describing the
-// invocations of this function.
+// History returns a sequence of SearchContextsStoreGetAllQueriesFuncCall
+// objects describing the invocations of this function.
 func (f *SearchContextsStoreGetAllQueriesFunc) History() []SearchContextsStoreGetAllQueriesFuncCall {
 	f.mutex.Lock()
 	history := make([]SearchContextsStoreGetAllQueriesFuncCall, len(f.history))
@@ -26892,9 +26891,9 @@ func (f *SearchContextsStoreGetAllQueriesFunc) History() []SearchContextsStoreGe
 	return history
 }
 
-// SearchContextsStoreGetAllQueriesFuncCall is an object that
-// describes an invocation of method GetAllQueries on an instance
-// of MockSearchContextsStore.
+// SearchContextsStoreGetAllQueriesFuncCall is an object that describes an
+// invocation of method GetAllQueries on an instance of
+// MockSearchContextsStore.
 type SearchContextsStoreGetAllQueriesFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
