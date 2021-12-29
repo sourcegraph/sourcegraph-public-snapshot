@@ -1,10 +1,5 @@
 BEGIN;
 
-ALTER TABLE
-  changesets
-ADD COLUMN IF NOT EXISTS
-  external_fork_namespace CITEXT NULL;
-
 -- Note that we have to regenerate the reconciler_changesets view, as the SELECT
 -- c.* in the view definition isn't refreshed when the fields change within the
 -- changesets table.
@@ -12,9 +7,9 @@ DROP VIEW IF EXISTS
     reconciler_changesets;
 
 ALTER TABLE
-    changesets
+  changesets
 ADD COLUMN IF NOT EXISTS
-    ui_publication_state batch_changes_changeset_ui_publication_state NULL DEFAULT NULL;
+  external_fork_namespace CITEXT NULL;
 
 CREATE VIEW reconciler_changesets AS
     SELECT c.* FROM changesets c
