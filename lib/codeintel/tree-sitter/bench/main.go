@@ -52,7 +52,16 @@ import (
 	"github.com/loov/hrtime"
 	"github.com/schollz/progressbar/v3"
 	sitter "github.com/smacker/go-tree-sitter"
-	"github.com/smacker/go-tree-sitter/golang"
+	sitter_c "github.com/smacker/go-tree-sitter/c"
+	sitter_cpp "github.com/smacker/go-tree-sitter/cpp"
+	sitter_go "github.com/smacker/go-tree-sitter/golang"
+	sitter_java "github.com/smacker/go-tree-sitter/java"
+	sitter_js "github.com/smacker/go-tree-sitter/javascript"
+	sitter_py "github.com/smacker/go-tree-sitter/python"
+	sitter_rb "github.com/smacker/go-tree-sitter/ruby"
+	sitter_rs "github.com/smacker/go-tree-sitter/rust"
+	sitter_scala "github.com/smacker/go-tree-sitter/scala"
+	sitter_ts "github.com/smacker/go-tree-sitter/typescript/typescript"
 	"github.com/sourcegraph/gosyntect"
 )
 
@@ -81,19 +90,19 @@ const NPARALLELISM = 10
 
 // Based on languages which are popular and are marked "fairly complete"
 // for tree-sitter in https://tree-sitter.github.io/tree-sitter/#available-parsers
-var extMap = map[string]struct{}{
-	".go":   {},
-	".c":    {},
-	".h":    {},
-	".js":   {},
-	".jsx":  {},
-	".cpp":  {},
-	".hpp":  {},
-	".ts":   {},
-	".tsx":  {},
-	".rb":   {},
-	".rs":   {},
-	".java": {},
+var extMap = map[string]*sitter.Language{
+	".go":    sitter_go.GetLanguage(),
+	".c":     sitter_c.GetLanguage(),
+	".h":     sitter_c.GetLanguage(),
+	".js":    sitter_js.GetLanguage(),
+	".cpp":   sitter_cpp.GetLanguage(),
+	".hpp":   sitter_cpp.GetLanguage(),
+	".ts":    sitter_ts.GetLanguage(),
+	".rb":    sitter_rb.GetLanguage(),
+	".rs":    sitter_rs.GetLanguage(),
+	".java":  sitter_java.GetLanguage(),
+	".scala": sitter_scala.GetLanguage(),
+	".py":    sitter_py.GetLanguage(),
 }
 
 func TryHighlightFileWithExtension(extension string) bool {
@@ -361,7 +370,8 @@ func (i *Input) benchmarkSynhtml() time.Duration {
 
 func (i *Input) benchmarkTreeSitter() time.Duration {
 	parser := sitter.NewParser()
-	parser.SetLanguage(golang.GetLanguage())
+	language := extMap[filepath.Ext(i.ZipRelativePath)]
+	parser.SetLanguage(language)
 	_, err := parser.ParseCtx(context.Background(), nil, i.Bytes)
 	if err != nil {
 		panic(err)
