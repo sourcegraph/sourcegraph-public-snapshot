@@ -7,8 +7,10 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -20,7 +22,9 @@ func Init() (*sql.DB, error) {
 		return nil, err
 	}
 
-	return conn.(*sql.DB), nil
+	db := conn.(*sql.DB)
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
+	return db, err
 }
 
 var initDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{}, error) {
