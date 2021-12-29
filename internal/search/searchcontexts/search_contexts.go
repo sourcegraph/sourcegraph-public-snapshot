@@ -223,6 +223,7 @@ func validateSearchContextQuery(contextQuery string) error {
 		case query.FieldVisibility:
 		case query.FieldCase:
 		case query.FieldFile:
+		case query.FieldLang:
 
 		default:
 			errs = multierror.Append(errs,

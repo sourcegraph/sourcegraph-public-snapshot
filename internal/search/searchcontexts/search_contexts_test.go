@@ -662,6 +662,19 @@ func TestParseQuery(t *testing.T) {
 			},
 		},
 		{
+			in: "r:foo|bar@HEAD f:^sub/dir lang:go",
+			out: []Query{
+				{
+					ReposListOptions: database.ReposListOptions{
+						IncludePatterns: []string{"foo|bar"},
+						NoForks:         true,
+						NoArchived:      true,
+					},
+					RevSpecs: []string{"HEAD"},
+				},
+			},
+		},
+		{
 			in: "(r:foo (rev:HEAD or rev:TAIL)) or r:bar@main:dev",
 			out: []Query{
 				{

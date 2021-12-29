@@ -315,7 +315,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 				Name:      "SearchContextV2",
 				Namespace: &namespace,
 				Public:    true,
-				Query:     `r:^github\.com/sgtest/(java-langserver|jsonrpc2) f:drop`,
+				Query:     `r:^github\.com/sgtest f:drop lang:java`,
 			}, []gqltestutil.SearchContextRepositoryRevisionsInput{})
 		require.NoError(t, err)
 
@@ -327,17 +327,17 @@ func testSearchClient(t *testing.T, client searchClient) {
 		searchContext, err := client.GetSearchContext(searchContextID)
 		require.NoError(t, err)
 
-		query := fmt.Sprintf("context:%s type:repo", searchContext.Spec)
+		query := fmt.Sprintf("context:%s select:repo", searchContext.Spec)
 		results, err := client.SearchRepositories(query)
 		require.NoError(t, err)
 
-		wantRepos := []string{"github.com/sgtest/java-langserver", "github.com/sgtest/jsonrpc2"}
+		wantRepos := []string{"github.com/sgtest/java-langserver"}
 		if missingRepos := results.Exists(wantRepos...); len(missingRepos) != 0 {
 			t.Fatalf("Missing repositories: %v", missingRepos)
 		}
 
 		if len(wantRepos) != len(results) {
-			t.Fatalf("want %d repositories, got %+v", len(wantRepos), results)
+			t.Fatalf("want %d repositories, got %d", len(wantRepos), len(results))
 		}
 	})
 
