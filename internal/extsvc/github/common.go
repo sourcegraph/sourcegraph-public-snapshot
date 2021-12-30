@@ -1120,13 +1120,6 @@ fragment label on Label {
   description
   id
 }
-
-fragment repo on Repository {
-  id
-  owner {
-    login
-  }
-}
 `
 
 // This fragment was formatted using the "prettify" button in the GitHub API explorer:
@@ -1388,6 +1381,13 @@ fragment commitWithChecks on Commit {
 fragment prCommit on PullRequestCommit {
   commit {
     ...commitWithChecks
+  }
+}
+
+fragment repo on Repository {
+  id
+  owner {
+    login
   }
 }
 
