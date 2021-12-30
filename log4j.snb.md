@@ -183,7 +183,7 @@ Well, there is much more work to be done beyond taking the immediate remediation
 
 The path to bridging all these gaps lies through source code, and tools that facilitate the shared understanding of code can play a crucial role in filling these gaps. Imagine if the developer who discovered and reported the issue had also found it straightforward enough to submit a patch in addition to urging, ["Please hurry up"](https://www.infoworld.com/article/3645131/how-developers-scrambled-to-secure-the-log4j-vulnerability.html), as knowledge of the exploit spread on WeChat forums? Weeks could have been saved, the burden of the patch would not have fallen only on the shoulders of volunteer maintainers, and so many human-hours of scrambling and overtime could have been avoided with a more orderly and timely patch release.
 
-We hope interactive documentation like this can link high-level understanding to specific versioned blocks of source code, and thereby be a force multiplier for disseminating a shared understanding of code and security--across individuals, teams, and organizational boundaries. If you found this post useful, consider forking it, creating a walkthrough of your own like it for a library you rely on, and sharing it with others.
+We hope interactive documentation like this can link high-level understanding to specific versioned blocks of source code, and thereby be a force multiplier for disseminating a shared understanding of code and security--across individuals, teams, and organizational boundaries. If you found this post useful, consider forking it, creating a walkthrough of your own for a library you rely on, and sharing it with others!
 
 ## References
 
