@@ -28,7 +28,7 @@ import (
 )
 
 // Stat returns a FileInfo describing the named file at commit.
-func Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+func Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
 	if Mocks.Stat != nil {
 		return Mocks.Stat(commit, path)
 	}
@@ -44,7 +44,7 @@ func Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path stri
 
 	path = util.Rel(path)
 
-	fi, err := lStat(ctx, repo, commit, path)
+	fi, err := lStat(ctx, checker, repo, commit, path)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,28 @@ func Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path stri
 }
 
 // ReadDir reads the contents of the named directory at commit.
-func ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
+func ReadDir(
+	ctx context.Context,
+	checker authz.SubRepoPermissionChecker,
+	repo api.RepoName,
+	commit api.CommitID,
+	path string,
+	recurse bool,
+) (files []fs.FileInfo, err error) {
+	defer func() {
+		if err != nil || !checker.Enabled() {
+			return
+		}
+		a := actor.FromContext(ctx)
+		filtered, err := authz.FilterActorFileInfos(ctx, checker, a, repo, files)
+		if err != nil {
+			err = errors.Wrap(err, "filtering paths")
+			files = nil
+			return
+		}
+		files = filtered
+	}()
+
 	if Mocks.ReadDir != nil {
 		return Mocks.ReadDir(commit, path, recurse)
 	}
@@ -104,7 +125,24 @@ func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo a
 
 // lStat returns a FileInfo describing the named file at commit. If the file is a symbolic link, the
 // returned FileInfo describes the symbolic link.  lStat makes no attempt to follow the link.
-func lStat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+func lStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (file fs.FileInfo, err error) {
+	defer func() {
+		if err != nil || !checker.Enabled() {
+			return
+		}
+		// Applying sub-repo permissions
+		a := actor.FromContext(ctx)
+		include, filteringErr := authz.FilterActorFileInfo(ctx, checker, a, repo, file)
+		if filteringErr != nil || !include {
+			if filteringErr != nil {
+				err = errors.Wrap(err, "filtering paths")
+			} else {
+				err = &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
+			}
+			file = nil
+		}
+	}()
+
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: lStat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -147,7 +185,13 @@ var (
 )
 
 // lsTree returns ls of tree at path.
-func lsTree(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
+func lsTree(
+	ctx context.Context,
+	repo api.RepoName,
+	commit api.CommitID,
+	path string,
+	recurse bool,
+) (files []fs.FileInfo, err error) {
 	if path != "" || !recurse {
 		// Only cache the root recursive ls-tree.
 		return lsTreeUncached(ctx, repo, commit, path, recurse)

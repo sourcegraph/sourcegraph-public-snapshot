@@ -49,6 +49,12 @@ func enterpriseInit(
 
 	codemonitorsBackground.StartBackgroundJobs(ctx, db)
 
+	var err error
+	ossAuthz.DefaultSubRepoPermsChecker, err = ossAuthz.NewSubRepoPermsClient(ossDB.SubRepoPerms(db))
+	if err != nil {
+		log.Fatalf("Failed to create sub-repo client: %v", err)
+	}
+
 	// No Batch Changes on dotcom, so we don't need to spawn the
 	// background jobs for this feature.
 	if !envvar.SourcegraphDotComMode() {

@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -134,7 +135,7 @@ func listGoPackagesInRepoImprecise(ctx context.Context, db database.DB, repoName
 	if err != nil {
 		return nil, err
 	}
-	fis, err := git.ReadDir(ctx, repo.Name, commitID, "", true)
+	fis, err := git.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "", true)
 	if err != nil {
 		return nil, err
 	}
