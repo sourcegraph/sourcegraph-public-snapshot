@@ -66,8 +66,8 @@ func ReadDir(
 			return
 		}
 		a := actor.FromContext(ctx)
-		filtered, err := authz.FilterActorFileInfos(ctx, checker, a, repo, files)
-		if err != nil {
+		filtered, filteringErr := authz.FilterActorFileInfos(ctx, checker, a, repo, files)
+		if filteringErr != nil {
 			err = errors.Wrap(err, "filtering paths")
 			files = nil
 			return
