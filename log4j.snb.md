@@ -123,7 +123,7 @@ and then feeds the remainder of the path to a template for shell commands:
 
 https://sourcegraph.com/github.com/sickcodes/JNDIExploit/-/blob/src/main/java/com/feihong/ldap/controllers/BasicController.java?L15-39
 
-This template expects a base64-encoded shell command and writes out a Java class file containing bytecode executing the shell command ("touch /tmp/pwned", which we base64 decoded from "dG91Y2ggL3RtcC9wd25lZAo=") on initialization:
+This template expects a base64-encoded shell command and writes out a Java class file containing bytecode executing the shell command (`touch /tmp/pwned`, which we base64 decoded from `dG91Y2ggL3RtcC9wd25lZAo=`) on initialization:
 
 https://sourcegraph.com/github.com/sickcodes/JNDIExploit/-/blob/src/main/java/com/feihong/ldap/template/CommandTemplate.java?L39-144
 
