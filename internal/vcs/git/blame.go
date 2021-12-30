@@ -48,8 +48,7 @@ func BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOp
 }
 
 func blameFileCmd(ctx context.Context, command cmdFunc, path string, opt *BlameOptions, repo api.RepoName, checker authz.SubRepoPermissionChecker) ([]*Hunk, error) {
-	hasAccess, err := authz.HasAccessToPath(ctx, checker, repo, path)
-	if err != nil || !hasAccess {
+	if hasAccess, err := authz.HasAccessToPath(ctx, checker, repo, path); err != nil || !hasAccess {
 		return nil, err
 	}
 	if opt == nil {

@@ -48,8 +48,7 @@ func NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, 
 	if Mocks.NewFileReader != nil {
 		return Mocks.NewFileReader(commit, name)
 	}
-	hasAccess, err := authz.HasAccessToPath(ctx, checker, repo, name)
-	if err != nil || !hasAccess {
+	if hasAccess, err := authz.HasAccessToPath(ctx, checker, repo, name); err != nil || !hasAccess {
 		return nil, err
 	}
 
