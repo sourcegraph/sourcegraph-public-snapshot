@@ -154,27 +154,36 @@ type Label struct {
 	Name        string
 }
 
+type PullRequestRepo struct {
+	ID    string
+	Owner struct {
+		Login string
+	}
+}
+
 // PullRequest is a GitHub pull request.
 type PullRequest struct {
-	RepoWithOwner string `json:"-"`
-	ID            string
-	Title         string
-	Body          string
-	State         string
-	URL           string
-	HeadRefOid    string
-	BaseRefOid    string
-	HeadRefName   string
-	BaseRefName   string
-	Number        int64
-	Author        Actor
-	Participants  []Actor
-	Labels        struct{ Nodes []Label }
-	TimelineItems []TimelineItem
-	Commits       struct{ Nodes []CommitWithChecks }
-	IsDraft       bool
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	RepoWithOwner  string `json:"-"`
+	ID             string
+	Title          string
+	Body           string
+	State          string
+	URL            string
+	HeadRefOid     string
+	BaseRefOid     string
+	HeadRefName    string
+	BaseRefName    string
+	Number         int64
+	Author         Actor
+	BaseRepository PullRequestRepo
+	HeadRepository PullRequestRepo
+	Participants   []Actor
+	Labels         struct{ Nodes []Label }
+	TimelineItems  []TimelineItem
+	Commits        struct{ Nodes []CommitWithChecks }
+	IsDraft        bool
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 // AssignedEvent represents an 'assigned' event on a PullRequest.
@@ -1111,6 +1120,13 @@ fragment label on Label {
   description
   id
 }
+
+fragment repo on Repository {
+  id
+  owner {
+    login
+  }
+}
 `
 
 // This fragment was formatted using the "prettify" button in the GitHub API explorer:
@@ -1392,6 +1408,12 @@ fragment pr on PullRequest {
   author {
     ...actor
   }
+  baseRepository {
+    ...repo
+  }
+  headRepository {
+    ...repo
+  }
   participants(first: 100) {
     nodes {
       ...actor
@@ -1667,6 +1689,37 @@ type Repository struct {
 	// to identify if a repository is public or private or internal.
 	// https://developer.github.com/changes/2019-12-03-internal-visibility-changes/#repository-visibility-fields
 	Visibility Visibility `json:",omitempty"`
+}
+
+type errMalformedNameWithOwner string
+
+func (e errMalformedNameWithOwner) Error() string {
+	return fmt.Sprintf("malformed NameWithOwner: %q", string(e))
+}
+
+func (r *Repository) Owner() (string, error) {
+	if owner, _, err := r.SplitOwnerName(); err != nil {
+		return "", err
+	} else {
+		return owner, nil
+	}
+}
+
+func (r *Repository) Name() (string, error) {
+	if _, name, err := r.SplitOwnerName(); err != nil {
+		return "", err
+	} else {
+		return name, nil
+	}
+}
+
+func (r *Repository) SplitOwnerName() (owner, name string, err error) {
+	parts := strings.SplitN(r.NameWithOwner, "/", 2)
+	if len(parts) != 2 {
+		return "", "", errMalformedNameWithOwner(r.NameWithOwner)
+	}
+
+	return parts[0], parts[1], nil
 }
 
 func ownerNameCacheKey(owner, name string) string       { return "0:" + owner + "/" + name }
