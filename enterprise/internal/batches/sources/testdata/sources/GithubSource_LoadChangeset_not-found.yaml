@@ -32,13 +32,13 @@ interactions:
       on PullRequestCommit {\n    commit {\n      ...commit\n    }\n  }\n  \n  ...
       on ConvertToDraftEvent {\n    actor {\n\t  ...actor\n\t}\n\tcreatedAt\n  }\n\n}\n\nfragment
       actor on Actor {\n  avatarUrl\n  login\n  url\n}\n\nfragment label on Label
-      {\n  name\n  color\n  description\n  id\n}\n\nfragment repo on Repository {\n  id\n  owner
-      {\n    login\n  }\n}\n\nfragment commitWithChecks on Commit {\n  oid\n  status
-      {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
+      {\n  name\n  color\n  description\n  id\n}\n\nfragment commitWithChecks on Commit
+      {\n  oid\n  status {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
       20) {\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
-      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      repo on Repository {\n  id\n  owner {\n    login\n  }\n}\n\nfragment pr on PullRequest
+      {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
       {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
       {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
@@ -74,7 +74,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 30 Dec 2021 22:26:18 GMT
+      - Thu, 30 Dec 2021 22:37:54 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -92,14 +92,14 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 92C2:3FCD:1AB8EF8:5022793:61CE3209
+      - B980:142E:1E1A5FB:551FEEF:61CE34C1
       X-Oauth-Scopes:
       - read:discussion, read:org, read:packages, read:public_key, read:repo_hook,
         read:user, repo, workflow
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "6"
+      - "77"
       X-Xss-Protection:
       - "0"
     status: 200 OK
