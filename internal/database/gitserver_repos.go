@@ -116,7 +116,7 @@ func (s *gitserverRepoStore) IterateWithNonemptyLastError(ctx context.Context, r
 }
 
 const nonemptyLastErrorQuery = `
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.GetWithNonemptyLastError
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.IterateWithNonemptyLastError
 SELECT
 	repo.name,
 	gr.last_error
