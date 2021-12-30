@@ -34,9 +34,11 @@ echo "--- :go: Building sg"
 
 echo "--- :file_cabinet: Uploading logs"
 BUILDKITE_API_TOKEN=$(gcloud secrets versions access latest --secret="BUILDKITE_API_TOKEN" --project="sourcegraph-ci" --quiet)
-BUILD_LOGS_LOKI_URL=$(gcloud secrets versions access latest --secret="BUILD_LOGS_LOKI_URL" --project="sourcegraph-ci" --quiet)
 export BUILDKITE_API_TOKEN
+BUILD_LOGS_LOKI_URL=$(gcloud secrets versions access latest --secret="BUILD_LOGS_LOKI_URL" --project="sourcegraph-ci" --quiet)
 export BUILD_LOGS_LOKI_URL
+CI_SENTRY_DSN=$(gcloud secrets versions access latest --secret="CI_SENTRY_DSN" --project="sourcegraph-ci" --quiet)
+export CI_SENTRY_DSN
 
 # Because we are running this script in the buildkite post-exit hook, the state of the job is still "running".
 # Passing --state="" just overrides the default. It's not set to any specific state because this script caller
