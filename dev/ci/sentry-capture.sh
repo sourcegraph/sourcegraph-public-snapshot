@@ -19,14 +19,14 @@ function capture {
     fi
 
     # Report to sentry if it failed
-    if [ $exit_code -ne 0 ]; then  
+    if [ $exit_code -ne 0 ]; then
       SENTRY_DSN="$CI_SENTRY_DSN" sentry-cli send-event \
         -m "$command" \
         -m "$trace" \
         -e "job_name:$BUILDKITE_LABEL" \
         -e "job_url:$BUILDKITE_BUILD_URL" \
         -e "build_number:$BUILDKITE_BUILD_NUMBER" \
-        -e "agent_name:$BUILDKITE_AGENT_NAME" 
+        -e "agent_name:$BUILDKITE_AGENT_NAME"
     fi
 
     # Still print the command for the runner
