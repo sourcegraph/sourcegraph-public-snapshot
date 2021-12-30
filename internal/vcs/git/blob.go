@@ -22,8 +22,7 @@ func ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name 
 	if Mocks.ReadFile != nil {
 		return Mocks.ReadFile(commit, name)
 	}
-	hasAccess, err := authz.HasAccessToPath(ctx, checker, repo, name)
-	if err != nil || !hasAccess {
+	if hasAccess, err := authz.HasAccessToPath(ctx, checker, repo, name); err != nil || !hasAccess {
 		return nil, err
 	}
 
