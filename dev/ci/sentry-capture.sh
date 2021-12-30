@@ -2,7 +2,6 @@
 
 function capture {
   (
-    
     set +x
     # Run the command and capture the output
     # shellcheck disable=SC2124
