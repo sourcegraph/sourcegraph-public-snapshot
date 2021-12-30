@@ -4,6 +4,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 root_dir=$(pwd)
 set -ex
 
+echo "trigger failure"
+exit 1
+
 if [ -z "$IMAGE" ]; then
   echo "Must specify \$IMAGE."
   exit 1
