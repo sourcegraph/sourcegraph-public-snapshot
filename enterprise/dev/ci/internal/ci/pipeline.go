@@ -240,6 +240,15 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				wait, // wait for all steps to pass
 				triggerUpdaterPipeline)
 		}
+
+		ops.Append(
+			wait, // wait for all steps to pass
+			func(p *bk.Pipeline) {
+				p.AddStep("Uploading trace on HoneyComb",
+					bk.Cmd("./enterprise/dev/upload-buildevent-report.sh"),
+				)
+			},
+		)
 	}
 
 	// Construct pipeline

@@ -8,6 +8,7 @@ package buildkite
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"regexp"
 	"strconv"
@@ -198,7 +199,10 @@ type StepOpt func(step *Step)
 
 func Cmd(command string) StepOpt {
 	return func(step *Step) {
-		step.Command = append(step.Command, command)
+		// BUILDKITE_STEP_ID is prefixed by $$ so it's not interpolated at pipeline generation time
+		// but instead when the step is executed.
+		traceCmd := "./buildevents cmd $BUILDKITE_BUILD_ID $$BUILDKITE_STEP_ID"
+		step.Command = append(step.Command, fmt.Sprintf("%s %s", traceCmd, command))
 	}
 }
 
