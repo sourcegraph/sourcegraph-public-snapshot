@@ -26,10 +26,10 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 echo "--- :go: Building sg"
 (
-set -x
-pushd dev/sg
-go build -o ../../ci_sg -ldflags "-X main.BuildCommit=$BUILDKITE_COMMIT" -mod=mod .
-popd
+  set -x
+  pushd dev/sg
+  go build -o ../../ci_sg -ldflags "-X main.BuildCommit=$BUILDKITE_COMMIT" -mod=mod .
+  popd
 )
 
 echo "--- :file_cabinet: Uploading logs"
