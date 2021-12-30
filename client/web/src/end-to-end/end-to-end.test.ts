@@ -619,7 +619,7 @@ describe('e2e test suite', () => {
                         )
                     })
 
-                    test('does navigation (same repo, different file)', async () => {
+                    test.skip('does navigation (same repo, different file)', async () => {
                         await driver.page.goto(
                             sourcegraphBaseUrl +
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/print.go?L13:31'
