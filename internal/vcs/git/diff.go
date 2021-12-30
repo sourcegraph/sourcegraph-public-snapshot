@@ -65,8 +65,7 @@ func Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error) {
 // DiffPath returns a position-ordered slice of changes (additions or deletions)
 // of the given path between the given source and target commits.
 func DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string, checker authz.SubRepoPermissionChecker) ([]*diff.Hunk, error) {
-	hasAccess, err := authz.HasAccessToPath(ctx, checker, repo, path)
-	if err != nil || !hasAccess {
+	if hasAccess, err := authz.HasAccessToPath(ctx, checker, repo, path); err != nil || !hasAccess {
 		return nil, err
 	}
 	reader, err := execReader(ctx, repo, []string{"diff", sourceCommit, targetCommit, "--", path})
