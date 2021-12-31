@@ -1665,6 +1665,26 @@ func SplitRepositoryNameWithOwner(nameWithOwner string) (owner, repo string, err
 	return parts[0], parts[1], nil
 }
 
+// Owner splits a GitHub repository's "owner/name" string and only returns the
+// owner.
+func (r *Repository) Owner() (string, error) {
+	if owner, _, err := SplitRepositoryNameWithOwner(r.NameWithOwner); err != nil {
+		return "", err
+	} else {
+		return owner, nil
+	}
+}
+
+// Name splits a GitHub repository's "owner/name" string and only returns the
+// name.
+func (r *Repository) Name() (string, error) {
+	if _, name, err := SplitRepositoryNameWithOwner(r.NameWithOwner); err != nil {
+		return "", err
+	} else {
+		return name, nil
+	}
+}
+
 // Repository is a GitHub repository.
 type Repository struct {
 	ID            string // ID of repository (GitHub GraphQL ID, not GitHub database ID)
@@ -1689,37 +1709,6 @@ type Repository struct {
 	// to identify if a repository is public or private or internal.
 	// https://developer.github.com/changes/2019-12-03-internal-visibility-changes/#repository-visibility-fields
 	Visibility Visibility `json:",omitempty"`
-}
-
-type errMalformedNameWithOwner string
-
-func (e errMalformedNameWithOwner) Error() string {
-	return fmt.Sprintf("malformed NameWithOwner: %q", string(e))
-}
-
-func (r *Repository) Owner() (string, error) {
-	if owner, _, err := r.SplitOwnerName(); err != nil {
-		return "", err
-	} else {
-		return owner, nil
-	}
-}
-
-func (r *Repository) Name() (string, error) {
-	if _, name, err := r.SplitOwnerName(); err != nil {
-		return "", err
-	} else {
-		return name, nil
-	}
-}
-
-func (r *Repository) SplitOwnerName() (owner, name string, err error) {
-	parts := strings.SplitN(r.NameWithOwner, "/", 2)
-	if len(parts) != 2 {
-		return "", "", errMalformedNameWithOwner(r.NameWithOwner)
-	}
-
-	return parts[0], parts[1], nil
 }
 
 func ownerNameCacheKey(owner, name string) string       { return "0:" + owner + "/" + name }

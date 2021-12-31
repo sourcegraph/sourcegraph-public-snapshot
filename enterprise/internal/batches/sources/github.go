@@ -297,7 +297,7 @@ func (s GithubSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (
 		return nil, errors.New("target repo is not a GitHub repo")
 	}
 
-	owner, name, err := meta.SplitOwnerName()
+	owner, name, err := github.SplitRepositoryNameWithOwner(meta.NameWithOwner)
 	if err != nil {
 		return nil, errors.New("parsing repo name")
 	}
