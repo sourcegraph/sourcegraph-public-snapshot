@@ -9,6 +9,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+	"github.com/stretchr/testify/assert"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -531,4 +532,80 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestGithubSource_GetUserFork(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("failures", func(t *testing.T) {
+		for name, tc := range map[string]struct {
+			targetRepo *types.Repo
+			client     githubClientFork
+		}{
+			"nil metadata": {
+				targetRepo: &types.Repo{
+					Metadata: nil,
+				},
+				client: nil,
+			},
+			"invalid metadata": {
+				targetRepo: &types.Repo{
+					Metadata: []string{},
+				},
+				client: nil,
+			},
+			"invalid NameWithOwner": {
+				targetRepo: &types.Repo{
+					Metadata: &github.Repository{
+						NameWithOwner: "foo",
+					},
+				},
+				client: nil,
+			},
+			"client error": {
+				targetRepo: &types.Repo{
+					Metadata: &github.Repository{
+						NameWithOwner: "foo/bar",
+					},
+				},
+				client: &mockGithubClientFork{err: errors.New("hello!")},
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				fork, err := githubGetUserFork(ctx, tc.targetRepo, tc.client)
+				assert.Nil(t, fork)
+				assert.NotNil(t, err)
+			})
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		want := &github.Repository{
+			NameWithOwner: "user/bar",
+		}
+		client := &mockGithubClientFork{fork: want}
+
+		targetRepo := &types.Repo{
+			Metadata: &github.Repository{
+				NameWithOwner: "foo/bar",
+			},
+		}
+
+		fork, err := githubGetUserFork(ctx, targetRepo, client)
+		assert.Nil(t, err)
+		assert.NotNil(t, fork)
+		assert.NotEqual(t, fork, targetRepo)
+		assert.Equal(t, want, fork.Metadata)
+	})
+}
+
+type mockGithubClientFork struct {
+	fork *github.Repository
+	err  error
+}
+
+var _ githubClientFork = &mockGithubClientFork{}
+
+func (mock *mockGithubClientFork) Fork(context.Context, string, string, *string) (*github.Repository, error) {
+	return mock.fork, mock.err
 }

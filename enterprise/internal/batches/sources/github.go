@@ -292,6 +292,15 @@ func (s GithubSource) MergeChangeset(ctx context.Context, c *Changeset, squash b
 // GetUserFork returns a repo pointing to a fork of the given repo in the
 // currently authenticated user's namespace.
 func (s GithubSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
+	// The implementation is separated here so we can mock the GitHub client.
+	return githubGetUserFork(ctx, targetRepo, s.client)
+}
+
+type githubClientFork interface {
+	Fork(context.Context, string, string, *string) (*github.Repository, error)
+}
+
+func githubGetUserFork(ctx context.Context, targetRepo *types.Repo, client githubClientFork) (*types.Repo, error) {
 	meta, ok := targetRepo.Metadata.(*github.Repository)
 	if !ok || meta == nil {
 		return nil, errors.New("target repo is not a GitHub repo")
@@ -302,7 +311,7 @@ func (s GithubSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (
 		return nil, errors.New("parsing repo name")
 	}
 
-	fork, err := s.client.Fork(ctx, owner, name, nil)
+	fork, err := client.Fork(ctx, owner, name, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "forking repository")
 	}
