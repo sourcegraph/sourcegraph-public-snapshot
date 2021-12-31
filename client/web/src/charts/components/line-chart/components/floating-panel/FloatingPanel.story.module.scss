@@ -1,0 +1,27 @@
+.container {
+    width: 100%;
+    height: 100%;
+    background-color: wheat;
+    overflow: auto;
+    position: relative;
+}
+
+.content {
+    width: 3000px;
+    height: 3000px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.target {
+    height: 200px;
+}
+
+.floating {
+    background-color: #0b70db;
+    color: white;
+    padding: 5px;
+    border-radius: 4px;
+    min-height: 300px;
+}
