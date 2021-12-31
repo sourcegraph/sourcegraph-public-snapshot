@@ -52,3 +52,6 @@ var MockMergeMergeRequest func(c *Client, ctx context.Context, project *Project,
 // MockCreateMergeRequestNote, if non-nil, will be called instead of
 // Client.CreateMergeRequestNote
 var MockCreateMergeRequestNote func(c *Client, ctx context.Context, project *Project, mr *MergeRequest, body string) error
+
+// MockForkProject, if non-nil, will be called instead of Client.ForkProject
+var MockForkProject func(c *Client, ctx context.Context, project *Project, namespace *string) (*Project, error)
