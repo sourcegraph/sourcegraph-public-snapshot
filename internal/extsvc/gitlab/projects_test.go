@@ -3,7 +3,6 @@ package gitlab
 import (
 	"context"
 	"net/http"
-	"os"
 	"reflect"
 	"testing"
 
@@ -107,14 +106,8 @@ func TestClient_GetProject_nonexistent(t *testing.T) {
 func TestClient_ForkProject(t *testing.T) {
 	ctx := context.Background()
 
-	token := os.Getenv("GITLAB_TOKEN")
-	createClient := func(t *testing.T) *Client {
-		provider := createTestProvider(t)
-		return provider.GetOAuthClient(token)
-	}
-
 	// We'll grab a project to use in the other tests.
-	project, err := createClient(t).GetProject(ctx, GetProjectOp{
+	project, err := createTestClient(t).GetProject(ctx, GetProjectOp{
 		PathWithNamespace: "sourcegraph/src-cli",
 		CommonOp:          CommonOp{NoCache: true},
 	})
@@ -123,7 +116,7 @@ func TestClient_ForkProject(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// For this test to be updated, src-cli must _not_ have been forked into
 		// the user associated with $GITLAB_TOKEN.
-		fork, err := createClient(t).ForkProject(ctx, project, nil)
+		fork, err := createTestClient(t).ForkProject(ctx, project, nil)
 		assert.Nil(t, err)
 		assert.NotNil(t, fork)
 
@@ -137,7 +130,7 @@ func TestClient_ForkProject(t *testing.T) {
 	t.Run("already forked", func(t *testing.T) {
 		// For this test to be updated, src-cli must have been forked into the user
 		// associated with $GITLAB_TOKEN.
-		fork, err := createClient(t).ForkProject(ctx, project, nil)
+		fork, err := createTestClient(t).ForkProject(ctx, project, nil)
 		assert.Nil(t, err)
 		assert.NotNil(t, fork)
 
@@ -191,6 +184,43 @@ func TestProjectCommon_Name(t *testing.T) {
 				name, err := tc.pc.Name()
 				assert.Nil(t, err)
 				assert.Equal(t, tc.want, name)
+			})
+		}
+	})
+}
+
+func TestProjectCommon_Namespace(t *testing.T) {
+	t.Run("errors", func(t *testing.T) {
+		for name, pc := range map[string]ProjectCommon{
+			"empty":      {PathWithNamespace: ""},
+			"no slashes": {PathWithNamespace: "foo"},
+		} {
+			t.Run(name, func(t *testing.T) {
+				ns, err := pc.Namespace()
+				assert.Equal(t, "", ns)
+				assert.NotNil(t, err)
+			})
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		for name, tc := range map[string]struct {
+			pc   ProjectCommon
+			want string
+		}{
+			"single namespace": {
+				pc:   ProjectCommon{PathWithNamespace: "foo/bar"},
+				want: "foo",
+			},
+			"nested namespaces": {
+				pc:   ProjectCommon{PathWithNamespace: "foo/bar/quux/baz"},
+				want: "foo/bar/quux",
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				ns, err := tc.pc.Namespace()
+				assert.Nil(t, err)
+				assert.Equal(t, tc.want, ns)
 			})
 		}
 	})

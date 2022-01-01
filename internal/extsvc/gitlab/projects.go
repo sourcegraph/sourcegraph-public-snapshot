@@ -58,6 +58,16 @@ func (pc *ProjectCommon) Name() (string, error) {
 	return parts[len(parts)-1], nil
 }
 
+// Namespace returns the project namespace(s) as a slash separated string.
+func (pc *ProjectCommon) Namespace() (string, error) {
+	parts := strings.Split(pc.PathWithNamespace, "/")
+	if len(parts) < 2 {
+		return "", errors.New("path with namespace does not include any namespaces")
+	}
+
+	return strings.Join(parts[0:len(parts)-1], "/"), nil
+}
+
 // RequiresAuthentication reports whether this project requires authentication to view (i.e., its visibility is
 // "private" or "internal").
 func (p Project) RequiresAuthentication() bool {

@@ -25,24 +25,25 @@ const (
 )
 
 type MergeRequest struct {
-	ID              ID                `json:"id"`
-	IID             ID                `json:"iid"`
-	ProjectID       ID                `json:"project_id"`
-	SourceProjectID ID                `json:"source_project_id"`
-	Title           string            `json:"title"`
-	Description     string            `json:"description"`
-	State           MergeRequestState `json:"state"`
-	CreatedAt       Time              `json:"created_at"`
-	UpdatedAt       Time              `json:"updated_at"`
-	MergedAt        *Time             `json:"merged_at"`
-	ClosedAt        *Time             `json:"closed_at"`
-	HeadPipeline    *Pipeline         `json:"head_pipeline"`
-	Labels          []string          `json:"labels"`
-	SourceBranch    string            `json:"source_branch"`
-	TargetBranch    string            `json:"target_branch"`
-	WebURL          string            `json:"web_url"`
-	WorkInProgress  bool              `json:"work_in_progress"`
-	Author          User              `json:"author"`
+	ID                     ID `json:"id"`
+	IID                    ID `json:"iid"`
+	ProjectID              ID `json:"project_id"`
+	SourceProjectID        ID `json:"source_project_id"`
+	SourceProjectNamespace string
+	Title                  string            `json:"title"`
+	Description            string            `json:"description"`
+	State                  MergeRequestState `json:"state"`
+	CreatedAt              Time              `json:"created_at"`
+	UpdatedAt              Time              `json:"updated_at"`
+	MergedAt               *Time             `json:"merged_at"`
+	ClosedAt               *Time             `json:"closed_at"`
+	HeadPipeline           *Pipeline         `json:"head_pipeline"`
+	Labels                 []string          `json:"labels"`
+	SourceBranch           string            `json:"source_branch"`
+	TargetBranch           string            `json:"target_branch"`
+	WebURL                 string            `json:"web_url"`
+	WorkInProgress         bool              `json:"work_in_progress"`
+	Author                 User              `json:"author"`
 
 	DiffRefs DiffRefs `json:"diff_refs"`
 
