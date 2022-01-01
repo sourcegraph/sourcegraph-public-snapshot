@@ -115,7 +115,7 @@ export function LineChart<D extends object>(props: LineChartContentProps<D>): Re
         [width, height, points]
     )
 
-    const { root, ...handlers } = useChartEventHandlers({
+    const handlers = useChartEventHandlers({
         onPointerMove: point => {
             const closestPoint = voronoiLayout.find(point.x, point.y)
 
@@ -131,7 +131,6 @@ export function LineChart<D extends object>(props: LineChartContentProps<D>): Re
         <svg
             width={outerWidth}
             height={outerHeight}
-            ref={root}
             className={classNames(styles.root, { [styles.rootWithHoveredLinkPoint]: activePoint?.linkUrl })}
             {...handlers}
         >

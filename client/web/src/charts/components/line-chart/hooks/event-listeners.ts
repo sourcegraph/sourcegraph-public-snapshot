@@ -1,6 +1,6 @@
 import { localPoint } from '@visx/event'
 import { Point } from '@visx/point'
-import { MouseEvent, MouseEventHandler, PointerEventHandler, RefObject, useRef } from 'react'
+import { MouseEvent, MouseEventHandler, PointerEventHandler } from 'react'
 
 interface UseChartEventHandlersProps {
     onPointerMove: (point: Point) => void
@@ -9,22 +9,19 @@ interface UseChartEventHandlersProps {
 }
 
 interface ChartHandlers {
-    root: RefObject<SVGSVGElement>
     onPointerMove: PointerEventHandler<SVGSVGElement>
     onPointerLeave: PointerEventHandler<SVGSVGElement>
     onClick: MouseEventHandler<SVGSVGElement>
 }
 
+/**
+ * Provides special svg|chart-specific handlers for mouse/touch events.
+ */
 export function useChartEventHandlers(props: UseChartEventHandlersProps): ChartHandlers {
     const { onPointerMove, onPointerLeave, onClick } = props
-    const rootSvgReference = useRef<SVGSVGElement>(null)
 
     const handleMouseMove: MouseEventHandler<SVGGElement> = event => {
-        if (!rootSvgReference.current) {
-            return
-        }
-
-        const point = localPoint(rootSvgReference.current, event)
+        const point = localPoint(event.currentTarget, event)
 
         if (!point) {
             return
@@ -50,7 +47,6 @@ export function useChartEventHandlers(props: UseChartEventHandlersProps): ChartH
     }
 
     return {
-        root: rootSvgReference,
         onPointerMove: handleMouseMove,
         onPointerLeave: handleMouseOut,
         onClick,
