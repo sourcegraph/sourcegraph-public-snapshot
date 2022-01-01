@@ -1,5 +1,5 @@
 import { Placement, VirtualElement, Strategy, flip } from '@floating-ui/core'
-import { getScrollParents, computePosition, shift, hide, offset } from '@floating-ui/dom'
+import { getScrollParents, computePosition, shift, limitShift, offset } from '@floating-ui/dom'
 import React, { forwardRef, useEffect, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -45,7 +45,11 @@ export const FloatingPanel: React.FunctionComponent<FloatingPanelProps> = props 
             const { x: xCoordinate, y: yCoordinate, middlewareData } = await computePosition(target, floatingElement, {
                 placement,
                 strategy,
-                middleware: [shift({ boundary: parents }), offset(padding), flip({ boundary: parents }), hide()],
+                middleware: [
+                    shift({ limiter: limitShift(), boundary: parents }),
+                    offset(padding),
+                    flip({ boundary: parents }),
+                ],
             })
 
             const { referenceHidden } = middlewareData.hide ?? {}
