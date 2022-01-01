@@ -105,16 +105,23 @@ func (s GitLabSource) ValidateAuthenticator(ctx context.Context) error {
 // CreateChangeset creates a GitLab merge request. If it already exists,
 // *Changeset will be populated and the return value will be true.
 func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
-	project := c.TargetRepo.Metadata.(*gitlab.Project)
+	remoteProject := c.RemoteRepo.Metadata.(*gitlab.Project)
+	targetProject := c.TargetRepo.Metadata.(*gitlab.Project)
 	exists := false
 	source := git.AbbreviateRef(c.HeadRef)
 	target := git.AbbreviateRef(c.BaseRef)
 	targetProjectID := 0
 	if c.RemoteRepo != c.TargetRepo {
-		targetProjectID = c.RemoteRepo.Metadata.(*gitlab.Project).ID
+		targetProjectID = c.TargetRepo.Metadata.(*gitlab.Project).ID
 	}
 
-	mr, err := s.client.CreateMergeRequest(ctx, project, gitlab.CreateMergeRequestOpts{
+	// We have to create the merge request against the remote project, not the
+	// target project, because that's how GitLab's API works: you provide the
+	// target project ID as one of the parameters. Yes, this is weird.
+	//
+	// Of course, we then have to use the targetProject for everything else,
+	// because that's what the merge request actually belongs to.
+	mr, err := s.client.CreateMergeRequest(ctx, remoteProject, gitlab.CreateMergeRequestOpts{
 		SourceBranch:    source,
 		TargetBranch:    target,
 		TargetProjectID: targetProjectID,
@@ -125,7 +132,7 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 		if err == gitlab.ErrMergeRequestAlreadyExists {
 			exists = true
 
-			mr, err = s.client.GetOpenMergeRequestByRefs(ctx, project, source, target)
+			mr, err = s.client.GetOpenMergeRequestByRefs(ctx, targetProject, source, target)
 			if err != nil {
 				return exists, errors.Wrap(err, "retrieving an extant merge request")
 			}
@@ -135,7 +142,7 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 	}
 
 	// These additional API calls can go away once we can use the GraphQL API.
-	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
+	if err := s.decorateMergeRequestData(ctx, targetProject, mr); err != nil {
 		return exists, errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
 	}
 
