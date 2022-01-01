@@ -24,8 +24,8 @@ type GitLabSource struct {
 	au     auth.Authenticator
 }
 
-var _ ChangesetSource = &GitLabSource{}
 var _ DraftChangesetSource = &GitLabSource{}
+var _ ForkableChangesetSource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
 func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
@@ -109,12 +109,17 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 	exists := false
 	source := git.AbbreviateRef(c.HeadRef)
 	target := git.AbbreviateRef(c.BaseRef)
+	targetProjectID := 0
+	if c.RemoteRepo != c.TargetRepo {
+		targetProjectID = c.RemoteRepo.Metadata.(*gitlab.Project).ID
+	}
 
 	mr, err := s.client.CreateMergeRequest(ctx, project, gitlab.CreateMergeRequestOpts{
-		SourceBranch: source,
-		TargetBranch: target,
-		Title:        c.Title,
-		Description:  c.Body,
+		SourceBranch:    source,
+		TargetBranch:    target,
+		TargetProjectID: targetProjectID,
+		Title:           c.Title,
+		Description:     c.Body,
 	})
 	if err != nil {
 		if err == gitlab.ErrMergeRequestAlreadyExists {
@@ -267,6 +272,24 @@ func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gi
 	pipelines, err := s.getMergeRequestPipelines(ctx, project, mr)
 	if err != nil {
 		return errors.Wrap(err, "retrieving pipelines")
+	}
+
+	if mr.SourceProjectID != mr.ProjectID {
+		project, err := s.client.GetProject(ctx, gitlab.GetProjectOp{
+			ID: int(mr.SourceProjectID),
+		})
+		if err != nil {
+			return errors.Wrap(err, "getting source project")
+		}
+
+		ns, err := project.Namespace()
+		if err != nil {
+			return errors.Wrap(err, "parsing project name")
+		}
+
+		mr.SourceProjectNamespace = ns
+	} else {
+		mr.SourceProjectNamespace = ""
 	}
 
 	mr.Notes = notes
@@ -466,4 +489,21 @@ func (s *GitLabSource) MergeChangeset(ctx context.Context, c *Changeset, squash 
 	}
 
 	return c.Changeset.SetMetadata(updated)
+}
+
+func (s *GitLabSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
+	project, ok := targetRepo.Metadata.(*gitlab.Project)
+	if !ok {
+		return nil, errors.New("target repo is not a GitLab project")
+	}
+
+	fork, err := s.client.ForkProject(ctx, project, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "forking project")
+	}
+
+	remoteRepo := *targetRepo
+	remoteRepo.Metadata = fork
+
+	return &remoteRepo, nil
 }
