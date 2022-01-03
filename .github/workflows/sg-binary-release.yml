@@ -19,6 +19,7 @@ jobs:
     steps:
       - name: checkout-sourcegraph-sg
         uses: actions/checkout@v2
+        runs-on: ubuntu-latest
         with: 
           repository: sourcegraph/sg
       - name: touch-sourcegraph-sg
