@@ -1160,10 +1160,6 @@ func (u *userStore) SetTag(ctx context.Context, userID int32, tag string, presen
 // HasTag reports whether the context actor has the given tag.
 // If not, it returns false and a nil error.
 func (u *userStore) HasTag(ctx context.Context, userID int32, tag string) (bool, error) {
-	if Mocks.Users.HasTag != nil {
-		return Mocks.Users.HasTag(ctx, userID, tag)
-	}
-
 	var tags []string
 	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
 	if err != nil {
