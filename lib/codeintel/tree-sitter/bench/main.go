@@ -5,21 +5,22 @@ Run instructions:
 # current directory is sourcegraph/
 
 # Only needed if you want to run the synhtml-stdin benchmarks
-cd ..
-git clone --branch vg/add-synhtml-stdin https://github.com/varungandhi-src/syntect.git
-cd syntect
-cargo build --release --example synhtml-stdin
-# Somewhere in $PATH
-cp target/release/examples/synhtml-stdin ~/.local/bin/synhtml-stdin
+(cd ..
+ && git clone --branch vg/add-synhtml-stdin https://github.com/varungandhi-src/syntect.git
+ && cd syntect
+ && cargo build --release --example synhtml-stdin
+ # Somewhere in $PATH
+ && cp target/release/examples/synhtml-stdin ~/.local/bin/synhtml-stdin
+)
 
 git clone --branch vg/time-nanos https://github.com/sourcegraph/gosyntect.git ../gosyntect
 
-cd ../sourcegraph/docker-images/syntax-highlighter
-cargo build --release
+(cd ./docker-images/syntax-highlighter
+ && cargo build --release)
 
 # In separate pane
-git clone https://github.com/slimsag/http-server-stabilizer.git
-cd http-server-stabilizer
+cd ..
+git clone https://github.com/slimsag/http-server-stabilizer.git && cd http-server-stabilizer
 go build
 # I think ROCKET_WORKERS=N should match concurrency, but not sure.
 # Product of workers * concurrency should probably be NCPUs.
@@ -27,8 +28,8 @@ go build
 
 # In separate pane
 
-cd ../sourcegraph/lib
-go run github.com/sourcegraph/sourcegraph/lib/codeintel/tree-sitter/bench
+(cd lib
+ && go run github.com/sourcegraph/sourcegraph/lib/codeintel/tree-sitter/cmd)
 */
 
 import (
@@ -38,6 +39,7 @@ import (
 	"crypto/md5"
 	"encoding/csv"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/tree-sitter/highlight"
 	"io"
 	"net/http"
 	"os"
@@ -52,26 +54,12 @@ import (
 	"github.com/loov/hrtime"
 	"github.com/schollz/progressbar/v3"
 	sitter "github.com/smacker/go-tree-sitter"
-	sitter_c "github.com/smacker/go-tree-sitter/c"
-	sitter_cpp "github.com/smacker/go-tree-sitter/cpp"
 	sitter_go "github.com/smacker/go-tree-sitter/golang"
-	sitter_java "github.com/smacker/go-tree-sitter/java"
-	sitter_js "github.com/smacker/go-tree-sitter/javascript"
-	sitter_py "github.com/smacker/go-tree-sitter/python"
-	sitter_rb "github.com/smacker/go-tree-sitter/ruby"
-	sitter_rs "github.com/smacker/go-tree-sitter/rust"
-	sitter_scala "github.com/smacker/go-tree-sitter/scala"
-	sitter_ts "github.com/smacker/go-tree-sitter/typescript/typescript"
 	"github.com/sourcegraph/gosyntect"
 )
 
-var (
-	kubernetes = &Corpus{Name: "kubernetes", URL: "https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.22.4.zip"}
-	megarepo   = &Corpus{
-		Name: "megarepo", URL: "https://github.com/sgtest/megarepo/zipball/11c726fd66bb6252cb8e9c0af8933f5ba0fb1e8d",
-	}
-	all = []*Corpus{kubernetes, megarepo}
-)
+//----------------------------------------------------------------------------
+// Key types
 
 type Corpus struct {
 	Name string
@@ -83,31 +71,22 @@ type Input struct {
 	Bytes           []byte
 }
 
-const SIZE_LIMIT = 512 * 1024
-const SYNTECT_SERVER_URL = "http://0.0.0.0:8000"
-const TREE_SITTER = "tree-sitter"
-const NPARALLELISM = 10
-
-// Based on languages which are popular and are marked "fairly complete"
-// for tree-sitter in https://tree-sitter.github.io/tree-sitter/#available-parsers
-var extMap = map[string]*sitter.Language{
-	".go":    sitter_go.GetLanguage(),
-	".c":     sitter_c.GetLanguage(),
-	".h":     sitter_c.GetLanguage(),
-	".js":    sitter_js.GetLanguage(),
-	".cpp":   sitter_cpp.GetLanguage(),
-	".hpp":   sitter_cpp.GetLanguage(),
-	".ts":    sitter_ts.GetLanguage(),
-	".rb":    sitter_rb.GetLanguage(),
-	".rs":    sitter_rs.GetLanguage(),
-	".java":  sitter_java.GetLanguage(),
-	".scala": sitter_scala.GetLanguage(),
-	".py":    sitter_py.GetLanguage(),
+type Timings struct {
+	TotalDuration     time.Duration
+	HighlightDuration time.Duration
 }
 
-func TryHighlightFileWithExtension(extension string) bool {
-	_, exists := extMap[extension]
-	return exists
+type BenchmarkResults struct {
+	inputs    []Input
+	workloads []string
+	// timings has dimensions len(inputs) x len(workloads).
+	timings [][]Timings
+}
+
+type Workload interface {
+	name() string
+	benchmarkSetup()
+	benchmark(input Input) time.Duration
 }
 
 type TreeSitter struct{}
@@ -134,6 +113,58 @@ func (self *Syntect) benchmark(input Input) time.Duration { return input.benchma
 
 var _ Workload = &Syntect{}
 
+type TreeSitterHighlighting struct{}
+
+func (TreeSitterHighlighting) name() string    { return "tree-sitter-with-highlighting" }
+func (TreeSitterHighlighting) benchmarkSetup() {}
+func (TreeSitterHighlighting) benchmark(input Input) time.Duration {
+	return input.benchmarkTreeSitterWithHighlighting()
+}
+
+//----------------------------------------------------------------------------
+// Configuration variables
+
+var (
+	kubernetes = &Corpus{Name: "kubernetes", URL: "https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.22.4.zip"}
+	megarepo   = &Corpus{
+		Name: "megarepo", URL: "https://github.com/sgtest/megarepo/zipball/11c726fd66bb6252cb8e9c0af8933f5ba0fb1e8d",
+	}
+	all = []*Corpus{kubernetes, megarepo}
+	// testCorpora := []*Corpus{megarepo}
+	testCorpora   = []*Corpus{kubernetes}
+	testWorkloads = []Workload{TreeSitterHighlighting{}, &Syntect{} /*, &Synhtml{}*/}
+)
+
+const SIZE_LIMIT = 512 * 1024
+const SYNTECT_SERVER_URL = "http://0.0.0.0:8000"
+const TREE_SITTER = "tree-sitter"
+const NPARALLELISM = 10
+
+// Based on languages which are popular and are marked "fairly complete"
+// for tree-sitter in https://tree-sitter.github.io/tree-sitter/#available-parsers
+var extensionMap = map[string]*sitter.Language{
+	".go": sitter_go.GetLanguage(),
+	//".c":     sitter_c.GetLanguage(),
+	//".h":     sitter_c.GetLanguage(),
+	//".js":    sitter_js.GetLanguage(),
+	//".cpp":   sitter_cpp.GetLanguage(),
+	//".hpp":   sitter_cpp.GetLanguage(),
+	//".ts":    sitter_ts.GetLanguage(),
+	//".rb":    sitter_rb.GetLanguage(),
+	//".rs":    sitter_rs.GetLanguage(),
+	//".java":  sitter_java.GetLanguage(),
+	//".scala": sitter_scala.GetLanguage(),
+	//".py":    sitter_py.GetLanguage(),
+}
+
+func ShouldHighlightFile(extension string) bool {
+	_, exists := extensionMap[extension]
+	return exists
+}
+
+//----------------------------------------------------------------------------
+// Benchmarking code
+
 func benchmarkHistogram(w Workload, inputs []Input) {
 	fmt.Println(fmt.Sprintf("Benchmarking %s (total)", w.name()))
 	bench := hrtime.NewBenchmark(len(inputs))
@@ -151,19 +182,7 @@ func benchmarkHistogram(w Workload, inputs []Input) {
 	}
 }
 
-func runParallel(functions []func()) {
-	var waitGroup sync.WaitGroup
-	waitGroup.Add(len(functions))
-	for _, function := range functions {
-		go func(doStuff func()) {
-			doStuff()
-			waitGroup.Done()
-		}(function)
-	}
-	waitGroup.Wait()
-}
-
-func benchmarkPure(w Workload, inputs []Input, outputs []Output) {
+func benchmarkPure(w Workload, inputs []Input, outputs []Timings) {
 	w.benchmarkSetup()
 
 	runFunc := func(startIndex int, endIndex int) func() {
@@ -237,12 +256,12 @@ func csvMain(testCorpora []*Corpus, workloads []Workload) {
 		if err != nil {
 			panic(fmt.Sprintf("failed to get inputs for corpus %s: %+v", corpus.Name, err))
 		}
-		fullOutput := FullOutput{inputs: inputs}
+		fullOutput := BenchmarkResults{inputs: inputs}
 		for _, w := range workloads {
-			outputs := make([]Output, len(inputs))
+			outputs := make([]Timings, len(inputs))
 			benchmarkPure(w, inputs, outputs)
 			fullOutput.timings = append(fullOutput.timings, outputs)
-			fullOutput.parsers = append(fullOutput.parsers, w.name())
+			fullOutput.workloads = append(fullOutput.workloads, w.name())
 		}
 		fullOutput.appendTo(outputCSV)
 	}
@@ -254,20 +273,17 @@ func csvMain(testCorpora []*Corpus, workloads []Workload) {
 }
 
 func main() {
-	// testCorpora := []*Corpus{megarepo}
-	testCorpora := []*Corpus{kubernetes}
-	workloads := []Workload{TreeSitter{}, &Syntect{} /*&Synhtml{}*/}
 	if len(os.Args) >= 2 && os.Args[1] == "--histogram" {
-		histogramMain(testCorpora, workloads)
+		histogramMain(testCorpora, testWorkloads)
 	} else {
-		csvMain(testCorpora, workloads)
+		csvMain(testCorpora, testWorkloads)
 	}
 }
 
-func (self *FullOutput) appendTo(outputCSV *os.File) {
+func (results *BenchmarkResults) appendTo(outputCSV *os.File) {
 	w := csv.NewWriter(outputCSV)
 	header := []string{"filesize (bytes)", "extension"}
-	for _, parser := range self.parsers {
+	for _, parser := range results.workloads {
 		if parser != TREE_SITTER {
 			header = append(header, fmt.Sprintf("%s total time (ns)", parser))
 			header = append(header, fmt.Sprintf("%s highlight time (ns)", parser))
@@ -280,16 +296,16 @@ func (self *FullOutput) appendTo(outputCSV *os.File) {
 	if err := w.Write(header); err != nil {
 		panic(fmt.Sprintf("Failed to write header to CSV: %v", err))
 	}
-	for i, input := range self.inputs {
+	for i, input := range results.inputs {
 		row := make([]string, len(header))
 		row[0] = fmt.Sprintf("%d", len(input.Bytes))
 		row[1] = filepath.Ext(input.ZipRelativePath)
 		idx := 2
-		for j, name := range self.parsers {
-			row[idx] = fmt.Sprintf("%d", self.timings[j][i].TotalDuration)
+		for j, name := range results.workloads {
+			row[idx] = fmt.Sprintf("%d", results.timings[j][i].TotalDuration)
 			idx++
 			if name != TREE_SITTER {
-				row[idx] = fmt.Sprintf("%d", self.timings[j][i].HighlightDuration)
+				row[idx] = fmt.Sprintf("%d", results.timings[j][i].HighlightDuration)
 				idx++
 			}
 		}
@@ -304,21 +320,32 @@ func (self *FullOutput) appendTo(outputCSV *os.File) {
 	w.Flush()
 }
 
-type FullOutput struct {
-	inputs  []Input
-	timings [][]Output
-	parsers []string
+func (i *Input) benchmarkTreeSitter() time.Duration {
+	parser := sitter.NewParser()
+	language := extensionMap[filepath.Ext(i.ZipRelativePath)]
+	parser.SetLanguage(language)
+	_, err := parser.ParseCtx(context.Background(), nil, i.Bytes)
+	if err != nil {
+		panic(err)
+	}
+	return -1
 }
 
-type Output struct {
-	TotalDuration     time.Duration
-	HighlightDuration time.Duration
-}
-
-type Workload interface {
-	name() string
-	benchmarkSetup()
-	benchmark(input Input) time.Duration
+func (i *Input) benchmarkTreeSitterWithHighlighting() time.Duration {
+	language := extensionMap[filepath.Ext(i.ZipRelativePath)]
+	parseTree, err := sitter.ParseCtx(context.Background(), i.Bytes, language)
+	if err != nil {
+		panic(errors.Wrap(err, "tree-sitter failed to parse input"))
+	}
+	var outputBuffer bytes.Buffer
+	ctx := context.Background()
+	highlighter := highlight.NewHighlightingContext(ctx, i.Bytes, &outputBuffer, language)
+	treeIterator := highlight.NewAllOrderIterator(parseTree, &highlighter)
+	before := time.Now()
+	if node, err := treeIterator.VisitTree(); err != nil {
+		panic(fmt.Sprintf("Failed to visit tree: node=%v err=%v", node, err))
+	}
+	return time.Now().Sub(before)
 }
 
 func (i *Input) syntectQuery() *gosyntect.Query {
@@ -368,19 +395,31 @@ func (i *Input) benchmarkSynhtml() time.Duration {
 	return time.Duration(highlightTime)
 }
 
-func (i *Input) benchmarkTreeSitter() time.Duration {
-	parser := sitter.NewParser()
-	language := extMap[filepath.Ext(i.ZipRelativePath)]
-	parser.SetLanguage(language)
-	_, err := parser.ParseCtx(context.Background(), nil, i.Bytes)
+//----------------------------------------------------------------------------
+// Input handling
+
+func (c *Corpus) testInputs() ([]Input, error) {
+	reader, err := c.openZipReader()
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrapf(err, "failed to open zip reader for corpus: %+v", c)
 	}
-	return -1
+	var inputs []Input
+	for _, file := range reader.File {
+		input, skip, err := readInput(file, reader)
+		if err != nil {
+			return nil, err
+		}
+		if skip {
+			continue
+		}
+		inputs = append(inputs, input)
+	}
+	// inputs = inputs[0:10] // testing
+	return inputs, nil
 }
 
 func readInput(file *zip.File, reader *zip.Reader) (Input, bool, error) {
-	if ext := filepath.Ext(file.Name); !TryHighlightFileWithExtension(ext) {
+	if ext := filepath.Ext(file.Name); !ShouldHighlightFile(ext) {
 		return Input{}, true, nil
 	}
 	open, err := reader.Open(file.Name)
@@ -403,43 +442,19 @@ func readInput(file *zip.File, reader *zip.Reader) (Input, bool, error) {
 	}, false, err
 }
 
-func (c *Corpus) testInputs() ([]Input, error) {
-	reader, err := c.openZipReader()
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to open zip reader for corpus: %+v", c)
-	}
-	var inputs []Input
-	for _, file := range reader.File {
-		input, skip, err := readInput(file, reader)
-		if err != nil {
-			return nil, err
-		}
-		if skip {
-			continue
-		}
-		inputs = append(inputs, input)
-	}
-	// inputs = inputs[0:100] // testing
-	return inputs, nil
-}
+//----------------------------------------------------------------------------
+// Helper functions
 
-func (c *Corpus) openZipReader() (*zip.Reader, error) {
-	zipPath, err := c.DownloadUrlAndCache()
-	if err != nil {
-		return nil, err
+func runParallel(functions []func()) {
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(len(functions))
+	for _, function := range functions {
+		go func(doStuff func()) {
+			doStuff()
+			waitGroup.Done()
+		}(function)
 	}
-	data, err := os.ReadFile(zipPath)
-	if err != nil {
-		return nil, err
-	}
-	return zip.NewReader(bytes.NewReader(data), int64(len(data)))
-}
-
-func (c *Corpus) zipCachePath() string {
-	return filepath.Join(
-		os.TempDir(),
-		fmt.Sprintf("%v-%x.zip", c.Name, md5.Sum([]byte(c.URL))),
-	)
+	waitGroup.Wait()
 }
 
 func (c *Corpus) DownloadUrlAndCache() (string, error) {
@@ -464,11 +479,28 @@ func (c *Corpus) DownloadUrlAndCache() (string, error) {
 		resp.ContentLength,
 		"downloading",
 	)
-
 	_, err = io.Copy(io.MultiWriter(out, bar), resp.Body)
-
 	if err != nil {
 		return "", err
 	}
 	return path, nil
+}
+
+func (c *Corpus) openZipReader() (*zip.Reader, error) {
+	zipPath, err := c.DownloadUrlAndCache()
+	if err != nil {
+		return nil, err
+	}
+	data, err := os.ReadFile(zipPath)
+	if err != nil {
+		return nil, err
+	}
+	return zip.NewReader(bytes.NewReader(data), int64(len(data)))
+}
+
+func (c *Corpus) zipCachePath() string {
+	return filepath.Join(
+		os.TempDir(),
+		fmt.Sprintf("%v-%x.zip", c.Name, md5.Sum([]byte(c.URL))),
+	)
 }
