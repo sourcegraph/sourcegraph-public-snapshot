@@ -129,9 +129,6 @@ func (s *userExternalAccountsStore) getEncryptionKey() encryption.Key {
 }
 
 func (s *userExternalAccountsStore) Get(ctx context.Context, id int32) (*extsvc.Account, error) {
-	if Mocks.ExternalAccounts.Get != nil {
-		return Mocks.ExternalAccounts.Get(id)
-	}
 	return s.getBySQL(ctx, sqlf.Sprintf("WHERE id=%d AND deleted_at IS NULL LIMIT 1", id))
 }
 
@@ -502,7 +499,6 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 
 // MockExternalAccounts mocks the Stores.ExternalAccounts DB store.
 type MockExternalAccounts struct {
-	Get                  func(id int32) (*extsvc.Account, error)
 	LookupUserAndSave    func(extsvc.AccountSpec, extsvc.AccountData) (userID int32, err error)
 	AssociateUserAndSave func(userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error
 	CreateUserAndSave    func(NewUser, extsvc.AccountSpec, extsvc.AccountData) (createdUserID int32, err error)
