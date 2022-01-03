@@ -1164,10 +1164,6 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 }
 
 func (e *externalServiceStore) GetByID(ctx context.Context, id int64) (*types.ExternalService, error) {
-	if Mocks.ExternalServices.GetByID != nil {
-		return Mocks.ExternalServices.GetByID(id)
-	}
-
 	opt := ExternalServicesListOptions{
 		IDs: []int64{id},
 	}
@@ -1497,7 +1493,6 @@ func configurationHasWebhooks(config interface{}) bool {
 // MockExternalServices mocks the external services store.
 type MockExternalServices struct {
 	Create           func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error
-	GetByID          func(id int64) (*types.ExternalService, error)
 	GetLastSyncError func(id int64) (string, error)
 	ListSyncErrors   func(ctx context.Context) (map[int64]string, error)
 	List             func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
