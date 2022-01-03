@@ -12,7 +12,6 @@ type MockRepos struct {
 	List                        func(v0 context.Context, v1 ReposListOptions) ([]*types.Repo, error)
 	ListMinimalRepos            func(v0 context.Context, v1 ReposListOptions) ([]types.MinimalRepo, error)
 	Metadata                    func(ctx context.Context, ids ...api.RepoID) ([]*types.SearchedRepo, error)
-	Count                       func(ctx context.Context, opt ReposListOptions) (int, error)
 	GetFirstRepoNamesByCloneURL func(ctx context.Context, cloneURL string) (api.RepoName, error)
 
 	// TODO: we're knowingly taking on a little tech debt by placing these here for now.
