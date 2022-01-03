@@ -384,10 +384,6 @@ func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccoun
 }
 
 func (s *userExternalAccountsStore) Count(ctx context.Context, opt ExternalAccountsListOptions) (int, error) {
-	if Mocks.ExternalAccounts.Count != nil {
-		return Mocks.ExternalAccounts.Count(opt)
-	}
-
 	conds := s.listSQL(opt)
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM user_external_accounts WHERE %s", sqlf.Join(conds, "AND"))
 	var count int
@@ -479,7 +475,6 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 
 // MockExternalAccounts mocks the Stores.ExternalAccounts DB store.
 type MockExternalAccounts struct {
-	Count          func(ExternalAccountsListOptions) (int, error)
 	TouchExpired   func(ctx context.Context, id int32) error
 	TouchLastValid func(ctx context.Context, id int32) error
 }
