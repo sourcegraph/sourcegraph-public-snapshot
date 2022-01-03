@@ -1179,10 +1179,6 @@ func (u *userStore) HasTag(ctx context.Context, userID int32, tag string) (bool,
 
 // Tags returns a map with all the tags currently belonging to the user.
 func (u *userStore) Tags(ctx context.Context, userID int32) (map[string]bool, error) {
-	if Mocks.Users.Tags != nil {
-		return Mocks.Users.Tags(ctx, userID)
-	}
-
 	var tags []string
 	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
 	if err != nil {

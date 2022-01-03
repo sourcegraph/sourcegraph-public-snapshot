@@ -12,7 +12,6 @@ type MockUsers struct {
 	GetByUsername                                   func(ctx context.Context, username string) (*types.User, error)
 	GetByCurrentAuthUser                            func(ctx context.Context) (*types.User, error)
 	Count                                           func(ctx context.Context, opt *UsersListOptions) (int, error)
-	Tags                                            func(ctx context.Context, userID int32) (map[string]bool, error)
 	RandomizePasswordAndClearPasswordResetRateLimit func(ctx context.Context, userID int32) error
 	RenewPasswordResetCode                          func(ctx context.Context, id int32) (string, error)
 }
