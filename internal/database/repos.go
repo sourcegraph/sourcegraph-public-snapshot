@@ -262,10 +262,6 @@ func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.Repo
 // GetByIDs returns a list of repositories by given IDs. The number of results list could be less
 // than the candidate list due to no repository is associated with some IDs.
 func (s *repoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) (_ []*types.Repo, err error) {
-	if Mocks.Repos.GetByIDs != nil {
-		return Mocks.Repos.GetByIDs(ctx, ids...)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.GetByIDs", "")
 	defer func() {
 		tr.SetError(err)
