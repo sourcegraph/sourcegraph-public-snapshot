@@ -16,10 +16,10 @@ env:
 jobs:
   touch_sg:
     name: Touch sourcegraph/sg
+    runs-on: ubuntu-latest
     steps:
       - name: checkout-sourcegraph-sg
         uses: actions/checkout@v2
-        runs-on: ubuntu-latest
         with: 
           repository: sourcegraph/sg
       - name: touch-sourcegraph-sg
