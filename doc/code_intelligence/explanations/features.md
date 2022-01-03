@@ -12,7 +12,7 @@ Popovers allow you to quickly glance at the type signature and accompanying docu
 
 ## Go to definition
 
-When you click on a symbol's name or select 'Go to definition' from the popover, you will be navigated directly to the definition of the symbol.
+When you click on the 'Go to definition' button in the popover or click on a symbol's name (in the sidebar or code view), you will be navigated directly to the definition of the symbol.
 
 <img src="../img/go-to-def.gif" width="500"/>
 
