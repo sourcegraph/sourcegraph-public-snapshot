@@ -166,16 +166,13 @@ func TestCachedLocationResolver(t *testing.T) {
 }
 
 func TestCachedLocationResolverUnknownRepository(t *testing.T) {
-	db := database.NewDB(nil)
-
-	t.Cleanup(func() {
-		database.Mocks.Repos.Get = nil
-		git.Mocks.ResolveRevision = nil
+	repos := database.NewStrictMockRepoStore()
+	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
+		return nil, &database.RepoNotFoundErr{ID: id}
 	})
 
-	database.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
-		return nil, &database.RepoNotFoundErr{ID: id}
-	}
+	db := database.NewStrictMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
 
 	repositoryResolver, err := NewCachedLocationResolver(db).Repository(context.Background(), 50)
 	if err != nil {
