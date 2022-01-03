@@ -102,7 +102,7 @@ func (r *LinkMetadataResolver) retrieveHtml(url string) string {
 		defer func(Body io.ReadCloser) {
 			err := Body.Close()
 			if err != nil {
-				// TODO: Handle error
+				log15.Info("Could not load HTML content for unfurling.", "url", url)
 			}
 		}(resp.Body)
 		body, err := io.ReadAll(resp.Body)
