@@ -22,7 +22,7 @@ To create an access token, please refer to "[Creating an access token](../how-to
 
 ## Adding request headers with `SRC_HEADER_`
 
-If your instance is behind an authenticating proxy that requires additional headers, they can be supplied via environment variables. Any environment variable passed starting with the string `SRC_HEADER_{string-A}="String-B` will be passed into the request with form `String-A: String-B`. See examples below:
+If your instance is behind an authenticating proxy that requires additional headers, they can be supplied via environment variables. Any environment variable passed starting with the string `SRC_HEADER_{string-A}="String-B"` will be passed into the request with form `String-A: String-B`. See examples below:
 
 Example passing env vars src command:
 ```bash
