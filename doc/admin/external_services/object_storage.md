@@ -30,7 +30,7 @@ To target an S3 bucket you've already provisioned, set the following environment
 - `PRECISE_CODE_INTEL_UPLOAD_AWS_SESSION_TOKEN=<your session token>` (optional)
 - `PRECISE_CODE_INTEL_UPLOAD_AWS_REGION=us-east-1` (default)
 
-**Note:_** If a non-default region is supplied, ensure that the subdomain of the endpoint URL (_the `AWS_ENDPOINT` value_) matches the target region.
+**_Note:_** If a non-default region is supplied, ensure that the subdomain of the endpoint URL (_the `AWS_ENDPOINT` value_) matches the target region.
 
 ### Using GCS
 
