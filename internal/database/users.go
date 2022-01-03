@@ -208,10 +208,6 @@ type NewUser struct {
 // order to avoid a race condition where multiple initial site admins could be created or zero site
 // admins could be created.
 func (u *userStore) Create(ctx context.Context, info NewUser) (newUser *types.User, err error) {
-	if Mocks.Users.Create != nil {
-		return Mocks.Users.Create(ctx, info)
-	}
-
 	tx, err := u.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -246,10 +242,6 @@ func CheckPasswordLength(pw string) error {
 // transaction. It must execute in a transaction because the post-user-creation
 // hooks must run atomically with the user creation.
 func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newUser *types.User, err error) {
-	if Mocks.Users.Create != nil {
-		return Mocks.Users.Create(ctx, info)
-	}
-
 	if !u.InTransaction() {
 		return nil, errors.New("must run within a transaction")
 	}
