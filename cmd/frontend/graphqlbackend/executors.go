@@ -6,8 +6,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
 func (r *schemaResolver) Executors(ctx context.Context, args *struct {

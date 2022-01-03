@@ -9,10 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	executorDB "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/store/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/batches"
 	codeintelqueue "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/queues/codeintel"
+	executorDB "github.com/sourcegraph/sourcegraph/internal/services/executors/store/db"
 )
 
 // Init initializes the executor endpoints required for use with the executor service.

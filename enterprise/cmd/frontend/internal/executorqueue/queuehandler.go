@@ -11,8 +11,8 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	executor "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
+	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 )
 
 func newExecutorQueueHandler(executorStore executor.Store, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler) (func() http.Handler, error) {

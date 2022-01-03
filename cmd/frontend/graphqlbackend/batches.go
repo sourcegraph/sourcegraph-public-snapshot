@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/transport/graphql"
+	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
 type CreateBatchChangeArgs struct {

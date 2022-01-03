@@ -10,8 +10,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
-	pgs "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	pgs "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 

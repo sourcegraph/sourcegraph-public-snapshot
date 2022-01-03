@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/store"
-	postgres "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/store/db"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/services/executors/store"
+	postgres "github.com/sourcegraph/sourcegraph/internal/services/executors/store/db"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 

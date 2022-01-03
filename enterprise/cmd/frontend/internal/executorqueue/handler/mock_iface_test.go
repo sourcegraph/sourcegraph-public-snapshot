@@ -7,13 +7,13 @@ import (
 	"sync"
 	"time"
 
-	store "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/store"
+	store "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // MockStore is a mock implementation of the Store interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/store)
+// github.com/sourcegraph/sourcegraph/internal/services/executors/store)
 // used for unit testing.
 type MockStore struct {
 	// DeleteInactiveHeartbeatsFunc is an instance of a mock function object

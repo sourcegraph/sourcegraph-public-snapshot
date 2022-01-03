@@ -3,9 +3,9 @@ package db
 import (
 	"database/sql"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 )
 
 // ensure that all the needed methods are implemented.

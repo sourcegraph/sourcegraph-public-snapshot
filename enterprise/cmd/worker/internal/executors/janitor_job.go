@@ -3,11 +3,11 @@ package executors
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/services/executors"
 )
 
 type janitorJob struct{}

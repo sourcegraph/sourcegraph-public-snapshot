@@ -7,7 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	executor "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/transport/graphql"
+	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
 // Node must be implemented by any resolver that implements the Node interface in

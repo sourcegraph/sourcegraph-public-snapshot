@@ -11,8 +11,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
-	executor "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/store"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 

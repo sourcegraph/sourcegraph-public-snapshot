@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	graphqlbackend "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	graphql "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/transport/graphql"
+	graphql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	resolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
