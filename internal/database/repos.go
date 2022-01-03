@@ -195,10 +195,6 @@ func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.Re
 //
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *types.Repo, err error) {
-	if Mocks.Repos.GetByName != nil {
-		return Mocks.Repos.GetByName(ctx, nameOrURI)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.GetByName", "")
 	defer func() {
 		tr.SetError(err)
@@ -241,10 +237,6 @@ func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 // RepoHashedName is the repository hashed name.
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.RepoHashedName) (_ *types.Repo, err error) {
-	if Mocks.Repos.GetByHashedName != nil {
-		return Mocks.Repos.GetByHashedName(ctx, repoHashedName)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.GetByHashedName", "")
 	defer func() {
 		tr.SetError(err)
@@ -270,10 +262,6 @@ func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.Repo
 // GetByIDs returns a list of repositories by given IDs. The number of results list could be less
 // than the candidate list due to no repository is associated with some IDs.
 func (s *repoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) (_ []*types.Repo, err error) {
-	if Mocks.Repos.GetByIDs != nil {
-		return Mocks.Repos.GetByIDs(ctx, ids...)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.GetByIDs", "")
 	defer func() {
 		tr.SetError(err)
@@ -300,10 +288,6 @@ func (s *repoStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (ma
 }
 
 func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, err error) {
-	if Mocks.Repos.Count != nil {
-		return Mocks.Repos.Count(ctx, opt)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.Count", "")
 	defer func() {
 		if err != nil {
@@ -1551,10 +1535,6 @@ LIMIT 1
 // match the given clone url. If not repo is found, an empty string and nil error
 // are returned.
 func (s *repoStore) GetFirstRepoNamesByCloneURL(ctx context.Context, cloneURL string) (api.RepoName, error) {
-	if Mocks.Repos.GetFirstRepoNamesByCloneURL != nil {
-		return Mocks.Repos.GetFirstRepoNamesByCloneURL(ctx, cloneURL)
-	}
-
 	name, _, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf(getFirstRepoNamesByCloneURLQueryFmtstr, cloneURL)))
 	if err != nil {
 		return "", err
