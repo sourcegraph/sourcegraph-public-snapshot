@@ -911,9 +911,6 @@ var (
 )
 
 func (u *userStore) RenewPasswordResetCode(ctx context.Context, id int32) (string, error) {
-	if Mocks.Users.RenewPasswordResetCode != nil {
-		return Mocks.Users.RenewPasswordResetCode(ctx, id)
-	}
 	if _, err := u.GetByID(ctx, id); err != nil {
 		return "", err
 	}
@@ -1061,10 +1058,6 @@ WHERE id=%s
 // A randomized password is used (instead of an empty password) to avoid bugs where an empty password
 // is considered to be no password. The random password is expected to be irretrievable.
 func (u *userStore) RandomizePasswordAndClearPasswordResetRateLimit(ctx context.Context, id int32) error {
-	if Mocks.Users.RandomizePasswordAndClearPasswordResetRateLimit != nil {
-		return Mocks.Users.RandomizePasswordAndClearPasswordResetRateLimit(ctx, id)
-	}
-
 	passwd, err := hashPassword(randstring.NewLen(36))
 	if err != nil {
 		return err
