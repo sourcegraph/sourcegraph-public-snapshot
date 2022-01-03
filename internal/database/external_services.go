@@ -968,10 +968,6 @@ type ExternalServiceUpdate struct {
 }
 
 func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) (err error) {
-	if Mocks.ExternalServices.Update != nil {
-		return Mocks.ExternalServices.Update(ctx, ps, id, update)
-	}
-
 	var (
 		normalized  []byte
 		keyID       string
@@ -1491,7 +1487,6 @@ type MockExternalServices struct {
 	Create         func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error
 	ListSyncErrors func(ctx context.Context) (map[int64]string, error)
 	List           func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
-	Update         func(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error
 	Count          func(ctx context.Context, opt ExternalServicesListOptions) (int, error)
 	Upsert         func(ctx context.Context, services ...*types.ExternalService) error
 	Transact       func(ctx context.Context) (ExternalServiceStore, error)
