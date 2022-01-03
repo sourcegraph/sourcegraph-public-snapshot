@@ -341,10 +341,6 @@ WHERE id = $1
 }
 
 func (s *userExternalAccountsStore) Delete(ctx context.Context, id int32) error {
-	if Mocks.ExternalAccounts.Delete != nil {
-		return Mocks.ExternalAccounts.Delete(id)
-	}
-
 	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
@@ -487,7 +483,6 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 
 // MockExternalAccounts mocks the Stores.ExternalAccounts DB store.
 type MockExternalAccounts struct {
-	Delete         func(id int32) error
 	List           func(ExternalAccountsListOptions) ([]*extsvc.Account, error)
 	Count          func(ExternalAccountsListOptions) (int, error)
 	TouchExpired   func(ctx context.Context, id int32) error
