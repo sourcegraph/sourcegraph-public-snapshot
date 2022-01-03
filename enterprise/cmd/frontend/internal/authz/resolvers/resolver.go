@@ -29,7 +29,7 @@ import (
 var errDisabledSourcegraphDotCom = errors.New("not enabled on sourcegraph.com")
 
 type Resolver struct {
-	store             *edb.PermsStore
+	store             edb.PermsStore
 	repoupdaterClient interface {
 		SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error
 	}

@@ -67,7 +67,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 		}()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{store: &edb.PermsStore{Store: basestore.NewWithDB(nil, sql.TxOptions{})}}).SetRepositoryPermissionsForUsers(ctx, &graphqlbackend.RepoPermsArgs{})
+		result, err := (&Resolver{store: edb.PermsWith(basestore.NewWithDB(nil, sql.TxOptions{}), time.Now)}).SetRepositoryPermissionsForUsers(ctx, &graphqlbackend.RepoPermsArgs{})
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
@@ -186,8 +186,8 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			database.Mocks.Repos.Get = func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 				return &types.Repo{ID: id}, nil
 			}
-			edb.Mocks.Perms.Transact = func(_ context.Context) (*edb.PermsStore, error) {
-				return &edb.PermsStore{}, nil
+			edb.Mocks.Perms.Transact = func(_ context.Context) (edb.PermsStore, error) {
+				return edb.Perms(nil, nil), nil
 			}
 			edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
 				ids := p.UserIDs.ToArray()
