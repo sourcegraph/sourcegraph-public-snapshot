@@ -640,10 +640,6 @@ func logUserDeletionEvent(ctx context.Context, db dbutil.DB, id int32, name Secu
 
 // SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin.
 func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
-	if Mocks.Users.SetIsSiteAdmin != nil {
-		return Mocks.Users.SetIsSiteAdmin(id, isSiteAdmin)
-	}
-
 	if BeforeSetUserIsSiteAdmin != nil {
 		if err := BeforeSetUserIsSiteAdmin(isSiteAdmin); err != nil {
 			return err
