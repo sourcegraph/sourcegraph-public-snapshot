@@ -65,7 +65,7 @@ var (
 			secretCommand,
 			setupCommand,
 			checkCommand,
-			dbCommand,
+			resetCommand,
 		},
 	}
 )
