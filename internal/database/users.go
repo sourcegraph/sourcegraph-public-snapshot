@@ -445,10 +445,6 @@ type UserUpdate struct {
 
 // Update updates a user's profile information.
 func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (err error) {
-	if Mocks.Users.Update != nil {
-		return Mocks.Users.Update(id, update)
-	}
-
 	tx, err := u.Transact(ctx)
 	if err != nil {
 		return err
