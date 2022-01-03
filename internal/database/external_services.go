@@ -1090,10 +1090,6 @@ func (e externalServiceNotFoundError) NotFound() bool {
 }
 
 func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error) {
-	if Mocks.ExternalServices.Delete != nil {
-		return Mocks.ExternalServices.Delete(ctx, id)
-	}
-
 	tx, err := e.transact(ctx)
 	if err != nil {
 		return err
@@ -1501,7 +1497,6 @@ func configurationHasWebhooks(config interface{}) bool {
 // MockExternalServices mocks the external services store.
 type MockExternalServices struct {
 	Create           func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error
-	Delete           func(ctx context.Context, id int64) error
 	GetByID          func(id int64) (*types.ExternalService, error)
 	GetLastSyncError func(id int64) (string, error)
 	ListSyncErrors   func(ctx context.Context) (map[int64]string, error)
