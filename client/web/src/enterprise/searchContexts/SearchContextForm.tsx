@@ -35,6 +35,7 @@ import {
     SelectedNamespaceType,
 } from './SearchContextOwnerDropdown'
 import { SearchContextRepositoriesFormArea } from './SearchContextRepositoriesFormArea'
+import { getExperimentalFeatures } from '../../stores'
 
 const MAX_DESCRIPTION_LENGTH = 1024
 const MAX_NAME_LENGTH = 32
@@ -122,6 +123,7 @@ type RepositoriesParseResult =
 export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> = props => {
     const { authenticatedUser, onSubmit, searchContext, deleteSearchContext, isSourcegraphDotCom } = props
     const history = useHistory()
+    const experimentalFeatures = getExperimentalFeatures()
 
     const [name, setName] = useState(searchContext ? searchContext.name : '')
     const [description, setDescription] = useState(searchContext ? searchContext.description : '')
@@ -372,7 +374,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     ))}
                 </div>
                 <hr className={classNames('my-4', styles.searchContextFormDivider)} />
-                {window?.context?.experimentalFeatures['search.contexts.query'] ? (
+                {experimentalFeatures.searchContextsQuery ? (
                     <div>
                         <div className="mb-1">Query</div>
                         <div className="text-muted mb-3">

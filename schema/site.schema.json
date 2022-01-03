@@ -264,8 +264,8 @@
             }
           ]
         },
-        "search.contexts.query": {
-          "description": "Enables search query based search contexts.",
+        "search.index.query.contexts": {
+          "description": "Enables indexing of revisions of repos matching any query defined in search contexts.",
           "type": "boolean",
           "default": false
         },

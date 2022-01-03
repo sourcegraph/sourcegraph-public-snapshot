@@ -285,28 +285,16 @@ func testSearchClient(t *testing.T, client searchClient) {
 	})
 
 	t.Run("context: search query", func(t *testing.T) {
-		// Update site configuration to enable "search.contexts.query".
-		siteConfig, err := client.SiteConfiguration()
+		err := client.OverwriteSettings(client.AuthenticatedUserID(), `{"experimentalFeatures":{"searchContextsQuery": true}}`)
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		defer func(old schema.SiteConfiguration) {
-			err = client.UpdateSiteConfiguration(&old)
+		defer func() {
+			err := client.OverwriteSettings(client.AuthenticatedUserID(), `{}`)
 			if err != nil {
 				t.Fatal(err)
 			}
-		}(*siteConfig)
-
-		if siteConfig.ExperimentalFeatures == nil {
-			siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{}
-		}
-
-		siteConfig.ExperimentalFeatures.SearchContextsQuery = true
-		err = client.UpdateSiteConfiguration(siteConfig)
-		if err != nil {
-			t.Fatal(err)
-		}
+		}()
 
 		_, err = client.Repository("github.com/sgtest/java-langserver")
 		require.NoError(t, err)

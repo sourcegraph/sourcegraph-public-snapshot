@@ -399,7 +399,7 @@ func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[ap
 		return nil, err
 	}
 
-	if !conf.ExperimentalFeatures().SearchContextsQuery {
+	if !conf.ExperimentalFeatures().SearchIndexQueryContexts {
 		return revs, nil
 	}
 
