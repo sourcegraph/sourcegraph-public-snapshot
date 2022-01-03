@@ -30,6 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The search bar is no longer auto-focused when navigating between files. This change means that the keyboard shortcut Cmd+LeftArrow (or Ctrl-LeftArrow) now goes back to the browser's previous page instead of moving the cursor position to the first position of the search bar. [#28943](https://github.com/sourcegraph/sourcegraph/pull/28943)
 - Minio service upgraded to RELEASE.2021-12-10T23-03-39Z. [#29188](https://github.com/sourcegraph/sourcegraph/pull/29188)
 - Using `select:repo` in search queries will now stream results incrementally, greatly improving speed and reducing time-to-first-result. [#28920](https://github.com/sourcegraph/sourcegraph/pull/28920)
+- Enabled fuzzy finder by default in the single-page app. Disable with `experimentalFeatures.fuzzyFinder: “false”`. [#29010](https://github.com/sourcegraph/sourcegraph/pull/29010)
 
 ### Fixed
 
