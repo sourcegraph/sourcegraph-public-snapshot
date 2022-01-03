@@ -71,8 +71,8 @@ var (
 )
 
 // We currently cannot override the CONFIGURATION_MODE at runtime, which by
-// defaults trigger calls to the frontend application and will prevent database calls
-// to succeed unless the front-end is running.
+// default triggers calls to the frontend application and will prevent database calls
+// to succeed unless the frontend is running.
 //
 // This function forces the configuration mode by restarting the current process
 // with an updated environment that forces the configuration mode.
