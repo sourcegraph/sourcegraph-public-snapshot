@@ -20,7 +20,7 @@ To target a managed object storage service, you will need to set a handful of en
 
 To target an S3 bucket you've already provisioned, set the following environment variables. Authentication is done through [an access and secret key pair](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys) (and optional session token).
 
-**_Warning:_** Be sure to follow security best practices when working with aws access keys in git. 
+**_Warning:_** Remember never to commit aws access keys in git. Consider using a secret handling service offered by your cloud provider. 
 
 - `PRECISE_CODE_INTEL_UPLOAD_BACKEND=S3`
 - `PRECISE_CODE_INTEL_UPLOAD_BUCKET=<my bucket name>`
