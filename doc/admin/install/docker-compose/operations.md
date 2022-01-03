@@ -214,7 +214,6 @@ docker exec -it codeintel-db psql -U sg -c "SELECT * FROM codeintel_schema_migra
 
 export SOURCEGRAPH_VERSION="122149_2021-12-17_1f7179c"
 
-
 for DATABASE in frontend codeintel; do
 	docker run --rm --name migrator_$SOURCEGRAPH_VERSION \
 		-e PGHOST='pgsql' \
