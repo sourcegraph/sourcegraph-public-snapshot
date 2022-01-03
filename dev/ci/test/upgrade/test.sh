@@ -23,9 +23,13 @@ cleanup() {
   cd "$root_dir"
   dev/ci/test/cleanup-display.sh
   if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
-    docker rm -f "$(docker ps -aq)"
+    # shellcheck disable=SC2046
+    docker rm -f $(docker ps -aq)
   fi
-  docker rmi -f "$(docker images -q)"
+  if [[ $(docker images -q | wc -l) -gt 0 ]]; then
+    # shellcheck disable=SC2046
+    docker rmi -f $(docker images -q)
+  fi
 }
 
 # Run and initialize an old Sourcegraph release
@@ -84,8 +88,6 @@ sleep 15
 echo "--- TEST: Checking Sourcegraph instance is accessible"
 curl -f http://localhost:7080
 curl -f http://localhost:7080/healthz
-echo "--- TEST: Downloading Puppeteer"
-yarn --cwd client/shared run download-puppeteer-browser
 echo "--- TEST: Running tests"
 pushd client/web
 yarn run test:regression:core

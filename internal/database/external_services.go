@@ -35,7 +35,7 @@ import (
 
 // BeforeCreateExternalService (if set) is invoked as a hook prior to creating a
 // new external service in the database.
-var BeforeCreateExternalService func(context.Context, dbutil.DB) error
+var BeforeCreateExternalService func(context.Context, DB) error
 
 type ExternalServiceStore interface {
 	// Count counts all external services that satisfy the options (ignoring limit and offset).
@@ -238,6 +238,7 @@ var ExternalServiceKinds = map[string]ExternalServiceKind{
 	extsvc.KindJVMPackages:     {CodeHost: true, JSONSchema: schema.JVMPackagesSchemaJSON},
 	extsvc.KindOther:           {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
 	extsvc.KindPagure:          {CodeHost: true, JSONSchema: schema.PagureSchemaJSON},
+	extsvc.KindNPMPackages:     {CodeHost: true, JSONSchema: schema.NPMPackagesSchemaJSON},
 	extsvc.KindPerforce:        {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
 	extsvc.KindPhabricator:     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
 }
@@ -343,6 +344,11 @@ type ValidateExternalServiceConfigOptions struct {
 	NamespaceOrgID int32
 }
 
+// IsSiteOwned returns true if the external service is owned by the site.
+func (e *ValidateExternalServiceConfigOptions) IsSiteOwned() bool {
+	return e.NamespaceUserID == 0 && e.NamespaceOrgID == 0
+}
+
 func (e *externalServiceStore) ValidateConfig(ctx context.Context, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error) {
 	ext, ok := ExternalServiceKinds[opt.Kind]
 	if !ok {
@@ -378,8 +384,8 @@ func (e *externalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 		)
 	}
 
-	// For user-added external services, we need to prevent them from using disallowed fields.
-	if opt.NamespaceUserID > 0 {
+	// For user-added and org-added external services, we need to prevent them from using disallowed fields.
+	if !opt.IsSiteOwned() {
 		// We do not allow users to add external service other than GitHub.com and GitLab.com
 		result := gjson.GetBytes(normalized, "url")
 		baseURL, err := url.Parse(result.String())
@@ -389,7 +395,7 @@ func (e *externalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 		normalizedURL := extsvc.NormalizeBaseURL(baseURL).String()
 		if normalizedURL != "https://github.com/" &&
 			normalizedURL != "https://gitlab.com/" {
-			return nil, errors.New("users are only allowed to add external service for https://github.com/ and https://gitlab.com/")
+			return nil, errors.New("external service only allowed for https://github.com/ and https://gitlab.com/")
 		}
 
 		disallowedFields := []string{"repositoryPathPattern", "nameTransformations", "rateLimit"}
@@ -400,8 +406,8 @@ func (e *externalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 			}
 		}
 
-		// A user can only create one external service per kind
-		if err := e.validateSingleKindPerUser(ctx, opt.ExternalServiceID, opt.Kind, opt.NamespaceUserID); err != nil {
+		// Allow only create one external service per kind
+		if err := e.validateSingleKindPerNamespace(ctx, opt.ExternalServiceID, opt.Kind, opt.NamespaceUserID, opt.NamespaceOrgID); err != nil {
 			return nil, err
 		}
 	}
@@ -605,14 +611,19 @@ func (e *externalServiceStore) validateDuplicateRateLimits(ctx context.Context, 
 	return nil
 }
 
-// validateSingleKindPerUser returns an error if the user attempts to add more than one external service of the same kind.
-func (e *externalServiceStore) validateSingleKindPerUser(ctx context.Context, id int64, kind string, userID int32) error {
+// validateSingleKindPerNamespace returns an error if the user/org attempts to add more than one external service of the same kind.
+func (e *externalServiceStore) validateSingleKindPerNamespace(ctx context.Context, id int64, kind string, userID int32, orgID int32) error {
+
 	opt := ExternalServicesListOptions{
 		Kinds: []string{kind},
 		LimitOffset: &LimitOffset{
 			Limit: 500, // The number is randomly chosen
 		},
-		NamespaceUserID: userID,
+	}
+	if userID > 0 {
+		opt.NamespaceUserID = userID
+	} else if orgID > 0 {
+		opt.NamespaceOrgID = orgID
 	}
 	for {
 		svcs, err := e.List(ctx, opt)
@@ -689,7 +700,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 	// Prior to saving the record, run a validation hook.
 	if BeforeCreateExternalService != nil {
-		if err := BeforeCreateExternalService(ctx, e.Store.Handle().DB()); err != nil {
+		if err := BeforeCreateExternalService(ctx, NewDB(e.Store.Handle().DB())); err != nil {
 			return err
 		}
 	}
@@ -837,10 +848,10 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&dbutil.NullTime{Time: &svcs[i].LastSyncAt},
 			&dbutil.NullTime{Time: &svcs[i].NextSyncAt},
 			&dbutil.NullInt32{N: &svcs[i].NamespaceUserID},
+			&dbutil.NullInt32{N: &svcs[i].NamespaceOrgID},
 			&svcs[i].Unrestricted,
 			&svcs[i].CloudDefault,
 			&encryptionKeyID,
-			&dbutil.NullInt32{N: &svcs[i].NamespaceOrgID},
 			&dbutil.NullBool{B: svcs[i].HasWebhooks},
 		)
 		if err != nil {
@@ -878,6 +889,7 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			nullTimeColumn(s.LastSyncAt),
 			nullTimeColumn(s.NextSyncAt),
 			nullInt32Column(s.NamespaceUserID),
+			nullInt32Column(s.NamespaceOrgID),
 			s.Unrestricted,
 			s.CloudDefault,
 			s.HasWebhooks,
@@ -891,7 +903,7 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -908,6 +920,7 @@ INSERT INTO external_services (
   last_sync_at,
   next_sync_at,
   namespace_user_id,
+  namespace_org_id,
   unrestricted,
   cloud_default,
   has_webhooks
@@ -925,6 +938,7 @@ SET
   last_sync_at       = excluded.last_sync_at,
   next_sync_at       = excluded.next_sync_at,
   namespace_user_id  = excluded.namespace_user_id,
+  namespace_org_id   = excluded.namespace_org_id,
   unrestricted       = excluded.unrestricted,
   cloud_default      = excluded.cloud_default,
   has_webhooks       = excluded.has_webhooks
@@ -939,10 +953,10 @@ RETURNING
 	last_sync_at,
 	next_sync_at,
 	namespace_user_id,
+	namespace_org_id,
 	unrestricted,
 	cloud_default,
 	encryption_key_id,
-	namespace_org_id,
 	has_webhooks
 `
 
@@ -954,10 +968,6 @@ type ExternalServiceUpdate struct {
 }
 
 func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) (err error) {
-	if Mocks.ExternalServices.Update != nil {
-		return Mocks.ExternalServices.Update(ctx, ps, id, update)
-	}
-
 	var (
 		normalized  []byte
 		keyID       string
@@ -995,6 +1005,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			Config:            *update.Config,
 			AuthProviders:     ps,
 			NamespaceUserID:   externalService.NamespaceUserID,
+			NamespaceOrgID:    externalService.NamespaceOrgID,
 		})
 		if err != nil {
 			return err
@@ -1075,10 +1086,6 @@ func (e externalServiceNotFoundError) NotFound() bool {
 }
 
 func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error) {
-	if Mocks.ExternalServices.Delete != nil {
-		return Mocks.ExternalServices.Delete(ctx, id)
-	}
-
 	tx, err := e.transact(ctx)
 	if err != nil {
 		return err
@@ -1153,10 +1160,6 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 }
 
 func (e *externalServiceStore) GetByID(ctx context.Context, id int64) (*types.ExternalService, error) {
-	if Mocks.ExternalServices.GetByID != nil {
-		return Mocks.ExternalServices.GetByID(id)
-	}
-
 	opt := ExternalServicesListOptions{
 		IDs: []int64{id},
 	}
@@ -1207,10 +1210,6 @@ FROM external_service_sync_jobs ORDER BY started_at desc
 }
 
 func (e *externalServiceStore) GetLastSyncError(ctx context.Context, id int64) (string, error) {
-	if Mocks.ExternalServices.GetLastSyncError != nil {
-		return Mocks.ExternalServices.GetLastSyncError(id)
-	}
-
 	q := sqlf.Sprintf(`
 SELECT failure_message from external_service_sync_jobs
 WHERE external_service_id = %d
@@ -1485,15 +1484,11 @@ func configurationHasWebhooks(config interface{}) bool {
 
 // MockExternalServices mocks the external services store.
 type MockExternalServices struct {
-	Create           func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error
-	Delete           func(ctx context.Context, id int64) error
-	GetByID          func(id int64) (*types.ExternalService, error)
-	GetLastSyncError func(id int64) (string, error)
-	ListSyncErrors   func(ctx context.Context) (map[int64]string, error)
-	List             func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
-	Update           func(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error
-	Count            func(ctx context.Context, opt ExternalServicesListOptions) (int, error)
-	Upsert           func(ctx context.Context, services ...*types.ExternalService) error
-	Transact         func(ctx context.Context) (ExternalServiceStore, error)
-	Done             func(error) error
+	Create         func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error
+	ListSyncErrors func(ctx context.Context) (map[int64]string, error)
+	List           func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
+	Count          func(ctx context.Context, opt ExternalServicesListOptions) (int, error)
+	Upsert         func(ctx context.Context, services ...*types.ExternalService) error
+	Transact       func(ctx context.Context) (ExternalServiceStore, error)
+	Done           func(error) error
 }

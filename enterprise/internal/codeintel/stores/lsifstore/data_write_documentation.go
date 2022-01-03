@@ -42,7 +42,7 @@ func (s *Store) WriteDocumentationPages(
 	repositoryNameID int,
 	languageNameID int,
 ) (count uint32, err error) {
-	ctx, traceLog, endObservation := s.operations.writeDocumentationPages.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.writeDocumentationPages.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", upload.ID),
 		log.String("repo", upload.RepositoryName),
 		log.String("commit", upload.Commit),
@@ -54,8 +54,8 @@ func (s *Store) WriteDocumentationPages(
 		if err := recover(); err != nil {
 			stack := debug.Stack()
 			stdlog.Printf("API docs panic: %v\n%s", err, stack)
-			traceLog(log.String("API docs panic error", fmt.Sprint(err)))
-			traceLog(log.String("API docs panic stack", string(stack)))
+			trace.Log(log.String("API docs panic error", fmt.Sprint(err)))
+			trace.Log(log.String("API docs panic stack", string(stack)))
 		}
 	}()
 
@@ -92,7 +92,7 @@ func (s *Store) WriteDocumentationPages(
 	); err != nil {
 		return 0, err
 	}
-	traceLog(log.Int("numResultChunkRecords", int(count)))
+	trace.Log(log.Int("numResultChunkRecords", int(count)))
 
 	// Note: If someone disables API docs search indexing, uploads during that time will not be
 	// indexed even if it is turned back on. Only future uploads would be.
@@ -125,7 +125,7 @@ FROM t_lsif_data_documentation_pages source
 
 // WriteDocumentationPathInfo is called (transactionally) from the precise-code-intel-worker.
 func (s *Store) WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentationPathInfo chan *precise.DocumentationPathInfoData) (count uint32, err error) {
-	ctx, traceLog, endObservation := s.operations.writeDocumentationPathInfo.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.writeDocumentationPathInfo.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -167,7 +167,7 @@ func (s *Store) WriteDocumentationPathInfo(ctx context.Context, bundleID int, do
 	); err != nil {
 		return 0, err
 	}
-	traceLog(log.Int("numResultChunkRecords", int(count)))
+	trace.Log(log.Int("numResultChunkRecords", int(count)))
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id here since it is the same for all rows in this operation.
@@ -191,7 +191,7 @@ FROM t_lsif_data_documentation_path_info source
 
 // WriteDocumentationMappings is called (transactionally) from the precise-code-intel-worker.
 func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan precise.DocumentationMapping) (count uint32, err error) {
-	ctx, traceLog, endObservation := s.operations.writeDocumentationMappings.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, trace, endObservation := s.operations.writeDocumentationMappings.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -227,7 +227,7 @@ func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, ma
 	); err != nil {
 		return 0, err
 	}
-	traceLog(log.Int("numRecords", int(count)))
+	trace.Log(log.Int("numRecords", int(count)))
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id here since it is the same for all rows in this operation.

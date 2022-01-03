@@ -9,9 +9,9 @@ import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 

@@ -1,6 +1,7 @@
 .field {
     min-height: 34px;
     height: auto;
+    position: relative;
 
     &:focus-within,
     &:focus {
@@ -34,5 +35,24 @@
 
     :global(.scroll-decoration) {
         display: none;
+    }
+
+    &::before {
+        content: attr(data-placeholder);
+        display: none;
+        position: absolute;
+        z-index: 1;
+        color: var(--text-muted);
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        background-color: transparent;
+        pointer-events: none;
+    }
+
+    &--with-placeholder {
+        &::before {
+            display: block;
+        }
     }
 }

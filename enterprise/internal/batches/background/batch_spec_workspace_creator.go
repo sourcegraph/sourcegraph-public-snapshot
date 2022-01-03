@@ -96,6 +96,7 @@ func (r *batchSpecWorkspaceCreator) process(
 			FileMatches:        w.FileMatches,
 			OnlyFetchWorkspace: w.OnlyFetchWorkspace,
 			Steps:              w.Steps,
+			SkippedSteps:       w.SkippedSteps,
 
 			Unsupported: w.Unsupported,
 			Ignored:     w.Ignored,
@@ -104,6 +105,12 @@ func (r *batchSpecWorkspaceCreator) process(
 		ws = append(ws, workspace)
 
 		if spec.NoCache {
+			continue
+		}
+		if !spec.AllowIgnored && w.Ignored {
+			continue
+		}
+		if !spec.AllowUnsupported && w.Unsupported {
 			continue
 		}
 
@@ -134,6 +141,9 @@ func (r *batchSpecWorkspaceCreator) process(
 		stepCacheKeys := make([]string, 0, len(workspace.Steps))
 		// Generate cache keys for all the step results as well.
 		for i := 0; i < len(workspace.Steps)-1; i++ {
+			if workspace.StepSkipped(i) {
+				continue
+			}
 			key := cache.StepsCacheKey{ExecutionKey: &key, StepIndex: i}
 			rawStepKey, err := key.Key()
 			if err != nil {
@@ -197,6 +207,11 @@ func (r *batchSpecWorkspaceCreator) process(
 	// Check for an existing cache entry for each of the workspaces.
 	for rawKey, workspace := range cacheKeyWorkspaces {
 		for idx, key := range workspace.stepCacheKeys {
+			// Ignore statically skipped steps.
+			if workspace.dbWorkspace.StepSkipped(idx) {
+				continue
+			}
+
 			if c, ok := stepEntriesByCacheKey[key]; ok {
 				var res execution.AfterStepResult
 				if err := json.Unmarshal([]byte(c.Value), &res); err != nil {
@@ -216,6 +231,9 @@ func (r *batchSpecWorkspaceCreator) process(
 		}
 
 		workspace.dbWorkspace.CachedResultFound = true
+
+		// Mark the cache entries as used.
+		usedCacheEntries = append(usedCacheEntries, entry.ID)
 
 		// Build the changeset specs from the cache entry.
 		var executionResult execution.Result
@@ -243,9 +261,6 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		cs = append(cs, specs...)
 		changesetsByWorkspace[workspace.dbWorkspace] = specs
-
-		// And mark the cache entries as used.
-		usedCacheEntries = append(usedCacheEntries, entry.ID)
 	}
 
 	// Mark all used cache entries as recently used for cache eviction purposes.

@@ -17,7 +17,7 @@ import (
 
 func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	ctx := context.Background()
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	// Create stub repo.
 	repoStore := database.Repos(db)
@@ -59,7 +59,7 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	}
 
 	// Create batch specs 1, 2.
-	_, err = db.Exec(`
+	_, err = db.ExecContext(context.Background(), `
 		INSERT INTO batch_specs
 			(id, rand_id, raw_spec, namespace_user_id)
 		VALUES
@@ -72,7 +72,7 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	}
 
 	// Create event logs
-	_, err = db.Exec(`
+	_, err = db.ExecContext(context.Background(), `
 		INSERT INTO event_logs
 			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
 		VALUES
@@ -111,7 +111,7 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	batchChangeCreationDate3 := now.Add(-24 * 7 * 60 * time.Hour) // 60 weeks ago
 
 	// Create batch changes 1, 2
-	_, err = db.Exec(`
+	_, err = db.ExecContext(context.Background(), `
 		INSERT INTO batch_changes
 			(id, name, batch_spec_id, created_at, last_applied_at, namespace_user_id, closed_at)
 		VALUES
@@ -127,7 +127,7 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	// 2 tracked: one OPEN, one MERGED.
 	// 4 created by a batch change: 2 open (one with diffstat, one without), 2 merged (one with diffstat, one without)
 	// missing diffstat shouldn't happen anymore (due to migration), but it's still a nullable field.
-	_, err = db.Exec(`
+	_, err = db.ExecContext(context.Background(), `
 		INSERT INTO changesets
 			(id, repo_id, external_service_type, owned_by_batch_change_id, batch_change_ids, external_state, publication_state, diff_stat_added, diff_stat_changed, diff_stat_deleted)
 		VALUES

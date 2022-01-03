@@ -33,19 +33,21 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 # hadolint ignore=DL3018
-RUN apk update && apk add --no-cache --verbose \
+RUN apk add --no-cache --verbose \
+    # We require git 2.34.1 because we use git-repack with flag --write-midx.
+    'git=~2.34.1' \
+    git-p4 \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main  \
     # NOTE that the Postgres version we run is different
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
-    'bash=5.0.17-r0' \
+    && apk add --no-cache --verbose \
+    'bash=~5.0.17' \
     'redis=~5.0' \
-    # Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
-    'git>=2.18' \
-    git-p4 \
     python2 \
     python3 \
-    'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0' \
+    'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=~14.5.0' \
     postgresql=12.9-r0 \
     postgresql-contrib
 
@@ -59,7 +61,7 @@ COPY --from=docker.io/sourcegraph/syntect_server:21-08-31_c330964@sha256:759f331
 
 
 # install minio (keep this up to date with docker-images/minio/Dockerfile)
-ENV MINIO_VERSION=RELEASE.2021-08-31T05-46-54Z
+ENV MINIO_VERSION=RELEASE.2021-12-10T23-03-39Z
 RUN wget "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.$MINIO_VERSION" && \
     chmod +x "minio.$MINIO_VERSION" && \
     mv "minio.$MINIO_VERSION" /usr/local/bin/minio

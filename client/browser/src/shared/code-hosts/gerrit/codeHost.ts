@@ -7,6 +7,8 @@ import { CodeHost } from '../shared/codeHost'
 import { CodeView, DOMFunctions } from '../shared/codeViews'
 import { queryWithSelector, ViewResolver, CustomSelectorFunction } from '../shared/views'
 
+import styles from './codeHost.module.scss'
+
 const PATCHSET_LABEL_PATTERN = /patchset (\d+)/i
 
 function checkIsGerrit(): boolean {
@@ -379,7 +381,7 @@ export const gerritCodeHost: CodeHost = {
     check: checkIsGerrit,
     notificationClassNames: { 1: '', 2: '', 3: '', 4: '', 5: '' },
     hoverOverlayClassProps: {
-        className: 'hover-overlay--gerrit',
+        className: styles.hoverOverlay,
     },
     codeViewToolbarClassProps: {
         className: 'code-view-toolbar--gerrit',

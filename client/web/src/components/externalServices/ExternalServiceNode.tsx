@@ -4,8 +4,8 @@ import DeleteIcon from 'mdi-react/DeleteIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import React, { useCallback, useState } from 'react'
 
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'

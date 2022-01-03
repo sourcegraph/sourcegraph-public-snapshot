@@ -64,7 +64,9 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             />
                         )}
                         {/* Only show if the user has already added repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
-                        {window.context.likelyDockerOnMac && <DockerForMacAlert className={styles.alert} />}
+                        {window.context.likelyDockerOnMac && window.context.deployType === 'docker-container' && (
+                            <DockerForMacAlert className={styles.alert} />
+                        )}
                         {window.context.sourcegraphDotComMode && (
                             <CodeHostScopeAlerts authenticatedUser={this.props.authenticatedUser} />
                         )}

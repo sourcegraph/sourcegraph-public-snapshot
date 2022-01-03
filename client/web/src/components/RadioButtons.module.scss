@@ -2,16 +2,23 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
+    padding: 0.375rem 0;
 
-    margin: 0 -0.25rem;
+    > :global(.form-check) {
+        &:not(:first-child) {
+            margin-left: 1rem;
+        }
+
+        // Added to override misalignment caused by using <small> label for radio buttons
+        :global(.form-check-input) {
+            --form-check-input-margin-y: 0.3rem;
+        }
+    }
 }
 
 .label {
-    display: flex;
     user-select: none;
     cursor: pointer;
-
-    padding: 0.25rem 0.5rem;
 }
 
 .item {

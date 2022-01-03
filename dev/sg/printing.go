@@ -1,27 +1,30 @@
 package main
 
-import "github.com/sourcegraph/sourcegraph/lib/output"
+import (
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/lib/output"
+)
 
-func writeOrangeLine(fmtStr string, args ...interface{}) {
-	out.WriteLine(output.Linef("", output.CombineStyles(output.StyleBold, output.StyleOrange), fmtStr, args...))
+func writeOrangeLinef(fmtStr string, args ...interface{}) {
+	stdout.Out.WriteLine(output.Linef("", output.CombineStyles(output.StyleBold, output.StyleOrange), fmtStr, args...))
 }
 
-func writeSuccessLine(fmtStr string, args ...interface{}) {
-	out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, fmtStr, args...))
+func writeSuccessLinef(fmtStr string, args ...interface{}) {
+	stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, fmtStr, args...))
 }
 
-func writeFailureLine(fmtStr string, args ...interface{}) {
-	out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, fmtStr, args...))
+func writeFailureLinef(fmtStr string, args ...interface{}) {
+	stdout.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, fmtStr, args...))
 }
 
-func writeWarningLine(fmtStr string, args ...interface{}) {
-	out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, fmtStr, args...))
+func writeWarningLinef(fmtStr string, args ...interface{}) {
+	stdout.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, fmtStr, args...))
 }
 
-func writeSkippedLine(fmtStr string, args ...interface{}) {
-	out.WriteLine(output.Linef(output.EmojiQuestionMark, output.StyleGrey, fmtStr, args...))
+func writeSkippedLinef(fmtStr string, args ...interface{}) {
+	stdout.Out.WriteLine(output.Linef(output.EmojiQuestionMark, output.StyleGrey, fmtStr, args...))
 }
 
-func writeFingerPointingLine(fmtStr string, args ...interface{}) {
-	out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, fmtStr, args...))
+func writeFingerPointingLinef(fmtStr string, args ...interface{}) {
+	stdout.Out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, fmtStr, args...))
 }

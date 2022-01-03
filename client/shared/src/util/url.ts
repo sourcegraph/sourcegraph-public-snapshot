@@ -1,3 +1,4 @@
+import { tryCatch } from '@sourcegraph/common'
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
@@ -6,7 +7,6 @@ import { discreteValueAliases } from '../search/query/filters'
 import { appendContextFilter } from '../search/query/transformer'
 import { findFilter, FilterKind } from '../search/query/validate'
 
-import { tryCatch } from './errors'
 import { replaceRange } from './strings'
 
 export interface RepoSpec {
@@ -549,9 +549,7 @@ export function toAbsoluteBlobURL(
 }
 
 /**
- * Returns the URL path for the given repository name.
- *
- * @deprecated Obtain the repository's URL from the GraphQL Repository.url field instead.
+ * Returns the URL path for the given repository name and revision.
  */
 export function toRepoURL(target: RepoSpec & Partial<RevisionSpec>): string {
     return '/' + encodeRepoRevision(target)

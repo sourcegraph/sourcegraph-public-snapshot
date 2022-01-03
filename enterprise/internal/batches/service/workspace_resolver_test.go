@@ -17,6 +17,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
@@ -50,7 +51,7 @@ func TestSetDefaultQueryCount(t *testing.T) {
 func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 	ctx := context.Background()
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	s := store.New(db, &observation.TestContext, nil)
 
 	u := ct.CreateTestUser(t, db, false)
@@ -327,7 +328,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		resolveWorkspacesAndCompare(t, s, u, searchMatches, batchSpec, want)
 	})
 
-	t.Run("workspaces without steps", func(t *testing.T) {
+	t.Run("workspaces with skipped steps", func(t *testing.T) {
 		conditionalSteps := []batcheslib.Step{
 			// Step should only execute in rs[1]
 			{Run: "echo 1", If: fmt.Sprintf(`${{ eq repository.name %q }}`, rs[1].Name)},
@@ -352,9 +353,10 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 
 		searchMatches := []streamhttp.EventMatch{}
 
-		// We want both workspaces, but only one of them has steps
+		// We want both workspaces, but only one of them has steps that need to run
 		ws0 := buildRepoWorkspace(rs[0], "", "", []string{})
-		ws0.Steps = []batcheslib.Step{}
+		ws0.Steps = conditionalSteps
+		ws0.SkippedSteps = []int32{0}
 		ws1 := buildRepoWorkspace(rs[1], "", "", []string{})
 		ws1.Steps = conditionalSteps
 
@@ -381,7 +383,7 @@ func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, u *types.User, ma
 }
 
 func newStreamSearchTestServer(t *testing.T, matches []streamhttp.EventMatch) string {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		type ev struct {
 			Name  string
 			Value interface{}
@@ -420,7 +422,7 @@ func mockDefaultBranches(t *testing.T, defaultBranches map[api.RepoName]defaultB
 }
 
 func mockBatchIgnores(t *testing.T, m map[api.CommitID]bool) {
-	git.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
+	git.Mocks.Stat = func(commit api.CommitID, _ string) (fs.FileInfo, error) {
 		hasBatchIgnore, ok := m[commit]
 		if !ok {
 			return nil, fmt.Errorf("unknown commit: %s", commit)
@@ -434,7 +436,7 @@ func mockBatchIgnores(t *testing.T, m map[api.CommitID]bool) {
 }
 
 func mockResolveRevision(t *testing.T, branches map[string]api.CommitID) {
-	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
+	git.Mocks.ResolveRevision = func(spec string, _ git.ResolveRevisionOptions) (api.CommitID, error) {
 		if commit, ok := branches[spec]; ok {
 			return commit, nil
 		}
@@ -603,7 +605,8 @@ func TestStepsForRepoRevision(t *testing.T) {
 	tests := map[string]struct {
 		spec *batcheslib.BatchSpec
 
-		wantSteps []batcheslib.Step
+		wantSteps   []batcheslib.Step
+		wantSkipped []int32
 	}{
 		"no if": {
 			spec: &batcheslib.BatchSpec{
@@ -648,7 +651,10 @@ func TestStepsForRepoRevision(t *testing.T) {
 					{Run: "echo 1", If: "this is not true"},
 				},
 			},
-			wantSteps: []batcheslib.Step{},
+			wantSteps: []batcheslib.Step{
+				{Run: "echo 1", If: "this is not true"},
+			},
+			wantSkipped: []int32{0},
 		},
 
 		"one of many steps has if with static non-true value": {
@@ -661,8 +667,10 @@ func TestStepsForRepoRevision(t *testing.T) {
 			},
 			wantSteps: []batcheslib.Step{
 				{Run: "echo 1"},
+				{Run: "echo 2", If: "every type system needs generics"},
 				{Run: "echo 3"},
 			},
+			wantSkipped: []int32{1},
 		},
 
 		"if expression that can be partially evaluated to true": {
@@ -682,16 +690,26 @@ func TestStepsForRepoRevision(t *testing.T) {
 					{Run: "echo 1", If: `${{ matches repository.name "horse" }}`},
 				},
 			},
-			wantSteps: []batcheslib.Step{},
+			wantSteps: []batcheslib.Step{
+				{Run: "echo 1", If: `${{ matches repository.name "horse" }}`},
+			},
+			wantSkipped: []int32{0},
 		},
 
-		"one of many steps has if expression that can be evaluated to true": {
+		"one of many steps has if expression that can be evaluated to false": {
 			spec: &batcheslib.BatchSpec{
 				Steps: []batcheslib.Step{
-					{Run: "echo 1", If: `${{ matches repository.name "horse" }}`},
+					{Run: "echo 1"},
+					{Run: "echo 2", If: `${{ matches repository.name "horse" }}`},
+					{Run: "echo 3"},
 				},
 			},
-			wantSteps: []batcheslib.Step{},
+			wantSteps: []batcheslib.Step{
+				{Run: "echo 1"},
+				{Run: "echo 2", If: `${{ matches repository.name "horse" }}`},
+				{Run: "echo 3"},
+			},
+			wantSkipped: []int32{1},
 		},
 
 		"if expression that can NOT be partially evaluated": {
@@ -708,14 +726,17 @@ func TestStepsForRepoRevision(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			haveSteps, err := stepsForRepo(tt.spec, "github.com/sourcegraph/src-cli", []string{})
+			haveSteps, haveSkipped, err := stepsForRepo(tt.spec, "github.com/sourcegraph/src-cli", []string{})
 			if err != nil {
 				t.Fatalf("unexpected err: %s", err)
 			}
 
 			opts := cmpopts.IgnoreUnexported(batcheslib.Step{})
 			if diff := cmp.Diff(tt.wantSteps, haveSteps, opts); diff != "" {
-				t.Errorf("mismatch (-want +got):\n%s", diff)
+				t.Errorf("mismatch in steps (-want +got):\n%s", diff)
+			}
+			if diff := cmp.Diff(tt.wantSkipped, haveSkipped, opts); diff != "" {
+				t.Errorf("mismatch in skipped (-want +got):\n%s", diff)
 			}
 		})
 	}

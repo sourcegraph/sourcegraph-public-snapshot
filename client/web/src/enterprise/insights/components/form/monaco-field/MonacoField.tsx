@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
-import React, { forwardRef, InputHTMLAttributes, useMemo } from 'react'
+import React, { forwardRef, InputHTMLAttributes, useImperativeHandle, useMemo } from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
@@ -24,14 +24,14 @@ const MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
     },
 }
 
-interface MonacoFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur'> {
+export interface MonacoFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur'> {
     patternType?: SearchPatternType
     value: string
     onBlur: () => void
     onChange: (value: string) => void
 }
 
-export const MonacoField: React.FunctionComponent<MonacoFieldProps> = forwardRef(props => {
+export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props, reference) => {
     const {
         value,
         className,
@@ -39,8 +39,16 @@ export const MonacoField: React.FunctionComponent<MonacoFieldProps> = forwardRef
         onBlur = noop,
         disabled,
         autoFocus,
+        placeholder,
         patternType = SearchPatternType.regexp,
     } = props
+
+    // Monaco doesn't have any native input elements, so we mock
+    // ref here to avoid React warnings in console about zero usage of
+    // element ref with forward ref call.
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    useImperativeHandle(reference, () => null)
 
     const { enhancedThemePreference } = useTheme()
     const monacoOptions = useMemo(() => ({ ...MONACO_OPTIONS, readOnly: disabled }), [disabled])
@@ -56,8 +64,9 @@ export const MonacoField: React.FunctionComponent<MonacoFieldProps> = forwardRef
             caseSensitive={false}
             globbing={true}
             height="auto"
+            data-placeholder={placeholder}
             onSubmit={noop}
-            className={classNames(className, styles.field)}
+            className={classNames(className, styles.field, { [styles.fieldWithPlaceholder]: !value })}
             editorOptions={monacoOptions}
             autoFocus={autoFocus}
             onBlur={onBlur}

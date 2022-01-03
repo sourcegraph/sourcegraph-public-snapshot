@@ -3,11 +3,11 @@ package usagestats
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func GetExtensionsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.ExtensionsUsageStatistics, error) {
+func GetExtensionsUsageStatistics(ctx context.Context, db database.DB) (*types.ExtensionsUsageStatistics, error) {
 	stats := types.ExtensionsUsageStatistics{}
 
 	// Query for evaluating success of individual extensions

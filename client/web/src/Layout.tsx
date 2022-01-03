@@ -16,7 +16,6 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { BatchChangesProps } from './batches'
-import { CodeMonitoringProps } from './code-monitoring'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
@@ -52,10 +51,8 @@ import { Settings } from './schema/settings.schema'
 import {
     parseSearchURLQuery,
     PatternTypeProps,
-    OnboardingTourProps,
     HomePanelsProps,
     SearchStreamingProps,
-    ParsedSearchQueryProps,
     parseSearchURL,
     SearchContextProps,
     getGlobalSearchContextFilter,
@@ -79,14 +76,10 @@ export interface LayoutProps
         KeyboardShortcutsProps,
         TelemetryProps,
         ActivationProps,
-        ParsedSearchQueryProps,
         PatternTypeProps,
-        OnboardingTourProps,
         SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,
-        CodeMonitoringProps,
-        SearchContextProps,
         UserExternalServicesOrRepositoriesUpdateProps,
         CodeIntelligenceProps,
         BatchChangesProps,
@@ -125,7 +118,6 @@ export interface LayoutProps
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 
     globbing: boolean
-    showMultilineSearchConsole: boolean
     isSourcegraphDotCom: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never
@@ -140,14 +132,12 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchNotebookPage = routeMatch?.startsWith('/search/notebook')
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
-    // Update parsedSearchQuery, patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
+    // Update patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
     const {
         history,
-        parsedSearchQuery: currentQuery,
         patternType: currentPatternType,
         selectedSearchContextSpec,
         location,
-        setParsedSearchQuery,
         setPatternType,
         setSelectedSearchContextSpec,
     } = props
@@ -159,10 +149,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const searchContextSpec = useMemo(() => getGlobalSearchContextFilter(query)?.spec, [query])
 
     useEffect(() => {
-        if (query !== currentQuery) {
-            setParsedSearchQuery(query)
-        }
-
         // Only override filters from URL if there is a search query
         if (query) {
             if (patternType && patternType !== currentPatternType) {
@@ -176,11 +162,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     }, [
         history,
         currentPatternType,
-        currentQuery,
         selectedSearchContextSpec,
         patternType,
         query,
-        setParsedSearchQuery,
         setPatternType,
         setSelectedSearchContextSpec,
         searchContextSpec,
@@ -229,6 +213,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         ...breadcrumbProps,
         onExtensionAlertDismissed,
         isMacPlatform,
+        parsedSearchQuery: query,
     }
 
     return (
@@ -243,6 +228,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <GlobalNavbar
                     {...props}
                     {...themeProps}
+                    parsedSearchQuery={query}
                     authRequired={!!authRequired}
                     showSearchBox={
                         isSearchRelatedPage &&

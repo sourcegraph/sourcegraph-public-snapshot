@@ -5,7 +5,15 @@ import {
     BatchSpecImportingChangesetsResult,
     PreviewBatchSpecImportingChangesetFields,
     BatchSpecWorkspacesPreviewResult,
+    EditBatchChangeFields,
 } from '../../../../graphql-operations'
+
+export const mockBatchSpec = (): EditBatchChangeFields['currentSpec'] => ({
+    __typename: 'BatchSpec',
+    id: '1',
+    originalInput: '',
+    createdAt: 'yesterday',
+})
 
 export const mockWorkspaceResolutionStatus = (
     status: BatchSpecWorkspaceResolutionState,
@@ -37,11 +45,6 @@ export const mockWorkspace = (
         id: `repo-${id}`,
         name: `github.com/my-org/repo-${id}`,
         url: 'superfake.com',
-        defaultBranch: {
-            __typename: 'GitRef',
-            id: 'main-branch-id',
-            ...fields?.repository?.defaultBranch,
-        },
         ...fields?.repository,
     },
     branch: {

@@ -1,5 +1,5 @@
+import { isErrorLike } from '@sourcegraph/common'
 import { ConfiguredSubjectOrError, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { Settings } from '../../../../../../schema/settings.schema'
 import {
@@ -81,6 +81,7 @@ export function parseInsightFromSubject(
             id: insightId,
             visibility: subject.subject.id,
             type: InsightExecutionType.Backend,
+            step: { months: 1 },
             viewType: type,
             ...insightConfiguration,
             series: insightConfiguration.series?.map((line, index) => ({

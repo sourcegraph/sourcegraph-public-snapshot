@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import React, { useState, useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike } from '@sourcegraph/common'
 
 import { addExternalService } from '../../../components/externalServices/backend'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'

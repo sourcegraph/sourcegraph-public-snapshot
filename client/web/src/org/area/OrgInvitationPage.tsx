@@ -4,11 +4,11 @@ import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, distinctUntilKeyChanged, map, mapTo, tap, withLatestFrom } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { orgURL } from '..'
 import { refreshAuthenticatedUser, AuthenticatedUser } from '../../auth'

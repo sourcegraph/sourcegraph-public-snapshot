@@ -8,10 +8,12 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -122,6 +124,12 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 
 		// Mark all steps as skipped when a workspace is skipped.
 		if r.workspace.Skipped {
+			si.Skipped = true
+		}
+
+		// If we have marked the step as to-be-skipped, we have to translate
+		// that here into the workspace step info.
+		if r.workspace.StepSkipped(idx) {
 			si.Skipped = true
 		}
 
@@ -324,6 +332,26 @@ func (r *batchSpecWorkspaceResolver) PlaceInQueue() *int32 {
 
 	i32 := int32(r.execution.PlaceInQueue)
 	return &i32
+}
+
+func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (*gql.ExecutorResolver, error) {
+	if r.execution == nil {
+		return nil, nil
+	}
+
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		if err != backend.ErrMustBeSiteAdmin {
+			return nil, err
+		}
+		return nil, nil
+	}
+
+	executor, err := gql.New(r.store.DatabaseDB()).ExecutorByHostname(ctx, r.execution.WorkerHostname)
+	if err != nil {
+		return nil, err
+	}
+
+	return executor, nil
 }
 
 type batchSpecWorkspaceStagesResolver struct {

@@ -38,11 +38,11 @@ import (
 var (
 	// BeforeCreateUser (if set) is a hook called before creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
-	BeforeCreateUser func(ctx context.Context, db dbutil.DB) error
+	BeforeCreateUser func(ctx context.Context, db DB) error
 	// AfterCreateUser (if set) is a hook called after creating a new user in the DB by any means
 	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
 	// Whatever this hook mutates in database should be reflected on the `user` argument as well.
-	AfterCreateUser func(ctx context.Context, db dbutil.DB, user *types.User) error
+	AfterCreateUser func(ctx context.Context, db DB, user *types.User) error
 	// BeforeSetUserIsSiteAdmin (if set) is a hook called before promoting/revoking a user to be a
 	// site admin.
 	BeforeSetUserIsSiteAdmin func(isSiteAdmin bool) error
@@ -208,10 +208,6 @@ type NewUser struct {
 // order to avoid a race condition where multiple initial site admins could be created or zero site
 // admins could be created.
 func (u *userStore) Create(ctx context.Context, info NewUser) (newUser *types.User, err error) {
-	if Mocks.Users.Create != nil {
-		return Mocks.Users.Create(ctx, info)
-	}
-
 	tx, err := u.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -246,10 +242,6 @@ func CheckPasswordLength(pw string) error {
 // transaction. It must execute in a transaction because the post-user-creation
 // hooks must run atomically with the user creation.
 func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newUser *types.User, err error) {
-	if Mocks.Users.Create != nil {
-		return Mocks.Users.Create(ctx, info)
-	}
-
 	if !u.InTransaction() {
 		return nil, errors.New("must run within a transaction")
 	}
@@ -303,7 +295,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 
 	// Run BeforeCreateUser hook.
 	if BeforeCreateUser != nil {
-		if err := BeforeCreateUser(ctx, u.Store.Handle().DB()); err != nil {
+		if err := BeforeCreateUser(ctx, NewDB(u.Store.Handle().DB())); err != nil {
 			return nil, errors.Wrap(err, "pre create user hook")
 		}
 	}
@@ -389,7 +381,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 
 		// Run AfterCreateUser hook
 		if AfterCreateUser != nil {
-			if err := AfterCreateUser(ctx, u.Store.Handle().DB(), user); err != nil {
+			if err := AfterCreateUser(ctx, NewDB(u.Store.Handle().DB()), user); err != nil {
 				return nil, errors.Wrap(err, "after create user hook")
 			}
 		}
@@ -448,14 +440,11 @@ type UserUpdate struct {
 	// - If pointer to "" (empty string), the value in the DB is set to null.
 	// - If pointer to a non-empty string, the value in the DB is set to the string.
 	DisplayName, AvatarURL *string
+	TosAccepted            *bool
 }
 
 // Update updates a user's profile information.
 func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (err error) {
-	if Mocks.Users.Update != nil {
-		return Mocks.Users.Update(id, update)
-	}
-
 	tx, err := u.Transact(ctx)
 	if err != nil {
 		return err
@@ -489,6 +478,9 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 	if update.AvatarURL != nil {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("avatar_url=%s", strOrNil(*update.AvatarURL)))
 	}
+	if update.TosAccepted != nil {
+		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("tos_accepted=%s", *update.TosAccepted))
+	}
 	query := sqlf.Sprintf("UPDATE users SET %s WHERE id=%d", sqlf.Join(fieldUpdates, ", "), id)
 	res, err := tx.ExecResult(ctx, query)
 	if err != nil {
@@ -510,10 +502,6 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 
 // Delete performs a soft-delete of the user and all resources associated with this user.
 func (u *userStore) Delete(ctx context.Context, id int32) (err error) {
-	if Mocks.Users.Delete != nil {
-		return Mocks.Users.Delete(ctx, id)
-	}
-
 	tx, err := u.Transact(ctx)
 	if err != nil {
 		return err
@@ -559,10 +547,6 @@ func (u *userStore) Delete(ctx context.Context, id int32) (err error) {
 
 // HardDelete removes the user and all resources associated with this user.
 func (u *userStore) HardDelete(ctx context.Context, id int32) (err error) {
-	if Mocks.Users.HardDelete != nil {
-		return Mocks.Users.HardDelete(ctx, id)
-	}
-
 	// Wrap in transaction because we delete from multiple tables.
 	tx, err := u.Transact(ctx)
 	if err != nil {
@@ -654,12 +638,8 @@ func logUserDeletionEvent(ctx context.Context, db dbutil.DB, id int32, name Secu
 	SecurityEventLogs(db).LogEvent(ctx, event)
 }
 
-// SetIsSiteAdmin sets the the user with given ID to be or not to be the site admin.
+// SetIsSiteAdmin sets the user with the given ID to be or not to be the site admin.
 func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error {
-	if Mocks.Users.SetIsSiteAdmin != nil {
-		return Mocks.Users.SetIsSiteAdmin(id, isSiteAdmin)
-	}
-
 	if BeforeSetUserIsSiteAdmin != nil {
 		if err := BeforeSetUserIsSiteAdmin(isSiteAdmin); err != nil {
 			return err
@@ -676,10 +656,6 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 // invited too many users, or some other error occurred). If the user has
 // quota remaining, their quota is decremented and ok is true.
 func (u *userStore) CheckAndDecrementInviteQuota(ctx context.Context, userID int32) (ok bool, err error) {
-	if Mocks.Users.CheckAndDecrementInviteQuota != nil {
-		return Mocks.Users.CheckAndDecrementInviteQuota(ctx, userID)
-	}
-
 	var quotaRemaining int32
 	q := sqlf.Sprintf(`
 	UPDATE users SET invite_quota=(invite_quota - 1)
@@ -707,9 +683,6 @@ func (u *userStore) GetByID(ctx context.Context, id int32) (*types.User, error) 
 // has a matching *unverified* email address, they will not be returned by this method. At most one
 // user may have any given verified email address.
 func (u *userStore) GetByVerifiedEmail(ctx context.Context, email string) (*types.User, error) {
-	if Mocks.Users.GetByVerifiedEmail != nil {
-		return Mocks.Users.GetByVerifiedEmail(ctx, email)
-	}
 	return u.getOneBySQL(ctx, sqlf.Sprintf("WHERE id=(SELECT user_id FROM user_emails WHERE email=%s AND verified_at IS NOT NULL) AND deleted_at IS NULL LIMIT 1", email))
 }
 
@@ -723,10 +696,6 @@ func (u *userStore) GetByUsername(ctx context.Context, username string) (*types.
 // GetByUsernames returns a list of users by given usernames. The number of results list could be less
 // than the candidate list due to no user is associated with some usernames.
 func (u *userStore) GetByUsernames(ctx context.Context, usernames ...string) ([]*types.User, error) {
-	if Mocks.Users.GetByUsernames != nil {
-		return Mocks.Users.GetByUsernames(ctx, usernames...)
-	}
-
 	if len(usernames) == 0 {
 		return []*types.User{}, nil
 	}
@@ -755,10 +724,6 @@ func (u *userStore) GetByCurrentAuthUser(ctx context.Context) (*types.User, erro
 }
 
 func (u *userStore) InvalidateSessionsByID(ctx context.Context, id int32) (err error) {
-	if Mocks.Users.InvalidateSessionsByID != nil {
-		return Mocks.Users.InvalidateSessionsByID(ctx, id)
-	}
-
 	tx, err := u.Transact(ctx)
 	if err != nil {
 		return err
@@ -817,10 +782,6 @@ type UsersListOptions struct {
 }
 
 func (u *userStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types.User, err error) {
-	if Mocks.Users.List != nil {
-		return Mocks.Users.List(ctx, opt)
-	}
-
 	tr, ctx := trace.New(ctx, "database.Users.List", fmt.Sprintf("%+v", opt))
 	defer func() {
 		tr.SetError(err)
@@ -907,7 +868,7 @@ func (u *userStore) getOneBySQL(ctx context.Context, q *sqlf.Query) (*types.User
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.User, error) {
-	q := sqlf.Sprintf("SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags, u.invalidated_sessions_at FROM users u %s", query)
+	q := sqlf.Sprintf("SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags, u.invalidated_sessions_at, u.tos_accepted FROM users u %s", query)
 	rows, err := u.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -918,7 +879,7 @@ func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.U
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt)
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted)
 		if err != nil {
 			return nil, err
 		}
@@ -950,9 +911,6 @@ var (
 )
 
 func (u *userStore) RenewPasswordResetCode(ctx context.Context, id int32) (string, error) {
-	if Mocks.Users.RenewPasswordResetCode != nil {
-		return Mocks.Users.RenewPasswordResetCode(ctx, id)
-	}
 	if _, err := u.GetByID(ctx, id); err != nil {
 		return "", err
 	}
@@ -1100,10 +1058,6 @@ WHERE id=%s
 // A randomized password is used (instead of an empty password) to avoid bugs where an empty password
 // is considered to be no password. The random password is expected to be irretrievable.
 func (u *userStore) RandomizePasswordAndClearPasswordResetRateLimit(ctx context.Context, id int32) error {
-	if Mocks.Users.RandomizePasswordAndClearPasswordResetRateLimit != nil {
-		return Mocks.Users.RandomizePasswordAndClearPasswordResetRateLimit(ctx, id)
-	}
-
 	passwd, err := hashPassword(randstring.NewLen(36))
 	if err != nil {
 		return err
@@ -1199,10 +1153,6 @@ func (u *userStore) SetTag(ctx context.Context, userID int32, tag string, presen
 // HasTag reports whether the context actor has the given tag.
 // If not, it returns false and a nil error.
 func (u *userStore) HasTag(ctx context.Context, userID int32, tag string) (bool, error) {
-	if Mocks.Users.HasTag != nil {
-		return Mocks.Users.HasTag(ctx, userID, tag)
-	}
-
 	var tags []string
 	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
 	if err != nil {
@@ -1222,10 +1172,6 @@ func (u *userStore) HasTag(ctx context.Context, userID int32, tag string) (bool,
 
 // Tags returns a map with all the tags currently belonging to the user.
 func (u *userStore) Tags(ctx context.Context, userID int32) (map[string]bool, error) {
-	if Mocks.Users.Tags != nil {
-		return Mocks.Users.Tags(ctx, userID)
-	}
-
 	var tags []string
 	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
 	if err != nil {

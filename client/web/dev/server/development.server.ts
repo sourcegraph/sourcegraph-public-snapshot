@@ -1,11 +1,13 @@
 import chalk from 'chalk'
 import compression from 'compression'
-import { Options as HTTPProxyMiddlewareOptions } from 'http-proxy-middleware'
+import { createProxyMiddleware, Options as HTTPProxyMiddlewareOptions } from 'http-proxy-middleware'
 import { once } from 'lodash'
 import signale from 'signale'
 import createWebpackCompiler, { Configuration } from 'webpack'
 import WebpackDevServer, { ProxyConfigArrayItem } from 'webpack-dev-server'
 
+import { getManifest } from '../esbuild/manifestPlugin'
+import { esbuildDevelopmentServer } from '../esbuild/server'
 import {
     environmentConfig,
     getAPIProxySettings,
@@ -16,6 +18,7 @@ import {
     HTTP_WEB_SERVER_URL,
     PROXY_ROUTES,
 } from '../utils'
+import { getHTMLPage } from '../webpack/get-html-webpack-plugins'
 
 // TODO: migrate webpack.config.js to TS to use `import` in this file.
 // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
@@ -52,6 +55,10 @@ async function startDevelopmentServer(): Promise<void> {
     switch (environmentConfig.DEV_WEB_BUILDER) {
         case 'webpack':
             await startWebpackDevelopmentServer(init)
+            break
+
+        case 'esbuild':
+            await startEsbuildDevelopmentServer(init)
             break
     }
 }
@@ -110,6 +117,21 @@ async function startWebpackDevelopmentServer({
     signale.info(`Development HTTP server is ready at ${chalk.blue.bold(HTTP_WEB_SERVER_URL)}`)
     signale.success(`Development HTTPS server is ready at ${chalk.blue.bold(HTTPS_WEB_SERVER_URL)}`)
     signale.await('Waiting for Webpack to compile assets')
+}
+
+async function startEsbuildDevelopmentServer({
+    proxyRoutes,
+    proxyMiddlewareOptions,
+}: DevelopmentServerInit): Promise<void> {
+    const manifest = getManifest()
+    const htmlPage = getHTMLPage(manifest)
+
+    await esbuildDevelopmentServer({ host: '0.0.0.0', port: SOURCEGRAPH_HTTPS_PORT }, app => {
+        app.use(createProxyMiddleware(proxyRoutes, proxyMiddlewareOptions))
+        app.get(/.*/, (_request, response) => {
+            response.send(htmlPage)
+        })
+    })
 }
 
 startDevelopmentServer().catch(error => signale.error(error))

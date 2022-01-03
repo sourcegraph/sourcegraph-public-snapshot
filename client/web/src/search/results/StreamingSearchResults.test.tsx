@@ -21,7 +21,7 @@ import {
 
 import { AuthenticatedUser } from '../../auth'
 import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
-import { useNavbarQueryState } from '../../stores'
+import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
 import * as helpers from '../helpers'
 
 import { generateMockedResponses } from './sidebar/Revisions.mocks'
@@ -53,11 +53,9 @@ describe('StreamingSearchResults', () => {
 
         fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_REQUEST,
         isLightTheme: true,
-        enableCodeMonitoring: false,
         featureFlags: EMPTY_FEATURE_FLAGS,
         extensionViews: () => null,
         isSourcegraphDotCom: false,
-        showSearchContext: true,
         searchContextsEnabled: true,
     }
 
@@ -81,6 +79,7 @@ describe('StreamingSearchResults', () => {
 
     beforeEach(() => {
         useNavbarQueryState.setState({ searchCaseSensitivity: false })
+        useExperimentalFeatures.setState({ showSearchContext: true, codeMonitoring: false })
     })
 
     it('should call streaming search API with the right parameters from URL', async () => {
@@ -280,10 +279,12 @@ describe('StreamingSearchResults', () => {
             const allChecks = await screen.findAllByTestId('streaming-progress-skipped-suggest-check')
 
             for (const check of allChecks) {
-                userEvent.click(check)
+                userEvent.click(check, undefined, { skipPointerEventsCheck: true })
             }
 
-            userEvent.click(await screen.findByText(/search again/i, { selector: 'button[type=submit]' }))
+            userEvent.click(await screen.findByText(/search again/i, { selector: 'button[type=submit]' }), undefined, {
+                skipPointerEventsCheck: true,
+            })
 
             expect(helpers.submitSearch).toBeCalledTimes(index + 1)
             const args = submitSearchMock.mock.calls[index][0]

@@ -50,22 +50,21 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
                 </ParentSize>
 
                 <ScrollBox
-                    as="ul"
-                    scrollEnabled={isHorizontal}
                     aria-hidden={true}
-                    rootClassName={classNames({ [styles.legendHorizontal]: isHorizontal })}
-                    className={classNames(styles.legendContent, { [styles.legendContentHorizontal]: isHorizontal })}
+                    className={classNames(styles.legend, { [styles.legendHorizontal]: isHorizontal })}
                 >
-                    {props.series.map(line => (
-                        <li key={line.dataKey.toString()} className={styles.legendItem}>
-                            <div
-                                /* eslint-disable-next-line react/forbid-dom-props */
-                                style={{ backgroundColor: getLineStroke(line) }}
-                                className={styles.legendMark}
-                            />
-                            {line.name}
-                        </li>
-                    ))}
+                    <ul className={classNames(styles.legendList, { [styles.legendListHorizontal]: isHorizontal })}>
+                        {props.series.map(line => (
+                            <li key={line.dataKey.toString()} className={styles.legendItem}>
+                                <div
+                                    /* eslint-disable-next-line react/forbid-dom-props */
+                                    style={{ backgroundColor: getLineStroke(line) }}
+                                    className={styles.legendMark}
+                                />
+                                {line.name}
+                            </li>
+                        ))}
+                    </ul>
                 </ScrollBox>
             </div>
         </EventEmitterProvider>

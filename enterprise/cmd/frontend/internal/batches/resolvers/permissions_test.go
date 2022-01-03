@@ -39,12 +39,12 @@ func TestPermissionLevels(t *testing.T) {
 
 	ct.MockRSAKeygen(t)
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	key := et.TestKey{}
 
 	cstore := store.New(db, &observation.TestContext, key)
 	sr := New(cstore)
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), sr, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), sr, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,12 +82,12 @@ func TestPermissionLevels(t *testing.T) {
 		t.Helper()
 
 		c := &btypes.BatchChange{
-			Name:             name,
-			InitialApplierID: userID,
-			NamespaceUserID:  userID,
-			LastApplierID:    userID,
-			LastAppliedAt:    time.Now(),
-			BatchSpecID:      batchSpecID,
+			Name:            name,
+			CreatorID:       userID,
+			NamespaceUserID: userID,
+			LastApplierID:   userID,
+			LastAppliedAt:   time.Now(),
+			BatchSpecID:     batchSpecID,
 		}
 		if err := s.CreateBatchChange(ctx, c); err != nil {
 			t.Fatal(err)
@@ -932,8 +932,13 @@ func TestPermissionLevels(t *testing.T) {
 					return fmt.Sprintf(`mutation { retryBatchSpecWorkspaceExecution(batchSpecWorkspaces: [%q]) { alwaysNil } }`, workspaceID)
 				},
 			},
+			{
+				name: "retryBatchSpecExecution",
+				mutationFunc: func(batchSpecID, _ string) string {
+					return fmt.Sprintf(`mutation { retryBatchSpecExecution(batchSpec: %q) { id } }`, batchSpecID)
+				},
+			},
 			// TODO: Once implemented, add test for CancelBatchSpecWorkspaceExecution
-			// TODO: Once implemented, add test for RetryBatchSpecExecution
 			// TODO: Once implemented, add test for EnqueueBatchSpecWorkspaceExecution
 			// TODO: Once implemented, add test for ToggleBatchSpecAutoApply
 			// TODO: Once implemented, add test for DeleteBatchSpec
@@ -1153,11 +1158,11 @@ func TestRepositoryPermissions(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	cstore := store.New(db, &observation.TestContext, nil)
 	sr := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), sr, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), sr, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1223,12 +1228,12 @@ func TestRepositoryPermissions(t *testing.T) {
 		}
 
 		batchChange := &btypes.BatchChange{
-			Name:             "my batch change",
-			InitialApplierID: userID,
-			NamespaceUserID:  userID,
-			LastApplierID:    userID,
-			LastAppliedAt:    time.Now(),
-			BatchSpecID:      spec.ID,
+			Name:            "my batch change",
+			CreatorID:       userID,
+			NamespaceUserID: userID,
+			LastApplierID:   userID,
+			LastAppliedAt:   time.Now(),
+			BatchSpecID:     spec.ID,
 		}
 		if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 			t.Fatal(err)

@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/service"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
@@ -153,8 +155,8 @@ func filterRepositories(filters types.InsightViewFilters, repositories []string)
 
 func expandCaptureGroupSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
 	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
-	interval := query.TimeInterval{
-		Unit:  definition.SampleIntervalUnit,
+	interval := timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
 		Value: definition.SampleIntervalValue,
 	}
 
@@ -288,6 +290,7 @@ func (l *lineChartDataSeriesPresentationResolver) Color(ctx context.Context) (st
 
 func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
 	uid := actor.FromContext(ctx).UID
+	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
 	tx, err := r.insightStore.Transact(ctx)
 	if err != nil {
@@ -333,7 +336,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 		}
 	}
 
-	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: r.permissionsValidator, viewId: view.UniqueID}, nil
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: view.UniqueID}, nil
 }
 
 func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
@@ -342,13 +345,14 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
+	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
 	var insightViewId string
 	err = relay.UnmarshalSpec(args.Id, &insightViewId)
 	if err != nil {
 		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
 	}
-	err = r.permissionsValidator.validateUserAccessForView(ctx, insightViewId)
+	err = permissionsValidator.validateUserAccessForView(ctx, insightViewId)
 	if err != nil {
 		return nil, err
 	}
@@ -422,7 +426,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 			}
 		}
 	}
-	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: r.permissionsValidator, viewId: insightViewId}, nil
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: insightViewId}, nil
 }
 
 func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.CreatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
@@ -431,6 +435,7 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
+	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
 	uid := actor.FromContext(ctx).UID
 	view, err := tx.CreateView(ctx, types.InsightView{
@@ -487,7 +492,7 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 		}
 	}
 
-	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: r.permissionsValidator, viewId: view.UniqueID}, nil
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: view.UniqueID}, nil
 }
 
 func (r *Resolver) UpdatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
@@ -496,13 +501,14 @@ func (r *Resolver) UpdatePieChartSearchInsight(ctx context.Context, args *graphq
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
+	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
 	var insightViewId string
 	err = relay.UnmarshalSpec(args.Id, &insightViewId)
 	if err != nil {
 		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
 	}
-	err = r.permissionsValidator.validateUserAccessForView(ctx, insightViewId)
+	err = permissionsValidator.validateUserAccessForView(ctx, insightViewId)
 	if err != nil {
 		return nil, err
 	}
@@ -536,7 +542,7 @@ func (r *Resolver) UpdatePieChartSearchInsight(ctx context.Context, args *graphq
 		return nil, errors.Wrap(err, "UpdateSeries")
 	}
 
-	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: r.permissionsValidator, viewId: view.UniqueID}, nil
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: view.UniqueID}, nil
 }
 
 type pieChartInsightViewPresentation struct {
@@ -854,8 +860,9 @@ func (r *Resolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.D
 	if err != nil {
 		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
 	}
+	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 
-	err = r.permissionsValidator.validateUserAccessForView(ctx, viewId)
+	err = permissionsValidator.validateUserAccessForView(ctx, viewId)
 	if err != nil {
 		return nil, err
 	}

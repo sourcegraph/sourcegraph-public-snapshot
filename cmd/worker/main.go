@@ -7,5 +7,5 @@ import (
 
 func main() {
 	authz.SetProviders(true, []authz.Provider{})
-	shared.Start(nil)
+	shared.Start(nil, nil)
 }

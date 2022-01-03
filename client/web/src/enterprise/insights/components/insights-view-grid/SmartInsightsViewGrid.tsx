@@ -27,12 +27,43 @@ const INSIGHT_PAGE_CONTEXT = {}
 export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGridProps> = memo(props => {
     const { telemetryService, insights } = props
 
-    const [layouts, setLayouts] = useState<Layouts>(insightLayoutGenerator(insights))
+    const [layouts, setLayouts] = useState<Layouts>({})
     const [resizingView, setResizeView] = useState<Layout | null>(null)
 
     useEffect(() => {
         setLayouts(insightLayoutGenerator(insights))
     }, [insights])
+
+    const trackUICustomization = useCallback(
+        (item: Layout) => {
+            try {
+                const insight = insights.find(insight => item.i === insight.id)
+
+                if (insight) {
+                    telemetryService.log(
+                        'InsightUICustomization',
+                        { insightType: insight.viewType },
+                        { insightType: insight.viewType }
+                    )
+                }
+            } catch {
+                // noop
+            }
+        },
+        [telemetryService, insights]
+    )
+
+    const handleResizeStart = useCallback(
+        (item: Layout) => {
+            setResizeView(item)
+            trackUICustomization(item)
+        },
+        [trackUICustomization]
+    )
+
+    const handleResizeStop = useCallback((item: Layout) => {
+        setResizeView(null)
+    }, [])
 
     const handleLayoutChange = useCallback(
         (currentLayout: Layout[], allLayouts: Layouts): void => {
@@ -41,16 +72,12 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
         [insights]
     )
 
-    const handleResizeStop = useCallback((item: Layout) => {
-        setResizeView(null)
-    }, [])
-
     return (
         <ViewGrid
             layouts={layouts}
-            telemetryService={telemetryService}
-            onResizeStart={setResizeView}
+            onResizeStart={handleResizeStart}
             onResizeStop={handleResizeStop}
+            onDragStart={trackUICustomization}
             onLayoutChange={handleLayoutChange}
         >
             {insights.map(insight => (

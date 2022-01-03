@@ -127,6 +127,7 @@ func enqueue(ctx context.Context, dataSeries []types.InsightSeries, mode store.P
 			multi = multierror.Append(multi, errors.Wrapf(err, "failed to stamp insight series_id: %s", seriesID))
 			continue // might as well try the other insights and just skip this one
 		}
+		log15.Info("queued global search for insight recording", "series_id", series.SeriesID)
 	}
 
 	return multi

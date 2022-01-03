@@ -6,9 +6,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/lib/pq"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights"
+	"github.com/lib/pq"
 
 	"github.com/cockroachdb/errors"
 
@@ -600,11 +600,19 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 	if series.CreatedAt.IsZero() {
 		series.CreatedAt = s.Now()
 	}
+	interval := timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
+		Value: series.SampleIntervalValue,
+	}
+	if !interval.IsValid() {
+		interval = timeseries.DefaultInterval
+	}
+
 	if series.NextRecordingAfter.IsZero() {
-		series.NextRecordingAfter = s.Now()
+		series.NextRecordingAfter = interval.StepForwards(s.Now())
 	}
 	if series.NextSnapshotAfter.IsZero() {
-		series.NextSnapshotAfter = s.Now()
+		series.NextSnapshotAfter = NextSnapshot(s.Now())
 	}
 	if series.OldestHistoricalAt.IsZero() {
 		// TODO(insights): this value should probably somewhere more discoverable / obvious than here
@@ -653,7 +661,10 @@ type InsightMetadataStore interface {
 // StampRecording will update the recording metadata for this series and return the InsightSeries struct with updated values.
 func (s *InsightStore) StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
 	current := s.Now()
-	next := insights.NextRecording(current)
+	next := timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
+		Value: series.SampleIntervalValue,
+	}.StepForwards(current)
 	if err := s.Exec(ctx, sqlf.Sprintf(stampRecordingSql, current, next, series.ID)); err != nil {
 		return types.InsightSeries{}, err
 	}
@@ -662,10 +673,15 @@ func (s *InsightStore) StampRecording(ctx context.Context, series types.InsightS
 	return series, nil
 }
 
+func NextSnapshot(current time.Time) time.Time {
+	year, month, day := current.In(time.UTC).Date()
+	return time.Date(year, month, day+1, 0, 0, 0, 0, time.UTC)
+}
+
 // StampSnapshot will update the recording metadata for this series and return the InsightSeries struct with updated values.
 func (s *InsightStore) StampSnapshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
 	current := s.Now()
-	next := insights.NextSnapshot(current)
+	next := NextSnapshot(current)
 	if err := s.Exec(ctx, sqlf.Sprintf(stampSnapshotSql, current, next, series.ID)); err != nil {
 		return types.InsightSeries{}, err
 	}

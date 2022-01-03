@@ -168,7 +168,8 @@ const StatusBarItem: React.FunctionComponent<
     const command = useMemo(() => statusBarItem.command, [statusBarItem.command])
 
     const to = useMemo(
-        () => command && urlForClientCommandOpen({ command: command.id, commandArguments: command.args }, location),
+        () =>
+            command && urlForClientCommandOpen({ command: command.id, commandArguments: command.args }, location.hash),
         [command, location]
     )
 

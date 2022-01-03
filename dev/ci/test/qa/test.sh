@@ -22,7 +22,10 @@ cleanup() {
   docker_logs
   cd "$root_dir"
   docker rm -f "$CONTAINER"
-  docker rmi -f "$(docker images -q)"
+  if [[ $(docker images -q | wc -l) -gt 0 ]]; then
+    # shellcheck disable=SC2046
+    docker rmi -f $(docker images -q)
+  fi
 
 }
 
@@ -52,8 +55,6 @@ set -x
 echo "--- TEST: Checking Sourcegraph instance is accessible"
 curl -f http://localhost:7080
 curl -f http://localhost:7080/healthz
-echo "--- TEST: Downloading Puppeteer"
-yarn --cwd client/shared run download-puppeteer-browser
 echo "--- TEST: Running tests"
 # Run all tests, and error if one fails
 test_status=0

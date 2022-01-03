@@ -229,7 +229,7 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}, nil
 }
 
-func QueryToZoektQuery(p *TextPatternInfo, typ IndexedRequestType) (zoekt.Q, error) {
+func QueryToZoektQuery(p *TextPatternInfo, feat *Features, typ IndexedRequestType) (zoekt.Q, error) {
 	var and []zoekt.Q
 
 	var q zoekt.Q
@@ -311,7 +311,7 @@ func QueryToZoektQuery(p *TextPatternInfo, typ IndexedRequestType) (zoekt.Q, err
 	// corrected by the more precise language metadata. If this is a problem, indexed search
 	// queries should have a special query converter that produces *only* Language predicates
 	// instead of filepatterns.
-	if len(p.Languages) > 0 {
+	if len(p.Languages) > 0 && feat.ContentBasedLangFilters {
 		or := &zoekt.Or{}
 		for _, lang := range p.Languages {
 			lang, _ = enry.GetLanguageByAlias(lang) // Invariant: lang is valid.

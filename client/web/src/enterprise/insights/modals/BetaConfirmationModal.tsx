@@ -7,7 +7,7 @@ import { Button, useAutoFocus } from '@sourcegraph/wildcard'
 import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
 
 import styles from './BetaConfirmationModal.module.scss'
-import { FourLineChart, PieChart, ThreeLineChart } from './components/MediaCharts'
+import { FourLineChart, LangStatsInsightChart, ThreeLineChart } from './components/MediaCharts'
 
 export const BetaConfirmationModal: React.FunctionComponent = () => {
     const history = useHistory()
@@ -57,7 +57,7 @@ export const BetaConfirmationModalContent: React.FunctionComponent<BetaConfirmat
             <div className={styles.mediaHeroContent}>
                 <ThreeLineChart className={styles.chart} />
                 <FourLineChart className={styles.chart} />
-                <PieChart className={styles.chart} />
+                <LangStatsInsightChart className={styles.chart} />
             </div>
 
             <div className={styles.textContent}>

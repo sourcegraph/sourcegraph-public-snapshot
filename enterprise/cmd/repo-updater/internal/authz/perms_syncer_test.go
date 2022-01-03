@@ -641,8 +641,8 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		authz.SetProviders(false, []authz.Provider{p1, p2})
 		defer authz.SetProviders(true, nil)
 
-		edb.Mocks.Perms.Transact = func(context.Context) (*edb.PermsStore, error) {
-			return &edb.PermsStore{}, nil
+		edb.Mocks.Perms.Transact = func(context.Context) (edb.PermsStore, error) {
+			return edb.Perms(nil, nil), nil
 		}
 		edb.Mocks.Perms.GetUserIDsByExternalAccounts = func(context.Context, *extsvc.Accounts) (map[string]int32, error) {
 			return map[string]int32{"user": 1}, nil
@@ -692,8 +692,8 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	})
 
 	t.Run("repo sync with external service userid but no providers", func(t *testing.T) {
-		edb.Mocks.Perms.Transact = func(context.Context) (*edb.PermsStore, error) {
-			return &edb.PermsStore{}, nil
+		edb.Mocks.Perms.Transact = func(context.Context) (edb.PermsStore, error) {
+			return edb.Perms(nil, nil), nil
 		}
 
 		edb.Mocks.Perms.GetUserIDsByExternalAccounts = func(context.Context, *extsvc.Accounts) (map[string]int32, error) {
@@ -749,8 +749,8 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	authz.SetProviders(false, []authz.Provider{p})
 	defer authz.SetProviders(true, nil)
 
-	edb.Mocks.Perms.Transact = func(context.Context) (*edb.PermsStore, error) {
-		return &edb.PermsStore{}, nil
+	edb.Mocks.Perms.Transact = func(context.Context) (edb.PermsStore, error) {
+		return edb.Perms(nil, nil), nil
 	}
 	edb.Mocks.Perms.GetUserIDsByExternalAccounts = func(context.Context, *extsvc.Accounts) (map[string]int32, error) {
 		return map[string]int32{"user": 1}, nil

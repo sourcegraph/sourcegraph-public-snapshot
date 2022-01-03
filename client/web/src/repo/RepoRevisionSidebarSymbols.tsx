@@ -5,7 +5,6 @@ import * as React from 'react'
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -20,7 +19,7 @@ import {
     SummaryContainer,
     ShowMoreButton,
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
-import { useDebounce } from '@sourcegraph/wildcard'
+import { useDebounce, Tooltip } from '@sourcegraph/wildcard'
 
 import { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'

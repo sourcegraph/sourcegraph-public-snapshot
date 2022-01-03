@@ -7,16 +7,16 @@ import { from, noop, Observable, combineLatest } from 'rxjs'
 import { catchError, map, mapTo } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
+import { asError } from '@sourcegraph/common'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
-import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { fetchSite } from '../../shared/backend/server'
 import { isExtension } from '../../shared/context'
 import { initSentry } from '../../shared/sentry'
-import { observeSourcegraphURL, getExtensionVersion, DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
+import { observeSourcegraphURL, getExtensionVersion, isDefaultSourcegraphUrl } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
 import {
     OptionFlagKey,
@@ -192,7 +192,7 @@ const Options: React.FunctionComponent = () => {
                 optionFlags={optionFlagsWithValues}
                 onChangeOptionFlag={handleChangeOptionFlag}
                 showPrivateRepositoryAlert={
-                    currentTabStatus?.status.hasPrivateCloudError && sourcegraphUrl === DEFAULT_SOURCEGRAPH_URL
+                    currentTabStatus?.status.hasPrivateCloudError && isDefaultSourcegraphUrl(sourcegraphUrl)
                 }
                 showSourcegraphCloudAlert={showSourcegraphCloudAlert}
                 permissionAlert={permissionAlert}

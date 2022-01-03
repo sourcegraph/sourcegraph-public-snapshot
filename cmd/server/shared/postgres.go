@@ -154,7 +154,22 @@ func postgresProcfile() (string, error) {
 		}
 	}
 	pgPrintf("Finished initializing the internal database.")
-	return "postgres: su-exec postgres sh -c 'postgres -c listen_addresses=127.0.0.1 -D " + path + "' 2>&1 | grep -v 'database system was shut down' | grep -v 'MultiXact member wraparound' | grep -v 'database system is ready' | grep -v 'autovacuum launcher started' | grep -v 'the database system is starting up' | grep -v 'listening on IPv4 address'", nil
+
+	ignoredLogs := []string{
+		"database system was shut down",
+		"MultiXact member wraparound",
+		"database system is ready",
+		"autovacuum launcher started",
+		"the database system is starting up",
+		"listening on IPv4 address",
+	}
+
+	grepCommands := make([]string, 0, len(ignoredLogs))
+	for _, ignoredLog := range ignoredLogs {
+		grepCommands = append(grepCommands, fmt.Sprintf("grep -v '%s'", ignoredLog))
+	}
+
+	return fmt.Sprintf("postgres: su-exec postgres sh -c 'postgres -c listen_addresses=127.0.0.1 -D "+path+"' 2>&1 | %s", strings.Join(grepCommands, " | ")), nil
 }
 
 func fileExists(path string) (bool, error) {

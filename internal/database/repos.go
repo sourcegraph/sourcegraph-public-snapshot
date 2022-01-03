@@ -35,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/npmpackages"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -115,10 +116,6 @@ func (s *repoStore) Transact(ctx context.Context) (RepoStore, error) {
 // Get finds and returns the repo with the given repository ID from the database.
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err error) {
-	if Mocks.Repos.Get != nil {
-		return Mocks.Repos.Get(ctx, id)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.Get", "")
 	defer func() {
 		tr.SetError(err)
@@ -194,10 +191,6 @@ func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.Re
 //
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *types.Repo, err error) {
-	if Mocks.Repos.GetByName != nil {
-		return Mocks.Repos.GetByName(ctx, nameOrURI)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.GetByName", "")
 	defer func() {
 		tr.SetError(err)
@@ -240,10 +233,6 @@ func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 // RepoHashedName is the repository hashed name.
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.RepoHashedName) (_ *types.Repo, err error) {
-	if Mocks.Repos.GetByHashedName != nil {
-		return Mocks.Repos.GetByHashedName(ctx, repoHashedName)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.GetByHashedName", "")
 	defer func() {
 		tr.SetError(err)
@@ -269,10 +258,6 @@ func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.Repo
 // GetByIDs returns a list of repositories by given IDs. The number of results list could be less
 // than the candidate list due to no repository is associated with some IDs.
 func (s *repoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) (_ []*types.Repo, err error) {
-	if Mocks.Repos.GetByIDs != nil {
-		return Mocks.Repos.GetByIDs(ctx, ids...)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.GetByIDs", "")
 	defer func() {
 		tr.SetError(err)
@@ -299,10 +284,6 @@ func (s *repoStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (ma
 }
 
 func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, err error) {
-	if Mocks.Repos.Count != nil {
-		return Mocks.Repos.Count(ctx, opt)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.Count", "")
 	defer func() {
 		if err != nil {
@@ -517,6 +498,8 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(extsvc.OtherRepoMetadata)
 	case extsvc.TypeJVMPackages:
 		r.Metadata = new(jvmpackages.Metadata)
+	case extsvc.TypeNPMPackages:
+		r.Metadata = new(npmpackages.Metadata)
 	default:
 		log15.Warn("scanRepo - unknown service type", "typ", typ)
 		return nil
@@ -1167,7 +1150,7 @@ WHERE
 	(
 		repo.stars >= %s
 		OR
-		lower(repo.name) LIKE 'src.fedoraproject.org/%%'
+		lower(repo.name) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'
 		OR
 		repo.id IN (
 			SELECT
@@ -1548,10 +1531,6 @@ LIMIT 1
 // match the given clone url. If not repo is found, an empty string and nil error
 // are returned.
 func (s *repoStore) GetFirstRepoNamesByCloneURL(ctx context.Context, cloneURL string) (api.RepoName, error) {
-	if Mocks.Repos.GetFirstRepoNamesByCloneURL != nil {
-		return Mocks.Repos.GetFirstRepoNamesByCloneURL(ctx, cloneURL)
-	}
-
 	name, _, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf(getFirstRepoNamesByCloneURLQueryFmtstr, cloneURL)))
 	if err != nil {
 		return "", err
@@ -1648,7 +1627,7 @@ func parseCursorConds(cs types.MultiCursor) (cond *sqlf.Query, err error) {
 // will be fast (even if there are many repos) because the query can be constrained
 // efficiently to only the repos in the group.
 func parseIncludePattern(pattern string) (exact, like []string, regexp string, err error) {
-	re, err := regexpsyntax.Parse(pattern, regexpsyntax.OneLine)
+	re, err := regexpsyntax.Parse(pattern, regexpsyntax.Perl)
 	if err != nil {
 		return nil, nil, "", err
 	}

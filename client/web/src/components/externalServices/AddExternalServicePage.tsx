@@ -1,10 +1,10 @@
 import * as H from 'history'
 import React, { useEffect, useCallback, useState } from 'react'
 
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 import { ExternalServiceFields, Scalars, AddExternalServiceInput } from '../../graphql-operations'

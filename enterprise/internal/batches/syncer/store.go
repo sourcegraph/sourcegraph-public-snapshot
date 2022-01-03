@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type SyncStore interface {
@@ -21,7 +20,7 @@ type SyncStore interface {
 	Repos() database.RepoStore
 	ExternalServices() database.ExternalServiceStore
 	Clock() func() time.Time
-	DB() dbutil.DB
+	DatabaseDB() database.DB
 	GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
 	UserCredentials() database.UserCredentialsStore
 }

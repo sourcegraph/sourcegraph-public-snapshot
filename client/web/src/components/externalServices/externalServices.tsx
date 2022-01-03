@@ -6,6 +6,7 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import GitIcon from 'mdi-react/GitIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
 import LanguageJavaIcon from 'mdi-react/LanguageJavaIcon'
+import NpmIcon from 'mdi-react/NpmIcon'
 import React from 'react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
@@ -17,6 +18,7 @@ import githubSchemaJSON from '../../../../../schema/github.schema.json'
 import gitlabSchemaJSON from '../../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../../schema/gitolite.schema.json'
 import jvmPackagesSchemaJSON from '../../../../../schema/jvm-packages.schema.json'
+import npmPackagesSchemaJSON from '../../../../../schema/npm-packages.schema.json'
 import otherExternalServiceSchemaJSON from '../../../../../schema/other_external_service.schema.json'
 import pagureSchemaJSON from '../../../../../schema/pagure.schema.json'
 import perforceSchemaJSON from '../../../../../schema/perforce.schema.json'
@@ -1233,6 +1235,39 @@ const PAGURE: AddExternalServiceOptions = {
     editorActions: [],
 }
 
+const NPM_PACKAGES: AddExternalServiceOptions = {
+    kind: ExternalServiceKind.NPMPACKAGES,
+    title: 'NPM Dependencies',
+    icon: NpmIcon,
+    jsonSchema: npmPackagesSchemaJSON,
+    defaultDisplayName: 'NPM Dependencies',
+    defaultConfig: `{
+  "registry": "https://registry.npmjs.org",
+  "dependencies": []
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <Field>registry</Field> to the applicable NPM registry. For example,
+                    <code>"https://registry.npmjs.mycompany.com"</code> or <code>"https://registry.npmjs.org"</code>.
+                    Note that this URL may not be the same as where packages can be searched (such as{' '}
+                    <code>https://www.npmjs.org</code>). If you're unsure about the exact URL URL for a custom registry,
+                    check the URLs for packages that have already been resolved, such as those in existing lock files
+                    like <code>yarn.lock</code>.
+                </li>
+                <li>
+                    In the configuration below, set <Field>dependencies</Field> to the list of packages that you want to
+                    manually add. For example,
+                    <code>"react@17.0.2"</code> or <code>"@types/lodash@4.14.177"</code>. Version ranges are not
+                    supported.
+                </li>
+            </ol>
+        </div>
+    ),
+    editorActions: [],
+}
+
 export const codeHostExternalServices: Record<string, AddExternalServiceOptions> = {
     github: GITHUB_DOTCOM,
     ghe: GITHUB_ENTERPRISE,
@@ -1247,6 +1282,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.jvmPackages === 'enabled' ? { jvmPackages: JVM_PACKAGES } : {}),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
+    ...(window.context?.experimentalFeatures?.npmPackages === 'enabled' ? { npmPackages: NPM_PACKAGES } : {}),
 }
 
 export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
@@ -1270,4 +1306,5 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
     [ExternalServiceKind.PERFORCE]: PERFORCE,
     [ExternalServiceKind.JVMPACKAGES]: JVM_PACKAGES,
     [ExternalServiceKind.PAGURE]: PAGURE,
+    [ExternalServiceKind.NPMPACKAGES]: NPM_PACKAGES,
 }

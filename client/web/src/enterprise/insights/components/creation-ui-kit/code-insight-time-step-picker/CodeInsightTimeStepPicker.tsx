@@ -44,7 +44,7 @@ export const CodeInsightTimeStepPicker = forwardRef<HTMLInputElement, CodeInsigh
             <FormGroup
                 name="insight step group"
                 title="Granularity: distance between data points"
-                description="The prototype supports 7 datapoints, so your total x-axis timeframe is 6 times the distance between each point."
+                description="The prototype supports timeframe up to 7 datapoints (for example: 2 weeks x 7 = 14 weeks timeframe)"
                 error={error}
                 className="mt-4"
                 labelClassName={styles.groupLabel}

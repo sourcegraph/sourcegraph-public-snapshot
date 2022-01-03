@@ -1,79 +1,109 @@
 import classNames from 'classnames'
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
+
+import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
+
+import { observeResize } from '../../../../../../../../../util/dom'
 
 import styles from './ScrollBox.module.scss'
 
-const addShutterElementsToTarget = (element: HTMLDivElement, fader: HTMLDivElement): void => {
-    const { scrollTop, scrollHeight, offsetHeight } = element
+/**
+ * Mutates element (adds/removes css classes) based on scroll height and client height.
+ */
+function addShutterElementsToTarget(parentElement: HTMLDivElement, scrollElement: HTMLDivElement): void {
+    const { scrollTop, scrollHeight, offsetHeight } = scrollElement
 
     if (scrollTop === 0) {
-        fader?.classList.remove(styles.faderHasTopScroll)
+        parentElement.classList.remove(styles.rootWithTopFader)
     } else {
-        fader?.classList.add(styles.faderHasTopScroll)
+        parentElement.classList.add(styles.rootWithTopFader)
     }
 
     if (offsetHeight + scrollTop === scrollHeight) {
-        fader?.classList.remove(styles.faderHasBottomScroll)
+        parentElement.classList.remove(styles.rootWithBottomFader)
     } else {
-        fader?.classList.add(styles.faderHasBottomScroll)
+        parentElement.classList.add(styles.rootWithBottomFader)
     }
 }
 
+function hasElementScroll(target: HTMLElement): boolean {
+    target.style.overflow = 'scroll'
+
+    const hasScroll = isFirefox()
+        ? // For some reason in Firefox it's possible to get a wrong scrollHeight with 1% ~ 1px
+          // static error. To avoid this "fake" scroll we take into calculation a static error
+          // value which equals to 1% of scrollable container height.
+          target.scrollHeight > Math.round(target.clientHeight + target.clientHeight / 100)
+        : target.scrollHeight > target.clientHeight
+
+    target.style.overflow = ''
+
+    return hasScroll
+}
+
 interface ScrollBoxProps extends React.HTMLAttributes<HTMLDivElement> {
-    scrollEnabled?: boolean
-    as?: React.ElementType
-    rootClassName?: string
+    className?: string
 }
 
 export const ScrollBox: React.FunctionComponent<ScrollBoxProps> = props => {
-    const { children, as: Component = 'div', scrollEnabled = true, rootClassName, ...otherProps } = props
+    const { children, className, ...otherProps } = props
 
-    const scrollBoxReference = useRef<HTMLDivElement>(null)
-    const faderReference = useRef<HTMLDivElement>(null)
+    const [parentElement, setParentElement] = useState<HTMLDivElement | null>()
+    const [hasScroll, setHasScroll] = useState(false)
 
     useEffect(() => {
-        const fader = faderReference.current
-        const scrollBoxElement = scrollBoxReference.current
-
-        if (!scrollBoxElement || !fader || !scrollEnabled) {
+        if (!parentElement) {
             return
         }
 
-        // On mount initial call
-        addShutterElementsToTarget(scrollBoxElement, fader)
-
         function onScroll(event: Event): void {
-            if (!event.target) {
+            if (!event.target || !parentElement) {
                 return
             }
 
-            addShutterElementsToTarget(event.target as HTMLDivElement, fader as HTMLDivElement)
+            addShutterElementsToTarget(parentElement, event.target as HTMLDivElement)
 
             event.stopPropagation()
             event.preventDefault()
         }
 
-        scrollBoxElement.addEventListener('scroll', onScroll)
+        parentElement.addEventListener('scroll', onScroll)
 
-        return () => scrollBoxElement.removeEventListener('scroll', onScroll)
-    }, [scrollEnabled])
+        const resizeSubscription = observeResize(parentElement).subscribe(entry => {
+            if (!entry) {
+                return
+            }
 
-    // If block doesn't have scroll content we render simple component without additional
-    // shutter elements for scroll visual effects
-    if (!scrollEnabled) {
-        return (
-            <Component {...otherProps} className={classNames(otherProps.className, rootClassName)}>
-                {children}
-            </Component>
-        )
-    }
+            const target = entry.target as HTMLElement
+
+            // Delay overflow content measurements while browser renders
+            // parent content
+            requestAnimationFrame(() => {
+                setHasScroll(hasElementScroll(target))
+                addShutterElementsToTarget(parentElement, parentElement)
+            })
+        })
+
+        return () => {
+            parentElement.removeEventListener('scroll', onScroll)
+            resizeSubscription.unsubscribe()
+        }
+    }, [parentElement])
 
     return (
-        <div {...otherProps} className={classNames(styles.root, rootClassName)}>
-            <div ref={faderReference} className={styles.fader} />
-            <Component ref={scrollBoxReference} className={classNames(otherProps.className, styles.scrollbox)}>
-                {children}
-            </Component>
+        <div
+            {...otherProps}
+            ref={setParentElement}
+            className={classNames(styles.root, className, { [styles.rootWithScroll]: hasScroll })}
+        >
+            {hasScroll && (
+                <>
+                    <div className={classNames(styles.fader, styles.faderTop)} />
+                    <div className={classNames(styles.fader, styles.faderBottom)} />
+                </>
+            )}
+
+            {children}
         </div>
     )
 }

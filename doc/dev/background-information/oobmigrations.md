@@ -181,7 +181,7 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 	defer func() { err = tx.Done(err) }()
 
 	// Select and lock a single record within this transaction. This ensures
-	// that many frontend instances can run the same migration concurrently
+	// that many worker instances can run the same migration concurrently
 	// without them all trying to convert the same record.
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
 		"SELECT id, payload FROM skunk_payloads WHERE payload2 IS NULL LIMIT %s FOR UPDATE SKIP LOCKED",
@@ -262,7 +262,7 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 }
 ```
 
-Lastly, in order for this migration to run, we need to register it to the [outOfBandMigrator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.25.0/-/blob/cmd/frontend/internal/cli/serve_cmd.go#L173:2). This instance is also available in the initialization functions for each component in the enterprise frontend.
+Lastly, in order for this migration to run, we need to [register it to the out of band migrator runner instance](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:.*.go+%28outOfBandMigration%29%3Frunner%5C.Register%5C%28&patternType=regexp) in the OSS or enterprise `worker` service.
 
 ```go
 migrator := database.NewMigrator(db)
