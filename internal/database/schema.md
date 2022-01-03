@@ -173,8 +173,8 @@ Foreign-key constraints:
  unsupported          | boolean                  |           | not null | false
  skipped              | boolean                  |           | not null | false
  cached_result_found  | boolean                  |           | not null | false
- step_cache_results   | jsonb                    |           | not null | '{}'::jsonb
  skipped_steps        | integer[]                |           | not null | '{}'::integer[]
+ step_cache_results   | jsonb                    |           | not null | '{}'::jsonb
 Indexes:
     "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
 Check constraints:
