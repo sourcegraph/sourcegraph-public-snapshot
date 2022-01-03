@@ -40,34 +40,55 @@ func (r *schemaResolver) LinkMetadata(ctx context.Context, args *linkMetadataArg
 
 func (r *LinkMetadataResolver) getMetadataWithCaching(url string) LinkMetadata {
 	if linkMetadata, ok := getMetadataFromCache(url); ok {
-		return *linkMetadata
+		return linkMetadata
 	}
 	htmlSource := r.retrieveHtml(url)
 	linkMetadata := parseBody(htmlSource)
-	if linkMetadataJsonString, err := json.Marshal(linkMetadata); err == nil {
+	if linkMetadataJsonBytes, err := linkMetadata.toJSON(); err == nil {
 		log15.Debug("Saving to cache: ", "url", url)
-		redisCache.Set(url, linkMetadataJsonString)
+		redisCache.Set(url, linkMetadataJsonBytes)
 	} else {
 		log15.Warn("Error marshalling link metadata.", "error", err, "linkMetadata", linkMetadata)
 	}
 	return linkMetadata
 }
 
-func getMetadataFromCache(url string) (*LinkMetadata, bool) {
+func getMetadataFromCache(url string) (LinkMetadata, bool) {
 	var linkMetadata LinkMetadata
 	if bytes, ok := redisCache.Get(url); ok {
 		// Cache hit
 		log15.Debug("Cache hit for", "url", url)
-		if err := json.Unmarshal(bytes, &linkMetadata); err != nil {
+		if err := linkMetadata.fromJSON(bytes); err != nil {
 			log15.Warn("Failed to unmarshal cached link metadata.", "url", url, "err", err)
-			return &LinkMetadata{}, false
+			return LinkMetadata{}, false
 		} else {
-			return &linkMetadata, true
+			return linkMetadata, true
 		}
 	} else {
 		// Cache miss
 		log15.Debug("Cache miss for", "url", url)
-		return &LinkMetadata{}, false
+		return LinkMetadata{}, false
+	}
+}
+
+func (m *LinkMetadata) toJSON() ([]byte, error) {
+	temp := map[string]interface{}{
+		"title":       m.title,
+		"description": m.description,
+		"imageUrl":    m.imageUrl,
+	}
+	return json.Marshal(temp)
+}
+
+func (m *LinkMetadata) fromJSON(jsonBytes []byte) error {
+	temp := map[string]string{}
+	if err := json.Unmarshal(jsonBytes, &temp); err != nil {
+		return err
+	} else {
+		m.title = strptr(temp["title"])
+		m.description = strptr(temp["description"])
+		m.imageUrl = strptr(temp["imageUrl"])
+		return nil
 	}
 }
 
