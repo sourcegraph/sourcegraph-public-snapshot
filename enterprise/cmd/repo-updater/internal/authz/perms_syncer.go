@@ -47,7 +47,7 @@ type PermsSyncer struct {
 	// The database interface for any repos and external services operations.
 	reposStore *repos.Store
 	// The database interface for any permissions operations.
-	permsStore *edb.PermsStore
+	permsStore edb.PermsStore
 	// The mockable function to return the current time.
 	clock func() time.Time
 	// The rate limit registry for code hosts.
@@ -59,7 +59,7 @@ type PermsSyncer struct {
 // NewPermsSyncer returns a new permissions syncing manager.
 func NewPermsSyncer(
 	reposStore *repos.Store,
-	permsStore *edb.PermsStore,
+	permsStore edb.PermsStore,
 	clock func() time.Time,
 	rateLimiterRegistry *ratelimit.Registry,
 ) *PermsSyncer {

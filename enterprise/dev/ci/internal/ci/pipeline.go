@@ -92,7 +92,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	const minimumUpgradeableVersion = "3.34.0"
+	const minimumUpgradeableVersion = "3.35.0"
 
 	// Set up operations that add steps to a pipeline.
 	var ops operations.Set
@@ -216,7 +216,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			codeIntelQA(c.candidateImageTag()),
 			serverE2E(c.candidateImageTag()),
 			serverQA(c.candidateImageTag()),
-			clusterQA(c.candidateImageTag()),
+			// Flaky deployment. See https://github.com/sourcegraph/sourcegraph/issues/25977
+			// clusterQA(c.candidateImageTag()),
 			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion))
 
 		// All operations before this point are required

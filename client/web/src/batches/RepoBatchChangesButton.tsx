@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { FC, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -31,7 +32,10 @@ export const RepoBatchChangesButton: FC<RepoBatchChangesButtonProps> = ({
     const { open, merged } = stats.changesetsStats
 
     return (
-        <Link className={className} to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}>
+        <Link
+            className={classNames('btn btn-outline-secondary', className)}
+            to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}
+        >
             <BatchChangesIcon className="icon-inline" /> Batch Changes
             {open > 0 && (
                 <Badge

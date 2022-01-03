@@ -1,0 +1,36 @@
+.card {
+    --card-bg: var(--color-bg-1);
+    --card-border-color: var(--border-color-2);
+    --card-border-radius: var(--border-radius);
+
+    // Added inset box shadow to prevent interactive card jump on hover and focus
+    --hover-box-shadow: 0 0 0 1px var(--primary) inset;
+    --card-spacer-y: 0.5rem;
+    --card-spacer-x: 0.5rem;
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0; // See https://github.com/twbs/bootstrap/pull/22740#issuecomment-305868106
+    word-wrap: break-word;
+    background-color: var(--card-bg);
+    background-clip: border-box;
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--card-border-color);
+    border-radius: var(--card-border-radius);
+}
+
+.card-interactive {
+    cursor: pointer;
+    &:hover {
+        --card-border-color: var(--primary);
+        box-shadow: var(--hover-box-shadow);
+    }
+    &:focus {
+        // prevent double border on hover and focus
+        --card-border-color: transparent;
+        box-shadow: var(--focus-box-shadow);
+        outline: none;
+    }
+}

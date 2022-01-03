@@ -1,16 +1,15 @@
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 import React, { CSSProperties } from 'react'
+
+import { isErrorLike } from '@sourcegraph/common'
 
 import { ActionItem, ActionItemComponentProps } from '../actions/ActionItem'
 import { NotificationType } from '../api/extension/extensionHostApi'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { ThemeProps } from '../theme'
-import { isErrorLike } from '../util/errors'
 import { sanitizeClass } from '../util/strings'
 
-import { toNativeEvent } from './helpers'
 import hoverOverlayStyle from './HoverOverlay.module.scss'
 import type { HoverContext, HoverOverlayBaseProps, GetAlertClassName } from './HoverOverlay.types'
 import { HoverOverlayAlerts, HoverOverlayAlertsProps } from './HoverOverlayAlerts'
@@ -21,15 +20,11 @@ import { useLogTelemetryEvent } from './useLogTelemetryEvent'
 
 const LOADING = 'loading' as const
 
-const transformMouseEvent = (handler: (event: MouseEvent) => void) => (event: React.MouseEvent<HTMLElement>) =>
-    handler(toNativeEvent(event))
-
 export type { HoverContext }
 
 export interface HoverOverlayClassProps {
     /** An optional class name to apply to the outermost element of the HoverOverlay */
     className?: string
-    closeButtonClassName?: string
 
     iconClassName?: string
     badgeClassName?: string
@@ -52,8 +47,6 @@ export interface HoverOverlayProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
     /** A ref callback to get the root overlay element. Use this to calculate the position. */
     hoverRef?: React.Ref<HTMLDivElement>
-    /** Called when the close button is clicked */
-    onCloseButtonClick?: (event: MouseEvent) => void
 
     /** Show Sourcegraph logo alongside prompt */
     useBrandedLogo?: boolean
@@ -84,11 +77,9 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
         platformContext,
         telemetryService,
         extensionsController,
-        showCloseButton,
         location,
 
         className,
-        closeButtonClassName,
         iconClassName,
         badgeClassName,
         actionItemClassName,
@@ -97,7 +88,6 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
 
         getAlertClassName,
         onAlertDismissed,
-        onCloseButtonClick,
 
         useBrandedLogo,
         useBrandedBadge,
@@ -122,23 +112,9 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                 data-testid="hover-overlay-contents"
                 className={classNames(
                     style.hoverOverlayContents,
-                    hoverOrError === LOADING && style.hoverOverlayContentsLoading,
-                    showCloseButton && style.hoverOverlayContentsWithCloseButton
+                    hoverOrError === LOADING && style.hoverOverlayContentsLoading
                 )}
             >
-                {showCloseButton && (
-                    <button
-                        type="button"
-                        onClick={onCloseButtonClick ? transformMouseEvent(onCloseButtonClick) : undefined}
-                        className={classNames(
-                            hoverOverlayStyle.closeButton,
-                            closeButtonClassName,
-                            hoverOrError === LOADING && hoverOverlayStyle.closeButtonLoading
-                        )}
-                    >
-                        <CloseIcon className={iconClassName} />
-                    </button>
-                )}
                 <HoverOverlayContents
                     hoverOrError={hoverOrError}
                     iconClassName={iconClassName}

@@ -62,19 +62,11 @@ func (s *subRepoPermsStore) With(other basestore.ShareableStore) SubRepoPermsSto
 
 // Transact begins a new transaction and make a new SubRepoPermsStore over it.
 func (s *subRepoPermsStore) Transact(ctx context.Context) (SubRepoPermsStore, error) {
-	if Mocks.SubRepoPerms.Transact != nil {
-		return Mocks.SubRepoPerms.Transact(ctx)
-	}
-
 	txBase, err := s.Store.Transact(ctx)
 	return &subRepoPermsStore{Store: txBase}, err
 }
 
 func (s *subRepoPermsStore) Done(err error) error {
-	if Mocks.SubRepoPerms.Transact != nil {
-		return err
-	}
-
 	return s.Store.Done(err)
 }
 
@@ -191,6 +183,5 @@ WHERE user_id = %s
 }
 
 type MockSubRepoPerms struct {
-	Transact       func(ctx context.Context) (*subRepoPermsStore, error)
 	UpsertWithSpec func(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error
 }

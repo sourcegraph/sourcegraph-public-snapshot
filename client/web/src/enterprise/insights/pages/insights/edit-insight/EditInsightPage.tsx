@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
 import { Link } from 'react-router-dom'
@@ -17,7 +16,6 @@ import { isCaptureGroupInsight, isLangStatsInsight, isSearchBasedInsight } from 
 import { EditCaptureGroupInsight } from './components/EditCaptureGroupInsight'
 import { EditLangStatsInsight } from './components/EditLangStatsInsight'
 import { EditSearchBasedInsight } from './components/EditSearchInsight'
-import styles from './EditInsightPage.module.scss'
 import { useEditPageHandlers } from './hooks/use-edit-page-handlers'
 
 export interface EditInsightPageProps {
@@ -64,7 +62,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
     }
 
     return (
-        <Page className={classNames('col-10', styles.creationPage)}>
+        <Page className="container">
             <PageTitle title="Edit code insight" />
 
             <div className="mb-5">

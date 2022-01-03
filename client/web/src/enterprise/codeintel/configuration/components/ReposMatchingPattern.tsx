@@ -3,8 +3,7 @@ import { debounce } from 'lodash'
 import TrashIcon from 'mdi-react/TrashIcon'
 import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './ReposMatchingPattern.module.scss'
 

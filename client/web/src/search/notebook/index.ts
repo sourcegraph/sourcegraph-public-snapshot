@@ -3,6 +3,7 @@ import { Observable } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
+import { asError } from '@sourcegraph/common'
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
@@ -13,7 +14,6 @@ import {
     AggregateStreamingSearchResults,
     emptyAggregateResults,
 } from '@sourcegraph/shared/src/search/stream'
-import { asError } from '@sourcegraph/shared/src/util/errors'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 import { LATEST_VERSION } from '../results/StreamingSearchResults'

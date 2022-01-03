@@ -1,8 +1,8 @@
 import classNames from 'classnames'
 import React, { useEffect, useState } from 'react'
 
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../../auth'
 import { eventLogger } from '../../tracking/eventLogger'

@@ -49,7 +49,10 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
                     {({ width, height }) => <LineChartContent {...otherProps} width={width} height={height} />}
                 </ParentSize>
 
-                <ScrollBox aria-hidden={true} className={classNames({ [styles.legendHorizontal]: isHorizontal })}>
+                <ScrollBox
+                    aria-hidden={true}
+                    className={classNames(styles.legend, { [styles.legendHorizontal]: isHorizontal })}
+                >
                     <ul className={classNames(styles.legendList, { [styles.legendListHorizontal]: isHorizontal })}>
                         {props.series.map(line => (
                             <li key={line.dataKey.toString()} className={styles.legendItem}>

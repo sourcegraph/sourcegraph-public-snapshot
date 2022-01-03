@@ -9,6 +9,7 @@ import (
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/google/go-github/v41/github"
+	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
 )
 
@@ -17,6 +18,7 @@ func main() {
 		ctx            = context.Background()
 		buildkiteToken string
 		githubToken    string
+		slackToken     string
 		slackWebhook   string
 		pipeline       string
 		branch         string
@@ -26,6 +28,7 @@ func main() {
 
 	flag.StringVar(&buildkiteToken, "buildkite.token", "", "mandatory buildkite token")
 	flag.StringVar(&githubToken, "github.token", "", "mandatory github token")
+	flag.StringVar(&slackToken, "slack.token", "", "mandatory slack api token")
 	flag.StringVar(&slackWebhook, "slack.webhook", "", "Slack Webhook URL to post the results on")
 	flag.StringVar(&pipeline, "pipeline", "sourcegraph", "name of the pipeline to inspect")
 	flag.StringVar(&branch, "branch", "main", "name of the branch to inspect")
@@ -35,7 +38,7 @@ func main() {
 
 	config, err := buildkite.NewTokenConfig(buildkiteToken, false)
 	if err != nil {
-		panic(err)
+		log.Fatal("buildkite.NewTokenConfig: ", err)
 	}
 	// Buildkite client
 	bkc := buildkite.NewClient(config.Client())
@@ -45,43 +48,51 @@ func main() {
 		&oauth2.Token{AccessToken: githubToken},
 	)))
 
+	// Slack client
+	slc := slack.New(slackToken)
+
 	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
 	builds, _, err := bkc.Builds.ListByPipeline("sourcegraph", pipeline, &buildkite.BuildsListOptions{
-		Branch: branch,
+		// Branch: branch,
+		Branch: "main",
 		// Fix to high page size just in case, default is 30
 		// https://buildkite.com/docs/apis/rest-api#pagination
 		ListOptions: buildkite.ListOptions{PerPage: 99},
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Builds.ListByPipeline: ", err)
 	}
 
 	opts := CheckOptions{
 		FailuresThreshold: threshold,
 		BuildTimeout:      time.Duration(timeoutMins) * time.Minute,
+		GitHubClient:      ghc,
 	}
-	fmt.Printf("running buildchecker over %d builds with option: %+v\n", len(builds), opts)
+	log.Printf("running buildchecker over %d builds with option: %+v\n", len(builds), opts)
 	results, err := CheckBuilds(
 		ctx,
 		NewBranchLocker(ghc, "sourcegraph", "sourcegraph", branch),
+		NewGithubSlackUserResolver(ghc, slc, "sourcegraph", "sourcegraph"),
 		builds,
 		opts,
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("CheckBuilds: ", err)
 	}
+	log.Printf("results: %+v\n", err)
 
 	// Only post an update if the lock has been modified
 	lockModified := results.Action != nil
 	if lockModified {
 		// Post update first to avoid invisible changes
-		if err := postSlackUpdate(slackWebhook, slackSummary(lockModified, results.FailedCommits)); err != nil {
+		summary := slackSummary(results.LockBranch, results.FailedCommits)
+		if err := postSlackUpdate(slackWebhook, summary); err != nil {
 			// If action is an unlock, try to unlock anyway
 			if !results.LockBranch {
 				log.Println("slack update failed but action is an unlock, trying to unlock branch anyway")
 				goto POST
 			}
-			log.Fatal(err)
+			log.Fatal("postSlackUpdate: ", err)
 		}
 
 	POST:
@@ -89,9 +100,9 @@ func main() {
 		if err := results.Action(); err != nil {
 			slackErr := postSlackUpdate(slackWebhook, fmt.Sprintf("Failed to execute action (%+v): %s", results, err))
 			if slackErr != nil {
-				log.Println(slackErr)
+				log.Fatal("postSlackUpdate: ", err)
 			}
-			log.Fatal(err)
+			log.Fatal("results.Action: ", err)
 		}
 	}
 }

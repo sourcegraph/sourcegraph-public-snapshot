@@ -163,4 +163,10 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
         condition: () => Boolean(window.context?.executorsEnabled),
     },
+    // Organization routes
+    {
+        path: '/organizations/early-access-orgs-code',
+        render: lazyComponent(() => import('../organizations/EarlyAccessOrgsCodeForm'), 'EarlyAccessOrgsCodeForm'),
+        exact: true,
+    },
 ]

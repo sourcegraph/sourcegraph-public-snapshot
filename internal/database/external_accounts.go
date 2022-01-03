@@ -129,17 +129,10 @@ func (s *userExternalAccountsStore) getEncryptionKey() encryption.Key {
 }
 
 func (s *userExternalAccountsStore) Get(ctx context.Context, id int32) (*extsvc.Account, error) {
-	if Mocks.ExternalAccounts.Get != nil {
-		return Mocks.ExternalAccounts.Get(id)
-	}
 	return s.getBySQL(ctx, sqlf.Sprintf("WHERE id=%d AND deleted_at IS NULL LIMIT 1", id))
 }
 
 func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
-	if Mocks.ExternalAccounts.LookupUserAndSave != nil {
-		return Mocks.ExternalAccounts.LookupUserAndSave(spec, data)
-	}
-
 	var (
 		encrypted, keyID string
 	)
@@ -183,10 +176,6 @@ RETURNING user_id
 }
 
 func (s *userExternalAccountsStore) AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
-	if Mocks.ExternalAccounts.AssociateUserAndSave != nil {
-		return Mocks.ExternalAccounts.AssociateUserAndSave(userID, spec, data)
-	}
-
 	// This "upsert" may cause us to return an ephemeral failure due to a race condition, but it
 	// won't result in inconsistent data.  Wrap in transaction.
 
@@ -275,10 +264,6 @@ AND deleted_at IS NULL
 }
 
 func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error) {
-	if Mocks.ExternalAccounts.CreateUserAndSave != nil {
-		return Mocks.ExternalAccounts.CreateUserAndSave(newUser, spec, data)
-	}
-
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return 0, err
@@ -356,10 +341,6 @@ WHERE id = $1
 }
 
 func (s *userExternalAccountsStore) Delete(ctx context.Context, id int32) error {
-	if Mocks.ExternalAccounts.Delete != nil {
-		return Mocks.ExternalAccounts.Delete(id)
-	}
-
 	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
@@ -384,10 +365,6 @@ type ExternalAccountsListOptions struct {
 }
 
 func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error) {
-	if Mocks.ExternalAccounts.List != nil {
-		return Mocks.ExternalAccounts.List(opt)
-	}
-
 	tr, ctx := trace.New(ctx, "UserExternalAccountsStore.List", "")
 	defer func() {
 		if err != nil {
@@ -407,10 +384,6 @@ func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccoun
 }
 
 func (s *userExternalAccountsStore) Count(ctx context.Context, opt ExternalAccountsListOptions) (int, error) {
-	if Mocks.ExternalAccounts.Count != nil {
-		return Mocks.ExternalAccounts.Count(opt)
-	}
-
 	conds := s.listSQL(opt)
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM user_external_accounts WHERE %s", sqlf.Join(conds, "AND"))
 	var count int
@@ -502,15 +475,8 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 
 // MockExternalAccounts mocks the Stores.ExternalAccounts DB store.
 type MockExternalAccounts struct {
-	Get                  func(id int32) (*extsvc.Account, error)
-	LookupUserAndSave    func(extsvc.AccountSpec, extsvc.AccountData) (userID int32, err error)
-	AssociateUserAndSave func(userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error
-	CreateUserAndSave    func(NewUser, extsvc.AccountSpec, extsvc.AccountData) (createdUserID int32, err error)
-	Delete               func(id int32) error
-	List                 func(ExternalAccountsListOptions) ([]*extsvc.Account, error)
-	Count                func(ExternalAccountsListOptions) (int, error)
-	TouchExpired         func(ctx context.Context, id int32) error
-	TouchLastValid       func(ctx context.Context, id int32) error
+	TouchExpired   func(ctx context.Context, id int32) error
+	TouchLastValid func(ctx context.Context, id int32) error
 }
 
 // MaybeEncrypt encrypts data with the given key returns the id of the key. If the key is nil, it returns the data unchanged.

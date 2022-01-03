@@ -187,7 +187,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			defer cleanupPermsTables(t, s.store)
+			defer cleanupPermsTables(t, s.store.(*permsStore))
 
 			globals.SetPermissionsUserMapping(test.config)
 
@@ -292,7 +292,7 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			defer cleanupPermsTables(t, s.store)
+			defer cleanupPermsTables(t, s.store.(*permsStore))
 
 			for _, update := range test.updates {
 				err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{

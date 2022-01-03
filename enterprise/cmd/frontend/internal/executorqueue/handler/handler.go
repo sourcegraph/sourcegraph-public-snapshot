@@ -8,7 +8,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -16,7 +16,7 @@ import (
 
 type handler struct {
 	QueueOptions
-	executorStore database.ExecutorStore
+	executorStore executor.Store
 }
 
 type QueueOptions struct {
@@ -36,7 +36,7 @@ type QueueOptions struct {
 	CanceledRecordsFetcher func(ctx context.Context, executorName string) (canceledIDs []int, err error)
 }
 
-func newHandler(executorStore database.ExecutorStore, queueOptions QueueOptions) *handler {
+func newHandler(executorStore executor.Store, queueOptions QueueOptions) *handler {
 	return &handler{
 		executorStore: executorStore,
 		QueueOptions:  queueOptions,

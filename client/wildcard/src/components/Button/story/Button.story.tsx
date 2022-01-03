@@ -1,5 +1,5 @@
 import { boolean, select } from '@storybook/addon-knobs'
-import { Meta } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 
@@ -11,7 +11,7 @@ import { BUTTON_VARIANTS, BUTTON_SIZES } from '../constants'
 
 import { ButtonVariants } from './ButtonVariants'
 
-const Story: Meta = {
+const config: Meta = {
     title: 'wildcard/Button',
 
     decorators: [
@@ -31,9 +31,9 @@ const Story: Meta = {
     },
 }
 
-export default Story
+export default config
 
-export const Simple = () => (
+export const Simple: Story = () => (
     <Button
         variant={select('Variant', BUTTON_VARIANTS, 'primary')}
         size={select('Size', BUTTON_SIZES, undefined)}
@@ -44,7 +44,7 @@ export const Simple = () => (
     </Button>
 )
 
-export const AllButtons = () => (
+export const AllButtons: Story = () => (
     <>
         <h1>Buttons</h1>
         <h2>Variants</h2>
@@ -63,7 +63,6 @@ export const AllButtons = () => (
         <Button
             variant="secondary"
             as="a"
-            // @ts-expect-error (providing `as` changes possible props)
             href="https://example.com"
             target="_blank"
             rel="noopener noreferrer"

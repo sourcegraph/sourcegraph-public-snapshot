@@ -146,7 +146,6 @@ export function quoteIfNeeded(string: string): string {
 
 export interface ParsedSearchQueryProps {
     parsedSearchQuery: string
-    setParsedSearchQuery: (query: string) => void
 }
 
 export interface PatternTypeProps {

@@ -3,7 +3,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
 import React from 'react'
 
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/common'
 
 import { isWebpackChunkError } from '../sentry/shouldErrorBeReported'
 

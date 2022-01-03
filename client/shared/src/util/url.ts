@@ -1,3 +1,4 @@
+import { tryCatch } from '@sourcegraph/common'
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
@@ -6,7 +7,6 @@ import { discreteValueAliases } from '../search/query/filters'
 import { appendContextFilter } from '../search/query/transformer'
 import { findFilter, FilterKind } from '../search/query/validate'
 
-import { tryCatch } from './errors'
 import { replaceRange } from './strings'
 
 export interface RepoSpec {

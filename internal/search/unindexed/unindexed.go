@@ -315,6 +315,8 @@ type RepoSubsetTextSearch struct {
 	UseIndex          query.YesNoOnly
 	ContainsRefGlobs  bool
 	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
+
+	IsRequired bool
 }
 
 func (t *RepoSubsetTextSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
@@ -342,6 +344,10 @@ func (*RepoSubsetTextSearch) Name() string {
 	return "RepoSubsetText"
 }
 
+func (t *RepoSubsetTextSearch) Required() bool {
+	return t.IsRequired
+}
+
 type RepoUniverseTextSearch struct {
 	GlobalZoektQuery *zoektutil.GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
@@ -350,6 +356,8 @@ type RepoUniverseTextSearch struct {
 	RepoOptions search.RepoOptions
 	Db          database.DB
 	UserID      int32
+
+	IsRequired bool
 }
 
 func (t *RepoUniverseTextSearch) Run(ctx context.Context, stream streaming.Sender, _ searchrepos.Pager) error {
@@ -377,4 +385,8 @@ func (t *RepoUniverseTextSearch) Run(ctx context.Context, stream streaming.Sende
 
 func (*RepoUniverseTextSearch) Name() string {
 	return "RepoUniverseText"
+}
+
+func (t *RepoUniverseTextSearch) Required() bool {
+	return t.IsRequired
 }

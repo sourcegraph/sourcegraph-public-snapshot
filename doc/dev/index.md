@@ -94,7 +94,7 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Developing observability](background-information/observability/index.md)
 - [Developing Sourcegraph extensions](background-information/sourcegraph_extensions.md)
 - [Dependencies and generated code](background-information/dependencies_and_codegen.md)
-- [Code reviews](background-information/code_reviews.md)
+- [Code reviews](background-information/pull_request_reviews.md)
 - [Commit messages](background-information/commit_messages.md)
 - [Exposing services](background-information/exposing-services.md)
 - [Developing a store](background-information/basestore.md)
@@ -141,7 +141,7 @@ Clarification and discussion about key concepts, architecture, and development s
 
 ## Guidelines
 
-- [Code reviews](background-information/code_reviews.md)
+- [Code reviews](background-information/pull_request_reviews.md)
 - [Open source FAQ](https://about.sourcegraph.com/community/faq)
 - [Code of conduct](https://about.sourcegraph.com/community/code_of_conduct)
 
