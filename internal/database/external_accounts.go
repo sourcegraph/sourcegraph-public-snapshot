@@ -264,10 +264,6 @@ AND deleted_at IS NULL
 }
 
 func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error) {
-	if Mocks.ExternalAccounts.CreateUserAndSave != nil {
-		return Mocks.ExternalAccounts.CreateUserAndSave(newUser, spec, data)
-	}
-
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return 0, err
@@ -491,12 +487,11 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 
 // MockExternalAccounts mocks the Stores.ExternalAccounts DB store.
 type MockExternalAccounts struct {
-	CreateUserAndSave func(NewUser, extsvc.AccountSpec, extsvc.AccountData) (createdUserID int32, err error)
-	Delete            func(id int32) error
-	List              func(ExternalAccountsListOptions) ([]*extsvc.Account, error)
-	Count             func(ExternalAccountsListOptions) (int, error)
-	TouchExpired      func(ctx context.Context, id int32) error
-	TouchLastValid    func(ctx context.Context, id int32) error
+	Delete         func(id int32) error
+	List           func(ExternalAccountsListOptions) ([]*extsvc.Account, error)
+	Count          func(ExternalAccountsListOptions) (int, error)
+	TouchExpired   func(ctx context.Context, id int32) error
+	TouchLastValid func(ctx context.Context, id int32) error
 }
 
 // MaybeEncrypt encrypts data with the given key returns the id of the key. If the key is nil, it returns the data unchanged.
