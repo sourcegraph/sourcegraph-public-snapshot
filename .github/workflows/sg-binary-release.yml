@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - devx/fix-sg-releases
     paths:
       - 'dev/sg/**'
       - '.github/workflows/sg-binary-release.yml'
@@ -13,6 +14,21 @@ env:
   CGO_ENABLED: '1'
 
 jobs:
+  commit_sg:
+    name: Touch sourcegraph/sg
+    steps:
+      - name: checkout-sourcegraph-sg
+        uses: actions/checkout@v2
+        with: 
+        repository: sourcegraph/sg
+      - name: touch-sourcegraph-sg
+        run: |
+          today=$(date +'%Y-%m-%d-%H-%M')
+          sed -i 's/Latest release: .*/Latest release: '"$today"'/' README.md 
+          git add README.md
+          git commit -m "Update to latest release"
+          git push
+
   create_release:
     name: create-github-release
     runs-on: ubuntu-latest
