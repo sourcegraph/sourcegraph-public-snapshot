@@ -87,7 +87,7 @@ Install the indexer by running:
 
 
 
-1. Navigate to the **_repo’s root folder_** (where the `package.json/tsconfig.json` is) and run `lsif-tsc -p .`
+1. Navigate to the **_repo’s root folder_** (where the `package.json/tsconfig.json` is) and install depedencies with `npm install` then run `lsif-tsc -p .`
 
 
 2. A `dump.lsif` file should have been generated. This is file you are going to upload to your Sourcegraph instance.
