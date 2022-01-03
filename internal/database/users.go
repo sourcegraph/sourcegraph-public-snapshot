@@ -724,10 +724,6 @@ func (u *userStore) GetByCurrentAuthUser(ctx context.Context) (*types.User, erro
 }
 
 func (u *userStore) InvalidateSessionsByID(ctx context.Context, id int32) (err error) {
-	if Mocks.Users.InvalidateSessionsByID != nil {
-		return Mocks.Users.InvalidateSessionsByID(ctx, id)
-	}
-
 	tx, err := u.Transact(ctx)
 	if err != nil {
 		return err
