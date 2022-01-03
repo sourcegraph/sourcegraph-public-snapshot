@@ -133,10 +133,6 @@ func (s *userExternalAccountsStore) Get(ctx context.Context, id int32) (*extsvc.
 }
 
 func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
-	if Mocks.ExternalAccounts.LookupUserAndSave != nil {
-		return Mocks.ExternalAccounts.LookupUserAndSave(spec, data)
-	}
-
 	var (
 		encrypted, keyID string
 	)
@@ -499,7 +495,6 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 
 // MockExternalAccounts mocks the Stores.ExternalAccounts DB store.
 type MockExternalAccounts struct {
-	LookupUserAndSave    func(extsvc.AccountSpec, extsvc.AccountData) (userID int32, err error)
 	AssociateUserAndSave func(userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error
 	CreateUserAndSave    func(NewUser, extsvc.AccountSpec, extsvc.AccountData) (createdUserID int32, err error)
 	Delete               func(id int32) error
