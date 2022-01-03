@@ -9,7 +9,6 @@ import (
 
 type MockRepos struct {
 	Get                         func(ctx context.Context, repo api.RepoID) (*types.Repo, error)
-	GetByName                   func(ctx context.Context, repo api.RepoName) (*types.Repo, error)
 	GetByHashedName             func(ctx context.Context, repo api.RepoHashedName) (*types.Repo, error) // TODO:
 	GetByIDs                    func(ctx context.Context, ids ...api.RepoID) ([]*types.Repo, error)
 	List                        func(v0 context.Context, v1 ReposListOptions) ([]*types.Repo, error)

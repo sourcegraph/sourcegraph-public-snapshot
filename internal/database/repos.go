@@ -195,10 +195,6 @@ func logPrivateRepoAccessGranted(ctx context.Context, db dbutil.DB, ids []api.Re
 //
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *types.Repo, err error) {
-	if Mocks.Repos.GetByName != nil {
-		return Mocks.Repos.GetByName(ctx, nameOrURI)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.GetByName", "")
 	defer func() {
 		tr.SetError(err)
@@ -326,10 +322,6 @@ func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 // Metadata returns repo metadata used to decorate search results. The returned slice may be smaller than the
 // number of IDs given if a repo with the given ID does not exist.
 func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types.SearchedRepo, err error) {
-	if Mocks.Repos.Metadata != nil {
-		return Mocks.Repos.Metadata(ctx, ids...)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.Metadata", "")
 	defer func() {
 		tr.SetError(err)
