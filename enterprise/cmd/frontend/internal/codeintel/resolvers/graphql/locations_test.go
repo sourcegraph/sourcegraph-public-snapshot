@@ -190,23 +190,22 @@ func TestCachedLocationResolverUnknownRepository(t *testing.T) {
 	if pathResolver != nil {
 		t.Errorf("unexpected non-nil resolver")
 	}
+	mockrequire.Called(t, repos.GetFunc)
 }
 
 func TestCachedLocationResolverUnknownCommit(t *testing.T) {
-	db := database.NewDB(nil)
-
-	t.Cleanup(func() {
-		database.Mocks.Repos.Get = nil
-		git.Mocks.ResolveRevision = nil
+	repos := database.NewStrictMockRepoStore()
+	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
+		return &types.Repo{ID: id}, nil
 	})
 
-	database.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: id}, nil
-	}
+	db := database.NewStrictMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
 
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		return "", &gitdomain.RevisionNotFoundError{}
 	}
+	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
 
 	commitResolver, err := NewCachedLocationResolver(db).Commit(context.Background(), 50, "deadbeef")
 	if err != nil {
@@ -224,20 +223,22 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 	if pathResolver != nil {
 		t.Errorf("unexpected non-nil resolver")
 	}
+	mockrequire.Called(t, repos.GetFunc)
 }
 
 func TestResolveLocations(t *testing.T) {
-	db := database.NewDB(nil)
+	repos := database.NewStrictMockRepoStore()
+	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
+		return &types.Repo{ID: id, Name: api.RepoName(fmt.Sprintf("repo%d", id))}, nil
+	})
+
+	db := database.NewStrictMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
 
 	t.Cleanup(func() {
-		database.Mocks.Repos.Get = nil
 		git.Mocks.ResolveRevision = nil
 		backend.Mocks.Repos.GetCommit = nil
 	})
-
-	database.Mocks.Repos.Get = func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: id, Name: api.RepoName(fmt.Sprintf("repo%d", id))}, nil
-	}
 
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec == "deadbeef3" {
@@ -264,6 +265,8 @@ func TestResolveLocations(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
+
+	mockrequire.Called(t, repos.GetFunc)
 
 	if len(locations) != 3 {
 		t.Fatalf("unexpected length. want=%d have=%d", 3, len(locations))
