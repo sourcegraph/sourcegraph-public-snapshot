@@ -54,7 +54,18 @@ const (
 )
 
 func getMode() configurationMode {
-	mode := os.Getenv("CONFIGURATION_MODE")
+	var mode string
+	if os.Getenv("SG_FORCE_CONFIGURATION_MODE") == "empty" {
+		// If we're  running `sg`, force the configuration mode to empty so `sg`
+		// can make use of the `internal/database` package without configuration
+		// side effects taking place.
+		//
+		// See https://github.com/sourcegraph/sourcegraph/issues/29222.
+		mode = "empty"
+	} else {
+		// If we're not running `sg`, behave normally.
+		mode = os.Getenv("CONFIGURATION_MODE")
+	}
 
 	switch mode {
 	case "server":

@@ -5,9 +5,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"os"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -70,40 +68,7 @@ var (
 	}
 )
 
-// We currently cannot override the CONFIGURATION_MODE at runtime, which by
-// default triggers calls to the frontend application and will prevent database calls
-// to succeed unless the frontend is running.
-//
-// This function forces the configuration mode by restarting the current process
-// with an updated environment that forces the configuration mode.
-//
-// See https://github.com/sourcegraph/sourcegraph/issues/29222
-func forceConfigurationMode() {
-	mode, ok := os.LookupEnv("CONFIGURATION_MODE")
-	if !ok || mode != "empty" {
-		path, err := os.Executable()
-		if err != nil {
-			panic(err)
-		}
-		env := os.Environ()
-		overridenEnv := make([]string, 0, len(env))
-		for _, e := range env {
-			if !strings.HasPrefix(e, "CONFIGURATION_MODE=") {
-				overridenEnv = append(overridenEnv, e)
-			}
-		}
-		overridenEnv = append(overridenEnv, "CONFIGURATION_MODE=empty")
-
-		if err := syscall.Exec(path, os.Args, overridenEnv); err != nil {
-			panic(err)
-		}
-	}
-}
-
 func dbAddUserExec(ctx context.Context, args []string) error {
-	// If we detect CONFIGURATION_MODE to be different than "empty", force its value to empty.
-	forceConfigurationMode()
-
 	// Read the configuration.
 	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
 	if !ok {
@@ -176,9 +141,6 @@ func dbResetRedisExec(ctx context.Context, args []string) error {
 }
 
 func dbResetPGExec(ctx context.Context, args []string) error {
-	// If we detect CONFIGURATION_MODE to be different than "empty", force its value to empty.
-	forceConfigurationMode()
-
 	// Read the configuration.
 	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
 	if !ok {
