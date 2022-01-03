@@ -786,10 +786,6 @@ type UsersListOptions struct {
 }
 
 func (u *userStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types.User, err error) {
-	if Mocks.Users.List != nil {
-		return Mocks.Users.List(ctx, opt)
-	}
-
 	tr, ctx := trace.New(ctx, "database.Users.List", fmt.Sprintf("%+v", opt))
 	defer func() {
 		tr.SetError(err)
