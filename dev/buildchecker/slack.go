@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+func slackMention(slackUserID string) string {
+	return fmt.Sprintf("<@%s>", slackUserID)
+}
+
 func slackSummary(locked bool, failedCommits []CommitInfo) string {
 	if !locked {
 		return ":white_check_mark: Pipeline healthy - branch unlocked!"
@@ -16,9 +20,16 @@ func slackSummary(locked bool, failedCommits []CommitInfo) string {
 	message := `:alert: *Consecutive build failures detected - branch has been locked.* :alert:
 The authors of the following failed commits who are Sourcegraph teammates have been granted merge access to investigate and resolve the issue:
 `
+
 	for _, commit := range failedCommits {
-		message += fmt.Sprintf("\n- <https://github.com/sourcegraph/sourcegraph/commit/%s|%s> - %s",
-			commit.Commit, commit.Commit, commit.Author)
+		var mention string
+		if commit.SlackUserID != "" {
+			mention = slackMention(commit.SlackUserID)
+		} else {
+			mention = ":warning: Cannot find Slack user :warning:"
+		}
+		message += fmt.Sprintf("\n- <https://github.com/sourcegraph/sourcegraph/commit/%s|%s> - %s - %s",
+			commit.Commit, commit.Commit, commit.Author, mention)
 	}
 	message += `
 

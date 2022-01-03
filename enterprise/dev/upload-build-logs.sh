@@ -18,6 +18,8 @@ if [ "$1" == "-h" ]; then
   exit 1
 fi
 
+source /root/.profile
+
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..

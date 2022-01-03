@@ -15,6 +15,7 @@ import (
 // and remove dbutil.DB altogether.
 type DB interface {
 	dbutil.DB
+	basestore.ShareableStore
 
 	AccessTokens() AccessTokenStore
 	Authz() AuthzStore

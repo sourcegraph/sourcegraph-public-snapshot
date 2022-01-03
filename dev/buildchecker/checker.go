@@ -7,16 +7,19 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
+	"github.com/google/go-github/v41/github"
 )
 
 type CheckOptions struct {
 	FailuresThreshold int
 	BuildTimeout      time.Duration
+	GitHubClient      *github.Client
 }
 
 type CommitInfo struct {
-	Commit string
-	Author string
+	Commit      string
+	SlackUserID string
+	Author      string
 }
 
 type CheckResults struct {
@@ -30,7 +33,7 @@ type CheckResults struct {
 
 // CheckBuilds is the main buildchecker program. It checks the given builds for relevant
 // failures and runs lock/unlock operations on the given branch.
-func CheckBuilds(ctx context.Context, branch BranchLocker, builds []buildkite.Build, opts CheckOptions) (results *CheckResults, err error) {
+func CheckBuilds(ctx context.Context, branch BranchLocker, slackUser SlackUserResolver, builds []buildkite.Build, opts CheckOptions) (results *CheckResults, err error) {
 	results = &CheckResults{}
 
 	// Scan for first build with a meaningful state
@@ -69,6 +72,17 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, builds []buildkite.Bu
 	}
 
 	fmt.Println("threshold exceeded, this is a big deal!")
+
+	// annotate the failures with their author (Github handle), so we can reach them
+	// over Slack.
+	for i, info := range results.FailedCommits {
+		results.FailedCommits[i].SlackUserID, err = slackUser.ResolveByCommit(ctx, info.Commit)
+		if err != nil {
+			// If we can't resolve the user, do not interrupt the process.
+			fmt.Println(fmt.Errorf("slackUserResolve: %w", err))
+		}
+	}
+
 	results.LockBranch = true
 	results.Action, err = branch.Lock(ctx, results.FailedCommits, "dev-experience")
 	if err != nil {
@@ -124,11 +138,12 @@ func checkConsecutiveFailures(builds []buildkite.Build, threshold int, timeout t
 			return
 		}
 
-		consecutiveFailures += 1
 		var author string
 		if b.Author != nil {
 			author = fmt.Sprintf("%s (%s)", b.Author.Name, b.Author.Email)
 		}
+
+		consecutiveFailures += 1
 		failedCommits = append(failedCommits, CommitInfo{
 			Commit: *b.Commit,
 			Author: author,

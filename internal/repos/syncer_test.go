@@ -1850,6 +1850,120 @@ func testAbortSyncWhenThereIsRepoLimitError(store *repos.Store) func(*testing.T)
 	}
 }
 
+func testUserAndOrgReposAreCountedCorrectly(store *repos.Store) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		now := time.Now()
+
+		// create fake org
+		orgName := "sample-org101"
+		org, err := database.OrgsWith(store).Create(ctx, orgName, &orgName)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// create fake user
+		user, err := database.UsersWith(store).Create(ctx, database.NewUser{
+			Email:                 "Email",
+			Username:              "Username",
+			DisplayName:           "DisplayName",
+			Password:              "Password",
+			EmailIsVerified:       true,
+			FailIfNotInitialUser:  false,
+			EnforcePasswordLength: false,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// create fake source (one user and one org)
+		svcs := []*types.ExternalService{
+			{
+				Kind:            extsvc.KindGitHub,
+				DisplayName:     "Github - Test1",
+				Config:          `{"url": "https://github.com"}`,
+				CreatedAt:       now,
+				UpdatedAt:       now,
+				NamespaceUserID: user.ID,
+			},
+			{
+				Kind:           extsvc.KindGitHub,
+				DisplayName:    "Github - Test2",
+				Config:         `{"url": "https://github.com"}`,
+				CreatedAt:      now,
+				UpdatedAt:      now,
+				NamespaceOrgID: org.ID,
+			},
+		}
+
+		// setup services
+		if err := store.ExternalServiceStore.Upsert(ctx, svcs...); err != nil {
+			t.Fatal(err)
+		}
+
+		reposToSync := []*types.Repo{
+			{
+				Name:     "github.com/org/foo",
+				Metadata: &github.Repository{},
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "foo-external-12345",
+					ServiceID:   "https://github.com/",
+					ServiceType: extsvc.TypeGitHub,
+				},
+			},
+			{
+				Name:     "github.com/org/foo2",
+				Metadata: &github.Repository{},
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "foo-external-123456",
+					ServiceID:   "https://github.com/",
+					ServiceType: extsvc.TypeGitHub,
+				},
+			},
+			{
+				Name:     "github.com/org/foo3",
+				Metadata: &github.Repository{},
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "foo-external-1234567",
+					ServiceID:   "https://github.com/",
+					ServiceType: extsvc.TypeGitHub,
+				},
+			},
+			{
+				Name:     "github.com/org/foo4",
+				Metadata: &github.Repository{},
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "foo-external-12345678",
+					ServiceID:   "https://github.com/",
+					ServiceType: extsvc.TypeGitHub,
+				},
+			},
+		}
+
+		repoIdx := 0
+		for _, svc := range svcs {
+			// Sync first service
+			syncer := &repos.Syncer{
+				Sourcer: func(service *types.ExternalService) (repos.Source, error) {
+					s := repos.NewFakeSource(svc, nil, reposToSync[repoIdx], reposToSync[repoIdx+1])
+					return s, nil
+				},
+				Store:               store,
+				Now:                 time.Now,
+				UserReposMaxPerSite: 10,
+				UserReposMaxPerUser: 3,
+			}
+
+			if err := syncer.SyncExternalService(ctx, svc.ID, 10*time.Second); err != nil {
+				t.Fatal("Error occurred. Should not happen because neither site nor user/org limit is exceeded.")
+			}
+			repoIdx += 2
+		}
+	}
+}
+
 func assertSourceCount(ctx context.Context, t *testing.T, store *repos.Store, want int) {
 	t.Helper()
 	var rowCount int

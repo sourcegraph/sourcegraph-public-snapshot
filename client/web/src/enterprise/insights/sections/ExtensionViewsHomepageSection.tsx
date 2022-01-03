@@ -53,6 +53,8 @@ export const ExtensionViewsHomepageSection: React.FunctionComponent<ExtensionVie
     )
 }
 
+const DEFAULT_CONTEXT = {}
+
 const ExtensionViewsHomepageSectionContent: React.FunctionComponent<ExtensionViewsSectionCommonProps> = props => {
     const { extensionsController, telemetryService, className } = props
     const { getInsights } = useContext(CodeInsightsBackendContext)
@@ -89,7 +91,7 @@ const ExtensionViewsHomepageSectionContent: React.FunctionComponent<ExtensionVie
                     insight={insight}
                     telemetryService={telemetryService}
                     where="homepage"
-                    context={{}}
+                    context={DEFAULT_CONTEXT}
                 />
             ))}
         </ViewGrid>
