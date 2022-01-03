@@ -27,6 +27,7 @@ export interface CreateSearchContextPageProps
         TelemetryProps,
         Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'> {
     authenticatedUser: AuthenticatedUser
+    isSourcegraphDotCom: boolean
 }
 
 export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<CreateSearchContextPageProps> = props => {

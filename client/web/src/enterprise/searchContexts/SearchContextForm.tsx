@@ -97,6 +97,7 @@ export interface SearchContextFormProps
     searchContext?: ISearchContext
     query?: string
     authenticatedUser: AuthenticatedUser
+    isSourcegraphDotCom: boolean
 
     onSubmit: (
         id: Scalars['ID'] | undefined,
@@ -119,7 +120,7 @@ type RepositoriesParseResult =
       }
 
 export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> = props => {
-    const { authenticatedUser, onSubmit, searchContext, deleteSearchContext } = props
+    const { authenticatedUser, onSubmit, searchContext, deleteSearchContext, isSourcegraphDotCom } = props
     const history = useHistory()
 
     const [name, setName] = useState(searchContext ? searchContext.name : '')
@@ -383,7 +384,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                             <LazyMonacoQueryInput
                                 isLightTheme={props.isLightTheme}
                                 patternType={SearchPatternType.regexp}
-                                isSourcegraphDotCom={!!window.context.sourcegraphDotComMode}
+                                isSourcegraphDotCom={isSourcegraphDotCom}
                                 caseSensitive={true}
                                 queryState={{ query }}
                                 onChange={({ query }) => setQuery(query)}

@@ -32,6 +32,7 @@ export interface EditSearchContextPageProps
         TelemetryProps,
         Pick<SearchContextProps, 'updateSearchContext' | 'fetchSearchContextBySpec' | 'deleteSearchContext'> {
     authenticatedUser: AuthenticatedUser
+    isSourcegraphDotCom: boolean
 }
 
 export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSearchContextPageProps> = props => {
