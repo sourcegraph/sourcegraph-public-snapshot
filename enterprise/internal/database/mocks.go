@@ -6,10 +6,6573 @@ import (
 	"context"
 	"database/sql"
 	"sync"
+	"time"
 
+	sqlf "github.com/keegancsmith/sqlf"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
+	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
 )
+
+// MockCodeMonitorStore is a mock implementation of the CodeMonitorStore
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/internal/database) used for
+// unit testing.
+type MockCodeMonitorStore struct {
+	// ClockFunc is an instance of a mock function object controlling the
+	// behavior of the method Clock.
+	ClockFunc *CodeMonitorStoreClockFunc
+	// CountActionJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method CountActionJobs.
+	CountActionJobsFunc *CodeMonitorStoreCountActionJobsFunc
+	// CountMonitorsFunc is an instance of a mock function object
+	// controlling the behavior of the method CountMonitors.
+	CountMonitorsFunc *CodeMonitorStoreCountMonitorsFunc
+	// CountQueryTriggerJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method CountQueryTriggerJobs.
+	CountQueryTriggerJobsFunc *CodeMonitorStoreCountQueryTriggerJobsFunc
+	// CountRecipientsFunc is an instance of a mock function object
+	// controlling the behavior of the method CountRecipients.
+	CountRecipientsFunc *CodeMonitorStoreCountRecipientsFunc
+	// CountSlackWebhookActionsFunc is an instance of a mock function object
+	// controlling the behavior of the method CountSlackWebhookActions.
+	CountSlackWebhookActionsFunc *CodeMonitorStoreCountSlackWebhookActionsFunc
+	// CountWebhookActionsFunc is an instance of a mock function object
+	// controlling the behavior of the method CountWebhookActions.
+	CountWebhookActionsFunc *CodeMonitorStoreCountWebhookActionsFunc
+	// CreateEmailActionFunc is an instance of a mock function object
+	// controlling the behavior of the method CreateEmailAction.
+	CreateEmailActionFunc *CodeMonitorStoreCreateEmailActionFunc
+	// CreateMonitorFunc is an instance of a mock function object
+	// controlling the behavior of the method CreateMonitor.
+	CreateMonitorFunc *CodeMonitorStoreCreateMonitorFunc
+	// CreateQueryTriggerFunc is an instance of a mock function object
+	// controlling the behavior of the method CreateQueryTrigger.
+	CreateQueryTriggerFunc *CodeMonitorStoreCreateQueryTriggerFunc
+	// CreateRecipientFunc is an instance of a mock function object
+	// controlling the behavior of the method CreateRecipient.
+	CreateRecipientFunc *CodeMonitorStoreCreateRecipientFunc
+	// CreateSlackWebhookActionFunc is an instance of a mock function object
+	// controlling the behavior of the method CreateSlackWebhookAction.
+	CreateSlackWebhookActionFunc *CodeMonitorStoreCreateSlackWebhookActionFunc
+	// CreateWebhookActionFunc is an instance of a mock function object
+	// controlling the behavior of the method CreateWebhookAction.
+	CreateWebhookActionFunc *CodeMonitorStoreCreateWebhookActionFunc
+	// DeleteEmailActionsFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteEmailActions.
+	DeleteEmailActionsFunc *CodeMonitorStoreDeleteEmailActionsFunc
+	// DeleteMonitorFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteMonitor.
+	DeleteMonitorFunc *CodeMonitorStoreDeleteMonitorFunc
+	// DeleteObsoleteTriggerJobsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// DeleteObsoleteTriggerJobs.
+	DeleteObsoleteTriggerJobsFunc *CodeMonitorStoreDeleteObsoleteTriggerJobsFunc
+	// DeleteOldTriggerJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteOldTriggerJobs.
+	DeleteOldTriggerJobsFunc *CodeMonitorStoreDeleteOldTriggerJobsFunc
+	// DeleteRecipientsFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteRecipients.
+	DeleteRecipientsFunc *CodeMonitorStoreDeleteRecipientsFunc
+	// DeleteSlackWebhookActionsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// DeleteSlackWebhookActions.
+	DeleteSlackWebhookActionsFunc *CodeMonitorStoreDeleteSlackWebhookActionsFunc
+	// DeleteWebhookActionsFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteWebhookActions.
+	DeleteWebhookActionsFunc *CodeMonitorStoreDeleteWebhookActionsFunc
+	// DoneFunc is an instance of a mock function object controlling the
+	// behavior of the method Done.
+	DoneFunc *CodeMonitorStoreDoneFunc
+	// EnqueueActionJobsForMonitorFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// EnqueueActionJobsForMonitor.
+	EnqueueActionJobsForMonitorFunc *CodeMonitorStoreEnqueueActionJobsForMonitorFunc
+	// EnqueueQueryTriggerJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method EnqueueQueryTriggerJobs.
+	EnqueueQueryTriggerJobsFunc *CodeMonitorStoreEnqueueQueryTriggerJobsFunc
+	// ExecFunc is an instance of a mock function object controlling the
+	// behavior of the method Exec.
+	ExecFunc *CodeMonitorStoreExecFunc
+	// GetActionJobFunc is an instance of a mock function object controlling
+	// the behavior of the method GetActionJob.
+	GetActionJobFunc *CodeMonitorStoreGetActionJobFunc
+	// GetActionJobMetadataFunc is an instance of a mock function object
+	// controlling the behavior of the method GetActionJobMetadata.
+	GetActionJobMetadataFunc *CodeMonitorStoreGetActionJobMetadataFunc
+	// GetEmailActionFunc is an instance of a mock function object
+	// controlling the behavior of the method GetEmailAction.
+	GetEmailActionFunc *CodeMonitorStoreGetEmailActionFunc
+	// GetMonitorFunc is an instance of a mock function object controlling
+	// the behavior of the method GetMonitor.
+	GetMonitorFunc *CodeMonitorStoreGetMonitorFunc
+	// GetQueryTriggerForJobFunc is an instance of a mock function object
+	// controlling the behavior of the method GetQueryTriggerForJob.
+	GetQueryTriggerForJobFunc *CodeMonitorStoreGetQueryTriggerForJobFunc
+	// GetQueryTriggerForMonitorFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// GetQueryTriggerForMonitor.
+	GetQueryTriggerForMonitorFunc *CodeMonitorStoreGetQueryTriggerForMonitorFunc
+	// GetSlackWebhookActionFunc is an instance of a mock function object
+	// controlling the behavior of the method GetSlackWebhookAction.
+	GetSlackWebhookActionFunc *CodeMonitorStoreGetSlackWebhookActionFunc
+	// GetWebhookActionFunc is an instance of a mock function object
+	// controlling the behavior of the method GetWebhookAction.
+	GetWebhookActionFunc *CodeMonitorStoreGetWebhookActionFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *CodeMonitorStoreHandleFunc
+	// ListActionJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method ListActionJobs.
+	ListActionJobsFunc *CodeMonitorStoreListActionJobsFunc
+	// ListEmailActionsFunc is an instance of a mock function object
+	// controlling the behavior of the method ListEmailActions.
+	ListEmailActionsFunc *CodeMonitorStoreListEmailActionsFunc
+	// ListMonitorsFunc is an instance of a mock function object controlling
+	// the behavior of the method ListMonitors.
+	ListMonitorsFunc *CodeMonitorStoreListMonitorsFunc
+	// ListQueryTriggerJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method ListQueryTriggerJobs.
+	ListQueryTriggerJobsFunc *CodeMonitorStoreListQueryTriggerJobsFunc
+	// ListRecipientsFunc is an instance of a mock function object
+	// controlling the behavior of the method ListRecipients.
+	ListRecipientsFunc *CodeMonitorStoreListRecipientsFunc
+	// ListSlackWebhookActionsFunc is an instance of a mock function object
+	// controlling the behavior of the method ListSlackWebhookActions.
+	ListSlackWebhookActionsFunc *CodeMonitorStoreListSlackWebhookActionsFunc
+	// ListWebhookActionsFunc is an instance of a mock function object
+	// controlling the behavior of the method ListWebhookActions.
+	ListWebhookActionsFunc *CodeMonitorStoreListWebhookActionsFunc
+	// NowFunc is an instance of a mock function object controlling the
+	// behavior of the method Now.
+	NowFunc *CodeMonitorStoreNowFunc
+	// ResetQueryTriggerTimestampsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// ResetQueryTriggerTimestamps.
+	ResetQueryTriggerTimestampsFunc *CodeMonitorStoreResetQueryTriggerTimestampsFunc
+	// SetQueryTriggerNextRunFunc is an instance of a mock function object
+	// controlling the behavior of the method SetQueryTriggerNextRun.
+	SetQueryTriggerNextRunFunc *CodeMonitorStoreSetQueryTriggerNextRunFunc
+	// TransactFunc is an instance of a mock function object controlling the
+	// behavior of the method Transact.
+	TransactFunc *CodeMonitorStoreTransactFunc
+	// UpdateEmailActionFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateEmailAction.
+	UpdateEmailActionFunc *CodeMonitorStoreUpdateEmailActionFunc
+	// UpdateMonitorFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateMonitor.
+	UpdateMonitorFunc *CodeMonitorStoreUpdateMonitorFunc
+	// UpdateMonitorEnabledFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateMonitorEnabled.
+	UpdateMonitorEnabledFunc *CodeMonitorStoreUpdateMonitorEnabledFunc
+	// UpdateQueryTriggerFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateQueryTrigger.
+	UpdateQueryTriggerFunc *CodeMonitorStoreUpdateQueryTriggerFunc
+	// UpdateSlackWebhookActionFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateSlackWebhookAction.
+	UpdateSlackWebhookActionFunc *CodeMonitorStoreUpdateSlackWebhookActionFunc
+	// UpdateTriggerJobWithResultsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// UpdateTriggerJobWithResults.
+	UpdateTriggerJobWithResultsFunc *CodeMonitorStoreUpdateTriggerJobWithResultsFunc
+	// UpdateWebhookActionFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateWebhookAction.
+	UpdateWebhookActionFunc *CodeMonitorStoreUpdateWebhookActionFunc
+}
+
+// NewMockCodeMonitorStore creates a new mock of the CodeMonitorStore
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockCodeMonitorStore() *MockCodeMonitorStore {
+	return &MockCodeMonitorStore{
+		ClockFunc: &CodeMonitorStoreClockFunc{
+			defaultHook: func() func() time.Time {
+				return nil
+			},
+		},
+		CountActionJobsFunc: &CodeMonitorStoreCountActionJobsFunc{
+			defaultHook: func(context.Context, ListActionJobsOpts) (int, error) {
+				return 0, nil
+			},
+		},
+		CountMonitorsFunc: &CodeMonitorStoreCountMonitorsFunc{
+			defaultHook: func(context.Context, int32) (int32, error) {
+				return 0, nil
+			},
+		},
+		CountQueryTriggerJobsFunc: &CodeMonitorStoreCountQueryTriggerJobsFunc{
+			defaultHook: func(context.Context, int64) (int32, error) {
+				return 0, nil
+			},
+		},
+		CountRecipientsFunc: &CodeMonitorStoreCountRecipientsFunc{
+			defaultHook: func(context.Context, int64) (int32, error) {
+				return 0, nil
+			},
+		},
+		CountSlackWebhookActionsFunc: &CodeMonitorStoreCountSlackWebhookActionsFunc{
+			defaultHook: func(context.Context, int64) (int, error) {
+				return 0, nil
+			},
+		},
+		CountWebhookActionsFunc: &CodeMonitorStoreCountWebhookActionsFunc{
+			defaultHook: func(context.Context, int64) (int, error) {
+				return 0, nil
+			},
+		},
+		CreateEmailActionFunc: &CodeMonitorStoreCreateEmailActionFunc{
+			defaultHook: func(context.Context, int64, *EmailActionArgs) (*EmailAction, error) {
+				return nil, nil
+			},
+		},
+		CreateMonitorFunc: &CodeMonitorStoreCreateMonitorFunc{
+			defaultHook: func(context.Context, MonitorArgs) (*Monitor, error) {
+				return nil, nil
+			},
+		},
+		CreateQueryTriggerFunc: &CodeMonitorStoreCreateQueryTriggerFunc{
+			defaultHook: func(context.Context, int64, string) (*QueryTrigger, error) {
+				return nil, nil
+			},
+		},
+		CreateRecipientFunc: &CodeMonitorStoreCreateRecipientFunc{
+			defaultHook: func(context.Context, int64, *int32, *int32) (*Recipient, error) {
+				return nil, nil
+			},
+		},
+		CreateSlackWebhookActionFunc: &CodeMonitorStoreCreateSlackWebhookActionFunc{
+			defaultHook: func(context.Context, int64, bool, string) (*SlackWebhookAction, error) {
+				return nil, nil
+			},
+		},
+		CreateWebhookActionFunc: &CodeMonitorStoreCreateWebhookActionFunc{
+			defaultHook: func(context.Context, int64, bool, string) (*WebhookAction, error) {
+				return nil, nil
+			},
+		},
+		DeleteEmailActionsFunc: &CodeMonitorStoreDeleteEmailActionsFunc{
+			defaultHook: func(context.Context, []int64, int64) error {
+				return nil
+			},
+		},
+		DeleteMonitorFunc: &CodeMonitorStoreDeleteMonitorFunc{
+			defaultHook: func(context.Context, int64) error {
+				return nil
+			},
+		},
+		DeleteObsoleteTriggerJobsFunc: &CodeMonitorStoreDeleteObsoleteTriggerJobsFunc{
+			defaultHook: func(context.Context) error {
+				return nil
+			},
+		},
+		DeleteOldTriggerJobsFunc: &CodeMonitorStoreDeleteOldTriggerJobsFunc{
+			defaultHook: func(context.Context, int) error {
+				return nil
+			},
+		},
+		DeleteRecipientsFunc: &CodeMonitorStoreDeleteRecipientsFunc{
+			defaultHook: func(context.Context, int64) error {
+				return nil
+			},
+		},
+		DeleteSlackWebhookActionsFunc: &CodeMonitorStoreDeleteSlackWebhookActionsFunc{
+			defaultHook: func(context.Context, int64, ...int64) error {
+				return nil
+			},
+		},
+		DeleteWebhookActionsFunc: &CodeMonitorStoreDeleteWebhookActionsFunc{
+			defaultHook: func(context.Context, int64, ...int64) error {
+				return nil
+			},
+		},
+		DoneFunc: &CodeMonitorStoreDoneFunc{
+			defaultHook: func(error) error {
+				return nil
+			},
+		},
+		EnqueueActionJobsForMonitorFunc: &CodeMonitorStoreEnqueueActionJobsForMonitorFunc{
+			defaultHook: func(context.Context, int64, int32) ([]*ActionJob, error) {
+				return nil, nil
+			},
+		},
+		EnqueueQueryTriggerJobsFunc: &CodeMonitorStoreEnqueueQueryTriggerJobsFunc{
+			defaultHook: func(context.Context) ([]*TriggerJob, error) {
+				return nil, nil
+			},
+		},
+		ExecFunc: &CodeMonitorStoreExecFunc{
+			defaultHook: func(context.Context, *sqlf.Query) error {
+				return nil
+			},
+		},
+		GetActionJobFunc: &CodeMonitorStoreGetActionJobFunc{
+			defaultHook: func(context.Context, int32) (*ActionJob, error) {
+				return nil, nil
+			},
+		},
+		GetActionJobMetadataFunc: &CodeMonitorStoreGetActionJobMetadataFunc{
+			defaultHook: func(context.Context, int32) (*ActionJobMetadata, error) {
+				return nil, nil
+			},
+		},
+		GetEmailActionFunc: &CodeMonitorStoreGetEmailActionFunc{
+			defaultHook: func(context.Context, int64) (*EmailAction, error) {
+				return nil, nil
+			},
+		},
+		GetMonitorFunc: &CodeMonitorStoreGetMonitorFunc{
+			defaultHook: func(context.Context, int64) (*Monitor, error) {
+				return nil, nil
+			},
+		},
+		GetQueryTriggerForJobFunc: &CodeMonitorStoreGetQueryTriggerForJobFunc{
+			defaultHook: func(context.Context, int32) (*QueryTrigger, error) {
+				return nil, nil
+			},
+		},
+		GetQueryTriggerForMonitorFunc: &CodeMonitorStoreGetQueryTriggerForMonitorFunc{
+			defaultHook: func(context.Context, int64) (*QueryTrigger, error) {
+				return nil, nil
+			},
+		},
+		GetSlackWebhookActionFunc: &CodeMonitorStoreGetSlackWebhookActionFunc{
+			defaultHook: func(context.Context, int64) (*SlackWebhookAction, error) {
+				return nil, nil
+			},
+		},
+		GetWebhookActionFunc: &CodeMonitorStoreGetWebhookActionFunc{
+			defaultHook: func(context.Context, int64) (*WebhookAction, error) {
+				return nil, nil
+			},
+		},
+		HandleFunc: &CodeMonitorStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				return nil
+			},
+		},
+		ListActionJobsFunc: &CodeMonitorStoreListActionJobsFunc{
+			defaultHook: func(context.Context, ListActionJobsOpts) ([]*ActionJob, error) {
+				return nil, nil
+			},
+		},
+		ListEmailActionsFunc: &CodeMonitorStoreListEmailActionsFunc{
+			defaultHook: func(context.Context, ListActionsOpts) ([]*EmailAction, error) {
+				return nil, nil
+			},
+		},
+		ListMonitorsFunc: &CodeMonitorStoreListMonitorsFunc{
+			defaultHook: func(context.Context, ListMonitorsOpts) ([]*Monitor, error) {
+				return nil, nil
+			},
+		},
+		ListQueryTriggerJobsFunc: &CodeMonitorStoreListQueryTriggerJobsFunc{
+			defaultHook: func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error) {
+				return nil, nil
+			},
+		},
+		ListRecipientsFunc: &CodeMonitorStoreListRecipientsFunc{
+			defaultHook: func(context.Context, ListRecipientsOpts) ([]*Recipient, error) {
+				return nil, nil
+			},
+		},
+		ListSlackWebhookActionsFunc: &CodeMonitorStoreListSlackWebhookActionsFunc{
+			defaultHook: func(context.Context, ListActionsOpts) ([]*SlackWebhookAction, error) {
+				return nil, nil
+			},
+		},
+		ListWebhookActionsFunc: &CodeMonitorStoreListWebhookActionsFunc{
+			defaultHook: func(context.Context, ListActionsOpts) ([]*WebhookAction, error) {
+				return nil, nil
+			},
+		},
+		NowFunc: &CodeMonitorStoreNowFunc{
+			defaultHook: func() time.Time {
+				return time.Time{}
+			},
+		},
+		ResetQueryTriggerTimestampsFunc: &CodeMonitorStoreResetQueryTriggerTimestampsFunc{
+			defaultHook: func(context.Context, int64) error {
+				return nil
+			},
+		},
+		SetQueryTriggerNextRunFunc: &CodeMonitorStoreSetQueryTriggerNextRunFunc{
+			defaultHook: func(context.Context, int64, time.Time, time.Time) error {
+				return nil
+			},
+		},
+		TransactFunc: &CodeMonitorStoreTransactFunc{
+			defaultHook: func(context.Context) (CodeMonitorStore, error) {
+				return nil, nil
+			},
+		},
+		UpdateEmailActionFunc: &CodeMonitorStoreUpdateEmailActionFunc{
+			defaultHook: func(context.Context, int64, *EmailActionArgs) (*EmailAction, error) {
+				return nil, nil
+			},
+		},
+		UpdateMonitorFunc: &CodeMonitorStoreUpdateMonitorFunc{
+			defaultHook: func(context.Context, int64, MonitorArgs) (*Monitor, error) {
+				return nil, nil
+			},
+		},
+		UpdateMonitorEnabledFunc: &CodeMonitorStoreUpdateMonitorEnabledFunc{
+			defaultHook: func(context.Context, int64, bool) (*Monitor, error) {
+				return nil, nil
+			},
+		},
+		UpdateQueryTriggerFunc: &CodeMonitorStoreUpdateQueryTriggerFunc{
+			defaultHook: func(context.Context, int64, string) error {
+				return nil
+			},
+		},
+		UpdateSlackWebhookActionFunc: &CodeMonitorStoreUpdateSlackWebhookActionFunc{
+			defaultHook: func(context.Context, int64, bool, string) (*SlackWebhookAction, error) {
+				return nil, nil
+			},
+		},
+		UpdateTriggerJobWithResultsFunc: &CodeMonitorStoreUpdateTriggerJobWithResultsFunc{
+			defaultHook: func(context.Context, int32, string, int) error {
+				return nil
+			},
+		},
+		UpdateWebhookActionFunc: &CodeMonitorStoreUpdateWebhookActionFunc{
+			defaultHook: func(context.Context, int64, bool, string) (*WebhookAction, error) {
+				return nil, nil
+			},
+		},
+	}
+}
+
+// NewStrictMockCodeMonitorStore creates a new mock of the CodeMonitorStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockCodeMonitorStore() *MockCodeMonitorStore {
+	return &MockCodeMonitorStore{
+		ClockFunc: &CodeMonitorStoreClockFunc{
+			defaultHook: func() func() time.Time {
+				panic("unexpected invocation of MockCodeMonitorStore.Clock")
+			},
+		},
+		CountActionJobsFunc: &CodeMonitorStoreCountActionJobsFunc{
+			defaultHook: func(context.Context, ListActionJobsOpts) (int, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CountActionJobs")
+			},
+		},
+		CountMonitorsFunc: &CodeMonitorStoreCountMonitorsFunc{
+			defaultHook: func(context.Context, int32) (int32, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CountMonitors")
+			},
+		},
+		CountQueryTriggerJobsFunc: &CodeMonitorStoreCountQueryTriggerJobsFunc{
+			defaultHook: func(context.Context, int64) (int32, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CountQueryTriggerJobs")
+			},
+		},
+		CountRecipientsFunc: &CodeMonitorStoreCountRecipientsFunc{
+			defaultHook: func(context.Context, int64) (int32, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CountRecipients")
+			},
+		},
+		CountSlackWebhookActionsFunc: &CodeMonitorStoreCountSlackWebhookActionsFunc{
+			defaultHook: func(context.Context, int64) (int, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CountSlackWebhookActions")
+			},
+		},
+		CountWebhookActionsFunc: &CodeMonitorStoreCountWebhookActionsFunc{
+			defaultHook: func(context.Context, int64) (int, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CountWebhookActions")
+			},
+		},
+		CreateEmailActionFunc: &CodeMonitorStoreCreateEmailActionFunc{
+			defaultHook: func(context.Context, int64, *EmailActionArgs) (*EmailAction, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CreateEmailAction")
+			},
+		},
+		CreateMonitorFunc: &CodeMonitorStoreCreateMonitorFunc{
+			defaultHook: func(context.Context, MonitorArgs) (*Monitor, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CreateMonitor")
+			},
+		},
+		CreateQueryTriggerFunc: &CodeMonitorStoreCreateQueryTriggerFunc{
+			defaultHook: func(context.Context, int64, string) (*QueryTrigger, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CreateQueryTrigger")
+			},
+		},
+		CreateRecipientFunc: &CodeMonitorStoreCreateRecipientFunc{
+			defaultHook: func(context.Context, int64, *int32, *int32) (*Recipient, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CreateRecipient")
+			},
+		},
+		CreateSlackWebhookActionFunc: &CodeMonitorStoreCreateSlackWebhookActionFunc{
+			defaultHook: func(context.Context, int64, bool, string) (*SlackWebhookAction, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CreateSlackWebhookAction")
+			},
+		},
+		CreateWebhookActionFunc: &CodeMonitorStoreCreateWebhookActionFunc{
+			defaultHook: func(context.Context, int64, bool, string) (*WebhookAction, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CreateWebhookAction")
+			},
+		},
+		DeleteEmailActionsFunc: &CodeMonitorStoreDeleteEmailActionsFunc{
+			defaultHook: func(context.Context, []int64, int64) error {
+				panic("unexpected invocation of MockCodeMonitorStore.DeleteEmailActions")
+			},
+		},
+		DeleteMonitorFunc: &CodeMonitorStoreDeleteMonitorFunc{
+			defaultHook: func(context.Context, int64) error {
+				panic("unexpected invocation of MockCodeMonitorStore.DeleteMonitor")
+			},
+		},
+		DeleteObsoleteTriggerJobsFunc: &CodeMonitorStoreDeleteObsoleteTriggerJobsFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockCodeMonitorStore.DeleteObsoleteTriggerJobs")
+			},
+		},
+		DeleteOldTriggerJobsFunc: &CodeMonitorStoreDeleteOldTriggerJobsFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockCodeMonitorStore.DeleteOldTriggerJobs")
+			},
+		},
+		DeleteRecipientsFunc: &CodeMonitorStoreDeleteRecipientsFunc{
+			defaultHook: func(context.Context, int64) error {
+				panic("unexpected invocation of MockCodeMonitorStore.DeleteRecipients")
+			},
+		},
+		DeleteSlackWebhookActionsFunc: &CodeMonitorStoreDeleteSlackWebhookActionsFunc{
+			defaultHook: func(context.Context, int64, ...int64) error {
+				panic("unexpected invocation of MockCodeMonitorStore.DeleteSlackWebhookActions")
+			},
+		},
+		DeleteWebhookActionsFunc: &CodeMonitorStoreDeleteWebhookActionsFunc{
+			defaultHook: func(context.Context, int64, ...int64) error {
+				panic("unexpected invocation of MockCodeMonitorStore.DeleteWebhookActions")
+			},
+		},
+		DoneFunc: &CodeMonitorStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockCodeMonitorStore.Done")
+			},
+		},
+		EnqueueActionJobsForMonitorFunc: &CodeMonitorStoreEnqueueActionJobsForMonitorFunc{
+			defaultHook: func(context.Context, int64, int32) ([]*ActionJob, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.EnqueueActionJobsForMonitor")
+			},
+		},
+		EnqueueQueryTriggerJobsFunc: &CodeMonitorStoreEnqueueQueryTriggerJobsFunc{
+			defaultHook: func(context.Context) ([]*TriggerJob, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.EnqueueQueryTriggerJobs")
+			},
+		},
+		ExecFunc: &CodeMonitorStoreExecFunc{
+			defaultHook: func(context.Context, *sqlf.Query) error {
+				panic("unexpected invocation of MockCodeMonitorStore.Exec")
+			},
+		},
+		GetActionJobFunc: &CodeMonitorStoreGetActionJobFunc{
+			defaultHook: func(context.Context, int32) (*ActionJob, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.GetActionJob")
+			},
+		},
+		GetActionJobMetadataFunc: &CodeMonitorStoreGetActionJobMetadataFunc{
+			defaultHook: func(context.Context, int32) (*ActionJobMetadata, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.GetActionJobMetadata")
+			},
+		},
+		GetEmailActionFunc: &CodeMonitorStoreGetEmailActionFunc{
+			defaultHook: func(context.Context, int64) (*EmailAction, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.GetEmailAction")
+			},
+		},
+		GetMonitorFunc: &CodeMonitorStoreGetMonitorFunc{
+			defaultHook: func(context.Context, int64) (*Monitor, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.GetMonitor")
+			},
+		},
+		GetQueryTriggerForJobFunc: &CodeMonitorStoreGetQueryTriggerForJobFunc{
+			defaultHook: func(context.Context, int32) (*QueryTrigger, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.GetQueryTriggerForJob")
+			},
+		},
+		GetQueryTriggerForMonitorFunc: &CodeMonitorStoreGetQueryTriggerForMonitorFunc{
+			defaultHook: func(context.Context, int64) (*QueryTrigger, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.GetQueryTriggerForMonitor")
+			},
+		},
+		GetSlackWebhookActionFunc: &CodeMonitorStoreGetSlackWebhookActionFunc{
+			defaultHook: func(context.Context, int64) (*SlackWebhookAction, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.GetSlackWebhookAction")
+			},
+		},
+		GetWebhookActionFunc: &CodeMonitorStoreGetWebhookActionFunc{
+			defaultHook: func(context.Context, int64) (*WebhookAction, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.GetWebhookAction")
+			},
+		},
+		HandleFunc: &CodeMonitorStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockCodeMonitorStore.Handle")
+			},
+		},
+		ListActionJobsFunc: &CodeMonitorStoreListActionJobsFunc{
+			defaultHook: func(context.Context, ListActionJobsOpts) ([]*ActionJob, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.ListActionJobs")
+			},
+		},
+		ListEmailActionsFunc: &CodeMonitorStoreListEmailActionsFunc{
+			defaultHook: func(context.Context, ListActionsOpts) ([]*EmailAction, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.ListEmailActions")
+			},
+		},
+		ListMonitorsFunc: &CodeMonitorStoreListMonitorsFunc{
+			defaultHook: func(context.Context, ListMonitorsOpts) ([]*Monitor, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.ListMonitors")
+			},
+		},
+		ListQueryTriggerJobsFunc: &CodeMonitorStoreListQueryTriggerJobsFunc{
+			defaultHook: func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.ListQueryTriggerJobs")
+			},
+		},
+		ListRecipientsFunc: &CodeMonitorStoreListRecipientsFunc{
+			defaultHook: func(context.Context, ListRecipientsOpts) ([]*Recipient, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.ListRecipients")
+			},
+		},
+		ListSlackWebhookActionsFunc: &CodeMonitorStoreListSlackWebhookActionsFunc{
+			defaultHook: func(context.Context, ListActionsOpts) ([]*SlackWebhookAction, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.ListSlackWebhookActions")
+			},
+		},
+		ListWebhookActionsFunc: &CodeMonitorStoreListWebhookActionsFunc{
+			defaultHook: func(context.Context, ListActionsOpts) ([]*WebhookAction, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.ListWebhookActions")
+			},
+		},
+		NowFunc: &CodeMonitorStoreNowFunc{
+			defaultHook: func() time.Time {
+				panic("unexpected invocation of MockCodeMonitorStore.Now")
+			},
+		},
+		ResetQueryTriggerTimestampsFunc: &CodeMonitorStoreResetQueryTriggerTimestampsFunc{
+			defaultHook: func(context.Context, int64) error {
+				panic("unexpected invocation of MockCodeMonitorStore.ResetQueryTriggerTimestamps")
+			},
+		},
+		SetQueryTriggerNextRunFunc: &CodeMonitorStoreSetQueryTriggerNextRunFunc{
+			defaultHook: func(context.Context, int64, time.Time, time.Time) error {
+				panic("unexpected invocation of MockCodeMonitorStore.SetQueryTriggerNextRun")
+			},
+		},
+		TransactFunc: &CodeMonitorStoreTransactFunc{
+			defaultHook: func(context.Context) (CodeMonitorStore, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.Transact")
+			},
+		},
+		UpdateEmailActionFunc: &CodeMonitorStoreUpdateEmailActionFunc{
+			defaultHook: func(context.Context, int64, *EmailActionArgs) (*EmailAction, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.UpdateEmailAction")
+			},
+		},
+		UpdateMonitorFunc: &CodeMonitorStoreUpdateMonitorFunc{
+			defaultHook: func(context.Context, int64, MonitorArgs) (*Monitor, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.UpdateMonitor")
+			},
+		},
+		UpdateMonitorEnabledFunc: &CodeMonitorStoreUpdateMonitorEnabledFunc{
+			defaultHook: func(context.Context, int64, bool) (*Monitor, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.UpdateMonitorEnabled")
+			},
+		},
+		UpdateQueryTriggerFunc: &CodeMonitorStoreUpdateQueryTriggerFunc{
+			defaultHook: func(context.Context, int64, string) error {
+				panic("unexpected invocation of MockCodeMonitorStore.UpdateQueryTrigger")
+			},
+		},
+		UpdateSlackWebhookActionFunc: &CodeMonitorStoreUpdateSlackWebhookActionFunc{
+			defaultHook: func(context.Context, int64, bool, string) (*SlackWebhookAction, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.UpdateSlackWebhookAction")
+			},
+		},
+		UpdateTriggerJobWithResultsFunc: &CodeMonitorStoreUpdateTriggerJobWithResultsFunc{
+			defaultHook: func(context.Context, int32, string, int) error {
+				panic("unexpected invocation of MockCodeMonitorStore.UpdateTriggerJobWithResults")
+			},
+		},
+		UpdateWebhookActionFunc: &CodeMonitorStoreUpdateWebhookActionFunc{
+			defaultHook: func(context.Context, int64, bool, string) (*WebhookAction, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.UpdateWebhookAction")
+			},
+		},
+	}
+}
+
+// NewMockCodeMonitorStoreFrom creates a new mock of the
+// MockCodeMonitorStore interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
+	return &MockCodeMonitorStore{
+		ClockFunc: &CodeMonitorStoreClockFunc{
+			defaultHook: i.Clock,
+		},
+		CountActionJobsFunc: &CodeMonitorStoreCountActionJobsFunc{
+			defaultHook: i.CountActionJobs,
+		},
+		CountMonitorsFunc: &CodeMonitorStoreCountMonitorsFunc{
+			defaultHook: i.CountMonitors,
+		},
+		CountQueryTriggerJobsFunc: &CodeMonitorStoreCountQueryTriggerJobsFunc{
+			defaultHook: i.CountQueryTriggerJobs,
+		},
+		CountRecipientsFunc: &CodeMonitorStoreCountRecipientsFunc{
+			defaultHook: i.CountRecipients,
+		},
+		CountSlackWebhookActionsFunc: &CodeMonitorStoreCountSlackWebhookActionsFunc{
+			defaultHook: i.CountSlackWebhookActions,
+		},
+		CountWebhookActionsFunc: &CodeMonitorStoreCountWebhookActionsFunc{
+			defaultHook: i.CountWebhookActions,
+		},
+		CreateEmailActionFunc: &CodeMonitorStoreCreateEmailActionFunc{
+			defaultHook: i.CreateEmailAction,
+		},
+		CreateMonitorFunc: &CodeMonitorStoreCreateMonitorFunc{
+			defaultHook: i.CreateMonitor,
+		},
+		CreateQueryTriggerFunc: &CodeMonitorStoreCreateQueryTriggerFunc{
+			defaultHook: i.CreateQueryTrigger,
+		},
+		CreateRecipientFunc: &CodeMonitorStoreCreateRecipientFunc{
+			defaultHook: i.CreateRecipient,
+		},
+		CreateSlackWebhookActionFunc: &CodeMonitorStoreCreateSlackWebhookActionFunc{
+			defaultHook: i.CreateSlackWebhookAction,
+		},
+		CreateWebhookActionFunc: &CodeMonitorStoreCreateWebhookActionFunc{
+			defaultHook: i.CreateWebhookAction,
+		},
+		DeleteEmailActionsFunc: &CodeMonitorStoreDeleteEmailActionsFunc{
+			defaultHook: i.DeleteEmailActions,
+		},
+		DeleteMonitorFunc: &CodeMonitorStoreDeleteMonitorFunc{
+			defaultHook: i.DeleteMonitor,
+		},
+		DeleteObsoleteTriggerJobsFunc: &CodeMonitorStoreDeleteObsoleteTriggerJobsFunc{
+			defaultHook: i.DeleteObsoleteTriggerJobs,
+		},
+		DeleteOldTriggerJobsFunc: &CodeMonitorStoreDeleteOldTriggerJobsFunc{
+			defaultHook: i.DeleteOldTriggerJobs,
+		},
+		DeleteRecipientsFunc: &CodeMonitorStoreDeleteRecipientsFunc{
+			defaultHook: i.DeleteRecipients,
+		},
+		DeleteSlackWebhookActionsFunc: &CodeMonitorStoreDeleteSlackWebhookActionsFunc{
+			defaultHook: i.DeleteSlackWebhookActions,
+		},
+		DeleteWebhookActionsFunc: &CodeMonitorStoreDeleteWebhookActionsFunc{
+			defaultHook: i.DeleteWebhookActions,
+		},
+		DoneFunc: &CodeMonitorStoreDoneFunc{
+			defaultHook: i.Done,
+		},
+		EnqueueActionJobsForMonitorFunc: &CodeMonitorStoreEnqueueActionJobsForMonitorFunc{
+			defaultHook: i.EnqueueActionJobsForMonitor,
+		},
+		EnqueueQueryTriggerJobsFunc: &CodeMonitorStoreEnqueueQueryTriggerJobsFunc{
+			defaultHook: i.EnqueueQueryTriggerJobs,
+		},
+		ExecFunc: &CodeMonitorStoreExecFunc{
+			defaultHook: i.Exec,
+		},
+		GetActionJobFunc: &CodeMonitorStoreGetActionJobFunc{
+			defaultHook: i.GetActionJob,
+		},
+		GetActionJobMetadataFunc: &CodeMonitorStoreGetActionJobMetadataFunc{
+			defaultHook: i.GetActionJobMetadata,
+		},
+		GetEmailActionFunc: &CodeMonitorStoreGetEmailActionFunc{
+			defaultHook: i.GetEmailAction,
+		},
+		GetMonitorFunc: &CodeMonitorStoreGetMonitorFunc{
+			defaultHook: i.GetMonitor,
+		},
+		GetQueryTriggerForJobFunc: &CodeMonitorStoreGetQueryTriggerForJobFunc{
+			defaultHook: i.GetQueryTriggerForJob,
+		},
+		GetQueryTriggerForMonitorFunc: &CodeMonitorStoreGetQueryTriggerForMonitorFunc{
+			defaultHook: i.GetQueryTriggerForMonitor,
+		},
+		GetSlackWebhookActionFunc: &CodeMonitorStoreGetSlackWebhookActionFunc{
+			defaultHook: i.GetSlackWebhookAction,
+		},
+		GetWebhookActionFunc: &CodeMonitorStoreGetWebhookActionFunc{
+			defaultHook: i.GetWebhookAction,
+		},
+		HandleFunc: &CodeMonitorStoreHandleFunc{
+			defaultHook: i.Handle,
+		},
+		ListActionJobsFunc: &CodeMonitorStoreListActionJobsFunc{
+			defaultHook: i.ListActionJobs,
+		},
+		ListEmailActionsFunc: &CodeMonitorStoreListEmailActionsFunc{
+			defaultHook: i.ListEmailActions,
+		},
+		ListMonitorsFunc: &CodeMonitorStoreListMonitorsFunc{
+			defaultHook: i.ListMonitors,
+		},
+		ListQueryTriggerJobsFunc: &CodeMonitorStoreListQueryTriggerJobsFunc{
+			defaultHook: i.ListQueryTriggerJobs,
+		},
+		ListRecipientsFunc: &CodeMonitorStoreListRecipientsFunc{
+			defaultHook: i.ListRecipients,
+		},
+		ListSlackWebhookActionsFunc: &CodeMonitorStoreListSlackWebhookActionsFunc{
+			defaultHook: i.ListSlackWebhookActions,
+		},
+		ListWebhookActionsFunc: &CodeMonitorStoreListWebhookActionsFunc{
+			defaultHook: i.ListWebhookActions,
+		},
+		NowFunc: &CodeMonitorStoreNowFunc{
+			defaultHook: i.Now,
+		},
+		ResetQueryTriggerTimestampsFunc: &CodeMonitorStoreResetQueryTriggerTimestampsFunc{
+			defaultHook: i.ResetQueryTriggerTimestamps,
+		},
+		SetQueryTriggerNextRunFunc: &CodeMonitorStoreSetQueryTriggerNextRunFunc{
+			defaultHook: i.SetQueryTriggerNextRun,
+		},
+		TransactFunc: &CodeMonitorStoreTransactFunc{
+			defaultHook: i.Transact,
+		},
+		UpdateEmailActionFunc: &CodeMonitorStoreUpdateEmailActionFunc{
+			defaultHook: i.UpdateEmailAction,
+		},
+		UpdateMonitorFunc: &CodeMonitorStoreUpdateMonitorFunc{
+			defaultHook: i.UpdateMonitor,
+		},
+		UpdateMonitorEnabledFunc: &CodeMonitorStoreUpdateMonitorEnabledFunc{
+			defaultHook: i.UpdateMonitorEnabled,
+		},
+		UpdateQueryTriggerFunc: &CodeMonitorStoreUpdateQueryTriggerFunc{
+			defaultHook: i.UpdateQueryTrigger,
+		},
+		UpdateSlackWebhookActionFunc: &CodeMonitorStoreUpdateSlackWebhookActionFunc{
+			defaultHook: i.UpdateSlackWebhookAction,
+		},
+		UpdateTriggerJobWithResultsFunc: &CodeMonitorStoreUpdateTriggerJobWithResultsFunc{
+			defaultHook: i.UpdateTriggerJobWithResults,
+		},
+		UpdateWebhookActionFunc: &CodeMonitorStoreUpdateWebhookActionFunc{
+			defaultHook: i.UpdateWebhookAction,
+		},
+	}
+}
+
+// CodeMonitorStoreClockFunc describes the behavior when the Clock method of
+// the parent MockCodeMonitorStore instance is invoked.
+type CodeMonitorStoreClockFunc struct {
+	defaultHook func() func() time.Time
+	hooks       []func() func() time.Time
+	history     []CodeMonitorStoreClockFuncCall
+	mutex       sync.Mutex
+}
+
+// Clock delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) Clock() func() time.Time {
+	r0 := m.ClockFunc.nextHook()()
+	m.ClockFunc.appendCall(CodeMonitorStoreClockFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Clock method of the
+// parent MockCodeMonitorStore instance is invoked and the hook queue is
+// empty.
+func (f *CodeMonitorStoreClockFunc) SetDefaultHook(hook func() func() time.Time) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Clock method of the parent MockCodeMonitorStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeMonitorStoreClockFunc) PushHook(hook func() func() time.Time) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreClockFunc) SetDefaultReturn(r0 func() time.Time) {
+	f.SetDefaultHook(func() func() time.Time {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreClockFunc) PushReturn(r0 func() time.Time) {
+	f.PushHook(func() func() time.Time {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreClockFunc) nextHook() func() func() time.Time {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreClockFunc) appendCall(r0 CodeMonitorStoreClockFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreClockFuncCall objects
+// describing the invocations of this function.
+func (f *CodeMonitorStoreClockFunc) History() []CodeMonitorStoreClockFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreClockFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreClockFuncCall is an object that describes an invocation
+// of method Clock on an instance of MockCodeMonitorStore.
+type CodeMonitorStoreClockFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 func() time.Time
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreClockFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreClockFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreCountActionJobsFunc describes the behavior when the
+// CountActionJobs method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreCountActionJobsFunc struct {
+	defaultHook func(context.Context, ListActionJobsOpts) (int, error)
+	hooks       []func(context.Context, ListActionJobsOpts) (int, error)
+	history     []CodeMonitorStoreCountActionJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// CountActionJobs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) CountActionJobs(v0 context.Context, v1 ListActionJobsOpts) (int, error) {
+	r0, r1 := m.CountActionJobsFunc.nextHook()(v0, v1)
+	m.CountActionJobsFunc.appendCall(CodeMonitorStoreCountActionJobsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CountActionJobs
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreCountActionJobsFunc) SetDefaultHook(hook func(context.Context, ListActionJobsOpts) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountActionJobs method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreCountActionJobsFunc) PushHook(hook func(context.Context, ListActionJobsOpts) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreCountActionJobsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, ListActionJobsOpts) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreCountActionJobsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, ListActionJobsOpts) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreCountActionJobsFunc) nextHook() func(context.Context, ListActionJobsOpts) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreCountActionJobsFunc) appendCall(r0 CodeMonitorStoreCountActionJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreCountActionJobsFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreCountActionJobsFunc) History() []CodeMonitorStoreCountActionJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreCountActionJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreCountActionJobsFuncCall is an object that describes an
+// invocation of method CountActionJobs on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreCountActionJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListActionJobsOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreCountActionJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreCountActionJobsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreCountMonitorsFunc describes the behavior when the
+// CountMonitors method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreCountMonitorsFunc struct {
+	defaultHook func(context.Context, int32) (int32, error)
+	hooks       []func(context.Context, int32) (int32, error)
+	history     []CodeMonitorStoreCountMonitorsFuncCall
+	mutex       sync.Mutex
+}
+
+// CountMonitors delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) CountMonitors(v0 context.Context, v1 int32) (int32, error) {
+	r0, r1 := m.CountMonitorsFunc.nextHook()(v0, v1)
+	m.CountMonitorsFunc.appendCall(CodeMonitorStoreCountMonitorsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CountMonitors method
+// of the parent MockCodeMonitorStore instance is invoked and the hook queue
+// is empty.
+func (f *CodeMonitorStoreCountMonitorsFunc) SetDefaultHook(hook func(context.Context, int32) (int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountMonitors method of the parent MockCodeMonitorStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeMonitorStoreCountMonitorsFunc) PushHook(hook func(context.Context, int32) (int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreCountMonitorsFunc) SetDefaultReturn(r0 int32, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) (int32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreCountMonitorsFunc) PushReturn(r0 int32, r1 error) {
+	f.PushHook(func(context.Context, int32) (int32, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreCountMonitorsFunc) nextHook() func(context.Context, int32) (int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreCountMonitorsFunc) appendCall(r0 CodeMonitorStoreCountMonitorsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreCountMonitorsFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreCountMonitorsFunc) History() []CodeMonitorStoreCountMonitorsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreCountMonitorsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreCountMonitorsFuncCall is an object that describes an
+// invocation of method CountMonitors on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreCountMonitorsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreCountMonitorsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreCountMonitorsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreCountQueryTriggerJobsFunc describes the behavior when the
+// CountQueryTriggerJobs method of the parent MockCodeMonitorStore instance
+// is invoked.
+type CodeMonitorStoreCountQueryTriggerJobsFunc struct {
+	defaultHook func(context.Context, int64) (int32, error)
+	hooks       []func(context.Context, int64) (int32, error)
+	history     []CodeMonitorStoreCountQueryTriggerJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// CountQueryTriggerJobs delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) CountQueryTriggerJobs(v0 context.Context, v1 int64) (int32, error) {
+	r0, r1 := m.CountQueryTriggerJobsFunc.nextHook()(v0, v1)
+	m.CountQueryTriggerJobsFunc.appendCall(CodeMonitorStoreCountQueryTriggerJobsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CountQueryTriggerJobs method of the parent MockCodeMonitorStore instance
+// is invoked and the hook queue is empty.
+func (f *CodeMonitorStoreCountQueryTriggerJobsFunc) SetDefaultHook(hook func(context.Context, int64) (int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountQueryTriggerJobs method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreCountQueryTriggerJobsFunc) PushHook(hook func(context.Context, int64) (int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreCountQueryTriggerJobsFunc) SetDefaultReturn(r0 int32, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (int32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreCountQueryTriggerJobsFunc) PushReturn(r0 int32, r1 error) {
+	f.PushHook(func(context.Context, int64) (int32, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreCountQueryTriggerJobsFunc) nextHook() func(context.Context, int64) (int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreCountQueryTriggerJobsFunc) appendCall(r0 CodeMonitorStoreCountQueryTriggerJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreCountQueryTriggerJobsFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreCountQueryTriggerJobsFunc) History() []CodeMonitorStoreCountQueryTriggerJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreCountQueryTriggerJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreCountQueryTriggerJobsFuncCall is an object that describes
+// an invocation of method CountQueryTriggerJobs on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreCountQueryTriggerJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreCountQueryTriggerJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreCountQueryTriggerJobsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreCountRecipientsFunc describes the behavior when the
+// CountRecipients method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreCountRecipientsFunc struct {
+	defaultHook func(context.Context, int64) (int32, error)
+	hooks       []func(context.Context, int64) (int32, error)
+	history     []CodeMonitorStoreCountRecipientsFuncCall
+	mutex       sync.Mutex
+}
+
+// CountRecipients delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) CountRecipients(v0 context.Context, v1 int64) (int32, error) {
+	r0, r1 := m.CountRecipientsFunc.nextHook()(v0, v1)
+	m.CountRecipientsFunc.appendCall(CodeMonitorStoreCountRecipientsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CountRecipients
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreCountRecipientsFunc) SetDefaultHook(hook func(context.Context, int64) (int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountRecipients method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreCountRecipientsFunc) PushHook(hook func(context.Context, int64) (int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreCountRecipientsFunc) SetDefaultReturn(r0 int32, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (int32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreCountRecipientsFunc) PushReturn(r0 int32, r1 error) {
+	f.PushHook(func(context.Context, int64) (int32, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreCountRecipientsFunc) nextHook() func(context.Context, int64) (int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreCountRecipientsFunc) appendCall(r0 CodeMonitorStoreCountRecipientsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreCountRecipientsFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreCountRecipientsFunc) History() []CodeMonitorStoreCountRecipientsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreCountRecipientsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreCountRecipientsFuncCall is an object that describes an
+// invocation of method CountRecipients on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreCountRecipientsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreCountRecipientsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreCountRecipientsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreCountSlackWebhookActionsFunc describes the behavior when
+// the CountSlackWebhookActions method of the parent MockCodeMonitorStore
+// instance is invoked.
+type CodeMonitorStoreCountSlackWebhookActionsFunc struct {
+	defaultHook func(context.Context, int64) (int, error)
+	hooks       []func(context.Context, int64) (int, error)
+	history     []CodeMonitorStoreCountSlackWebhookActionsFuncCall
+	mutex       sync.Mutex
+}
+
+// CountSlackWebhookActions delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) CountSlackWebhookActions(v0 context.Context, v1 int64) (int, error) {
+	r0, r1 := m.CountSlackWebhookActionsFunc.nextHook()(v0, v1)
+	m.CountSlackWebhookActionsFunc.appendCall(CodeMonitorStoreCountSlackWebhookActionsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CountSlackWebhookActions method of the parent MockCodeMonitorStore
+// instance is invoked and the hook queue is empty.
+func (f *CodeMonitorStoreCountSlackWebhookActionsFunc) SetDefaultHook(hook func(context.Context, int64) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountSlackWebhookActions method of the parent MockCodeMonitorStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *CodeMonitorStoreCountSlackWebhookActionsFunc) PushHook(hook func(context.Context, int64) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreCountSlackWebhookActionsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreCountSlackWebhookActionsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, int64) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreCountSlackWebhookActionsFunc) nextHook() func(context.Context, int64) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreCountSlackWebhookActionsFunc) appendCall(r0 CodeMonitorStoreCountSlackWebhookActionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreCountSlackWebhookActionsFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreCountSlackWebhookActionsFunc) History() []CodeMonitorStoreCountSlackWebhookActionsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreCountSlackWebhookActionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreCountSlackWebhookActionsFuncCall is an object that
+// describes an invocation of method CountSlackWebhookActions on an instance
+// of MockCodeMonitorStore.
+type CodeMonitorStoreCountSlackWebhookActionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreCountSlackWebhookActionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreCountSlackWebhookActionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreCountWebhookActionsFunc describes the behavior when the
+// CountWebhookActions method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreCountWebhookActionsFunc struct {
+	defaultHook func(context.Context, int64) (int, error)
+	hooks       []func(context.Context, int64) (int, error)
+	history     []CodeMonitorStoreCountWebhookActionsFuncCall
+	mutex       sync.Mutex
+}
+
+// CountWebhookActions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) CountWebhookActions(v0 context.Context, v1 int64) (int, error) {
+	r0, r1 := m.CountWebhookActionsFunc.nextHook()(v0, v1)
+	m.CountWebhookActionsFunc.appendCall(CodeMonitorStoreCountWebhookActionsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CountWebhookActions
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreCountWebhookActionsFunc) SetDefaultHook(hook func(context.Context, int64) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountWebhookActions method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreCountWebhookActionsFunc) PushHook(hook func(context.Context, int64) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreCountWebhookActionsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreCountWebhookActionsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, int64) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreCountWebhookActionsFunc) nextHook() func(context.Context, int64) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreCountWebhookActionsFunc) appendCall(r0 CodeMonitorStoreCountWebhookActionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreCountWebhookActionsFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreCountWebhookActionsFunc) History() []CodeMonitorStoreCountWebhookActionsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreCountWebhookActionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreCountWebhookActionsFuncCall is an object that describes
+// an invocation of method CountWebhookActions on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreCountWebhookActionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreCountWebhookActionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreCountWebhookActionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreCreateEmailActionFunc describes the behavior when the
+// CreateEmailAction method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreCreateEmailActionFunc struct {
+	defaultHook func(context.Context, int64, *EmailActionArgs) (*EmailAction, error)
+	hooks       []func(context.Context, int64, *EmailActionArgs) (*EmailAction, error)
+	history     []CodeMonitorStoreCreateEmailActionFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateEmailAction delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) CreateEmailAction(v0 context.Context, v1 int64, v2 *EmailActionArgs) (*EmailAction, error) {
+	r0, r1 := m.CreateEmailActionFunc.nextHook()(v0, v1, v2)
+	m.CreateEmailActionFunc.appendCall(CodeMonitorStoreCreateEmailActionFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CreateEmailAction
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreCreateEmailActionFunc) SetDefaultHook(hook func(context.Context, int64, *EmailActionArgs) (*EmailAction, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateEmailAction method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreCreateEmailActionFunc) PushHook(hook func(context.Context, int64, *EmailActionArgs) (*EmailAction, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreCreateEmailActionFunc) SetDefaultReturn(r0 *EmailAction, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64, *EmailActionArgs) (*EmailAction, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreCreateEmailActionFunc) PushReturn(r0 *EmailAction, r1 error) {
+	f.PushHook(func(context.Context, int64, *EmailActionArgs) (*EmailAction, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreCreateEmailActionFunc) nextHook() func(context.Context, int64, *EmailActionArgs) (*EmailAction, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreCreateEmailActionFunc) appendCall(r0 CodeMonitorStoreCreateEmailActionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreCreateEmailActionFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreCreateEmailActionFunc) History() []CodeMonitorStoreCreateEmailActionFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreCreateEmailActionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreCreateEmailActionFuncCall is an object that describes an
+// invocation of method CreateEmailAction on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreCreateEmailActionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *EmailActionArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *EmailAction
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreCreateEmailActionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreCreateEmailActionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreCreateMonitorFunc describes the behavior when the
+// CreateMonitor method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreCreateMonitorFunc struct {
+	defaultHook func(context.Context, MonitorArgs) (*Monitor, error)
+	hooks       []func(context.Context, MonitorArgs) (*Monitor, error)
+	history     []CodeMonitorStoreCreateMonitorFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateMonitor delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) CreateMonitor(v0 context.Context, v1 MonitorArgs) (*Monitor, error) {
+	r0, r1 := m.CreateMonitorFunc.nextHook()(v0, v1)
+	m.CreateMonitorFunc.appendCall(CodeMonitorStoreCreateMonitorFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CreateMonitor method
+// of the parent MockCodeMonitorStore instance is invoked and the hook queue
+// is empty.
+func (f *CodeMonitorStoreCreateMonitorFunc) SetDefaultHook(hook func(context.Context, MonitorArgs) (*Monitor, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateMonitor method of the parent MockCodeMonitorStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeMonitorStoreCreateMonitorFunc) PushHook(hook func(context.Context, MonitorArgs) (*Monitor, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreCreateMonitorFunc) SetDefaultReturn(r0 *Monitor, r1 error) {
+	f.SetDefaultHook(func(context.Context, MonitorArgs) (*Monitor, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreCreateMonitorFunc) PushReturn(r0 *Monitor, r1 error) {
+	f.PushHook(func(context.Context, MonitorArgs) (*Monitor, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreCreateMonitorFunc) nextHook() func(context.Context, MonitorArgs) (*Monitor, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreCreateMonitorFunc) appendCall(r0 CodeMonitorStoreCreateMonitorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreCreateMonitorFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreCreateMonitorFunc) History() []CodeMonitorStoreCreateMonitorFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreCreateMonitorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreCreateMonitorFuncCall is an object that describes an
+// invocation of method CreateMonitor on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreCreateMonitorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 MonitorArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *Monitor
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreCreateMonitorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreCreateMonitorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreCreateQueryTriggerFunc describes the behavior when the
+// CreateQueryTrigger method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreCreateQueryTriggerFunc struct {
+	defaultHook func(context.Context, int64, string) (*QueryTrigger, error)
+	hooks       []func(context.Context, int64, string) (*QueryTrigger, error)
+	history     []CodeMonitorStoreCreateQueryTriggerFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateQueryTrigger delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) CreateQueryTrigger(v0 context.Context, v1 int64, v2 string) (*QueryTrigger, error) {
+	r0, r1 := m.CreateQueryTriggerFunc.nextHook()(v0, v1, v2)
+	m.CreateQueryTriggerFunc.appendCall(CodeMonitorStoreCreateQueryTriggerFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CreateQueryTrigger
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreCreateQueryTriggerFunc) SetDefaultHook(hook func(context.Context, int64, string) (*QueryTrigger, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateQueryTrigger method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreCreateQueryTriggerFunc) PushHook(hook func(context.Context, int64, string) (*QueryTrigger, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreCreateQueryTriggerFunc) SetDefaultReturn(r0 *QueryTrigger, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64, string) (*QueryTrigger, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreCreateQueryTriggerFunc) PushReturn(r0 *QueryTrigger, r1 error) {
+	f.PushHook(func(context.Context, int64, string) (*QueryTrigger, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreCreateQueryTriggerFunc) nextHook() func(context.Context, int64, string) (*QueryTrigger, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreCreateQueryTriggerFunc) appendCall(r0 CodeMonitorStoreCreateQueryTriggerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreCreateQueryTriggerFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreCreateQueryTriggerFunc) History() []CodeMonitorStoreCreateQueryTriggerFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreCreateQueryTriggerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreCreateQueryTriggerFuncCall is an object that describes an
+// invocation of method CreateQueryTrigger on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreCreateQueryTriggerFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *QueryTrigger
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreCreateQueryTriggerFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreCreateQueryTriggerFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreCreateRecipientFunc describes the behavior when the
+// CreateRecipient method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreCreateRecipientFunc struct {
+	defaultHook func(context.Context, int64, *int32, *int32) (*Recipient, error)
+	hooks       []func(context.Context, int64, *int32, *int32) (*Recipient, error)
+	history     []CodeMonitorStoreCreateRecipientFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateRecipient delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) CreateRecipient(v0 context.Context, v1 int64, v2 *int32, v3 *int32) (*Recipient, error) {
+	r0, r1 := m.CreateRecipientFunc.nextHook()(v0, v1, v2, v3)
+	m.CreateRecipientFunc.appendCall(CodeMonitorStoreCreateRecipientFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CreateRecipient
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreCreateRecipientFunc) SetDefaultHook(hook func(context.Context, int64, *int32, *int32) (*Recipient, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateRecipient method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreCreateRecipientFunc) PushHook(hook func(context.Context, int64, *int32, *int32) (*Recipient, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreCreateRecipientFunc) SetDefaultReturn(r0 *Recipient, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64, *int32, *int32) (*Recipient, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreCreateRecipientFunc) PushReturn(r0 *Recipient, r1 error) {
+	f.PushHook(func(context.Context, int64, *int32, *int32) (*Recipient, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreCreateRecipientFunc) nextHook() func(context.Context, int64, *int32, *int32) (*Recipient, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreCreateRecipientFunc) appendCall(r0 CodeMonitorStoreCreateRecipientFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreCreateRecipientFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreCreateRecipientFunc) History() []CodeMonitorStoreCreateRecipientFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreCreateRecipientFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreCreateRecipientFuncCall is an object that describes an
+// invocation of method CreateRecipient on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreCreateRecipientFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *int32
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *Recipient
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreCreateRecipientFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreCreateRecipientFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreCreateSlackWebhookActionFunc describes the behavior when
+// the CreateSlackWebhookAction method of the parent MockCodeMonitorStore
+// instance is invoked.
+type CodeMonitorStoreCreateSlackWebhookActionFunc struct {
+	defaultHook func(context.Context, int64, bool, string) (*SlackWebhookAction, error)
+	hooks       []func(context.Context, int64, bool, string) (*SlackWebhookAction, error)
+	history     []CodeMonitorStoreCreateSlackWebhookActionFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateSlackWebhookAction delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) CreateSlackWebhookAction(v0 context.Context, v1 int64, v2 bool, v3 string) (*SlackWebhookAction, error) {
+	r0, r1 := m.CreateSlackWebhookActionFunc.nextHook()(v0, v1, v2, v3)
+	m.CreateSlackWebhookActionFunc.appendCall(CodeMonitorStoreCreateSlackWebhookActionFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CreateSlackWebhookAction method of the parent MockCodeMonitorStore
+// instance is invoked and the hook queue is empty.
+func (f *CodeMonitorStoreCreateSlackWebhookActionFunc) SetDefaultHook(hook func(context.Context, int64, bool, string) (*SlackWebhookAction, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateSlackWebhookAction method of the parent MockCodeMonitorStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *CodeMonitorStoreCreateSlackWebhookActionFunc) PushHook(hook func(context.Context, int64, bool, string) (*SlackWebhookAction, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreCreateSlackWebhookActionFunc) SetDefaultReturn(r0 *SlackWebhookAction, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64, bool, string) (*SlackWebhookAction, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreCreateSlackWebhookActionFunc) PushReturn(r0 *SlackWebhookAction, r1 error) {
+	f.PushHook(func(context.Context, int64, bool, string) (*SlackWebhookAction, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreCreateSlackWebhookActionFunc) nextHook() func(context.Context, int64, bool, string) (*SlackWebhookAction, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreCreateSlackWebhookActionFunc) appendCall(r0 CodeMonitorStoreCreateSlackWebhookActionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreCreateSlackWebhookActionFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreCreateSlackWebhookActionFunc) History() []CodeMonitorStoreCreateSlackWebhookActionFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreCreateSlackWebhookActionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreCreateSlackWebhookActionFuncCall is an object that
+// describes an invocation of method CreateSlackWebhookAction on an instance
+// of MockCodeMonitorStore.
+type CodeMonitorStoreCreateSlackWebhookActionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *SlackWebhookAction
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreCreateSlackWebhookActionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreCreateSlackWebhookActionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreCreateWebhookActionFunc describes the behavior when the
+// CreateWebhookAction method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreCreateWebhookActionFunc struct {
+	defaultHook func(context.Context, int64, bool, string) (*WebhookAction, error)
+	hooks       []func(context.Context, int64, bool, string) (*WebhookAction, error)
+	history     []CodeMonitorStoreCreateWebhookActionFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateWebhookAction delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) CreateWebhookAction(v0 context.Context, v1 int64, v2 bool, v3 string) (*WebhookAction, error) {
+	r0, r1 := m.CreateWebhookActionFunc.nextHook()(v0, v1, v2, v3)
+	m.CreateWebhookActionFunc.appendCall(CodeMonitorStoreCreateWebhookActionFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CreateWebhookAction
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreCreateWebhookActionFunc) SetDefaultHook(hook func(context.Context, int64, bool, string) (*WebhookAction, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateWebhookAction method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreCreateWebhookActionFunc) PushHook(hook func(context.Context, int64, bool, string) (*WebhookAction, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreCreateWebhookActionFunc) SetDefaultReturn(r0 *WebhookAction, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64, bool, string) (*WebhookAction, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreCreateWebhookActionFunc) PushReturn(r0 *WebhookAction, r1 error) {
+	f.PushHook(func(context.Context, int64, bool, string) (*WebhookAction, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreCreateWebhookActionFunc) nextHook() func(context.Context, int64, bool, string) (*WebhookAction, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreCreateWebhookActionFunc) appendCall(r0 CodeMonitorStoreCreateWebhookActionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreCreateWebhookActionFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreCreateWebhookActionFunc) History() []CodeMonitorStoreCreateWebhookActionFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreCreateWebhookActionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreCreateWebhookActionFuncCall is an object that describes
+// an invocation of method CreateWebhookAction on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreCreateWebhookActionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *WebhookAction
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreCreateWebhookActionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreCreateWebhookActionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreDeleteEmailActionsFunc describes the behavior when the
+// DeleteEmailActions method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreDeleteEmailActionsFunc struct {
+	defaultHook func(context.Context, []int64, int64) error
+	hooks       []func(context.Context, []int64, int64) error
+	history     []CodeMonitorStoreDeleteEmailActionsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteEmailActions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) DeleteEmailActions(v0 context.Context, v1 []int64, v2 int64) error {
+	r0 := m.DeleteEmailActionsFunc.nextHook()(v0, v1, v2)
+	m.DeleteEmailActionsFunc.appendCall(CodeMonitorStoreDeleteEmailActionsFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteEmailActions
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreDeleteEmailActionsFunc) SetDefaultHook(hook func(context.Context, []int64, int64) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteEmailActions method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreDeleteEmailActionsFunc) PushHook(hook func(context.Context, []int64, int64) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreDeleteEmailActionsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, []int64, int64) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreDeleteEmailActionsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, []int64, int64) error {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreDeleteEmailActionsFunc) nextHook() func(context.Context, []int64, int64) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreDeleteEmailActionsFunc) appendCall(r0 CodeMonitorStoreDeleteEmailActionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreDeleteEmailActionsFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreDeleteEmailActionsFunc) History() []CodeMonitorStoreDeleteEmailActionsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreDeleteEmailActionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreDeleteEmailActionsFuncCall is an object that describes an
+// invocation of method DeleteEmailActions on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreDeleteEmailActionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreDeleteEmailActionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreDeleteEmailActionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreDeleteMonitorFunc describes the behavior when the
+// DeleteMonitor method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreDeleteMonitorFunc struct {
+	defaultHook func(context.Context, int64) error
+	hooks       []func(context.Context, int64) error
+	history     []CodeMonitorStoreDeleteMonitorFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteMonitor delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) DeleteMonitor(v0 context.Context, v1 int64) error {
+	r0 := m.DeleteMonitorFunc.nextHook()(v0, v1)
+	m.DeleteMonitorFunc.appendCall(CodeMonitorStoreDeleteMonitorFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteMonitor method
+// of the parent MockCodeMonitorStore instance is invoked and the hook queue
+// is empty.
+func (f *CodeMonitorStoreDeleteMonitorFunc) SetDefaultHook(hook func(context.Context, int64) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteMonitor method of the parent MockCodeMonitorStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeMonitorStoreDeleteMonitorFunc) PushHook(hook func(context.Context, int64) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreDeleteMonitorFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int64) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreDeleteMonitorFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int64) error {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreDeleteMonitorFunc) nextHook() func(context.Context, int64) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreDeleteMonitorFunc) appendCall(r0 CodeMonitorStoreDeleteMonitorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreDeleteMonitorFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreDeleteMonitorFunc) History() []CodeMonitorStoreDeleteMonitorFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreDeleteMonitorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreDeleteMonitorFuncCall is an object that describes an
+// invocation of method DeleteMonitor on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreDeleteMonitorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreDeleteMonitorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreDeleteMonitorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreDeleteObsoleteTriggerJobsFunc describes the behavior when
+// the DeleteObsoleteTriggerJobs method of the parent MockCodeMonitorStore
+// instance is invoked.
+type CodeMonitorStoreDeleteObsoleteTriggerJobsFunc struct {
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
+	history     []CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteObsoleteTriggerJobs delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) DeleteObsoleteTriggerJobs(v0 context.Context) error {
+	r0 := m.DeleteObsoleteTriggerJobsFunc.nextHook()(v0)
+	m.DeleteObsoleteTriggerJobsFunc.appendCall(CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteObsoleteTriggerJobs method of the parent MockCodeMonitorStore
+// instance is invoked and the hook queue is empty.
+func (f *CodeMonitorStoreDeleteObsoleteTriggerJobsFunc) SetDefaultHook(hook func(context.Context) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteObsoleteTriggerJobs method of the parent MockCodeMonitorStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *CodeMonitorStoreDeleteObsoleteTriggerJobsFunc) PushHook(hook func(context.Context) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreDeleteObsoleteTriggerJobsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreDeleteObsoleteTriggerJobsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context) error {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreDeleteObsoleteTriggerJobsFunc) nextHook() func(context.Context) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreDeleteObsoleteTriggerJobsFunc) appendCall(r0 CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreDeleteObsoleteTriggerJobsFunc) History() []CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall is an object that
+// describes an invocation of method DeleteObsoleteTriggerJobs on an
+// instance of MockCodeMonitorStore.
+type CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreDeleteObsoleteTriggerJobsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreDeleteOldTriggerJobsFunc describes the behavior when the
+// DeleteOldTriggerJobs method of the parent MockCodeMonitorStore instance
+// is invoked.
+type CodeMonitorStoreDeleteOldTriggerJobsFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []CodeMonitorStoreDeleteOldTriggerJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteOldTriggerJobs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) DeleteOldTriggerJobs(v0 context.Context, v1 int) error {
+	r0 := m.DeleteOldTriggerJobsFunc.nextHook()(v0, v1)
+	m.DeleteOldTriggerJobsFunc.appendCall(CodeMonitorStoreDeleteOldTriggerJobsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteOldTriggerJobs
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreDeleteOldTriggerJobsFunc) SetDefaultHook(hook func(context.Context, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteOldTriggerJobs method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreDeleteOldTriggerJobsFunc) PushHook(hook func(context.Context, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreDeleteOldTriggerJobsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreDeleteOldTriggerJobsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreDeleteOldTriggerJobsFunc) nextHook() func(context.Context, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreDeleteOldTriggerJobsFunc) appendCall(r0 CodeMonitorStoreDeleteOldTriggerJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreDeleteOldTriggerJobsFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreDeleteOldTriggerJobsFunc) History() []CodeMonitorStoreDeleteOldTriggerJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreDeleteOldTriggerJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreDeleteOldTriggerJobsFuncCall is an object that describes
+// an invocation of method DeleteOldTriggerJobs on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreDeleteOldTriggerJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreDeleteOldTriggerJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreDeleteOldTriggerJobsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreDeleteRecipientsFunc describes the behavior when the
+// DeleteRecipients method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreDeleteRecipientsFunc struct {
+	defaultHook func(context.Context, int64) error
+	hooks       []func(context.Context, int64) error
+	history     []CodeMonitorStoreDeleteRecipientsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteRecipients delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) DeleteRecipients(v0 context.Context, v1 int64) error {
+	r0 := m.DeleteRecipientsFunc.nextHook()(v0, v1)
+	m.DeleteRecipientsFunc.appendCall(CodeMonitorStoreDeleteRecipientsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteRecipients
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreDeleteRecipientsFunc) SetDefaultHook(hook func(context.Context, int64) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteRecipients method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreDeleteRecipientsFunc) PushHook(hook func(context.Context, int64) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreDeleteRecipientsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int64) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreDeleteRecipientsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int64) error {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreDeleteRecipientsFunc) nextHook() func(context.Context, int64) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreDeleteRecipientsFunc) appendCall(r0 CodeMonitorStoreDeleteRecipientsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreDeleteRecipientsFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreDeleteRecipientsFunc) History() []CodeMonitorStoreDeleteRecipientsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreDeleteRecipientsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreDeleteRecipientsFuncCall is an object that describes an
+// invocation of method DeleteRecipients on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreDeleteRecipientsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreDeleteRecipientsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreDeleteRecipientsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreDeleteSlackWebhookActionsFunc describes the behavior when
+// the DeleteSlackWebhookActions method of the parent MockCodeMonitorStore
+// instance is invoked.
+type CodeMonitorStoreDeleteSlackWebhookActionsFunc struct {
+	defaultHook func(context.Context, int64, ...int64) error
+	hooks       []func(context.Context, int64, ...int64) error
+	history     []CodeMonitorStoreDeleteSlackWebhookActionsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteSlackWebhookActions delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) DeleteSlackWebhookActions(v0 context.Context, v1 int64, v2 ...int64) error {
+	r0 := m.DeleteSlackWebhookActionsFunc.nextHook()(v0, v1, v2...)
+	m.DeleteSlackWebhookActionsFunc.appendCall(CodeMonitorStoreDeleteSlackWebhookActionsFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteSlackWebhookActions method of the parent MockCodeMonitorStore
+// instance is invoked and the hook queue is empty.
+func (f *CodeMonitorStoreDeleteSlackWebhookActionsFunc) SetDefaultHook(hook func(context.Context, int64, ...int64) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteSlackWebhookActions method of the parent MockCodeMonitorStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *CodeMonitorStoreDeleteSlackWebhookActionsFunc) PushHook(hook func(context.Context, int64, ...int64) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreDeleteSlackWebhookActionsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int64, ...int64) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreDeleteSlackWebhookActionsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int64, ...int64) error {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreDeleteSlackWebhookActionsFunc) nextHook() func(context.Context, int64, ...int64) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreDeleteSlackWebhookActionsFunc) appendCall(r0 CodeMonitorStoreDeleteSlackWebhookActionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreDeleteSlackWebhookActionsFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreDeleteSlackWebhookActionsFunc) History() []CodeMonitorStoreDeleteSlackWebhookActionsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreDeleteSlackWebhookActionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreDeleteSlackWebhookActionsFuncCall is an object that
+// describes an invocation of method DeleteSlackWebhookActions on an
+// instance of MockCodeMonitorStore.
+type CodeMonitorStoreDeleteSlackWebhookActionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c CodeMonitorStoreDeleteSlackWebhookActionsFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreDeleteSlackWebhookActionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreDeleteWebhookActionsFunc describes the behavior when the
+// DeleteWebhookActions method of the parent MockCodeMonitorStore instance
+// is invoked.
+type CodeMonitorStoreDeleteWebhookActionsFunc struct {
+	defaultHook func(context.Context, int64, ...int64) error
+	hooks       []func(context.Context, int64, ...int64) error
+	history     []CodeMonitorStoreDeleteWebhookActionsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteWebhookActions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) DeleteWebhookActions(v0 context.Context, v1 int64, v2 ...int64) error {
+	r0 := m.DeleteWebhookActionsFunc.nextHook()(v0, v1, v2...)
+	m.DeleteWebhookActionsFunc.appendCall(CodeMonitorStoreDeleteWebhookActionsFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteWebhookActions
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreDeleteWebhookActionsFunc) SetDefaultHook(hook func(context.Context, int64, ...int64) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteWebhookActions method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreDeleteWebhookActionsFunc) PushHook(hook func(context.Context, int64, ...int64) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreDeleteWebhookActionsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int64, ...int64) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreDeleteWebhookActionsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int64, ...int64) error {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreDeleteWebhookActionsFunc) nextHook() func(context.Context, int64, ...int64) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreDeleteWebhookActionsFunc) appendCall(r0 CodeMonitorStoreDeleteWebhookActionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreDeleteWebhookActionsFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreDeleteWebhookActionsFunc) History() []CodeMonitorStoreDeleteWebhookActionsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreDeleteWebhookActionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreDeleteWebhookActionsFuncCall is an object that describes
+// an invocation of method DeleteWebhookActions on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreDeleteWebhookActionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c CodeMonitorStoreDeleteWebhookActionsFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreDeleteWebhookActionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreDoneFunc describes the behavior when the Done method of
+// the parent MockCodeMonitorStore instance is invoked.
+type CodeMonitorStoreDoneFunc struct {
+	defaultHook func(error) error
+	hooks       []func(error) error
+	history     []CodeMonitorStoreDoneFuncCall
+	mutex       sync.Mutex
+}
+
+// Done delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) Done(v0 error) error {
+	r0 := m.DoneFunc.nextHook()(v0)
+	m.DoneFunc.appendCall(CodeMonitorStoreDoneFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Done method of the
+// parent MockCodeMonitorStore instance is invoked and the hook queue is
+// empty.
+func (f *CodeMonitorStoreDoneFunc) SetDefaultHook(hook func(error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Done method of the parent MockCodeMonitorStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeMonitorStoreDoneFunc) PushHook(hook func(error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreDoneFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreDoneFunc) PushReturn(r0 error) {
+	f.PushHook(func(error) error {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreDoneFunc) nextHook() func(error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreDoneFunc) appendCall(r0 CodeMonitorStoreDoneFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreDoneFuncCall objects
+// describing the invocations of this function.
+func (f *CodeMonitorStoreDoneFunc) History() []CodeMonitorStoreDoneFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreDoneFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreDoneFuncCall is an object that describes an invocation of
+// method Done on an instance of MockCodeMonitorStore.
+type CodeMonitorStoreDoneFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreDoneFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreDoneFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreEnqueueActionJobsForMonitorFunc describes the behavior
+// when the EnqueueActionJobsForMonitor method of the parent
+// MockCodeMonitorStore instance is invoked.
+type CodeMonitorStoreEnqueueActionJobsForMonitorFunc struct {
+	defaultHook func(context.Context, int64, int32) ([]*ActionJob, error)
+	hooks       []func(context.Context, int64, int32) ([]*ActionJob, error)
+	history     []CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall
+	mutex       sync.Mutex
+}
+
+// EnqueueActionJobsForMonitor delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) EnqueueActionJobsForMonitor(v0 context.Context, v1 int64, v2 int32) ([]*ActionJob, error) {
+	r0, r1 := m.EnqueueActionJobsForMonitorFunc.nextHook()(v0, v1, v2)
+	m.EnqueueActionJobsForMonitorFunc.appendCall(CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// EnqueueActionJobsForMonitor method of the parent MockCodeMonitorStore
+// instance is invoked and the hook queue is empty.
+func (f *CodeMonitorStoreEnqueueActionJobsForMonitorFunc) SetDefaultHook(hook func(context.Context, int64, int32) ([]*ActionJob, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// EnqueueActionJobsForMonitor method of the parent MockCodeMonitorStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *CodeMonitorStoreEnqueueActionJobsForMonitorFunc) PushHook(hook func(context.Context, int64, int32) ([]*ActionJob, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreEnqueueActionJobsForMonitorFunc) SetDefaultReturn(r0 []*ActionJob, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64, int32) ([]*ActionJob, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreEnqueueActionJobsForMonitorFunc) PushReturn(r0 []*ActionJob, r1 error) {
+	f.PushHook(func(context.Context, int64, int32) ([]*ActionJob, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreEnqueueActionJobsForMonitorFunc) nextHook() func(context.Context, int64, int32) ([]*ActionJob, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreEnqueueActionJobsForMonitorFunc) appendCall(r0 CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall objects describing
+// the invocations of this function.
+func (f *CodeMonitorStoreEnqueueActionJobsForMonitorFunc) History() []CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall is an object that
+// describes an invocation of method EnqueueActionJobsForMonitor on an
+// instance of MockCodeMonitorStore.
+type CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*ActionJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreEnqueueQueryTriggerJobsFunc describes the behavior when
+// the EnqueueQueryTriggerJobs method of the parent MockCodeMonitorStore
+// instance is invoked.
+type CodeMonitorStoreEnqueueQueryTriggerJobsFunc struct {
+	defaultHook func(context.Context) ([]*TriggerJob, error)
+	hooks       []func(context.Context) ([]*TriggerJob, error)
+	history     []CodeMonitorStoreEnqueueQueryTriggerJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// EnqueueQueryTriggerJobs delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) EnqueueQueryTriggerJobs(v0 context.Context) ([]*TriggerJob, error) {
+	r0, r1 := m.EnqueueQueryTriggerJobsFunc.nextHook()(v0)
+	m.EnqueueQueryTriggerJobsFunc.appendCall(CodeMonitorStoreEnqueueQueryTriggerJobsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// EnqueueQueryTriggerJobs method of the parent MockCodeMonitorStore
+// instance is invoked and the hook queue is empty.
+func (f *CodeMonitorStoreEnqueueQueryTriggerJobsFunc) SetDefaultHook(hook func(context.Context) ([]*TriggerJob, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// EnqueueQueryTriggerJobs method of the parent MockCodeMonitorStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *CodeMonitorStoreEnqueueQueryTriggerJobsFunc) PushHook(hook func(context.Context) ([]*TriggerJob, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreEnqueueQueryTriggerJobsFunc) SetDefaultReturn(r0 []*TriggerJob, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]*TriggerJob, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreEnqueueQueryTriggerJobsFunc) PushReturn(r0 []*TriggerJob, r1 error) {
+	f.PushHook(func(context.Context) ([]*TriggerJob, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreEnqueueQueryTriggerJobsFunc) nextHook() func(context.Context) ([]*TriggerJob, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreEnqueueQueryTriggerJobsFunc) appendCall(r0 CodeMonitorStoreEnqueueQueryTriggerJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreEnqueueQueryTriggerJobsFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreEnqueueQueryTriggerJobsFunc) History() []CodeMonitorStoreEnqueueQueryTriggerJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreEnqueueQueryTriggerJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreEnqueueQueryTriggerJobsFuncCall is an object that
+// describes an invocation of method EnqueueQueryTriggerJobs on an instance
+// of MockCodeMonitorStore.
+type CodeMonitorStoreEnqueueQueryTriggerJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*TriggerJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreEnqueueQueryTriggerJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreEnqueueQueryTriggerJobsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreExecFunc describes the behavior when the Exec method of
+// the parent MockCodeMonitorStore instance is invoked.
+type CodeMonitorStoreExecFunc struct {
+	defaultHook func(context.Context, *sqlf.Query) error
+	hooks       []func(context.Context, *sqlf.Query) error
+	history     []CodeMonitorStoreExecFuncCall
+	mutex       sync.Mutex
+}
+
+// Exec delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) Exec(v0 context.Context, v1 *sqlf.Query) error {
+	r0 := m.ExecFunc.nextHook()(v0, v1)
+	m.ExecFunc.appendCall(CodeMonitorStoreExecFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Exec method of the
+// parent MockCodeMonitorStore instance is invoked and the hook queue is
+// empty.
+func (f *CodeMonitorStoreExecFunc) SetDefaultHook(hook func(context.Context, *sqlf.Query) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Exec method of the parent MockCodeMonitorStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeMonitorStoreExecFunc) PushHook(hook func(context.Context, *sqlf.Query) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreExecFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *sqlf.Query) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreExecFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *sqlf.Query) error {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreExecFunc) nextHook() func(context.Context, *sqlf.Query) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreExecFunc) appendCall(r0 CodeMonitorStoreExecFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreExecFuncCall objects
+// describing the invocations of this function.
+func (f *CodeMonitorStoreExecFunc) History() []CodeMonitorStoreExecFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreExecFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreExecFuncCall is an object that describes an invocation of
+// method Exec on an instance of MockCodeMonitorStore.
+type CodeMonitorStoreExecFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *sqlf.Query
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreExecFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreExecFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreGetActionJobFunc describes the behavior when the
+// GetActionJob method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreGetActionJobFunc struct {
+	defaultHook func(context.Context, int32) (*ActionJob, error)
+	hooks       []func(context.Context, int32) (*ActionJob, error)
+	history     []CodeMonitorStoreGetActionJobFuncCall
+	mutex       sync.Mutex
+}
+
+// GetActionJob delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) GetActionJob(v0 context.Context, v1 int32) (*ActionJob, error) {
+	r0, r1 := m.GetActionJobFunc.nextHook()(v0, v1)
+	m.GetActionJobFunc.appendCall(CodeMonitorStoreGetActionJobFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetActionJob method
+// of the parent MockCodeMonitorStore instance is invoked and the hook queue
+// is empty.
+func (f *CodeMonitorStoreGetActionJobFunc) SetDefaultHook(hook func(context.Context, int32) (*ActionJob, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetActionJob method of the parent MockCodeMonitorStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeMonitorStoreGetActionJobFunc) PushHook(hook func(context.Context, int32) (*ActionJob, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreGetActionJobFunc) SetDefaultReturn(r0 *ActionJob, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) (*ActionJob, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreGetActionJobFunc) PushReturn(r0 *ActionJob, r1 error) {
+	f.PushHook(func(context.Context, int32) (*ActionJob, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreGetActionJobFunc) nextHook() func(context.Context, int32) (*ActionJob, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreGetActionJobFunc) appendCall(r0 CodeMonitorStoreGetActionJobFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreGetActionJobFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreGetActionJobFunc) History() []CodeMonitorStoreGetActionJobFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreGetActionJobFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreGetActionJobFuncCall is an object that describes an
+// invocation of method GetActionJob on an instance of MockCodeMonitorStore.
+type CodeMonitorStoreGetActionJobFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *ActionJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreGetActionJobFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreGetActionJobFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreGetActionJobMetadataFunc describes the behavior when the
+// GetActionJobMetadata method of the parent MockCodeMonitorStore instance
+// is invoked.
+type CodeMonitorStoreGetActionJobMetadataFunc struct {
+	defaultHook func(context.Context, int32) (*ActionJobMetadata, error)
+	hooks       []func(context.Context, int32) (*ActionJobMetadata, error)
+	history     []CodeMonitorStoreGetActionJobMetadataFuncCall
+	mutex       sync.Mutex
+}
+
+// GetActionJobMetadata delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) GetActionJobMetadata(v0 context.Context, v1 int32) (*ActionJobMetadata, error) {
+	r0, r1 := m.GetActionJobMetadataFunc.nextHook()(v0, v1)
+	m.GetActionJobMetadataFunc.appendCall(CodeMonitorStoreGetActionJobMetadataFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetActionJobMetadata
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreGetActionJobMetadataFunc) SetDefaultHook(hook func(context.Context, int32) (*ActionJobMetadata, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetActionJobMetadata method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreGetActionJobMetadataFunc) PushHook(hook func(context.Context, int32) (*ActionJobMetadata, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreGetActionJobMetadataFunc) SetDefaultReturn(r0 *ActionJobMetadata, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) (*ActionJobMetadata, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreGetActionJobMetadataFunc) PushReturn(r0 *ActionJobMetadata, r1 error) {
+	f.PushHook(func(context.Context, int32) (*ActionJobMetadata, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreGetActionJobMetadataFunc) nextHook() func(context.Context, int32) (*ActionJobMetadata, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreGetActionJobMetadataFunc) appendCall(r0 CodeMonitorStoreGetActionJobMetadataFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreGetActionJobMetadataFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreGetActionJobMetadataFunc) History() []CodeMonitorStoreGetActionJobMetadataFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreGetActionJobMetadataFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreGetActionJobMetadataFuncCall is an object that describes
+// an invocation of method GetActionJobMetadata on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreGetActionJobMetadataFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *ActionJobMetadata
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreGetActionJobMetadataFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreGetActionJobMetadataFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreGetEmailActionFunc describes the behavior when the
+// GetEmailAction method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreGetEmailActionFunc struct {
+	defaultHook func(context.Context, int64) (*EmailAction, error)
+	hooks       []func(context.Context, int64) (*EmailAction, error)
+	history     []CodeMonitorStoreGetEmailActionFuncCall
+	mutex       sync.Mutex
+}
+
+// GetEmailAction delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) GetEmailAction(v0 context.Context, v1 int64) (*EmailAction, error) {
+	r0, r1 := m.GetEmailActionFunc.nextHook()(v0, v1)
+	m.GetEmailActionFunc.appendCall(CodeMonitorStoreGetEmailActionFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetEmailAction
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreGetEmailActionFunc) SetDefaultHook(hook func(context.Context, int64) (*EmailAction, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetEmailAction method of the parent MockCodeMonitorStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeMonitorStoreGetEmailActionFunc) PushHook(hook func(context.Context, int64) (*EmailAction, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreGetEmailActionFunc) SetDefaultReturn(r0 *EmailAction, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (*EmailAction, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreGetEmailActionFunc) PushReturn(r0 *EmailAction, r1 error) {
+	f.PushHook(func(context.Context, int64) (*EmailAction, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreGetEmailActionFunc) nextHook() func(context.Context, int64) (*EmailAction, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreGetEmailActionFunc) appendCall(r0 CodeMonitorStoreGetEmailActionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreGetEmailActionFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreGetEmailActionFunc) History() []CodeMonitorStoreGetEmailActionFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreGetEmailActionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreGetEmailActionFuncCall is an object that describes an
+// invocation of method GetEmailAction on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreGetEmailActionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *EmailAction
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreGetEmailActionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreGetEmailActionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreGetMonitorFunc describes the behavior when the GetMonitor
+// method of the parent MockCodeMonitorStore instance is invoked.
+type CodeMonitorStoreGetMonitorFunc struct {
+	defaultHook func(context.Context, int64) (*Monitor, error)
+	hooks       []func(context.Context, int64) (*Monitor, error)
+	history     []CodeMonitorStoreGetMonitorFuncCall
+	mutex       sync.Mutex
+}
+
+// GetMonitor delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) GetMonitor(v0 context.Context, v1 int64) (*Monitor, error) {
+	r0, r1 := m.GetMonitorFunc.nextHook()(v0, v1)
+	m.GetMonitorFunc.appendCall(CodeMonitorStoreGetMonitorFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetMonitor method of
+// the parent MockCodeMonitorStore instance is invoked and the hook queue is
+// empty.
+func (f *CodeMonitorStoreGetMonitorFunc) SetDefaultHook(hook func(context.Context, int64) (*Monitor, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetMonitor method of the parent MockCodeMonitorStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeMonitorStoreGetMonitorFunc) PushHook(hook func(context.Context, int64) (*Monitor, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreGetMonitorFunc) SetDefaultReturn(r0 *Monitor, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (*Monitor, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreGetMonitorFunc) PushReturn(r0 *Monitor, r1 error) {
+	f.PushHook(func(context.Context, int64) (*Monitor, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreGetMonitorFunc) nextHook() func(context.Context, int64) (*Monitor, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreGetMonitorFunc) appendCall(r0 CodeMonitorStoreGetMonitorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreGetMonitorFuncCall objects
+// describing the invocations of this function.
+func (f *CodeMonitorStoreGetMonitorFunc) History() []CodeMonitorStoreGetMonitorFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreGetMonitorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreGetMonitorFuncCall is an object that describes an
+// invocation of method GetMonitor on an instance of MockCodeMonitorStore.
+type CodeMonitorStoreGetMonitorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *Monitor
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreGetMonitorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreGetMonitorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreGetQueryTriggerForJobFunc describes the behavior when the
+// GetQueryTriggerForJob method of the parent MockCodeMonitorStore instance
+// is invoked.
+type CodeMonitorStoreGetQueryTriggerForJobFunc struct {
+	defaultHook func(context.Context, int32) (*QueryTrigger, error)
+	hooks       []func(context.Context, int32) (*QueryTrigger, error)
+	history     []CodeMonitorStoreGetQueryTriggerForJobFuncCall
+	mutex       sync.Mutex
+}
+
+// GetQueryTriggerForJob delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) GetQueryTriggerForJob(v0 context.Context, v1 int32) (*QueryTrigger, error) {
+	r0, r1 := m.GetQueryTriggerForJobFunc.nextHook()(v0, v1)
+	m.GetQueryTriggerForJobFunc.appendCall(CodeMonitorStoreGetQueryTriggerForJobFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetQueryTriggerForJob method of the parent MockCodeMonitorStore instance
+// is invoked and the hook queue is empty.
+func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) SetDefaultHook(hook func(context.Context, int32) (*QueryTrigger, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetQueryTriggerForJob method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) PushHook(hook func(context.Context, int32) (*QueryTrigger, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) SetDefaultReturn(r0 *QueryTrigger, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) (*QueryTrigger, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) PushReturn(r0 *QueryTrigger, r1 error) {
+	f.PushHook(func(context.Context, int32) (*QueryTrigger, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) nextHook() func(context.Context, int32) (*QueryTrigger, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) appendCall(r0 CodeMonitorStoreGetQueryTriggerForJobFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreGetQueryTriggerForJobFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) History() []CodeMonitorStoreGetQueryTriggerForJobFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreGetQueryTriggerForJobFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreGetQueryTriggerForJobFuncCall is an object that describes
+// an invocation of method GetQueryTriggerForJob on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreGetQueryTriggerForJobFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *QueryTrigger
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreGetQueryTriggerForJobFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreGetQueryTriggerForJobFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreGetQueryTriggerForMonitorFunc describes the behavior when
+// the GetQueryTriggerForMonitor method of the parent MockCodeMonitorStore
+// instance is invoked.
+type CodeMonitorStoreGetQueryTriggerForMonitorFunc struct {
+	defaultHook func(context.Context, int64) (*QueryTrigger, error)
+	hooks       []func(context.Context, int64) (*QueryTrigger, error)
+	history     []CodeMonitorStoreGetQueryTriggerForMonitorFuncCall
+	mutex       sync.Mutex
+}
+
+// GetQueryTriggerForMonitor delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) GetQueryTriggerForMonitor(v0 context.Context, v1 int64) (*QueryTrigger, error) {
+	r0, r1 := m.GetQueryTriggerForMonitorFunc.nextHook()(v0, v1)
+	m.GetQueryTriggerForMonitorFunc.appendCall(CodeMonitorStoreGetQueryTriggerForMonitorFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetQueryTriggerForMonitor method of the parent MockCodeMonitorStore
+// instance is invoked and the hook queue is empty.
+func (f *CodeMonitorStoreGetQueryTriggerForMonitorFunc) SetDefaultHook(hook func(context.Context, int64) (*QueryTrigger, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetQueryTriggerForMonitor method of the parent MockCodeMonitorStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *CodeMonitorStoreGetQueryTriggerForMonitorFunc) PushHook(hook func(context.Context, int64) (*QueryTrigger, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreGetQueryTriggerForMonitorFunc) SetDefaultReturn(r0 *QueryTrigger, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (*QueryTrigger, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreGetQueryTriggerForMonitorFunc) PushReturn(r0 *QueryTrigger, r1 error) {
+	f.PushHook(func(context.Context, int64) (*QueryTrigger, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreGetQueryTriggerForMonitorFunc) nextHook() func(context.Context, int64) (*QueryTrigger, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreGetQueryTriggerForMonitorFunc) appendCall(r0 CodeMonitorStoreGetQueryTriggerForMonitorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreGetQueryTriggerForMonitorFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreGetQueryTriggerForMonitorFunc) History() []CodeMonitorStoreGetQueryTriggerForMonitorFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreGetQueryTriggerForMonitorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreGetQueryTriggerForMonitorFuncCall is an object that
+// describes an invocation of method GetQueryTriggerForMonitor on an
+// instance of MockCodeMonitorStore.
+type CodeMonitorStoreGetQueryTriggerForMonitorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *QueryTrigger
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreGetQueryTriggerForMonitorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreGetQueryTriggerForMonitorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreGetSlackWebhookActionFunc describes the behavior when the
+// GetSlackWebhookAction method of the parent MockCodeMonitorStore instance
+// is invoked.
+type CodeMonitorStoreGetSlackWebhookActionFunc struct {
+	defaultHook func(context.Context, int64) (*SlackWebhookAction, error)
+	hooks       []func(context.Context, int64) (*SlackWebhookAction, error)
+	history     []CodeMonitorStoreGetSlackWebhookActionFuncCall
+	mutex       sync.Mutex
+}
+
+// GetSlackWebhookAction delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) GetSlackWebhookAction(v0 context.Context, v1 int64) (*SlackWebhookAction, error) {
+	r0, r1 := m.GetSlackWebhookActionFunc.nextHook()(v0, v1)
+	m.GetSlackWebhookActionFunc.appendCall(CodeMonitorStoreGetSlackWebhookActionFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetSlackWebhookAction method of the parent MockCodeMonitorStore instance
+// is invoked and the hook queue is empty.
+func (f *CodeMonitorStoreGetSlackWebhookActionFunc) SetDefaultHook(hook func(context.Context, int64) (*SlackWebhookAction, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetSlackWebhookAction method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreGetSlackWebhookActionFunc) PushHook(hook func(context.Context, int64) (*SlackWebhookAction, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreGetSlackWebhookActionFunc) SetDefaultReturn(r0 *SlackWebhookAction, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (*SlackWebhookAction, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreGetSlackWebhookActionFunc) PushReturn(r0 *SlackWebhookAction, r1 error) {
+	f.PushHook(func(context.Context, int64) (*SlackWebhookAction, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreGetSlackWebhookActionFunc) nextHook() func(context.Context, int64) (*SlackWebhookAction, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreGetSlackWebhookActionFunc) appendCall(r0 CodeMonitorStoreGetSlackWebhookActionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreGetSlackWebhookActionFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreGetSlackWebhookActionFunc) History() []CodeMonitorStoreGetSlackWebhookActionFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreGetSlackWebhookActionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreGetSlackWebhookActionFuncCall is an object that describes
+// an invocation of method GetSlackWebhookAction on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreGetSlackWebhookActionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *SlackWebhookAction
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreGetSlackWebhookActionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreGetSlackWebhookActionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreGetWebhookActionFunc describes the behavior when the
+// GetWebhookAction method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreGetWebhookActionFunc struct {
+	defaultHook func(context.Context, int64) (*WebhookAction, error)
+	hooks       []func(context.Context, int64) (*WebhookAction, error)
+	history     []CodeMonitorStoreGetWebhookActionFuncCall
+	mutex       sync.Mutex
+}
+
+// GetWebhookAction delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) GetWebhookAction(v0 context.Context, v1 int64) (*WebhookAction, error) {
+	r0, r1 := m.GetWebhookActionFunc.nextHook()(v0, v1)
+	m.GetWebhookActionFunc.appendCall(CodeMonitorStoreGetWebhookActionFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetWebhookAction
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreGetWebhookActionFunc) SetDefaultHook(hook func(context.Context, int64) (*WebhookAction, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetWebhookAction method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreGetWebhookActionFunc) PushHook(hook func(context.Context, int64) (*WebhookAction, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreGetWebhookActionFunc) SetDefaultReturn(r0 *WebhookAction, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (*WebhookAction, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreGetWebhookActionFunc) PushReturn(r0 *WebhookAction, r1 error) {
+	f.PushHook(func(context.Context, int64) (*WebhookAction, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreGetWebhookActionFunc) nextHook() func(context.Context, int64) (*WebhookAction, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreGetWebhookActionFunc) appendCall(r0 CodeMonitorStoreGetWebhookActionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreGetWebhookActionFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreGetWebhookActionFunc) History() []CodeMonitorStoreGetWebhookActionFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreGetWebhookActionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreGetWebhookActionFuncCall is an object that describes an
+// invocation of method GetWebhookAction on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreGetWebhookActionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *WebhookAction
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreGetWebhookActionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreGetWebhookActionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreHandleFunc describes the behavior when the Handle method
+// of the parent MockCodeMonitorStore instance is invoked.
+type CodeMonitorStoreHandleFunc struct {
+	defaultHook func() *basestore.TransactableHandle
+	hooks       []func() *basestore.TransactableHandle
+	history     []CodeMonitorStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) Handle() *basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(CodeMonitorStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockCodeMonitorStore instance is invoked and the hook queue is
+// empty.
+func (f *CodeMonitorStoreHandleFunc) SetDefaultHook(hook func() *basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockCodeMonitorStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeMonitorStoreHandleFunc) PushHook(hook func() *basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreHandleFunc) SetDefaultReturn(r0 *basestore.TransactableHandle) {
+	f.SetDefaultHook(func() *basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreHandleFunc) PushReturn(r0 *basestore.TransactableHandle) {
+	f.PushHook(func() *basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreHandleFunc) nextHook() func() *basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreHandleFunc) appendCall(r0 CodeMonitorStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreHandleFuncCall objects
+// describing the invocations of this function.
+func (f *CodeMonitorStoreHandleFunc) History() []CodeMonitorStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreHandleFuncCall is an object that describes an invocation
+// of method Handle on an instance of MockCodeMonitorStore.
+type CodeMonitorStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreListActionJobsFunc describes the behavior when the
+// ListActionJobs method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreListActionJobsFunc struct {
+	defaultHook func(context.Context, ListActionJobsOpts) ([]*ActionJob, error)
+	hooks       []func(context.Context, ListActionJobsOpts) ([]*ActionJob, error)
+	history     []CodeMonitorStoreListActionJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListActionJobs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) ListActionJobs(v0 context.Context, v1 ListActionJobsOpts) ([]*ActionJob, error) {
+	r0, r1 := m.ListActionJobsFunc.nextHook()(v0, v1)
+	m.ListActionJobsFunc.appendCall(CodeMonitorStoreListActionJobsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListActionJobs
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreListActionJobsFunc) SetDefaultHook(hook func(context.Context, ListActionJobsOpts) ([]*ActionJob, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListActionJobs method of the parent MockCodeMonitorStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeMonitorStoreListActionJobsFunc) PushHook(hook func(context.Context, ListActionJobsOpts) ([]*ActionJob, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreListActionJobsFunc) SetDefaultReturn(r0 []*ActionJob, r1 error) {
+	f.SetDefaultHook(func(context.Context, ListActionJobsOpts) ([]*ActionJob, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreListActionJobsFunc) PushReturn(r0 []*ActionJob, r1 error) {
+	f.PushHook(func(context.Context, ListActionJobsOpts) ([]*ActionJob, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreListActionJobsFunc) nextHook() func(context.Context, ListActionJobsOpts) ([]*ActionJob, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreListActionJobsFunc) appendCall(r0 CodeMonitorStoreListActionJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreListActionJobsFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreListActionJobsFunc) History() []CodeMonitorStoreListActionJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreListActionJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreListActionJobsFuncCall is an object that describes an
+// invocation of method ListActionJobs on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreListActionJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListActionJobsOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*ActionJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreListActionJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreListActionJobsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreListEmailActionsFunc describes the behavior when the
+// ListEmailActions method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreListEmailActionsFunc struct {
+	defaultHook func(context.Context, ListActionsOpts) ([]*EmailAction, error)
+	hooks       []func(context.Context, ListActionsOpts) ([]*EmailAction, error)
+	history     []CodeMonitorStoreListEmailActionsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListEmailActions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) ListEmailActions(v0 context.Context, v1 ListActionsOpts) ([]*EmailAction, error) {
+	r0, r1 := m.ListEmailActionsFunc.nextHook()(v0, v1)
+	m.ListEmailActionsFunc.appendCall(CodeMonitorStoreListEmailActionsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListEmailActions
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreListEmailActionsFunc) SetDefaultHook(hook func(context.Context, ListActionsOpts) ([]*EmailAction, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListEmailActions method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreListEmailActionsFunc) PushHook(hook func(context.Context, ListActionsOpts) ([]*EmailAction, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreListEmailActionsFunc) SetDefaultReturn(r0 []*EmailAction, r1 error) {
+	f.SetDefaultHook(func(context.Context, ListActionsOpts) ([]*EmailAction, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreListEmailActionsFunc) PushReturn(r0 []*EmailAction, r1 error) {
+	f.PushHook(func(context.Context, ListActionsOpts) ([]*EmailAction, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreListEmailActionsFunc) nextHook() func(context.Context, ListActionsOpts) ([]*EmailAction, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreListEmailActionsFunc) appendCall(r0 CodeMonitorStoreListEmailActionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreListEmailActionsFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreListEmailActionsFunc) History() []CodeMonitorStoreListEmailActionsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreListEmailActionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreListEmailActionsFuncCall is an object that describes an
+// invocation of method ListEmailActions on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreListEmailActionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListActionsOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*EmailAction
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreListEmailActionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreListEmailActionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreListMonitorsFunc describes the behavior when the
+// ListMonitors method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreListMonitorsFunc struct {
+	defaultHook func(context.Context, ListMonitorsOpts) ([]*Monitor, error)
+	hooks       []func(context.Context, ListMonitorsOpts) ([]*Monitor, error)
+	history     []CodeMonitorStoreListMonitorsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListMonitors delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) ListMonitors(v0 context.Context, v1 ListMonitorsOpts) ([]*Monitor, error) {
+	r0, r1 := m.ListMonitorsFunc.nextHook()(v0, v1)
+	m.ListMonitorsFunc.appendCall(CodeMonitorStoreListMonitorsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListMonitors method
+// of the parent MockCodeMonitorStore instance is invoked and the hook queue
+// is empty.
+func (f *CodeMonitorStoreListMonitorsFunc) SetDefaultHook(hook func(context.Context, ListMonitorsOpts) ([]*Monitor, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListMonitors method of the parent MockCodeMonitorStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeMonitorStoreListMonitorsFunc) PushHook(hook func(context.Context, ListMonitorsOpts) ([]*Monitor, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreListMonitorsFunc) SetDefaultReturn(r0 []*Monitor, r1 error) {
+	f.SetDefaultHook(func(context.Context, ListMonitorsOpts) ([]*Monitor, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreListMonitorsFunc) PushReturn(r0 []*Monitor, r1 error) {
+	f.PushHook(func(context.Context, ListMonitorsOpts) ([]*Monitor, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreListMonitorsFunc) nextHook() func(context.Context, ListMonitorsOpts) ([]*Monitor, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreListMonitorsFunc) appendCall(r0 CodeMonitorStoreListMonitorsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreListMonitorsFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreListMonitorsFunc) History() []CodeMonitorStoreListMonitorsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreListMonitorsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreListMonitorsFuncCall is an object that describes an
+// invocation of method ListMonitors on an instance of MockCodeMonitorStore.
+type CodeMonitorStoreListMonitorsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListMonitorsOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*Monitor
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreListMonitorsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreListMonitorsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreListQueryTriggerJobsFunc describes the behavior when the
+// ListQueryTriggerJobs method of the parent MockCodeMonitorStore instance
+// is invoked.
+type CodeMonitorStoreListQueryTriggerJobsFunc struct {
+	defaultHook func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error)
+	hooks       []func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error)
+	history     []CodeMonitorStoreListQueryTriggerJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListQueryTriggerJobs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) ListQueryTriggerJobs(v0 context.Context, v1 ListTriggerJobsOpts) ([]*TriggerJob, error) {
+	r0, r1 := m.ListQueryTriggerJobsFunc.nextHook()(v0, v1)
+	m.ListQueryTriggerJobsFunc.appendCall(CodeMonitorStoreListQueryTriggerJobsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListQueryTriggerJobs
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreListQueryTriggerJobsFunc) SetDefaultHook(hook func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListQueryTriggerJobs method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreListQueryTriggerJobsFunc) PushHook(hook func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreListQueryTriggerJobsFunc) SetDefaultReturn(r0 []*TriggerJob, r1 error) {
+	f.SetDefaultHook(func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreListQueryTriggerJobsFunc) PushReturn(r0 []*TriggerJob, r1 error) {
+	f.PushHook(func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreListQueryTriggerJobsFunc) nextHook() func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreListQueryTriggerJobsFunc) appendCall(r0 CodeMonitorStoreListQueryTriggerJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreListQueryTriggerJobsFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreListQueryTriggerJobsFunc) History() []CodeMonitorStoreListQueryTriggerJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreListQueryTriggerJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreListQueryTriggerJobsFuncCall is an object that describes
+// an invocation of method ListQueryTriggerJobs on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreListQueryTriggerJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListTriggerJobsOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*TriggerJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreListQueryTriggerJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreListQueryTriggerJobsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreListRecipientsFunc describes the behavior when the
+// ListRecipients method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreListRecipientsFunc struct {
+	defaultHook func(context.Context, ListRecipientsOpts) ([]*Recipient, error)
+	hooks       []func(context.Context, ListRecipientsOpts) ([]*Recipient, error)
+	history     []CodeMonitorStoreListRecipientsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListRecipients delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) ListRecipients(v0 context.Context, v1 ListRecipientsOpts) ([]*Recipient, error) {
+	r0, r1 := m.ListRecipientsFunc.nextHook()(v0, v1)
+	m.ListRecipientsFunc.appendCall(CodeMonitorStoreListRecipientsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListRecipients
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreListRecipientsFunc) SetDefaultHook(hook func(context.Context, ListRecipientsOpts) ([]*Recipient, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListRecipients method of the parent MockCodeMonitorStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeMonitorStoreListRecipientsFunc) PushHook(hook func(context.Context, ListRecipientsOpts) ([]*Recipient, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreListRecipientsFunc) SetDefaultReturn(r0 []*Recipient, r1 error) {
+	f.SetDefaultHook(func(context.Context, ListRecipientsOpts) ([]*Recipient, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreListRecipientsFunc) PushReturn(r0 []*Recipient, r1 error) {
+	f.PushHook(func(context.Context, ListRecipientsOpts) ([]*Recipient, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreListRecipientsFunc) nextHook() func(context.Context, ListRecipientsOpts) ([]*Recipient, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreListRecipientsFunc) appendCall(r0 CodeMonitorStoreListRecipientsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreListRecipientsFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreListRecipientsFunc) History() []CodeMonitorStoreListRecipientsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreListRecipientsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreListRecipientsFuncCall is an object that describes an
+// invocation of method ListRecipients on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreListRecipientsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListRecipientsOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*Recipient
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreListRecipientsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreListRecipientsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreListSlackWebhookActionsFunc describes the behavior when
+// the ListSlackWebhookActions method of the parent MockCodeMonitorStore
+// instance is invoked.
+type CodeMonitorStoreListSlackWebhookActionsFunc struct {
+	defaultHook func(context.Context, ListActionsOpts) ([]*SlackWebhookAction, error)
+	hooks       []func(context.Context, ListActionsOpts) ([]*SlackWebhookAction, error)
+	history     []CodeMonitorStoreListSlackWebhookActionsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListSlackWebhookActions delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) ListSlackWebhookActions(v0 context.Context, v1 ListActionsOpts) ([]*SlackWebhookAction, error) {
+	r0, r1 := m.ListSlackWebhookActionsFunc.nextHook()(v0, v1)
+	m.ListSlackWebhookActionsFunc.appendCall(CodeMonitorStoreListSlackWebhookActionsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// ListSlackWebhookActions method of the parent MockCodeMonitorStore
+// instance is invoked and the hook queue is empty.
+func (f *CodeMonitorStoreListSlackWebhookActionsFunc) SetDefaultHook(hook func(context.Context, ListActionsOpts) ([]*SlackWebhookAction, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListSlackWebhookActions method of the parent MockCodeMonitorStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *CodeMonitorStoreListSlackWebhookActionsFunc) PushHook(hook func(context.Context, ListActionsOpts) ([]*SlackWebhookAction, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreListSlackWebhookActionsFunc) SetDefaultReturn(r0 []*SlackWebhookAction, r1 error) {
+	f.SetDefaultHook(func(context.Context, ListActionsOpts) ([]*SlackWebhookAction, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreListSlackWebhookActionsFunc) PushReturn(r0 []*SlackWebhookAction, r1 error) {
+	f.PushHook(func(context.Context, ListActionsOpts) ([]*SlackWebhookAction, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreListSlackWebhookActionsFunc) nextHook() func(context.Context, ListActionsOpts) ([]*SlackWebhookAction, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreListSlackWebhookActionsFunc) appendCall(r0 CodeMonitorStoreListSlackWebhookActionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreListSlackWebhookActionsFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreListSlackWebhookActionsFunc) History() []CodeMonitorStoreListSlackWebhookActionsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreListSlackWebhookActionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreListSlackWebhookActionsFuncCall is an object that
+// describes an invocation of method ListSlackWebhookActions on an instance
+// of MockCodeMonitorStore.
+type CodeMonitorStoreListSlackWebhookActionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListActionsOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*SlackWebhookAction
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreListSlackWebhookActionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreListSlackWebhookActionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreListWebhookActionsFunc describes the behavior when the
+// ListWebhookActions method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreListWebhookActionsFunc struct {
+	defaultHook func(context.Context, ListActionsOpts) ([]*WebhookAction, error)
+	hooks       []func(context.Context, ListActionsOpts) ([]*WebhookAction, error)
+	history     []CodeMonitorStoreListWebhookActionsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListWebhookActions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) ListWebhookActions(v0 context.Context, v1 ListActionsOpts) ([]*WebhookAction, error) {
+	r0, r1 := m.ListWebhookActionsFunc.nextHook()(v0, v1)
+	m.ListWebhookActionsFunc.appendCall(CodeMonitorStoreListWebhookActionsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListWebhookActions
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreListWebhookActionsFunc) SetDefaultHook(hook func(context.Context, ListActionsOpts) ([]*WebhookAction, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListWebhookActions method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreListWebhookActionsFunc) PushHook(hook func(context.Context, ListActionsOpts) ([]*WebhookAction, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreListWebhookActionsFunc) SetDefaultReturn(r0 []*WebhookAction, r1 error) {
+	f.SetDefaultHook(func(context.Context, ListActionsOpts) ([]*WebhookAction, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreListWebhookActionsFunc) PushReturn(r0 []*WebhookAction, r1 error) {
+	f.PushHook(func(context.Context, ListActionsOpts) ([]*WebhookAction, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreListWebhookActionsFunc) nextHook() func(context.Context, ListActionsOpts) ([]*WebhookAction, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreListWebhookActionsFunc) appendCall(r0 CodeMonitorStoreListWebhookActionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreListWebhookActionsFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreListWebhookActionsFunc) History() []CodeMonitorStoreListWebhookActionsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreListWebhookActionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreListWebhookActionsFuncCall is an object that describes an
+// invocation of method ListWebhookActions on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreListWebhookActionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListActionsOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*WebhookAction
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreListWebhookActionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreListWebhookActionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreNowFunc describes the behavior when the Now method of the
+// parent MockCodeMonitorStore instance is invoked.
+type CodeMonitorStoreNowFunc struct {
+	defaultHook func() time.Time
+	hooks       []func() time.Time
+	history     []CodeMonitorStoreNowFuncCall
+	mutex       sync.Mutex
+}
+
+// Now delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) Now() time.Time {
+	r0 := m.NowFunc.nextHook()()
+	m.NowFunc.appendCall(CodeMonitorStoreNowFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Now method of the
+// parent MockCodeMonitorStore instance is invoked and the hook queue is
+// empty.
+func (f *CodeMonitorStoreNowFunc) SetDefaultHook(hook func() time.Time) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Now method of the parent MockCodeMonitorStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeMonitorStoreNowFunc) PushHook(hook func() time.Time) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreNowFunc) SetDefaultReturn(r0 time.Time) {
+	f.SetDefaultHook(func() time.Time {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreNowFunc) PushReturn(r0 time.Time) {
+	f.PushHook(func() time.Time {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreNowFunc) nextHook() func() time.Time {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreNowFunc) appendCall(r0 CodeMonitorStoreNowFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreNowFuncCall objects
+// describing the invocations of this function.
+func (f *CodeMonitorStoreNowFunc) History() []CodeMonitorStoreNowFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreNowFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreNowFuncCall is an object that describes an invocation of
+// method Now on an instance of MockCodeMonitorStore.
+type CodeMonitorStoreNowFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 time.Time
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreNowFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreNowFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreResetQueryTriggerTimestampsFunc describes the behavior
+// when the ResetQueryTriggerTimestamps method of the parent
+// MockCodeMonitorStore instance is invoked.
+type CodeMonitorStoreResetQueryTriggerTimestampsFunc struct {
+	defaultHook func(context.Context, int64) error
+	hooks       []func(context.Context, int64) error
+	history     []CodeMonitorStoreResetQueryTriggerTimestampsFuncCall
+	mutex       sync.Mutex
+}
+
+// ResetQueryTriggerTimestamps delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) ResetQueryTriggerTimestamps(v0 context.Context, v1 int64) error {
+	r0 := m.ResetQueryTriggerTimestampsFunc.nextHook()(v0, v1)
+	m.ResetQueryTriggerTimestampsFunc.appendCall(CodeMonitorStoreResetQueryTriggerTimestampsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// ResetQueryTriggerTimestamps method of the parent MockCodeMonitorStore
+// instance is invoked and the hook queue is empty.
+func (f *CodeMonitorStoreResetQueryTriggerTimestampsFunc) SetDefaultHook(hook func(context.Context, int64) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ResetQueryTriggerTimestamps method of the parent MockCodeMonitorStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *CodeMonitorStoreResetQueryTriggerTimestampsFunc) PushHook(hook func(context.Context, int64) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreResetQueryTriggerTimestampsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int64) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreResetQueryTriggerTimestampsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int64) error {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreResetQueryTriggerTimestampsFunc) nextHook() func(context.Context, int64) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreResetQueryTriggerTimestampsFunc) appendCall(r0 CodeMonitorStoreResetQueryTriggerTimestampsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreResetQueryTriggerTimestampsFuncCall objects describing
+// the invocations of this function.
+func (f *CodeMonitorStoreResetQueryTriggerTimestampsFunc) History() []CodeMonitorStoreResetQueryTriggerTimestampsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreResetQueryTriggerTimestampsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreResetQueryTriggerTimestampsFuncCall is an object that
+// describes an invocation of method ResetQueryTriggerTimestamps on an
+// instance of MockCodeMonitorStore.
+type CodeMonitorStoreResetQueryTriggerTimestampsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreResetQueryTriggerTimestampsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreResetQueryTriggerTimestampsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreSetQueryTriggerNextRunFunc describes the behavior when
+// the SetQueryTriggerNextRun method of the parent MockCodeMonitorStore
+// instance is invoked.
+type CodeMonitorStoreSetQueryTriggerNextRunFunc struct {
+	defaultHook func(context.Context, int64, time.Time, time.Time) error
+	hooks       []func(context.Context, int64, time.Time, time.Time) error
+	history     []CodeMonitorStoreSetQueryTriggerNextRunFuncCall
+	mutex       sync.Mutex
+}
+
+// SetQueryTriggerNextRun delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) SetQueryTriggerNextRun(v0 context.Context, v1 int64, v2 time.Time, v3 time.Time) error {
+	r0 := m.SetQueryTriggerNextRunFunc.nextHook()(v0, v1, v2, v3)
+	m.SetQueryTriggerNextRunFunc.appendCall(CodeMonitorStoreSetQueryTriggerNextRunFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// SetQueryTriggerNextRun method of the parent MockCodeMonitorStore instance
+// is invoked and the hook queue is empty.
+func (f *CodeMonitorStoreSetQueryTriggerNextRunFunc) SetDefaultHook(hook func(context.Context, int64, time.Time, time.Time) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetQueryTriggerNextRun method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreSetQueryTriggerNextRunFunc) PushHook(hook func(context.Context, int64, time.Time, time.Time) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreSetQueryTriggerNextRunFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int64, time.Time, time.Time) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreSetQueryTriggerNextRunFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int64, time.Time, time.Time) error {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreSetQueryTriggerNextRunFunc) nextHook() func(context.Context, int64, time.Time, time.Time) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreSetQueryTriggerNextRunFunc) appendCall(r0 CodeMonitorStoreSetQueryTriggerNextRunFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreSetQueryTriggerNextRunFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreSetQueryTriggerNextRunFunc) History() []CodeMonitorStoreSetQueryTriggerNextRunFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreSetQueryTriggerNextRunFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreSetQueryTriggerNextRunFuncCall is an object that
+// describes an invocation of method SetQueryTriggerNextRun on an instance
+// of MockCodeMonitorStore.
+type CodeMonitorStoreSetQueryTriggerNextRunFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Time
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreSetQueryTriggerNextRunFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreSetQueryTriggerNextRunFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreTransactFunc describes the behavior when the Transact
+// method of the parent MockCodeMonitorStore instance is invoked.
+type CodeMonitorStoreTransactFunc struct {
+	defaultHook func(context.Context) (CodeMonitorStore, error)
+	hooks       []func(context.Context) (CodeMonitorStore, error)
+	history     []CodeMonitorStoreTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// Transact delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) Transact(v0 context.Context) (CodeMonitorStore, error) {
+	r0, r1 := m.TransactFunc.nextHook()(v0)
+	m.TransactFunc.appendCall(CodeMonitorStoreTransactFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Transact method of
+// the parent MockCodeMonitorStore instance is invoked and the hook queue is
+// empty.
+func (f *CodeMonitorStoreTransactFunc) SetDefaultHook(hook func(context.Context) (CodeMonitorStore, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Transact method of the parent MockCodeMonitorStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeMonitorStoreTransactFunc) PushHook(hook func(context.Context) (CodeMonitorStore, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreTransactFunc) SetDefaultReturn(r0 CodeMonitorStore, r1 error) {
+	f.SetDefaultHook(func(context.Context) (CodeMonitorStore, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreTransactFunc) PushReturn(r0 CodeMonitorStore, r1 error) {
+	f.PushHook(func(context.Context) (CodeMonitorStore, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreTransactFunc) nextHook() func(context.Context) (CodeMonitorStore, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreTransactFunc) appendCall(r0 CodeMonitorStoreTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreTransactFuncCall objects
+// describing the invocations of this function.
+func (f *CodeMonitorStoreTransactFunc) History() []CodeMonitorStoreTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreTransactFuncCall is an object that describes an
+// invocation of method Transact on an instance of MockCodeMonitorStore.
+type CodeMonitorStoreTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 CodeMonitorStore
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreTransactFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreUpdateEmailActionFunc describes the behavior when the
+// UpdateEmailAction method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreUpdateEmailActionFunc struct {
+	defaultHook func(context.Context, int64, *EmailActionArgs) (*EmailAction, error)
+	hooks       []func(context.Context, int64, *EmailActionArgs) (*EmailAction, error)
+	history     []CodeMonitorStoreUpdateEmailActionFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateEmailAction delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) UpdateEmailAction(v0 context.Context, v1 int64, v2 *EmailActionArgs) (*EmailAction, error) {
+	r0, r1 := m.UpdateEmailActionFunc.nextHook()(v0, v1, v2)
+	m.UpdateEmailActionFunc.appendCall(CodeMonitorStoreUpdateEmailActionFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the UpdateEmailAction
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreUpdateEmailActionFunc) SetDefaultHook(hook func(context.Context, int64, *EmailActionArgs) (*EmailAction, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateEmailAction method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreUpdateEmailActionFunc) PushHook(hook func(context.Context, int64, *EmailActionArgs) (*EmailAction, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreUpdateEmailActionFunc) SetDefaultReturn(r0 *EmailAction, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64, *EmailActionArgs) (*EmailAction, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreUpdateEmailActionFunc) PushReturn(r0 *EmailAction, r1 error) {
+	f.PushHook(func(context.Context, int64, *EmailActionArgs) (*EmailAction, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreUpdateEmailActionFunc) nextHook() func(context.Context, int64, *EmailActionArgs) (*EmailAction, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreUpdateEmailActionFunc) appendCall(r0 CodeMonitorStoreUpdateEmailActionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreUpdateEmailActionFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreUpdateEmailActionFunc) History() []CodeMonitorStoreUpdateEmailActionFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreUpdateEmailActionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreUpdateEmailActionFuncCall is an object that describes an
+// invocation of method UpdateEmailAction on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreUpdateEmailActionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *EmailActionArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *EmailAction
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreUpdateEmailActionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreUpdateEmailActionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreUpdateMonitorFunc describes the behavior when the
+// UpdateMonitor method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreUpdateMonitorFunc struct {
+	defaultHook func(context.Context, int64, MonitorArgs) (*Monitor, error)
+	hooks       []func(context.Context, int64, MonitorArgs) (*Monitor, error)
+	history     []CodeMonitorStoreUpdateMonitorFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateMonitor delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) UpdateMonitor(v0 context.Context, v1 int64, v2 MonitorArgs) (*Monitor, error) {
+	r0, r1 := m.UpdateMonitorFunc.nextHook()(v0, v1, v2)
+	m.UpdateMonitorFunc.appendCall(CodeMonitorStoreUpdateMonitorFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the UpdateMonitor method
+// of the parent MockCodeMonitorStore instance is invoked and the hook queue
+// is empty.
+func (f *CodeMonitorStoreUpdateMonitorFunc) SetDefaultHook(hook func(context.Context, int64, MonitorArgs) (*Monitor, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateMonitor method of the parent MockCodeMonitorStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeMonitorStoreUpdateMonitorFunc) PushHook(hook func(context.Context, int64, MonitorArgs) (*Monitor, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreUpdateMonitorFunc) SetDefaultReturn(r0 *Monitor, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64, MonitorArgs) (*Monitor, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreUpdateMonitorFunc) PushReturn(r0 *Monitor, r1 error) {
+	f.PushHook(func(context.Context, int64, MonitorArgs) (*Monitor, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreUpdateMonitorFunc) nextHook() func(context.Context, int64, MonitorArgs) (*Monitor, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreUpdateMonitorFunc) appendCall(r0 CodeMonitorStoreUpdateMonitorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreUpdateMonitorFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreUpdateMonitorFunc) History() []CodeMonitorStoreUpdateMonitorFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreUpdateMonitorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreUpdateMonitorFuncCall is an object that describes an
+// invocation of method UpdateMonitor on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreUpdateMonitorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 MonitorArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *Monitor
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreUpdateMonitorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreUpdateMonitorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreUpdateMonitorEnabledFunc describes the behavior when the
+// UpdateMonitorEnabled method of the parent MockCodeMonitorStore instance
+// is invoked.
+type CodeMonitorStoreUpdateMonitorEnabledFunc struct {
+	defaultHook func(context.Context, int64, bool) (*Monitor, error)
+	hooks       []func(context.Context, int64, bool) (*Monitor, error)
+	history     []CodeMonitorStoreUpdateMonitorEnabledFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateMonitorEnabled delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) UpdateMonitorEnabled(v0 context.Context, v1 int64, v2 bool) (*Monitor, error) {
+	r0, r1 := m.UpdateMonitorEnabledFunc.nextHook()(v0, v1, v2)
+	m.UpdateMonitorEnabledFunc.appendCall(CodeMonitorStoreUpdateMonitorEnabledFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the UpdateMonitorEnabled
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreUpdateMonitorEnabledFunc) SetDefaultHook(hook func(context.Context, int64, bool) (*Monitor, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateMonitorEnabled method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreUpdateMonitorEnabledFunc) PushHook(hook func(context.Context, int64, bool) (*Monitor, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreUpdateMonitorEnabledFunc) SetDefaultReturn(r0 *Monitor, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64, bool) (*Monitor, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreUpdateMonitorEnabledFunc) PushReturn(r0 *Monitor, r1 error) {
+	f.PushHook(func(context.Context, int64, bool) (*Monitor, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreUpdateMonitorEnabledFunc) nextHook() func(context.Context, int64, bool) (*Monitor, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreUpdateMonitorEnabledFunc) appendCall(r0 CodeMonitorStoreUpdateMonitorEnabledFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreUpdateMonitorEnabledFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreUpdateMonitorEnabledFunc) History() []CodeMonitorStoreUpdateMonitorEnabledFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreUpdateMonitorEnabledFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreUpdateMonitorEnabledFuncCall is an object that describes
+// an invocation of method UpdateMonitorEnabled on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreUpdateMonitorEnabledFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *Monitor
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreUpdateMonitorEnabledFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreUpdateMonitorEnabledFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreUpdateQueryTriggerFunc describes the behavior when the
+// UpdateQueryTrigger method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreUpdateQueryTriggerFunc struct {
+	defaultHook func(context.Context, int64, string) error
+	hooks       []func(context.Context, int64, string) error
+	history     []CodeMonitorStoreUpdateQueryTriggerFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateQueryTrigger delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) UpdateQueryTrigger(v0 context.Context, v1 int64, v2 string) error {
+	r0 := m.UpdateQueryTriggerFunc.nextHook()(v0, v1, v2)
+	m.UpdateQueryTriggerFunc.appendCall(CodeMonitorStoreUpdateQueryTriggerFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UpdateQueryTrigger
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreUpdateQueryTriggerFunc) SetDefaultHook(hook func(context.Context, int64, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateQueryTrigger method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreUpdateQueryTriggerFunc) PushHook(hook func(context.Context, int64, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreUpdateQueryTriggerFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int64, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreUpdateQueryTriggerFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int64, string) error {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreUpdateQueryTriggerFunc) nextHook() func(context.Context, int64, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreUpdateQueryTriggerFunc) appendCall(r0 CodeMonitorStoreUpdateQueryTriggerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreUpdateQueryTriggerFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreUpdateQueryTriggerFunc) History() []CodeMonitorStoreUpdateQueryTriggerFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreUpdateQueryTriggerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreUpdateQueryTriggerFuncCall is an object that describes an
+// invocation of method UpdateQueryTrigger on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreUpdateQueryTriggerFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreUpdateQueryTriggerFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreUpdateQueryTriggerFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreUpdateSlackWebhookActionFunc describes the behavior when
+// the UpdateSlackWebhookAction method of the parent MockCodeMonitorStore
+// instance is invoked.
+type CodeMonitorStoreUpdateSlackWebhookActionFunc struct {
+	defaultHook func(context.Context, int64, bool, string) (*SlackWebhookAction, error)
+	hooks       []func(context.Context, int64, bool, string) (*SlackWebhookAction, error)
+	history     []CodeMonitorStoreUpdateSlackWebhookActionFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateSlackWebhookAction delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) UpdateSlackWebhookAction(v0 context.Context, v1 int64, v2 bool, v3 string) (*SlackWebhookAction, error) {
+	r0, r1 := m.UpdateSlackWebhookActionFunc.nextHook()(v0, v1, v2, v3)
+	m.UpdateSlackWebhookActionFunc.appendCall(CodeMonitorStoreUpdateSlackWebhookActionFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// UpdateSlackWebhookAction method of the parent MockCodeMonitorStore
+// instance is invoked and the hook queue is empty.
+func (f *CodeMonitorStoreUpdateSlackWebhookActionFunc) SetDefaultHook(hook func(context.Context, int64, bool, string) (*SlackWebhookAction, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateSlackWebhookAction method of the parent MockCodeMonitorStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *CodeMonitorStoreUpdateSlackWebhookActionFunc) PushHook(hook func(context.Context, int64, bool, string) (*SlackWebhookAction, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreUpdateSlackWebhookActionFunc) SetDefaultReturn(r0 *SlackWebhookAction, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64, bool, string) (*SlackWebhookAction, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreUpdateSlackWebhookActionFunc) PushReturn(r0 *SlackWebhookAction, r1 error) {
+	f.PushHook(func(context.Context, int64, bool, string) (*SlackWebhookAction, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreUpdateSlackWebhookActionFunc) nextHook() func(context.Context, int64, bool, string) (*SlackWebhookAction, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreUpdateSlackWebhookActionFunc) appendCall(r0 CodeMonitorStoreUpdateSlackWebhookActionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreUpdateSlackWebhookActionFuncCall objects describing the
+// invocations of this function.
+func (f *CodeMonitorStoreUpdateSlackWebhookActionFunc) History() []CodeMonitorStoreUpdateSlackWebhookActionFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreUpdateSlackWebhookActionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreUpdateSlackWebhookActionFuncCall is an object that
+// describes an invocation of method UpdateSlackWebhookAction on an instance
+// of MockCodeMonitorStore.
+type CodeMonitorStoreUpdateSlackWebhookActionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *SlackWebhookAction
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreUpdateSlackWebhookActionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreUpdateSlackWebhookActionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreUpdateTriggerJobWithResultsFunc describes the behavior
+// when the UpdateTriggerJobWithResults method of the parent
+// MockCodeMonitorStore instance is invoked.
+type CodeMonitorStoreUpdateTriggerJobWithResultsFunc struct {
+	defaultHook func(context.Context, int32, string, int) error
+	hooks       []func(context.Context, int32, string, int) error
+	history     []CodeMonitorStoreUpdateTriggerJobWithResultsFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateTriggerJobWithResults delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) UpdateTriggerJobWithResults(v0 context.Context, v1 int32, v2 string, v3 int) error {
+	r0 := m.UpdateTriggerJobWithResultsFunc.nextHook()(v0, v1, v2, v3)
+	m.UpdateTriggerJobWithResultsFunc.appendCall(CodeMonitorStoreUpdateTriggerJobWithResultsFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// UpdateTriggerJobWithResults method of the parent MockCodeMonitorStore
+// instance is invoked and the hook queue is empty.
+func (f *CodeMonitorStoreUpdateTriggerJobWithResultsFunc) SetDefaultHook(hook func(context.Context, int32, string, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateTriggerJobWithResults method of the parent MockCodeMonitorStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *CodeMonitorStoreUpdateTriggerJobWithResultsFunc) PushHook(hook func(context.Context, int32, string, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreUpdateTriggerJobWithResultsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, string, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreUpdateTriggerJobWithResultsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, string, int) error {
+		return r0
+	})
+}
+
+func (f *CodeMonitorStoreUpdateTriggerJobWithResultsFunc) nextHook() func(context.Context, int32, string, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreUpdateTriggerJobWithResultsFunc) appendCall(r0 CodeMonitorStoreUpdateTriggerJobWithResultsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeMonitorStoreUpdateTriggerJobWithResultsFuncCall objects describing
+// the invocations of this function.
+func (f *CodeMonitorStoreUpdateTriggerJobWithResultsFunc) History() []CodeMonitorStoreUpdateTriggerJobWithResultsFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreUpdateTriggerJobWithResultsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreUpdateTriggerJobWithResultsFuncCall is an object that
+// describes an invocation of method UpdateTriggerJobWithResults on an
+// instance of MockCodeMonitorStore.
+type CodeMonitorStoreUpdateTriggerJobWithResultsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreUpdateTriggerJobWithResultsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreUpdateTriggerJobWithResultsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeMonitorStoreUpdateWebhookActionFunc describes the behavior when the
+// UpdateWebhookAction method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreUpdateWebhookActionFunc struct {
+	defaultHook func(context.Context, int64, bool, string) (*WebhookAction, error)
+	hooks       []func(context.Context, int64, bool, string) (*WebhookAction, error)
+	history     []CodeMonitorStoreUpdateWebhookActionFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateWebhookAction delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) UpdateWebhookAction(v0 context.Context, v1 int64, v2 bool, v3 string) (*WebhookAction, error) {
+	r0, r1 := m.UpdateWebhookActionFunc.nextHook()(v0, v1, v2, v3)
+	m.UpdateWebhookActionFunc.appendCall(CodeMonitorStoreUpdateWebhookActionFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the UpdateWebhookAction
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreUpdateWebhookActionFunc) SetDefaultHook(hook func(context.Context, int64, bool, string) (*WebhookAction, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateWebhookAction method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreUpdateWebhookActionFunc) PushHook(hook func(context.Context, int64, bool, string) (*WebhookAction, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreUpdateWebhookActionFunc) SetDefaultReturn(r0 *WebhookAction, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64, bool, string) (*WebhookAction, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreUpdateWebhookActionFunc) PushReturn(r0 *WebhookAction, r1 error) {
+	f.PushHook(func(context.Context, int64, bool, string) (*WebhookAction, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreUpdateWebhookActionFunc) nextHook() func(context.Context, int64, bool, string) (*WebhookAction, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreUpdateWebhookActionFunc) appendCall(r0 CodeMonitorStoreUpdateWebhookActionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreUpdateWebhookActionFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreUpdateWebhookActionFunc) History() []CodeMonitorStoreUpdateWebhookActionFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreUpdateWebhookActionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreUpdateWebhookActionFuncCall is an object that describes
+// an invocation of method UpdateWebhookAction on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreUpdateWebhookActionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *WebhookAction
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreUpdateWebhookActionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreUpdateWebhookActionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
 
 // MockEnterpriseDB is a mock implementation of the EnterpriseDB interface
 // (from the package
@@ -22,6 +6585,9 @@ type MockEnterpriseDB struct {
 	// AuthzFunc is an instance of a mock function object controlling the
 	// behavior of the method Authz.
 	AuthzFunc *EnterpriseDBAuthzFunc
+	// CodeMonitorsFunc is an instance of a mock function object controlling
+	// the behavior of the method CodeMonitors.
+	CodeMonitorsFunc *EnterpriseDBCodeMonitorsFunc
 	// ConfFunc is an instance of a mock function object controlling the
 	// behavior of the method Conf.
 	ConfFunc *EnterpriseDBConfFunc
@@ -49,6 +6615,9 @@ type MockEnterpriseDB struct {
 	// GlobalStateFunc is an instance of a mock function object controlling
 	// the behavior of the method GlobalState.
 	GlobalStateFunc *EnterpriseDBGlobalStateFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *EnterpriseDBHandleFunc
 	// NamespacesFunc is an instance of a mock function object controlling
 	// the behavior of the method Namespaces.
 	NamespacesFunc *EnterpriseDBNamespacesFunc
@@ -128,6 +6697,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 				return nil
 			},
 		},
+		CodeMonitorsFunc: &EnterpriseDBCodeMonitorsFunc{
+			defaultHook: func() CodeMonitorStore {
+				return nil
+			},
+		},
 		ConfFunc: &EnterpriseDBConfFunc{
 			defaultHook: func() database.ConfStore {
 				return nil
@@ -170,6 +6744,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		GlobalStateFunc: &EnterpriseDBGlobalStateFunc{
 			defaultHook: func() database.GlobalStateStore {
+				return nil
+			},
+		},
+		HandleFunc: &EnterpriseDBHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
 				return nil
 			},
 		},
@@ -295,6 +6874,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.Authz")
 			},
 		},
+		CodeMonitorsFunc: &EnterpriseDBCodeMonitorsFunc{
+			defaultHook: func() CodeMonitorStore {
+				panic("unexpected invocation of MockEnterpriseDB.CodeMonitors")
+			},
+		},
 		ConfFunc: &EnterpriseDBConfFunc{
 			defaultHook: func() database.ConfStore {
 				panic("unexpected invocation of MockEnterpriseDB.Conf")
@@ -338,6 +6922,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 		GlobalStateFunc: &EnterpriseDBGlobalStateFunc{
 			defaultHook: func() database.GlobalStateStore {
 				panic("unexpected invocation of MockEnterpriseDB.GlobalState")
+			},
+		},
+		HandleFunc: &EnterpriseDBHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockEnterpriseDB.Handle")
 			},
 		},
 		NamespacesFunc: &EnterpriseDBNamespacesFunc{
@@ -459,6 +7048,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		AuthzFunc: &EnterpriseDBAuthzFunc{
 			defaultHook: i.Authz,
 		},
+		CodeMonitorsFunc: &EnterpriseDBCodeMonitorsFunc{
+			defaultHook: i.CodeMonitors,
+		},
 		ConfFunc: &EnterpriseDBConfFunc{
 			defaultHook: i.Conf,
 		},
@@ -485,6 +7077,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		GlobalStateFunc: &EnterpriseDBGlobalStateFunc{
 			defaultHook: i.GlobalState,
+		},
+		HandleFunc: &EnterpriseDBHandleFunc{
+			defaultHook: i.Handle,
 		},
 		NamespacesFunc: &EnterpriseDBNamespacesFunc{
 			defaultHook: i.Namespaces,
@@ -748,6 +7343,106 @@ func (c EnterpriseDBAuthzFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBAuthzFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBCodeMonitorsFunc describes the behavior when the CodeMonitors
+// method of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBCodeMonitorsFunc struct {
+	defaultHook func() CodeMonitorStore
+	hooks       []func() CodeMonitorStore
+	history     []EnterpriseDBCodeMonitorsFuncCall
+	mutex       sync.Mutex
+}
+
+// CodeMonitors delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) CodeMonitors() CodeMonitorStore {
+	r0 := m.CodeMonitorsFunc.nextHook()()
+	m.CodeMonitorsFunc.appendCall(EnterpriseDBCodeMonitorsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CodeMonitors method
+// of the parent MockEnterpriseDB instance is invoked and the hook queue is
+// empty.
+func (f *EnterpriseDBCodeMonitorsFunc) SetDefaultHook(hook func() CodeMonitorStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CodeMonitors method of the parent MockEnterpriseDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnterpriseDBCodeMonitorsFunc) PushHook(hook func() CodeMonitorStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnterpriseDBCodeMonitorsFunc) SetDefaultReturn(r0 CodeMonitorStore) {
+	f.SetDefaultHook(func() CodeMonitorStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnterpriseDBCodeMonitorsFunc) PushReturn(r0 CodeMonitorStore) {
+	f.PushHook(func() CodeMonitorStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBCodeMonitorsFunc) nextHook() func() CodeMonitorStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBCodeMonitorsFunc) appendCall(r0 EnterpriseDBCodeMonitorsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBCodeMonitorsFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBCodeMonitorsFunc) History() []EnterpriseDBCodeMonitorsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBCodeMonitorsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBCodeMonitorsFuncCall is an object that describes an
+// invocation of method CodeMonitors on an instance of MockEnterpriseDB.
+type EnterpriseDBCodeMonitorsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 CodeMonitorStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBCodeMonitorsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBCodeMonitorsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -1669,6 +8364,105 @@ func (c EnterpriseDBGlobalStateFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBGlobalStateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBHandleFunc describes the behavior when the Handle method of
+// the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBHandleFunc struct {
+	defaultHook func() *basestore.TransactableHandle
+	hooks       []func() *basestore.TransactableHandle
+	history     []EnterpriseDBHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockEnterpriseDB) Handle() *basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(EnterpriseDBHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockEnterpriseDB instance is invoked and the hook queue is empty.
+func (f *EnterpriseDBHandleFunc) SetDefaultHook(hook func() *basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockEnterpriseDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *EnterpriseDBHandleFunc) PushHook(hook func() *basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *EnterpriseDBHandleFunc) SetDefaultReturn(r0 *basestore.TransactableHandle) {
+	f.SetDefaultHook(func() *basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *EnterpriseDBHandleFunc) PushReturn(r0 *basestore.TransactableHandle) {
+	f.PushHook(func() *basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBHandleFunc) nextHook() func() *basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBHandleFunc) appendCall(r0 EnterpriseDBHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBHandleFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBHandleFunc) History() []EnterpriseDBHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBHandleFuncCall is an object that describes an invocation of
+// method Handle on an instance of MockEnterpriseDB.
+type EnterpriseDBHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

@@ -1,19 +1,24 @@
-package codemonitors
+package database
 
 import (
 	"context"
 	"database/sql"
+	"testing"
 	"time"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 // CodeMonitorStore is an interface for interacting with the code monitor tables in the database
-//go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors -i CodeMonitorStore -o mock_store_test.go
 type CodeMonitorStore interface {
 	basestore.ShareableStore
 	Transact(context.Context) (CodeMonitorStore, error)
@@ -85,14 +90,14 @@ type codeMonitorStore struct {
 
 var _ CodeMonitorStore = (*codeMonitorStore)(nil)
 
-// NewStore returns a new Store backed by the given database.
-func NewStore(db dbutil.DB) *codeMonitorStore {
-	return NewStoreWithClock(db, timeutil.Now)
+// CodeMonitors returns a new Store backed by the given database.
+func CodeMonitors(db dbutil.DB) *codeMonitorStore {
+	return CodeMonitorsWithClock(db, timeutil.Now)
 }
 
-// NewStoreWithClock returns a new Store backed by the given database and
+// CodeMonitorsWithClock returns a new Store backed by the given database and
 // clock for timestamps.
-func NewStoreWithClock(db dbutil.DB, clock func() time.Time) *codeMonitorStore {
+func CodeMonitorsWithClock(db dbutil.DB, clock func() time.Time) *codeMonitorStore {
 	return &codeMonitorStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), now: clock}
 }
 
@@ -114,4 +119,145 @@ func (s *codeMonitorStore) Transact(ctx context.Context) (CodeMonitorStore, erro
 		return nil, err
 	}
 	return &codeMonitorStore{Store: txBase, now: s.now}, nil
+}
+
+type JobTable int
+
+const (
+	TriggerJobs JobTable = iota
+	ActionJobs
+)
+
+type JobState int
+
+const (
+	Queued JobState = iota
+	Processing
+	Completed
+	Errored
+	Failed
+)
+
+const setStatusFmtStr = `
+UPDATE %s
+SET state = %s,
+    started_at = %s,
+    finished_at = %s
+WHERE id = %s;
+`
+
+// quote wraps the given string in a *sqlf.Query so that it is not passed to the database
+// as a parameter. It is necessary to quote things such as table names, columns, and other
+// expressions that are not simple values.
+func quote(s string) *sqlf.Query {
+	return sqlf.Sprintf(s)
+}
+
+func (s *TestStore) SetJobStatus(ctx context.Context, table JobTable, state JobState, id int) error {
+	st := []string{"queued", "processing", "completed", "errored", "failed"}[state]
+	t := []string{"cm_trigger_jobs", "cm_action_jobs"}[table]
+	return s.Exec(ctx, sqlf.Sprintf(setStatusFmtStr, quote(t), st, s.Now(), s.Now(), id))
+}
+
+type TestStore struct {
+	CodeMonitorStore
+}
+
+func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*Monitor, error) {
+	t.Helper()
+
+	actions := []*EmailActionArgs{
+		{
+			Enabled:  true,
+			Priority: "NORMAL",
+			Header:   "test header 1",
+		},
+		{
+			Enabled:  true,
+			Priority: "CRITICAL",
+			Header:   "test header 2",
+		},
+	}
+
+	// Create monitor.
+	uid := actor.FromContext(ctx).UID
+	m, err := s.CreateMonitor(ctx, MonitorArgs{
+		Description:     testDescription,
+		Enabled:         true,
+		NamespaceUserID: &uid,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Create trigger.
+	_, err = s.CreateQueryTrigger(ctx, m.ID, testQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, a := range actions {
+		e, err := s.CreateEmailAction(ctx, m.ID, &EmailActionArgs{
+			Enabled:  a.Enabled,
+			Priority: a.Priority,
+			Header:   a.Header,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = s.CreateRecipient(ctx, e.ID, &uid, nil)
+		if err != nil {
+			return nil, err
+		}
+		// TODO(camdencheek): add other action types (webhooks) here
+	}
+	return m, nil
+}
+
+func NewTestStore(t *testing.T, db dbutil.DB) (context.Context, *TestStore) {
+	ctx := actor.WithInternalActor(context.Background())
+	now := time.Now().Truncate(time.Microsecond)
+	return ctx, &TestStore{CodeMonitorsWithClock(db, func() time.Time { return now })}
+}
+
+func NewTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, id int32, namespace graphql.ID, userContext context.Context) {
+	t.Helper()
+
+	name = "cm-user1"
+	id = insertTestUser(ctx, t, db, name, true)
+	namespace = relay.MarshalID("User", id)
+	ctx = actor.WithActor(ctx, actor.FromUser(id))
+	return name, id, namespace, ctx
+}
+
+const (
+	testQuery       = "repo:github\\.com/sourcegraph/sourcegraph func type:diff patternType:literal"
+	testDescription = "test description"
+)
+
+func newTestStore(t *testing.T) (context.Context, dbutil.DB, *codeMonitorStore) {
+	ctx := actor.WithInternalActor(context.Background())
+	db := dbtest.NewDB(t)
+	now := time.Now().Truncate(time.Microsecond)
+	return ctx, db, CodeMonitorsWithClock(db, func() time.Time { return now })
+}
+
+func newTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, id int32, namespace graphql.ID, userContext context.Context) {
+	t.Helper()
+
+	name = "cm-user1"
+	id = insertTestUser(ctx, t, db, name, true)
+	namespace = relay.MarshalID("User", id)
+	ctx = actor.WithActor(ctx, actor.FromUser(id))
+	return name, id, namespace, ctx
+}
+
+func insertTestUser(ctx context.Context, t *testing.T, db dbutil.DB, name string, isAdmin bool) (userID int32) {
+	t.Helper()
+
+	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
+	err := db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
+	require.NoError(t, err)
+	return userID
 }
