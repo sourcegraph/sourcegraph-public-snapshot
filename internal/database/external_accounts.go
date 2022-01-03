@@ -365,10 +365,6 @@ type ExternalAccountsListOptions struct {
 }
 
 func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error) {
-	if Mocks.ExternalAccounts.List != nil {
-		return Mocks.ExternalAccounts.List(opt)
-	}
-
 	tr, ctx := trace.New(ctx, "UserExternalAccountsStore.List", "")
 	defer func() {
 		if err != nil {
@@ -483,7 +479,6 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 
 // MockExternalAccounts mocks the Stores.ExternalAccounts DB store.
 type MockExternalAccounts struct {
-	List           func(ExternalAccountsListOptions) ([]*extsvc.Account, error)
 	Count          func(ExternalAccountsListOptions) (int, error)
 	TouchExpired   func(ctx context.Context, id int32) error
 	TouchLastValid func(ctx context.Context, id int32) error
