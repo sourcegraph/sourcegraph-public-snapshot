@@ -288,10 +288,6 @@ func (s *repoStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (ma
 }
 
 func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, err error) {
-	if Mocks.Repos.Count != nil {
-		return Mocks.Repos.Count(ctx, opt)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.Count", "")
 	defer func() {
 		if err != nil {
@@ -1535,10 +1531,6 @@ LIMIT 1
 // match the given clone url. If not repo is found, an empty string and nil error
 // are returned.
 func (s *repoStore) GetFirstRepoNamesByCloneURL(ctx context.Context, cloneURL string) (api.RepoName, error) {
-	if Mocks.Repos.GetFirstRepoNamesByCloneURL != nil {
-		return Mocks.Repos.GetFirstRepoNamesByCloneURL(ctx, cloneURL)
-	}
-
 	name, _, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf(getFirstRepoNamesByCloneURLQueryFmtstr, cloneURL)))
 	if err != nil {
 		return "", err
