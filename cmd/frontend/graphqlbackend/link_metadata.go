@@ -2,6 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
+	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"golang.org/x/net/html"
 	"io"
 	"net/http"
@@ -27,11 +30,49 @@ type LinkMetadata struct {
 	imageUrl    *string
 }
 
+// redisCache is an HTTP cache backed by Redis. The TTL of a month is a balance between caching values
+// for a useful amount of time versus growing the cache too large or having them get stale.
+var redisCache = rcache.NewWithTTL("link_metadata", 60*60*24*7)
+
 func (r *schemaResolver) LinkMetadata(ctx context.Context, args *linkMetadataArgs) *LinkMetadataResolver {
 	return &LinkMetadataResolver{sync.Once{}, args.URL, ""}
 }
 
+func (r *LinkMetadataResolver) getMetadataWithCaching(url string) LinkMetadata {
+	if linkMetadata, ok := getMetadataFromCache(url); ok {
+		return *linkMetadata
+	}
+	htmlSource := r.retrieveHtml(url)
+	linkMetadata := parseBody(htmlSource)
+	if linkMetadataJsonString, err := json.Marshal(linkMetadata); err == nil {
+		log15.Debug("Saving to cache: ", "url", url)
+		redisCache.Set(url, linkMetadataJsonString)
+	} else {
+		log15.Warn("Error marshalling link metadata.", "error", err, "linkMetadata", linkMetadata)
+	}
+	return linkMetadata
+}
+
+func getMetadataFromCache(url string) (*LinkMetadata, bool) {
+	var linkMetadata LinkMetadata
+	if bytes, ok := redisCache.Get(url); ok {
+		// Cache hit
+		log15.Debug("Cache hit for", "url", url)
+		if err := json.Unmarshal(bytes, &linkMetadata); err != nil {
+			log15.Warn("Failed to unmarshal cached link metadata.", "url", url, "err", err)
+			return &LinkMetadata{}, false
+		} else {
+			return &linkMetadata, true
+		}
+	} else {
+		// Cache miss
+		log15.Debug("Cache miss for", "url", url)
+		return &LinkMetadata{}, false
+	}
+}
+
 func (r *LinkMetadataResolver) retrieveHtml(url string) string {
+	log15.Debug("Getting HTML for", "url", url)
 	r.once.Do(func() {
 		resp, err := http.Get(url)
 		if err != nil {
@@ -118,22 +159,13 @@ func extractField(metaTags map[string]string, fieldNames []string) *string {
 }
 
 func (r *LinkMetadataResolver) Title() *string {
-	htmlSource := r.retrieveHtml(r.URL)
-	linkMetadata := parseBody(htmlSource)
-
-	return linkMetadata.title
+	return r.getMetadataWithCaching(r.URL).title
 }
 
 func (r *LinkMetadataResolver) Description() *string {
-	htmlSource := r.retrieveHtml(r.URL)
-	linkMetadata := parseBody(htmlSource)
-
-	return linkMetadata.description
+	return r.getMetadataWithCaching(r.URL).description
 }
 
 func (r *LinkMetadataResolver) ImageURL() *string {
-	htmlSource := r.retrieveHtml(r.URL)
-	linkMetadata := parseBody(htmlSource)
-
-	return linkMetadata.imageUrl
+	return r.getMetadataWithCaching(r.URL).imageUrl
 }
