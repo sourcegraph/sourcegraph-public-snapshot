@@ -14,13 +14,13 @@ env:
   CGO_ENABLED: '1'
 
 jobs:
-  commit_sg:
+  touch_sg:
     name: Touch sourcegraph/sg
     steps:
       - name: checkout-sourcegraph-sg
         uses: actions/checkout@v2
         with: 
-        repository: sourcegraph/sg
+          repository: sourcegraph/sg
       - name: touch-sourcegraph-sg
         run: |
           today=$(date +'%Y-%m-%d-%H-%M')
@@ -31,6 +31,7 @@ jobs:
 
   create_release:
     name: create-github-release
+    needs: touch_sg
     runs-on: ubuntu-latest
     outputs:
       release_name: ${{ steps.release.outputs.release_name }}
