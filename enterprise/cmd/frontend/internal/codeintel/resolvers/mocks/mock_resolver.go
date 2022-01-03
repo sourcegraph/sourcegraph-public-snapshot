@@ -6,9 +6,6 @@ import (
 	"context"
 	"sync"
 
-
-
-
 	graphqlbackend "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	resolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
