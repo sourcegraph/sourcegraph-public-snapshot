@@ -234,7 +234,7 @@ for DATABASE in frontend codeintel; do
 done
 ```
 
-> NOTE: These values will work for a standard, docker-compose deployment of Sourcegraph. If you've customized you're deployment (e.g. using an external database service) you will have to modify the environment variables accordingly.
+> NOTE: These values will work for a standard docker-compose deployment of Sourcegraph. If you've customized your deployment (e.g., using an external database service), you will have to modify the environment variables accordingly.
 
 Once the `migrator` has run, you should see output similar to:
 > sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Checked current version" schema=frontend version=1528395959 dirty=false
