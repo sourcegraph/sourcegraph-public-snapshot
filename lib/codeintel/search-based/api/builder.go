@@ -77,7 +77,7 @@ func Index(
 		node := visitor.Cursor.CurrentNode()
 		if definitionFingerprint != nil {
 			scope := visitor.Scope
-			for i := 0; i < len(definitionFingerprint.ParentTypes) && scope.Outer != nil; i++ {
+			for i := 1; i < len(definitionFingerprint.ParentTypes) && scope.Outer != nil; i++ {
 				scope = scope.Outer
 			}
 			visitor.EmitLocalOccurrence(

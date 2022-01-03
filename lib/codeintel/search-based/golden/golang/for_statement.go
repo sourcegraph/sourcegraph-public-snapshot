@@ -9,7 +9,6 @@
 //             ^ local0-i reference
 //                     ^ local0-i reference
     fmt.Println(i)
-//              ^ local0-i reference
    }
   
    for i, j := 0, 1; i < 10; i, j = i+1, j+2 {
@@ -21,8 +20,6 @@
 //                                  ^ local1-i reference
 //                                       ^ local2-j reference
     fmt.Println(i, j)
-//              ^ local1-i reference
-//                 ^ local2-j reference
    }
   
    for n := range make(chan int, 1) {

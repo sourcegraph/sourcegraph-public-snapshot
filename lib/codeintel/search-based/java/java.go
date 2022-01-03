@@ -20,7 +20,7 @@ func (_ Indexer) FileExtensions() []string {
 	return []string{".java"}
 }
 
-func (_ Indexer) Index(ctx context.Context, input *api.Input, _ *api.IndexingOptions) (*lsif_typed.Document, error) {
+func (_ Indexer) Index(ctx context.Context, input *api.Input) (*lsif_typed.Document, error) {
 	return api.Index(ctx, input, javaGrammar.GetLanguage(), api.LocalIntelGrammar{
 		Identifiers: map[string]struct{}{"identifier": {}},
 		Fingerprints: []api.DefinitionFingerprint{

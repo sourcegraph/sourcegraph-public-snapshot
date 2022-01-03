@@ -12,5 +12,5 @@ type IndexingOptions struct {
 type Indexer interface {
 	Name() string
 	FileExtensions() []string
-	Index(ctx context.Context, input *Input, options *IndexingOptions) (*lsif_typed.Document, error)
+	Index(ctx context.Context, input *Input) (*lsif_typed.Document, error)
 }

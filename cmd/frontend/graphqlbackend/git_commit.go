@@ -281,7 +281,7 @@ func (r *lsifDocumentResolver) Occurrences(ctx context.Context) ([]*lsifOccurren
 	for _, indexer := range sb.AllIndexers {
 		for _, extension := range indexer.FileExtensions() {
 			if strings.HasSuffix(r.path, extension) {
-				doc, _ := indexer.Index(ctx, sbApi.NewInput(r.path, []byte(r.content)), &sbApi.IndexingOptions{})
+				doc, _ := indexer.Index(ctx, sbApi.NewInput(r.path, []byte(r.content)))
 				if doc != nil {
 					resolvers := make([]*lsifOccurrenceResolver, len(doc.Occurrences))
 					for i, occ := range doc.Occurrences {

@@ -145,7 +145,7 @@ func testIndexer(env goldenEnv, relativePath string, t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read file %v, err %v", originalPath, err)
 	}
-	doc, err := env.indexer.Index(context.Background(), api.NewInput(originalPath, data), &api.IndexingOptions{})
+	doc, err := env.indexer.Index(context.Background(), api.NewInput(originalPath, data))
 	if err != nil {
 		t.Fatalf("failed to index doc %v, err %v", originalPath, err)
 	}
@@ -175,8 +175,8 @@ func testIndexer(env goldenEnv, relativePath string, t *testing.T) {
 		edits := myers.ComputeEdits(span.URIFromPath(goldenPath), string(expectedGolden), obtainedGolden)
 		if len(edits) > 0 {
 			diff := fmt.Sprint(gotextdiff.ToUnified(
-				goldenPath+" (obtained)",
-				goldenPath+" (expected)",
+				goldenPath+" (expected/what the golden tests want)",
+				goldenPath+" (obtained/what the current program produced)",
 				string(expectedGolden),
 				edits,
 			))
