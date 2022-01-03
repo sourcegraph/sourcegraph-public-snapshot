@@ -195,7 +195,6 @@ The `migrator` container in the `docker-compose.yaml` file will automatically ru
 To execute the database migrations independently, run the following command (substituting in the version you'd like to migrate to):
 
 ```bash
-
 export SOURCEGRAPH_VERSION="the version you're upgrading to"
 
 # This will output the current migration version for the frontend db
