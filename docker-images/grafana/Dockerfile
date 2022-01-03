@@ -39,7 +39,7 @@ USER root
 
 # Create optional folders to avoid error logs about missing dirs
 RUN mkdir /sg_grafana_additional_dashboards
-RUN mkdir /sg_config_grafana/provisioning/plugins
+RUN mkdir /sg_config_grafana/provisioning/plugins && chown grafana:root /sg_config_grafana/provisioning/plugins
 
 # @FIXME: Update redis image
 # Pin busybox=1.32.1-r7 https://github.com/sourcegraph/sourcegraph/issues/27965
