@@ -502,10 +502,6 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 
 // Delete performs a soft-delete of the user and all resources associated with this user.
 func (u *userStore) Delete(ctx context.Context, id int32) (err error) {
-	if Mocks.Users.Delete != nil {
-		return Mocks.Users.Delete(ctx, id)
-	}
-
 	tx, err := u.Transact(ctx)
 	if err != nil {
 		return err
