@@ -1,14 +1,15 @@
 import classNames from 'classnames'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Form } from 'reactstrap'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebviewPageProps } from '../platform/context'
 
 import styles from './SearchSidebar.module.scss'
 
-interface SidebarAuthCheckProps extends Pick<WebviewPageProps, 'sourcegraphVSCodeExtensionAPI'> {
+interface SidebarAuthCheckProps extends TelemetryProps, Pick<WebviewPageProps, 'sourcegraphVSCodeExtensionAPI'> {
     className?: string
     hasAccessToken: boolean
     onSubmitAccessToken: React.FormEventHandler<HTMLFormElement>
@@ -21,6 +22,7 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
     hasAccessToken,
     onSubmitAccessToken,
     validAccessToken,
+    telemetryService,
 }) => {
     // `undefined` while waiting for Comlink response.
     const [instanceHostname, setInstanceHostname] = useState<string | undefined>(undefined)
@@ -45,6 +47,15 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
         setValidating(false)
     }, [sourcegraphVSCodeExtensionAPI, instanceHostname])
 
+    const onSignUpClick = useCallback(
+        (event?: React.FormEvent): void => {
+            event?.preventDefault()
+            setHasAccount(true)
+            telemetryService.log('VSCESearchBarClicked', { campaign: 'Sign up link' }, { campaign: 'Sign up link' })
+        },
+        [telemetryService]
+    )
+
     return (
         <div className={classNames('d-flex flex-column align-items-left justify-content-center', className)}>
             <p className={classNames('mt-3', styles.title)}>Search Your Private Code</p>
@@ -59,8 +70,11 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                             </p>
                             <a
                                 href={signUpUrl}
-                                className={classNames('btn btn-sm w-100 border-0 font-weight-normal', styles.button)}
-                                onClick={() => setHasAccount(true)}
+                                className={classNames(
+                                    'btn btn-lg btn-block border-0 font-weight-normal',
+                                    styles.button
+                                )}
+                                onClick={onSignUpClick}
                             >
                                 <span className={classNames('my-3', styles.text)}>Create an account</span>
                             </a>
@@ -104,8 +118,10 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                             >
                                 <span className={classNames('my-0', styles.text)}>Enter Access Token</span>
                             </button>
-                            <p className={classNames('my-3', styles.text)}>
-                                <a href={signUpUrl}>Create an account</a>
+                            <p className={classNames('mb-3', styles.text)}>
+                                <a href={signUpUrl} onClick={onSignUpClick}>
+                                    Create an account
+                                </a>
                             </p>
                         </Form>
                     )}
@@ -118,7 +134,7 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                         <Form onSubmit={onSubmitAccessToken}>
                             <a
                                 href={signInUrl}
-                                className="btn btn-sm btn-danger w-100 border-0 font-weight-normal"
+                                className="btn btn-lg btn-block btn-danger border-0 font-weight-normal"
                                 onClick={() => setHasAccount(true)}
                             >
                                 <span className={classNames('my-3', styles.text)}>
@@ -147,7 +163,7 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                             type="button"
                             onClick={() => sourcegraphVSCodeExtensionAPI.openSearchPanel()}
                             className={classNames(
-                                'mb-3 btn btn-sm w-100 border-0 font-weight-normal disabled',
+                                'mb-3 btn btn-lg btn-block btn-success border-0 font-weight-normal disabled',
                                 styles.button
                             )}
                         >

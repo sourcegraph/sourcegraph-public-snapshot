@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React from 'react'
+import React, { useCallback } from 'react'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded/src/components/SyntaxHighlightedSearchQuery'
 import { ModalVideo } from '@sourcegraph/branded/src/search/documentation/ModalVideo'
@@ -7,8 +7,8 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { QueryState } from '@sourcegraph/shared/src/search/helpers'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { SearchExample, exampleQueries, fonts } from '@sourcegraph/web/src/search/home//LoggedOutHomepage.constants'
 import { DynamicWebFonts } from '@sourcegraph/web/src/search/home/DynamicWebFonts'
+import { SearchExample, exampleQueries, fonts } from '@sourcegraph/web/src/search/home/LoggedOutHomepage.constants'
 import styles from '@sourcegraph/web/src/search/home/LoggedOutHomepage.module.scss'
 export interface HomePanelsProps extends TelemetryProps, ThemeProps {
     setQuery: (newState: QueryState) => void
@@ -26,34 +26,44 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
     subtitle,
     examples,
     icon,
+    telemetryService,
     setQuery,
-}) => (
-    <div className={styles.searchExamplesWrapper}>
-        <div className={classNames('d-flex align-items-baseline mb-2', styles.searchExamplesTitleWrapper)}>
-            <div className={classNames('mr-2', styles.title, styles.searchExamplesTitle)}>{title}</div>
-            <div className="font-weight-normal text-muted">{subtitle}</div>
-        </div>
-        <div className={styles.searchExamples}>
-            {examples.map(example => (
-                <div key={example.query} className={styles.searchExampleCardWrapper}>
-                    <Link
-                        to={example.to}
-                        className={classNames('card', styles.searchExampleCard)}
-                        onClick={() => setQuery({ query: example.query })}
-                    >
-                        <div className={classNames(styles.searchExampleIcon)}>{icon}</div>
-                        <div className={styles.searchExampleQueryWrapper}>
-                            <div className={styles.searchExampleQuery}>
-                                <SyntaxHighlightedSearchQuery query={example.query} />
+}) => {
+    const searchExampleClicked = useCallback(
+        (trackEventName: string, exampleQuery: string) => (): void => {
+            setQuery({ query: exampleQuery })
+            telemetryService.log(trackEventName)
+        },
+        [setQuery, telemetryService]
+    )
+    return (
+        <div className={styles.searchExamplesWrapper}>
+            <div className={classNames('d-flex align-items-baseline mb-2', styles.searchExamplesTitleWrapper)}>
+                <div className={classNames('mr-2', styles.title, styles.searchExamplesTitle)}>{title}</div>
+                <div className="font-weight-normal text-muted">{subtitle}</div>
+            </div>
+            <div className={styles.searchExamples}>
+                {examples.map(example => (
+                    <div key={example.query} className={styles.searchExampleCardWrapper}>
+                        <Link
+                            to={example.to}
+                            className={classNames('card', styles.searchExampleCard)}
+                            onClick={searchExampleClicked(example.trackEventName, example.query)}
+                        >
+                            <div className={classNames(styles.searchExampleIcon)}>{icon}</div>
+                            <div className={styles.searchExampleQueryWrapper}>
+                                <div className={styles.searchExampleQuery}>
+                                    <SyntaxHighlightedSearchQuery query={example.query} />
+                                </div>
                             </div>
-                        </div>
-                    </Link>
-                    <p>{example.label}</p>
-                </div>
-            ))}
+                        </Link>
+                        <p>{example.label}</p>
+                    </div>
+                ))}
+            </div>
         </div>
-    </div>
-)
+    )
+}
 
 export const HomePanels: React.FunctionComponent<HomePanelsProps> = props => (
     <DynamicWebFonts fonts={fonts}>

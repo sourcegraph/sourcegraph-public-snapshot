@@ -204,6 +204,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
                         className={styles.sidebarContainer}
                         sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
                         hasAccessToken={hasAccessToken}
+                        telemetryService={platformContext.telemetryService}
                         onSubmitAccessToken={onSubmitAccessToken}
                         validAccessToken={validAccessToken}
                     />

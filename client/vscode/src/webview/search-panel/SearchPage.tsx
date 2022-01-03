@@ -146,6 +146,18 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
             })
     }
 
+    const onSignUpClick = useCallback(
+        (event?: React.FormEvent): void => {
+            event?.preventDefault()
+            platformContext.telemetryService.log(
+                'VSCESearchPageClicked',
+                { campaign: 'Sign up link' },
+                { campaign: 'Sign up link' }
+            )
+        },
+        [platformContext.telemetryService]
+    )
+
     return (
         <div>
             {!queryToRun.query ? (
@@ -256,6 +268,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                     {loading ? (
                         <p>Loading...</p>
                     ) : (
+                        // Display Sign up banner if no access token is detected (assuming they do not have a Sourcegraph account)
                         <div className={classNames(styles.streamingSearchResultsContainer)}>
                             {!hasAccessToken && (
                                 <div className="card my-2 mr-3 d-flex p-3 flex-md-row flex-column align-items-center">
@@ -287,6 +300,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                                     <a
                                         className={classNames('btn', styles.streamingSearchResultsBtn)}
                                         href="https://sourcegraph.com/sign-up?src=SearchCTA"
+                                        onClick={onSignUpClick}
                                     >
                                         <span className={styles.streamingSearchResultsText}>Create a free account</span>
                                     </a>
