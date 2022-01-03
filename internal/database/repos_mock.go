@@ -8,7 +8,6 @@ import (
 )
 
 type MockRepos struct {
-	Get              func(ctx context.Context, repo api.RepoID) (*types.Repo, error)
 	List             func(v0 context.Context, v1 ReposListOptions) ([]*types.Repo, error)
 	ListMinimalRepos func(v0 context.Context, v1 ReposListOptions) ([]types.MinimalRepo, error)
 	Metadata         func(ctx context.Context, ids ...api.RepoID) ([]*types.SearchedRepo, error)
