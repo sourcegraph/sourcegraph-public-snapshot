@@ -683,9 +683,6 @@ func (u *userStore) GetByID(ctx context.Context, id int32) (*types.User, error) 
 // has a matching *unverified* email address, they will not be returned by this method. At most one
 // user may have any given verified email address.
 func (u *userStore) GetByVerifiedEmail(ctx context.Context, email string) (*types.User, error) {
-	if Mocks.Users.GetByVerifiedEmail != nil {
-		return Mocks.Users.GetByVerifiedEmail(ctx, email)
-	}
 	return u.getOneBySQL(ctx, sqlf.Sprintf("WHERE id=(SELECT user_id FROM user_emails WHERE email=%s AND verified_at IS NOT NULL) AND deleted_at IS NULL LIMIT 1", email))
 }
 
@@ -699,10 +696,6 @@ func (u *userStore) GetByUsername(ctx context.Context, username string) (*types.
 // GetByUsernames returns a list of users by given usernames. The number of results list could be less
 // than the candidate list due to no user is associated with some usernames.
 func (u *userStore) GetByUsernames(ctx context.Context, usernames ...string) ([]*types.User, error) {
-	if Mocks.Users.GetByUsernames != nil {
-		return Mocks.Users.GetByUsernames(ctx, usernames...)
-	}
-
 	if len(usernames) == 0 {
 		return []*types.User{}, nil
 	}
