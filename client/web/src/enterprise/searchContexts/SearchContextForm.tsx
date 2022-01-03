@@ -379,7 +379,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                             a Sourcegraph query.
                         </div>
 
-                        <div className="form-control text-code w-100">
+                        <div className={styles.searchContextFormQuery}>
                             <LazyMonacoQueryInput
                                 isLightTheme={props.isLightTheme}
                                 patternType={SearchPatternType.regexp}
