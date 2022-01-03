@@ -24,7 +24,7 @@ There are four fields for configuring which repositories are mirrored/synchroniz
 
 - [`repos`](github.md#configuration)<br>A list of repositories in `owner/name` format.
 - [`orgs`](github.md#configuration)<br>A list of organizations (every repository belonging to the organization will be cloned).
-- [`repositoryQuery`](github.md#configuration)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`, none of which are subject to result limitations), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires the latter, GitHub advanced search queries, to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
+- [`repositoryQuery`](github.md#configuration)<br>A list of strings with three predefined options (`public`, `affiliated`, `none`, none of which are subject to result limitations), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires the latter, GitHub advanced search queries, to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
 - [`exclude`](github.md#configuration)<br>A list of repositories to exclude which takes precedence over the `repos`, `orgs`, and `repositoryQuery` fields.
 
 ### Private repositories
@@ -144,7 +144,7 @@ When the search rate limit quota is exhausted, an error like `failed to list Git
 
 ### "repositoryQuery": ["public"] does not return archived status of a repo
 
-The  `repositoryQuery` option `"public"` is valuable in that it allows sourcegraph to sync all public repositories, however, it does not return whether or not a repo is archived. This can result in archived repos appearing in normal search. You can see an example of what is returned by the GitHub API for a query to "public" [here](https://docs.github.com/en/rest/reference/repos#list-public-repositories).
+The  `repositoryQuery` option `"public"` is valuable in that it allows Sourcegraph to sync all public repositories, however, it does not return whether or not a repo is archived. This can result in archived repos appearing in normal search. You can see an example of what is returned by the GitHub API for a query to "public" [here](https://docs.github.com/en/rest/reference/repos#list-public-repositories).
 
 If you would like to sync all public repositories while omitting archived repos, consider generating a GitHub token with access to only public repositories, then use `respositoryQuery` with option `affiliated` and an `exclude` argument with option `public` as seen in the example below:
 ```
@@ -165,7 +165,7 @@ If you would like to sync all public repositories while omitting archived repos,
 ```
 ### repositoryQuery returns first 1000 results only
 
-GitHub's [Search API](https://developer.github.com/v3/search/) only returns the first 1000 results. Therefore a `repositoryQuery` (other than the three pre-defined options) needs to return a 1000 results or less otherwise Sourcegraph will not synchronize some repositories. To workaround this limitation you can split your query into multiple queries, each returning less than a 1000 results. For example if your query is `org:Microsoft fork:no` you can adjust your query to:
+GitHub's [Search API](https://developer.github.com/v3/search/) only returns the first 1000 results. Therefore a `repositoryQuery` (other than the three predefined options) needs to return a 1000 results or less otherwise Sourcegraph will not synchronize some repositories. To work around this limitation you can split your query into multiple queries, each returning less than a 1000 results. For example if your query is `org:Microsoft fork:no` you can adjust your query to:
 
 ```jsonx
 {
