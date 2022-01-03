@@ -1,13 +1,13 @@
-package graphqlbackend
+package graphql
 
 import (
-	"context"
+	"encoding/json"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -15,31 +15,13 @@ type ExecutorResolver struct {
 	executor types.Executor
 }
 
-// ExecutorByHostname returns an executor resolver for the given hostname, or
-// nil when there is no executor record matching the given hostname.
-//
-// 🚨 SECURITY: This always returns nil for non-site admins.
-func ExecutorByHostname(ctx context.Context, db database.DB, hostname string) (*ExecutorResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
-		if err != backend.ErrMustBeSiteAdmin {
-			return nil, err
-		}
-		return nil, nil
-	}
-
-	e, found, err := db.Executors().GetByHostname(ctx, hostname)
-	if err != nil {
-		return nil, err
-	}
-
-	if !found {
-		return nil, nil
-	}
-
-	return &ExecutorResolver{executor: e}, nil
+func NewExecutorResolver(executor Executor) *ExecutorResolver {
+	return &ExecutorResolver{executor: executor}
 }
 
-func (e *ExecutorResolver) ID() graphql.ID    { return marshalExecutorID(int64(e.executor.ID)) }
+func (e *ExecutorResolver) ID() graphql.ID {
+	return relay.MarshalID("Executor", (int64(e.executor.ID)))
+}
 func (e *ExecutorResolver) Hostname() string  { return e.executor.Hostname }
 func (e *ExecutorResolver) QueueName() string { return e.executor.QueueName }
 func (e *ExecutorResolver) Active() bool {
@@ -56,3 +38,36 @@ func (e *ExecutorResolver) IgniteVersion() string   { return e.executor.IgniteVe
 func (e *ExecutorResolver) SrcCliVersion() string   { return e.executor.SrcCliVersion }
 func (e *ExecutorResolver) FirstSeenAt() DateTime   { return DateTime{e.executor.FirstSeenAt} }
 func (e *ExecutorResolver) LastSeenAt() DateTime    { return DateTime{e.executor.LastSeenAt} }
+
+// DateTime implements the DateTime GraphQL scalar type.
+type DateTime struct{ time.Time }
+
+// DateTimeOrNil is a helper function that returns nil for time == nil and otherwise wraps time in
+// DateTime.
+func DateTimeOrNil(time *time.Time) *DateTime {
+	if time == nil {
+		return nil
+	}
+	return &DateTime{Time: *time}
+}
+
+func (DateTime) ImplementsGraphQLType(name string) bool {
+	return name == "DateTime"
+}
+
+func (v DateTime) MarshalJSON() ([]byte, error) {
+	return json.Marshal(v.Time.Format(time.RFC3339))
+}
+
+func (v *DateTime) UnmarshalGraphQL(input interface{}) error {
+	s, ok := input.(string)
+	if !ok {
+		return errors.Errorf("invalid GraphQL DateTime scalar value input (got %T, expected string)", input)
+	}
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return err
+	}
+	*v = DateTime{Time: t}
+	return nil
+}
