@@ -48,7 +48,7 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
 
     return (
         <div
-            className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+            className="alert alert-info m-3 d-flex justify-content-between flex-shrink-0"
             data-testid="install-browser-extension-alert"
         >
             <div className="d-flex align-items-center">
