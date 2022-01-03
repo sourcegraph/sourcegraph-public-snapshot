@@ -32,7 +32,11 @@ export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> 
                     </Badge>
                 )}
             </div>
-            {node.query.length > 0 && <SyntaxHighlightedSearchQuery query={node.query} key={node.name} />}
+            {node.query.length > 0 && (
+                <small>
+                    <SyntaxHighlightedSearchQuery query={node.query} key={node.name} />
+                </small>
+            )}
 
             {node.description.length > 0 && (
                 <div className={classNames('text-muted mt-1', styles.leftDescription)}>{node.description}</div>
