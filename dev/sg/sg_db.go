@@ -32,7 +32,7 @@ var (
 	dbRedisFlagSet        = flag.NewFlagSet("sg db reset-redis", flag.ExitOnError)
 	dbAddUserFlagSet      = flag.NewFlagSet("sg db add-user", flag.ExitOnError)
 	dbAddUserNameFlag     = dbAddUserFlagSet.String("name", "sourcegraph", "User name")
-	dbAddUserPasswordFlag = dbAddUserFlagSet.String("password", "sourcegraph", "User password")
+	dbAddUserPasswordFlag = dbAddUserFlagSet.String("password", "sourcegraphsourcegraph", "User password")
 
 	dbCommand = &ffcli.Command{
 		Name:       "db",
