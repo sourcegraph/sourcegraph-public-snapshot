@@ -85,9 +85,15 @@ func (m *LinkMetadata) fromJSON(jsonBytes []byte) error {
 	if err := json.Unmarshal(jsonBytes, &temp); err != nil {
 		return err
 	} else {
-		m.title = strptr(temp["title"])
-		m.description = strptr(temp["description"])
-		m.imageUrl = strptr(temp["imageUrl"])
+		if temp["title"] != "" {
+			m.title = strptr(temp["title"])
+		}
+		if temp["description"] != "" {
+			m.description = strptr(temp["description"])
+		}
+		if temp["imageUrl"] != "" {
+			m.imageUrl = strptr(temp["imageUrl"])
+		}
 		return nil
 	}
 }
