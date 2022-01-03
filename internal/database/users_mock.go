@@ -8,7 +8,6 @@ import (
 )
 
 type MockUsers struct {
-	HardDelete                                      func(ctx context.Context, id int32) error
 	SetIsSiteAdmin                                  func(id int32, isSiteAdmin bool) error
 	SetTosAccepted                                  func(id int32) error
 	CheckAndDecrementInviteQuota                    func(ctx context.Context, userID int32) (bool, error)

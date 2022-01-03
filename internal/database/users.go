@@ -547,10 +547,6 @@ func (u *userStore) Delete(ctx context.Context, id int32) (err error) {
 
 // HardDelete removes the user and all resources associated with this user.
 func (u *userStore) HardDelete(ctx context.Context, id int32) (err error) {
-	if Mocks.Users.HardDelete != nil {
-		return Mocks.Users.HardDelete(ctx, id)
-	}
-
 	// Wrap in transaction because we delete from multiple tables.
 	tx, err := u.Transact(ctx)
 	if err != nil {
