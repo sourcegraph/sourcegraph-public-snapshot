@@ -1,4 +1,4 @@
-package codemonitors
+package database
 
 import (
 	"context"
@@ -20,7 +20,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 
 		db := database.NewDB(dbtest.NewDB(t))
 		_, _, _, ctx := newTestUser(ctx, t, db)
-		s := NewStore(db)
+		s := CodeMonitors(db)
 		fixtures, err := s.insertTestMonitor(ctx, t)
 		require.NoError(t, err)
 
@@ -38,7 +38,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 
 		db := database.NewDB(dbtest.NewDB(t))
 		_, _, _, ctx := newTestUser(ctx, t, db)
-		s := NewStore(db)
+		s := CodeMonitors(db)
 		fixtures, err := s.insertTestMonitor(ctx, t)
 		require.NoError(t, err)
 
@@ -60,7 +60,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 
 		db := database.NewDB(dbtest.NewDB(t))
 		_, _, _, ctx := newTestUser(ctx, t, db)
-		s := NewStore(db)
+		s := CodeMonitors(db)
 
 		_, err := s.UpdateWebhookAction(ctx, 383838, false, url2)
 		require.Error(t, err)
@@ -71,7 +71,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 
 		db := database.NewDB(dbtest.NewDB(t))
 		_, _, _, ctx := newTestUser(ctx, t, db)
-		s := NewStore(db)
+		s := CodeMonitors(db)
 		fixtures, err := s.insertTestMonitor(ctx, t)
 		require.NoError(t, err)
 
@@ -96,7 +96,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 
 		db := database.NewDB(dbtest.NewDB(t))
 		_, _, _, ctx := newTestUser(ctx, t, db)
-		s := NewStore(db)
+		s := CodeMonitors(db)
 		fixtures, err := s.insertTestMonitor(ctx, t)
 		require.NoError(t, err)
 
@@ -117,7 +117,7 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 
 		db := database.NewDB(dbtest.NewDB(t))
 		_, _, _, ctx := newTestUser(ctx, t, db)
-		s := NewStore(db)
+		s := CodeMonitors(db)
 		fixtures, err := s.insertTestMonitor(ctx, t)
 		require.NoError(t, err)
 
