@@ -117,7 +117,7 @@ if ! ./dev/ci/go-test.sh "$@"; then
   echo ""
   echo "'${flakefile}'"
   echo ""
-  echo "Strongly consider rewriting these changes to make a backwards compatible"
-  echo "change instead."
+  echo "Rewrite these scshema changes to be backwards compatible. For help,"
+  echo "see docs.sourcegraph.com/dev/background-information/sql/migrations."
   exit 1
 fi
