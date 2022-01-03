@@ -1,4 +1,4 @@
-package database
+package db
 
 import (
 	"context"
@@ -8,76 +8,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-type ExecutorStore interface {
-	// List returns a set of executor activity records matching the given options.
-	//
-	// 🚨 SECURITY: The caller must ensure that the actor is permitted to view executor details
-	// (e.g., a site-admin).
-	List(ctx context.Context, args ExecutorStoreListOptions) ([]types.Executor, int, error)
-
-	// GetByID returns an executor activity record by identifier. If no such record exists, a
-	// false-valued flag is returned.
-	//
-	// 🚨 SECURITY: The caller must ensure that the actor is permitted to view executor details
-	// (e.g., a site-admin).
-	GetByID(ctx context.Context, id int) (types.Executor, bool, error)
-
-	// GetByHostname returns an executor activity record by the worker hostname. If no such record
-	// exists, a false-valued flag is returned.
-	//
-	// 🚨 SECURITY: The caller must ensure that the actor is permitted to view executor details
-	// (e.g., a site-admin).
-	GetByHostname(ctx context.Context, hostname string) (types.Executor, bool, error)
-
-	// UpsertHeartbeat updates or creates an executor activity record for a particular executor instance.
-	UpsertHeartbeat(ctx context.Context, executor types.Executor) error
-
-	// DeleteInactiveHeartbeats deletes heartbeat records belonging to executor instances that have not pinged
-	// the Sourcegraph instance in at least the given duration.
-	DeleteInactiveHeartbeats(ctx context.Context, minAge time.Duration) error
-
-	With(store basestore.ShareableStore) ExecutorStore
-	Transact(ctx context.Context) (ExecutorStore, error)
-	Done(err error) error
-	basestore.ShareableStore
-}
-
-type executorStore struct {
-	*basestore.Store
-}
-
-var _ ExecutorStore = (*executorStore)(nil)
-
-// Executors instantiates and returns a new ExecutorStore with prepared statements.
-func Executors(db dbutil.DB) ExecutorStore {
-	return executors(db)
-}
-
-func executors(db dbutil.DB) *executorStore {
-	return &executorStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
-}
-
-// ExecutorsWith instantiates and returns a new ExecutorStore using the other store handle.
-func ExecutorsWith(other basestore.ShareableStore) ExecutorStore {
-	return &executorStore{Store: basestore.NewWithHandle(other.Handle())}
-}
-
-func (s *executorStore) With(other basestore.ShareableStore) ExecutorStore {
-	return &executorStore{Store: s.Store.With(other)}
-}
-func (s *executorStore) Transact(ctx context.Context) (ExecutorStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &executorStore{Store: txBase}, err
-}
-
-func (s *executorStore) Done(err error) error {
-	return s.Store.Done(err)
-}
 
 // scanExecutors reads executor objects from the given row object.
 func scanExecutors(rows *sql.Rows, queryErr error) (_ []types.Executor, err error) {
@@ -121,19 +55,12 @@ func scanFirstExecutor(rows *sql.Rows, err error) (types.Executor, bool, error) 
 	return executors[0], true, nil
 }
 
-type ExecutorStoreListOptions struct {
-	Query  string
-	Active bool
-	Offset int
-	Limit  int
-}
-
-func (s *executorStore) List(ctx context.Context, opts ExecutorStoreListOptions) (_ []types.Executor, _ int, err error) {
+func (s *ExecutorStore) List(ctx context.Context, opts store.ExecutorStoreListOptions) (_ []types.Executor, _ int, err error) {
 	return s.list(ctx, opts, timeutil.Now())
 }
 
-func (s *executorStore) list(ctx context.Context, opts ExecutorStoreListOptions, now time.Time) (_ []types.Executor, _ int, err error) {
-	tx, err := s.Store.Transact(ctx)
+func (s *ExecutorStore) list(ctx context.Context, opts store.ExecutorStoreListOptions, now time.Time) (_ []types.Executor, _ int, err error) {
+	tx, err := s.db.Transact(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -215,8 +142,8 @@ func makeExecutorSearchCondition(term string) *sqlf.Query {
 	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))
 }
 
-func (s *executorStore) GetByID(ctx context.Context, id int) (types.Executor, bool, error) {
-	return scanFirstExecutor(s.Query(ctx, sqlf.Sprintf(executorStoreGetByIDQuery, id)))
+func (s *ExecutorStore) GetByID(ctx context.Context, id int) (types.Executor, bool, error) {
+	return scanFirstExecutor(s.db.Query(ctx, sqlf.Sprintf(executorStoreGetByIDQuery, id)))
 }
 
 const executorStoreGetByIDQuery = `
@@ -238,8 +165,8 @@ FROM executor_heartbeats h
 WHERE h.id = %s
 `
 
-func (s *executorStore) GetByHostname(ctx context.Context, hostname string) (types.Executor, bool, error) {
-	return scanFirstExecutor(s.Query(ctx, sqlf.Sprintf(executorStoreGetByHostnameQuery, hostname)))
+func (s *ExecutorStore) GetByHostname(ctx context.Context, hostname string) (types.Executor, bool, error) {
+	return scanFirstExecutor(s.db.Query(ctx, sqlf.Sprintf(executorStoreGetByHostnameQuery, hostname)))
 }
 
 const executorStoreGetByHostnameQuery = `
@@ -261,12 +188,12 @@ FROM executor_heartbeats h
 WHERE h.hostname = %s
 `
 
-func (s *executorStore) UpsertHeartbeat(ctx context.Context, executor types.Executor) error {
+func (s *ExecutorStore) UpsertHeartbeat(ctx context.Context, executor types.Executor) error {
 	return s.upsertHeartbeat(ctx, executor, timeutil.Now())
 }
 
-func (s *executorStore) upsertHeartbeat(ctx context.Context, executor types.Executor, now time.Time) error {
-	return s.Exec(ctx, sqlf.Sprintf(
+func (s *ExecutorStore) upsertHeartbeat(ctx context.Context, executor types.Executor, now time.Time) error {
+	return s.db.Exec(ctx, sqlf.Sprintf(
 		executorStoreUpsertHeartbeatQuery,
 
 		// insert
@@ -324,12 +251,12 @@ SET
 	last_seen_at = %s
 `
 
-func (s *executorStore) DeleteInactiveHeartbeats(ctx context.Context, minAge time.Duration) error {
+func (s *ExecutorStore) DeleteInactiveHeartbeats(ctx context.Context, minAge time.Duration) error {
 	return s.deleteInactiveHeartbeats(ctx, minAge, timeutil.Now())
 }
 
-func (s *executorStore) deleteInactiveHeartbeats(ctx context.Context, minAge time.Duration, now time.Time) error {
-	return s.Exec(ctx, sqlf.Sprintf(executorStoreDeleteInactiveHeartbeatsQuery, now, minAge/time.Second))
+func (s *ExecutorStore) deleteInactiveHeartbeats(ctx context.Context, minAge time.Duration, now time.Time) error {
+	return s.db.Exec(ctx, sqlf.Sprintf(executorStoreDeleteInactiveHeartbeatsQuery, now, minAge/time.Second))
 }
 
 const executorStoreDeleteInactiveHeartbeatsQuery = `

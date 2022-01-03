@@ -1,4 +1,4 @@
-package database
+package db
 
 import (
 	"context"
@@ -11,12 +11,13 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	pgs "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestExecutorsList(t *testing.T) {
 	db := dbtest.NewDB(t)
-	store := executors(db)
+	store := New(db)
 	ctx := context.Background()
 
 	executors := []types.Executor{
@@ -53,7 +54,7 @@ func TestExecutorsList(t *testing.T) {
 		10: t2,
 	}
 	for id, lastSeenAt := range lastSeenAtByID {
-		if err := store.Exec(ctx, sqlf.Sprintf(`UPDATE executor_heartbeats SET last_seen_at = %s WHERE id = %s`, lastSeenAt, id)); err != nil {
+		if err := store.db.Exec(ctx, sqlf.Sprintf(`UPDATE executor_heartbeats SET last_seen_at = %s WHERE id = %s`, lastSeenAt, id)); err != nil {
 			t.Fatalf("failed to set up executors for test: %s", err)
 		}
 	}
@@ -84,7 +85,7 @@ func TestExecutorsList(t *testing.T) {
 		)
 
 		t.Run(name, func(t *testing.T) {
-			executors, totalCount, err := store.list(ctx, ExecutorStoreListOptions{
+			executors, totalCount, err := store.list(ctx, pgs.ExecutorStoreListOptions{
 				Query:  testCase.query,
 				Active: testCase.active,
 				Limit:  3,
@@ -128,7 +129,7 @@ func TestExecutorsList(t *testing.T) {
 
 func TestExecutorsGetByID(t *testing.T) {
 	db := dbtest.NewDB(t)
-	store := executors(db)
+	store := New(db)
 	ctx := context.Background()
 
 	// Executor does not exist initially
@@ -187,7 +188,7 @@ func TestExecutorsGetByID(t *testing.T) {
 
 func TestExecutorsGetByHostname(t *testing.T) {
 	db := dbtest.NewDB(t)
-	store := executors(db)
+	store := New(db)
 	ctx := context.Background()
 
 	hostname := "megahost-somuchfast"
@@ -248,7 +249,7 @@ func TestExecutorsGetByHostname(t *testing.T) {
 
 func TestExecutorsDeleteInactiveHeartbeats(t *testing.T) {
 	db := dbtest.NewDB(t)
-	store := executors(db)
+	store := New(db)
 	ctx := context.Background()
 
 	for i := 0; i < 10; i++ {
@@ -272,7 +273,7 @@ func TestExecutorsDeleteInactiveHeartbeats(t *testing.T) {
 		10: t2,
 	}
 	for id, lastSeenAt := range lastSeenAtByID {
-		if err := store.Exec(ctx, sqlf.Sprintf(`UPDATE executor_heartbeats SET last_seen_at = %s WHERE id = %s`, lastSeenAt, id)); err != nil {
+		if err := store.db.Exec(ctx, sqlf.Sprintf(`UPDATE executor_heartbeats SET last_seen_at = %s WHERE id = %s`, lastSeenAt, id)); err != nil {
 			t.Fatalf("failed to set up executors for test: %s", err)
 		}
 	}
@@ -281,7 +282,7 @@ func TestExecutorsDeleteInactiveHeartbeats(t *testing.T) {
 		t.Fatalf("unexpected error deleting inactive heartbeats: %s", err)
 	}
 
-	if _, totalCount, err := store.List(ctx, ExecutorStoreListOptions{}); err != nil {
+	if _, totalCount, err := store.List(ctx, pgs.ExecutorStoreListOptions{}); err != nil {
 		t.Fatalf("unexpected error listing executors: %s", err)
 	} else if totalCount != 5 {
 		t.Fatalf("unexpected total count. want=%d have=%d", 5, totalCount)
