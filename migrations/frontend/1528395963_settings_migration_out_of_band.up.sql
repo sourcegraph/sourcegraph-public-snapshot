@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS insights_settings_migration_jobs
     completed_at timestamp
 );
 
+TRUNCATE insights_settings_migration_jobs;
+
 -- We go in this order (global, org, user) such that we migrate any higher level shared insights first. This way
 -- we can just go in the order of id rather than have a secondary index.
 
