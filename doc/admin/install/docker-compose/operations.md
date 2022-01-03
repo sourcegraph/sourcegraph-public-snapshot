@@ -223,7 +223,7 @@ for DATABASE in frontend codeintel; do
 		-e PGPASSWORD='sg' \
 		-e PGDATABASE='sg' \
 		-e PGSSLMODE='disable' \
-        -e CODEINTEL_PGHOST='codeintel-db' \
+		-e CODEINTEL_PGHOST='codeintel-db' \
 		-e CODEINTEL_PGPORT='5432' \
 		-e CODEINTEL_PGUSER='sg' \
 		-e CODEINTEL_PGPASSWORD='sg' \
