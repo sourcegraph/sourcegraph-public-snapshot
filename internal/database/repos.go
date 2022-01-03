@@ -237,10 +237,6 @@ func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 // RepoHashedName is the repository hashed name.
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.RepoHashedName) (_ *types.Repo, err error) {
-	if Mocks.Repos.GetByHashedName != nil {
-		return Mocks.Repos.GetByHashedName(ctx, repoHashedName)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.GetByHashedName", "")
 	defer func() {
 		tr.SetError(err)
