@@ -111,7 +111,7 @@ func dbAddUserExec(ctx context.Context, args []string) error {
 	}
 
 	// Connect to the database.
-	conn, err := connections.NewFrontendDB(postgresdsn.New("", "", getEnv), "frontend", true, &observation.TestContext)
+	conn, err := connections.NewFrontendDB(postgresdsn.New("", "", globalConf.GetEnv), "frontend", true, &observation.TestContext)
 	if err != nil {
 		return err
 	}
@@ -160,7 +160,7 @@ func dbResetRedisExec(ctx context.Context, args []string) error {
 	}
 
 	// Connect to the redis database.
-	endpoint := getEnv("REDIS_ENDPOINT")
+	endpoint := globalConf.GetEnv("REDIS_ENDPOINT")
 	conn, err := redis.Dial("tcp", endpoint, redis.DialConnectTimeout(5*time.Second))
 	if err != nil {
 		return errors.Wrapf(err, "failed to connect to Redis at %s", endpoint)
@@ -198,9 +198,9 @@ func dbResetPGExec(ctx context.Context, args []string) error {
 
 	for _, name := range schemaNames {
 		if name == "frontend" {
-			dsnMap[name] = postgresdsn.New("", "", getEnv)
+			dsnMap[name] = postgresdsn.New("", "", globalConf.GetEnv)
 		} else {
-			dsnMap[name] = postgresdsn.New(strings.ToUpper(name), "", getEnv)
+			dsnMap[name] = postgresdsn.New(strings.ToUpper(name), "", globalConf.GetEnv)
 		}
 	}
 
@@ -243,24 +243,4 @@ func dbResetPGExec(ctx context.Context, args []string) error {
 	}
 
 	return connections.RunnerFromDSNs(dsnMap, "sg", storeFactory).Run(ctx, options)
-}
-
-func getEnv(key string) string {
-	// First look into process env, emulating the logic in makeEnv used
-	// in internal/run/run.go
-	val, ok := os.LookupEnv(key)
-	if ok {
-		return val
-	}
-	// Otherwise check in globalConf.Env and *expand* the key, because a value might refer to another env var.
-	return os.Expand(globalConf.Env[key], func(lookup string) string {
-		if lookup == key {
-			return os.Getenv(lookup)
-		}
-
-		if e, ok := globalConf.Env[lookup]; ok {
-			return e
-		}
-		return os.Getenv(lookup)
-	})
 }
