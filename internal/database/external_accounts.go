@@ -176,10 +176,6 @@ RETURNING user_id
 }
 
 func (s *userExternalAccountsStore) AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
-	if Mocks.ExternalAccounts.AssociateUserAndSave != nil {
-		return Mocks.ExternalAccounts.AssociateUserAndSave(userID, spec, data)
-	}
-
 	// This "upsert" may cause us to return an ephemeral failure due to a race condition, but it
 	// won't result in inconsistent data.  Wrap in transaction.
 
@@ -495,13 +491,12 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 
 // MockExternalAccounts mocks the Stores.ExternalAccounts DB store.
 type MockExternalAccounts struct {
-	AssociateUserAndSave func(userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error
-	CreateUserAndSave    func(NewUser, extsvc.AccountSpec, extsvc.AccountData) (createdUserID int32, err error)
-	Delete               func(id int32) error
-	List                 func(ExternalAccountsListOptions) ([]*extsvc.Account, error)
-	Count                func(ExternalAccountsListOptions) (int, error)
-	TouchExpired         func(ctx context.Context, id int32) error
-	TouchLastValid       func(ctx context.Context, id int32) error
+	CreateUserAndSave func(NewUser, extsvc.AccountSpec, extsvc.AccountData) (createdUserID int32, err error)
+	Delete            func(id int32) error
+	List              func(ExternalAccountsListOptions) ([]*extsvc.Account, error)
+	Count             func(ExternalAccountsListOptions) (int, error)
+	TouchExpired      func(ctx context.Context, id int32) error
+	TouchLastValid    func(ctx context.Context, id int32) error
 }
 
 // MaybeEncrypt encrypts data with the given key returns the id of the key. If the key is nil, it returns the data unchanged.
