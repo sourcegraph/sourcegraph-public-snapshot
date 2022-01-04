@@ -307,18 +307,6 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 
 func makeEnv(envs ...map[string]string) []string {
 	combined := os.Environ()
-	// Remove the workaround for the conf package and CONFIGURATION_MODE so
-	// sub commands are behaving normally, freed from `sg` troubles
-	// with the CONFIGURATION_MODE.
-	//
-	// See https://github.com/sourcegraph/sourcegraph/issues/29222
-	// See forceConfigurationMode() in main.go.
-	for i, v := range combined {
-		if strings.HasPrefix(v, "SG_FORCE_CONFIGURATION_MODE=") {
-			combined = append(combined[:i], combined[i+1:]...)
-		}
-	}
-
 	expandedEnv := map[string]string{}
 
 	for _, env := range envs {
