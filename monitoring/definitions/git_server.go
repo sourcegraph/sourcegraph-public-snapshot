@@ -25,19 +25,12 @@ func GitServer() *monitoring.Container {
 		Name:        "gitserver",
 		Title:       "Git Server",
 		Description: "Stores, manages, and operates Git repositories.",
-		Templates: []sdk.TemplateVar{
+		Variables: []monitoring.ContainerVariable{
 			{
-				Label:      "Shard",
-				Name:       "shard",
-				Type:       "query",
-				Datasource: monitoring.StringPtr("Prometheus"),
-				Query:      "label_values(src_gitserver_exec_running, instance)",
-				Multi:      true,
-				Refresh:    sdk.BoolInt{Flag: true, Value: monitoring.Int64Ptr(2)}, // Refresh on time range change
-				Sort:       3,
-				IncludeAll: true,
-				AllValue:   ".*",
-				Current:    sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"},
+				Label: "Shard",
+				Name:  "shard",
+				Query: "label_values(src_gitserver_exec_running, instance)",
+				Multi: true,
 			},
 		},
 		Groups: []monitoring.Group{
