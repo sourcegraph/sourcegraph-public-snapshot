@@ -26,9 +26,6 @@ import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
 
-const symbolIsActiveTrue = (): boolean => true
-const symbolIsActiveFalse = (): boolean => false
-
 interface SymbolNodeProps {
     node: SymbolNodeFields
     onHandleClick: () => void
@@ -36,7 +33,7 @@ interface SymbolNodeProps {
 }
 
 const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, onHandleClick, isActive }) => {
-    const isActiveFunc = isActive ? symbolIsActiveTrue : symbolIsActiveFalse
+    const isActiveFunc = (): boolean => isActive
     return (
         <li className={styles.repoRevisionSidebarSymbolsNode} data-tooltip={node.location.resource.path}>
             <NavLink
