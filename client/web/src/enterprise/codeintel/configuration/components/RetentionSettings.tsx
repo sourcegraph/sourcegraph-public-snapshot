@@ -27,17 +27,17 @@ export const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ p
 
     const radioButtons = [
         {
-            id: 'disabled',
-            label: 'Disable',
+            id: 'disable-retention',
+            label: 'Disable for this policy',
         },
         {
-            id: 'enabled',
-            label: 'Enable, keep data for specific duration',
+            id: 'enable-retention',
+            label: 'Enable for this policy, keep data for specific duration',
         },
     ]
 
     const onChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-        const retentionEnabled = event.target.value === 'enabled'
+        const retentionEnabled = event.target.value === 'enable-retention'
         updatePolicy({ retentionEnabled })
     }
 
@@ -48,8 +48,9 @@ export const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ p
             <div className="form-group">
                 <RadioButtons
                     nodes={radioButtons}
+                    name="toggle-retention"
                     onChange={onChange}
-                    selected={policy.retentionEnabled ? 'enabled' : 'disabled'}
+                    selected={policy.retentionEnabled ? 'enable-retention' : 'disable-retention'}
                     className={styles.radioButtons}
                 />
 
