@@ -186,6 +186,13 @@ TODO: more reflective thoughts here
 * Software supply chain
 * OSS maintainers
 
+Remaining TODO:
+
+* Fix snippet issue
+* Annotated snippets
+* Move back to beyang.org (and make public)
+* Publish
+
 ----------------
 
 This concludes our source-level walkthrough of the Log4Shell vulnerability. You now understand how the exploit works as well as anyone. So now what?
