@@ -3,10 +3,10 @@ import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { ErrorLike, asError } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { ErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'

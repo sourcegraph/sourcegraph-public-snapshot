@@ -1,4 +1,4 @@
-import { PlatformName, getPlatformName } from '../../util/context'
+import { PlatformName, getPlatformName, getExtensionVersion } from '../../util/context'
 
 export const EXTENSION_MARKER_ID = 'sourcegraph-app-background'
 
@@ -22,6 +22,7 @@ export function injectExtensionMarker(): void {
     const extensionMarker = document.createElement('div')
     extensionMarker.id = EXTENSION_MARKER_ID
     extensionMarker.dataset.platform = getPlatformName()
+    extensionMarker.dataset.version = getExtensionVersion()
     extensionMarker.style.display = 'none'
     document.body.append(extensionMarker)
 }
@@ -41,8 +42,8 @@ export function signalBrowserExtensionInstalled(): void {
 function dispatchSourcegraphEvents(): void {
     // Send custom webapp <-> extension registration event in case webapp listener is attached first.
     document.dispatchEvent(
-        new CustomEvent<{ platform: PlatformName }>('sourcegraph:browser-extension-registration', {
-            detail: { platform: getPlatformName() },
+        new CustomEvent<{ platform: PlatformName; version: string }>('sourcegraph:browser-extension-registration', {
+            detail: { platform: getPlatformName(), version: getExtensionVersion() },
         })
     )
 }

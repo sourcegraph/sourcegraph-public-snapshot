@@ -2,29 +2,27 @@ import path from 'path'
 
 import CssMinimizerWebpackPlugin from 'css-minimizer-webpack-plugin'
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
-import TerserPlugin from 'terser-webpack-plugin'
 import webpack, { optimize } from 'webpack'
 
-import { getCSSLoaders } from '@sourcegraph/build-config'
+import {
+    ROOT_PATH,
+    getBabelLoader,
+    getCSSLoaders,
+    getProvidePlugin,
+    getTerserPlugin,
+    getCSSModulesLoader,
+    getBasicCSSLoader,
+} from '@sourcegraph/build-config'
 
 import { subtypeOf } from '../../../shared/src/util/types'
 
-export const rootPath = path.resolve(__dirname, '../../../../')
-export const browserWorkspacePath = path.resolve(rootPath, 'client/browser')
+export const browserWorkspacePath = path.resolve(ROOT_PATH, 'client/browser')
 const browserSourcePath = path.resolve(browserWorkspacePath, 'src')
 const contentEntry = path.resolve(browserSourcePath, 'config/content.entry.js')
 const backgroundEntry = path.resolve(browserSourcePath, 'config/background.entry.js')
 const optionsEntry = path.resolve(browserSourcePath, 'config/options.entry.js')
 const pageEntry = path.resolve(browserSourcePath, 'config/page.entry.js')
 const extensionEntry = path.resolve(browserSourcePath, 'config/extension.entry.js')
-
-const babelLoader = {
-    loader: 'babel-loader',
-    options: {
-        cacheDirectory: true,
-        configFile: path.join(__dirname, '..', '..', 'babel.config.js'),
-    },
-}
 
 const extensionHostWorker = /main\.worker\.ts$/
 
@@ -65,29 +63,14 @@ export const config = subtypeOf<webpack.Configuration>()({
     },
     devtool: 'inline-cheap-module-source-map',
     optimization: {
-        minimizer: [
-            new TerserPlugin({
-                terserOptions: {
-                    compress: {
-                        // Don't inline functions, which causes name collisions with uglify-es:
-                        // https://github.com/mishoo/UglifyJS2/issues/2842
-                        inline: 1,
-                    },
-                },
-            }) as webpack.WebpackPluginInstance,
-            new CssMinimizerWebpackPlugin(),
-        ],
+        minimizer: [getTerserPlugin() as webpack.WebpackPluginInstance, new CssMinimizerWebpackPlugin()],
     },
 
     plugins: [
         new MiniCssExtractPlugin({ filename: '../css/[name].bundle.css' }),
         // Code splitting doesn't make sense/work in the browser extension, but we still want to use dynamic import()
         new optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
-        new webpack.ProvidePlugin({
-            process: 'process/browser',
-            // Based on the issue: https://github.com/webpack/changelog-v5/issues/10
-            Buffer: ['buffer', 'Buffer'],
-        }),
+        getProvidePlugin(),
     ],
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
@@ -100,28 +83,18 @@ export const config = subtypeOf<webpack.Configuration>()({
             {
                 test: /\.[jt]sx?$/,
                 exclude: extensionHostWorker,
-                use: [babelLoader],
+                use: [getBabelLoader()],
             },
             {
                 // SCSS rule for our own styles and Bootstrap
                 test: /\.(css|sass|scss)$/,
                 exclude: /\.module\.(sass|scss)$/,
-                use: getCSSLoaders(MiniCssExtractPlugin.loader, { loader: 'css-loader', options: { url: false } }),
+                use: getCSSLoaders(MiniCssExtractPlugin.loader, getBasicCSSLoader()),
             },
             {
                 test: /\.(css|sass|scss)$/,
                 include: /\.module\.(sass|scss)$/,
-                use: getCSSLoaders(MiniCssExtractPlugin.loader, {
-                    loader: 'css-loader',
-                    options: {
-                        sourceMap: false,
-                        modules: {
-                            exportLocalsConvention: 'camelCase',
-                            localIdentName: '[name]__[local]_[hash:base64:5]',
-                        },
-                        url: false,
-                    },
-                }),
+                use: getCSSLoaders(MiniCssExtractPlugin.loader, getCSSModulesLoader({ sourceMap: false, url: false })),
             },
             {
                 test: /\.svg$/i,
@@ -134,7 +107,7 @@ export const config = subtypeOf<webpack.Configuration>()({
                         loader: 'worker-loader',
                         options: { filename: 'extensionHostWorker.bundle.js' },
                     },
-                    babelLoader,
+                    getBabelLoader(),
                 ],
             },
         ],

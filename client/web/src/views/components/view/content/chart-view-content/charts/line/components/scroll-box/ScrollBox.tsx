@@ -1,22 +1,44 @@
 import classNames from 'classnames'
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
+
+import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
+
+import { observeResize } from '../../../../../../../../../util/dom'
 
 import styles from './ScrollBox.module.scss'
 
-const addShutterElementsToTarget = (element: HTMLDivElement): void => {
-    const { scrollTop, scrollHeight, offsetHeight } = element
+/**
+ * Mutates element (adds/removes css classes) based on scroll height and client height.
+ */
+function addShutterElementsToTarget(parentElement: HTMLDivElement, scrollElement: HTMLDivElement): void {
+    const { scrollTop, scrollHeight, offsetHeight } = scrollElement
 
     if (scrollTop === 0) {
-        element.classList.remove(styles.rootWithTopFader)
+        parentElement.classList.remove(styles.rootWithTopFader)
     } else {
-        element.classList.add(styles.rootWithTopFader)
+        parentElement.classList.add(styles.rootWithTopFader)
     }
 
     if (offsetHeight + scrollTop === scrollHeight) {
-        element.classList.remove(styles.rootWithBottomFader)
+        parentElement.classList.remove(styles.rootWithBottomFader)
     } else {
-        element.classList.add(styles.rootWithBottomFader)
+        parentElement.classList.add(styles.rootWithBottomFader)
     }
+}
+
+function hasElementScroll(target: HTMLElement): boolean {
+    target.style.overflow = 'scroll'
+
+    const hasScroll = isFirefox()
+        ? // For some reason in Firefox it's possible to get a wrong scrollHeight with 1% ~ 1px
+          // static error. To avoid this "fake" scroll we take into calculation a static error
+          // value which equals to 1% of scrollable container height.
+          target.scrollHeight > Math.round(target.clientHeight + target.clientHeight / 100)
+        : target.scrollHeight > target.clientHeight
+
+    target.style.overflow = ''
+
+    return hasScroll
 }
 
 interface ScrollBoxProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -26,48 +48,62 @@ interface ScrollBoxProps extends React.HTMLAttributes<HTMLDivElement> {
 export const ScrollBox: React.FunctionComponent<ScrollBoxProps> = props => {
     const { children, className, ...otherProps } = props
 
-    const scrollBoxReference = useRef<HTMLDivElement>(null)
+    const [parentElement, setParentElement] = useState<HTMLDivElement | null>()
+    const [hasScroll, setHasScroll] = useState(false)
 
     useEffect(() => {
-        const scrollBoxElement = scrollBoxReference.current
-
-        if (!scrollBoxElement) {
-            return
-        }
-
-        // On mount initial call
-        addShutterElementsToTarget(scrollBoxElement)
-    })
-
-    useEffect(() => {
-        const scrollBoxElement = scrollBoxReference.current
-
-        if (!scrollBoxElement) {
+        if (!parentElement) {
             return
         }
 
         function onScroll(event: Event): void {
-            if (!event.target) {
+            if (!event.target || !parentElement) {
                 return
             }
 
-            addShutterElementsToTarget(event.target as HTMLDivElement)
+            addShutterElementsToTarget(parentElement, event.target as HTMLDivElement)
 
             event.stopPropagation()
             event.preventDefault()
         }
 
-        scrollBoxElement.addEventListener('scroll', onScroll)
+        parentElement.addEventListener('scroll', onScroll)
 
-        return () => scrollBoxElement.removeEventListener('scroll', onScroll)
-    }, [])
+        const resizeSubscription = observeResize(parentElement).subscribe(entry => {
+            if (!entry) {
+                return
+            }
+
+            const target = entry.target as HTMLElement
+
+            // Delay overflow content measurements while browser renders
+            // parent content
+            requestAnimationFrame(() => {
+                setHasScroll(hasElementScroll(target))
+                addShutterElementsToTarget(parentElement, parentElement)
+            })
+        })
+
+        return () => {
+            parentElement.removeEventListener('scroll', onScroll)
+            resizeSubscription.unsubscribe()
+        }
+    }, [parentElement])
 
     return (
-        <div {...otherProps} ref={scrollBoxReference} className={classNames(styles.root, className)}>
-            <div className={classNames(styles.fader, styles.faderTop)} />
-            <div className={classNames(styles.fader, styles.faderBottom)} />
+        <div
+            {...otherProps}
+            ref={setParentElement}
+            className={classNames(styles.root, className, { [styles.rootWithScroll]: hasScroll })}
+        >
+            {hasScroll && (
+                <>
+                    <div className={classNames(styles.fader, styles.faderTop)} />
+                    <div className={classNames(styles.fader, styles.faderBottom)} />
+                </>
+            )}
 
-            <div className={styles.scrollbox}>{children}</div>
+            {children}
         </div>
     )
 }

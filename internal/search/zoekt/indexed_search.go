@@ -442,7 +442,7 @@ func DoZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c st
 	defer cancel()
 
 	k := ResultCountFactor(0, args.FileMatchLimit, true)
-	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit)
+	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit, args.Select)
 
 	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -461,29 +461,6 @@ func DoZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c st
 		defer cancel()
 	}
 
-	// PERF: if we are going to be selecting to repo results only anyways, we can
-	// just ask zoekt for only results of type repo.
-	if args.Select.Root() == filter.Repository {
-		repoList, err := args.Zoekt.List(ctx, args.Query, nil)
-		if err != nil {
-			return err
-		}
-
-		matches := make([]result.Match, 0, len(repoList.Repos))
-		for _, repo := range repoList.Repos {
-			matches = append(matches, &result.RepoMatch{
-				Name: api.RepoName(repo.Repository.Name),
-				ID:   api.RepoID(repo.Repository.ID),
-			})
-		}
-
-		c.Send(streaming.SearchEvent{
-			Results: matches,
-			Stats:   streaming.Stats{}, // TODO
-		})
-		return nil
-	}
-
 	return args.Zoekt.StreamSearch(ctx, args.Query, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		sendMatches(event, func(file *zoekt.FileMatch) (types.MinimalRepo, []string) {
 			repo := types.MinimalRepo{
@@ -491,7 +468,7 @@ func DoZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c st
 				Name: api.RepoName(file.Repository),
 			}
 			return repo, []string{""}
-		}, args.Typ, c)
+		}, args.Typ, args.Select, c)
 	}))
 }
 
@@ -512,7 +489,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
 
 	k := ResultCountFactor(len(repos.repoRevs), fileMatchLimit, false)
-	searchOpts := SearchOpts(ctx, k, fileMatchLimit)
+	searchOpts := SearchOpts(ctx, k, fileMatchLimit, selector)
 
 	// Start event stream.
 	t0 := time.Now()
@@ -534,22 +511,10 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 		defer cancel()
 	}
 
-	// PERF: if we are going to be selecting to repo results only anyways, we can just ask
-	// zoekt for only results of type repo.
-	if selector.Root() == filter.Repository {
-		return zoektSearchReposOnly(ctx, client, finalQuery, c, func() map[api.RepoID]*search.RepositoryRevisions {
-			repoRevMap := make(map[api.RepoID]*search.RepositoryRevisions, len(repos.repoRevs))
-			for _, r := range repos.repoRevs {
-				repoRevMap[r.Repo.ID] = r
-			}
-			return repoRevMap
-		})
-	}
-
 	foundResults := atomic.Bool{}
 	err := client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
-		sendMatches(event, repos.getRepoInputRev, typ, c)
+		sendMatches(event, repos.getRepoInputRev, typ, selector, c)
 	}))
 	if err != nil {
 		return err
@@ -569,9 +534,22 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 	return nil
 }
 
-func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ search.IndexedRequestType, c streaming.Sender) {
+func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ search.IndexedRequestType, selector filter.SelectPath, c streaming.Sender) {
 	files := event.Files
 	limitHit := event.FilesSkipped+event.ShardsSkipped > 0
+
+	if selector.Root() == filter.Repository {
+		// By default we stream up to "all" repository results per
+		// select:repo request, and we never communicate whether a limit
+		// is reached here based on Zoekt progress (because Zoekt can't
+		// tell us the value of something like `ReposSkipped`). Instead,
+		// limitHit is determined by other factors, like whether the
+		// request is cancelled, or when we find the maximum number of
+		// `count` results. I.e., from the webapp, this is
+		// `max(defaultMaxSearchResultsStreaming,count)` which comes to
+		// `max(500,count)`.
+		limitHit = false
+	}
 
 	if len(files) == 0 {
 		c.Send(streaming.SearchEvent{
@@ -583,6 +561,14 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 	matches := make([]result.Match, 0, len(files))
 	for _, file := range files {
 		repo, inputRevs := getRepoInputRev(&file)
+
+		if selector.Root() == filter.Repository {
+			matches = append(matches, &result.RepoMatch{
+				Name: repo.Name,
+				ID:   repo.ID,
+			})
+			continue
+		}
 
 		var lines []*result.LineMatch
 		if typ != search.SymbolRequest {
@@ -616,40 +602,6 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 			IsLimitHit: limitHit,
 		},
 	})
-}
-
-// zoektSearchReposOnly is used when select:repo is set, in which case we can ask zoekt
-// only for the repos that contain matches for the query. This is a performance optimization,
-// and not required for proper function of select:repo.
-func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, c streaming.Sender, getRepoRevMap func() map[api.RepoID]*search.RepositoryRevisions) error {
-	repoList, err := client.List(ctx, query, &zoekt.ListOptions{Minimal: true})
-	if err != nil {
-		return err
-	}
-
-	repoRevMap := getRepoRevMap()
-	if repoRevMap == nil {
-		return nil
-	}
-
-	matches := make([]result.Match, 0, len(repoList.Minimal))
-	for id := range repoList.Minimal {
-		rev, ok := repoRevMap[api.RepoID(id)]
-		if !ok {
-			continue
-		}
-
-		matches = append(matches, &result.RepoMatch{
-			Name: rev.Repo.Name,
-			ID:   rev.Repo.ID,
-		})
-	}
-
-	c.Send(streaming.SearchEvent{
-		Results: matches,
-		Stats:   streaming.Stats{}, // TODO
-	})
-	return nil
 }
 
 func zoektFileMatchToLineMatches(file *zoekt.FileMatch) []*result.LineMatch {

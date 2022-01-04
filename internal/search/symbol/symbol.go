@@ -417,6 +417,8 @@ type RepoSubsetSymbolSearch struct {
 	UseIndex          query.YesNoOnly
 	ContainsRefGlobs  bool
 	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
+
+	IsRequired bool
 }
 
 func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
@@ -444,6 +446,10 @@ func (*RepoSubsetSymbolSearch) Name() string {
 	return "RepoSubsetSymbol"
 }
 
+func (s *RepoSubsetSymbolSearch) Required() bool {
+	return false
+}
+
 type RepoUniverseSymbolSearch struct {
 	GlobalZoektQuery *zoektutil.GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
@@ -452,6 +458,8 @@ type RepoUniverseSymbolSearch struct {
 
 	RepoOptions search.RepoOptions
 	Db          database.DB
+
+	IsRequired bool
 }
 
 func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, stream streaming.Sender, _ searchrepos.Pager) error {
@@ -478,4 +486,8 @@ func (s *RepoUniverseSymbolSearch) Run(ctx context.Context, stream streaming.Sen
 
 func (*RepoUniverseSymbolSearch) Name() string {
 	return "RepoUniverseSymbol"
+}
+
+func (s *RepoUniverseSymbolSearch) Required() bool {
+	return s.IsRequired
 }

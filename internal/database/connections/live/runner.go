@@ -13,10 +13,10 @@ func RunnerFromDSNs(dsns map[string]string, appName string, newStore StoreFactor
 	makeFactory := func(
 		name string,
 		schema *schemas.Schema,
-		factory func(dsn, appName string, migrate bool, observationContext *observation.Context) (*sql.DB, error),
+		factory func(dsn, appName string, observationContext *observation.Context) (*sql.DB, error),
 	) runner.StoreFactory {
 		return func(ctx context.Context) (runner.Store, error) {
-			db, err := factory(dsns[name], appName, false, &observation.TestContext)
+			db, err := factory(dsns[name], appName, &observation.TestContext)
 			if err != nil {
 				return nil, err
 			}
@@ -26,9 +26,9 @@ func RunnerFromDSNs(dsns map[string]string, appName string, newStore StoreFactor
 	}
 
 	storeFactoryMap := map[string]runner.StoreFactory{
-		"frontend":     makeFactory("frontend", schemas.Frontend, NewFrontendDB),
-		"codeintel":    makeFactory("codeintel", schemas.CodeIntel, NewCodeIntelDB),
-		"codeinsights": makeFactory("codeinsights", schemas.CodeInsights, NewCodeInsightsDB),
+		"frontend":     makeFactory("frontend", schemas.Frontend, RawNewFrontendDB),
+		"codeintel":    makeFactory("codeintel", schemas.CodeIntel, RawNewCodeIntelDB),
+		"codeinsights": makeFactory("codeinsights", schemas.CodeInsights, RawNewCodeInsightsDB),
 	}
 
 	return runner.NewRunner(storeFactoryMap)

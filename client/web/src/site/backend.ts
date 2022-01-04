@@ -1,8 +1,8 @@
 import { Observable, ReplaySubject } from 'rxjs'
 import { filter, mergeMap, take, tap } from 'rxjs/operators'
 
+import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 
 import { authRequired } from '../auth'
 import { requestGraphQL } from '../backend/graphql'

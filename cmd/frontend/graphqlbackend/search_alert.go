@@ -300,9 +300,6 @@ func (a alertSearchImplementer) Results(context.Context) (*SearchResultsResolver
 	return &SearchResultsResolver{db: a.db, SearchResults: a.alert.wrapResults()}, nil
 }
 
-func (alertSearchImplementer) Suggestions(context.Context, *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {
-	return nil, nil
-}
 func (alertSearchImplementer) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
 func (alertSearchImplementer) Inputs() run.SearchInputs {
 	return run.SearchInputs{}

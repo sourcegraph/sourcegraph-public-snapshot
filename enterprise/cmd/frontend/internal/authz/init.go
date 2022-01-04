@@ -27,13 +27,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 var clock = timeutil.Now
 
-func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	database.ExternalServices = edb.NewExternalServicesStore
 	database.Authz = func(db dbutil.DB) database.AuthzStore {
 		return edb.NewAuthzStore(db, clock)

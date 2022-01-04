@@ -60,7 +60,7 @@ function cluster_setup() {
   popd
   echo "--- wait for ready"
   kubectl get pods -n "$NAMESPACE"
-  time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=20m -n "$NAMESPACE"
+  time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=5m -n "$NAMESPACE"
   set -e
   set -o pipefail
 }
@@ -97,8 +97,6 @@ function test_setup() {
 
 function e2e() {
   pushd client/web
-  echo "--- TEST: Downloading Puppeteer"
-  yarn --cwd client/shared run download-puppeteer-browser
   echo "$SOURCEGRAPH_BASE_URL"
   echo "--- TEST: Running tests"
   yarn run test:regression:core

@@ -12,10 +12,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
 )
 
-func newExecutorQueueHandler(executorStore database.ExecutorStore, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler) (func() http.Handler, error) {
+func newExecutorQueueHandler(executorStore executor.Store, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler) (func() http.Handler, error) {
 	host, port, err := net.SplitHostPort(envvar.HTTPAddrInternal)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("failed to parse internal API address %q", envvar.HTTPAddrInternal))

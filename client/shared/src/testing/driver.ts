@@ -16,13 +16,11 @@ import puppeteer, {
     LaunchOptions,
     ConsoleMessage,
     Target,
-    BrowserFetcherRevisionInfo,
     PuppeteerNode,
     BrowserLaunchArgumentOptions,
     BrowserConnectOptions,
 } from 'puppeteer'
 import puppeteerFirefox from 'puppeteer-firefox'
-import { PUPPETEER_REVISIONS } from 'puppeteer/lib/cjs/puppeteer/revisions'
 import { from, fromEvent, merge, Subscription } from 'rxjs'
 import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
@@ -774,8 +772,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
         timeout: 300000,
     }
     let browser: puppeteer.Browser
-    const browserName = resolvedOptions.browser || 'chrome'
-    if (browserName === 'firefox') {
+    if (resolvedOptions.browser === 'firefox') {
         // Make sure CSP is disabled in FF preferences,
         // because Puppeteer uses new Function() to evaluate code
         // which is not allowed by the github.com CSP.
@@ -827,32 +824,10 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
             args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
         }
 
-        const revision = PUPPETEER_REVISIONS.chromium
-        const revisionInfo = getPuppeteerBrowser(browserName, revision)
-
-        console.log(`Using ${browserName} (revision ${revision}) executable path:`, revisionInfo.executablePath)
-        browser = await puppeteer.launch({ ...launchOptions, executablePath: revisionInfo.executablePath })
+        browser = await puppeteer.launch({ ...launchOptions })
     }
 
     const page = await browser.newPage()
 
     return new Driver(browser, page, resolvedOptions)
-}
-
-/**
- * Get the RevisionInfo (which contains the executable path) for the given
- * browser and revision string.
- */
-export function getPuppeteerBrowser(browserName: string, revision: string): BrowserFetcherRevisionInfo {
-    const browserFetcher = ((puppeteer as unknown) as puppeteer.PuppeteerNode).createBrowserFetcher({
-        product: browserName,
-    })
-    const revisionInfo = browserFetcher.revisionInfo(revision)
-    if (!revisionInfo.local) {
-        throw new Error(
-            `No local executable found for Puppeteer browser: expected ${browserName} revision "${revision}". Run "yarn run download-puppeteer-browser".`
-        )
-    }
-
-    return revisionInfo
 }

@@ -277,10 +277,6 @@ LIMIT 1
 // GetVerifiedEmails returns a list of verified emails from the candidate list. Some emails are excluded
 // from the results list because of unverified or simply don't exist.
 func (s *userEmailsStore) GetVerifiedEmails(ctx context.Context, emails ...string) ([]*UserEmail, error) {
-	if Mocks.UserEmails.GetVerifiedEmails != nil {
-		return Mocks.UserEmails.GetVerifiedEmails(ctx, emails...)
-	}
-
 	if len(emails) == 0 {
 		return []*UserEmail{}, nil
 	}

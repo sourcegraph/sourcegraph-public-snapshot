@@ -155,6 +155,8 @@ The following projects have example Travis CI configurations to generate and upl
 
 ## Manual indexing
 
+Manual indexing is valuable as a proof of concept, however, it may be difficult to keep indexes up to date and enable cross repository navigation. 
+
 1. Install [lsif-node](https://github.com/sourcegraph/lsif-node) with `npm install -g @sourcegraph/lsif-tsc` or your favorite method of installing npm packages.
 
 1. Install the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) with
@@ -170,15 +172,18 @@ The following projects have example Travis CI configurations to generate and upl
 1. `cd` into your project's root (where the package.json/tsconfig.json) and run the following:
 
    ```
+   # install your projects dependencies with npm or yarn
+   npm install
    # for typescript projects
    lsif-tsc -p .
    # for javascript projects
    lsif-tsc **/*.js --allowJs --checkJs
    ```
+> **_NOTE:_** The `npm install` step is required to correctly typecheck the codebase and to enable cross-repo navigation.
 
-> **_NOTE:_** This is also applicable if you are using a mono-repo that contains different projects. For example, Project A is located in `<repo root>/proja/` and Project B is located in `<repo root>/projb/`. You just need to invoke `lsif-tsc` and `src lsif upload` in both `./proja` and `./projb` directories to generate and upload a precise code intelligence index for each project.
+If you are working with a mono-repo that contains different projects, you may use the above procedure in sub projects within the monorepo. For example, Project A is located in `<repo root>/proja/` and Project B is located in `<repo root>/projb/`. You just need to invoke `lsif-tsc` and `src lsif upload` in both `./proja` and `./projb` directories to generate and upload a precise code intelligence index for each project.
 
-   Check out the tool's [documentation](https://github.com/microsoft/lsif-node) if you're having trouble getting `lsif-tsc` to work. It accepts any [options](https://www.typescriptlang.org/docs/handbook/compiler-options.html) `tsc` does, so it shouldn't be too hard to get it running on your project.
+Check out the tool's [documentation](https://github.com/microsoft/lsif-node) if you're having trouble getting `lsif-tsc` to work. It accepts any [options](https://www.typescriptlang.org/docs/handbook/compiler-options.html) `tsc` does, so it shouldn't be too hard to get it running on your project.
 
 1. Upload the data to a Sourcegraph instance with
 

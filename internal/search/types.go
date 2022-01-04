@@ -280,7 +280,6 @@ type RepoOptions struct {
 	Visibility               query.RepoVisibility
 	Limit                    int
 	Cursors                  []*types.Cursor
-	CacheLookup              bool
 	Query                    query.Q
 }
 

@@ -16,29 +16,6 @@ This will print a location to where `sg` was installed. Use that `sg` to run `sg
 
 Docker [requires Rosetta](https://docs.docker.com/desktop/mac/apple-silicon/#system-requirements) to run `amd64` binaries. It should be installed by default, but if that wasn't the case, run `softwareupdate --install-rosetta`.
 
-## Puppeteer
-If you hit a Puppeteer error stating "The chromium binary is not available for arm64", you need to install Chromium for Puppeteer via Homebrew.
-
-```
-brew install --no-quarantine chromium
-```
-
-Check that Chromium opens correctly:
-```
-open -a /Applications/Chromium.app
-```
-
-If you hit an error above, try allowing the app under System Preferences > Security & Privacy > General Tab > Allow Anyways. If it was successful, exit Chromium and point Puppeteer to Chromium by adding the following to your shell configuration (e.g. `~/.zshenv`)
-```
-export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-```
-
-and updating your shell (e.g. `source ~/.zshenv`).
-
-This will unblock `yarn install`, but you still won't be able to run browser-based tests because [Puppeteer ignores `PUPPETEER_EXECUTABLE_PATH` on `arm64`](https://github.com/puppeteer/puppeteer/blob/v5.5.0/src/node/Launcher.ts#L107-L108).
-
-(Based on https://linguinecode.com/post/how-to-fix-m1-mac-puppeteer-chromium-arm64-bug)
-
 ## Jaeger
 
 [Get the Mac version of Jaeger](https://github.com/jhchabran/jaeger/releases/download/v1.28.1/jaeger-1.28.1-darwin-arm64.tar.gz), extract it, then

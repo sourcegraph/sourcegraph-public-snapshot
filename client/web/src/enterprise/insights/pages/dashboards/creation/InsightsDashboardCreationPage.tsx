@@ -2,8 +2,8 @@ import classNames from 'classnames'
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router-dom'
 
+import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader, Container, Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
