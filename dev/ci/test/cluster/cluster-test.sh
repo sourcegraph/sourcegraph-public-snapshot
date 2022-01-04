@@ -86,7 +86,7 @@ function test_setup() {
   # Load variables set up by init-server, disabling `-x` to avoid printing variables, setting +u to avoid blowing up on ubound ones
   set +x +u
   # shellcheck disable=SC1091
-  source /root/.profile
+  source /root/.sg_envrc
   set -x -u
 
   echo "--- TEST: Checking Sourcegraph instance is accessible"

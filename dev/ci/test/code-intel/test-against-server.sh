@@ -19,7 +19,8 @@ pushd dev/ci/test/code-intel || exit 1
 "${SG_ROOT}/init-sg" initSG
 # Disable `-x` to avoid printing secrets
 set +x
-source /root/.profile
+# shellcheck disable=SC1091
+source /root/.sg_envrc
 set -x
 "${SG_ROOT}/init-sg" addRepos -config repos.json
 popd || exit 1
