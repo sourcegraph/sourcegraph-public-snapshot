@@ -162,7 +162,7 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                         variant="secondary"
                         className={classNames('btn-block', styles.button)}
                     >
-                        {loading ? <LoadingSpinner inline={true} /> : 'Send'}
+                        {loading ? <LoadingSpinner /> : 'Send'}
                     </Button>
                 </Form>
             )}

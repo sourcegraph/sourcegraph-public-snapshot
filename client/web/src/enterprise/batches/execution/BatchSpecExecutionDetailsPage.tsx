@@ -62,7 +62,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
     if (loading) {
         return (
             <div className="text-center">
-                <LoadingSpinner inline={true} className="mx-auto my-4" />
+                <LoadingSpinner className="mx-auto my-4" />
             </div>
         )
     }
@@ -261,7 +261,7 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                             {isCanceling !== true && <>Cancel</>}
                             {isCanceling === true && (
                                 <>
-                                    <LoadingSpinner inline={true} /> Canceling
+                                    <LoadingSpinner /> Canceling
                                 </>
                             )}
                         </button>

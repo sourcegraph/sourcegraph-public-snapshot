@@ -2,9 +2,8 @@ import * as H from 'history'
 import React, { useCallback, useState } from 'react'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { AlertLink } from '@sourcegraph/wildcard'
+import { AlertLink, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { Scalars } from '../../../graphql-operations'
@@ -110,7 +109,7 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
                             onClick={onClose}
                             disabled={isClosing === true || !viewerCanAdminister}
                         >
-                            {isClosing === true && <LoadingSpinner className="icon-inline" />} Close batch change
+                            {isClosing === true && <LoadingSpinner />} Close batch change
                         </button>
                     </div>
                 </div>

@@ -1,8 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'
 
@@ -16,7 +16,7 @@ export const StreamingSearchResultFooter: React.FunctionComponent<{
     <div className={classNames(styles.streamingSearchResultsContentCentered, 'd-flex flex-column align-items-center')}>
         {(!results || results?.state === 'loading') && (
             <div className="text-center my-4" data-testid="loading-container">
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             </div>
         )}
 

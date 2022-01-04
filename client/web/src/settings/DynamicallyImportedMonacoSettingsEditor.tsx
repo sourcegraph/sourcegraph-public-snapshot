@@ -4,9 +4,9 @@ import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
 import { EditorAction } from '../site-admin/configHelpers'
@@ -147,7 +147,7 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                         </div>
                     </div>
                 )}
-                <React.Suspense fallback={<LoadingSpinner className="icon-inline mt-2" />}>
+                <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
                     <MonacoSettingsEditor
                         {...this.props}
                         onDidSave={this.onSave}

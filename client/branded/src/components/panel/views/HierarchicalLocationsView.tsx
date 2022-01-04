@@ -7,7 +7,6 @@ import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, t
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
@@ -15,6 +14,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import styles from './HierarchicalLocationsView.module.scss'
@@ -156,7 +156,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
             return <FileLocationsError error={this.state.locationsOrError.result} />
         }
         if (this.state.locationsOrError.isLoading && this.state.locationsOrError.result.locations.length === 0) {
-            return <LoadingSpinner className="icon-inline m-1 test-loading-spinner" />
+            return <LoadingSpinner className="m-1 test-loading-spinner" />
         }
         if (this.state.locationsOrError.result.locations.length === 0) {
             return <FileLocationsNotFound />
@@ -270,7 +270,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                                         />
                                                     ))}
                                                     {this.state.locationsOrError.isLoading && (
-                                                        <LoadingSpinner className="icon-inline m-2 flex-shrink-0 test-loading-spinner" />
+                                                        <LoadingSpinner className="m-2 flex-shrink-0 test-loading-spinner" />
                                                     )}
                                                 </div>
                                             }
