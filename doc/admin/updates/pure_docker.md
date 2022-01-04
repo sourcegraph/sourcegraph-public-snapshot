@@ -10,6 +10,8 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 ## 3.34 -> 3.35
 
+> WARNING: **We are currently investigating issues related to Code Insights on this release. Users are advised to hold off on upgrading to 3.35 until a fix is available.**
+
 The `query-runner` service has been decomissioned in the 3.35.0 release. You can safely remove the `query-runner` service from your installation.
 
 To upgrade, please perform the changes in the following diff:
