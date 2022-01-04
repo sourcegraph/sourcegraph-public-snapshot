@@ -54,6 +54,10 @@ func Index(
 	}
 	for visitor.NextNode() {
 		node := visitor.Cursor.CurrentNode()
+		if node.Type() == "lambda_expression" {
+			fmt.Println(input.Format(node))
+			fmt.Println(node.String())
+		}
 		var definitionFingerprint *DefinitionFingerprint
 		for _, fingerprint := range grammar.Fingerprints {
 			for i, parentType := range fingerprint.ParentTypes {

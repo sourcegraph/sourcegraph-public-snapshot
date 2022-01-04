@@ -32,6 +32,18 @@ func (_ Indexer) Index(ctx context.Context, input *api.Input) (*lsif_typed.Docum
 				ParentTypes:      []string{"identifier", "formal_parameter", "formal_parameters", "method_declaration"},
 				ParentFieldNames: []string{"name", "", "parameters"},
 			},
+			{
+				ParentTypes:      []string{"identifier", "variable_declarator", "spread_parameter", "formal_parameters", "method_declaration"},
+				ParentFieldNames: []string{"name", "", "", "parameters"},
+			},
+			{
+				ParentTypes:      []string{"identifier", "lambda_expression"},
+				ParentFieldNames: []string{"parameters", ""},
+			},
+			{
+				ParentTypes:      []string{"identifier", "inferred_parameters", "lambda_expression"},
+				ParentFieldNames: []string{"", "parameters", ""},
+			},
 		},
 	})
 }
