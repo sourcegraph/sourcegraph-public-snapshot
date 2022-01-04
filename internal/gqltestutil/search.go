@@ -708,6 +708,9 @@ func (s *SearchStreamClient) search(query string, dec streamhttp.FrontendStreamD
 	if err != nil {
 		return err
 	}
+	// NOTE: This header is required to authenticate our session with a session cookie, see:
+	// https://docs.sourcegraph.com/dev/security/csrf_security_model#authentication-in-api-endpoints
+	req.Header.Set("X-Requested-With", "Sourcegraph")
 	s.Client.addCookies(req)
 
 	resp, err := http.DefaultClient.Do(req)
