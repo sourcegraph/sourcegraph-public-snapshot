@@ -26,9 +26,9 @@ type NotebooksResolver interface {
 }
 
 type NotebookConnectionResolver interface {
-	Nodes(ctx context.Context) ([]NotebookResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Nodes(ctx context.Context) []NotebookResolver
+	TotalCount(ctx context.Context) int32
+	PageInfo(ctx context.Context) *graphqlutil.PageInfo
 }
 
 type NotebookResolver interface {

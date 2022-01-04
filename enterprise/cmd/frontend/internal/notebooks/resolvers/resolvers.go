@@ -295,20 +295,20 @@ type notebookConnectionResolver struct {
 	hasNextPage bool
 }
 
-func (n *notebookConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.NotebookResolver, error) {
-	return n.notebooks, nil
+func (n *notebookConnectionResolver) Nodes(ctx context.Context) []graphqlbackend.NotebookResolver {
+	return n.notebooks
 }
 
-func (n *notebookConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return n.totalCount, nil
+func (n *notebookConnectionResolver) TotalCount(ctx context.Context) int32 {
+	return n.totalCount
 }
 
-func (n *notebookConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (n *notebookConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
 	if len(n.notebooks) == 0 || !n.hasNextPage {
-		return graphqlutil.HasNextPage(false), nil
+		return graphqlutil.HasNextPage(false)
 	}
 	// The after value (offset) for the next page is computed from the current after value + the number of retrieved notebooks
-	return graphqlutil.NextPageCursor(marshalNotebookCursor(n.afterCursor + int64(len(n.notebooks)))), nil
+	return graphqlutil.NextPageCursor(marshalNotebookCursor(n.afterCursor + int64(len(n.notebooks))))
 }
 
 type notebookResolver struct {
