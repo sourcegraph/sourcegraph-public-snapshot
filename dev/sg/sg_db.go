@@ -102,7 +102,8 @@ func dbAddUserExec(ctx context.Context, args []string) error {
 
 	// Report back the new user informations.
 	writeFingerPointingLinef(
-		"User %s%s%s (%s%s%s) has been created and its password is %s%s%s.",
+		// the space after the last %s is so the user can select the password easily in the shell to copy it.
+		"User %s%s%s (%s%s%s) has been created and its password is %s%s%s .",
 		output.StyleOrange,
 		*dbAddUserNameFlag,
 		output.StyleReset,
