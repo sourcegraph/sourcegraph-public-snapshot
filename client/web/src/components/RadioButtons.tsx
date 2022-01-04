@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { RadioButton } from '@sourcegraph/wildcard'
+
 import styles from './RadioButtons.module.scss'
 
 /**
@@ -56,12 +58,16 @@ interface Props {
 export const RadioButtons: React.FunctionComponent<Props> = ({ nodes, onChange, selected, className }) => (
     <div className={classNames(styles.radioButtons, className)}>
         {nodes.map(node => (
-            <label key={node.key ? node.key : node.id.toString()} className={styles.item} title={node.tooltip}>
-                <input name="filter" type="radio" onChange={onChange} value={node.id} checked={node.id === selected} />{' '}
-                <small>
-                    <div className={styles.label}>{node.label}</div>
-                </small>
-            </label>
+            <RadioButton
+                key={node.key ? node.key : node.id.toString()}
+                id={node.id.toString()}
+                title={node.tooltip}
+                name="filter"
+                onChange={onChange}
+                value={node.id}
+                checked={node.id === selected}
+                label={<small className={styles.label}>{node.label}</small>}
+            />
         ))}
     </div>
 )

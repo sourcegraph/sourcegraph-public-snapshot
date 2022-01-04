@@ -372,6 +372,7 @@ type ListBatchSpecsOpts struct {
 	LimitOpts
 	Cursor        int64
 	BatchChangeID int64
+	NewestFirst   bool
 
 	ExcludeCreatedFromRawNotOwnedByUser int32
 }
@@ -407,14 +408,13 @@ SELECT %s FROM batch_specs
 -- Joins go here:
 %s
 WHERE %s
-ORDER BY batch_specs.id ASC
+ORDER BY %s
 `
 
 func listBatchSpecsQuery(opts *ListBatchSpecsOpts) *sqlf.Query {
-	preds := []*sqlf.Query{
-		sqlf.Sprintf("batch_specs.id >= %s", opts.Cursor),
-	}
+	preds := []*sqlf.Query{}
 	joins := []*sqlf.Query{}
+	order := sqlf.Sprintf("batch_specs.id ASC")
 
 	if opts.BatchChangeID != 0 {
 		joins = append(joins, sqlf.Sprintf(`INNER JOIN batch_changes
@@ -431,11 +431,21 @@ ON
 		preds = append(preds, sqlf.Sprintf("(batch_specs.user_id = %s OR batch_specs.created_from_raw IS FALSE)", opts.ExcludeCreatedFromRawNotOwnedByUser))
 	}
 
+	if opts.NewestFirst {
+		order = sqlf.Sprintf("batch_specs.id DESC")
+		if opts.Cursor != 0 {
+			preds = append(preds, sqlf.Sprintf("batch_specs.id <= %s", opts.Cursor))
+		}
+	} else {
+		preds = append(preds, sqlf.Sprintf("batch_specs.id >= %s", opts.Cursor))
+	}
+
 	return sqlf.Sprintf(
 		listBatchSpecsQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(batchSpecColumns, ", "),
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
+		order,
 	)
 }
 

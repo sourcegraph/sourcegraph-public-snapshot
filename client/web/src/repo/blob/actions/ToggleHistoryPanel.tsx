@@ -4,7 +4,6 @@ import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import {
     addLineRangeQueryParameter,
     formatSearchParameters,
@@ -13,6 +12,7 @@ import {
     toPositionOrRangeQueryParameter,
     toViewStateHash,
 } from '@sourcegraph/shared/src/util/url'
+import { TooltipController } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
@@ -64,7 +64,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
                 const visible = ToggleHistoryPanel.isVisible(this.props.location)
                 eventLogger.log(visible ? 'HideHistoryPanel' : 'ShowHistoryPanel')
                 this.props.history.push(ToggleHistoryPanel.locationWithVisibility(this.props.location, !visible))
-                Tooltip.forceUpdate()
+                TooltipController.forceUpdate()
             })
         )
 

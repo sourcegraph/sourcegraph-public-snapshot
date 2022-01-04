@@ -39,10 +39,6 @@ $warning: $yellow;
 $danger: $red;
 $merged: $purple;
 
-// Color for the <mark> element and highlighted/hovered tokens.
-$mark-bg-dark: rgba(217, 72, 15, 0.5);
-$mark-bg-light: rgba(255, 192, 120, 0.5);
-
 // Added to bg- and text- utilities because it is commonly needed in our app.
 $theme-colors: (
     'merged': $merged,
@@ -101,6 +97,10 @@ $theme-colors: (
     --header-icon-color: var(--gray-05);
     --tooltip-bg: var(--gray-08);
     --text-disabled: var(--gray-06);
+
+    // Color for the <mark> element and highlighted/hovered tokens.
+    --mark-bg-dark: rgba(217, 72, 15, 0.5);
+    --mark-bg-light: rgba(255, 192, 120, 0.5);
 }
 
 .theme-light {

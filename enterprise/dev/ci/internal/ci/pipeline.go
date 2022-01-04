@@ -33,10 +33,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"VERSION":                            c.Version,
 
 		// Additional flags
-		"GO111MODULE":                      "on",
-		"PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
-		"FORCE_COLOR":                      "3",
-		"ENTERPRISE":                       "1",
+		"GO111MODULE": "on",
+		"FORCE_COLOR": "3",
+		"ENTERPRISE":  "1",
 		// Add debug flags for scripts to consume
 		"CI_DEBUG_PROFILE": strconv.FormatBool(c.MessageFlags.ProfilingEnabled),
 		// Bump Node.js memory to prevent OOM crashes
@@ -208,7 +207,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}))
 
 		// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-		const minimumUpgradeableVersion = "3.34.0"
+		const minimumUpgradeableVersion = "3.35.0"
 
 		// Various integration tests
 		ops.Append(
@@ -216,7 +215,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			codeIntelQA(c.candidateImageTag()),
 			serverE2E(c.candidateImageTag()),
 			serverQA(c.candidateImageTag()),
-			clusterQA(c.candidateImageTag()),
+			// Flaky deployment. See https://github.com/sourcegraph/sourcegraph/issues/25977
+			// clusterQA(c.candidateImageTag()),
 			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion))
 
 		// All operations before this point are required

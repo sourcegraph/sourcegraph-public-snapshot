@@ -1,8 +1,8 @@
 import { from } from 'rxjs'
 import { take } from 'rxjs/operators'
 
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined, isNot } from '@sourcegraph/shared/src/util/types'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 

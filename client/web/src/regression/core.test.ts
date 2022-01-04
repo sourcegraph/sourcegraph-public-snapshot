@@ -75,7 +75,8 @@ describe('Core functionality regression test suite', () => {
         await alwaysCleanupManager.destroyAll()
     })
 
-    test('2.2.1 User settings are saved and applied', async () => {
+    // TODO: Disabled because it's flaky. https://github.com/sourcegraph/sourcegraph/issues/29098
+    test.skip('2.2.1 User settings are saved and applied', async () => {
         const getSettings = async () => {
             await driver.page.waitForSelector('.test-settings-file .monaco-editor .view-lines')
             return driver.page.evaluate(() => {

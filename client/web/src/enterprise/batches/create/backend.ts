@@ -1,5 +1,40 @@
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
+export const GET_BATCH_CHANGE_TO_EDIT = gql`
+    query GetBatchChangeToEdit($namespace: ID!, $name: String!) {
+        batchChange(namespace: $namespace, name: $name) {
+            ...EditBatchChangeFields
+        }
+    }
+
+    fragment EditBatchChangeFields on BatchChange {
+        __typename
+        id
+        url
+        name
+        namespace {
+            id
+        }
+        description
+
+        currentSpec {
+            id
+            originalInput
+            createdAt
+        }
+
+        batchSpecs(first: 1) {
+            nodes {
+                id
+                originalInput
+                createdAt
+            }
+        }
+
+        state
+    }
+`
+
 export const EXECUTE_BATCH_SPEC = gql`
     mutation ExecuteBatchSpec($batchSpec: ID!) {
         executeBatchSpec(batchSpec: $batchSpec) {
@@ -11,18 +46,35 @@ export const EXECUTE_BATCH_SPEC = gql`
     }
 `
 
-export const CREATE_BATCH_SPEC_FROM_RAW = gql`
-    mutation CreateBatchSpecFromRaw($spec: String!, $namespace: ID!, $noCache: Boolean!) {
-        createBatchSpecFromRaw(batchSpec: $spec, namespace: $namespace, noCache: $noCache) {
+// This mutation is used to create a new batch change. It creates the batch change and an
+// "empty" batch spec for it.
+export const CREATE_EMPTY_BATCH_CHANGE = gql`
+    mutation CreateEmptyBatchChange($namespace: ID!, $name: String!) {
+        createEmptyBatchChange(namespace: $namespace, name: $name) {
             id
+            url
         }
     }
 `
 
+// This mutation is used to create a new batch spec when the existing batch spec attached
+// to a batch change has already been applied.
+export const CREATE_BATCH_SPEC_FROM_RAW = gql`
+    mutation CreateBatchSpecFromRaw($spec: String!, $noCache: Boolean!, $namespace: ID!) {
+        createBatchSpecFromRaw(batchSpec: $spec, noCache: $noCache, namespace: $namespace) {
+            id
+            createdAt
+        }
+    }
+`
+
+// This mutation is used to update the batch spec when the existing batch spec is
+// unapplied.
 export const REPLACE_BATCH_SPEC_INPUT = gql`
     mutation ReplaceBatchSpecInput($previousSpec: ID!, $spec: String!, $noCache: Boolean!) {
         replaceBatchSpecInput(previousSpec: $previousSpec, batchSpec: $spec, noCache: $noCache) {
             id
+            createdAt
         }
     }
 `

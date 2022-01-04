@@ -192,17 +192,11 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
         hoverOverlayElements,
     ])
 
-    const closeButtonClicks = useMemo(() => new Subject<MouseEvent>(), [])
-    const nextCloseButtonClick = useCallback((event: MouseEvent): void => closeButtonClicks.next(event), [
-        closeButtonClicks,
-    ])
-
     const componentRerenders = useMemo(() => new Subject<void>(), [])
 
     const hoverifier = useMemo(
         () =>
             createHoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>({
-                closeButtonClicks,
                 hoverOverlayElements,
                 hoverOverlayRerenders: componentRerenders.pipe(
                     withLatestFrom(hoverOverlayElements, containerElements),
@@ -220,16 +214,8 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
                 getDocumentHighlights: hoveredToken =>
                     getDocumentHighlights(getLSPTextDocumentPositionParameters(hoveredToken), { extensionsController }),
                 getActions: context => getHoverActions({ extensionsController, platformContext }, context),
-                pinningEnabled: true,
             }),
-        [
-            closeButtonClicks,
-            containerElements,
-            extensionsController,
-            hoverOverlayElements,
-            platformContext,
-            componentRerenders,
-        ]
+        [containerElements, extensionsController, hoverOverlayElements, platformContext, componentRerenders]
     )
     useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
 
@@ -314,13 +300,14 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
                 {hoverState?.hoverOverlayProps && (
                     <WebHoverOverlay
                         {...hoverState.hoverOverlayProps}
+                        nav={url => history.push(url)}
+                        hoveredTokenElement={hoverState.hoveredTokenElement}
                         telemetryService={telemetryService}
                         extensionsController={extensionsController}
                         isLightTheme={isLightTheme}
                         location={location}
                         platformContext={platformContext}
                         hoverRef={nextOverlayElement}
-                        onCloseButtonClick={nextCloseButtonClick}
                     />
                 )}
             </div>

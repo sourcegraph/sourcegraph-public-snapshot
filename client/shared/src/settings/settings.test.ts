@@ -1,4 +1,4 @@
-import { createAggregateError, isErrorLike } from '../util/errors'
+import { createAggregateError, isErrorLike } from '@sourcegraph/common'
 
 import {
     CustomMergeFunctions,

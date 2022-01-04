@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -15,7 +15,7 @@ import (
 func TestReposourceCloneURLToRepoName(t *testing.T) {
 	ctx := context.Background()
 
-	externalServices := dbmock.NewMockExternalServiceStore()
+	externalServices := database.NewMockExternalServiceStore()
 	externalServices.ListFunc.SetDefaultReturn(
 		[]*types.ExternalService{{
 			ID:          1,
@@ -26,9 +26,9 @@ func TestReposourceCloneURLToRepoName(t *testing.T) {
 		nil,
 	)
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-	db.ReposFunc.SetDefaultReturn(dbmock.NewMockRepoStore())
+	db.ReposFunc.SetDefaultReturn(database.NewMockRepoStore())
 
 	tests := []struct {
 		name         string

@@ -13,6 +13,10 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+- Add extra field to log browser extension version [#issues/27845](https://github.com/sourcegraph/sourcegraph/issues/27845), [pull/27902](https://github.com/sourcegraph/sourcegraph/pull/27902)
+
+## Chrome v21.12.10.1012, Firefox v21.12.10.1048, Safari v1.9
+
 - Private cloud repositories should use hashed identifiers instead of repository names [pull/28621](https://github.com/sourcegraph/sourcegraph/pull/28621), [#pull/28387](https://github.com/sourcegraph/sourcegraph/pull/28387), [#issues/27922](https://github.com/sourcegraph/sourcegraph/issues/27922)
 
   - Also, browser extension does not override native codehost tooltips whenever cannot inject code intelligence
