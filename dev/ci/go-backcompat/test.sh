@@ -93,6 +93,14 @@ PROTECTED_FILES=(
 git checkout "${latest_minor_release_tag}"
 git checkout "${current_head}" -- "${PROTECTED_FILES[@]}"
 
+# If migration files have been renamed or deleted between these commits,
+# we may continue to hold on to renamed or deleted files. Historically,
+# this has happened when reverting existing migrations. To prevent this,
+# we'll ensure that the migrations directory does not contain old versions
+# of the schema definitions.
+git reset ./migrations
+git clean -fd ./migrations
+
 if [ -f "${flakefile}" ]; then
   echo ""
   echo "Disabling tests listed in flakefile ${flakefile}"
