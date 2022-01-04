@@ -202,7 +202,7 @@ func Cmd(command string) StepOpt {
 		// BUILDKITE_STEP_ID is prefixed by $$ so it's not interpolated at pipeline generation time
 		// but instead when the step is executed.
 		traceCmd := "./buildevents cmd $BUILDKITE_BUILD_ID $$BUILDKITE_STEP_ID"
-		step.Command = append(step.Command, fmt.Sprintf("%s %s", traceCmd, command))
+		step.Command = append(step.Command, fmt.Sprintf("%s -- %s", traceCmd, command))
 	}
 }
 
