@@ -28,7 +28,7 @@ trap cleanup EXIT
 # ==========================
 
 echo "TEST: Running E2E tests"
-if [[ $VAGRANT_RUN_ENV = "CI" ]]; then
+if [[ $BUIDKITE = "true" ]]; then
   IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION
 else
   # shellcheck disable=SC2034
