@@ -281,17 +281,23 @@ sg check client
 sg check --help
 ```
 
-### `sg reset` - Reset your local Sourcegraph database(s)
+### `sg db` - Interact with your local Sourcegraph database(s)
 
 ```bash
 # Reset the Sourcegraph 'frontend' database
-sg reset
+sg db reset-pg
 
 # Reset the 'frontend' and 'codeintel' databases
-sg reset -db=frontend,codeintel
+sg db reset-pg -db=frontend,codeintel
 
 # Reset all databases ('frontend', 'codeintel', 'codeinsights')
-sg reset -db=all
+sg db reset-pg -db=all
+
+# Reset the redis database
+sg db reset-redis
+
+# Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
+sg db add-user -name=foo
 ```
 
 ## Configuration
