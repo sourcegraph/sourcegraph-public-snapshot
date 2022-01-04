@@ -2,10 +2,12 @@ import React, { FunctionComponent } from 'react'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 
+import { RadioButtons } from '../../../../components/RadioButtons'
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../../graphql-operations'
 import { nullPolicy } from '../hooks/types'
 
 import { DurationSelect } from './DurationSelect'
+import styles from './RetentionSettings.module.scss'
 
 export interface RetentionSettingsProps {
     policy: CodeIntelligenceConfigurationPolicyFields
@@ -23,31 +25,43 @@ export const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ p
         setPolicy(policy => ({ ...(policy || nullPolicy), ...updates }))
     }
 
+    const radioButtons = [
+        {
+            id: 'disabled',
+            label: 'Disable',
+        },
+        {
+            id: 'enabled',
+            label: 'Enable, keep data for specific duration',
+        },
+    ]
+
+    const onChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        const retentionEnabled = event.target.value === 'enabled'
+        updatePolicy({ retentionEnabled })
+    }
+
     return (
         <div className="form-group">
             <h3>Retention</h3>
 
             <div className="form-group">
-                <Toggle
-                    id="retention-enabled"
-                    title="Enabled"
-                    value={policy.retentionEnabled}
-                    onToggle={retentionEnabled => updatePolicy({ retentionEnabled })}
-                    disabled={policy.protected}
+                <RadioButtons
+                    nodes={radioButtons}
+                    onChange={onChange}
+                    selected={policy.retentionEnabled ? 'enabled' : 'disabled'}
+                    className={styles.radioButtons}
                 />
-                <label htmlFor="retention-enabled" className="ml-2">
-                    Enabled / disabled
+
+                <label className="ml-4" htmlFor="retention-duration">
+                    Duration
                 </label>
-            </div>
-
-            <div className="form-group">
-                <label htmlFor="retention-duration">Duration</label>
-
                 <DurationSelect
                     id="retention-duration"
                     value={policy.retentionDurationHours ? `${policy.retentionDurationHours}` : null}
                     onChange={retentionDurationHours => updatePolicy({ retentionDurationHours })}
                     disabled={!policy.retentionEnabled}
+                    className="ml-4"
                 />
             </div>
 
