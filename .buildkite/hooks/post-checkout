@@ -14,4 +14,4 @@ echo "done installing"
 echo "Fetching buildevents"
 curl -L -o buildevents https://github.com/honeycombio/buildevents/releases/latest/download/buildevents-linux-amd64
 chmod 755 buildevents
-mv buildevents /usr/local/bin
+# mv buildevents /usr/local/bin
