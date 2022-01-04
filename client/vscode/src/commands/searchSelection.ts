@@ -1,9 +1,7 @@
 import vscode from 'vscode'
 
 /**
- * Open new search of the selected text in the browser on the configured Sourcegraph instance.
- *
- * TODO: implement opening new search within VSCE
+ * Open new search of the selected text on the configured Sourcegraph instance in browser .
  */
 export async function searchSelection(): Promise<void> {
     const instanceUrl = vscode.workspace.getConfiguration('sourcegraph').get('url')
@@ -11,7 +9,7 @@ export async function searchSelection(): Promise<void> {
     // check if the current file is a remote file or not
     if (query && typeof instanceUrl === 'string') {
         await openLinkInBrowser(
-            `${instanceUrl}search?q=context:global+${encodeURIComponent(query)}&patternType=literal`
+            `${instanceUrl}/search?q=context:global+${encodeURIComponent(query)}&patternType=literal`
         )
     } else {
         await vscode.window.showInformationMessage('No selection detected.')
