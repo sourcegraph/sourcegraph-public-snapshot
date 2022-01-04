@@ -3,9 +3,8 @@ package golang
 import "fmt"
 
 func forStatement() {
-
-	for i := 0; i < 10; i++ {
-		fmt.Println(i)
+	for hello := 0; hello < 10; hello++ {
+		fmt.Println(hello)
 	}
 
 	for i, j := 0, 1; i < 10; i, j = i+1, j+2 {

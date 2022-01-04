@@ -77,8 +77,17 @@ func Index(
 		node := visitor.Cursor.CurrentNode()
 		if definitionFingerprint != nil {
 			scope := visitor.Scope
-			for i := 1; i < len(definitionFingerprint.ParentTypes) && scope.Outer != nil; i++ {
+			for i := 0; i < len(definitionFingerprint.ParentTypes); i++ {
+				fmt.Println(scope.Node.Type())
+				if definitionFingerprint.ParentTypes[i] != scope.Node.Type() {
+					panic(scope.Node.Type())
+				}
 				scope = scope.Outer
+			}
+			if input.Substring(node) == "i" {
+				fmt.Println(input.Format(node))
+				fmt.Println(input.Format(scope.Node))
+				fmt.Println(input.Format(visitor.Scope.Node))
 			}
 			visitor.EmitLocalOccurrence(
 				node,
@@ -86,7 +95,16 @@ func Index(
 				lsif_typed.MonikerOccurrence_ROLE_DEFINITION,
 			)
 		} else if _, ok := grammar.Identifiers[node.Type()]; ok {
-			sym := visitor.Scope.Lookup(NewSimpleName(visitor.Input.Substring(node)))
+			name := NewSimpleName(input.Substring(node))
+			sym := visitor.Scope.Lookup(name)
+			//if name.Value == "hello" && sym == nil {
+			//	fmt.Println(
+			//		input.Format(node),
+			//		input.Format(visitor.Scope.Node),
+			//		visitor.Scope.Node,
+			//		sym,
+			//	)
+			//}
 			if sym != nil {
 				visitor.EmitOccurrence(sym, node, lsif_typed.MonikerOccurrence_ROLE_REFERENCE)
 			}
@@ -100,28 +118,25 @@ func Index(
 	return visitor.Document, nil
 }
 
-func (b *Builder) popName() {
+func (b *Builder) popNode() {
 	n := len(b.Types)
-	if n > 0 {
-		b.Types = b.Types[0 : n-1]
-		b.Names = b.Names[0 : n-1]
-		b.Scope = b.Scope.Outer
-	}
+	b.Types = b.Types[0 : n-1]
+	b.Names = b.Names[0 : n-1]
+	b.Scope = b.Scope.Outer
 }
 
-func (b *Builder) pushName() {
+func (b *Builder) pushNode() {
 	b.Types = append(b.Types, b.Cursor.CurrentNode().Type())
 	b.Names = append(b.Names, b.Cursor.CurrentFieldName())
 	b.Scope = b.Scope.NewInnerScope()
+	b.Scope.Node = b.Cursor.CurrentNode()
 }
 
 func (b *Builder) NextNode() bool {
 	for b.nextAnyNode() {
 		//fieldName := b.Cursor.CurrentFieldName()
-		b.pushName()
+		b.pushNode()
 		return true
-		//if fieldName != "" {
-		//}
 	}
 	return false
 }
@@ -133,14 +148,13 @@ func (b *Builder) nextAnyNode() bool {
 	}
 	isNextSibling := b.Cursor.GoToNextSibling()
 	if isNextSibling {
-		b.popName()
 		return true
 	}
 	for b.Cursor.GoToParent() {
-		b.popName()
+		b.popNode()
 		isNextSibling = b.Cursor.GoToNextSibling()
 		if isNextSibling {
-			b.popName()
+			b.popNode()
 			return true
 		}
 	}

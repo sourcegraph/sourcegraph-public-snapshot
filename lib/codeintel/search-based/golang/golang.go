@@ -31,7 +31,7 @@ func (g Indexer) Index(ctx context.Context, input *api.Input) (*lsif_typed.Docum
 			},
 			{
 				ParentTypes:      []string{"identifier", "expression_list", "short_var_declaration", "for_clause", "for_statement"},
-				ParentFieldNames: []string{"", "left"},
+				ParentFieldNames: []string{"", "left", "initializer"},
 			},
 			{
 				ParentTypes:      []string{"identifier", "expression_list", "range_clause", "for_statement"},

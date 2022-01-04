@@ -3,12 +3,11 @@
   import "fmt"
   
   func forStatement() {
-  
-   for i := 0; i < 10; i++ {
-//     ^ local0-i definition
-//             ^ local0-i reference
-//                     ^ local0-i reference
-    fmt.Println(i)
+   for hello := 0; hello < 10; hello++ {
+//     ^^^^^ local0-hello definition
+//                 ^^^^^ local0-hello reference
+//                             ^^^^^ local0-hello reference
+    fmt.Println(hello)
    }
   
    for i, j := 0, 1; i < 10; i, j = i+1, j+2 {

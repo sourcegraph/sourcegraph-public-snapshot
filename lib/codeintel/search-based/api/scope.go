@@ -1,8 +1,11 @@
 package api
 
+import sitter "github.com/smacker/go-tree-sitter"
+
 type Scope struct {
 	Outer    *Scope
 	Bindings []*binding
+	Node     *sitter.Node
 }
 
 type binding struct {
