@@ -175,8 +175,8 @@ func testIndexer(env goldenEnv, relativePath string, t *testing.T) {
 		edits := myers.ComputeEdits(span.URIFromPath(goldenPath), string(expectedGolden), obtainedGolden)
 		if len(edits) > 0 {
 			diff := fmt.Sprint(gotextdiff.ToUnified(
-				goldenPath+" (expected/what the golden tests want)",
 				goldenPath+" (obtained/what the current program produced)",
+				goldenPath+" (expected/what the golden tests want)",
 				string(expectedGolden),
 				edits,
 			))

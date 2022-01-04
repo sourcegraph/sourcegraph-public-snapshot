@@ -14,7 +14,7 @@ type Builder struct {
 	Options      *IndexingOptions
 	Cursor       *sitter.TreeCursor
 	Types        []string
-	Names        []string
+	FieldNames   []string
 	Scope        *Scope
 	localCounter int
 }
@@ -50,13 +50,12 @@ func Index(
 		Document: doc,
 		Input:    input,
 		Cursor:   cursor,
+		Scope:    NewScope(),
 	}
 	for visitor.NextNode() {
+		node := visitor.Cursor.CurrentNode()
 		var definitionFingerprint *DefinitionFingerprint
 		for _, fingerprint := range grammar.Fingerprints {
-			if definitionFingerprint != nil {
-				break
-			}
 			for i, parentType := range fingerprint.ParentTypes {
 				if i >= len(visitor.Types) {
 					break
@@ -66,28 +65,28 @@ func Index(
 					break
 				}
 				if i < len(fingerprint.ParentFieldNames) &&
-					fingerprint.ParentFieldNames[i] != visitor.Names[j] {
+					fingerprint.ParentFieldNames[i] != visitor.FieldNames[j] {
 					break
 				}
 				if i == len(fingerprint.ParentTypes)-1 {
 					definitionFingerprint = &fingerprint
 				}
 			}
+			if definitionFingerprint != nil {
+				break
+			}
 		}
-		node := visitor.Cursor.CurrentNode()
 		if definitionFingerprint != nil {
 			scope := visitor.Scope
 			for i := 0; i < len(definitionFingerprint.ParentTypes); i++ {
-				fmt.Println(scope.Node.Type())
 				if definitionFingerprint.ParentTypes[i] != scope.Node.Type() {
-					panic(scope.Node.Type())
+					panic(fmt.Sprintf(
+						"mis-matching parent type: fingerprint.Parent %v scope.Type %v",
+						definitionFingerprint.ParentTypes[i],
+						scope.Node.Type(),
+					))
 				}
 				scope = scope.Outer
-			}
-			if input.Substring(node) == "i" {
-				fmt.Println(input.Format(node))
-				fmt.Println(input.Format(scope.Node))
-				fmt.Println(input.Format(visitor.Scope.Node))
 			}
 			visitor.EmitLocalOccurrence(
 				node,
@@ -97,23 +96,10 @@ func Index(
 		} else if _, ok := grammar.Identifiers[node.Type()]; ok {
 			name := NewSimpleName(input.Substring(node))
 			sym := visitor.Scope.Lookup(name)
-			//if name.Value == "hello" && sym == nil {
-			//	fmt.Println(
-			//		input.Format(node),
-			//		input.Format(visitor.Scope.Node),
-			//		visitor.Scope.Node,
-			//		sym,
-			//	)
-			//}
 			if sym != nil {
 				visitor.EmitOccurrence(sym, node, lsif_typed.MonikerOccurrence_ROLE_REFERENCE)
 			}
 		}
-		//if node.Type() == "identifier" {
-		//	fmt.Println(visitor.Types)
-		//	fmt.Println(visitor.Names)
-		//	fmt.Println(input.Format(node))
-		//}
 	}
 	return visitor.Document, nil
 }
@@ -121,13 +107,13 @@ func Index(
 func (b *Builder) popNode() {
 	n := len(b.Types)
 	b.Types = b.Types[0 : n-1]
-	b.Names = b.Names[0 : n-1]
+	b.FieldNames = b.FieldNames[0 : n-1]
 	b.Scope = b.Scope.Outer
 }
 
 func (b *Builder) pushNode() {
 	b.Types = append(b.Types, b.Cursor.CurrentNode().Type())
-	b.Names = append(b.Names, b.Cursor.CurrentFieldName())
+	b.FieldNames = append(b.FieldNames, b.Cursor.CurrentFieldName())
 	b.Scope = b.Scope.NewInnerScope()
 	b.Scope.Node = b.Cursor.CurrentNode()
 }
@@ -148,6 +134,7 @@ func (b *Builder) nextAnyNode() bool {
 	}
 	isNextSibling := b.Cursor.GoToNextSibling()
 	if isNextSibling {
+		b.popNode()
 		return true
 	}
 	for b.Cursor.GoToParent() {
