@@ -28,7 +28,7 @@ echo "--- :go: Building sg"
 (
   set -x
   pushd dev/sg
-  go build -o ../../ci_sg -ldflags "-X main.BuildCommit=$BUILDKITE_COMMIT" -mod=mod .
+  go build -o ../../sg -ldflags "-X main.BuildCommit=$BUILDKITE_COMMIT" -mod=mod .
   popd
 )
 
@@ -37,4 +37,4 @@ echo "--- :file_cabinet: Uploading logs"
 # Because we are running this script in the buildkite post-exit hook, the state of the job is still "running".
 # Passing --state="" just overrides the default. It's not set to any specific state because this script caller
 # is responsible of making sure the job has failed.
-./dev/ci/sentry-capture.sh ./ci_sg ci logs --out="$BUILD_LOGS_LOKI_URL" --state="" --overwrite-state="failed" --build="$BUILDKITE_BUILD_NUMBER" --job="$BUILDKITE_JOB_ID"
+./dev/ci/sentry-capture.sh ./sg ci logs --out="$BUILD_LOGS_LOKI_URL" --state="" --overwrite-state="failed" --build="$BUILDKITE_BUILD_NUMBER" --job="$BUILDKITE_JOB_ID"
