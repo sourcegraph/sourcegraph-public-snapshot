@@ -12,6 +12,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -39,6 +41,10 @@ import (
 
 func main() {
 	shared.Main(enterpriseSetupHook)
+}
+
+func init() {
+	oobmigration.ReturnEnterpriseMigrations = true
 }
 
 type EnterpriseInitializer = func(context.Context, database.DB, conftypes.UnifiedWatchable, *enterprise.Services, *observation.Context) error
