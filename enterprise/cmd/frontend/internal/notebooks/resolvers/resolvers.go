@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/notebooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -201,6 +202,113 @@ func (r *Resolver) DeleteNotebook(ctx context.Context, args graphqlbackend.Delet
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func marshalNotebookCursor(cursor int64) string {
+	return string(relay.MarshalID("NotebookCursor", cursor))
+}
+
+func unmarshalNotebookCursor(cursor *string) (int64, error) {
+	if cursor == nil {
+		return 0, nil
+	}
+	var after int64
+	err := relay.UnmarshalSpec(graphql.ID(*cursor), &after)
+	if err != nil {
+		return -1, err
+	}
+	return after, nil
+}
+
+func (r *Resolver) Notebooks(ctx context.Context, args graphqlbackend.ListNotebooksArgs) (graphqlbackend.NotebookConnectionResolver, error) {
+	orderBy := notebooks.NotebooksOrderByUpdatedAt
+	if args.OrderBy == graphqlbackend.NotebookOrderByCreatedAt {
+		orderBy = notebooks.NotebooksOrderByCreatedAt
+	}
+
+	// Request one extra to determine if there are more pages
+	newArgs := args
+	newArgs.First += 1
+
+	afterCursor, err := unmarshalNotebookCursor(newArgs.After)
+	if err != nil {
+		return nil, err
+	}
+
+	var userID int32
+	if args.CreatorUserID != nil {
+		userID, err = graphqlbackend.UnmarshalUserID(*args.CreatorUserID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	var query string
+	if args.Query != nil {
+		query = *args.Query
+	}
+
+	opts := notebooks.ListNotebooksOptions{
+		Query:             query,
+		CreatorUserID:     userID,
+		OrderBy:           orderBy,
+		OrderByDescending: args.Descending,
+	}
+	pageOpts := notebooks.ListNotebooksPageOptions{First: newArgs.First, After: afterCursor}
+
+	store := notebooks.Notebooks(r.db)
+	notebooks, err := store.ListNotebooks(ctx, pageOpts, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	count, err := store.CountNotebooks(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	hasNextPage := false
+	if len(notebooks) == int(args.First)+1 {
+		hasNextPage = true
+		notebooks = notebooks[:len(notebooks)-1]
+	}
+
+	return &notebookConnectionResolver{
+		afterCursor: afterCursor,
+		notebooks:   r.notebooksToResolvers(notebooks),
+		totalCount:  int32(count),
+		hasNextPage: hasNextPage,
+	}, nil
+}
+
+func (r *Resolver) notebooksToResolvers(notebooks []*notebooks.Notebook) []graphqlbackend.NotebookResolver {
+	notebookResolvers := make([]graphqlbackend.NotebookResolver, len(notebooks))
+	for idx, notebook := range notebooks {
+		notebookResolvers[idx] = &notebookResolver{notebook, r.db}
+	}
+	return notebookResolvers
+}
+
+type notebookConnectionResolver struct {
+	afterCursor int64
+	notebooks   []graphqlbackend.NotebookResolver
+	totalCount  int32
+	hasNextPage bool
+}
+
+func (n *notebookConnectionResolver) Nodes(ctx context.Context) []graphqlbackend.NotebookResolver {
+	return n.notebooks
+}
+
+func (n *notebookConnectionResolver) TotalCount(ctx context.Context) int32 {
+	return n.totalCount
+}
+
+func (n *notebookConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
+	if len(n.notebooks) == 0 || !n.hasNextPage {
+		return graphqlutil.HasNextPage(false)
+	}
+	// The after value (offset) for the next page is computed from the current after value + the number of retrieved notebooks
+	return graphqlutil.NextPageCursor(marshalNotebookCursor(n.afterCursor + int64(len(n.notebooks))))
 }
 
 type notebookResolver struct {
