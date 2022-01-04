@@ -31,6 +31,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.35.0
 
+**⚠️ We are currently investigating issues related to Code Insights on this release. Users are advised to hold off on upgrading to 3.35 until a fix is available.**
+
 ### Added
 
 - Individual batch changes can publish multiple changesets to the same repository by specifying multiple target branches using the [`on.branches`](https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#on-repository) attribute. [#25228](https://github.com/sourcegraph/sourcegraph/issues/25228)
