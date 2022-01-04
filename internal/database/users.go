@@ -742,10 +742,6 @@ func (u *userStore) InvalidateSessionsByID(ctx context.Context, id int32) (err e
 }
 
 func (u *userStore) Count(ctx context.Context, opt *UsersListOptions) (int, error) {
-	if Mocks.Users.Count != nil {
-		return Mocks.Users.Count(ctx, opt)
-	}
-
 	if opt == nil {
 		opt = &UsersListOptions{}
 	}
