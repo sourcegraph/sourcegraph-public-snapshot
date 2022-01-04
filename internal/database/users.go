@@ -673,9 +673,6 @@ func (u *userStore) CheckAndDecrementInviteQuota(ctx context.Context, userID int
 }
 
 func (u *userStore) GetByID(ctx context.Context, id int32) (*types.User, error) {
-	if Mocks.Users.GetByID != nil {
-		return Mocks.Users.GetByID(ctx, id)
-	}
 	return u.getOneBySQL(ctx, sqlf.Sprintf("WHERE id=%s AND deleted_at IS NULL LIMIT 1", id))
 }
 
