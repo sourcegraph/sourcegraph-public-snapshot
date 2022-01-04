@@ -88,7 +88,7 @@ https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/com/sun/jndi/url/ldap/lda
 
 https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/com/sun/jndi/url/ldap/ldapURLContextFactory.java?L59-60&subtree=true
 
-Our context in hand, we then invoke `lookup` on this instance of `LdapCtx`, which then issues the LDAP request over the network, passing the name argument (`nm`), `Basic/Command/Base64/dG91Y2ggL3RtcC9wd25lZAo=`, to the client:
+Our context in hand, we then invoke `lookup` on this instance of `LdapCtx`, which then issues the LDAP request over the network, passing the name argument (`nm`), `Basic/Command/Base64/dG91Y2ggL3RtcC9wd25lZAo=`, to the LDAP client:
 
 https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/com/sun/jndi/ldap/LdapCtx.java?L2013-2026&subtree=true
 
@@ -96,11 +96,11 @@ https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/com/sun/jndi/ldap/LdapCtx
 
 ## Part 3: Malicious LDAP server
 
-Across the Internet, our attacker's server awaits the LDAP request, listening on malicious.com:1389. Our attacker's server is fairly featureful and routes the request to a specific controller depending on the URL path (`base`):
+Across the Internet, our attacker's server awaits the LDAP request, listening on malicious.com:1389. Our attacker's server is fairly featureful, containing different controller classes to field different payload types that correspond to different exploit paths. The universe of JNDI vulnerabilities is large enough that hackers and security researchers have created these general toolkits completing different exploit paths. It routes the request to a specific controller depending on the URL path (returned from `result.getRequest().getBaseDN()`):
 
 https://sourcegraph.com/github.com/sickcodes/JNDIExploit/-/blob/src/main/java/com/feihong/ldap/LdapServer.java?L72-96#L72:17-72:36
 
-The controllers are registered to path prefixes using Java annotations:
+The controllers are registered to path prefixes using a Java annotation:
 
 https://sourcegraph.com/github.com/sickcodes/JNDIExploit/-/blob/src/main/java/com/feihong/ldap/controllers/BasicController.java?L15-16
 
@@ -109,15 +109,15 @@ The server iterates through the annotated controller classes on startup and adds
 https://sourcegraph.com/github.com/sickcodes/JNDIExploit@7753e3a3924ae4527891f4a708c2d7151d023b39/-/blob/src/main/java/com/feihong/ldap/LdapServer.java?L46-64
 
 
-Our request, with its path of `Basic/Command/Base64/dG91Y2ggL3RtcC9wd25lZAo=`, is routed to `BasicController`, which further parses the request type ("command") from the URL path:
+Our request, with its URL path of `Basic/Command/Base64/dG91Y2ggL3RtcC9wd25lZAo=`, is routed to a `BasicController` instance, which further parses the request type ("command") from the URL path into the `type` variable:
 
 https://sourcegraph.com/github.com/sickcodes/JNDIExploit@7753e3a3924ae4527891f4a708c2d7151d023b39/-/blob/src/main/java/com/feihong/ldap/controllers/BasicController.java?L90-103
 
-and then feeds the remainder of the path to a template for shell commands:
+and then feeds the remainder of the path to a template for shell commands (`case command` in the switch statement below):
 
 https://sourcegraph.com/github.com/sickcodes/JNDIExploit/-/blob/src/main/java/com/feihong/ldap/controllers/BasicController.java?L15-39
 
-This template expects a base64-encoded shell command and writes out a Java class file containing bytecode executing the shell command (`touch /tmp/pwned`, which we base64 decoded from `dG91Y2ggL3RtcC9wd25lZAo=`) on initialization:
+The `CommandTemplate` class expects a base64-encoded shell command and writes out a Java class file containing bytecode executing that shell command (in our case, `touch /tmp/pwned`, which we base64 decoded from `dG91Y2ggL3RtcC9wd25lZAo=`) on initialization. Here is what the code that generates the class looks like:
 
 https://sourcegraph.com/github.com/sickcodes/JNDIExploit/-/blob/src/main/java/com/feihong/ldap/template/CommandTemplate.java?L39-144
 
@@ -137,7 +137,7 @@ The result gets returned up through a few stack frames:
 
 https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/com/sun/jndi/ldap/LdapCtx.java?L1056
 
-Up until now, we haven't actually loaded the malicious class file from the attacker's server. This happens further down the `c_lookup` method where the parsed LDAP response parameters have been decoded into a set of attributes that parameterize a call to `DirectoryManager.getObjectInstance`:
+At this point, we haven't yet loaded the malicious class file from the attacker's server. This happens further down the `c_lookup` method where the parsed LDAP response parameters have been decoded into a set of attributes that parameterize a call to `DirectoryManager.getObjectInstance`:
 
 https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/com/sun/jndi/ldap/LdapCtx.java?L1114-1115
 
@@ -154,11 +154,11 @@ The `javaCodeBase`, `javaFactory`, and `javaClassName` values were all parsed fr
 
 https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/javax/naming/spi/NamingManager.java?L165-176
 
-Our attacker server receives the HTTP request for the class file and responds with the malicious class file generated earlier from `CommandTemplate`:
+Our attacker server receives the HTTP request for the class file and responds with the cached malicious class (`ExploitDLFzSVQjFv`) generated earlier from `CommandTemplate`:
 
 https://sourcegraph.com/github.com/sickcodes/JNDIExploit/-/blob/src/main/java/com/feihong/ldap/HTTPServer.java?L92-108&subtree=true
 
-Back in our vulnerable app, we receive the response and create a new instance of the generated malicious factory class, `ExploitDLFzSVQjFv`:
+Back in our vulnerable app, we receive the response and create a new instance of the malicious factory class `ExploitDLFzSVQjFv`:
 
 https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/javax/naming/spi/NamingManager.java?L179-180
 
