@@ -6,6 +6,32 @@ edition = "2018"
 license = "MIT"
 
 [dependencies]
+# TODO: Switch over to other one, but causes build problem.
+# syntect = { git = "https://github.com/sourcegraph/syntect" }
+#
+# tsproto/docker-images/syntax-highlighter on  tjdevries-tsproto [!] is 📦 v1.0.0 via 🦀 v1.53.0 took 1m26s
+# ❯ cargo run
+#     Updating git repository `https://github.com/sourcegraph/syntect`
+#     Updating git submodule `https://github.com/sethlopezme/InspiredGitHub.tmtheme.git`
+#     Updating git submodule `https://github.com/slimsag/Packages`
+#     Updating git submodule `https://github.com/braver/Solarized.git`
+#     Updating git submodule `https://github.com/kkga/spacegray.git`
+#     Updating crates.io index
+# error: failed to select a version for `once_cell`.
+#     ... required by package `syntect v4.7.0 (https://github.com/sourcegraph/syntect#7f053137)`
+#     ... which is depended on by `syntect_server v1.0.0 (/home/tjdevries/sourcegraph/sourcegraph.git/tsproto/docker-images/syntax-highlighter)`
+# versions that meet the requirements `^1.8` are: 1.9.0, 1.8.0
+# 
+# all possible versions conflict with previously selected packages.
+# 
+#   previously selected package `once_cell v1.4.1`
+#     ... which is depended on by `dashmap v4.0.0-rc6`
+#     ... which is depended on by `cookie v0.15.0-dev (https://github.com/SergioBenitez/cookie-rs.git?rev=3795f2e#3795f2e6)`
+#     ... which is depended on by `rocket v0.5.0-dev (https://github.com/SergioBenitez/Rocket#1369dc47)`
+#     ... which is depended on by `rocket_contrib v0.5.0-dev (https://github.com/SergioBenitez/Rocket#1369dc47)`
+#     ... which is depended on by `syntect_server v1.0.0 (/home/tjdevries/sourcegraph/sourcegraph.git/tsproto/docker-images/syntax-highlighter)`
+# 
+# failed to select a version for `once_cell` which could resolve this conflict
 syntect = { git = "https://github.com/slimsag/syntect" }
 rocket = { git = "https://github.com/SergioBenitez/Rocket" } # Rocket 0.5 is not released yet: https://github.com/SergioBenitez/Rocket/issues/19#issuecomment-684122645
 rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket" } # Rocket 0.5 is not released yet: https://github.com/SergioBenitez/Rocket/issues/19#issuecomment-684122645
@@ -14,3 +40,8 @@ serde_json = "1.0"
 serde_derive = "1.0"
 rayon = "1.0"
 lazy_static = "1.0"
+tree-sitter = "0.20.2"
+tree-sitter-highlight = "0.20.1"
+tree-sitter-go = "0.19.1"
+
+[features]
