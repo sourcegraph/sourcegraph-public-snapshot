@@ -848,7 +848,6 @@ VALUES
 	// AuthzEnforceForSiteAdmins is set
 	conf.Get().AuthzEnforceForSiteAdmins = true
 	t.Cleanup(func() {
-		Mocks.Users = MockUsers{}
 		conf.Get().AuthzEnforceForSiteAdmins = false
 	})
 	adminCtx = actor.WithActor(ctx, &actor.Actor{UID: admin.ID})
