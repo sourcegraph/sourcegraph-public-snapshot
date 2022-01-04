@@ -12652,7 +12652,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (index_shard_merging_running)`
+Query: `max by (instance) (index_shard_merging_running{instance=~`${instance:regex}`})`
 
 </details>
 
@@ -12673,7 +12673,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (instance) (index_vacuum_running)`
+Query: `max by (instance) (index_vacuum_running{instance=~`${instance:regex}`})`
 
 </details>
 

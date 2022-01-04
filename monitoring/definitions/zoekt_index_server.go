@@ -340,7 +340,7 @@ func ZoektIndexServer() *monitoring.Container {
 						{
 							Name:        "shard_merging_merge_running_per_instance",
 							Description: "if shard merging is running (per instance)",
-							Query:       "max by (instance) (index_shard_merging_running)",
+							Query:       "max by (instance) (index_shard_merging_running{instance=~`${instance:regex}`})",
 							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerSearchCore,
@@ -351,7 +351,7 @@ func ZoektIndexServer() *monitoring.Container {
 						{
 							Name:        "shard_merging_vacuum_running_per_instance",
 							Description: "if vacuum is running (per instance)",
-							Query:       "max by (instance) (index_vacuum_running)",
+							Query:       "max by (instance) (index_vacuum_running{instance=~`${instance:regex}`})",
 							NoAlert:     true,
 							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerSearchCore,
