@@ -138,11 +138,6 @@ func loadSecrets() error {
 }
 
 func main() {
-	// If we detect SG_FORCE_CONFIGURATION_MODE not being present, force its assignment.
-	// It will only affect `sg` and not the underlying commands which will be spawned with
-	// a standard environment.
-	forceConfigurationMode()
-
 	if err := loadSecrets(); err != nil {
 		fmt.Printf("failed to open secrets: %s\n", err)
 	}
@@ -217,32 +212,4 @@ func fileExists(path string) (bool, error) {
 		return false, err
 	}
 	return true, nil
-}
-
-// We currently cannot override the CONFIGURATION_MODE at runtime, which by
-// default triggers calls to the frontend application and will prevent database calls
-// to succeed unless the frontend is running.
-//
-// This function forces the configuration mode by restarting the current process
-// with an updated environment with the special SG_FORCE_CONFIGURATION_MODE that forces
-// the configuration mode from within the conf package, while enabling `sg` to see the original
-// value so it can be restored in the respective sub commands environments.
-//
-// See https://github.com/sourcegraph/sourcegraph/issues/29222
-// See internal/run/run.go for the code that restore the environment.
-func forceConfigurationMode() {
-	mode, ok := os.LookupEnv("SG_FORCE_CONFIGURATION_MODE")
-	if !ok || mode != "empty" {
-		path, err := os.Executable()
-		if err != nil {
-			panic(err)
-		}
-		overridenEnv := os.Environ()
-		overridenEnv = append(overridenEnv, "SG_FORCE_CONFIGURATION_MODE=empty")
-
-		// Restart `sg` with the new environment.
-		if err := syscall.Exec(path, os.Args, overridenEnv); err != nil {
-			panic(err)
-		}
-	}
 }

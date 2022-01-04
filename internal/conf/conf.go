@@ -5,6 +5,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -54,18 +55,7 @@ const (
 )
 
 func getMode() configurationMode {
-	var mode string
-	if os.Getenv("SG_FORCE_CONFIGURATION_MODE") == "empty" {
-		// If we're  running `sg`, force the configuration mode to empty so `sg`
-		// can make use of the `internal/database` package without configuration
-		// side effects taking place.
-		//
-		// See https://github.com/sourcegraph/sourcegraph/issues/29222.
-		mode = "empty"
-	} else {
-		// If we're not running `sg`, behave normally.
-		mode = os.Getenv("CONFIGURATION_MODE")
-	}
+	mode := os.Getenv("CONFIGURATION_MODE")
 
 	switch mode {
 	case "server":
@@ -75,9 +65,18 @@ func getMode() configurationMode {
 	case "empty":
 		return modeEmpty
 	default:
-		// Detect 'go test' and default to empty mode in that case.
 		p, err := os.Executable()
-		if err == nil && strings.Contains(strings.ToLower(p), "test") {
+		if err == nil && filepath.Base(p) == "sg" {
+			// If we're  running `sg`, force the configuration mode to empty so `sg`
+			// can make use of the `internal/database` package without configuration
+			// side effects taking place.
+			//
+			// See https://github.com/sourcegraph/sourcegraph/issues/29222.
+			return modeEmpty
+		}
+
+		if err == nil && strings.Contains(strings.ToLower(filepath.Base(p)), "test") {
+			// If we detect 'go test', defaults to empty mode in that case.
 			return modeEmpty
 		}
 
