@@ -43,6 +43,8 @@ func getWebIntegrationFileNames() []string {
 func chunkItems(items []string, size int) [][]string {
 	lenItems := len(items)
 	lenChunks := int(math.Ceil(float64(lenItems) / float64(size)))
+	println("lenItems:", lenItems, "lenChunks:", lenChunks)
+
 	chunks := make([][]string, lenChunks)
 
 	for i := 0; i < lenChunks; i++ {
