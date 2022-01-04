@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
+	"github.com/cockroachdb/errors"
 )
 
 func slackMention(slackUserID string) string {
@@ -77,7 +77,7 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 	log.Println("slackBody: ", string(body))
 
 	// Attempt to send a message out to each
-	var errs = &multierror.Error{}
+	var errs error
 	var oneSucceeded bool
 	for _, webhook := range webhooks {
 		if len(webhook) == 0 {
@@ -88,7 +88,7 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 
 		req, err := http.NewRequest(http.MethodPost, webhook, bytes.NewBuffer(body))
 		if err != nil {
-			errs = multierror.Append(errs, fmt.Errorf("%s: NewRequest: %w", webhook, err))
+			errs = errors.CombineErrors(errs, fmt.Errorf("%s: NewRequest: %w", webhook, err))
 			continue
 		}
 		req.Header.Add("Content-Type", "application/json")
@@ -97,7 +97,7 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 		client := &http.Client{Timeout: 10 * time.Second}
 		resp, err := client.Do(req)
 		if err != nil {
-			errs = multierror.Append(errs, fmt.Errorf("%s: client.Do: %w", webhook, err))
+			errs = errors.CombineErrors(errs, fmt.Errorf("%s: client.Do: %w", webhook, err))
 			continue
 		}
 
@@ -105,12 +105,12 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 		buf := new(bytes.Buffer)
 		_, err = buf.ReadFrom(resp.Body)
 		if err != nil {
-			errs = multierror.Append(errs, fmt.Errorf("%s: buf.ReadFrom(resp.Body): %w", webhook, err))
+			errs = errors.CombineErrors(errs, fmt.Errorf("%s: buf.ReadFrom(resp.Body): %w", webhook, err))
 			continue
 		}
 		defer resp.Body.Close()
 		if buf.String() != "ok" {
-			errs = multierror.Append(errs, fmt.Errorf("%s: non-ok response from Slack: %s", webhook, buf.String()))
+			errs = errors.CombineErrors(errs, fmt.Errorf("%s: non-ok response from Slack: %s", webhook, buf.String()))
 			continue
 		}
 
@@ -118,5 +118,5 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 		oneSucceeded = true
 	}
 
-	return oneSucceeded, errs.ErrorOrNil()
+	return oneSucceeded, err
 }
