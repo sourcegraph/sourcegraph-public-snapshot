@@ -5,10 +5,9 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { MockedStoryProvider, MockedStoryProviderProps } from '@sourcegraph/storybook/src/apollo/MockedStoryProvider'
 import { usePrependStyles } from '@sourcegraph/storybook/src/hooks/usePrependStyles'
 import { useTheme } from '@sourcegraph/storybook/src/hooks/useTheme'
+import { Tooltip } from '@sourcegraph/wildcard'
 
 import brandedStyles from '../global-styles/index.scss'
-
-import { Tooltip } from './tooltip/Tooltip'
 
 export interface BrandedProps extends MemoryRouterProps, Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
     children: React.FunctionComponent<ThemeProps>

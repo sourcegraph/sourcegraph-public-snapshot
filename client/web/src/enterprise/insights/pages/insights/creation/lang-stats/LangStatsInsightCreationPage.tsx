@@ -1,8 +1,8 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 
+import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { Page } from '../../../../../../components/Page'

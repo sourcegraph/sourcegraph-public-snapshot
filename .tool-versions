@@ -8,3 +8,4 @@ github-cli 2.0.0
 packer 1.6.6
 trivy 0.20.0
 kustomize 4.0.5
+awscli 2.4.7

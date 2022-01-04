@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/browser'
+import classNames from 'classnames'
 import { trimStart } from 'lodash'
 import { defer, of } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -27,6 +28,7 @@ import { NativeTooltip } from '../shared/nativeTooltips'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
 import { ViewResolver } from '../shared/views'
 
+import styles from './codeHost.module.scss'
 import { markdownBodyViewResolver } from './contentViews'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
@@ -304,7 +306,7 @@ const nativeTooltipResolver: ViewResolver<NativeTooltip> = {
     resolveView: element => ({ element }),
 }
 
-const iconClassName = 'icon--github v-align-text-bottom'
+const iconClassName = classNames(styles.icon, 'v-align-text-bottom')
 
 const notificationClassNames = {
     [NotificationType.Log]: 'flash',
@@ -445,23 +447,25 @@ export const githubCodeHost: CodeHost = {
         selectedListItemClassName: 'navigation-focus',
         listItemClassName:
             'd-flex flex-justify-start flex-items-center p-0 f5 navigation-item js-navigation-item js-jump-to-scoped-search',
-        actionItemClassName:
-            'command-palette-action-item--github no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
+        actionItemClassName: classNames(
+            styles.commandPaletteActionItem,
+            'no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path p-2'
+        ),
         noResultsClassName: 'd-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
         iconClassName,
     },
     codeViewToolbarClassProps: {
-        className: 'code-view-toolbar--github',
-        listItemClass: 'code-view-toolbar__item--github BtnGroup',
-        actionItemClass: 'btn btn-sm tooltipped tooltipped-s BtnGroup-item action-item--github',
+        className: styles.codeViewToolbar,
+        listItemClass: classNames(styles.codeViewToolbarItem, 'BtnGroup'),
+        actionItemClass: classNames('btn btn-sm tooltipped tooltipped-s BtnGroup-item', styles.actionItem),
         actionItemPressedClass: 'selected',
-        actionItemIconClass: 'icon--github v-align-text-bottom',
+        actionItemIconClass: classNames(styles.icon, 'v-align-text-bottom'),
     },
     hoverOverlayClassProps: {
         className: 'Box',
         actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
-        badgeClassName: 'label hover-overlay__badge--github',
+        badgeClassName: classNames('label', styles.hoverOverlayBadge),
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames, 'flash-full'),
         iconClassName,
     },

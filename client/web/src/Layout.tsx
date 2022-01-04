@@ -53,7 +53,6 @@ import {
     PatternTypeProps,
     HomePanelsProps,
     SearchStreamingProps,
-    ParsedSearchQueryProps,
     parseSearchURL,
     SearchContextProps,
     getGlobalSearchContextFilter,
@@ -77,7 +76,6 @@ export interface LayoutProps
         KeyboardShortcutsProps,
         TelemetryProps,
         ActivationProps,
-        ParsedSearchQueryProps,
         PatternTypeProps,
         SearchContextProps,
         HomePanelsProps,
@@ -134,14 +132,12 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchNotebookPage = routeMatch?.startsWith('/search/notebook')
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
-    // Update parsedSearchQuery, patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
+    // Update patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
     const {
         history,
-        parsedSearchQuery: currentQuery,
         patternType: currentPatternType,
         selectedSearchContextSpec,
         location,
-        setParsedSearchQuery,
         setPatternType,
         setSelectedSearchContextSpec,
     } = props
@@ -153,10 +149,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const searchContextSpec = useMemo(() => getGlobalSearchContextFilter(query)?.spec, [query])
 
     useEffect(() => {
-        if (query !== currentQuery) {
-            setParsedSearchQuery(query)
-        }
-
         // Only override filters from URL if there is a search query
         if (query) {
             if (patternType && patternType !== currentPatternType) {
@@ -170,11 +162,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     }, [
         history,
         currentPatternType,
-        currentQuery,
         selectedSearchContextSpec,
         patternType,
         query,
-        setParsedSearchQuery,
         setPatternType,
         setSelectedSearchContextSpec,
         searchContextSpec,
@@ -223,6 +213,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         ...breadcrumbProps,
         onExtensionAlertDismissed,
         isMacPlatform,
+        parsedSearchQuery: query,
     }
 
     return (
@@ -237,6 +228,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <GlobalNavbar
                     {...props}
                     {...themeProps}
+                    parsedSearchQuery={query}
                     authRequired={!!authRequired}
                     showSearchBox={
                         isSearchRelatedPage &&

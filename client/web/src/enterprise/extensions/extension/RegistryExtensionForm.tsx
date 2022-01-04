@@ -1,8 +1,8 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../../../components/alerts'
 import {

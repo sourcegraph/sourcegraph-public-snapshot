@@ -1,10 +1,10 @@
 import { useContext, useEffect, useState } from 'react'
 
+import { asError, ErrorLike } from '@sourcegraph/common'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isFilterType, isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
-import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { dedupeWhitespace } from '@sourcegraph/shared/src/util/strings'
 
 import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'

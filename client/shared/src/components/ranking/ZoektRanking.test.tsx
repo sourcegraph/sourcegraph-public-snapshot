@@ -40,6 +40,76 @@ describe('ZoektRanking', () => {
                 },
                 "startLine": 0,
               },
+              Object {
+                "endLine": 10,
+                "matches": Array [
+                  Object {
+                    "character": 2,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 8,
+                  },
+                ],
+                "position": Object {
+                  "character": 3,
+                  "line": 9,
+                },
+                "startLine": 7,
+              },
+              Object {
+                "endLine": 16,
+                "matches": Array [
+                  Object {
+                    "character": 19,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 14,
+                  },
+                ],
+                "position": Object {
+                  "character": 20,
+                  "line": 15,
+                },
+                "startLine": 13,
+              },
+              Object {
+                "endLine": 22,
+                "matches": Array [
+                  Object {
+                    "character": 11,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 20,
+                  },
+                ],
+                "position": Object {
+                  "character": 12,
+                  "line": 21,
+                },
+                "startLine": 19,
+              },
+              Object {
+                "endLine": 26,
+                "matches": Array [
+                  Object {
+                    "character": 8,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 24,
+                  },
+                  Object {
+                    "character": 19,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 24,
+                  },
+                ],
+                "position": Object {
+                  "character": 9,
+                  "line": 25,
+                },
+                "startLine": 23,
+              },
             ]
         `)
     })
@@ -47,7 +117,7 @@ describe('ZoektRanking', () => {
         // reverse the data to demonstrate that zoekt-ranking does not sort the
         // results by line number, it preserves the original sort from the
         // server.
-        const dataReversed = [...testDataRealMatches].reverse().slice(0, 3)
+        const dataReversed = [...testDataRealMatches].reverse().slice(0, 6)
         expect(ranking.expandedResults(dataReversed, 1).grouped).toMatchInlineSnapshot(`
             Array [
               Object {
@@ -76,6 +146,24 @@ describe('ZoektRanking', () => {
                 "endLine": 174,
                 "matches": Array [
                   Object {
+                    "character": 16,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 171,
+                  },
+                  Object {
+                    "character": 30,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 171,
+                  },
+                  Object {
+                    "character": 41,
+                    "highlightLength": 5,
+                    "isInContext": false,
+                    "line": 171,
+                  },
+                  Object {
                     "character": 10,
                     "highlightLength": 5,
                     "isInContext": false,
@@ -83,10 +171,10 @@ describe('ZoektRanking', () => {
                   },
                 ],
                 "position": Object {
-                  "character": 11,
-                  "line": 173,
+                  "character": 17,
+                  "line": 172,
                 },
-                "startLine": 171,
+                "startLine": 170,
               },
             ]
         `)

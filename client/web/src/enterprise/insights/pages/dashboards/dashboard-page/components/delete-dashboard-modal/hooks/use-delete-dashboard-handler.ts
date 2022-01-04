@@ -1,6 +1,6 @@
 import { useContext, useState } from 'react'
 
-import { ErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike, asError } from '@sourcegraph/common'
 
 import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
 import { CustomInsightDashboard } from '../../../../../../core/types'

@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/browser'
+import classNames from 'classnames'
 import { Omit } from 'utility-types'
 
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -12,6 +13,7 @@ import { createNotificationClassNameGetter } from '../shared/getNotificationClas
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
 import { queryWithSelector, ViewResolver } from '../shared/views'
 
+import styles from './codeHost.module.scss'
 import { diffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './fileInfo'
@@ -220,7 +222,7 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
     },
     notificationClassNames,
     commandPaletteClassProps: {
-        popoverClassName: 'dropdown-menu command-list-popover--gitlab',
+        popoverClassName: classNames('dropdown-menu', styles.commandListPopover),
         formClassName: 'dropdown-input',
         inputClassName: 'dropdown-input-field',
         resultsContainerClassName: 'dropdown-content',
@@ -229,13 +231,13 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         iconClassName: 's16 align-bottom',
     },
     codeViewToolbarClassProps: {
-        className: 'code-view-toolbar--gitlab',
-        actionItemClass: 'btn btn-sm btn-secondary ml-2 action-item--gitlab',
+        className: styles.codeViewToolbar,
+        actionItemClass: 'btn btn-sm btn-secondary ml-2',
         actionItemPressedClass: 'active',
     },
     hoverOverlayClassProps: {
-        className: 'card hover-overlay--gitlab',
-        actionItemClassName: 'btn btn-secondary action-item--gitlab',
+        className: classNames('card', styles.hoverOverlay),
+        actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
         iconClassName: 'square s16',
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames),

@@ -84,8 +84,6 @@ extend type Query {
     isSearchContextAvailable(spec: String!): Boolean!
 }
 
-extend union SearchSuggestion = SearchContext
-
 """
 A search context. Specifies a set of repositories to be searched.
 """

@@ -1,0 +1,13 @@
+.error {
+    > hr {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        border-color: #93a9c8;
+    }
+
+    &-text {
+        margin-top: 1rem;
+        background-color: #233043;
+        padding: 1rem;
+    }
+}

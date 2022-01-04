@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/google/zoekt"
@@ -253,26 +252,6 @@ var testSearchGQLQuery = `
 		}
 `
 
-func testStringResult(result SearchSuggestionResolver) string {
-	var name string
-	switch r := result.(type) {
-	case repositorySuggestionResolver:
-		name = "repo:" + r.repo.Name()
-	case gitTreeSuggestionResolver:
-		name = "file:" + r.gitTreeEntry.Path()
-	case languageSuggestionResolver:
-		name = "lang:" + r.lang.name
-	case symbolSuggestionResolver:
-		name = "symbol:" + r.symbol.Symbol.Name
-	default:
-		panic("never here")
-	}
-	if result.Score() == 0 {
-		return "<removed>"
-	}
-	return name
-}
-
 func TestDetectSearchType(t *testing.T) {
 	typeRegexp := "regexp"
 	typeLiteral := "literal"
@@ -411,9 +390,7 @@ func BenchmarkSearchResults(b *testing.B) {
 				Query:        plan.ToParseTree(),
 				UserSettings: &schema.Settings{},
 			},
-			zoekt:    z,
-			reposMu:  &sync.Mutex{},
-			resolved: &searchrepos.Resolved{},
+			zoekt: z,
 		}
 		results, err := resolver.Results(ctx)
 		if err != nil {

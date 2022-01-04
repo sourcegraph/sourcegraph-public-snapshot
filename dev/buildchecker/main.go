@@ -10,11 +10,13 @@ import (
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/google/go-github/v41/github"
+	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
 )
 
 func main() {
 	var (
+<<<<<<< HEAD
 		ctx                   = context.Background()
 		buildkiteToken        string
 		githubToken           string
@@ -24,12 +26,28 @@ func main() {
 		branch                string
 		threshold             int
 		timeoutMins           int
+=======
+		ctx            = context.Background()
+		buildkiteToken string
+		githubToken    string
+		slackToken     string
+		slackWebhook   string
+		pipeline       string
+		branch         string
+		threshold      int
+		timeoutMins    int
+>>>>>>> 3ea417d11119985e1d9b4b7dc4e8e91bf6624a6b
 	)
 
 	flag.StringVar(&buildkiteToken, "buildkite.token", "", "mandatory buildkite token")
 	flag.StringVar(&githubToken, "github.token", "", "mandatory github token")
+<<<<<<< HEAD
 	flag.StringVar(&slackAnnounceWebhooks, "slack.announce-webhook", "", "Slack Webhook URL to post the results on (comma-delimited for multiple values)")
 	flag.StringVar(&slackDebugWebhook, "slack.debug-webhook", "", "Slack Webhook URL to post debug results on")
+=======
+	flag.StringVar(&slackToken, "slack.token", "", "mandatory slack api token")
+	flag.StringVar(&slackWebhook, "slack.webhook", "", "Slack Webhook URL to post the results on")
+>>>>>>> 3ea417d11119985e1d9b4b7dc4e8e91bf6624a6b
 	flag.StringVar(&pipeline, "pipeline", "sourcegraph", "name of the pipeline to inspect")
 	flag.StringVar(&branch, "branch", "main", "name of the branch to inspect")
 	flag.IntVar(&threshold, "failures.threshold", 3, "failures required to trigger an incident")
@@ -48,9 +66,13 @@ func main() {
 		&oauth2.Token{AccessToken: githubToken},
 	)))
 
+	// Slack client
+	slc := slack.New(slackToken)
+
 	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
 	builds, _, err := bkc.Builds.ListByPipeline("sourcegraph", pipeline, &buildkite.BuildsListOptions{
-		Branch: branch,
+		// Branch: branch,
+		Branch: "main",
 		// Fix to high page size just in case, default is 30
 		// https://buildkite.com/docs/apis/rest-api#pagination
 		ListOptions: buildkite.ListOptions{PerPage: 99},
@@ -67,6 +89,7 @@ func main() {
 	results, err := CheckBuilds(
 		ctx,
 		NewBranchLocker(ghc, "sourcegraph", "sourcegraph", branch),
+		NewGithubSlackUserResolver(ghc, slc, "sourcegraph", "sourcegraph"),
 		builds,
 		opts,
 	)

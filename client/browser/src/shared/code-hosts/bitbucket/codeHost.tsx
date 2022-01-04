@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { of } from 'rxjs'
 import { Omit } from 'utility-types'
 
@@ -11,6 +12,7 @@ import { CodeView, DOMFunctions } from '../shared/codeViews'
 import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
 import { ViewResolver } from '../shared/views'
 
+import styles from './codeHost.module.scss'
 import { getContext } from './context'
 import { diffDOMFunctions, newDiffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import {
@@ -42,7 +44,7 @@ export const getToolbarMount = (
     const mount = document.createElement('div')
     mount.classList.add('btn-group')
     mount.classList.add('sg-toolbar-mount')
-    mount.classList.add('sg-toolbar-mount-bitbucket-server')
+    mount.classList.add(styles.sgToolbarMount)
 
     fileActions.prepend(mount)
 
@@ -167,8 +169,8 @@ const diffCodeViewResolver: ViewResolver<CodeView> = {
 }
 
 const newDiffToolbarButtonProps = {
-    listItemClass: 'action-nav-item--bitbucket-server-new-diff',
-    actionItemClass: 'action-item--bitbucket-server-new-diff',
+    listItemClass: styles.actionNavItemNewDiff,
+    actionItemClass: styles.actionItemNewDiff,
 }
 
 /**
@@ -187,7 +189,7 @@ const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTMLElemen
     if (!headerElement) {
         return null
     }
-    const classNames = ['command-palette-button', 'command-palette-button--bitbucket-server']
+    const classNames = ['command-palette-button', styles.commandPaletteButton]
     const create = (): HTMLElement => {
         const mount = document.createElement('li')
         mount.className = classNames.join(' ')
@@ -209,7 +211,7 @@ function getViewContextOnSourcegraphMount(container: HTMLElement): HTMLElement |
     }
     const mount = document.createElement('span')
     mount.id = 'open-on-sourcegraph'
-    mount.className = 'open-on-sourcegraph--bitbucket-server'
+    mount.className = styles.openOnSourcegraph
     branchSelectorButtons.append(mount)
     return mount
 }
@@ -236,13 +238,17 @@ export const bitbucketServerCodeHost: CodeHost = {
     getCommandPaletteMount,
     notificationClassNames,
     commandPaletteClassProps: {
-        buttonClassName:
-            'command-list-popover-button--bitbucket-server aui-alignment-target aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left',
+        buttonClassName: classNames(
+            styles.commandListPopoverButton,
+            'aui-alignment-target aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left'
+        ),
         buttonElement: 'a',
         buttonOpenClassName: 'aui-dropdown2-active active aui-alignment-enabled',
         showCaret: false,
-        popoverClassName:
-            'command-palette-popover--bitbucket-server aui-dropdown2 aui-style-default aui-layer aui-dropdown2-in-header aui-alignment-element aui-alignment-side-bottom aui-alignment-snap-left aui-alignment-enabled aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left',
+        popoverClassName: classNames(
+            styles.commandPalettePopover,
+            'aui-dropdown2 aui-style-default aui-layer aui-dropdown2-in-header aui-alignment-element aui-alignment-side-bottom aui-alignment-snap-left aui-alignment-enabled aui-alignment-abutted aui-alignment-abutted-left aui-alignment-element-attached-top aui-alignment-element-attached-left aui-alignment-target-attached-bottom aui-alignment-target-attached-left'
+        ),
         popoverInnerClassName: 'aui-dropdown2-section',
         formClassName: 'aui',
         inputClassName: 'text',
@@ -250,19 +256,19 @@ export const bitbucketServerCodeHost: CodeHost = {
         listClassName: 'results-list',
         listItemClassName: 'result',
         selectedListItemClassName: 'focused',
-        noResultsClassName: 'no-results',
+        noResultsClassName: styles.noResults,
         iconClassName,
     },
     codeViewToolbarClassProps: {
-        className: 'code-view-toolbar--bitbucket aui-buttons',
-        actionItemClass: 'aui-button action-item--bitbucket-server',
+        className: classNames(styles.codeViewToolbar, 'aui-buttons'),
+        actionItemClass: 'aui-button',
         // actionItemPressedClass is not needed because Bitbucket applies styling to aria-pressed="true"
         actionItemIconClass: 'aui-icon',
-        listItemClass: 'action-nav-item--bitbucket',
+        listItemClass: styles.actionNavItem,
     },
     hoverOverlayClassProps: {
         className: 'aui-dialog',
-        actionItemClassName: 'aui-button hover-action-item--bitbucket-server',
+        actionItemClassName: classNames('aui-button', styles.hoverActionItem),
         getAlertClassName: createNotificationClassNameGetter(notificationClassNames),
         iconClassName,
     },

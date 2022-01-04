@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ORG_DISPLAY_NAME_MAX_LENGTH } from '../..'

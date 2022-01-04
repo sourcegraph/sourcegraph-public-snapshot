@@ -5,6 +5,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
+import { createAggregateError, ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import {
     ConfiguredRegistryExtension,
@@ -17,7 +18,6 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { createAggregateError, ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../../auth'
 import { queryGraphQL } from '../../backend/graphql'

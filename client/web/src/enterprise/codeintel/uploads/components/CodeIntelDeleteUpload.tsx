@@ -1,8 +1,8 @@
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import React, { FunctionComponent } from 'react'
 
+import { ErrorLike } from '@sourcegraph/common'
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Button } from '@sourcegraph/wildcard'
 
 export interface CodeIntelDeleteUploadProps {
