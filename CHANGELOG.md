@@ -33,7 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Skipped migrations caused existing Code Insights to not appear. [#29392](https://github.com/sourcegraph/sourcegraph/pull/29392) [#29395](https://github.com/sourcegraph/sourcegraph/pull/29395)
+- Skipped migrations caused existing Code Insights to not appear. [#29395](https://github.com/sourcegraph/sourcegraph/pull/29395)
 
 ## 3.35.0
 
