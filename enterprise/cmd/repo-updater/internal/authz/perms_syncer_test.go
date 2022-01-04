@@ -142,12 +142,14 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	externalServices.ListFunc.SetDefaultReturn([]*types.ExternalService{extService}, nil)
 
 	userEmails := database.NewMockUserEmailsStore()
+	externalAccounts := database.NewMockUserExternalAccountsStore()
 
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 
 	edb.Mocks.Perms.ListExternalAccounts = func(context.Context, int32) ([]*extsvc.Account, error) {
 		return []*extsvc.Account{&extAccount}, nil
@@ -242,12 +244,14 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 	})
 
 	userEmails := database.NewMockUserEmailsStore()
+	externalAccounts := database.NewMockUserExternalAccountsStore()
 
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 
 	edb.Mocks.Perms.ListExternalAccounts = func(context.Context, int32) ([]*extsvc.Account, error) {
 		return []*extsvc.Account{&extAccount}, nil
