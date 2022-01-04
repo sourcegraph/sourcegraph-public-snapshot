@@ -7,7 +7,6 @@ import (
 )
 
 type MockUsers struct {
-	GetByUsername        func(ctx context.Context, username string) (*types.User, error)
 	GetByCurrentAuthUser func(ctx context.Context) (*types.User, error)
 	Count                func(ctx context.Context, opt *UsersListOptions) (int, error)
 }

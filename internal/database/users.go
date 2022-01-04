@@ -684,9 +684,6 @@ func (u *userStore) GetByVerifiedEmail(ctx context.Context, email string) (*type
 }
 
 func (u *userStore) GetByUsername(ctx context.Context, username string) (*types.User, error) {
-	if Mocks.Users.GetByUsername != nil {
-		return Mocks.Users.GetByUsername(ctx, username)
-	}
 	return u.getOneBySQL(ctx, sqlf.Sprintf("WHERE u.username=%s AND u.deleted_at IS NULL LIMIT 1", username))
 }
 
