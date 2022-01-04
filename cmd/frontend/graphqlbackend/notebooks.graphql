@@ -8,6 +8,81 @@ extend type Mutation {
         """
         notebook: NotebookInput!
     ): Notebook!
+    """
+    Update a notebook. Only the owner can update it.
+    """
+    updateNotebook(
+        """
+        Notebook ID.
+        """
+        id: ID!
+        """
+        Notebook input.
+        """
+        notebook: NotebookInput!
+    ): Notebook!
+    """
+    Delete a notebook. Only the owner can delete it.
+    """
+    deleteNotebook(id: ID!): EmptyResponse!
+}
+
+extend type Query {
+    """
+    All available notebooks.
+    """
+    notebooks(
+        """
+        Returns the first n notebooks from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+        """
+        Query to filter notebooks by title and blocks content.
+        """
+        query: String
+        """
+        Limit notebooks made by a single creator.
+        """
+        creatorUserID: ID
+        """
+        Sort field.
+        """
+        orderBy: NotebooksOrderBy = NOTEBOOK_UPDATED_AT
+        """
+        Sort direction.
+        """
+        descending: Boolean = false
+    ): NotebookConnection!
+}
+
+"""
+A paginated list of notebooks.
+"""
+type NotebookConnection {
+    """
+    A list of notebooks.
+    """
+    nodes: [Notebook!]!
+    """
+    The total number of notebooks in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+NotebooksOrderBy enumerates the ways notebooks can be ordered.
+"""
+enum NotebooksOrderBy {
+    NOTEBOOK_UPDATED_AT
+    NOTEBOOK_CREATED_AT
 }
 
 """
