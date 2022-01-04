@@ -326,11 +326,13 @@
   },
   "dependencies": {
     "@apollo/client": "3.4.7",
+    "@floating-ui/react-dom": "^0.3.3",
     "@reach/accordion": "^0.10.2",
     "@reach/combobox": "^0.15.2",
     "@reach/dialog": "^0.11.2",
     "@reach/listbox": "^0.10.1",
     "@reach/menu-button": "^0.16.1",
+    "@reach/popover": "^0.16.2",
     "@reach/tabs": "^0.13.0",
     "@reach/visually-hidden": "^0.15.2",
     "@sentry/browser": "^6.13.2",

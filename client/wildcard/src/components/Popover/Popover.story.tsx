@@ -21,6 +21,8 @@ export default config
 
 export const PopoverExample: Story = () => {
     const buttonReference = useRef<HTMLButtonElement>(null)
+    const popoverReference = useRef<HTMLButtonElement>(null)
+
     const [isVisible, setVisibility] = useState(true)
 
     return (

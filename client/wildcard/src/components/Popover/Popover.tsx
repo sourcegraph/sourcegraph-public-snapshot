@@ -1,4 +1,5 @@
-import ReachPopover, { Position, positionDefault } from '@reach/popover'
+import { useFloating, arrow } from '@floating-ui/react-dom'
+import ReachPopover, { Position, positionMatchWidth } from '@reach/popover'
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import FocusLock from 'react-focus-lock'
@@ -15,12 +16,19 @@ interface PopoverProps extends React.HTMLAttributes<HTMLDivElement> {
     className?: string
 }
 
+/**
+ * The Popover component is a wrapper around the Reach Popover component.
+ * It should be used to display contextual information and should be triggered through an action (such as a button click).
+ *
+ * This component an be controlled or uncontrolled. This is determined by the consumer providing the `isOpen` prop.
+ * Note: You will likely want to position the Popover differently for your use case. Please see the `position` prop for this.
+ */
 export const Popover: React.FunctionComponent<PopoverProps> = props => {
     const {
         isOpen,
         target,
         positionTarget = target,
-        position = positionDefault,
+        position = positionMatchWidth,
         children,
         className,
         onVisibilityChange,
@@ -28,12 +36,17 @@ export const Popover: React.FunctionComponent<PopoverProps> = props => {
     } = props
 
     const isControlledReference = useRef(isOpen !== undefined)
-    const popoverReference = useRef<HTMLDivElement>(null)
+    const popoverReference = useRef<HTMLDivElement>()
 
     // Local popover visibility state is used if popover component is used
     // in stateful controlled mode.
     const [isOpenInternal, setOpenInternalState] = useState(false)
     const isPopoverVisible = isControlledReference.current ? isOpen : isOpenInternal
+
+    const test = target.current ? target : undefined
+
+    const positionFloating = useFloating({ middleware: [arrow({ element: test })] })
+    console.log('positionFloating', positionFloating)
 
     const setPopoverVisibility = useCallback(
         (state: boolean): void => {
