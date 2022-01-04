@@ -23,7 +23,7 @@ export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> 
     <div className={classNames('py-3 d-flex align-items-center', styles.searchContextNode)}>
         <div className={classNames('flex-grow-1', styles.left)}>
             <div>
-                <Link to={(node.query && `/contexts/${node.spec}/edit`) || `/contexts/${node.spec}`}>
+                <Link to={`/contexts/${node.spec}`}>
                     <strong>{node.spec}</strong>
                 </Link>
                 {!node.public && (
