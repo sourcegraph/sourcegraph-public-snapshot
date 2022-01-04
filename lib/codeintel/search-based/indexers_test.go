@@ -169,9 +169,7 @@ func testIndexer(env goldenEnv, relativePath string, t *testing.T) {
 		}
 	} else {
 		expectedGolden, err := os.ReadFile(goldenPath)
-		if err != nil {
-			t.Fatalf("os.ReadFile failed, relativePath %v, err %v", goldenPath, err)
-		}
+		isMissingGoldenFile := err != nil
 		edits := myers.ComputeEdits(span.URIFromPath(goldenPath), string(expectedGolden), obtainedGolden)
 		if len(edits) > 0 {
 			diff := fmt.Sprint(gotextdiff.ToUnified(
@@ -181,6 +179,9 @@ func testIndexer(env goldenEnv, relativePath string, t *testing.T) {
 				edits,
 			))
 			t.Fatalf("\n" + diff)
+		}
+		if isMissingGoldenFile {
+			t.Fatalf("missing golden output file. To fix this problem run the command:\n  go test -v github.com/sourcegraph/sourcegraph/lib/codeintel/search-based -update")
 		}
 	}
 }
