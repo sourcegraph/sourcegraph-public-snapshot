@@ -73,14 +73,16 @@ func TestQueryToGitQuery(t *testing.T) {
 }
 
 func TestExpandUsernamesToEmails(t *testing.T) {
-	resetMocks()
-	database.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
+	users := database.NewStrictMockUserStore()
+	users.GetByUsernameFunc.SetDefaultHook(func(_ context.Context, username string) (*types.User, error) {
 		if want := "alice"; username != want {
 			t.Errorf("got %q, want %q", username, want)
 		}
 		return &types.User{ID: 123}, nil
-	}
-	database.Mocks.UserEmails.ListByUser = func(_ context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+	})
+
+	userEmails := database.NewStrictMockUserEmailsStore()
+	userEmails.ListByUserFunc.SetDefaultHook(func(_ context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		if want := int32(123); opt.UserID != want {
 			t.Errorf("got %v, want %v", opt.UserID, want)
 		}
@@ -89,9 +91,13 @@ func TestExpandUsernamesToEmails(t *testing.T) {
 			{Email: "alice@example.com", VerifiedAt: &t},
 			{Email: "alice@example.org", VerifiedAt: &t},
 		}, nil
-	}
+	})
 
-	x, err := expandUsernamesToEmails(context.Background(), nil, []string{"foo", "@alice"})
+	db := database.NewStrictMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+
+	x, err := expandUsernamesToEmails(context.Background(), db, []string{"foo", "@alice"})
 	if err != nil {
 		t.Fatal(err)
 	}
