@@ -33,7 +33,7 @@ type Stats struct {
 	IsIndexUnavailable bool
 }
 
-// update updates c with the other data, deduping as necessary. It modifies c but
+// Update updates c with the other data, deduping as necessary. It modifies c but
 // does not modify other.
 func (c *Stats) Update(other *Stats) {
 	if other == nil {

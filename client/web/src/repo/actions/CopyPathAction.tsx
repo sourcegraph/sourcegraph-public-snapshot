@@ -4,7 +4,7 @@ import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import React, { useState, useLayoutEffect } from 'react'
 import { useLocation } from 'react-router'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
+import { TooltipController } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { parseBrowserRepoURL } from '../../util/url'
@@ -19,7 +19,7 @@ export const CopyPathAction: React.FunctionComponent = () => {
     const [copied, setCopied] = useState(false)
 
     useLayoutEffect(() => {
-        Tooltip.forceUpdate()
+        TooltipController.forceUpdate()
     }, [copied])
 
     const onClick = (event: React.MouseEvent<HTMLButtonElement>): void => {

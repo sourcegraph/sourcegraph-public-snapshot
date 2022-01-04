@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -42,8 +42,8 @@ func TestParsePercent(t *testing.T) {
 
 func TestGetVCSSyncer(t *testing.T) {
 	repo := api.RepoName("foo/bar")
-	extsvcStore := dbmock.NewMockExternalServiceStore()
-	repoStore := dbmock.NewMockRepoStore()
+	extsvcStore := database.NewMockExternalServiceStore()
+	repoStore := database.NewMockRepoStore()
 	codeIntelDB := new(codeinteldbstore.Store)
 
 	repoStore.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (*types.Repo, error) {

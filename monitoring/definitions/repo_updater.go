@@ -132,10 +132,10 @@ func RepoUpdater() *monitoring.Container {
 							Description: "total number of user added repos",
 							Query:       `max(src_repoupdater_user_repos_total)`,
 							// 90% of our enforced limit
-							Critical:          monitoring.Alert().GreaterOrEqual(200000*0.9, nil).For(5 * time.Minute),
+							Critical:          monitoring.Alert().GreaterOrEqual(400000*0.9, nil).For(5 * time.Minute),
 							Panel:             monitoring.Panel().Unit(monitoring.Number),
 							Owner:             monitoring.ObservableOwnerCoreApplication,
-							PossibleSolutions: "Check for unusual spikes in user added repos. Each user is only allowed to add 2000",
+							PossibleSolutions: "Check for unusual spikes in user added repos. Each user is only allowed to add 2000 and we have a site wide limit of 400k.",
 						},
 					},
 					{

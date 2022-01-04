@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
 const (
@@ -63,6 +64,10 @@ func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 			return r.ConfigurationPolicyByID(ctx, id)
 		},
 	}
+}
+
+func (r *Resolver) ExecutorResolver() executor.Resolver {
+	return r.resolver.ExecutorResolver()
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetUploadByID
@@ -327,9 +332,11 @@ func (r *Resolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (
 
 // 🚨 SECURITY: dbstore layer handles authz for GetConfigurationPolicies
 func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, args *gql.CodeIntelligenceConfigurationPoliciesArgs) (_ gql.CodeIntelligenceConfigurationPolicyConnectionResolver, err error) {
-	ctx, traceErrs, endObservation := r.observationContext.configurationPolicies.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(*args.Repository)),
-	}})
+	fields := []log.Field{}
+	if args.Repository != nil {
+		fields = append(fields, log.String("repoID", string(*args.Repository)))
+	}
+	ctx, traceErrs, endObservation := r.observationContext.configurationPolicies.WithErrors(ctx, &err, observation.Args{LogFields: fields})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	offset, err := graphqlutil.DecodeIntCursor(args.After)

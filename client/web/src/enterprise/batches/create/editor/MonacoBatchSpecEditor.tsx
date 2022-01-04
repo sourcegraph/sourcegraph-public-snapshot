@@ -23,6 +23,7 @@ interface JSONSchema {
 
 export interface Props extends ThemeProps {
     className?: string
+    batchChangeName: string
     value: string | undefined
     onChange?: (newValue: string) => void
     readOnly?: boolean | undefined
@@ -112,7 +113,7 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
     private onDidEditorMount(): void {
         const monaco = this.monaco!
 
-        setDiagnosticsOptions(monaco)
+        setDiagnosticsOptions(monaco, this.props.batchChangeName)
 
         // Only listen to 1 event each to avoid receiving events from other Monaco editors on the
         // same page (if there are multiple).
@@ -143,13 +144,17 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
     }
 }
 
-function setDiagnosticsOptions(editor: typeof monaco): void {
-    const schemaWithoutEnvironmentForwarding = cloneDeep(batchSpecSchemaJSON)
+function setDiagnosticsOptions(editor: typeof monaco, batchChangeName: string): void {
+    const schema = cloneDeep(batchSpecSchemaJSON)
     // We don't allow env forwarding in src-cli so we remove it from the schema
     // so that monaco can show the error inline.
-    schemaWithoutEnvironmentForwarding.properties.steps.items.properties.env.oneOf[2].items!.oneOf = schemaWithoutEnvironmentForwarding.properties.steps.items.properties.env.oneOf[2].items!.oneOf.filter(
+    schema.properties.steps.items.properties.env.oneOf[2].items!.oneOf = schema.properties.steps.items.properties.env.oneOf[2].items!.oneOf.filter(
         type => type.type !== 'string'
     )
+
+    // Enforce the exact name match. The user must use the settings UI to change the name.
+    schema.properties.name.pattern = `^${batchChangeName}$`
+
     editor.languages.yaml.yamlDefaults.setDiagnosticsOptions({
         validate: true,
         isKubernetes: false,
@@ -159,7 +164,7 @@ function setDiagnosticsOptions(editor: typeof monaco): void {
         schemas: [
             {
                 uri: 'file:///root',
-                schema: schemaWithoutEnvironmentForwarding as JSONSchema,
+                schema: schema as JSONSchema,
                 fileMatch: ['*'],
             },
         ],

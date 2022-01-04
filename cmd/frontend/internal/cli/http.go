@@ -118,12 +118,14 @@ func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntel
 	internalMux := http.NewServeMux()
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
 		actor.HTTPMiddleware(
-			internalhttpapi.NewInternalHandler(
-				router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
-				db,
-				schema,
-				newCodeIntelUploadHandler,
-				rateLimitWatcher,
+			featureflag.Middleware(database.FeatureFlags(db),
+				internalhttpapi.NewInternalHandler(
+					router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
+					db,
+					schema,
+					newCodeIntelUploadHandler,
+					rateLimitWatcher,
+				),
 			),
 		),
 	))

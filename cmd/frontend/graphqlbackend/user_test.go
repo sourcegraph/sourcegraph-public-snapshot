@@ -14,13 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestUser(t *testing.T) {
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	t.Run("by username", func(t *testing.T) {
 		checkUserByUsername := func(t *testing.T) {
 			t.Helper()
@@ -45,7 +44,7 @@ func TestUser(t *testing.T) {
 			})
 		}
 
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByUsernameFunc.SetDefaultHook(func(ctx context.Context, username string) (*types.User, error) {
 			assert.Equal(t, "alice", username)
 			return &types.User{ID: 1, Username: "alice"}, nil
@@ -66,7 +65,7 @@ func TestUser(t *testing.T) {
 	})
 
 	t.Run("by email", func(t *testing.T) {
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByVerifiedEmailFunc.SetDefaultHook(func(ctx context.Context, email string) (*types.User, error) {
 			assert.Equal(t, "alice@example.com", email)
 			return &types.User{ID: 1, Username: "alice"}, nil
@@ -137,7 +136,7 @@ func TestUser(t *testing.T) {
 }
 
 func TestUser_Email(t *testing.T) {
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
 		orig := envvar.SourcegraphDotComMode()
 		envvar.MockSourcegraphDotComMode(true)
@@ -151,9 +150,9 @@ func TestUser_Email(t *testing.T) {
 }
 
 func TestUser_LatestSettings(t *testing.T) {
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		orig := envvar.SourcegraphDotComMode()
@@ -205,9 +204,9 @@ func TestUser_LatestSettings(t *testing.T) {
 }
 
 func TestUser_ViewerCanAdminister(t *testing.T) {
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		orig := envvar.SourcegraphDotComMode()
@@ -257,10 +256,10 @@ func TestUser_ViewerCanAdminister(t *testing.T) {
 }
 
 func TestNode_User(t *testing.T) {
-	users := dbmock.NewMockUserStore()
+	users := database.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1, Username: "alice"}, nil)
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	RunTests(t, []*Test{
@@ -289,10 +288,10 @@ func TestNode_User(t *testing.T) {
 }
 
 func TestUpdateUser(t *testing.T) {
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 
 	t.Run("not site admin nor the same user", func(t *testing.T) {
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 			return &types.User{
 				ID:       id,
@@ -318,7 +317,7 @@ func TestUpdateUser(t *testing.T) {
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(orig)
 
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -342,7 +341,7 @@ func TestUpdateUser(t *testing.T) {
 		})
 		defer conf.Mock(nil)
 
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 			return &types.User{ID: id}, nil
 		})
@@ -376,7 +375,7 @@ func TestUpdateUser(t *testing.T) {
 			DisplayName: "alice-updated",
 			AvatarURL:   "http://www.example.com/alice-updated",
 		}
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(mockUser, nil)
 		users.UpdateFunc.SetDefaultReturn(nil)
@@ -411,7 +410,7 @@ func TestUpdateUser(t *testing.T) {
 	})
 
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		orig := envvar.SourcegraphDotComMode()
@@ -467,7 +466,7 @@ func TestUpdateUser(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 			return &types.User{
 				ID:       id,
@@ -504,7 +503,7 @@ func TestUpdateUser(t *testing.T) {
 }
 
 func TestUser_Organizations(t *testing.T) {
-	users := dbmock.NewMockUserStore()
+	users := database.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 		// Set up a mock set of users, consisting of two regular users and one site admin.
 		knownUsers := map[int32]*types.User{
@@ -530,7 +529,7 @@ func TestUser_Organizations(t *testing.T) {
 		return users.GetByID(ctx, actor.FromContext(ctx).UID)
 	})
 
-	orgs := dbmock.NewMockOrgStore()
+	orgs := database.NewMockOrgStore()
 	orgs.GetByUserIDFunc.SetDefaultHook(func(_ context.Context, userID int32) ([]*types.Org, error) {
 		if want := int32(1); userID != want {
 			t.Errorf("got %q, want %q", userID, want)
@@ -543,7 +542,7 @@ func TestUser_Organizations(t *testing.T) {
 		}, nil
 	})
 
-	db := dbmock.NewMockDB()
+	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgsFunc.SetDefaultReturn(orgs)
 

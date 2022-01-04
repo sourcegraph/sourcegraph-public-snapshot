@@ -30,7 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func cleanupPermsTables(t *testing.T, s *PermsStore) {
+func cleanupPermsTables(t *testing.T, s *permsStore) {
 	if t.Failed() {
 		return
 	}
@@ -69,7 +69,7 @@ func clock() time.Time {
 func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Run("no matching", func(t *testing.T) {
-			s := Perms(db, clock)
+			s := perms(db, clock)
 			t.Cleanup(func() {
 				cleanupPermsTables(t, s)
 			})
@@ -96,7 +96,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("found matching", func(t *testing.T) {
-			s := Perms(db, clock)
+			s := perms(db, clock)
 			t.Cleanup(func() {
 				cleanupPermsTables(t, s)
 			})
@@ -127,7 +127,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("add and change", func(t *testing.T) {
-			s := Perms(db, clock)
+			s := perms(db, clock)
 			t.Cleanup(func() {
 				cleanupPermsTables(t, s)
 			})
@@ -201,7 +201,7 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Run("no matching", func(t *testing.T) {
-			s := Perms(db, time.Now)
+			s := perms(db, time.Now)
 			t.Cleanup(func() {
 				cleanupPermsTables(t, s)
 			})
@@ -228,7 +228,7 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("found matching", func(t *testing.T) {
-			s := Perms(db, time.Now)
+			s := perms(db, time.Now)
 			t.Cleanup(func() {
 				cleanupPermsTables(t, s)
 			})
@@ -259,7 +259,7 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func checkRegularPermsTable(s *PermsStore, sql string, expects map[int32][]uint32) error {
+func checkRegularPermsTable(s *permsStore, sql string, expects map[int32][]uint32) error {
 	rows, err := s.Handle().DB().QueryContext(context.Background(), sql)
 	if err != nil {
 		return err
@@ -459,7 +459,7 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 
 	return func(t *testing.T) {
 		t.Run("user-centric update should set synced_at", func(t *testing.T) {
-			s := Perms(db, clock)
+			s := perms(db, clock)
 			t.Cleanup(func() {
 				cleanupPermsTables(t, s)
 			})
@@ -499,7 +499,7 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 					upsertRepoPermissionsPageSize = test.upsertRepoPermissionsPageSize
 				}
 
-				s := Perms(db, clock)
+				s := perms(db, clock)
 				t.Cleanup(func() {
 					cleanupPermsTables(t, s)
 					if test.upsertRepoPermissionsPageSize > 0 {
@@ -648,7 +648,7 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 
 	return func(t *testing.T) {
 		t.Run("repo-centric update should set synced_at", func(t *testing.T) {
-			s := Perms(db, clock)
+			s := perms(db, clock)
 			t.Cleanup(func() {
 				cleanupPermsTables(t, s)
 			})
@@ -678,7 +678,7 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				s := Perms(db, clock)
+				s := perms(db, clock)
 				t.Cleanup(func() {
 					cleanupPermsTables(t, s)
 				})
@@ -721,7 +721,7 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 func testPermsStore_TouchRepoPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		now := timeutil.Now().Unix()
-		s := Perms(db, func() time.Time {
+		s := perms(db, func() time.Time {
 			return time.Unix(atomic.LoadInt64(&now), 0)
 		})
 		t.Cleanup(func() {
@@ -769,7 +769,7 @@ func testPermsStore_TouchRepoPermissions(db *sql.DB) func(*testing.T) {
 func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Run("no matching with different account ID", func(t *testing.T) {
-			s := Perms(db, clock)
+			s := perms(db, clock)
 			t.Cleanup(func() {
 				cleanupPermsTables(t, s)
 			})
@@ -802,7 +802,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("no matching with different service ID", func(t *testing.T) {
-			s := Perms(db, clock)
+			s := perms(db, clock)
 			t.Cleanup(func() {
 				cleanupPermsTables(t, s)
 			})
@@ -835,7 +835,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("found matching", func(t *testing.T) {
-			s := Perms(db, clock)
+			s := perms(db, clock)
 			t.Cleanup(func() {
 				cleanupPermsTables(t, s)
 			})
@@ -868,7 +868,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("add and change", func(t *testing.T) {
-			s := Perms(db, clock)
+			s := perms(db, clock)
 			t.Cleanup(func() {
 				cleanupPermsTables(t, s)
 			})
@@ -938,7 +938,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 
 func checkUserPendingPermsTable(
 	ctx context.Context,
-	s *PermsStore,
+	s *permsStore,
 	expects map[extsvc.AccountSpec][]uint32,
 ) (
 	idToSpecs map[int32]extsvc.AccountSpec,
@@ -991,7 +991,7 @@ func checkUserPendingPermsTable(
 
 func checkRepoPendingPermsTable(
 	ctx context.Context,
-	s *PermsStore,
+	s *permsStore,
 	idToSpecs map[int32]extsvc.AccountSpec,
 	expects map[int32][]extsvc.AccountSpec,
 ) error {
@@ -1275,7 +1275,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 					t.Skip("slow-tests not enabled")
 				}
 
-				s := Perms(db, clock)
+				s := perms(db, clock)
 				t.Cleanup(func() {
 					cleanupPermsTables(t, s)
 				})
@@ -1400,7 +1400,7 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				s := Perms(db, clock)
+				s := perms(db, clock)
 				t.Cleanup(func() {
 					cleanupPermsTables(t, s)
 				})
@@ -1895,7 +1895,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 					upsertRepoPermissionsPageSize = test.upsertRepoPermissionsPageSize
 				}
 
-				s := Perms(db, clock)
+				s := perms(db, clock)
 				t.Cleanup(func() {
 					cleanupPermsTables(t, s)
 					if test.upsertRepoPermissionsPageSize > 0 {
@@ -1955,7 +1955,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 // because permissions have been granted for those users.
 func testPermsStore_SetPendingPermissionsAfterGrant(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		s := Perms(db, clock)
+		s := perms(db, clock)
 		defer cleanupPermsTables(t, s)
 
 		ctx := context.Background()
@@ -2011,7 +2011,7 @@ func testPermsStore_SetPendingPermissionsAfterGrant(db *sql.DB) func(*testing.T)
 
 func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		s := Perms(db, clock)
+		s := perms(db, clock)
 		t.Cleanup(func() {
 			cleanupPermsTables(t, s)
 		})
@@ -2065,7 +2065,7 @@ func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(*testing.T) {
 
 func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		s := Perms(db, clock)
+		s := perms(db, clock)
 		t.Cleanup(func() {
 			cleanupPermsTables(t, s)
 		})
@@ -2122,7 +2122,7 @@ func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(*testing.T)
 
 func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		s := Perms(db, time.Now)
+		s := perms(db, time.Now)
 		t.Cleanup(func() {
 			cleanupPermsTables(t, s)
 		})
@@ -2216,7 +2216,7 @@ func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func cleanupUsersTable(t *testing.T, s *PermsStore) {
+func cleanupUsersTable(t *testing.T, s *permsStore) {
 	if t.Failed() {
 		return
 	}
@@ -2229,7 +2229,7 @@ func cleanupUsersTable(t *testing.T, s *PermsStore) {
 
 func testPermsStore_ListExternalAccounts(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		s := Perms(db, time.Now)
+		s := perms(db, time.Now)
 		t.Cleanup(func() {
 			cleanupUsersTable(t, s)
 		})
@@ -2331,7 +2331,7 @@ VALUES
 
 func testPermsStore_GetUserIDsByExternalAccounts(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		s := Perms(db, time.Now)
+		s := perms(db, time.Now)
 		t.Cleanup(func() {
 			cleanupUsersTable(t, s)
 		})
@@ -2383,7 +2383,7 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 
 func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		s := Perms(db, time.Now)
+		s := perms(db, time.Now)
 		ctx := context.Background()
 		t.Cleanup(func() {
 			cleanupUsersTable(t, s)
@@ -2493,7 +2493,7 @@ func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
 
 func testPermsStore_UserIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		s := Perms(db, time.Now)
+		s := perms(db, time.Now)
 		t.Cleanup(func() {
 			cleanupUsersTable(t, s)
 			cleanupPermsTables(t, s)
@@ -2548,7 +2548,7 @@ func testPermsStore_UserIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func cleanupReposTable(t *testing.T, s *PermsStore) {
+func cleanupReposTable(t *testing.T, s *permsStore) {
 	if t.Failed() {
 		return
 	}
@@ -2561,7 +2561,7 @@ func cleanupReposTable(t *testing.T, s *PermsStore) {
 
 func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		s := Perms(db, time.Now)
+		s := perms(db, time.Now)
 		t.Cleanup(func() {
 			cleanupReposTable(t, s)
 			cleanupPermsTables(t, s)
@@ -2633,7 +2633,7 @@ func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 
 func testPermsStore_UserIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		s := Perms(db, clock)
+		s := perms(db, clock)
 		ctx := context.Background()
 		t.Cleanup(func() {
 			cleanupPermsTables(t, s)
@@ -2723,7 +2723,7 @@ WHERE user_id = 2`, clock().AddDate(1, 0, 0))
 
 func testPermsStore_ReposIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		s := Perms(db, clock)
+		s := perms(db, clock)
 		ctx := context.Background()
 		t.Cleanup(func() {
 			cleanupPermsTables(t, s)
@@ -2830,7 +2830,7 @@ WHERE repo_id = 2`, clock().AddDate(1, 0, 0))
 
 func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		s := Perms(db, clock)
+		s := perms(db, clock)
 		ctx := context.Background()
 		t.Cleanup(func() {
 			if t.Failed() {
@@ -2912,7 +2912,7 @@ func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*tes
 
 func testPermsStore_Metrics(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		s := Perms(db, clock)
+		s := perms(db, clock)
 
 		ctx := context.Background()
 		t.Cleanup(func() {

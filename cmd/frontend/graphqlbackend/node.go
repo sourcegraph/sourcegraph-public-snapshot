@@ -6,6 +6,8 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
+	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
 // Node must be implemented by any resolver that implements the Node interface in
@@ -64,6 +66,16 @@ func (r *NodeResolver) ToMonitorQuery() (MonitorQueryResolver, bool) {
 
 func (r *NodeResolver) ToMonitorEmail() (MonitorEmailResolver, bool) {
 	n, ok := r.Node.(MonitorEmailResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorWebhook() (MonitorWebhookResolver, bool) {
+	n, ok := r.Node.(MonitorWebhookResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToMonitorSlackWebhook() (MonitorSlackWebhookResolver, bool) {
+	n, ok := r.Node.(MonitorSlackWebhookResolver)
 	return n, ok
 }
 
@@ -251,7 +263,7 @@ func (r *NodeResolver) ToWebhookLog() (*webhookLogResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToExecutor() (*executorResolver, bool) {
-	n, ok := r.Node.(*executorResolver)
+func (r *NodeResolver) ToExecutor() (*executor.ExecutorResolver, bool) {
+	n, ok := r.Node.(*executor.ExecutorResolver)
 	return n, ok
 }

@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -86,9 +85,8 @@ func (a *Aggregator) Error(err error) {
 	}
 }
 
-func (a *Aggregator) DoSearch(ctx context.Context, job Job, repos searchrepos.Pager, mode search.GlobalSearchMode) (err error) {
+func (a *Aggregator) DoSearch(ctx context.Context, job Job, repos searchrepos.Pager) (err error) {
 	tr, ctx := trace.New(ctx, "DoSearch", job.Name())
-	tr.LogFields(trace.Stringer("global_search_mode", mode))
 	defer func() {
 		a.Error(err)
 		tr.SetErrorIfNotContext(err)

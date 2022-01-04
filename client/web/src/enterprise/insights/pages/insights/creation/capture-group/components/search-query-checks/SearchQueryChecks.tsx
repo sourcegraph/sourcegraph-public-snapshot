@@ -1,39 +1,50 @@
 import classNames from 'classnames'
 import Check from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
+import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
 import React from 'react'
 
 import styles from './SearchQueryChecks.module.scss'
 
 interface SearchQueryChecksProps {
     checks: {
-        isValidRegex: boolean
-        isValidOperator: boolean
-        isValidPatternType: boolean
-        isNotRepo: boolean
-        isNotCommitOrDiff: boolean
+        isValidOperator: true | false | undefined
+        isValidPatternType: true | false | undefined
+        isNotRepo: true | false | undefined
+        isNotCommitOrDiff: true | false | undefined
     }
 }
 
-const CheckListItem: React.FunctionComponent<{ valid?: boolean }> = ({ children, valid }) =>
-    valid ? (
-        <span>
-            <Check size={16} className="text-success icon-inline" style={{ top: '3px' }} /> {children}
-        </span>
-    ) : (
-        <span className="text-dark">
-            <CloseIcon size={16} className="text-danger icon-inline" style={{ top: '3px' }} /> {children}
-        </span>
+const CheckListItem: React.FunctionComponent<{ valid: true | false | undefined }> = ({ children, valid }) => {
+    if (valid === true) {
+        return (
+            <>
+                <Check className={classNames(styles.icon, 'text-success icon-inline')} />
+                <span className={classNames(styles.valid, 'text-muted')}>{children}</span>
+            </>
+        )
+    }
+
+    if (valid === false) {
+        return (
+            <>
+                <CloseIcon className={classNames(styles.icon, 'text-danger icon-inline')} />
+                <span className="text-muted">{children}</span>
+            </>
+        )
+    }
+
+    return (
+        <>
+            <RadioboxBlankIcon className={classNames(styles.icon, styles.smaller, 'icon-inline')} />{' '}
+            <span className="text-muted">{children}</span>
+        </>
     )
+}
 
 export const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> = ({ checks }) => (
-    <div className={classNames(styles.checks)}>
-        <ul className={classNames('text-muted', styles.check)}>
-            <li>
-                <CheckListItem valid={checks.isValidRegex}>
-                    Contains a properly formatted regular expression
-                </CheckListItem>
-            </li>
+    <div className={classNames(styles.checksWrapper)}>
+        <ul className={classNames(styles.checks)}>
             <li>
                 <CheckListItem valid={checks.isValidOperator}>
                     Does not contain boolean operator <code>AND</code> and <code>OR</code> (regular expression boolean

@@ -968,10 +968,6 @@ type ExternalServiceUpdate struct {
 }
 
 func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) (err error) {
-	if Mocks.ExternalServices.Update != nil {
-		return Mocks.ExternalServices.Update(ctx, ps, id, update)
-	}
-
 	var (
 		normalized  []byte
 		keyID       string
@@ -1090,10 +1086,6 @@ func (e externalServiceNotFoundError) NotFound() bool {
 }
 
 func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error) {
-	if Mocks.ExternalServices.Delete != nil {
-		return Mocks.ExternalServices.Delete(ctx, id)
-	}
-
 	tx, err := e.transact(ctx)
 	if err != nil {
 		return err
@@ -1168,10 +1160,6 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 }
 
 func (e *externalServiceStore) GetByID(ctx context.Context, id int64) (*types.ExternalService, error) {
-	if Mocks.ExternalServices.GetByID != nil {
-		return Mocks.ExternalServices.GetByID(id)
-	}
-
 	opt := ExternalServicesListOptions{
 		IDs: []int64{id},
 	}
@@ -1222,10 +1210,6 @@ FROM external_service_sync_jobs ORDER BY started_at desc
 }
 
 func (e *externalServiceStore) GetLastSyncError(ctx context.Context, id int64) (string, error) {
-	if Mocks.ExternalServices.GetLastSyncError != nil {
-		return Mocks.ExternalServices.GetLastSyncError(id)
-	}
-
 	q := sqlf.Sprintf(`
 SELECT failure_message from external_service_sync_jobs
 WHERE external_service_id = %d
@@ -1500,15 +1484,11 @@ func configurationHasWebhooks(config interface{}) bool {
 
 // MockExternalServices mocks the external services store.
 type MockExternalServices struct {
-	Create           func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error
-	Delete           func(ctx context.Context, id int64) error
-	GetByID          func(id int64) (*types.ExternalService, error)
-	GetLastSyncError func(id int64) (string, error)
-	ListSyncErrors   func(ctx context.Context) (map[int64]string, error)
-	List             func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
-	Update           func(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) error
-	Count            func(ctx context.Context, opt ExternalServicesListOptions) (int, error)
-	Upsert           func(ctx context.Context, services ...*types.ExternalService) error
-	Transact         func(ctx context.Context) (ExternalServiceStore, error)
-	Done             func(error) error
+	Create         func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error
+	ListSyncErrors func(ctx context.Context) (map[int64]string, error)
+	List           func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
+	Count          func(ctx context.Context, opt ExternalServicesListOptions) (int, error)
+	Upsert         func(ctx context.Context, services ...*types.ExternalService) error
+	Transact       func(ctx context.Context) (ExternalServiceStore, error)
+	Done           func(error) error
 }

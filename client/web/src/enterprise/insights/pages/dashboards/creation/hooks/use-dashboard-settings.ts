@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { InsightDashboard, Settings } from '../../../../../../schema/settings.schema'
 

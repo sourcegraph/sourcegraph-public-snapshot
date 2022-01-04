@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/golang/gddo/httputil"
@@ -117,7 +118,16 @@ func Main(enterpriseInit EnterpriseInit) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	sqlDB, err := connections.NewFrontendDB(dsn, "repo-updater", false, &observation.TestContext)
+	var (
+		sqlDB *sql.DB
+		err   error
+	)
+	if os.Getenv("NEW_MIGRATIONS") == "" {
+		// CURRENTLY DEPRECATING
+		sqlDB, err = connections.NewFrontendDB(dsn, "repo-updater", false, &observation.TestContext)
+	} else {
+		sqlDB, err = connections.EnsureNewFrontendDB(dsn, "repo-updater", &observation.TestContext)
+	}
 	if err != nil {
 		log.Fatalf("failed to initialize database store: %v", err)
 	}

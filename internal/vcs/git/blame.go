@@ -10,7 +10,9 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -37,16 +39,27 @@ type Hunk struct {
 }
 
 // BlameFile returns Git blame information about a file.
-func BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error) {
+func BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOptions, checker authz.SubRepoPermissionChecker) ([]*Hunk, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: BlameFile")
 	span.SetTag("repo", repo)
 	span.SetTag("path", path)
 	span.SetTag("opt", opt)
 	defer span.Finish()
-	return blameFileCmd(ctx, gitserverCmdFunc(repo), path, opt)
+	return blameFileCmd(ctx, gitserverCmdFunc(repo), path, opt, repo, checker)
 }
 
-func blameFileCmd(ctx context.Context, command cmdFunc, path string, opt *BlameOptions) ([]*Hunk, error) {
+func blameFileCmd(ctx context.Context, command cmdFunc, path string, opt *BlameOptions, repo api.RepoName, checker authz.SubRepoPermissionChecker) ([]*Hunk, error) {
+	if checker != nil && checker.Enabled() {
+		a := actor.FromContext(ctx)
+		filtered, err := authz.FilterActorPaths(ctx, checker, a, repo, []string{path})
+		if err != nil {
+			return nil, errors.Wrap(err, "filtering path")
+		}
+		// Expect to get []string{path} back if user has access to this file, otherwise they don't.
+		if len(filtered) != 1 || filtered[0] != path {
+			return nil, nil
+		}
+	}
 	if opt == nil {
 		opt = &BlameOptions{}
 	}

@@ -4,10 +4,10 @@ import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
@@ -123,7 +123,6 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                                 <a
                                     href="https://about.sourcegraph.com/pricing"
                                     className="btn btn-primary btn-sm"
-                                    // eslint-disable-next-line react/jsx-no-target-blank
                                     target="_blank"
                                     rel="noopener"
                                 >
@@ -142,7 +141,6 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
                                     <a
                                         href="http://about.sourcegraph.com/contact/sales"
                                         className="btn btn-primary btn-sm"
-                                        // eslint-disable-next-line react/jsx-no-target-blank
                                         target="_blank"
                                         rel="noopener"
                                         data-tooltip="Buy a Sourcegraph Enterprise subscription to get a license key"
