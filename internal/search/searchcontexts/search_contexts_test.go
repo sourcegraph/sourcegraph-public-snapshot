@@ -598,15 +598,15 @@ func TestDeletingAutoDefinedSearchContext(t *testing.T) {
 	}
 }
 
-func TestParseQuery(t *testing.T) {
+func TestParseRepoOpts(t *testing.T) {
 	for _, tc := range []struct {
 		in  string
-		out []Query
+		out []RepoOpts
 		err error
 	}{
 		{
 			in: "(r:foo or r:bar) case:yes archived:only visibility:private (rev:HEAD or rev:TAIL)",
-			out: []Query{
+			out: []RepoOpts{
 				{
 					ReposListOptions: database.ReposListOptions{
 						IncludePatterns:       []string{"foo"},
@@ -651,7 +651,7 @@ func TestParseQuery(t *testing.T) {
 		},
 		{
 			in: "r:foo|bar@HEAD:TAIL archived:yes",
-			out: []Query{
+			out: []RepoOpts{
 				{
 					ReposListOptions: database.ReposListOptions{
 						IncludePatterns: []string{"foo|bar"},
@@ -663,7 +663,7 @@ func TestParseQuery(t *testing.T) {
 		},
 		{
 			in: "r:foo|bar@HEAD f:^sub/dir lang:go",
-			out: []Query{
+			out: []RepoOpts{
 				{
 					ReposListOptions: database.ReposListOptions{
 						IncludePatterns: []string{"foo|bar"},
@@ -676,7 +676,7 @@ func TestParseQuery(t *testing.T) {
 		},
 		{
 			in: "(r:foo (rev:HEAD or rev:TAIL)) or r:bar@main:dev",
-			out: []Query{
+			out: []RepoOpts{
 				{
 					ReposListOptions: database.ReposListOptions{
 						IncludePatterns: []string{"foo"},
@@ -705,7 +705,7 @@ func TestParseQuery(t *testing.T) {
 		},
 	} {
 		t.Run(tc.in, func(t *testing.T) {
-			have, err := ParseQuery(tc.in)
+			have, err := ParseRepoOpts(tc.in)
 			if err != nil {
 				t.Fatal(err)
 			}

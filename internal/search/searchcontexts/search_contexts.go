@@ -408,13 +408,13 @@ func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[ap
 		return nil, err
 	}
 
-	var rqs []Query
+	var opts []RepoOpts
 	for _, q := range contextQueries {
-		qs, err := ParseQuery(q)
+		o, err := ParseRepoOpts(q)
 		if err != nil {
 			return nil, err
 		}
-		rqs = append(rqs, qs...)
+		opts = append(opts, o...)
 	}
 
 	repos := db.Repos()
@@ -422,7 +422,7 @@ func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[ap
 	g, ctx := errgroup.WithContext(ctx)
 	mu := sync.Mutex{}
 
-	for _, q := range rqs {
+	for _, q := range opts {
 		q := q
 		g.Go(func() error {
 			if err := sem.Acquire(ctx, 1); err != nil {
@@ -430,10 +430,10 @@ func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[ap
 			}
 			defer sem.Release(1)
 
-			opts := q.ReposListOptions
-			opts.IDs = repoIDs
+			o := q.ReposListOptions
+			o.IDs = repoIDs
 
-			rs, err := repos.ListMinimalRepos(ctx, opts)
+			rs, err := repos.ListMinimalRepos(ctx, o)
 			if err != nil {
 				return err
 			}
@@ -457,21 +457,22 @@ func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[ap
 	return revs, nil
 }
 
-// Query represents a parsed search context repository query.
-type Query struct {
+// RepoOpts contains the database.ReposListOptions and RevSpecs parsed from
+// a search context query.
+type RepoOpts struct {
 	database.ReposListOptions
 	RevSpecs []string
 }
 
-// ParseQuery parses the given repository query, returning an error
+// ParseRepoOpts parses the given repository query, returning an error
 // in case of failure.
-func ParseQuery(contextQuery string) ([]Query, error) {
+func ParseRepoOpts(contextQuery string) ([]RepoOpts, error) {
 	plan, err := query.Pipeline(query.Init(contextQuery, query.SearchTypeRegex))
 	if err != nil {
 		return nil, err
 	}
 
-	qs := make([]Query, 0, len(plan))
+	qs := make([]RepoOpts, 0, len(plan))
 	for _, p := range plan {
 		q := p.ToParseTree()
 
@@ -490,7 +491,7 @@ func ParseQuery(contextQuery string) ([]Query, error) {
 		visibilityStr, _ := q.StringValue(query.FieldVisibility)
 		visibility := query.ParseVisibility(visibilityStr)
 
-		rq := Query{
+		rq := RepoOpts{
 			ReposListOptions: database.ReposListOptions{
 				CaseSensitivePatterns: q.IsCaseSensitive(),
 				ExcludePattern:        search.UnionRegExps(minusRepoFilters),
