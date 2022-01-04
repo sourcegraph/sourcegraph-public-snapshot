@@ -33,5 +33,5 @@ export BUILD_START_TIME=`curl -H "Authorization: Bearer $BUILDKITE_API_TOKEN" "h
 BUILD_START_TIME=`TZ=UTC date -d $BUILD_START_TIME +'%s'`
 
 # Init the step
-export STEP_START=$(date +%s)
+export STEP_START=$(date +'%s')
 
