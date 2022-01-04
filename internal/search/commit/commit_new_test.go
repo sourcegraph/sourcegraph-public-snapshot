@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -104,9 +103,4 @@ func TestExpandUsernamesToEmails(t *testing.T) {
 	if want := []string{"foo", `alice@example\.com`, `alice@example\.org`}; !reflect.DeepEqual(x, want) {
 		t.Errorf("got %q, want %q", x, want)
 	}
-}
-
-func resetMocks() {
-	database.Mocks = database.MockStores{}
-	backend.Mocks = backend.MockServices{}
 }
