@@ -374,12 +374,25 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     ))}
                 </div>
                 <hr className={classNames('my-4', styles.searchContextFormDivider)} />
-                {experimentalFeatures.searchContextsQuery ? (
+                <div>
+                    <div className="mb-1">Repositories and revisions</div>
+                    <div className="text-muted mb-3">
+                        Define which repositories and revisions should be included in this search context.
+                    </div>
+                    <SearchContextRepositoriesFormArea
+                        {...props}
+                        onChange={onRepositoriesConfigChange}
+                        validateRepositories={validateRepositories}
+                        repositories={searchContext?.repositories}
+                    />
+                </div>
+                {experimentalFeatures.searchContextsQuery && (
                     <div>
+                        <hr className={classNames('my-4', styles.searchContextFormDivider)} />
                         <div className="mb-1">Query</div>
                         <div className="text-muted mb-3">
-                            Define which repositories, revisions and file paths are included in this search context with
-                            a Sourcegraph query.
+                            Alternatively, define which repositories, revisions and file paths are included in this
+                            search context with a Sourcegraph search query.
                         </div>
 
                         <div className={styles.searchContextFormQuery}>
@@ -395,19 +408,6 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                                 preventNewLine={false}
                             />
                         </div>
-                    </div>
-                ) : (
-                    <div>
-                        <div className="mb-1">Repositories and revisions</div>
-                        <div className="text-muted mb-3">
-                            Define which repositories and revisions should be included in this search context.
-                        </div>
-                        <SearchContextRepositoriesFormArea
-                            {...props}
-                            onChange={onRepositoriesConfigChange}
-                            validateRepositories={validateRepositories}
-                            repositories={searchContext?.repositories}
-                        />
                     </div>
                 )}
             </Container>

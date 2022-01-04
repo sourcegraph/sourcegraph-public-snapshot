@@ -197,7 +197,7 @@ func validateSearchContextQuery(contextQuery string) error {
 		case query.FieldRepo:
 			if a.Labels.IsSet(query.IsPredicate) {
 				errs = multierror.Append(errs,
-					errors.Errorf("unsupported repo field predicate in repository query: %q", value))
+					errors.Errorf("unsupported repo field predicate in search context query: %q", value))
 				return
 			}
 
@@ -206,7 +206,7 @@ func validateSearchContextQuery(contextQuery string) error {
 			for _, rev := range revs {
 				if rev.RevSpec == "" {
 					errs = multierror.Append(errs,
-						errors.Errorf("unsupported rev glob in repository query: %q", value))
+						errors.Errorf("unsupported rev glob in search context query: %q", value))
 					return
 				}
 			}
@@ -227,14 +227,14 @@ func validateSearchContextQuery(contextQuery string) error {
 
 		default:
 			errs = multierror.Append(errs,
-				errors.Errorf("unsupported field in repository query: %q", field))
+				errors.Errorf("unsupported field in search context query: %q", field))
 		}
 	})
 
 	query.VisitPattern(q, func(value string, negated bool, a query.Annotation) {
 		if value != "" {
 			errs = multierror.Append(errs,
-				errors.Errorf("unsupported pattern in repository query: %q", value))
+				errors.Errorf("unsupported pattern in search context query: %q", value))
 		}
 	})
 
@@ -283,7 +283,7 @@ func CreateSearchContextWithRepositoryRevisions(
 	}
 
 	if searchContext.Query != "" && len(repositoryRevisions) > 0 {
-		return nil, errors.New("repository query and repository revisions are mutually exclusive")
+		return nil, errors.New("search context query and repository revisions are mutually exclusive")
 	}
 
 	err = validateSearchContextRepositoryRevisions(repositoryRevisions)
@@ -329,7 +329,7 @@ func UpdateSearchContextWithRepositoryRevisions(ctx context.Context, db database
 	}
 
 	if searchContext.Query != "" && len(repositoryRevisions) > 0 {
-		return nil, errors.New("repository query and repository revisions are mutually exclusive")
+		return nil, errors.New("search context query and repository revisions are mutually exclusive")
 	}
 
 	err = validateSearchContextRepositoryRevisions(repositoryRevisions)
@@ -464,7 +464,7 @@ type RepoOpts struct {
 	RevSpecs []string
 }
 
-// ParseRepoOpts parses the given repository query, returning an error
+// ParseRepoOpts parses the given search context query, returning an error
 // in case of failure.
 func ParseRepoOpts(contextQuery string) ([]RepoOpts, error) {
 	plan, err := query.Pipeline(query.Init(contextQuery, query.SearchTypeRegex))
