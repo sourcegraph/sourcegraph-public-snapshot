@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-traceURL=$(BUILDEVENT_API_KEY="$CI_BUILDEVENT_API_KEY" \
+traceURL=$(BUILDEVENT_APIKEY="$CI_BUILDEVENT_API_KEY" \
   BUILDEVENT_DATASET="buildkite" \
   ./buildevents "$BUILDKITE_BUILD_ID" "$BUILD_START_TIME" success)
 
