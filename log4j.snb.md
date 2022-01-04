@@ -1,8 +1,20 @@
 # Anatomy of an exploit: a source-level walkthrough of the Log4j RCE
 
+Over Christmas, I decided to dive into the Log4j source code to more deeply understand how the recent major exploit works. I was driven by a combination of curiosity and a desire to develop some amount of intuition for how these exploits are discovered and constructed.
+
+For context, I am not a security engineer. My background is in application development, and though I've acquired domain knowledge in various security-related things over the years (certain authN protocols), I'm far from an expert.
+
+When previous major exploits have been published, I've read through blog posts explaining them at a high level, but never bothered to dive into to understand the lower-level details. Why would I? As an application engineer, those facts are only directly relevant to me if I am one of the unlucky few tasked with resolving them. But this lack of motivation to dive into the details is indicative of a larger gap between application and security engineers, a gap that was confirmed in conversations with several CISOs.
+
+So I thought it would be fun and informative to try to understand how the Log4j exploit worked at a source level, and in doing so, write up my thoughts and reflections to share with others if they find them interesting.
+
+
+
+<!--
 By now, we've seen a multitude of posts covering the Log4j exploit, the attacks it enables, and how to address it with a variety of steps and tools.
 
 Most of these posts focus on applying the appropriate mitigations, explaining how the vulnerability works at a high level. I thought it would be fun to take a deeper dive and perhaps in the process, learn some intricacies about how Java works and spread awareness of security topics to a broader developer audience. I often think that as application developers, we don't spend enough time exploring other codebases, and what better code to explore than the code involved in the biggest security vulnerability of the decade? So, in the name of science and better application security, here we go.
+-->
 
 Let's begin with a high-level diagram that outlines the key steps involved in the attack:
 
@@ -164,7 +176,17 @@ https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/javax/naming/spi/NamingMa
 
 It is here that the malicious code we received from the attacker server is run. In our case, that means by this point in the execution, the file `/tmp/pwned` has been created and the RCE has run successfully.
 
-## Conclusion: bridging gaps
+## Reflections: bridging gaps
+
+TODO: more reflective thoughts here
+
+* How many such exploits exist?
+* How hard are they to find?
+* How long are they known to some before being made known to all?
+* Software supply chain
+* OSS maintainers
+
+----------------
 
 This concludes our source-level walkthrough of the Log4Shell vulnerability. You now understand how the exploit works as well as anyone. So now what?
 
