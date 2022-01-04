@@ -19,7 +19,7 @@ import {
     SummaryContainer,
     ShowMoreButton,
 } from '@sourcegraph/web/src/components/FilteredConnection/ui'
-import { useDebounce, Tooltip } from '@sourcegraph/wildcard'
+import { useDebounce } from '@sourcegraph/wildcard'
 
 import { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
@@ -49,7 +49,7 @@ interface SymbolNodeProps {
 const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location, onHandleClick }) => {
     const isActiveFunc = symbolIsActive(node.url, location) ? symbolIsActiveTrue : symbolIsActiveFalse
     return (
-        <li className={styles.repoRevisionSidebarSymbolsNode} data-tooltip={node.location.resource.path}>
+        <li className={styles.repoRevisionSidebarSymbolsNode}>
             <NavLink
                 to={node.url}
                 isActive={isActiveFunc}
@@ -198,7 +198,6 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSid
             {error && <ConnectionError errors={[error.message]} compact={true} />}
             {connection && (
                 <ConnectionList compact={true}>
-                    <Tooltip />
                     {connection.nodes.map((node, index) => (
                         <SymbolNode key={index} node={node} location={location} onHandleClick={onHandleSymbolClick} />
                     ))}
