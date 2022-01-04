@@ -92,10 +92,6 @@ SET
 // external repo spec to map to out internal repo id. If there is no mapping,
 // nothing is written.
 func (s *subRepoPermsStore) UpsertWithSpec(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error {
-	if Mocks.SubRepoPerms.UpsertWithSpec != nil {
-		return Mocks.SubRepoPerms.UpsertWithSpec(ctx, userID, spec, perms)
-	}
-
 	q := sqlf.Sprintf(`
 INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, version, updated_at)
 SELECT %s, id, %s, %s, %s, now()
@@ -180,8 +176,4 @@ WHERE user_id = %s
 	}
 
 	return result, nil
-}
-
-type MockSubRepoPerms struct {
-	UpsertWithSpec func(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error
 }

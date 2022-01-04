@@ -11,8 +11,7 @@ var Mocks MockStores
 type MockStores struct {
 	AccessTokens MockAccessTokens
 
-	Repos        MockRepos
-	SubRepoPerms MockSubRepoPerms
+	Repos MockRepos
 
 	ExternalAccounts MockExternalAccounts
 
