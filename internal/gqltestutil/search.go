@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 
@@ -704,7 +705,7 @@ func (s *SearchStreamClient) DeleteSearchContext(id string) error {
 }
 
 func (s *SearchStreamClient) search(query string, dec streamhttp.FrontendStreamDecoder) error {
-	req, err := streamhttp.NewRequest(s.Client.baseURL+"/.api", query)
+	req, err := streamhttp.NewRequest(strings.TrimRight(s.Client.baseURL, "/")+"/.api", query)
 	if err != nil {
 		return err
 	}
