@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import Popper from 'popper.js'
-import React, { ReactNode } from 'react'
+import React, { ReactNode, useMemo } from 'react'
 import { Tooltip as BootstrapTooltip } from 'reactstrap'
 
 import styles from './Tooltip.module.scss'
@@ -24,6 +24,8 @@ const TOOLTIP_MODIFIERS: Popper.Modifiers = {
 export const Tooltip: React.FunctionComponent<TooltipProps> = ({ className }) => {
     const { subject, content, subjectSeq, placement = 'auto', delay } = useTooltipState()
 
+    const tooltipStyle = useMemo(() => getTooltipStyle(placement), [placement])
+
     if (!subject || !content) {
         return null
     }
@@ -38,7 +40,7 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = ({ className }) =>
             placement={placement}
             // in order to add our own placement classes we need to set the popperClassNames
             // here is where bootstrap injects it's placement classes such as 'bs-tooltip-auto' automatically.
-            popperClassName={classNames(styles.tooltip, styles.show, className, getTooltipStyle(placement))}
+            popperClassName={classNames(styles.tooltip, styles.show, className, tooltipStyle)}
             arrowClassName={styles.arrow}
             innerClassName={styles.tooltipInner}
             // This is a workaround to an issue with tooltips in reactstrap that causes the entire page to freeze.
