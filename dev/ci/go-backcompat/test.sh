@@ -88,6 +88,17 @@ PROTECTED_FILES=(
   ./dev/ci/go-backcompat
 )
 
+# Check out the previous code then immediately restore whatever
+# the current version of the protected files are. Between these
+# two commands, we want to ensure that any renames or deletions
+# of migration files (which happens on reverts with migrations)
+# do not stick around after our checkout. We ensure this is the
+# case by removing all migration state from the checkout we're
+# only using for unit tests.
+git checkout "${latest_minor_release_tag}"
+rm -rf ./migrations
+git checkout "${current_head}" -- "${PROTECTED_FILES[@]}"
+
 # If migration files have been renamed or deleted between these commits
 # (which historically we've done in response to reverted migrations), we
 # might end up with a combination of files from both commits that ruin
@@ -95,12 +106,6 @@ PROTECTED_FILES=(
 # We delete this directory first prior to the checkout so that we don't
 # have any current state in the migrations directory to mess us up in this
 # way.
-rm -rf ./migrations
-
-# Check out the previous code then immediately restore whatever
-# the current version of the protected files are.
-git checkout "${latest_minor_release_tag}"
-git checkout "${current_head}" -- "${PROTECTED_FILES[@]}"
 
 if [ -f "${flakefile}" ]; then
   echo ""
