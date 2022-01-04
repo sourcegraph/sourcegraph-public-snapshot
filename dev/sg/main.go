@@ -34,11 +34,8 @@ var (
 	// `parseConf` before.
 	globalConf *Config
 
-	rootFlagSet = flag.NewFlagSet("sg", flag.ExitOnError)
-	verboseFlag = rootFlagSet.Bool("v", false, "verbose mode")
-	// pristineLimitsFlag is a workaround to handle issues around setting limits on the buildkite agents.
-	// TODO(@jhchabran) check this again once we modernize the agents.
-	pristineLimitsFlag  = rootFlagSet.Bool("pristine-limits", false, "prevent sg from updating maximum open files limits")
+	rootFlagSet         = flag.NewFlagSet("sg", flag.ExitOnError)
+	verboseFlag         = rootFlagSet.Bool("v", false, "verbose mode")
 	configFlag          = rootFlagSet.String("config", defaultConfigFile, "configuration file")
 	overwriteConfigFlag = rootFlagSet.String("overwrite", defaultConfigOverwriteFile, "configuration overwrites file that is gitignored and can be used to, for example, add credentials")
 
@@ -149,13 +146,11 @@ func main() {
 
 	checkSgVersion()
 
-	if !*pristineLimitsFlag {
-		// Unless asked otherwise, we always try to set this, since we
-		// often want to watch files, start commands, etc...
-		if err := setMaxOpenFiles(); err != nil {
-			fmt.Printf("failed to set max open files: %s\n", err)
-			os.Exit(1)
-		}
+	// We always try to set this, since we
+	// often want to watch files, start commands, etc...
+	if err := setMaxOpenFiles(); err != nil {
+		fmt.Printf("failed to set max open files: %s\n", err)
+		os.Exit(1)
 	}
 
 	if err := rootCommand.Run(ctx); err != nil {
