@@ -704,7 +704,7 @@ func (s *SearchStreamClient) DeleteSearchContext(id string) error {
 }
 
 func (s *SearchStreamClient) search(query string, dec streamhttp.FrontendStreamDecoder) error {
-	req, err := streamhttp.NewRequest(s.Client.baseURL, query)
+	req, err := streamhttp.NewRequest(s.Client.baseURL+"/.api", query)
 	if err != nil {
 		return err
 	}
