@@ -55,7 +55,7 @@ interface Props {
      * name of the field that these radio buttons select. Use a unique name for
      * each group of radio buttons in a form.
      */
-    name?: string
+    name: string
 }
 
 /**
@@ -68,7 +68,7 @@ export const RadioButtons: React.FunctionComponent<Props> = ({ nodes, onChange, 
                 key={node.key ? node.key : node.id.toString()}
                 id={node.id.toString()}
                 title={node.tooltip}
-                name={name || 'filtered'}
+                name={name}
                 onChange={onChange}
                 value={node.id}
                 checked={node.id === selected}
