@@ -71,7 +71,9 @@ export const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({
                         </div>
                     )}
 
-                <label htmlFor="ml-4 index-commit-max-age">Commit max age</label>
+                <label className="ml-4" htmlFor="index-commit-max-age">
+                    Commit max age
+                </label>
                 <DurationSelect
                     id="index-commit-max-age"
                     value={policy.indexCommitMaxAgeHours ? `${policy.indexCommitMaxAgeHours}` : null}
