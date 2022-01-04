@@ -5,7 +5,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { HomePanelsProps, PatternTypeProps } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { VulnerabilityAnnouncement } from '../home/VulnerabilityAnnouncement'
 
 import { CommunitySearchContextsPanel } from './CommunitySearchContextPanel'
 import styles from './HomePanels.module.scss'
@@ -21,7 +20,6 @@ interface Props extends Pick<PatternTypeProps, 'patternType'>, TelemetryProps, H
 
 export const HomePanels: React.FunctionComponent<Props> = (props: Props) => (
     <div className={classNames('container', styles.homePanels)} data-testid="home-panels">
-        {props.isSourcegraphDotCom && <VulnerabilityAnnouncement />}
         <div className="row">
             <RepositoriesPanel {...props} className={classNames('col-lg-4', styles.panel)} />
             <RecentSearchesPanel {...props} className={classNames('col-lg-8', styles.panel)} />
