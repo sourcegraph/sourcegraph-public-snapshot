@@ -42,6 +42,8 @@ export interface SourcegraphVSCodeExtensionAPI
     openFile: (sourcegraphUri: string) => void
     // Open links in browser
     openLink: (uri: string) => void
+    // Copy Link to Clipboard
+    copyLink: (uri: string) => void
     // For search sidebar
     openSearchPanel: () => void
     // Check if on VS Code Desktop or VS Code Web

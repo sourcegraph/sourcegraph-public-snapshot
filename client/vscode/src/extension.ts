@@ -1,7 +1,7 @@
 import 'cross-fetch/polyfill'
 import { releaseProxy } from 'comlink'
 import { of, ReplaySubject } from 'rxjs'
-import vscode from 'vscode'
+import vscode, { env } from 'vscode'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
@@ -148,6 +148,8 @@ export function activate(context: vscode.ExtensionContext): void {
         openFile: (uri: string) => openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri)),
         // Open Links in Browser
         openLink: (uri: string) => openLinkInBrowser(uri),
+        copyLink: (uri: string) =>
+            env.clipboard.writeText(uri).then(() => vscode.window.showInformationMessage('Link Copied!')),
         openSearchPanel: () => vscode.commands.executeCommand('sourcegraph.search'),
         // Check if on VS Code Desktop or VS Code Web
         onDesktop: () => vscode.env.appHost === 'desktop',

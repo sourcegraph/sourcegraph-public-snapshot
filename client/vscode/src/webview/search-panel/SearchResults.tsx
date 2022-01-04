@@ -1,3 +1,5 @@
+import classNames from 'classnames'
+import ShareOutlineIcon from 'mdi-react/ShareOutlineIcon'
 import React, { useCallback } from 'react'
 
 import { StreamingSearchResultsList } from '@sourcegraph/branded/src/search/results/StreamingSearchResultsList'
@@ -18,15 +20,17 @@ import { SourcegraphUri } from '../../file-system/SourcegraphUri'
 import { CommitSearchResultFields, FileMatchFields, RepositoryFields, SearchResult } from '../../graphql-operations'
 import { WebviewPageProps } from '../platform/context'
 
-import { useQueryState } from '.'
+import styles from './SearchResults.module.scss'
 
+import { useQueryState } from '.'
 interface SearchResultsProps extends WebviewPageProps {
     settings: SettingsCascadeOrError<Settings>
     instanceHostname: Promise<string>
+    fullQuery: string
 }
 
 export const SearchResults = React.memo<SearchResultsProps>(
-    ({ platformContext, theme, sourcegraphVSCodeExtensionAPI, settings, instanceHostname }) => {
+    ({ platformContext, theme, sourcegraphVSCodeExtensionAPI, settings, instanceHostname, fullQuery }) => {
         const executedQuery = useQueryState(({ state }) => state.queryToRun.query)
         const searchResults = useQueryState(({ state }) => state.searchResults)
         const searchActions = useQueryState(({ actions }) => actions)
@@ -118,13 +122,43 @@ export const SearchResults = React.memo<SearchResultsProps>(
                     }
                 }
             })().catch(error => {
-                console.log({ error })
+                console.log(error)
+                // TODO error handling
+            })
+        }
+
+        const onShareResultsClick = (): void => {
+            ;(async () => {
+                const host = await instanceHostname
+                const finalUri = host + '/search?q=' + encodeURIComponent(fullQuery)
+                return sourcegraphVSCodeExtensionAPI.copyLink(finalUri)
+            })().catch(error => {
+                console.log(error)
                 // TODO error handling
             })
         }
 
         return (
-            <>
+            <div className={styles.streamingSearchResultsContainer}>
+                {/* TODO: This is a temporary searchResultsInfoBar */}
+                <div className={classNames('flex-grow-1 result-container', styles.searchResultsInfoBar)}>
+                    <div className={styles.row}>
+                        <div className={styles.expander} />
+                        <ul className="nav align-items-center">
+                            <li className={styles.divider} aria-hidden="true" />
+                            <li className={classNames('mr-2', styles.navItem)} data-tooltip="Share results link">
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-secondary text-decoration-none"
+                                    onClick={onShareResultsClick}
+                                >
+                                    <ShareOutlineIcon className="icon-inline mr-1" />
+                                    <small>Share</small>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
                 <StreamingSearchResultsList
                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
                     isLightTheme={theme === 'theme-light'}
@@ -152,7 +186,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
                         </p>
                     </div>
                 )}
-            </>
+            </div>
         )
     }
 )

@@ -5,6 +5,7 @@ import { Observable, Subscription } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { SearchBox } from '@sourcegraph/branded/src/search/input/SearchBox'
+import { getFullQuery } from '@sourcegraph/branded/src/search/input/toggles/Toggles'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { getAvailableSearchContextSpecOrDefault } from '@sourcegraph/shared/src/search'
@@ -41,7 +42,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
     const caseSensitive = useQueryState(({ state }) => state.caseSensitive)
     const patternType = useQueryState(({ state }) => state.patternType)
     const selectedSearchContextSpec = useQueryState(({ state }) => state.selectedSearchContextSpec)
-
+    const [fullQuery, setFullQuery] = useState<string | undefined>(undefined)
     const instanceHostname = useMemo(() => sourcegraphVSCodeExtensionAPI.getInstanceHostname(), [
         sourcegraphVSCodeExtensionAPI,
     ])
@@ -81,6 +82,14 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
 
         if (queryToRun.query) {
             setLoading(true)
+
+            const currentFullQuery = getFullQuery(
+                queryToRun.query,
+                selectedSearchContextSpec || '',
+                caseSensitive,
+                patternType
+            )
+            setFullQuery(currentFullQuery)
 
             let queryString = `${queryToRun.query}${caseSensitive ? ' case:yes' : ''}`
 
@@ -306,13 +315,16 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                                     </a>
                                 </div>
                             )}
-                            <SearchResults
-                                platformContext={platformContext}
-                                theme={theme}
-                                sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
-                                settings={sourcegraphSettings}
-                                instanceHostname={instanceHostname}
-                            />
+                            {fullQuery && (
+                                <SearchResults
+                                    platformContext={platformContext}
+                                    theme={theme}
+                                    sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                                    settings={sourcegraphSettings}
+                                    instanceHostname={instanceHostname}
+                                    fullQuery={fullQuery}
+                                />
+                            )}
                         </div>
                     )}
                 </>
