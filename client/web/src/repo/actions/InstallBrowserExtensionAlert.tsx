@@ -137,7 +137,7 @@ export function isFirefoxCampaignActive(currentMs: number): boolean {
 }
 
 export const FirefoxAddonAlert: React.FunctionComponent<FirefoxAlertProps> = ({ onAlertDismissed, displayName }) => (
-    <div className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 percy-hide">
+    <div className="alert alert-info m-3 d-flex justify-content-between flex-shrink-0 percy-hide">
         <div>
             <p className="font-weight-medium my-0 mr-3">
                 Sourcegraph is back at{' '}
