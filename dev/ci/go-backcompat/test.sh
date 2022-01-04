@@ -88,18 +88,19 @@ PROTECTED_FILES=(
   ./dev/ci/go-backcompat
 )
 
+# If migration files have been renamed or deleted between these commits
+# (which historically we've done in response to reverted migrations), we
+# might end up with a combination of files from both commits that ruin
+# some of the assumptions we make (unique prefix ID being one major one).
+# We delete this directory first prior to the checkout so that we don't
+# have any current state in the migrations directory to mess us up in this
+# way.
+rm -rf ./migrations
+
 # Check out the previous code then immediately restore whatever
 # the current version of the protected files are.
 git checkout "${latest_minor_release_tag}"
 git checkout "${current_head}" -- "${PROTECTED_FILES[@]}"
-
-# If migration files have been renamed or deleted between these commits,
-# we may continue to hold on to renamed or deleted files. Historically,
-# this has happened when reverting existing migrations. To prevent this,
-# we'll ensure that the migrations directory does not contain old versions
-# of the schema definitions.
-git reset ./migrations
-git clean -fd ./migrations
 
 if [ -f "${flakefile}" ]; then
   echo ""
