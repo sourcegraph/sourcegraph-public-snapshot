@@ -705,10 +705,6 @@ func (u *userStore) GetByUsernames(ctx context.Context, usernames ...string) ([]
 var ErrNoCurrentUser = errors.New("no current user")
 
 func (u *userStore) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
-	if Mocks.Users.GetByCurrentAuthUser != nil {
-		return Mocks.Users.GetByCurrentAuthUser(ctx)
-	}
-
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() {
 		return nil, ErrNoCurrentUser
