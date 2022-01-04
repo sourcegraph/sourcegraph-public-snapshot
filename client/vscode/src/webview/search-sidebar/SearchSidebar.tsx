@@ -128,7 +128,6 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
                     .toPromise()
                 if (currentUser.data) {
                     setValidAccessToken(true)
-                    await sourcegraphVSCodeExtensionAPI.openSearchPanel()
                 } else {
                     setValidAccessToken(false)
                 }
