@@ -66,7 +66,6 @@ func main() {
 	opts := CheckOptions{
 		FailuresThreshold: threshold,
 		BuildTimeout:      time.Duration(timeoutMins) * time.Minute,
-		GitHubClient:      ghc,
 	}
 	log.Printf("running buildchecker over %d builds with option: %+v\n", len(builds), opts)
 	results, err := CheckBuilds(
