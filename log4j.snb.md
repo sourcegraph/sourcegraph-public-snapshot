@@ -189,7 +189,7 @@ TODO: more reflective thoughts here
 Remaining TODO:
 
 * Fix snippet issue
-* Annotated snippets
+* Annotated snippets (maybe later?)
 * Move back to beyang.org (and make public)
 * Publish
 
