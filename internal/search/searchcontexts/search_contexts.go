@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -57,7 +58,14 @@ func ParseSearchContextSpec(searchContextSpec string) ParsedSearchContextSpec {
 	return ParsedSearchContextSpec{SearchContextName: searchContextSpec}
 }
 
-func ResolveSearchContextSpec(ctx context.Context, db database.DB, searchContextSpec string) (*types.SearchContext, error) {
+func ResolveSearchContextSpec(ctx context.Context, db database.DB, searchContextSpec string) (sc *types.SearchContext, err error) {
+	tr, ctx := trace.New(ctx, "ResolveSearchContextSpec", searchContextSpec)
+	defer func() {
+		tr.LazyPrintf("context: %+v", sc)
+		tr.SetErrorIfNotContext(err)
+		tr.Finish()
+	}()
+
 	parsedSearchContextSpec := ParseSearchContextSpec(searchContextSpec)
 	hasNamespaceName := parsedSearchContextSpec.NamespaceName != ""
 	hasSearchContextName := parsedSearchContextSpec.SearchContextName != ""
