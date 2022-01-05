@@ -39,4 +39,3 @@ BUILD_START_TIME=$(TZ=UTC date -d "$BUILD_START_TIME" +'%s')
 # Init the step
 STEP_START=$(date +'%s')
 export STEP_START
-

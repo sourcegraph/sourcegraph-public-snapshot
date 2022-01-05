@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 (
   BUILDEVENT_APIKEY="$CI_BUILDEVENT_API_KEY"
   BUILDEVENT_DATASET="buildkite"
