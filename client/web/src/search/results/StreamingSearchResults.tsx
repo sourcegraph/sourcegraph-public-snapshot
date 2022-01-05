@@ -3,6 +3,7 @@ import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
+import { asError } from '@sourcegraph/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -15,17 +16,15 @@ import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { PatternTypeProps, SearchStreamingProps, ParsedSearchQueryProps, SearchContextProps } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { CodeMonitoringProps } from '../../code-monitoring'
 import { PageTitle } from '../../components/PageTitle'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { useNavbarQueryState, useSearchStack } from '../../stores'
+import { useExperimentalFeatures, useNavbarQueryState, useSearchStack } from '../../stores'
 import { SearchBetaIcon } from '../CtaIcons'
 import { getSubmittedSearchesCount, submitSearch } from '../helpers'
 
@@ -41,15 +40,14 @@ import { StreamingSearchResultsList } from './StreamingSearchResultsList'
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
         Pick<ActivationProps, 'activation'>,
-        Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        ParsedSearchQueryProps,
         Pick<PatternTypeProps, 'patternType'>,
-        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled' | 'showSearchContext'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         SettingsCascadeProps,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         ThemeProps,
-        CodeMonitoringProps,
         CodeInsightsProps,
         FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
@@ -81,6 +79,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         extensionsController: { extHostAPI: extensionHostAPI },
     } = props
 
+    const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
 
     // Log view event on first load
@@ -252,6 +251,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 caseSensitive={caseSensitive}
                 query={query}
                 enableCodeInsights={codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)}
+                enableCodeMonitoring={enableCodeMonitoring}
                 resultsFound={resultsFound}
                 className={classNames('flex-grow-1', styles.streamingSearchResultsInfobar)}
                 allExpanded={allExpanded}

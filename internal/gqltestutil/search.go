@@ -539,7 +539,7 @@ query SearchSuggestions($query: String!) {
 }
 
 type SearchStreamClient struct {
-	Client *Client
+	*Client
 }
 
 func (s *SearchStreamClient) SearchRepositories(query string) (SearchRepositoryResults, error) {
@@ -677,30 +677,6 @@ func (s *SearchStreamClient) SearchAll(query string) ([]*AnyResult, error) {
 		ar = append(ar, &AnyResult{Inner: r})
 	}
 	return ar, nil
-}
-
-func (s *SearchStreamClient) OverwriteSettings(subjectID, contents string) error {
-	return s.Client.OverwriteSettings(subjectID, contents)
-}
-
-func (s *SearchStreamClient) AuthenticatedUserID() string {
-	return s.Client.AuthenticatedUserID()
-}
-
-func (s *SearchStreamClient) Repository(name string) (*Repository, error) {
-	return s.Client.Repository(name)
-}
-
-func (s *SearchStreamClient) CreateSearchContext(input CreateSearchContextInput, repositories []SearchContextRepositoryRevisionsInput) (string, error) {
-	return s.Client.CreateSearchContext(input, repositories)
-}
-
-func (s *SearchStreamClient) GetSearchContext(id string) (*GetSearchContextResult, error) {
-	return s.Client.GetSearchContext(id)
-}
-
-func (s *SearchStreamClient) DeleteSearchContext(id string) error {
-	return s.Client.DeleteSearchContext(id)
 }
 
 func (s *SearchStreamClient) search(query string, dec streamhttp.FrontendStreamDecoder) error {

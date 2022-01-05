@@ -3,14 +3,13 @@ import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useState, useMemo, useCallback } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
@@ -96,7 +95,7 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
     if (batchChange === undefined) {
         return (
             <div className="text-center">
-                <LoadingSpinner className="icon-inline mx-auto my-4" />
+                <LoadingSpinner className="mx-auto my-4" />
             </div>
         )
     }
@@ -121,7 +120,7 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
                 byline={
                     <BatchChangeInfoByline
                         createdAt={batchChange.createdAt}
-                        initialApplier={batchChange.initialApplier}
+                        creator={batchChange.creator}
                         lastAppliedAt={batchChange.lastAppliedAt}
                         lastApplier={batchChange.lastApplier}
                     />

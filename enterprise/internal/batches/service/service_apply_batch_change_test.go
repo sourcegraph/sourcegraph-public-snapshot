@@ -58,13 +58,13 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			}
 
 			want := &btypes.BatchChange{
-				Name:             batchSpec.Spec.Name,
-				Description:      batchSpec.Spec.Description,
-				InitialApplierID: admin.ID,
-				LastApplierID:    admin.ID,
-				LastAppliedAt:    now,
-				NamespaceUserID:  batchSpec.NamespaceUserID,
-				BatchSpecID:      batchSpec.ID,
+				Name:            batchSpec.Spec.Name,
+				Description:     batchSpec.Spec.Description,
+				CreatorID:       admin.ID,
+				LastApplierID:   admin.ID,
+				LastAppliedAt:   now,
+				NamespaceUserID: batchSpec.NamespaceUserID,
+				BatchSpecID:     batchSpec.ID,
 
 				// Ignore these fields
 				ID:        batchChange.ID,
@@ -123,8 +123,8 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				batchSpec := ct.CreateBatchSpec(t, ctx, store, "created-by-user", user.ID)
 				batchChange := ct.CreateBatchChange(t, ctx, store, "created-by-user", user.ID, batchSpec.ID)
 
-				if have, want := batchChange.InitialApplierID, user.ID; have != want {
-					t.Fatalf("batch change InitialApplierID is wrong. want=%d, have=%d", want, have)
+				if have, want := batchChange.CreatorID, user.ID; have != want {
+					t.Fatalf("batch change CreatorID is wrong. want=%d, have=%d", want, have)
 				}
 
 				if have, want := batchChange.LastApplierID, user.ID; have != want {
@@ -143,8 +143,8 @@ func TestServiceApplyBatchChange(t *testing.T) {
 					t.Fatalf("batch change ID is wrong. want=%d, have=%d", want, have)
 				}
 
-				if have, want := batchChange2.InitialApplierID, batchChange.InitialApplierID; have != want {
-					t.Fatalf("batch change InitialApplierID is wrong. want=%d, have=%d", want, have)
+				if have, want := batchChange2.CreatorID, batchChange.CreatorID; have != want {
+					t.Fatalf("batch change CreatorID is wrong. want=%d, have=%d", want, have)
 				}
 
 				if have, want := batchChange2.LastApplierID, admin.ID; have != want {

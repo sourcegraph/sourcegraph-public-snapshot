@@ -241,7 +241,7 @@ func revsToGitArgs(revs []protocol.RevisionSpecifier) []string {
 		} else if rev.RefGlob != "" {
 			revArgs = append(revArgs, "--glob="+rev.RefGlob)
 		} else if rev.ExcludeRefGlob != "" {
-			revArgs = append(revArgs, "--exclude="+rev.RefGlob)
+			revArgs = append(revArgs, "--exclude="+rev.ExcludeRefGlob)
 		} else {
 			revArgs = append(revArgs, "HEAD")
 		}

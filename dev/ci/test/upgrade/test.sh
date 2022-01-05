@@ -43,7 +43,7 @@ popd
 # Load variables set up by init-server, disabling `-x` to avoid printing variables
 set +x
 # shellcheck disable=SC1091
-source /root/.profile
+source /root/.sg_envrc
 set -x
 
 # Stop old Sourcegraph release
@@ -88,8 +88,6 @@ sleep 15
 echo "--- TEST: Checking Sourcegraph instance is accessible"
 curl -f http://localhost:7080
 curl -f http://localhost:7080/healthz
-echo "--- TEST: Downloading Puppeteer"
-yarn --cwd client/shared run download-puppeteer-browser
 echo "--- TEST: Running tests"
 pushd client/web
 yarn run test:regression:core

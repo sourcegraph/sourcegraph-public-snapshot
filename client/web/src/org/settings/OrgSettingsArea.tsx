@@ -3,10 +3,11 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../auth'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables } from '../../graphql-operations'
@@ -32,6 +33,7 @@ const NotFoundPage: React.FunctionComponent = () => (
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
     location: H.Location
+    authenticatedUser: AuthenticatedUser
 }
 
 /**
@@ -61,7 +63,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
             <OrgSettingsSidebar {...props} className="flex-0 mr-3" showOrgCode={showOrgCode} />
             <div className="flex-1">
                 <ErrorBoundary location={props.location}>
-                    <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                    <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
                         <Switch>
                             <Route
                                 path={props.match.path}

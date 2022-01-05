@@ -3,7 +3,7 @@ import { replaceRange } from '../../util/strings'
 import { FILTERS, FilterType } from './filters'
 import { scanSearchQuery } from './scanner'
 import { Filter, Token } from './token'
-import { filterExists, findFilters } from './validate'
+import { filterExists, findFilters, getGlobalSearchContextFilter } from './validate'
 
 export function appendContextFilter(query: string, searchContextSpec: string | undefined): string {
     return !filterExists(query, FilterType.context) && searchContextSpec
@@ -97,4 +97,17 @@ export const sanitizeQueryForTelemetry = (query: string): string => {
     }
 
     return newQuery
+}
+
+/**
+ * Wraps a query in parenthesis if a global search context filter exists.
+ * Example: context:ctx a or b -> context:ctx (a or b)
+ */
+export function parenthesizeQueryWithGlobalContext(query: string): string {
+    const globalSearchContextFilter = getGlobalSearchContextFilter(query)
+    if (!globalSearchContextFilter) {
+        return query
+    }
+    const queryWithOmittedContext = omitFilter(query, globalSearchContextFilter.filter)
+    return appendContextFilter(`(${queryWithOmittedContext})`, globalSearchContextFilter.spec)
 }

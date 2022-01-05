@@ -10,7 +10,8 @@ import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
 import type { ExtensionAlertProps } from './repo/RepoContainer'
 import { PageRoutes } from './routes.constants'
-import { useExperimentalFeatures } from './stores'
+import { ParsedSearchQueryProps } from './search'
+import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
@@ -32,6 +33,7 @@ const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
         Omit<LayoutProps, 'match'>,
+        ParsedSearchQueryProps,
         ThemeProps,
         ThemePreferenceProps,
         BreadcrumbsProps,
@@ -72,7 +74,7 @@ function passThroughToServer(): React.ReactNode {
 export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: PageRoutes.Index,
-        render: () => <Redirect to="/search" />,
+        render: () => <Redirect to={PageRoutes.Search} />,
         exact: true,
     },
     {
@@ -83,7 +85,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: PageRoutes.SearchConsole,
         render: props =>
-            props.showMultilineSearchConsole ? <SearchConsolePage {...props} /> : <Redirect to="/search" />,
+            getExperimentalFeatures().showMultilineSearchConsole ? (
+                <SearchConsolePage {...props} />
+            ) : (
+                <Redirect to={PageRoutes.Search} />
+            ),
         exact: true,
     },
     {
@@ -92,7 +98,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             useExperimentalFeatures.getState().showSearchNotebook ? (
                 <SearchNotebookPage {...props} />
             ) : (
-                <Redirect to="/search" />
+                <Redirect to={PageRoutes.Search} />
             ),
         exact: true,
     },
@@ -131,7 +137,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
                     setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
                 />
             ) : (
-                <Redirect to="/search" />
+                <Redirect to={PageRoutes.Search} />
             ),
 
         exact: true,

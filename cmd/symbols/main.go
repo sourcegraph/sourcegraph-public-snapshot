@@ -80,7 +80,8 @@ func main() {
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 		HoneyDataset: &honey.Dataset{
-			Name: "codeintel-symbols",
+			Name:       "codeintel-symbols",
+			SampleRate: 5,
 		},
 	}
 

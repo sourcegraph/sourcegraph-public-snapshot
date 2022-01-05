@@ -10,10 +10,10 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FuzzyFinder } from '@sourcegraph/web/src/components/fuzzyFinder/FuzzyFinder'
 
-import { PatternTypeProps, OnboardingTourProps, SearchContextInputProps, parseSearchURLQuery } from '..'
+import { PatternTypeProps, SearchContextInputProps, parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '../../keyboardShortcuts/keyboardShortcuts'
-import { useNavbarQueryState } from '../../stores'
+import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
 import { NavbarQueryState } from '../../stores/navbarSearchQueryState'
 import { getExperimentalFeatures } from '../../util/get-experimental-features'
 import { SubmitSearchParameters } from '../helpers'
@@ -26,7 +26,6 @@ interface Props
         SettingsCascadeProps,
         ThemeProps,
         SearchContextInputProps,
-        OnboardingTourProps,
         TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
@@ -64,6 +63,10 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         searchCaseSensitivity,
         setSearchCaseSensitivity,
     } = useNavbarQueryState(selectQueryState, shallow)
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
+    const showSearchContextManagement = useExperimentalFeatures(
+        features => features.showSearchContextManagement ?? false
+    )
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -104,6 +107,8 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         >
             <SearchBox
                 {...props}
+                showSearchContext={showSearchContext}
+                showSearchContextManagement={showSearchContextManagement}
                 caseSensitive={searchCaseSensitivity}
                 setCaseSensitivity={setSearchCaseSensitivity}
                 queryState={queryState}

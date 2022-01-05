@@ -62,6 +62,11 @@
             "pointer": true
           }
         },
+        "searchContextsQuery": {
+          "description": "Enables query based search contexts",
+          "type": "boolean",
+          "default": false
+        },
         "searchStats": {
           "description": "Enables a button on the search results page that shows language statistics about the results for a search query.",
           "type": "boolean",
@@ -194,6 +199,15 @@
           "description": "Enables search stack",
           "type": "boolean",
           "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "clientSearchResultRanking": {
+          "description": "How to rank search results in the client",
+          "type": "string",
+          "default": "by-line-number",
+          "examples": ["by-line-number", "by-zoekt-ranking"],
           "!go": {
             "pointer": true
           }

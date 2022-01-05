@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -30,13 +29,13 @@ func TestAutoDefinedSearchContexts(t *testing.T) {
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(orig) // reset
 
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: username}, nil)
 
-		orgs := dbmock.NewMockOrgStore()
+		orgs := database.NewMockOrgStore()
 		orgs.GetOrgsWithRepositoriesByUserIDFunc.SetDefaultReturn([]*types.Org{}, nil)
 
-		db := dbmock.NewMockDB()
+		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.OrgsFunc.SetDefaultReturn(orgs)
 
@@ -79,16 +78,16 @@ func TestAutoDefinedSearchContexts(t *testing.T) {
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(orig) // reset
 
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: username}, nil)
-		orgs := dbmock.NewMockOrgStore()
+		orgs := database.NewMockOrgStore()
 		orgs.GetOrgsWithRepositoriesByUserIDFunc.SetDefaultReturn([]*types.Org{{
 			ID:          orgID,
 			Name:        orgName,
 			DisplayName: &orgDisplayName,
 		}}, nil)
 
-		db := dbmock.NewMockDB()
+		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.OrgsFunc.SetDefaultReturn(orgs)
 
@@ -144,7 +143,7 @@ func TestSearchContexts(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sc := dbmock.NewMockSearchContextsStore()
+			sc := database.NewMockSearchContextsStore()
 			sc.CountSearchContextsFunc.SetDefaultReturn(0, nil)
 			sc.ListSearchContextsFunc.SetDefaultHook(func(ctx context.Context, pageOpts database.ListSearchContextsPageOptions, opts database.ListSearchContextsOptions) ([]*types.SearchContext, error) {
 				if diff := cmp.Diff(tt.wantOpts, opts); diff != "" {
@@ -153,7 +152,7 @@ func TestSearchContexts(t *testing.T) {
 				return []*types.SearchContext{}, nil
 			})
 
-			db := dbmock.NewMockDB()
+			db := database.NewMockDB()
 			db.SearchContextsFunc.SetDefaultReturn(sc)
 
 			_, err := (&Resolver{db: db}).SearchContexts(ctx, tt.args)

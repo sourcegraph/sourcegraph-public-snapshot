@@ -481,12 +481,12 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 				if tc.batchSpecApplied {
 					batchChange := &btypes.BatchChange{
-						Name:             fmt.Sprintf("batch change for spec %d", batchSpec.ID),
-						BatchSpecID:      batchSpec.ID,
-						InitialApplierID: batchSpec.UserID,
-						NamespaceUserID:  batchSpec.NamespaceUserID,
-						LastApplierID:    batchSpec.UserID,
-						LastAppliedAt:    time.Now(),
+						Name:            fmt.Sprintf("batch change for spec %d", batchSpec.ID),
+						BatchSpecID:     batchSpec.ID,
+						CreatorID:       batchSpec.UserID,
+						NamespaceUserID: batchSpec.NamespaceUserID,
+						LastApplierID:   batchSpec.UserID,
+						LastAppliedAt:   time.Now(),
 					}
 					if err := s.CreateBatchChange(ctx, batchChange); err != nil {
 						t.Fatal(err)

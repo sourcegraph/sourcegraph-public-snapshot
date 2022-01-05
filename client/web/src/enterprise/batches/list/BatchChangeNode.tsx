@@ -7,7 +7,7 @@ import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { Badge } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../components/time/Timestamp'
-import { ListBatchChange } from '../../../graphql-operations'
+import { BatchChangeState, ListBatchChange } from '../../../graphql-operations'
 import {
     ChangesetStatusOpen,
     ChangesetStatusClosed,
@@ -23,6 +23,30 @@ export interface BatchChangeNodeProps {
     displayNamespace: boolean
 }
 
+const StateBadge: React.FunctionComponent<{ state: BatchChangeState }> = ({ state }) => {
+    switch (state) {
+        case BatchChangeState.OPEN:
+            return (
+                <Badge variant="success" className={classNames(styles.batchChangeNodeBadge, 'text-uppercase')}>
+                    Open
+                </Badge>
+            )
+        case BatchChangeState.CLOSED:
+            return (
+                <Badge variant="danger" className={classNames(styles.batchChangeNodeBadge, 'text-uppercase')}>
+                    Closed
+                </Badge>
+            )
+        case BatchChangeState.DRAFT:
+        default:
+            return (
+                <Badge variant="secondary" className={classNames(styles.batchChangeNodeBadge, 'text-uppercase')}>
+                    Draft
+                </Badge>
+            )
+    }
+}
+
 /**
  * An item in the list of batch changes.
  */
@@ -33,16 +57,7 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
 }) => (
     <>
         <span className={styles.batchChangeNodeSeparator} />
-        {!node.closedAt && (
-            <Badge variant="success" className={classNames(styles.batchChangeNodeBadge, 'text-uppercase')}>
-                Open
-            </Badge>
-        )}
-        {node.closedAt && (
-            <Badge variant="danger" className={classNames(styles.batchChangeNodeBadge, 'text-uppercase')}>
-                Closed
-            </Badge>
-        )}
+        <StateBadge state={node.state} />
         <div className={styles.batchChangeNodeContent}>
             <div className="m-0 d-md-flex d-block align-items-baseline">
                 <h3 className={classNames(styles.batchChangeNodeTitle, 'm-0 d-md-inline-block d-block')}>
@@ -57,7 +72,10 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                             <span className="text-muted d-inline-block mx-1">/</span>
                         </div>
                     )}
-                    <Link className="test-batches-link mr-2" to={node.url}>
+                    <Link
+                        className="test-batches-link mr-2"
+                        to={`${node.url}${node.state === BatchChangeState.DRAFT ? '/edit' : ''}`}
+                    >
                         {node.name}
                     </Link>
                 </h3>
@@ -72,17 +90,21 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                 }
             />
         </div>
-        <ChangesetStatusOpen
-            className="d-block d-sm-flex"
-            label={<span className="text-muted">{node.changesetsStats.open} open</span>}
-        />
-        <ChangesetStatusClosed
-            className="d-block d-sm-flex text-center"
-            label={<span className="text-muted">{node.changesetsStats.closed} closed</span>}
-        />
-        <ChangesetStatusMerged
-            className="d-block d-sm-flex"
-            label={<span className="text-muted">{node.changesetsStats.merged} merged</span>}
-        />
+        {node.state !== BatchChangeState.DRAFT && (
+            <>
+                <ChangesetStatusOpen
+                    className="d-block d-sm-flex"
+                    label={<span className="text-muted">{node.changesetsStats.open} open</span>}
+                />
+                <ChangesetStatusClosed
+                    className="d-block d-sm-flex text-center"
+                    label={<span className="text-muted">{node.changesetsStats.closed} closed</span>}
+                />
+                <ChangesetStatusMerged
+                    className="d-block d-sm-flex"
+                    label={<span className="text-muted">{node.changesetsStats.merged} merged</span>}
+                />
+            </>
+        )}
     </>
 )

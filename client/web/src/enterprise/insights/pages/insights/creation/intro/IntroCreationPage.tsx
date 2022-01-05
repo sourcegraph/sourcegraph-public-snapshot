@@ -65,7 +65,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     <>
                         Insights analyze your code based on any search query.{' '}
                         <a href="https://docs.sourcegraph.com/code_insights" target="_blank" rel="noopener">
-                            Learn more.
+                            Learn more
                         </a>
                     </>
                 }
@@ -87,19 +87,19 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     onClick={handleCreateCodeStatsInsightClick}
                 />
 
+                <div className={styles.info}>
+                    Not sure which insight type to choose? Learn more about the{' '}
+                    <a
+                        href="https://docs.sourcegraph.com/code_insights/references/common_use_cases"
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        use cases.
+                    </a>
+                </div>
+
                 <ExtensionInsightsCard data-testid="explore-extensions" onClick={handleExploreExtensionsClick} />
             </div>
-
-            <footer className="mt-3">
-                Not sure which insight type to choose? Learn more about the{' '}
-                <a
-                    href="https://docs.sourcegraph.com/code_insights/references/common_use_cases"
-                    target="_blank"
-                    rel="noopener"
-                >
-                    use cases
-                </a>
-            </footer>
         </Page>
     )
 }

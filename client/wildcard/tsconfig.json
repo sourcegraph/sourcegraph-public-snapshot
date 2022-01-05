@@ -8,7 +8,12 @@
     "baseUrl": "./src",
     "jsx": "react",
   },
-  "references": [{ "path": "../shared" }, { "path": "../branded" }, { "path": "../../schema" }],
+  "references": [
+    { "path": "../shared" },
+    { "path": "../branded" },
+    { "path": "../../schema" },
+    { "path": "../common" },
+  ],
   "include": ["**/*", ".*"],
   "exclude": ["../../node_modules", "./node_modules", "./out"],
 }

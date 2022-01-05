@@ -74,18 +74,18 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 
 	matchingBatchChange := &btypes.BatchChange{
-		Name:             spec.Spec.Name,
-		NamespaceOrgID:   orgID,
-		InitialApplierID: userID,
-		LastApplierID:    userID,
-		LastAppliedAt:    time.Now(),
-		BatchSpecID:      spec.ID,
+		Name:           spec.Spec.Name,
+		NamespaceOrgID: orgID,
+		CreatorID:      userID,
+		LastApplierID:  userID,
+		LastAppliedAt:  time.Now(),
+		BatchSpecID:    spec.ID,
 	}
 	if err := cstore.CreateBatchChange(ctx, matchingBatchChange); err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -288,7 +288,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

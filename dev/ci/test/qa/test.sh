@@ -29,7 +29,7 @@ cleanup() {
 
 }
 
-if [[ $VAGRANT_RUN_ENV = "CI" ]]; then
+if [[ $BUILDKITE = "true" ]]; then
   IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION
 else
   # shellcheck disable=SC2034
@@ -49,14 +49,12 @@ popd
 # Load variables set up by init-server, disabling `-x` to avoid printing variables
 set +x
 # shellcheck disable=SC1091
-source /root/.profile
+source /root/.sg_envrc
 set -x
 
 echo "--- TEST: Checking Sourcegraph instance is accessible"
 curl -f http://localhost:7080
 curl -f http://localhost:7080/healthz
-echo "--- TEST: Downloading Puppeteer"
-yarn --cwd client/shared run download-puppeteer-browser
 echo "--- TEST: Running tests"
 # Run all tests, and error if one fails
 test_status=0

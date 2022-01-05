@@ -80,6 +80,14 @@ export interface MonacoQueryInputProps
     height?: string | number
     preventNewLine?: boolean
     editorOptions?: Monaco.editor.IStandaloneEditorConstructionOptions
+
+    /**
+     * NOTE: This is currently only used for Insights code through
+     * the MonacoField component: client/web/src/enterprise/insights/components/form/monaco-field/MonacoField.tsx
+     *
+     * Issue to improve this: https://github.com/sourcegraph/sourcegraph/issues/29438
+     */
+    placeholder?: string
 }
 
 /**
@@ -155,7 +163,10 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     preventNewLine = true,
     editorOptions,
     onHandleFuzzyFinder,
+    caseSensitive,
+    keyboardShortcutForFocus,
     onEditorCreated: onEditorCreatedCallback,
+    placeholder,
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
 
@@ -370,6 +381,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     return (
         <div
             ref={setContainer}
+            data-placeholder={placeholder}
             className={classNames('flex-grow-1 flex-shrink-past-contents', className)}
             onFocus={onFocus}
         >

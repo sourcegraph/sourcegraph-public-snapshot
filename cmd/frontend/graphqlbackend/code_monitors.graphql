@@ -272,7 +272,7 @@ type MonitorActionConnection {
 """
 Supported actions for code monitors.
 """
-union MonitorAction = MonitorEmail
+union MonitorAction = MonitorEmail | MonitorWebhook | MonitorSlackWebhook
 
 """
 Email is one of the supported actions of code monitors.
@@ -328,6 +328,68 @@ The priority of an email action.
 enum MonitorEmailPriority {
     NORMAL
     CRITICAL
+}
+
+"""
+Webhook is one of the supported actions of code monitors.
+"""
+type MonitorWebhook implements Node {
+    """
+    The unique id of a webhook action.
+    """
+    id: ID!
+    """
+    Whether the webhook action is enabled or not.
+    """
+    enabled: Boolean!
+    """
+    The endpoint the webhook event will be sent to
+    """
+    url: String!
+    """
+    A list of events.
+    """
+    events(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionEventConnection!
+}
+
+"""
+SlackWebhook is one of the supported actions of code monitors.
+"""
+type MonitorSlackWebhook implements Node {
+    """
+    The unique id of an Slack webhook action.
+    """
+    id: ID!
+    """
+    Whether the Slack webhook action is enabled or not.
+    """
+    enabled: Boolean!
+    """
+    The endpoint the Slack webhook event will be sent to
+    """
+    url: String!
+    """
+    A list of events.
+    """
+    events(
+        """
+        Returns the first n events from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): MonitorActionEventConnection!
 }
 
 """
@@ -462,6 +524,14 @@ input MonitorActionInput {
     An email action.
     """
     email: MonitorEmailInput
+    """
+    A webhook action.
+    """
+    webhook: MonitorWebhookInput
+    """
+    A Slack webhook action.
+    """
+    slackWebhook: MonitorSlackWebhookInput
 }
 
 """
@@ -485,6 +555,35 @@ input MonitorEmailInput {
     """
     header: String!
 }
+
+"""
+The input required to create a webhook action.
+"""
+input MonitorWebhookInput {
+    """
+    Whether the webhook action is enabled or not.
+    """
+    enabled: Boolean!
+    """
+    The URL that will receive a payload when the action is triggered.
+    """
+    url: String!
+}
+
+"""
+The input required to create a Slack webhook action.
+"""
+input MonitorSlackWebhookInput {
+    """
+    Whether the Slack webhook action is enabled or not.
+    """
+    enabled: Boolean!
+    """
+    The URL that will receive a payload when the action is triggered.
+    """
+    url: String!
+}
+
 """
 The input required to edit an action.
 """
@@ -493,6 +592,16 @@ input MonitorEditActionInput {
     An email action.
     """
     email: MonitorEditEmailInput
+
+    """
+    A webhook action.
+    """
+    webhook: MonitorEditWebhookInput
+
+    """
+    A Slack webhook action.
+    """
+    slackWebhook: MonitorEditSlackWebhookInput
 }
 
 """
@@ -500,11 +609,45 @@ The input required to edit an email action.
 """
 input MonitorEditEmailInput {
     """
-    The id of an email action.
+    The id of an email action. If unset, this will
+    be treated as a new email action and be created
+    rather than updated.
     """
     id: ID
     """
     The desired state after the update.
     """
     update: MonitorEmailInput!
+}
+
+"""
+The input required to edit a webhook action.
+"""
+input MonitorEditWebhookInput {
+    """
+    The id of a webhook action. If unset, this will
+    be treated as a new webhook action and be created
+    rather than updated.
+    """
+    id: ID
+    """
+    The desired state after the update.
+    """
+    update: MonitorWebhookInput!
+}
+
+"""
+The input required to edit a Slack webhook action.
+"""
+input MonitorEditSlackWebhookInput {
+    """
+    The id of a Slack webhook action. If unset, this will
+    be treated as a new Slack webhook action and be created
+    rather than updated.
+    """
+    id: ID
+    """
+    The desired state after the update.
+    """
+    update: MonitorSlackWebhookInput!
 }

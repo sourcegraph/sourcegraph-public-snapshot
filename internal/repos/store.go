@@ -170,7 +170,7 @@ func (s *Store) CountNamespacedRepos(ctx context.Context, userID, orgID int32) (
 const countTotalNamespacedReposQueryFmtstr = `
 SELECT COUNT(DISTINCT(repo_id))
 FROM external_service_repos
-WHERE user_id IS NOT NULL OR org_id IS NOT NULL`
+WHERE (user_id IS NOT NULL OR org_id IS NOT NULL)`
 
 // DeleteExternalServiceReposNotIn calls DeleteExternalServiceRepo for every repo not in the given ids that is owned
 // by the given external service. We run one query per repo rather than one batch query in order to reduce the chances

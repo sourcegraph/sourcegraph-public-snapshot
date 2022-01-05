@@ -60,7 +60,7 @@ function cluster_setup() {
   popd
   echo "--- wait for ready"
   kubectl get pods -n "$NAMESPACE"
-  time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=20m -n "$NAMESPACE"
+  time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=5m -n "$NAMESPACE"
   set -e
   set -o pipefail
 }
@@ -86,7 +86,7 @@ function test_setup() {
   # Load variables set up by init-server, disabling `-x` to avoid printing variables, setting +u to avoid blowing up on ubound ones
   set +x +u
   # shellcheck disable=SC1091
-  source /root/.profile
+  source /root/.sg_envrc
   set -x -u
 
   echo "--- TEST: Checking Sourcegraph instance is accessible"
@@ -97,8 +97,6 @@ function test_setup() {
 
 function e2e() {
   pushd client/web
-  echo "--- TEST: Downloading Puppeteer"
-  yarn --cwd client/shared run download-puppeteer-browser
   echo "$SOURCEGRAPH_BASE_URL"
   echo "--- TEST: Running tests"
   yarn run test:regression:core

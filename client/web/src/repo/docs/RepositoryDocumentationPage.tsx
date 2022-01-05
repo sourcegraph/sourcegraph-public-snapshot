@@ -8,15 +8,14 @@ import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, ErrorLike } from '@sourcegraph/common'
 import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Container, ProductStatusBadge, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
@@ -192,7 +191,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                     }
                 />
             ) : null}
-            {loading ? <LoadingSpinner className="icon-inline m-1" /> : null}
+            {loading ? <LoadingSpinner className="m-1" /> : null}
             {error && error.message === 'page not found' ? <PageNotFound /> : null}
             {error && (error.message === 'no LSIF data' || error.message === 'no LSIF documentation') ? (
                 <div className={styles.container}>

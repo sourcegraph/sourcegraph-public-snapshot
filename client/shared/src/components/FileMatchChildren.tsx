@@ -4,12 +4,13 @@ import React from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { isErrorLike } from '@sourcegraph/common'
+
 import { IHighlightLineRange } from '../graphql/schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
 import { SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { isErrorLike } from '../util/errors'
 import {
     appendLineRangeQueryParameter,
     toPositionOrRangeQueryParameter,
@@ -18,9 +19,9 @@ import {
 
 import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
 import styles from './FileMatchChildren.module.scss'
-import { MatchGroup } from './FileMatchContext'
 import { LastSyncedIcon } from './LastSyncedIcon'
 import { Link } from './Link'
+import { MatchGroup } from './ranking/PerFileResultRanking'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     location: H.Location

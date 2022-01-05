@@ -16,7 +16,7 @@ import { Link, Redirect } from 'react-router-dom'
 import { Observable, EMPTY } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -30,12 +30,11 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -50,6 +49,7 @@ import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphq
 import { CodeInsightsProps } from '../../insights/types'
 import { Settings } from '../../schema/settings.schema'
 import { PatternTypeProps, SearchContextProps } from '../../search'
+import { useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
@@ -264,8 +264,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
     }, [uri, showCodeInsights, props.extensionsController])
 
     // eslint-disable-next-line unicorn/prevent-abbreviations
-    const enableAPIDocs =
-        !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.apiDocs !== false
+    const enableAPIDocs = useExperimentalFeatures(features => features.apiDocs)
 
     const getPageTitle = (): string => {
         const repoString = displayRepoName(repo.name)
@@ -329,7 +328,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                 <PageTitle title={getPageTitle()} />
                 {treeOrError === undefined ? (
                     <div>
-                        <LoadingSpinner className="icon-inline" /> Loading files and directories
+                        <LoadingSpinner /> Loading files and directories
                     </div>
                 ) : isErrorLike(treeOrError) ? (
                     // If the tree is actually a blob, be helpful and redirect to the blob page.
@@ -399,12 +398,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 <BrainIcon className="icon-inline" /> Code Intelligence
                                             </Link>
                                         )}
-                                        {batchChangesEnabled && (
-                                            <RepoBatchChangesButton
-                                                className="btn btn-outline-secondary"
-                                                repoName={repo.name}
-                                            />
-                                        )}
+                                        {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
                                         {repo.viewerCanAdminister && (
                                             <Link
                                                 className="btn btn-outline-secondary"

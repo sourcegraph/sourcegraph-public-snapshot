@@ -3,11 +3,13 @@ import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber
 import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operators'
 import { AggregableBadge } from 'sourcegraph'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 
 import { displayRepoName } from '../components/RepoFileLink'
 import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../graphql/schema'
+
+import { parenthesizeQueryWithGlobalContext } from './query/transformer'
 
 export type SearchEvent =
     | { type: 'matches'; data: SearchMatch[] }
@@ -420,8 +422,13 @@ function initiateSearchStream(
     return new Observable<SearchEvent>(observer => {
         const subscriptions = new Subscription()
 
+        // Parenthesizing the query prevents misintepreting the query if a context is selected (from the dropdown).
+        // For example, if context 'ctx' is selected and the query is 'a or b':
+        // we should interpret the query as 'context:ctx (a or b)' and not 'context:ctx a or b', which is the
+        // same as '(context:ctx a) or b'.
+        const parenthesizedQuery = parenthesizeQueryWithGlobalContext(query)
         const parameters = [
-            ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
+            ['q', `${parenthesizedQuery} ${caseSensitive ? 'case:yes' : ''}`],
             ['v', version],
             ['t', patternType as string],
             ['dl', '0'],

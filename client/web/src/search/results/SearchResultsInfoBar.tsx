@@ -21,7 +21,6 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { PatternTypeProps, CaseSensitivityProps } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { CodeMonitoringProps } from '../../code-monitoring'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { SearchPatternType } from '../../graphql-operations'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../CtaIcons'
@@ -36,6 +35,7 @@ import {
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
 import { CreateCodeInsightButton } from './components/CreateCodeInsightButton'
+import { CreateSearchContextButton } from './components/CreateSearchContextButton'
 import styles from './SearchResultsInfoBar.module.scss'
 
 function getFeatureTourElementFn(isAuthenticatedUser: boolean): (onClose: () => void) => HTMLElement {
@@ -68,8 +68,7 @@ export interface SearchResultsInfoBarProps
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         Pick<PatternTypeProps, 'patternType'>,
-        Pick<CaseSensitivityProps, 'caseSensitive'>,
-        CodeMonitoringProps {
+        Pick<CaseSensitivityProps, 'caseSensitive'> {
     history: H.History
     /** The currently authenticated user or null */
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
@@ -78,6 +77,7 @@ export interface SearchResultsInfoBarProps
      * Whether the code insights feature flag is enabled.
      */
     enableCodeInsights?: boolean
+    enableCodeMonitoring: boolean
 
     /** The search query and if any results were found */
     query?: string
@@ -186,6 +186,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
     }, [props.telemetryService, tour])
 
     const showActionButtonExperimentalVersion = !props.authenticatedUser
+
+    const searchContextButton = useMemo(
+        () => <CreateSearchContextButton query={props.query} authenticatedUser={props.authenticatedUser} />,
+        [props.authenticatedUser, props.query]
+    )
 
     const codeInsightsButton = useMemo(
         () => (
@@ -333,10 +338,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         )}
                     </ActionsContainer>
 
-                    {(codeInsightsButton || createCodeMonitorButton || saveSearchButton) && (
+                    {(searchContextButton || codeInsightsButton || createCodeMonitorButton || saveSearchButton) && (
                         <li className={styles.divider} aria-hidden="true" />
                     )}
 
+                    {searchContextButton}
                     {codeInsightsButton}
                     {createCodeMonitorButton}
                     {saveSearchButton}
