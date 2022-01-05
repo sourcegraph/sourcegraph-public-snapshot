@@ -3,4 +3,4 @@
 -- See https://docs.timescale.com/latest/using-timescaledb/telemetry
 --
 -- Cannot be run inside of a transaction block.
-ALTER SYSTEM SET timescaledb.telemetry_level=off;
+-- ALTER SYSTEM SET timescaledb.telemetry_level=off;

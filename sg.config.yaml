@@ -6,7 +6,7 @@ env:
   PGDATABASE: sourcegraph
   PGSSLMODE: disable
   SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: 'true'
-  
+
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
   SRC_LOG_LEVEL: info
   SRC_LOG_FORMAT: condensed
@@ -101,7 +101,7 @@ env:
 
   # Code Insights uses a separate database, because it's easier to run TimescaleDB in
   # Docker than install as a Postgres extension in dev environments.
-  CODEINSIGHTS_PGDATASOURCE: postgres://postgres:password@127.0.0.1:5435/postgres
+  CODEINSIGHTS_PGDATASOURCE: postgres://sourcegraph:sourcegraph@127.0.0.1:5435/postgres
   DB_STARTUP_TIMEOUT: 120s # codeinsights-db needs more time to start in some instances.
   DISABLE_CODE_INSIGHTS_HISTORICAL: true
   DISABLE_CODE_INSIGHTS: true
@@ -500,7 +500,9 @@ commands:
         --name=${CONTAINER} \
         --cpus=1 \
         --memory=1g \
-        -e POSTGRES_PASSWORD=password \
+        -e POSTGRES_USER=sourcegraph \
+        -e POSTGRES_PASSWORD=sourcegraph \
+        -e PGDATA=/var/lib/postgresql/data \
         -p 0.0.0.0:$PORT:5432 \
         -v $DISK:/var/lib/postgresql/data \
         $IMAGE >$LOG_FILE 2>&1

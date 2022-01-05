@@ -3,4 +3,5 @@
 set -ex
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-docker build -t "${IMAGE:-sourcegraph/codeinsights-db}" .
+# This image is identical to our "sourcegraph/postgres-12.6-alpine" image.
+IMAGE="${IMAGE:-sourcegraph/codeinsights-db}" ../postgres-12.6-alpine/build.sh

@@ -16,7 +16,7 @@ BEGIN;
 
 -- Drop all Timescale chunks prior to now. This will reduce a bloated number of partitions caused by old
 -- data generation patterns. This is a Timescale specific thing.
-SELECT drop_chunks('series_points', CURRENT_TIMESTAMP::DATE);
+-- SELECT drop_chunks('series_points', CURRENT_TIMESTAMP::DATE);
 
 -- Clean up the remaining records if any exist.
 TRUNCATE series_points CASCADE;
