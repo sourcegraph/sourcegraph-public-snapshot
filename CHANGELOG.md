@@ -39,6 +39,17 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.35.0
 
+**⚠️ Due to issues related to Code Insights in the 3.35.0 release, users are advised to upgrade directly to 3.35.1.**
+
+### Fixed
+
+- Skipped migrations caused existing Code Insights to not appear. [#29395](https://github.com/sourcegraph/sourcegraph/pull/29395)
+- Enterprise-only out-of-band migrations failed to execute due to missing enterprise configuration flag. [#29426](https://github.com/sourcegraph/sourcegraph/pull/29426)
+
+## 3.35.0
+
+**⚠️ Due to issues related to Code Insights on this release, users are advised to upgrade directly to 3.35.1.**
+
 ### Added
 
 - Individual batch changes can publish multiple changesets to the same repository by specifying multiple target branches using the [`on.branches`](https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#on-repository) attribute. [#25228](https://github.com/sourcegraph/sourcegraph/issues/25228)
