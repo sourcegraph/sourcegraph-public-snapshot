@@ -16,7 +16,7 @@ import { filter, switchMap } from 'rxjs/operators'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -188,7 +188,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
             return (
                 <EmptyCommandListContainer className={styles.commandList}>
                     <div className="d-flex py-5 align-items-center justify-content-center">
-                        <LoadingSpinner />
+                        <LoadingSpinner inline={false} />
                         <span className="mx-2">Loading Sourcegraph extensions</span>
                         <PuzzleIcon className="icon-inline" />
                     </div>

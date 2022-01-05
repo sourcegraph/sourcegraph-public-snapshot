@@ -7,11 +7,11 @@ import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
 import sanitizeHtml from 'sanitize-html'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 import { highlightNode } from '@sourcegraph/shared/src/util/dom'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { highlightCode } from '../search/backend'
 
@@ -177,7 +177,7 @@ export class CommitSearchResultMatch extends React.Component<
                         </Link>
                     ) : (
                         <>
-                            <LoadingSpinner className={classNames('icon-inline', styles.loader)} />
+                            <LoadingSpinner className={styles.loader} />
                             <table>
                                 <tbody>
                                     {range(firstLine, lastLine).map(index => (

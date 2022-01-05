@@ -6,9 +6,8 @@ import { catchError } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { querySearchResultsStats } from './backend'
 import { SearchStatsLanguages } from './SearchStatsLanguages'
@@ -86,7 +85,7 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
             </Form>
             <hr className="my-3" />
             {stats === undefined ? (
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             ) : isErrorLike(stats) ? (
                 <div className="alert alert-danger">{stats.message}</div>
             ) : stats.limitHit ? (

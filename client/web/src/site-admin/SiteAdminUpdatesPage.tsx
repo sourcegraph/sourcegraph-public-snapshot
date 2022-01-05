@@ -6,9 +6,9 @@ import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 import { PageTitle } from '../components/PageTitle'
@@ -44,7 +44,7 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetry
                 <div>
                     {updateCheck.pending && (
                         <div className={classNames('alert alert-primary', styles.alert)}>
-                            <LoadingSpinner className="icon-inline" /> Checking for updates... (reload in a few seconds)
+                            <LoadingSpinner /> Checking for updates... (reload in a few seconds)
                         </div>
                     )}
                     {!updateCheck.errorMessage &&

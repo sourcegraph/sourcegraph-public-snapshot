@@ -1,9 +1,8 @@
 import * as H from 'history'
 import React, { useEffect, useMemo } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
@@ -30,7 +29,7 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<RepoSettingsPe
     const permissionsInfo = useObservable(useMemo(() => repoPermissionsInfo(repo.id), [repo.id]))
 
     if (permissionsInfo === undefined) {
-        return <LoadingSpinner />
+        return <LoadingSpinner inline={false} />
     }
 
     return (
