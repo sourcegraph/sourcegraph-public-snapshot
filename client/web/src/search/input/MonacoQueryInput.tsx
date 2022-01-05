@@ -87,7 +87,7 @@ export interface MonacoQueryInputProps
      *
      * Issue to improve this: https://github.com/sourcegraph/sourcegraph/issues/29438
      */
-    'data-placeholder'?: string
+    placeholder?: string
 }
 
 /**
@@ -166,7 +166,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     caseSensitive,
     keyboardShortcutForFocus,
     onEditorCreated: onEditorCreatedCallback,
-    'data-placeholder': placeholder,
+    placeholder,
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
 
