@@ -78,31 +78,31 @@ In this part of our journey, we leave the Log4j codebase for the source code for
 
 From the `this.context.lookup(name)` invocation in Log4j's `JNDIManager`, we jump into the `InitialContext` class:
 
-https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/javax/naming/InitialContext.java?L408-410
+https://sourcegraph.com/jdk@v11/-/blob/java.naming/javax/naming/InitialContext.java?L408-410
 
 This method breaks the lookup into two parts: a context and then a subsequent lookup within that context. If the name we specify is a URL, the context will be determined by the URL scheme:
 
-https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/javax/naming/InitialContext.java?L314-343&subtree=true
+https://sourcegraph.com/jdk@v11/-/blob/java.naming/javax/naming/InitialContext.java?L314-343&subtree=true
 
 JNDI supports a variety of lookup mechanisms keyed by URL scheme. Because our name has the `ldap` URL scheme, the `NamingManager.getURLContext` invocation returns an instance of `ldapURLContext`, which then performs the lookup.
 
-https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/com/sun/jndi/url/ldap/ldapURLContext.java?L90-96&subtree=true
+https://sourcegraph.com/jdk@v11/-/blob/java.naming/com/sun/jndi/url/ldap/ldapURLContext.java?L90-96&subtree=true
 
 This code makes use of Java's inheritance structure. `ldapURLContext::lookup` invokes `GenericURLContext::lookup`:
 
-https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/com/sun/jndi/toolkit/url/GenericURLContext.java?L203-211
+https://sourcegraph.com/jdk@v11/-/blob/java.naming/com/sun/jndi/toolkit/url/GenericURLContext.java?L203-211
 
 ...which in turn invokes `getRootURLContext`, an abstract method defined in `ldapURLContext::getRootURLContext`:
 
-https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/com/sun/jndi/url/ldap/ldapURLContext.java?L59-62
+https://sourcegraph.com/jdk@v11/-/blob/java.naming/com/sun/jndi/url/ldap/ldapURLContext.java?L59-62
 
 ...which finally invokes `ldapURLContextFactory::getUsingURLIgnoreRootDN`, which returns an instance of `LdapCtx` with fields pointing to host malicious.com:1389:
 
-https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/com/sun/jndi/url/ldap/ldapURLContextFactory.java?L59-60&subtree=true
+https://sourcegraph.com/jdk@v11/-/blob/java.naming/com/sun/jndi/url/ldap/ldapURLContextFactory.java?L59-60&subtree=true
 
 Our context in hand, we then invoke `lookup` on this instance of `LdapCtx`, which then issues the LDAP request over the network, passing the name argument (`nm`), `Basic/Command/Base64/dG91Y2ggL3RtcC9wd25lZAo=`, to the LDAP client:
 
-https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/com/sun/jndi/ldap/LdapCtx.java?L2013-2026&subtree=true
+https://sourcegraph.com/jdk@v11/-/blob/java.naming/com/sun/jndi/ldap/LdapCtx.java?L2013-2026&subtree=true
 
 > Aside: Our specific exploit involves manipulating the vulnerable server into making an LDAP request that ultimately leads to an RCE, but there are other vectors that lead to both RCE and non-RCE exploits. Indeed, early mitigation efforts focused on LDAP, which led [attackers to shift their strategy to other protocols like RMI](https://blogs.juniper.net/en-us/threat-research/log4j-vulnerability-attackers-shift-focus-from-ldap-to-rmi) and [DNS](https://www.microsoft.com/security/blog/2021/12/11/guidance-for-preventing-detecting-and-hunting-for-cve-2021-44228-log4j-2-exploitation/). The updates to the source code in 2.14.0 (primarily, the additional checks added to `JndiManager::lookup`) defended against these other vectors by relying on explicit whitelists.
 
@@ -143,15 +143,15 @@ https://sourcegraph.com/github.com/sickcodes/JNDIExploit/-/blob/src/main/java/co
 
 Back in our vulnerable app code, we receive the LDAP response:
 
-https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/com/sun/jndi/ldap/LdapCtx.java?L2013-2026&subtree=true
+https://sourcegraph.com/jdk@v11/-/blob/java.naming/com/sun/jndi/ldap/LdapCtx.java?L2013-2026&subtree=true
 
 The result gets returned up through a few stack frames:
 
-https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/com/sun/jndi/ldap/LdapCtx.java?L1056
+https://sourcegraph.com/jdk@v11/-/blob/java.naming/com/sun/jndi/ldap/LdapCtx.java?L1056
 
 At this point, we haven't yet loaded the malicious class file from the attacker's server. This happens further down the `c_lookup` method where the parsed LDAP response parameters have been decoded into a set of attributes that parameterize a call to `DirectoryManager.getObjectInstance`:
 
-https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/com/sun/jndi/ldap/LdapCtx.java?L1114-1115
+https://sourcegraph.com/jdk@v11/-/blob/java.naming/com/sun/jndi/ldap/LdapCtx.java?L1114-1115
 
 The `attrs` variable at this point contains a hash table with the following values:
 
@@ -164,7 +164,7 @@ javaClassName: foo
 
 The `javaCodeBase`, `javaFactory`, and `javaClassName` values were all parsed from our malicious LDAP response. The `javaCodeBase` value tells the DirectoryManager to fetch the factory class `ExploitDLFzSVQjFv` from "http://malicious.com:8888", where our attacker service is ready to serve the generated malicious class.
 
-https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/javax/naming/spi/NamingManager.java?L165-176
+https://sourcegraph.com/jdk@v11/-/blob/java.naming/javax/naming/spi/NamingManager.java?L165-176
 
 Our attacker server receives the HTTP request for the class file and responds with the cached malicious class (`ExploitDLFzSVQjFv`) generated earlier from `CommandTemplate`:
 
@@ -172,7 +172,7 @@ https://sourcegraph.com/github.com/sickcodes/JNDIExploit/-/blob/src/main/java/co
 
 Back in our vulnerable app, we receive the response and create a new instance of the malicious factory class `ExploitDLFzSVQjFv`:
 
-https://sourcegraph.com/jdk@65983d0/-/blob/java.naming/javax/naming/spi/NamingManager.java?L179-180
+https://sourcegraph.com/jdk@v11/-/blob/java.naming/javax/naming/spi/NamingManager.java?L179-180
 
 It is here that the malicious code we received from the attacker server is run. In our case, that means by this point in the execution, the file `/tmp/pwned` has been created and the RCE has run successfully.
 
