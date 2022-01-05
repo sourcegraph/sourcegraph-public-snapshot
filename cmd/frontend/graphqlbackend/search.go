@@ -92,7 +92,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 	}
 	tr.LazyPrintf("parsing done")
 
-	if settings.ExperimentalFeatures.SearchContextsQuery {
+	if settings.ExperimentalFeatures != nil && settings.ExperimentalFeatures.SearchContextsQuery {
 		// Replace each context in the query with its repository query if any.
 		plan, err = substituteSearchContexts(ctx, db, plan)
 		if err != nil {
