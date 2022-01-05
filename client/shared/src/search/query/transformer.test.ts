@@ -121,7 +121,4 @@ describe('parenthesizeQueryWithGlobalContext', () => {
 
     test('query with nested context', () =>
         expect(parenthesizeQueryWithGlobalContext('(context:ctx a) or b')).toEqual('(context:ctx a) or b'))
-
-    test('query with global context filter and spec=global', () =>
-        expect(parenthesizeQueryWithGlobalContext('context:global a or b')).toEqual('context:global a or b'))
 })

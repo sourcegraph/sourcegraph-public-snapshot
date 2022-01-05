@@ -100,12 +100,12 @@ export const sanitizeQueryForTelemetry = (query: string): string => {
 }
 
 /**
- * Wraps a query in parenthesis and appends a global search context filter if it exists and it does not have the spec 'global'.
+ * Wraps a query in parenthesis if a global search context filter exists.
  * Example: context:ctx a or b -> context:ctx (a or b)
  */
 export function parenthesizeQueryWithGlobalContext(query: string): string {
     const globalSearchContextFilter = getGlobalSearchContextFilter(query)
-    if (!globalSearchContextFilter || globalSearchContextFilter.spec === 'global') {
+    if (!globalSearchContextFilter) {
         return query
     }
     const queryWithOmittedContext = omitFilter(query, globalSearchContextFilter.filter)
