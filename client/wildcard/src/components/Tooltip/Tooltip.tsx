@@ -21,6 +21,12 @@ const TOOLTIP_MODIFIERS: Popper.Modifiers = {
     },
 }
 
+/**
+ * Renders a Tooltip that can be positioned relative to a target element.
+ *
+ * This component should typically only need to be rendered once in a React tree.
+ * If you need to attach a tooltip to an specific element, simply add the `data-tooltip` attribute to that element.
+ */
 export const Tooltip: React.FunctionComponent<TooltipProps> = ({ className }) => {
     const { subject, content, subjectSeq, placement = 'auto', delay } = useTooltipState()
 
