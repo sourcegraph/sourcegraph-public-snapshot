@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
-traceURL=$(BUILDEVENT_APIKEY="$CI_BUILDEVENT_API_KEY" \
-  BUILDEVENT_DATASET="buildkite" \
-  ./buildevents "$BUILDKITE_BUILD_ID" "$BUILD_START_TIME" success)
+(
+  BUILDEVENT_APIKEY="$CI_BUILDEVENT_API_KEY"
+  BUILDEVENT_DATASET="buildkite"
+  export BUILDEVENT_APIKEY
+  export BUILDEVENT_DATASET
 
-echo "Honeycomb trace url: $traceURL"
+  traceURL=$(./buildevents "$BUILDKITE_BUILD_ID" "$BUILD_START_TIME" success)
+
+  echo "Honeycomb trace url: $traceURL"
+)
