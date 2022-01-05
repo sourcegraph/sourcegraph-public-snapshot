@@ -179,6 +179,11 @@ func validateSearchContextRepositoryRevisions(repositoryRevisions []*types.Searc
 	return nil
 }
 
+// validateSearchContextQuery validates that the search context query complies to the
+// necessary restrictions. We need to limit what we accept so that the query can
+// be converted to an efficient database lookup when determing which revisions
+// to index in RepoRevs. We don't want to run a search to determine which revisions
+// we need to index. That would be brittle, recursive and possibly impossible.
 func validateSearchContextQuery(contextQuery string) error {
 	if contextQuery == "" {
 		return nil
