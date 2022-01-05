@@ -12,6 +12,8 @@ and any manual migration steps you must perform.
 
 ## 3.34 -> 3.35
 
+> WARNING: **We are currently investigating issues related to Code Insights on this release. Users are advised to hold off on upgrading to 3.35 until a fix is available.**
+
 The query-runner deployment has been removed, so if you deploy with a method other than the `kubectl-apply-all.sh`, a manual removal of the deployment may be necessary.
 Follow the [standard upgrade procedure](../install/kubernetes/update.md) to upgrade your deployment.
 

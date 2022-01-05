@@ -402,8 +402,6 @@ func codeIntelQA(candidateTag string) operations.Operation {
 	}
 }
 
-const vagrantServiceAccount = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
-
 func serverE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":chromium: Sourcegraph E2E",
@@ -411,11 +409,7 @@ func serverE2E(candidateTag string) operations.Operation {
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
-
-			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
-			bk.Env("VAGRANT_RUN_ENV", "CI"),
 			bk.Env("DISPLAY", ":99"),
-
 			// TODO need doc
 			bk.Env("JEST_CIRCUS", "0"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
@@ -435,11 +429,7 @@ func serverQA(candidateTag string) operations.Operation {
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
-
-			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
-			bk.Env("VAGRANT_RUN_ENV", "CI"),
 			bk.Env("DISPLAY", ":99"),
-
 			// TODO need doc
 			bk.Env("JEST_CIRCUS", "0"),
 			bk.Env("LOG_STATUS_MESSAGES", "true"),
@@ -462,11 +452,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
-
-			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
-			bk.Env("VAGRANT_RUN_ENV", "CI"),
 			bk.Env("DISPLAY", ":99"),
-
 			bk.Env("LOG_STATUS_MESSAGES", "true"),
 			bk.Env("NO_CLEANUP", "false"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
