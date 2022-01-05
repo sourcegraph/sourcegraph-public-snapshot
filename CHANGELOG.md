@@ -20,6 +20,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Sourcegraph's API (streaming search, GraphQL, etc.) may now be used from any domain when using an access token for authentication, or with no authentication in the case of Sourcegraph.com. [#28775](https://github.com/sourcegraph/sourcegraph/pull/28775)
+- The endpoint `/search/stream` will be retired in favor of `/.api/search/stream`. This requires no action unless you have developed custom code against `/search/stream`. We will support both endpoints for a short period of time before removing `/search/stream`. Please refer to the [documentation](https://docs.sourcegraph.com/api/stream_api) for more information.
 
 ### Fixed
 
