@@ -1,4 +1,3 @@
-import { useFloating, arrow } from '@floating-ui/react-dom'
 import ReachPopover, { Position, positionMatchWidth } from '@reach/popover'
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
@@ -36,17 +35,12 @@ export const Popover: React.FunctionComponent<PopoverProps> = props => {
     } = props
 
     const isControlledReference = useRef(isOpen !== undefined)
-    const popoverReference = useRef<HTMLDivElement>()
+    const popoverReference = useRef<HTMLDivElement>(null)
 
     // Local popover visibility state is used if popover component is used
     // in stateful controlled mode.
     const [isOpenInternal, setOpenInternalState] = useState(false)
     const isPopoverVisible = isControlledReference.current ? isOpen : isOpenInternal
-
-    const test = target.current ? target : undefined
-
-    const positionFloating = useFloating({ middleware: [arrow({ element: test })] })
-    console.log('positionFloating', positionFloating)
 
     const setPopoverVisibility = useCallback(
         (state: boolean): void => {

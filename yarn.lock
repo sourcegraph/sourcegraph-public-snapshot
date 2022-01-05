@@ -1701,26 +1701,6 @@
   dependencies:
     "@figspec/components" "^1.0.0"
 
-"@floating-ui/core@^0.2.1":
-  version "0.2.1"
-  resolved "https://registry.npmjs.org/@floating-ui/core/-/core-0.2.1.tgz#69edf53b310d1f7285cbe1926ff74eab776bc99a"
-  integrity sha512-fhFNlxBdiA8RVdVcZUllwvIgwvj3QL1o5MxthjgPmkc6nizu1/qwTVMhpr9QRdkF6DwNQnu0rvgb0r7Ml3i4mw==
-
-"@floating-ui/dom@^0.1.7":
-  version "0.1.7"
-  resolved "https://registry.npmjs.org/@floating-ui/dom/-/dom-0.1.7.tgz#6fb8d012d8984c04f53badb6a96e4c8c6a9bcb44"
-  integrity sha512-aA0i/ov24v+f6YCobJecoDBcOikn1W7+q9txSXQmezfPEJ6P9QFRrFvuYGaO0EevgexmJ3PlrfSR4dKhNHRP0Q==
-  dependencies:
-    "@floating-ui/core" "^0.2.1"
-
-"@floating-ui/react-dom@^0.3.3":
-  version "0.3.3"
-  resolved "https://registry.npmjs.org/@floating-ui/react-dom/-/react-dom-0.3.3.tgz#47bdfca1a9bb47d3b2ec51e833e1aaa20958b944"
-  integrity sha512-ALPyo9zJkRKsUFHNXtvBVB1B5zOhDfLtq4eJHYMt6DHt4wPiHgCoM8XtMiFz5s5P3cbznkNa6cUUIRn9j2F5/A==
-  dependencies:
-    "@floating-ui/dom" "^0.1.7"
-    use-isomorphic-layout-effect "^1.1.1"
-
 "@gql2ts/from-query@^1.9.0":
   version "1.9.0"
   resolved "https://registry.npmjs.org/@gql2ts/from-query/-/from-query-1.9.0.tgz#ae92a4fa3df005df57eb835b371d7964644b9beb"
@@ -23357,11 +23337,6 @@ use-isomorphic-layout-effect@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/use-isomorphic-layout-effect/-/use-isomorphic-layout-effect-1.0.0.tgz#f56b4ed633e1c21cd9fc76fe249002a1c28989fb"
   integrity sha512-JMwJ7Vd86NwAt1jH7q+OIozZSIxA4ND0fx6AsOe2q1H8ooBUp5aN6DvVCqZiIaYU6JaMRJGyR0FO7EBCIsb/Rg==
-
-use-isomorphic-layout-effect@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.npmjs.org/use-isomorphic-layout-effect/-/use-isomorphic-layout-effect-1.1.1.tgz#7bb6589170cd2987a152042f9084f9effb75c225"
-  integrity sha512-L7Evj8FGcwo/wpbv/qvSfrkHFtOpCzvM5yl2KVyDJoylVuSvzphiiasmjgQPttIGBAy2WKiBNR98q8w7PiNgKQ==
 
 use-latest@^1.0.0:
   version "1.1.0"
