@@ -12,7 +12,7 @@ and any manual migration steps you must perform.
 
 ## 3.34 -> 3.35.1
 
-> WARNING: **Due to issues related to Code Insights on the 3.35.0 release, Users are advised to upgrade directly to 3.35.1.**
+**Due to issues related to Code Insights on the 3.35.0 release, Users are advised to upgrade directly to 3.35.1.**
 
 The query-runner deployment has been removed, so if you deploy with a method other than the `kubectl-apply-all.sh`, a manual removal of the deployment may be necessary.
 Follow the [standard upgrade procedure](../install/kubernetes/update.md) to upgrade your deployment.

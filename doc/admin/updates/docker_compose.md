@@ -11,11 +11,12 @@ Each section comprehensively describes the steps needed to upgrade, and any manu
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
 ## 3.35.0 -> 3.35.1
-> WARNING: **Due to issues related to Code Insights on the 3.35.0 release, users are advised to upgrade to 3.35.1 as soon as possible.**
+
+**Due to issues related to Code Insights on the 3.35.0 release, users are advised to upgrade to 3.35.1 as soon as possible.
 
 ## 3.34 -> 3.35.1
 
-> WARNING: **Due to issues related to Code Insights on the 3.35.0 release, users are advised to upgrade directly to 3.35.1.**
+**Due to issues related to Code Insights on the 3.35.0 release, users are advised to upgrade directly to 3.35.1.**
 
 The `query-runner` service has been decommissioned in the 3.35 release and will be removed during the upgrade.
 
