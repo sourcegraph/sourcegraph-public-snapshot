@@ -23,14 +23,11 @@ func init() {
 }
 
 func TestDeleteLSIFUpload(t *testing.T) {
-	db := database.NewDB(nil)
+	users := database.NewStrictMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	t.Cleanup(func() {
-		database.Mocks.Users.GetByCurrentAuthUser = nil
-	})
-	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
+	db := database.NewStrictMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
 
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFUpload:42")))
 	mockResolver := resolvermocks.NewMockResolver()
@@ -59,14 +56,11 @@ func TestDeleteLSIFUploadUnauthenticated(t *testing.T) {
 }
 
 func TestDeleteLSIFIndex(t *testing.T) {
-	db := database.NewDB(nil)
+	users := database.NewStrictMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	t.Cleanup(func() {
-		database.Mocks.Users.GetByCurrentAuthUser = nil
-	})
-	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
+	db := database.NewStrictMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
 
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFIndex:42")))
 	mockResolver := resolvermocks.NewMockResolver()

@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -115,7 +114,7 @@ func (j CommitSearch) Required() bool {
 	return j.IsRequired
 }
 
-func (j *CommitSearch) ExpandUsernames(ctx context.Context, db dbutil.DB) (err error) {
+func (j *CommitSearch) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
 	protocol.ReduceWith(j.Query, func(n protocol.Node) protocol.Node {
 		if err != nil {
 			return n
@@ -149,19 +148,19 @@ func (j *CommitSearch) ExpandUsernames(ctx context.Context, db dbutil.DB) (err e
 // For example, given a list ["foo", "@alice"] where the user "alice" has 2 email addresses
 // "alice@example.com" and "alice@example.org", it would return ["foo", "alice@example\\.com",
 // "alice@example\\.org"].
-func expandUsernamesToEmails(ctx context.Context, db dbutil.DB, values []string) (expandedValues []string, err error) {
+func expandUsernamesToEmails(ctx context.Context, db database.DB, values []string) (expandedValues []string, err error) {
 	expandOne := func(ctx context.Context, value string) ([]string, error) {
 		if isPossibleUsernameReference := strings.HasPrefix(value, "@"); !isPossibleUsernameReference {
 			return nil, nil
 		}
 
-		user, err := database.Users(db).GetByUsername(ctx, strings.TrimPrefix(value, "@"))
+		user, err := db.Users().GetByUsername(ctx, strings.TrimPrefix(value, "@"))
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		} else if err != nil {
 			return nil, err
 		}
-		emails, err := database.UserEmails(db).ListByUser(ctx, database.UserEmailsListOptions{
+		emails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 			UserID: user.ID,
 		})
 		if err != nil {
