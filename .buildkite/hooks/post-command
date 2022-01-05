@@ -9,6 +9,6 @@
     ./buildevents step "$BUILDKITE_BUILD_ID" "$BUILDKITE_STEP_ID" "$STEP_START" "$BUILDKITE_STEP_KEY"
 
     if [ "$BUILDKITE_COMMAND_EXIT_STATUS" -ne 0 ]; then
-      ./buildevents build "$BUILDKITE_BUILD_ID" "$BUILD_START_TIME" failure
+        ./buildevents build "$BUILDKITE_BUILD_ID" "$BUILD_START_TIME" failure
     fi
 )
