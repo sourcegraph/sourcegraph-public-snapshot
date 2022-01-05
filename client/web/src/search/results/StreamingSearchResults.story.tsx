@@ -94,16 +94,6 @@ add('no results', () => {
     return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
 })
 
-add('diffs tab selected, user logged in', () => {
-    useNavbarQueryState.setState({ searchQueryFromURL: 'r:golang/oauth2 test f:travis type:diff' })
-    return <WebStory>{() => <StreamingSearchResults {...defaultProps} />}</WebStory>
-})
-
-add('code tab selected, user logged in', () => {
-    useNavbarQueryState.setState({ searchQueryFromURL: 'r:golang/oauth2 test f:travis' })
-    return <WebStory>{() => <StreamingSearchResults {...defaultProps} />}</WebStory>
-})
-
 add('search with quotes', () => {
     useNavbarQueryState.setState({ searchQueryFromURL: 'r:golang/oauth2 test f:travis "test"' })
     return <WebStory>{() => <StreamingSearchResults {...defaultProps} />}</WebStory>
