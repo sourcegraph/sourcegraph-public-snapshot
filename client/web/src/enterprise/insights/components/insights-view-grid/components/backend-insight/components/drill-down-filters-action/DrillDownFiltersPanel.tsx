@@ -3,9 +3,9 @@ import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React, { useRef } from 'react'
 
 import { Popover } from '@sourcegraph/wildcard'
+import { flipRightPosition } from '@sourcegraph/wildcard/src/components/Popover'
 
 import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
-import { flipRightPosition } from '../../../../../context-menu/utils'
 import { SubmissionResult } from '../../../../../form/hooks/useForm'
 import { hasActiveFilters } from '../drill-down-filters-panel/components/drill-down-filters-form/DrillDownFiltersForm'
 import { DrillDownInsightCreationFormValues } from '../drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'

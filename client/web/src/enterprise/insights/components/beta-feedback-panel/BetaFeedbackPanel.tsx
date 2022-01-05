@@ -1,9 +1,9 @@
 import React, { useRef, useState } from 'react'
 
 import { Popover, Button, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { flipRightPosition } from '@sourcegraph/wildcard/src/components/Popover'
 
 import { FeedbackPromptContent } from '../../../../nav/Feedback/FeedbackPrompt'
-import { flipRightPosition } from '../context-menu/utils'
 
 import styles from './BetaFeedbackPanel.module.scss'
 

@@ -1,4 +1,4 @@
-import ReachPopover, { Position, positionMatchWidth } from '@reach/popover'
+import ReachPopover, { Position, positionDefault } from '@reach/popover'
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import FocusLock from 'react-focus-lock'
@@ -20,6 +20,7 @@ interface PopoverProps extends React.HTMLAttributes<HTMLDivElement> {
  * It should be used to display contextual information and should be triggered through an action (such as a button click).
  *
  * This component an be controlled or uncontrolled. This is determined by the consumer providing the `isOpen` prop.
+ *
  * Note: You will likely want to position the Popover differently for your use case. Please see the `position` prop for this.
  */
 export const Popover: React.FunctionComponent<PopoverProps> = props => {
@@ -27,7 +28,7 @@ export const Popover: React.FunctionComponent<PopoverProps> = props => {
         isOpen,
         target,
         positionTarget = target,
-        position = positionMatchWidth,
+        position = positionDefault,
         children,
         className,
         onVisibilityChange,

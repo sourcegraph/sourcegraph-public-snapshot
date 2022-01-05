@@ -3,7 +3,8 @@ import classNames from 'classnames'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React from 'react'
 
-import { positionBottomRight } from '../../../../../components/context-menu/utils'
+import { positionBottomRight } from '@sourcegraph/wildcard/src/components/Popover'
+
 import { InsightDashboard } from '../../../../../core/types'
 import { SupportedInsightSubject } from '../../../../../core/types/subjects'
 import { getTooltipMessage, useDashboardPermissions } from '../../hooks/use-dashboard-permissions'
