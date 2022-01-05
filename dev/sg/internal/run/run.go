@@ -307,7 +307,6 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 
 func makeEnv(envs ...map[string]string) []string {
 	combined := os.Environ()
-
 	expandedEnv := map[string]string{}
 
 	for _, env := range envs {
