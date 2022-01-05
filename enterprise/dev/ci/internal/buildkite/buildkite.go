@@ -204,7 +204,7 @@ func Cmd(command string) StepOpt {
 		// BUILDKITE_STEP_ID is prefixed by $$ so it's not interpolated at pipeline generation time
 		// but instead when the step is executed.
 		// TODO
-		tracedCmd := fmt.Sprintf("./tr %s", command)
+		tracedCmd := fmt.Sprintf("./tr '%s'", command)
 		step.Command = append(step.Command, tracedCmd)
 	}
 }
