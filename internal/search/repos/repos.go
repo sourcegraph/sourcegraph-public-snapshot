@@ -163,7 +163,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	}
 
 	// Filter by search context repository revisions only if this search context doesn't have
-	// a repository query, which is replaced by the context:foo term at query parsing time.
+	// a query, which replaces the context:foo term at query parsing time.
 	if searchContext.Query == "" {
 		options.SearchContextID = searchContext.ID
 		options.UserID = searchContext.NamespaceUserID
