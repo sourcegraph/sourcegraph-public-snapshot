@@ -44,6 +44,8 @@ var scheduleReposCounter = promauto.NewCounter(prometheus.CounterOpts{
 type PermsSyncer struct {
 	// The priority queue to maintain the permissions syncing requests.
 	queue *requestQueue
+	// The generic database handle.
+	db database.DB
 	// The database interface for any repos and external services operations.
 	reposStore *repos.Store
 	// The database interface for any permissions operations.
@@ -58,6 +60,7 @@ type PermsSyncer struct {
 
 // NewPermsSyncer returns a new permissions syncing manager.
 func NewPermsSyncer(
+	db database.DB,
 	reposStore *repos.Store,
 	permsStore edb.PermsStore,
 	clock func() time.Time,
@@ -65,6 +68,7 @@ func NewPermsSyncer(
 ) *PermsSyncer {
 	return &PermsSyncer{
 		queue:               newRequestQueue(),
+		db:                  db,
 		reposStore:          reposStore,
 		permsStore:          permsStore,
 		clock:               clock,
@@ -250,7 +254,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		serviceToAccounts[acct.ServiceType+":"+acct.ServiceID] = acct
 	}
 
-	userEmails, err := database.UserEmailsWith(s.reposStore).ListByUser(ctx,
+	userEmails, err := s.db.UserEmails().ListByUser(ctx,
 		database.UserEmailsListOptions{
 			UserID:       user.ID,
 			OnlyVerified: true,
@@ -266,7 +270,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	}
 
 	byServiceID := s.providersByServiceID()
-	accounts := database.ExternalAccountsWith(s.reposStore)
+	accounts := s.db.UserExternalAccounts()
 
 	// Check if the user has an external account for every authz provider respectively,
 	// and try to fetch the account when not.
@@ -454,7 +458,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 		return []uint32{}, nil
 	}
 
-	svcs, err := database.ExternalServicesWith(s.reposStore).List(ctx,
+	svcs, err := s.db.ExternalServices().List(ctx,
 		database.ExternalServicesListOptions{
 			NamespaceUserID: userID,
 			Kinds:           []string{extsvc.KindGitHub, extsvc.KindGitLab},
@@ -593,7 +597,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
 
-	user, err := database.UsersWith(s.reposStore).GetByID(ctx, userID)
+	user, err := s.db.Users().GetByID(ctx, userID)
 	if err != nil {
 		return errors.Wrap(err, "get user")
 	}
@@ -640,7 +644,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	)
 
 	// Set sub-repository permissions
-	srp := database.SubRepoPerms(s.reposStore.Handle().DB())
+	srp := s.db.SubRepoPerms()
 	for spec, perm := range subRepoPerms {
 		if err := srp.UpsertWithSpec(ctx, user.ID, spec, *perm); err != nil {
 			return errors.Wrapf(err, "upserting sub repo perms %v for user %d", spec, user.ID)
