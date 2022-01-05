@@ -3,6 +3,7 @@ import React from 'react'
 import { Redirect } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 
 import { AuthenticatedUser } from '../../auth'
 import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
@@ -67,7 +68,7 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
     featureFlags,
 }) => {
     if (!needsSiteInit) {
-        return <Redirect to="/search" />
+        return <Redirect to={PageRoutes.Search} />
     }
 
     return (
