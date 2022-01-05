@@ -42,6 +42,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The GraphQL API for Code Insights has entered beta. [docs](https://docs.sourcegraph.com/code_insights/references/code_insights_graphql_api)
 - The `SRC_GIT_SERVICE_MAX_EGRESS_BYTES_PER_SECOND` environment variable to control the egress throughput of gitserver's git service (e.g. used by zoekt-index-server to clone repos to index). Set to -1 for no limit. [#29197](https://github.com/sourcegraph/sourcegraph/pull/29197)
 - More explicit Terms of Service and Privacy Policy consent has been added to Sourcegraph Server. [#28716](https://github.com/sourcegraph/sourcegraph/issues/28716)
+- Search suggestions via the GraphQL API were deprecated last release and are now no longer available. Suggestions now work only with the search streaming API. [#29283](https://github.com/sourcegraph/sourcegraph/pull/29283)
 
 ### Changed
 
