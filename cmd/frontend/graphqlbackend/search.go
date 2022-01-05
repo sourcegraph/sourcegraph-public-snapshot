@@ -88,6 +88,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		if err != nil {
 			return alertForQuery(args.Query, err).wrapSearchImplementer(db), nil
 		}
+		tr.LazyPrintf("context substitution done")
 	}
 
 	defaultLimit := defaultMaxSearchResults
@@ -99,20 +100,22 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		defaultLimit = defaultMaxSearchResults
 	}
 
+	inputs := &run.SearchInputs{
+		Plan:          plan,
+		Query:         plan.ToParseTree(),
+		OriginalQuery: args.Query,
+		UserSettings:  settings,
+		Features:      featureflag.FromContext(ctx),
+		PatternType:   searchType,
+		DefaultLimit:  defaultLimit,
+	}
+
+	tr.LazyPrintf("Parsed query: %s", inputs.Query)
+
 	return &searchResolver{
-		db: db,
-		SearchInputs: &run.SearchInputs{
-			Plan:          plan,
-			Query:         plan.ToParseTree(),
-			OriginalQuery: args.Query,
-			UserSettings:  settings,
-			Features:      featureflag.FromContext(ctx),
-			PatternType:   searchType,
-			DefaultLimit:  defaultLimit,
-		},
-
-		stream: args.Stream,
-
+		db:           db,
+		SearchInputs: inputs,
+		stream:       args.Stream,
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
 	}, nil
@@ -211,7 +214,6 @@ func substituteSearchContexts(ctx context.Context, db database.DB, plan query.Pl
 	}
 
 	return query.ToPlan(dnf)
-
 }
 
 func getBoolPtr(b *bool, def bool) bool {
