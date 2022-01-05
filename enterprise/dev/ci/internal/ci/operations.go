@@ -721,3 +721,11 @@ func publishExecutorDockerMirror(version string) operations.Operation {
 		pipeline.AddStep(":packer: :white_check_mark: docker registry mirror image", stepOpts...)
 	}
 }
+
+func buildeventUploadTrace() operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep(":arrow_heading_up: Uploading trace to HoneyComb",
+			bk.Cmd("./enterprise/dev/upload-buildevent-report.sh"),
+		)
+	}
+}

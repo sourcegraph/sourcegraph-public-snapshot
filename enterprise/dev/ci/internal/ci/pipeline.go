@@ -47,6 +47,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"CI_COMMIT_SHA": os.Getenv("BUILDKITE_COMMIT"),
 		// $ in commit messages must be escaped to not attempt interpolation which will fail.
 		"CI_COMMIT_MESSAGE": strings.ReplaceAll(os.Getenv("BUILDKITE_MESSAGE"), "$", "$$"),
+
+		// HoneyComb dataset that stores build traces.
+		"CI_BUILDEVENT_DATASET": "buildkite",
 	}
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
@@ -241,16 +244,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				wait, // wait for all steps to pass
 				triggerUpdaterPipeline)
 		}
-
-		ops.Append(
-			wait, // wait for all steps to pass
-			func(p *bk.Pipeline) {
-				p.AddStep("Uploading trace on HoneyComb",
-					bk.Cmd("./enterprise/dev/upload-buildevent-report.sh"),
-				)
-			},
-		)
 	}
+
+	ops.Append(
+		wait,                    // wait for all steps to pass
+		buildeventUploadTrace(), // upload the final buildevent trace if the build succeeded.
+	)
 
 	// Construct pipeline
 	pipeline := &bk.Pipeline{
