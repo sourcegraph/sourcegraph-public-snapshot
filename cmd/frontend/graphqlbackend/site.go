@@ -140,8 +140,8 @@ func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSON
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return "", err
 	}
-	siteConfig := globals.ConfigurationServerFrontendOnly.Raw().Site
-	return JSONCString(siteConfig), nil
+	siteConfig, err := globals.ConfigurationServerFrontendOnly.RedactSecrets()
+	return JSONCString(siteConfig.Site), err
 }
 
 func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]string, error) {

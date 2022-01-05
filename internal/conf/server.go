@@ -11,7 +11,10 @@ import (
 	"github.com/sourcegraph/jsonx"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )
+
+const RedactedSecret = "REDACTED"
 
 // ConfigurationSource provides direct access to read and write to the
 // "raw" configuration.
@@ -54,6 +57,35 @@ func NewServer(source ConfigurationSource) *Server {
 // Raw returns the raw text of the configuration file.
 func (s *Server) Raw() conftypes.RawUnified {
 	return s.store.Raw()
+}
+
+func (s *Server) RedactSecrets() (conftypes.RawUnified, error) {
+	raw := s.store.Raw()
+	cfg, err := ParseConfig(raw)
+	if err != nil {
+		return raw, err
+	}
+	for _, ap := range cfg.AuthProviders {
+		if ap.Openidconnect != nil {
+			ap.Openidconnect.ClientSecret = RedactedSecret
+		}
+		if ap.Github != nil {
+			ap.Github.ClientSecret = RedactedSecret
+		}
+		if ap.Gitlab != nil {
+			ap.Gitlab.ClientSecret = RedactedSecret
+		}
+	}
+	newSite, err := jsonc.Edit(raw.Site, cfg.AuthProviders, "auth.providers")
+	if err != nil {
+		return raw, err
+	}
+	if cfg.ExecutorsAccessToken != "" {
+		newSite, err = jsonc.Edit(newSite, RedactedSecret, "executors.accessToken")
+	}
+	return conftypes.RawUnified{
+		Site: newSite,
+	}, err
 }
 
 // Write writes the JSON config file to the config file's path. If the JSON configuration is
