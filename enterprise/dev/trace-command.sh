@@ -6,7 +6,7 @@
   export BUILDEVENT_DATASET
   args=$@
 
-  tracedCommand=$(printf "./buildevents cmd $BUILDKITE_BUILD_ID $BUILDKITE_STEP_ID %s" "$args")
+  tracedCommand=$(printf './buildevents cmd $BUILDKITE_BUILD_ID $BUILDKITE_STEP_ID "%s"' "$args")
   set -x
   $tracedCommand -- $args
 )
