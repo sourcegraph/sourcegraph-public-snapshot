@@ -6,11 +6,13 @@ extern crate rayon;
 #[macro_use]
 extern crate rocket;
 #[macro_use]
+extern crate rocket_contrib;
+#[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
 extern crate syntect;
 
-use rocket::serde::json::{json, Json, Value as JsonValue};
+use rocket_contrib::json::{Json, JsonValue};
 use std::env;
 use std::panic;
 use std::path::Path;
@@ -245,7 +247,7 @@ fn list_features() {
 }
 
 #[launch]
-fn rocket() -> _ {
+fn rocket() -> rocket::Rocket {
     // Only list features if QUIET != "true"
     match env::var("QUIET") {
         Ok(v) => {
@@ -256,7 +258,7 @@ fn rocket() -> _ {
         Err(_) => list_features(),
     };
 
-    rocket::build()
+    rocket::ignite()
         .mount("/", routes![index, health])
-        .register("/", catchers![not_found])
+        .register(catchers![not_found])
 }
