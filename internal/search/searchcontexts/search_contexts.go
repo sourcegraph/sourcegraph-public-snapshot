@@ -3,19 +3,27 @@ package searchcontexts
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -171,6 +179,73 @@ func validateSearchContextRepositoryRevisions(repositoryRevisions []*types.Searc
 	return nil
 }
 
+// validateSearchContextQuery validates that the search context query complies to the
+// necessary restrictions. We need to limit what we accept so that the query can
+// be converted to an efficient database lookup when determing which revisions
+// to index in RepoRevs. We don't want to run a search to determine which revisions
+// we need to index. That would be brittle, recursive and possibly impossible.
+func validateSearchContextQuery(contextQuery string) error {
+	if contextQuery == "" {
+		return nil
+	}
+
+	plan, err := query.Pipeline(query.Init(contextQuery, query.SearchTypeRegex))
+	if err != nil {
+		return err
+	}
+
+	q := plan.ToParseTree()
+	errs := new(multierror.Error)
+
+	query.VisitParameter(q, func(field, value string, negated bool, a query.Annotation) {
+		switch field {
+		case query.FieldRepo:
+			if a.Labels.IsSet(query.IsPredicate) {
+				errs = multierror.Append(errs,
+					errors.Errorf("unsupported repo field predicate in search context query: %q", value))
+				return
+			}
+
+			repoRegex, revs := search.ParseRepositoryRevisions(value)
+
+			for _, rev := range revs {
+				if rev.RevSpec == "" {
+					errs = multierror.Append(errs,
+						errors.Errorf("unsupported rev glob in search context query: %q", value))
+					return
+				}
+			}
+
+			_, err := regexp.Compile(repoRegex)
+			if err != nil {
+				errs = multierror.Append(errs,
+					errors.Errorf("repo field regex %q is invalid: %v", value, err))
+				return
+			}
+
+		case query.FieldFork:
+		case query.FieldArchived:
+		case query.FieldVisibility:
+		case query.FieldCase:
+		case query.FieldFile:
+		case query.FieldLang:
+
+		default:
+			errs = multierror.Append(errs,
+				errors.Errorf("unsupported field in search context query: %q", field))
+		}
+	})
+
+	query.VisitPattern(q, func(value string, negated bool, a query.Annotation) {
+		if value != "" {
+			errs = multierror.Append(errs,
+				errors.Errorf("unsupported pattern in search context query: %q", value))
+		}
+	})
+
+	return errs.ErrorOrNil()
+}
+
 func validateSearchContextDoesNotExist(ctx context.Context, db dbutil.DB, searchContext *types.SearchContext) error {
 	_, err := database.SearchContexts(db).GetSearchContext(ctx, database.GetSearchContextOptions{
 		Name:            searchContext.Name,
@@ -187,7 +262,12 @@ func validateSearchContextDoesNotExist(ctx context.Context, db dbutil.DB, search
 	return err
 }
 
-func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db database.DB, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
+func CreateSearchContextWithRepositoryRevisions(
+	ctx context.Context,
+	db database.DB,
+	searchContext *types.SearchContext,
+	repositoryRevisions []*types.SearchContextRepositoryRevisions,
+) (*types.SearchContext, error) {
 	if IsGlobalSearchContext(searchContext) {
 		return nil, errors.New("cannot override global search context")
 	}
@@ -207,7 +287,16 @@ func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db database
 		return nil, err
 	}
 
+	if searchContext.Query != "" && len(repositoryRevisions) > 0 {
+		return nil, errors.New("search context query and repository revisions are mutually exclusive")
+	}
+
 	err = validateSearchContextRepositoryRevisions(repositoryRevisions)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateSearchContextQuery(searchContext.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +333,16 @@ func UpdateSearchContextWithRepositoryRevisions(ctx context.Context, db database
 		return nil, err
 	}
 
+	if searchContext.Query != "" && len(repositoryRevisions) > 0 {
+		return nil, errors.New("search context query and repository revisions are mutually exclusive")
+	}
+
 	err = validateSearchContextRepositoryRevisions(repositoryRevisions)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateSearchContextQuery(searchContext.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -291,6 +389,140 @@ func GetAutoDefinedSearchContexts(ctx context.Context, db database.DB) ([]*types
 		searchContexts = append(searchContexts, GetOrganizationSearchContext(org.ID, org.Name, *org.DisplayName))
 	}
 	return searchContexts, nil
+}
+
+// RepoRevs returns all the revisions for the given repo IDs defined across all search contexts.
+func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
+	if a := actor.FromContext(ctx); !a.IsInternal() {
+		return nil, errors.New("searchcontexts.RepoRevs can only be accessed by an internal actor")
+	}
+
+	sc := db.SearchContexts()
+
+	revs, err := sc.GetAllRevisionsForRepos(ctx, repoIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	if !conf.ExperimentalFeatures().SearchIndexQueryContexts {
+		return revs, nil
+	}
+
+	contextQueries, err := sc.GetAllQueries(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var opts []RepoOpts
+	for _, q := range contextQueries {
+		o, err := ParseRepoOpts(q)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, o...)
+	}
+
+	repos := db.Repos()
+	sem := semaphore.NewWeighted(4)
+	g, ctx := errgroup.WithContext(ctx)
+	mu := sync.Mutex{}
+
+	for _, q := range opts {
+		q := q
+		g.Go(func() error {
+			if err := sem.Acquire(ctx, 1); err != nil {
+				return err
+			}
+			defer sem.Release(1)
+
+			o := q.ReposListOptions
+			o.IDs = repoIDs
+
+			rs, err := repos.ListMinimalRepos(ctx, o)
+			if err != nil {
+				return err
+			}
+
+			mu.Lock()
+			defer mu.Unlock()
+
+			for _, r := range rs {
+				revs[r.ID] = append(revs[r.ID], q.RevSpecs...)
+			}
+
+			return nil
+		})
+	}
+
+	err = g.Wait()
+	if err != nil {
+		return nil, err
+	}
+
+	return revs, nil
+}
+
+// RepoOpts contains the database.ReposListOptions and RevSpecs parsed from
+// a search context query.
+type RepoOpts struct {
+	database.ReposListOptions
+	RevSpecs []string
+}
+
+// ParseRepoOpts parses the given search context query, returning an error
+// in case of failure.
+func ParseRepoOpts(contextQuery string) ([]RepoOpts, error) {
+	plan, err := query.Pipeline(query.Init(contextQuery, query.SearchTypeRegex))
+	if err != nil {
+		return nil, err
+	}
+
+	qs := make([]RepoOpts, 0, len(plan))
+	for _, p := range plan {
+		q := p.ToParseTree()
+
+		repoFilters, minusRepoFilters := q.Repositories()
+
+		fork := query.No
+		if setFork := q.Fork(); setFork != nil {
+			fork = *setFork
+		}
+
+		archived := query.No
+		if setArchived := q.Archived(); setArchived != nil {
+			archived = *setArchived
+		}
+
+		visibilityStr, _ := q.StringValue(query.FieldVisibility)
+		visibility := query.ParseVisibility(visibilityStr)
+
+		rq := RepoOpts{
+			ReposListOptions: database.ReposListOptions{
+				CaseSensitivePatterns: q.IsCaseSensitive(),
+				ExcludePattern:        search.UnionRegExps(minusRepoFilters),
+				OnlyForks:             fork == query.Only,
+				NoForks:               fork == query.No,
+				OnlyArchived:          archived == query.Only,
+				NoArchived:            archived == query.No,
+				NoPrivate:             visibility == query.Public,
+				OnlyPrivate:           visibility == query.Private,
+			},
+		}
+
+		for _, r := range repoFilters {
+			repoFilter, revs := search.ParseRepositoryRevisions(r)
+			for _, rev := range revs {
+				if rev.RevSpec != "" {
+					rq.RevSpecs = append(rq.RevSpecs, rev.RevSpec)
+				}
+			}
+			rq.IncludePatterns = append(rq.IncludePatterns, repoFilter)
+		}
+
+		qs = append(qs, rq)
+	}
+
+	return qs, nil
 }
 
 func GetRepositoryRevisions(ctx context.Context, db database.DB, searchContextID int64) ([]*search.RepositoryRevisions, error) {

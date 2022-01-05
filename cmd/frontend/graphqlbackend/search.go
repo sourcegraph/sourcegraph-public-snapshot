@@ -5,6 +5,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -79,6 +81,14 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		return alertForQuery(args.Query, err).wrapSearchImplementer(db), nil
 	}
 	tr.LazyPrintf("parsing done")
+
+	if settings.ExperimentalFeatures != nil && settings.ExperimentalFeatures.SearchContextsQuery {
+		// Replace each context in the query with its repository query if any.
+		plan, err = substituteSearchContexts(ctx, db, plan)
+		if err != nil {
+			return alertForQuery(args.Query, err).wrapSearchImplementer(db), nil
+		}
+	}
 
 	defaultLimit := defaultMaxSearchResults
 	if args.Stream != nil {
@@ -162,6 +172,46 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 		}
 	})
 	return searchType
+}
+
+func substituteSearchContexts(ctx context.Context, db database.DB, plan query.Plan) (query.Plan, error) {
+	errs := new(multierror.Error)
+	dnf := query.Dnf(query.MapParameter(plan.ToParseTree(), func(field, value string, negated bool, a query.Annotation) query.Node {
+		p := query.Parameter{
+			Value:   value,
+			Field:   field,
+			Negated: negated,
+		}
+
+		if field != query.FieldContext {
+			return p
+		}
+
+		sc, err := searchcontexts.ResolveSearchContextSpec(ctx, db, value)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+			return p
+		}
+
+		if sc.Query == "" {
+			return p
+		}
+
+		contextQuery, err := query.Pipeline(query.Init(sc.Query, query.SearchTypeRegex))
+		if err != nil {
+			errs = multierror.Append(errs, err)
+			return p
+		}
+
+		return contextQuery.ToParseTree()[0]
+	}))
+
+	if err := errs.ErrorOrNil(); err != nil {
+		return nil, err
+	}
+
+	return query.ToPlan(dnf)
+
 }
 
 func getBoolPtr(b *bool, def bool) bool {

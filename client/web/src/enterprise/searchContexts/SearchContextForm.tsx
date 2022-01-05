@@ -10,6 +10,7 @@ import {
     Scalars,
     SearchContextInput,
     SearchContextRepositoryRevisionsInput,
+    SearchPatternType,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { ISearchContext, ISearchContextRepositoryRevisionsInput } from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -20,6 +21,8 @@ import { Container, RadioButton } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SearchContextProps } from '../../search'
+import { LazyMonacoQueryInput } from '../../search/input/LazyMonacoQueryInput'
+import { getExperimentalFeatures } from '../../stores'
 
 import { fetchRepositoriesByNames } from './backend'
 import { DeleteSearchContextModal } from './DeleteSearchContextModal'
@@ -93,7 +96,9 @@ export interface SearchContextFormProps
         TelemetryProps,
         Pick<SearchContextProps, 'deleteSearchContext'> {
     searchContext?: ISearchContext
+    query?: string
     authenticatedUser: AuthenticatedUser
+    isSourcegraphDotCom: boolean
 
     onSubmit: (
         id: Scalars['ID'] | undefined,
@@ -116,14 +121,16 @@ type RepositoriesParseResult =
       }
 
 export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> = props => {
-    const { authenticatedUser, onSubmit, searchContext, deleteSearchContext } = props
+    const { authenticatedUser, onSubmit, searchContext, deleteSearchContext, isSourcegraphDotCom } = props
     const history = useHistory()
+    const experimentalFeatures = getExperimentalFeatures()
 
     const [name, setName] = useState(searchContext ? searchContext.name : '')
     const [description, setDescription] = useState(searchContext ? searchContext.description : '')
     const [visibility, setVisibility] = useState<SelectedVisibility>(
         searchContext ? searchContextVisibility(searchContext) : 'public'
     )
+    const [query, setQuery] = useState(searchContext?.query || props.query || '')
 
     const isValidName = useMemo(() => name.length === 0 || name.match(VALIDATE_NAME_REGEXP) !== null, [name])
 
@@ -156,6 +163,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
             return (
                 name.length > 0 ||
                 description.length > 0 ||
+                query.length > 0 ||
                 visibility !== 'public' ||
                 selectedNamespace.type !== 'user' ||
                 hasRepositoriesConfigChanged
@@ -164,10 +172,11 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
         return (
             searchContext.name !== name ||
             searchContext.description !== description ||
+            searchContext.query !== query ||
             searchContextVisibility(searchContext) !== visibility ||
             hasRepositoriesConfigChanged
         )
-    }, [description, name, searchContext, selectedNamespace, visibility, hasRepositoriesConfigChanged])
+    }, [description, name, searchContext, selectedNamespace, visibility, query, hasRepositoriesConfigChanged])
 
     const parseRepositories = useCallback(
         (): Observable<RepositoriesParseResult> =>
@@ -231,7 +240,13 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     switchMap(repositoryRevisionsArray =>
                         onSubmit(
                             searchContext?.id,
-                            { name, description, public: visibility === 'public', namespace: selectedNamespace.id },
+                            {
+                                name,
+                                description,
+                                public: visibility === 'public',
+                                namespace: selectedNamespace.id,
+                                query,
+                            },
                             repositoryRevisionsArray
                         ).pipe(
                             startWith(LOADING),
@@ -245,7 +260,17 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     ),
                     catchError(error => [asError(error)])
                 ),
-            [onSubmit, parseRepositories, name, description, visibility, selectedNamespace, history, searchContext]
+            [
+                onSubmit,
+                parseRepositories,
+                name,
+                description,
+                query,
+                visibility,
+                selectedNamespace,
+                history,
+                searchContext,
+            ]
         )
     )
 
@@ -360,6 +385,30 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                         repositories={searchContext?.repositories}
                     />
                 </div>
+                {experimentalFeatures.searchContextsQuery && (
+                    <div>
+                        <hr className={classNames('my-4', styles.searchContextFormDivider)} />
+                        <div className="mb-1">Query</div>
+                        <div className="text-muted mb-3">
+                            Alternatively, define which repositories, revisions and file paths are included in this
+                            search context with a Sourcegraph search query.
+                        </div>
+
+                        <div className={styles.searchContextFormQuery}>
+                            <LazyMonacoQueryInput
+                                isLightTheme={props.isLightTheme}
+                                patternType={SearchPatternType.regexp}
+                                isSourcegraphDotCom={isSourcegraphDotCom}
+                                caseSensitive={true}
+                                queryState={{ query }}
+                                onChange={({ query }) => setQuery(query)}
+                                onSubmit={() => {}}
+                                globbing={false}
+                                preventNewLine={false}
+                            />
+                        </div>
+                    </div>
+                )}
             </Container>
             <div className="d-flex">
                 <button

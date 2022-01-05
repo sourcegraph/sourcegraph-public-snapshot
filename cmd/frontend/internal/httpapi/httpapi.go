@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -25,12 +26,14 @@ import (
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -121,10 +124,12 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 
 	// zoekt-indexserver endpoints
 	indexer := &searchIndexerServer{
-		ListIndexable:       backend.NewRepos(db.Repos()).ListIndexable,
-		RepoStore:           database.Repos(db),
-		SearchContextsStore: database.SearchContexts(db),
-		Indexers:            search.Indexers(),
+		ListIndexable: backend.NewRepos(db.Repos()).ListIndexable,
+		RepoStore:     database.Repos(db),
+		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
+			return searchcontexts.RepoRevs(ctx, db, repoIDs)
+		},
+		Indexers: search.Indexers(),
 
 		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
 	}
