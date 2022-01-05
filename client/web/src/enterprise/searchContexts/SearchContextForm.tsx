@@ -22,6 +22,7 @@ import { Container } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { SearchContextProps } from '../../search'
 import { LazyMonacoQueryInput } from '../../search/input/LazyMonacoQueryInput'
+import { getExperimentalFeatures } from '../../stores'
 
 import { fetchRepositoriesByNames } from './backend'
 import { DeleteSearchContextModal } from './DeleteSearchContextModal'
@@ -35,7 +36,6 @@ import {
     SelectedNamespaceType,
 } from './SearchContextOwnerDropdown'
 import { SearchContextRepositoriesFormArea } from './SearchContextRepositoriesFormArea'
-import { getExperimentalFeatures } from '../../stores'
 
 const MAX_DESCRIPTION_LENGTH = 1024
 const MAX_NAME_LENGTH = 32
