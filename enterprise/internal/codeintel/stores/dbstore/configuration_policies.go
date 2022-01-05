@@ -247,7 +247,7 @@ func (s *Store) GetConfigurationPolicyByID(ctx context.Context, id int) (_ Confi
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Store.Handle().DB()))
 	if err != nil {
 		return ConfigurationPolicy{}, false, err
 	}
