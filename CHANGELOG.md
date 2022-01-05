@@ -30,9 +30,19 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 3.35.1
+
+**⚠️ Due to issues related to Code Insights on in the 3.35.0 release. users are advised to upgrade directly to 3.35.1.**
+
+### Fixed
+
+- Skipped migrations caused existing Code Insights to not appear. [#29395](https://github.com/sourcegraph/sourcegraph/pull/29395)
+- Enterprise-only out-of-band migrations failed to execute due to missing enterprise configuration flag. [#29426](https://github.com/sourcegraph/sourcegraph/pull/29426)
+- Fix the display of enterprise-only out-of-band migrations in the frontend service. [#29428](https://github.com/sourcegraph/sourcegraph/pull/29428)
+
 ## 3.35.0
 
-**⚠️ We are currently investigating issues related to Code Insights on this release. Users are advised to hold off on upgrading to 3.35 until a fix is available.**
+**⚠️ Due to issues related to Code Insights on this release, users are advised to upgrade directly to 3.35.1.**
 
 ### Added
 
