@@ -299,10 +299,6 @@ type UserEmailsListOptions struct {
 
 // ListByUser returns a list of emails that are associated to the given user.
 func (s *userEmailsStore) ListByUser(ctx context.Context, opt UserEmailsListOptions) ([]*UserEmail, error) {
-	if Mocks.UserEmails.ListByUser != nil {
-		return Mocks.UserEmails.ListByUser(ctx, opt)
-	}
-
 	conds := []*sqlf.Query{
 		sqlf.Sprintf("user_id=%s", opt.UserID),
 	}
