@@ -16,7 +16,7 @@ import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { CodeInsightsProps } from '../../insights/types'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
-import { useExperimentalFeatures } from '../../stores'
+import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { HomePanels } from '../panels/HomePanels'
 
@@ -54,7 +54,8 @@ export interface SearchPageProps
 export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
     const { extensionViews: ExtensionViewsSection } = props
     const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
-    const showOnboardingTour = useExperimentalFeatures(features => features.showOnboardingTour ?? false)
+    const onboardingTourEnabled = useExperimentalFeatures(features => features.showOnboardingTour ?? false)
+    const hasSearchQuery = !!useNavbarQueryState(state => state.searchQueryFromURL)
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 
     return (
@@ -70,7 +71,11 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
                     [styles.searchContainerWithContentBelow]: props.isSourcegraphDotCom || showEnterpriseHomePanels,
                 })}
             >
-                <SearchPageInput {...props} showOnboardingTour={showOnboardingTour} source="home" />
+                <SearchPageInput
+                    {...props}
+                    showOnboardingTour={onboardingTourEnabled && hasSearchQuery}
+                    source="home"
+                />
                 <ExtensionViewsSection
                     className="mt-5"
                     telemetryService={props.telemetryService}
