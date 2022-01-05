@@ -23705,6 +23705,11 @@ web-namespaces@^1.0.0:
   resolved "https://registry.npmjs.org/web-namespaces/-/web-namespaces-1.1.4.tgz#bc98a3de60dadd7faefc403d1076d529f5e030ec"
   integrity sha512-wYxSGajtmoP4WxfejAPIr4l0fVh+jeMXZb08wNc0tMg6xsfZXj3cECqIK0G7ZAqUq0PP8WlMDtaOGVBTAWztNw==
 
+web-tree-sitter@^0.20.2:
+  version "0.20.2"
+  resolved "https://registry.npmjs.org/web-tree-sitter/-/web-tree-sitter-0.20.2.tgz#12268962fd58322003d2d112b417f63e194c281d"
+  integrity sha512-beDt3JEETNzl4pBtpLuaVc36LAfkOouFZFktTVmY1g2Wjy+IPk2Zif1KCUhbyXtOx3khXtRViG99b0zqtbfW1A==
+
 webcomponents.js@0.7.20:
   version "0.7.20"
   resolved "https://registry.npmjs.org/webcomponents.js/-/webcomponents.js-0.7.20.tgz#36727218fbf59433ae10139e59eaf3cfdddc11c5"

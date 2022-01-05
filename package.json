@@ -418,6 +418,7 @@
     "use-resize-observer": "^7.0.0",
     "utility-types": "^3.10.0",
     "uuid": "^8.3.0",
+    "web-tree-sitter": "^0.20.2",
     "webext-domain-permission-toggle": "^1.0.1",
     "webextension-polyfill": "^0.6.0",
     "yaml-ast-parser": "^0.0.43",

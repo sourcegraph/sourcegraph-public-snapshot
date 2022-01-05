@@ -4,10 +4,11 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Redirect } from 'react-router'
-import { Observable } from 'rxjs'
+import { from, Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { syntaxHighlight } from '@sourcegraph/shared/src/code-intel/indexers'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -147,6 +148,24 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                             disableTimeout,
                         })
                     ),
+                    switchMap(blob => {
+                        if (blob === null) {
+                            return from(Promise.resolve(blob))
+                        }
+                        console.log({ filePath, text: blob.content })
+                        const html = syntaxHighlight(filePath, blob.content)
+                        console.log({ html })
+                        if (!html) {
+                            return from(Promise.resolve(blob))
+                        }
+                        return from(
+                            html.then(markup => {
+                                // blob.highlight.html = markup
+                                console.log({ markup })
+                                return blob
+                            })
+                        )
+                    }),
                     map(blob => {
                         if (blob === null) {
                             return blob
@@ -161,7 +180,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                             mode,
                             // Properties used in `BlobPage` but not `Blob`
                             richHTML: blob.richHTML,
-                            aborted: blob.highlight.aborted,
+                            aborted: false, // blob.highlight.aborted,
                         }
                         return blobInfo
                     }),

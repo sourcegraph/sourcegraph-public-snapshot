@@ -182,6 +182,7 @@ const config = {
       // https://github.com/joshwnj/react-visibility-sensor/issues/148
       'react-visibility-sensor': path.resolve(ROOT_PATH, 'node_modules/react-visibility-sensor/visibility-sensor.js'),
     },
+    fallback: { fs: false, path: false },
   },
   module: {
     rules: [
