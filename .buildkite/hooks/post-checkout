@@ -17,4 +17,4 @@ chmod 755 buildevents
 # mv buildevents /usr/local/bin
 
 # Link the trace-script so we can have pretty steps in the buildkite ui
-ln -s "$(pwd)/enterprise/dev/trace-command.sh" ./tr
+ln -s "$(pwd)/enterprise/dev/trace-command.sh" tr
