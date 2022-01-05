@@ -1,6 +1,13 @@
 import { FilterType } from './filters'
 import { Filter } from './token'
-import { appendContextFilter, omitFilter, sanitizeQueryForTelemetry, updateFilter, updateFilters } from './transformer'
+import {
+    appendContextFilter,
+    omitFilter,
+    parenthesizeQueryWithGlobalContext,
+    sanitizeQueryForTelemetry,
+    updateFilter,
+    updateFilters,
+} from './transformer'
 import { FilterKind, findFilter } from './validate'
 
 expect.addSnapshotSerializer({
@@ -104,4 +111,17 @@ describe('sanitizeQueryForTelemetry', () => {
             'test -repo:[REDACTED] -r:[REDACTED] -file:[REDACTED] -f:[REDACTED]'
         )
     })
+})
+
+describe('parenthesizeQueryWithGlobalContext', () => {
+    test('query without context', () => expect(parenthesizeQueryWithGlobalContext('a or b')).toEqual('a or b'))
+
+    test('query with global context filter', () =>
+        expect(parenthesizeQueryWithGlobalContext('context:ctx a or b')).toEqual('context:ctx (a or b)'))
+
+    test('query with nested context', () =>
+        expect(parenthesizeQueryWithGlobalContext('(context:ctx a) or b')).toEqual('(context:ctx a) or b'))
+
+    test('query with global context filter and spec=global', () =>
+        expect(parenthesizeQueryWithGlobalContext('context:global a or b')).toEqual('context:global a or b'))
 })
