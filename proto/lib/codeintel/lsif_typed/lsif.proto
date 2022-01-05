@@ -21,10 +21,29 @@ message LsifValues {
 
 message LsifValue {
   oneof value {
-    Package package = 1;
-    Document document = 2;
-    Moniker moniker = 3;
+    // Metadata about this index. Must appear once (and only once) at the start of this index.
+    Metadata metadata = 1;
+    // Packages that are either referenced from this index or the packages that are defined by this index.
+    Package package = 2;
+    Document document = 3;
+    // External monikers that are referenced but not defined in this index.
+    Moniker moniker = 4;
   }
+}
+
+message Metadata {
+  enum PositionEncoding {
+      POSITION_ENCODING_UNSPECIFIED = 0;
+      POSITION_ENCODING_UTF16 = 1;
+  }
+  ToolInfo toolInfo = 1;
+  string projectRoot = 2;
+  PositionEncoding positionEncoding = 3;
+}
+
+message ToolInfo {
+    string name = 1;
+    string version = 2;
 }
 
 // Position defines a single offset in a source file.
@@ -51,40 +70,41 @@ message Range {
 // Moniker defines a symbol, such as a function or an interface.
 message Moniker {
   enum Unique {
-    UNIQUE_UNSPECIFIED = 0;
-    UNIQUE_DOCUMENT = 1;
-    UNIQUE_PROJECT = 2;
-    UNIQUE_WORKSPACE = 3;
-    UNIQUE_SCHEME = 4;
-    UNIQUE_GLOBAL = 5;
+      UNIQUE_UNSPECIFIED = 0;
+      UNIQUE_DOCUMENT = 1;
+      UNIQUE_GLOBAL = 2;
   }
   // The identifier of this moniker, which can be referenced from
   // MonikerOccurence. An empty id means this moniker can be ignored.
+  // Globally unique monikers must encode the `package_id` in order to
+  // permit incremental indexing. Bumping up the version of an external
+  // dependency should change moniker IDs that reference symbols from that
+  // package.
   string id = 1;
-  // (optional) the syntax that is used for the scheme. Only relevant when
-  // the `unique` field has value `Unique.SCHEME`.
-  string scheme = 2;
-  // Determines how unique the id field is. For example, it is allowed for two
-  // distinct monikers to have the same ID as long as they origin from different
-  // document/project/workspace/scheme and have the appropriate `unique` field
-  // value. Monikers with different `unique` values must never be compared.
-  Unique unique = 3;
+  // Determines whether this moniker is local to a single document or if can be
+  // referenced from multiple documents.
+  // Document monikers (`Document.monikers`) can be either local or global.
+  // Toplevel monikers (`LsifValue.value`) must be global.
+  Unique unique = 2;
   // (optional, but strongly recommended) The markdown-formatted documentation
   // for this moniker. This field is repeated to allow different kinds of
   // documentation.  For example, it's nice to include both the signature of a
   // method (parameters and return type) along with the accompanying docstring.
-  repeated string markdown_hover = 4;
-  // (optional) Links to other monikers that this moniker "implements" in some form. For
-  // example, if this moniker represents a function that implements another
-  // function from an interface, then this field would link to the other
-  // moniker.
-  repeated string implementation_monikers = 5;
+  repeated string markdown_hover = 3;
   // (optional) Links to the original package that defines this moniker to
   // enable navigation across different LSIF indexes (whether they come from
-  // different projects or git repositories).
-  string package_id = 6;
-  // "import", "export", or "implementation"
-  string kind = 7;
+  // different projects or git repositories). This field must be non-empty for
+  // toplevel monikers (`LsifValue.value`).
+  string package_id = 4;
+  // (optional) Monikers that are "implemented" by this moniker. For example,
+  // the moniker of a TypeScript or Java class that implements an interface
+  // should list the interface here.
+  repeated string implementation_monikers = 5;
+  // (optional) Monikers that should be included together with this moniker when
+  // resolving "find references".  For example, the moniker of a TypeScript or
+  // Java method that implements an interface method should list the interface
+  // method here.
+  repeated string reference_monikers = 6;
 }
 
 // MonikerOccurrence describes the appearance of a moniker at a given range in a
@@ -113,8 +133,10 @@ message MonikerOccurrence {
 message Document {
   // URI-formatted absolute path of the source file on disk (example "file:///path/to/some/file/on/disk.ts").
   string uri = 1;
-  // The moniker occurrences that appear in this file.
+  // Moniker occurrences that appear in this file.
   repeated MonikerOccurrence occurrences = 2;
+  // Monikers that are defined within this document.
+  repeated Moniker monikers = 3;
 }
 
 // Package defines a publishable artifact such as an npm package, Docker
@@ -124,11 +146,11 @@ message Package {
   // `Moniker.package_id`.  This ID is not intended to be displayed to humans,
   // but it's recommended to use a human-readable format to aid with debugging.
   string id = 1;
-  // The name of this package, for example "@types/react" or "com.google.guava:guava".
+  // Name of this package, for example "@types/react" or "com.google.guava:guava".
   string name = 2;
-  // The version of this package, for example "0.1.0" or "2.1.5".
+  // Version of this package, for example "0.1.0" or "2.1.5".
   string version = 3;
-  // The package manager, for example "npm", "maven" or "cargo".
+  // Package manager, for example "npm", "maven" or "cargo".
   string manager = 4;
 }
 
