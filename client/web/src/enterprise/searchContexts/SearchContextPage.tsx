@@ -10,16 +10,18 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Badge, Container, PageHeader } from '@sourcegraph/wildcard'
 
+import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { SearchContextProps } from '../../search'
 
 import styles from './SearchContextPage.module.scss'
@@ -87,12 +89,14 @@ const SearchContextRepositories: React.FunctionComponent<{ repositories: ISearch
     return (
         <>
             <div className="d-flex justify-content-between align-items-center mb-3">
-                <h3>
-                    <span>
-                        {filteredRepositories.length}{' '}
-                        {pluralize('repository', filteredRepositories.length, 'repositories')}
-                    </span>
-                </h3>
+                {filteredRepositories.length > 0 && (
+                    <h3>
+                        <span>
+                            {filteredRepositories.length}{' '}
+                            {pluralize('repository', filteredRepositories.length, 'repositories')}
+                        </span>
+                    </h3>
+                )}
                 {repositories.length > 0 && (
                     <input
                         type="text"
@@ -211,8 +215,21 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                         />
                                     </div>
                                 )}
-                                {!searchContextOrError.autoDefined && (
+                                {!searchContextOrError.autoDefined && searchContextOrError.query.length === 0 && (
                                     <SearchContextRepositories repositories={searchContextOrError.repositories} />
+                                )}
+                                {searchContextOrError.query.length > 0 && (
+                                    <Link
+                                        to={`/search?${buildSearchURLQuery(
+                                            searchContextOrError.query,
+                                            SearchPatternType.regexp,
+                                            false
+                                        )}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        <SyntaxHighlightedSearchQuery query={searchContextOrError.query} />
+                                    </Link>
                                 )}
                             </Container>
                         </>

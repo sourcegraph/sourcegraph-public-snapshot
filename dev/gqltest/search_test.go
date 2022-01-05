@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearch(t *testing.T) {
@@ -22,7 +23,7 @@ func TestSearch(t *testing.T) {
 	}
 
 	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "gqltest-github-search",
 		Config: mustMarshalJSONString(struct {
@@ -49,12 +50,6 @@ func TestSearch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		err := client.DeleteExternalService(esID)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
 
 	err = client.WaitForReposToBeCloned(
 		"github.com/sgtest/java-langserver",
@@ -100,6 +95,9 @@ type searchClient interface {
 	SearchRepositories(query string) (gqltestutil.SearchRepositoryResults, error)
 	SearchFiles(query string) (*gqltestutil.SearchFileResults, error)
 	SearchAll(query string) ([]*gqltestutil.AnyResult, error)
+
+	UpdateSiteConfiguration(config *schema.SiteConfiguration) error
+	SiteConfiguration() (*schema.SiteConfiguration, error)
 
 	OverwriteSettings(subjectID, contents string) error
 	AuthenticatedUserID() string
@@ -249,7 +247,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
-	t.Run("context: search", func(t *testing.T) {
+	t.Run("context: search repo revs", func(t *testing.T) {
 		repo1, err := client.Repository("github.com/sgtest/java-langserver")
 		require.NoError(t, err)
 		repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
@@ -277,6 +275,55 @@ func testSearchClient(t *testing.T, client searchClient) {
 		require.NoError(t, err)
 
 		wantRepos := []string{"github.com/sgtest/java-langserver", "github.com/sgtest/jsonrpc2"}
+		if missingRepos := results.Exists(wantRepos...); len(missingRepos) != 0 {
+			t.Fatalf("Missing repositories: %v", missingRepos)
+		}
+
+		if len(wantRepos) != len(results) {
+			t.Fatalf("want %d repositories, got %d", len(wantRepos), len(results))
+		}
+	})
+
+	t.Run("context: search query", func(t *testing.T) {
+		err := client.OverwriteSettings(client.AuthenticatedUserID(), `{"experimentalFeatures":{"searchContextsQuery": true}}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			err := client.OverwriteSettings(client.AuthenticatedUserID(), `{}`)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
+
+		_, err = client.Repository("github.com/sgtest/java-langserver")
+		require.NoError(t, err)
+		_, err = client.Repository("github.com/sgtest/jsonrpc2")
+		require.NoError(t, err)
+
+		namespace := client.AuthenticatedUserID()
+		searchContextID, err := client.CreateSearchContext(
+			gqltestutil.CreateSearchContextInput{
+				Name:      "SearchContextV2",
+				Namespace: &namespace,
+				Public:    true,
+				Query:     `r:^github\.com/sgtest f:drop lang:java`,
+			}, []gqltestutil.SearchContextRepositoryRevisionsInput{})
+		require.NoError(t, err)
+
+		defer func() {
+			err = client.DeleteSearchContext(searchContextID)
+			require.NoError(t, err)
+		}()
+
+		searchContext, err := client.GetSearchContext(searchContextID)
+		require.NoError(t, err)
+
+		query := fmt.Sprintf("context:%s select:repo", searchContext.Spec)
+		results, err := client.SearchRepositories(query)
+		require.NoError(t, err)
+
+		wantRepos := []string{"github.com/sgtest/java-langserver"}
 		if missingRepos := results.Exists(wantRepos...); len(missingRepos) != 0 {
 			t.Fatalf("Missing repositories: %v", missingRepos)
 		}

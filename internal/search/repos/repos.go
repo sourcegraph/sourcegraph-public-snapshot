@@ -138,21 +138,17 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	options := database.ReposListOptions{
 		IncludePatterns:       includePatterns,
-		ExcludePattern:        UnionRegExps(excludePatterns),
+		ExcludePattern:        search.UnionRegExps(excludePatterns),
 		CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
 		Cursors:               op.Cursors,
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-		LimitOffset:            &database.LimitOffset{Limit: limit + 1},
-		NoForks:                op.NoForks,
-		OnlyForks:              op.OnlyForks,
-		NoArchived:             op.NoArchived,
-		OnlyArchived:           op.OnlyArchived,
-		NoPrivate:              op.Visibility == query.Public,
-		OnlyPrivate:            op.Visibility == query.Private,
-		SearchContextID:        searchContext.ID,
-		UserID:                 searchContext.NamespaceUserID,
-		OrgID:                  searchContext.NamespaceOrgID,
-		IncludeUserPublicRepos: searchContext.ID == 0 && searchContext.NamespaceUserID != 0,
+		LimitOffset:  &database.LimitOffset{Limit: limit + 1},
+		NoForks:      op.NoForks,
+		OnlyForks:    op.OnlyForks,
+		NoArchived:   op.NoArchived,
+		OnlyArchived: op.OnlyArchived,
+		NoPrivate:    op.Visibility == query.Public,
+		OnlyPrivate:  op.Visibility == query.Private,
 		OrderBy: database.RepoListOrderBy{
 			{
 				Field:      database.RepoListStars,
@@ -164,6 +160,15 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 				Descending: true,
 			},
 		},
+	}
+
+	// Filter by search context repository revisions only if this search context doesn't have
+	// a query, which replaces the context:foo term at query parsing time.
+	if searchContext.Query == "" {
+		options.SearchContextID = searchContext.ID
+		options.UserID = searchContext.NamespaceUserID
+		options.OrgID = searchContext.NamespaceOrgID
+		options.IncludeUserPublicRepos = searchContext.ID == 0 && searchContext.NamespaceUserID != 0
 	}
 
 	tr.LazyPrintf("Repos.ListMinimalRepos - start")
@@ -205,7 +210,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	tr.LazyPrintf("Associate/validate revs - start")
 
 	var searchContextRepositoryRevisions map[api.RepoID]*search.RepositoryRevisions
-	if !searchcontexts.IsAutoDefinedSearchContext(searchContext) {
+	if !searchcontexts.IsAutoDefinedSearchContext(searchContext) && searchContext.Query == "" {
 		scRepoRevs, err := searchcontexts.GetRepositoryRevisions(ctx, r.DB, searchContext.ID)
 		if err != nil {
 			return Resolved{}, err
@@ -422,7 +427,7 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 
 	options := database.ReposListOptions{
 		IncludePatterns: includePatterns,
-		ExcludePattern:  UnionRegExps(excludePatterns),
+		ExcludePattern:  search.UnionRegExps(excludePatterns),
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 		LimitOffset:            &database.LimitOffset{Limit: limit + 1},
 		NoForks:                op.NoForks,
@@ -504,26 +509,6 @@ func ExactlyOneRepo(repoFilters []string) bool {
 		}
 	}
 	return false
-}
-
-func UnionRegExps(patterns []string) string {
-	if len(patterns) == 0 {
-		return ""
-	}
-	if len(patterns) == 1 {
-		return patterns[0]
-	}
-
-	// We only need to wrap the pattern in parentheses if it contains a "|" because
-	// "|" has the lowest precedence of any operator.
-	patterns2 := make([]string, len(patterns))
-	for i, p := range patterns {
-		if strings.Contains(p, "|") {
-			p = "(" + p + ")"
-		}
-		patterns2[i] = p
-	}
-	return strings.Join(patterns2, "|")
 }
 
 // Cf. golang/go/src/regexp/syntax/parse.go.
@@ -714,7 +699,7 @@ func PrivateReposForUser(ctx context.Context, db database.DB, userID int32, repo
 		NoForks:        repoOptions.NoForks,
 		OnlyArchived:   repoOptions.OnlyArchived,
 		NoArchived:     repoOptions.NoArchived,
-		ExcludePattern: UnionRegExps(repoOptions.MinusRepoFilters),
+		ExcludePattern: search.UnionRegExps(repoOptions.MinusRepoFilters),
 	})
 
 	if err != nil {

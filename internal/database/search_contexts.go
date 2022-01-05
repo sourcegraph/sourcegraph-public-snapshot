@@ -39,6 +39,7 @@ type SearchContextsStore interface {
 	GetSearchContext(context.Context, GetSearchContextOptions) (*types.SearchContext, error)
 	GetSearchContextRepositoryRevisions(context.Context, int64) ([]*types.SearchContextRepositoryRevisions, error)
 	ListSearchContexts(context.Context, ListSearchContextsPageOptions, ListSearchContextsOptions) ([]*types.SearchContext, error)
+	GetAllQueries(context.Context) ([]string, error)
 	SetSearchContextRepositoryRevisions(context.Context, int64, []*types.SearchContextRepositoryRevisions) error
 	Transact(context.Context) (SearchContextsStore, error)
 	UpdateSearchContextWithRepositoryRevisions(context.Context, *types.SearchContext, []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error)
@@ -85,7 +86,17 @@ func searchContextsPermissionsCondition(ctx context.Context, db dbutil.DB) (*sql
 }
 
 const listSearchContextsFmtStr = `
-SELECT sc.id, sc.name, sc.description, sc.public, sc.namespace_user_id, sc.namespace_org_id, sc.updated_at, u.username, o.name
+SELECT
+  sc.id,
+  sc.name,
+  sc.description,
+  sc.public,
+  sc.namespace_user_id,
+  sc.namespace_org_id,
+  sc.updated_at,
+  sc.query,
+  u.username,
+  o.name
 FROM search_contexts sc
 LEFT JOIN users u on sc.namespace_user_id = u.id
 LEFT JOIN orgs o on sc.namespace_org_id = o.id
@@ -306,8 +317,8 @@ func (s *searchContextsStore) DeleteSearchContext(ctx context.Context, searchCon
 
 const insertSearchContextFmtStr = `
 INSERT INTO search_contexts
-(name, description, public, namespace_user_id, namespace_org_id)
-VALUES (%s, %s, %s, %s, %s)
+(name, description, public, namespace_user_id, namespace_org_id, query)
+VALUES (%s, %s, %s, %s, %s, %s)
 `
 
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin or has permission to create the search context.
@@ -336,6 +347,7 @@ SET
 	name = %s,
 	description = %s,
 	public = %s,
+	query = %s,
 	updated_at = now()
 WHERE id = %d
 `
@@ -400,6 +412,7 @@ func createSearchContext(ctx context.Context, s SearchContextsStore, searchConte
 		searchContext.Public,
 		nullInt32Column(searchContext.NamespaceUserID),
 		nullInt32Column(searchContext.NamespaceOrgID),
+		nullStringColumn(searchContext.Query),
 	)
 	_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -418,6 +431,7 @@ func updateSearchContext(ctx context.Context, s SearchContextsStore, searchConte
 		searchContext.Name,
 		searchContext.Description,
 		searchContext.Public,
+		nullStringColumn(searchContext.Query),
 		searchContext.ID,
 	)
 	_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
@@ -454,6 +468,7 @@ func scanSearchContexts(rows *sql.Rows) ([]*types.SearchContext, error) {
 			&dbutil.NullInt32{N: &sc.NamespaceUserID},
 			&dbutil.NullInt32{N: &sc.NamespaceOrgID},
 			&sc.UpdatedAt,
+			&dbutil.NullString{S: &sc.Query},
 			&dbutil.NullString{S: &sc.NamespaceUserName},
 			&dbutil.NullString{S: &sc.NamespaceOrgName},
 		)
@@ -587,4 +602,14 @@ func (s *searchContextsStore) GetAllRevisionsForRepos(ctx context.Context, repoI
 	}
 
 	return revs, nil
+}
+
+func (s *searchContextsStore) GetAllQueries(ctx context.Context) (qs []string, _ error) {
+	if a := actor.FromContext(ctx); !a.IsInternal() {
+		return nil, errors.New("GetAllQueries can only be accessed by an internal actor")
+	}
+
+	q := sqlf.Sprintf(`SELECT array_agg(query) FROM search_contexts WHERE query IS NOT NULL`)
+
+	return qs, s.QueryRow(ctx, q).Scan(pq.Array(&qs))
 }

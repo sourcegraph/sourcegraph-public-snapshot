@@ -34,9 +34,9 @@ func TestServeConfiguration(t *testing.T) {
 	}}
 	srv := &searchIndexerServer{
 		RepoStore: &fakeRepoStore{Repos: repos},
-		SearchContextsStore: &fakeSearchContextsStore{Revisions: map[api.RepoID][]string{
-			6: {"a", "b"},
-		}},
+		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
+			return map[api.RepoID][]string{6: {"a", "b"}}, nil
+		},
 	}
 
 	git.Mocks.ResolveRevision = func(spec string, _ git.ResolveRevisionOptions) (api.CommitID, error) {
@@ -223,14 +223,6 @@ func (f *fakeRepoStore) StreamMinimalRepos(ctx context.Context, opt database.Rep
 	}
 
 	return nil
-}
-
-type fakeSearchContextsStore struct {
-	Revisions map[api.RepoID][]string
-}
-
-func (f *fakeSearchContextsStore) GetAllRevisionsForRepos(context.Context, []api.RepoID) (map[api.RepoID][]string, error) {
-	return f.Revisions, nil
 }
 
 // suffixIndexers mocks Indexers. ReposSubset will return all repoNames with

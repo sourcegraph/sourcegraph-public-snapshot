@@ -111,3 +111,12 @@ export const isFilterType = (token: Token, filterType: FilterType): token is Fil
     (token.field.value === filterType ||
         resolveFieldAlias(token.field.value) === filterType ||
         (isNegatedFilter(token.field.value) && resolveNegatedFilter(token.field.value) === filterType))
+
+export function getGlobalSearchContextFilter(query: string): { filter: Filter; spec: string } | null {
+    const globalContextFilter = findFilter(query, FilterType.context, FilterKind.Global)
+    if (!globalContextFilter) {
+        return null
+    }
+    const searchContextSpec = globalContextFilter.value?.value || ''
+    return { filter: globalContextFilter, spec: searchContextSpec }
+}
