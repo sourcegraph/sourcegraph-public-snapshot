@@ -52,6 +52,15 @@ describe('Blob viewer', () => {
             createFileExternalLinksResult(`https://${repositoryName}/blob/master/${filePath}`),
         TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, ['README.md', fileName]),
         Blob: ({ filePath }) => createBlobContentResult(`content for: ${filePath}\nsecond line\nthird line`),
+        FileNames: () => ({
+            repository: {
+                __typename: 'Repository',
+                commit: {
+                    __typename: 'GitCommit',
+                    fileNames: ['README.md'],
+                },
+            },
+        }),
     }
 
     beforeEach(() => {
