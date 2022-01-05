@@ -74,15 +74,15 @@ Why exactly is our `ldap://`-prefixed payload so dangerous if passed directly to
 
 ## Part 2: JNDI
 
-In this part of our journey, we leave the Log4j codebase for the source code for JNDI, in the JDK. [JNDI](https://docs.oracle.com/javase/jndi/tutorial/getStarted/overview/index.html) is a directory name lookup API that enables named resources to be loaded at runtime. Relevant to our attack, if the lookup names are LDAP URLs, the loadable resources can be Java classes.
+In this part of our journey, we leave the Log4j codebase for the source code for JNDI, in the JDK. [JNDI](https://docs.oracle.com/javase/jndi/tutorial/getStarted/overview/index.html) is a directory name lookup API that enables named resources to be loaded at runtime. Relevant to our attack, if the lookup names are LDAP URLs, *the loadable resources can be Java classes*.
 
-From the `this.context.lookup(name)` invocation in Log4j's `JNDIManager`, we jump into the `InitialContext` class:
+The `this.context.lookup(name)` above jumps us into the `InitialContext` class:
 
 https://sourcegraph.com/jdk@v11/-/blob/java.naming/javax/naming/InitialContext.java?L408-410
 
 This method breaks the lookup into two parts: a context and then a subsequent lookup within that context. If the name we specify is a URL, the context will be determined by the URL scheme:
 
-https://sourcegraph.com/jdk@v11/-/blob/java.naming/javax/naming/InitialContext.java?L314-343&subtree=true
+https://sourcegraph.com/jdk@v11/-/blob/java.naming/javax/naming/InitialContext.java?L330-343
 
 JNDI supports a variety of lookup mechanisms keyed by URL scheme. Because our name has the `ldap` URL scheme, the `NamingManager.getURLContext` invocation returns an instance of `ldapURLContext`, which then performs the lookup.
 
