@@ -4,6 +4,7 @@ import React from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
 
@@ -74,7 +75,7 @@ export const SearchPageFooter: React.FunctionComponent<
 
     return isSourcegraphDotCom ? (
         <footer className={styles.footer}>
-            <Link to="/search" aria-label="Home" className="flex-shrink-0">
+            <Link to={PageRoutes.Search} aria-label="Home" className="flex-shrink-0">
                 <BrandLogo isLightTheme={isLightTheme} variant="symbol" className={styles.logo} />
             </Link>
 
