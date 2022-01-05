@@ -2,16 +2,11 @@
 
 # shellcheck disable=SC1091
 source /root/.profile
-root_dir="$(dirname "${BASH_SOURCE[0]}")/../../../.."
-cd "$root_dir"
+cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 root_dir=$(pwd)
-
 set -ex
 
-dev/ci/test/setup-deps.sh
-dev/ci/test/setup-display.sh
-
-# ==========================
+URL="${1:-"http://localhost:7080"}"
 
 docker_logs() {
   echo "--- dump server logs"
@@ -21,7 +16,6 @@ docker_logs() {
 cleanup() {
   docker_logs
   cd "$root_dir"
-  dev/ci/test/cleanup-display.sh
   if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
     # shellcheck disable=SC2046
     docker rm -f $(docker ps -aq)
@@ -86,8 +80,8 @@ sleep 15
 
 # Run tests
 echo "--- TEST: Checking Sourcegraph instance is accessible"
-curl -f http://localhost:7080
-curl -f http://localhost:7080/healthz
+curl -f "$URL"
+curl -f "$URL"/healthz
 echo "--- TEST: Running tests"
 pushd client/web
 yarn run test:regression:core
