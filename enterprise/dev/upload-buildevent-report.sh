@@ -6,6 +6,6 @@
   export BUILDEVENT_APIKEY
   export BUILDEVENT_DATASET
 
-  traceURL=$(./buildevents build "$BUILDKITE_BUILD_ID" "$BUILD_START_TIME" success)
+  traceURL=$(buildevents build "$BUILDKITE_BUILD_ID" "$BUILD_START_TIME" success)
   echo "Honeycomb trace url: $traceURL" | ./dev/ci/annotate.sh -m -s "Build trace"
 )
