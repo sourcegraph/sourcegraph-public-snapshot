@@ -15,7 +15,7 @@ import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHel
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 import { SourcegraphContext } from '../jscontext'
-import { useExperimentalFeatures } from '../stores'
+import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreference } from '../stores/themeState'
 
 import { GlobalNavbar } from './GlobalNavbar'
@@ -44,7 +44,6 @@ const defaultProps = (
     themePreference: ThemePreference.Light,
     onThemePreferenceChange: () => undefined,
     globbing: false,
-    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     platformContext: {} as any,
     keyboardShortcuts: [],
     selectedSearchContextSpec: '',
@@ -68,6 +67,7 @@ const defaultProps = (
 
 const { add } = storiesOf('web/nav/GlobalNav', module).addDecorator(Story => {
     useExperimentalFeatures.setState({ codeMonitoring: true })
+    useNavbarQueryState.setState({ searchQueryFromURL: 'r:golang/oauth2 test f:travis' })
     return <Story />
 })
 

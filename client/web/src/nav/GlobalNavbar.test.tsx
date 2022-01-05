@@ -30,7 +30,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     onThemePreferenceChange: () => undefined,
     isLightTheme: true,
     themePreference: ThemePreference.Light,
-    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     platformContext: {} as any,
     settingsCascade: NOOP_SETTINGS_CASCADE,
     batchChangesEnabled: false,
@@ -59,7 +58,10 @@ describe('GlobalNavbar', () => {
     setLinkComponent(({ children, ...props }) => <a {...props}>{children}</a>)
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
     beforeEach(() => {
-        useNavbarQueryState.setState({ searchCaseSensitivity: false })
+        useNavbarQueryState.setState({
+            searchCaseSensitivity: false,
+            searchQueryFromURL: 'r:golang/oauth2 test f:travis',
+        })
         useExperimentalFeatures.setState({ codeMonitoring: false })
     })
 

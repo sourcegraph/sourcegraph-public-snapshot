@@ -50,7 +50,6 @@ describe('SearchPage', () => {
         onThemePreferenceChange: () => undefined,
         authenticatedUser: authUser,
         globbing: false,
-        parsedSearchQuery: 'r:golang/oauth2 test f:travis',
         platformContext: {} as any,
         keyboardShortcuts: [],
         searchContextsEnabled: true,
@@ -71,7 +70,10 @@ describe('SearchPage', () => {
     }
 
     beforeEach(() => {
-        useNavbarQueryState.setState({ searchCaseSensitivity: false })
+        useNavbarQueryState.setState({
+            searchCaseSensitivity: false,
+            searchQueryFromURL: 'r:golang/oauth2 test f:travis',
+        })
     })
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {

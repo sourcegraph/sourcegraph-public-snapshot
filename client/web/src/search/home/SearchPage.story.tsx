@@ -13,7 +13,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
-import { useExperimentalFeatures } from '../../stores'
+import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
 import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches, authUser } from '../panels/utils'
 
@@ -34,7 +34,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     onThemePreferenceChange: () => undefined,
     authenticatedUser: authUser,
     globbing: false,
-    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     platformContext: {} as any,
     keyboardShortcuts: [],
     searchContextsEnabled: true,
@@ -65,6 +64,7 @@ const { add } = storiesOf('web/search/home/SearchPage', module)
     })
     .addDecorator(Story => {
         useExperimentalFeatures.setState({ showSearchContext: false, showEnterpriseHomePanels: false })
+        useNavbarQueryState.setState({ searchQueryFromURL: 'r:golang/oauth2 test f:travis' })
         return <Story />
     })
 
