@@ -4,10 +4,11 @@
   BUILDEVENT_DATASET="buildkite"
   export BUILDEVENT_APIKEY
   export BUILDEVENT_DATASET
+  args=$@
 
-  tracedCommand=$(printf "./buildevents cmd $BUILDKITE_BUILD_ID $BUILDKITE_STEP_ID '%s'" "$@")
+  tracedCommand=$(printf "./buildevents cmd $BUILDKITE_BUILD_ID $BUILDKITE_STEP_ID '%s'" "$args")
   echo "xxxxxxxx"
-  echo $tracedCommand -- $@
+  echo $tracedCommand -- $args
   echo "xxxxxxxx"
-  $tracedCommand -- $@
+  $tracedCommand -- $args
 )
