@@ -206,6 +206,8 @@ func Cmd(command string) StepOpt {
 		tracedCmd := fmt.Sprintf(`(
   BUILDEVENT_APIKEY="$$CI_BUILDEVENT_API_KEY"
   BUILDEVENT_DATASET="buildkite"
+  export BUILDEVENT_APIKEY
+  export BUILDEVENT_DATASET
   ./buildevents cmd $BUILDKITE_BUILD_ID $$BUILDKITE_STEP_ID '%s' -- %s
 )
 `, command, command)
