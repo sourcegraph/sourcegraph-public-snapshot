@@ -88,6 +88,7 @@ add(
                     authenticatedUser={authUser}
                     onSubmit={onSubmit}
                     deleteSearchContext={deleteSearchContext}
+                    isSourcegraphDotCom={false}
                 />
             )}
         </WebStory>
@@ -106,6 +107,7 @@ add(
                     authenticatedUser={authUser}
                     onSubmit={onSubmit}
                     deleteSearchContext={deleteSearchContext}
+                    isSourcegraphDotCom={false}
                 />
             )}
         </WebStory>
