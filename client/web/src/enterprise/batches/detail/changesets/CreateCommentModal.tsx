@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
@@ -85,7 +85,7 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
                         disabled={isLoading === true || commentBody.length === 0}
                         className="btn btn-primary"
                     >
-                        {isLoading === true && <LoadingSpinner className="icon-inline" />}
+                        {isLoading === true && <LoadingSpinner />}
                         Post comments
                     </button>
                 </div>

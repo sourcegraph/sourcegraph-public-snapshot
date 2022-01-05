@@ -553,7 +553,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
 exports[`<HierarchicalLocationsView /> shows a spinner before any locations emissions 1`] = `
 <DocumentFragment>
   <div
-    class="loading-spinner icon-inline m-1 test-loading-spinner"
+    class="loadingSpinner icon-inline m-1 test-loading-spinner"
   />
 </DocumentFragment>
 `;
@@ -561,7 +561,7 @@ exports[`<HierarchicalLocationsView /> shows a spinner before any locations emis
 exports[`<HierarchicalLocationsView /> shows a spinner if locations emits empty and is not complete 1`] = `
 <DocumentFragment>
   <div
-    class="loading-spinner icon-inline m-1 test-loading-spinner"
+    class="loadingSpinner icon-inline m-1 test-loading-spinner"
   />
 </DocumentFragment>
 `;

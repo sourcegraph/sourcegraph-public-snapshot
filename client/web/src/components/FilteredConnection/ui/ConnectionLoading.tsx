@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import styles from './ConnectionLoading.module.scss'
 
@@ -18,6 +18,6 @@ export const ConnectionLoading: React.FunctionComponent<ConnectionLoadingProps> 
         data-testid="filtered-connection-loader"
         className={classNames(compact && styles.compact, styles.normal, className)}
     >
-        <LoadingSpinner className="icon-inline" />
+        <LoadingSpinner />
     </span>
 )

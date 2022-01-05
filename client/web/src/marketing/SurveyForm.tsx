@@ -2,10 +2,9 @@ import React, { useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useMutation } from '@sourcegraph/shared/src/graphql/apollo'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SubmitSurveyResult, SubmitSurveyVariables } from '../graphql-operations'
@@ -138,7 +137,7 @@ export const SurveyForm: React.FunctionComponent<SurveyFormProps> = ({ authentic
             </div>
             {response.loading && (
                 <div className={styles.loader}>
-                    <LoadingSpinner className="icon-inline" />
+                    <LoadingSpinner />
                 </div>
             )}
             <div>
