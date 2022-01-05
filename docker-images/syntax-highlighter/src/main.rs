@@ -13,6 +13,7 @@ extern crate serde_json;
 extern crate syntect;
 
 use rocket_contrib::json::{Json, JsonValue};
+use std::collections::HashMap;
 use std::env;
 use std::panic;
 use std::path::Path;
@@ -22,9 +23,9 @@ use syntect::{
     html::{highlighted_html_for_string, ClassStyle},
     parsing::SyntaxSet,
 };
+use tree_sitter::Language;
 use tree_sitter_highlight::HighlightConfiguration;
 use tree_sitter_highlight::Highlighter;
-use tree_sitter_highlight::HtmlRenderer;
 
 use tree_sitter_go;
 
@@ -42,6 +43,10 @@ thread_local! {
 lazy_static! {
     static ref THEME_SET: ThemeSet = ThemeSet::load_defaults();
 }
+
+// lazy_static! {
+//     static ref LANGUAGES:
+// }
 
 #[derive(Deserialize)]
 struct Query {
@@ -81,208 +86,66 @@ fn index(q: Json<Query>) -> JsonValue {
     }
 }
 
-const GO_HIGHLIGHTS: &str = r#"
-;; Forked from tree-sitter-go
-;; Copyright (c) 2014 Max Brunsfeld (The MIT License)
+lazy_static! {
+    static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
+        let highlight_names = &[
+            "attribute",
+            "constant",
+            "comment",
+            "function.builtin",
+            "function",
+            "include",
+            "keyword",
+            "operator",
+            "property",
+            "punctuation",
+            "punctuation.bracket",
+            "punctuation.delimiter",
+            "string",
+            "string.special",
+            "tag",
+            "type",
+            "type.builtin",
+            "variable",
+            "variable.builtin",
+            "variable.parameter",
+        ];
 
-;;
-; Identifiers
+        let mut m = HashMap::new();
 
-(type_identifier) @type
-(field_identifier) @property
-(identifier) @variable
-(package_identifier) @variable
+        let mut lang = HighlightConfiguration::new(
+            tree_sitter_go::language(),
+            include_str!("../queries/go/highlights.scm").as_ref(),
+            "",
+            "",
+        )
+        .unwrap();
+        lang.configure(highlight_names);
+        m.insert("go", lang);
 
-(parameter_declaration (identifier) @parameter)
-(variadic_parameter_declaration (identifier) @parameter)
+        let mut lang = HighlightConfiguration::new(
+            tree_sitter_html::language(),
+            include_str!("../queries/html/highlights.scm").as_ref(),
+            include_str!("../queries/html/injections.scm").as_ref(),
+            "",
+        )
+        .unwrap();
+        lang.configure(highlight_names);
+        m.insert("html", lang);
 
-((identifier) @constant
- (#eq? @constant "_"))
+        let mut lang = HighlightConfiguration::new(
+            tree_sitter_javascript::language(),
+            include_str!("../queries/javascript/highlights.scm").as_ref(),
+            include_str!("../queries/javascript/injections.scm").as_ref(),
+            "",
+        )
+        .unwrap();
+        lang.configure(highlight_names);
+        m.insert("javascript", lang);
 
-((identifier) @constant
- (#vim-match? @constant "^[A-Z][A-Z\\d_]+$"))
-
-(const_spec
-  name: (identifier) @constant)
-
-; Function calls
-
-(call_expression
-  function: (identifier) @function)
-
-(call_expression
-  function: (selector_expression
-    field: (field_identifier) @method))
-
-; Function definitions
-
-(function_declaration
-  name: (identifier) @function)
-
-(method_declaration
-  name: (field_identifier) @method)
-
-; Operators
-
-[
-  "--"
-  "-"
-  "-="
-  ":="
-  "!"
-  "!="
-  "..."
-  "*"
-  "*"
-  "*="
-  "/"
-  "/="
-  "&"
-  "&&"
-  "&="
-  "%"
-  "%="
-  "^"
-  "^="
-  "+"
-  "++"
-  "+="
-  "<-"
-  "<"
-  "<<"
-  "<<="
-  "<="
-  "="
-  "=="
-  ">"
-  ">="
-  ">>"
-  ">>="
-  "|"
-  "|="
-  "||"
-] @operator
-
-; Keywords
-
-[
-  "break"
-  "chan"
-  "const"
-  "continue"
-  "default"
-  "defer"
-  "go"
-  "goto"
-  "interface"
-  "map"
-  "range"
-  "select"
-  "struct"
-  "type"
-  "var"
-  "fallthrough"
-] @keyword
-
-"func" @keyword.function
-"return" @keyword.return
-
-"for" @repeat
-
-[
-  "import"
-  "package"
-] @include
-
-[
-  "else"
-  "case"
-  "switch"
-  "if"
- ] @conditional
-
-
-;; Builtin types
-
-((type_identifier) @type.builtin
- (#any-of? @type.builtin
-           "bool"
-           "byte"
-           "complex128"
-           "complex64"
-           "error"
-           "float32"
-           "float64"
-           "int"
-           "int16"
-           "int32"
-           "int64"
-           "int8"
-           "rune"
-           "string"
-           "uint"
-           "uint16"
-           "uint32"
-           "uint64"
-           "uint8"
-           "uintptr"))
-
-
-;; Builtin functions
-
-((identifier) @function.builtin
- (#any-of? @function.builtin
-           "append"
-           "cap"
-           "close"
-           "complex"
-           "copy"
-           "delete"
-           "imag"
-           "len"
-           "make"
-           "new"
-           "panic"
-           "print"
-           "println"
-           "real"
-           "recover"))
-
-
-; Delimiters
-
-"." @punctuation.delimiter
-"," @punctuation.delimiter
-":" @punctuation.delimiter
-";" @punctuation.delimiter
-
-"(" @punctuation.bracket
-")" @punctuation.bracket
-"{" @punctuation.bracket
-"}" @punctuation.bracket
-"[" @punctuation.bracket
-"]" @punctuation.bracket
-
-
-; Literals
-
-(interpreted_string_literal) @string
-(raw_string_literal) @string
-(rune_literal) @string
-(escape_sequence) @string.escape
-
-(int_literal) @number
-(float_literal) @float
-(imaginary_literal) @number
-
-(true) @boolean
-(false) @boolean
-(nil) @constant.builtin
-
-(comment) @comment
-
-(ERROR) @error
-"#;
+        m
+    };
+}
 
 fn highlight(q: Query) -> JsonValue {
     SYNTAX_SET.with(|syntax_set| {
@@ -292,83 +155,66 @@ fn highlight(q: Query) -> JsonValue {
             Err(e) => return e,
         };
 
-        if syntax_def.name.to_lowercase() == "go" {
-            let highlight_names = &[
-                "attribute",
-                "constant",
-                "comment",
-                "function.builtin",
-                "function",
-                "include",
-                "keyword",
-                "operator",
-                "property",
-                "punctuation",
-                "punctuation.bracket",
-                "punctuation.delimiter",
-                "string",
-                "string.special",
-                "tag",
-                "type",
-                "type.builtin",
-                "variable",
-                "variable.builtin",
-                "variable.parameter",
-            ];
+        println!("RUNNING: {}", syntax_def.name.to_lowercase());
+        match syntax_def.name.to_lowercase().as_str() {
+            mut filetype @ ("go" | "javascript" | "html" | "js custom - react") => {
+                if filetype == "js custom - react" {
+                    filetype = "javascript"
+                }
 
-            let class_names = &[
-                "class='hl-attribute'",
-                "class='hl-constant'",
-                "class='hl-comment'",
-                "class='hl-function.builtin'",
-                "class='hl-function'",
-                "class='hl-include'",
-                "class='hl-keyword'",
-                "class='hl-operator'",
-                "class='hl-property'",
-                "class='hl-punctuation'",
-                "class='hl-punctuation.bracket'",
-                "class='hl-punctuation.delimiter'",
-                "class='hl-string'",
-                "class='hl-string.special'",
-                "class='hl-tag'",
-                "class='hl-type'",
-                "class='hl-type.builtin'",
-                "class='hl-variable'",
-                "class='hl-variable.builtin'",
-                "class='hl-variable.parameter'",
-            ];
+                let class_names = &[
+                    "class='hl-attribute'",
+                    "class='hl-constant'",
+                    "class='hl-comment'",
+                    "class='hl-function.builtin'",
+                    "class='hl-function'",
+                    "class='hl-include'",
+                    "class='hl-keyword'",
+                    "class='hl-operator'",
+                    "class='hl-property'",
+                    "class='hl-punctuation'",
+                    "class='hl-punctuation.bracket'",
+                    "class='hl-punctuation.delimiter'",
+                    "class='hl-string'",
+                    "class='hl-string.special'",
+                    "class='hl-tag'",
+                    "class='hl-type'",
+                    "class='hl-type.builtin'",
+                    "class='hl-variable'",
+                    "class='hl-variable.builtin'",
+                    "class='hl-variable.parameter'",
+                ];
 
-            println!("Oh no, we got some go code");
+                println!("Oh no, we got some code: {}", filetype);
 
-            // let go_language = tree_sitter_go::language();
+                let mut highlighter = Highlighter::new();
 
-            let mut highlighter = Highlighter::new();
-            let mut go_config =
-                HighlightConfiguration::new(tree_sitter_go::language(), GO_HIGHLIGHTS, "", "")
+                let lang_config = &CONFIGURATIONS[filetype];
+
+                let highlights = highlighter
+                    .highlight(&lang_config, q.code.as_bytes(), None, |l| {
+                        println!("Some language: {}", l);
+                        Some(&CONFIGURATIONS[l])
+                    })
                     .unwrap();
 
-            go_config.configure(highlight_names);
+                let mut html_renderer = TableHtmlRenderer::new();
+                html_renderer
+                    .render(highlights, q.code.as_bytes(), &|highlight| {
+                        // println!("Highlight from render: {:?}", highlight);
+                        class_names[highlight.0].as_bytes()
+                    })
+                    .unwrap();
 
-            let highlights = highlighter
-                .highlight(&go_config, q.code.as_bytes(), None, |_| None)
-                .unwrap();
+                // println!("Highlights: {:?}", String::from_utf8(html_renderer.html));
 
-            let mut html_renderer = TableHtmlRenderer::new();
-            html_renderer
-                .render(highlights, q.code.as_bytes(), &|highlight| {
-                    println!("Highlight from render: {:?}", highlight);
-                    class_names[highlight.0].as_bytes()
-                })
-                .unwrap();
-
-            // println!("Highlights: {:?}", String::from_utf8(html_renderer.html));
-
-            return json!({
-                "data": String::from_utf8(html_renderer.html).unwrap(),
-                "plaintext": false,
-            });
-        }
+                return json!({
+                    "data": String::from_utf8(html_renderer.html).unwrap(),
+                    "plaintext": false,
+                });
+            }
+            _ => {}
+        };
 
         if q.css {
             let output = ClassedTableGenerator::new(

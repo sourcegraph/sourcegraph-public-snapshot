@@ -13,11 +13,20 @@ pub struct TableHtmlRenderer {
     pub html: Vec<u8>,
 }
 
+/// Our version of `tree_sitter_highlight::HtmlRenderer`, which emits stuff as a table.
+///
+/// You can see the original version in the tree_sitter_highlight crate.
 impl TableHtmlRenderer {
     pub fn new() -> Self {
         TableHtmlRenderer {
+            // TODO: This is just wasting space, but now sure how to stream this and correctly
+            // handle line endings. Instead I wait til things are done, and then split the lines
+            // afterwards.
+            //
+            // Could perhaps match on something or modify the Highlighter, but it seems very hard.
+            // This way is simple but does save the string twice basically.
             highlighted: Vec::with_capacity(BUFFER_HTML_RESERVE_CAPACITY),
-            html: Vec::with_capacity(BUFFER_HTML_RESERVE_CAPACITY * 2),
+            html: Vec::new(),
         }
     }
 
@@ -51,6 +60,9 @@ impl TableHtmlRenderer {
         if self.highlighted.last() != Some(&b'\n') {
             self.highlighted.push(b'\n');
         }
+
+        // Just guess that we need something twice as long, so we don't have a lot of resizes
+        self.html = Vec::with_capacity(self.highlighted.len() * 2);
 
         // This is the same format as ClassedTableGenerator
         //
