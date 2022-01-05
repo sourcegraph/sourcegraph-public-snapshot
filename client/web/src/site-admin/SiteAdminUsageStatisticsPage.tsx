@@ -263,6 +263,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                                 label,
                                 id: key,
                             }))}
+                            name="chart-options"
                             onChange={this.onChartIndexChange}
                             selected={this.state.chartID}
                         />
