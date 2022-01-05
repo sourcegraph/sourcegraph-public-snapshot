@@ -6,5 +6,6 @@
   export BUILDEVENT_DATASET
 
   command=$(printf "./buildevents cmd $BUILDKITE_BUILD_ID $BUILDKITE_STEP_ID '%s' -- %s" "$1" "$1")
+  echo $command
   $command
 )
