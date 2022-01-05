@@ -7,6 +7,10 @@
   args=$@
 
   tracedCommand=$(printf "./buildevents cmd %s %s '%s'" "$BUILDKITE_BUILD_ID" "$BUILDKITE_STEP_ID" "$args")
+  echo "--------"
+  echo $tracedCommand
+  echo "--------"
+
   set -x
   $tracedCommand -- $args
 )
