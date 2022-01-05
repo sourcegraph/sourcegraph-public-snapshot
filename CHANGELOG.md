@@ -34,7 +34,8 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Skipped migrations caused existing Code Insights to not appear. [#29395](https://github.com/sourcegraph/sourcegraph/pull/29395)
-- Enterprise only out-of-band migrations failed to execute due to missing enterprise configuration flag. [#29426](https://github.com/sourcegraph/sourcegraph/pull/29426)
+- Enterprise-only out-of-band migrations failed to execute due to missing enterprise configuration flag. [#29426](https://github.com/sourcegraph/sourcegraph/pull/29426)
+- Fix the display of enterprise-only out-of-band migrations in the frontend service. [#29428](https://github.com/sourcegraph/sourcegraph/pull/29428)
 
 ## 3.35.0
 
