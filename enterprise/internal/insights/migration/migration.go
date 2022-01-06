@@ -166,16 +166,24 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 
 		userStore := database.Users(m.postgresDB)
 		user, err := userStore.GetByID(ctx, userId)
-		if err != nil {
+		if err != nil && errors.Is(err, database.NewUserNotFoundError(userId)) {
+			// skip it
+			return nil
+		} else if err != nil {
 			return errors.Wrap(err, "UserStoreGetByID")
 		}
+
 		subjectName = replaceIfEmpty(&user.DisplayName, user.Username)
 	} else if job.OrgId != nil {
 		orgId := int32(*job.OrgId)
 		subject = api.SettingsSubject{Org: &orgId}
 		migrationContext.orgIds = []int{*job.OrgId}
 		org, err := orgStore.GetByID(ctx, orgId)
-		if err != nil {
+		refErr := &database.OrgNotFoundError{Message: fmt.Sprintf("id %d", orgId)}
+		if err != nil && errors.Is(err, error(refErr)) {
+			// skip it
+			return nil
+		} else if err != nil {
 			return errors.Wrap(err, "OrgStoreGetByID")
 		}
 		subjectName = replaceIfEmpty(org.DisplayName, org.Name)

@@ -4,6 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/hexops/autogold"
@@ -277,4 +281,49 @@ func TestCreateSpecialCaseDashboard(t *testing.T) {
 			GlobalGrant: true,
 		}).Equal(t, *got)
 	})
+}
+
+func TestDeletedUser(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	postgres := dbtest.NewDB(t)
+	migrator := migrator{postgresDB: postgres}
+	migrationStore := store.NewSettingsMigrationJobsStore(postgres)
+
+	userStore := database.Users(postgres)
+	created, err := userStore.Create(ctx, database.NewUser{
+		Email:                 "test@test.com",
+		Username:              "test1",
+		DisplayName:           "test1",
+		Password:              "test234",
+		EmailVerificationCode: "code1234",
+		EmailIsVerified:       false,
+		FailIfNotInitialUser:  false,
+		EnforcePasswordLength: false,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = userStore.Delete(ctx, created.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := int(created.ID)
+	err = migrator.performMigrationForRow(ctx, migrationStore, store.SettingsMigrationJob{
+		UserId:             &id,
+		OrgId:              nil,
+		Global:             false,
+		TotalInsights:      0,
+		MigratedInsights:   0,
+		TotalDashboards:    0,
+		MigratedDashboards: 0,
+		Runs:               0,
+		DashboardCreated:   false,
+	})
+	if err != nil {
+		t.Error("got unexpected error from deleted user (should skip)", err)
+	}
 }
