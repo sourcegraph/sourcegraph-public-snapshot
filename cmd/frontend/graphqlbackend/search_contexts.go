@@ -34,12 +34,12 @@ type SearchContextsResolver interface {
 
 type SearchContextResolver interface {
 	ID() graphql.ID
-	Name(ctx context.Context) string
-	Description(ctx context.Context) string
-	Public(ctx context.Context) bool
-	AutoDefined(ctx context.Context) bool
+	Name() string
+	Description() string
+	Public() bool
+	AutoDefined() bool
 	Spec() string
-	UpdatedAt(ctx context.Context) DateTime
+	UpdatedAt() DateTime
 	Namespace(ctx context.Context) (*NamespaceResolver, error)
 	ViewerCanManage(ctx context.Context) bool
 	Repositories(ctx context.Context) ([]SearchContextRepositoryRevisionsResolver, error)
@@ -47,14 +47,14 @@ type SearchContextResolver interface {
 }
 
 type SearchContextConnectionResolver interface {
-	Nodes(ctx context.Context) ([]SearchContextResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	Nodes() []SearchContextResolver
+	TotalCount() int32
+	PageInfo() *graphqlutil.PageInfo
 }
 
 type SearchContextRepositoryRevisionsResolver interface {
-	Repository(ctx context.Context) *RepositoryResolver
-	Revisions(ctx context.Context) []string
+	Repository() *RepositoryResolver
+	Revisions() []string
 }
 
 type SearchContextInputArgs struct {
