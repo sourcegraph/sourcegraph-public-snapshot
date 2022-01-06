@@ -5,9 +5,10 @@ import (
 	"context"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
-	"golang.org/x/sync/errgroup"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -62,7 +63,12 @@ func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 		return err
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
+	var (
+		wg       sync.WaitGroup
+		errMux   sync.Mutex
+		multiErr *multierror.Error
+	)
+
 	for _, repoRev := range repoRevs {
 		repoRev := repoRev // we close over repoRev in onMatches
 
@@ -89,18 +95,25 @@ func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 			})
 		}
 
-		g.Go(func() error {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
 			limitHit, err := gitserver.DefaultClient.Search(ctx, args, onMatches)
 			stream.Send(streaming.SearchEvent{
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
 				},
 			})
-			return err
-		})
+
+			errMux.Lock()
+			multiErr = multierror.Append(multiErr, err)
+			errMux.Unlock()
+		}()
 	}
 
-	return g.Wait()
+	wg.Wait()
+	return multiErr.ErrorOrNil()
 }
 
 func (j CommitSearch) Name() string {
