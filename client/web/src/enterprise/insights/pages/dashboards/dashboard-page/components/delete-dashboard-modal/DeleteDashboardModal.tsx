@@ -41,7 +41,6 @@ export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalP
 
     const isDeleting = !isErrorLike(loadingOrError) && loadingOrError
 
-    // TODO: Check styles
     return (
         <Modal className={styles.modal} onDismiss={onClose} aria-label="Delete code insight dashboard modal">
             <Button className={classNames('btn-icon', styles.closeButton)} onClick={onClose}>

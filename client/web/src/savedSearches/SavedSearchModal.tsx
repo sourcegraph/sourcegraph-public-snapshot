@@ -48,7 +48,6 @@ export class SavedSearchModal extends React.Component<Props, State> {
         this.setState({ organization: orgName })
     }
 
-    // TODO: Check styles
     public render(): JSX.Element | null {
         return (
             this.props.authenticatedUser && (

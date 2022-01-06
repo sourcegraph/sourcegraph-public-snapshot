@@ -68,8 +68,6 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
         }
     }
 
-    // TODO: Check styles
-
     if (insights === undefined) {
         return (
             <Modal className={styles.modal} aria-label="Add insights to dashboard modal">
