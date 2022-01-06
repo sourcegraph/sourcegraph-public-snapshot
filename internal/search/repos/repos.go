@@ -595,7 +595,8 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 		// Validate pattern now so the error message is more recognizable to the
 		// user
 		if _, err := regexp.Compile(repoPattern); err != nil {
-			return nil, &badRequestError{err}
+			log15.Info("Error is here", "for", repoPattern)
+			return nil, &badRequestError{errors.Wrap(err, "in findPatternRevs")}
 		}
 		repoPattern = optimizeRepoPatternWithHeuristics(repoPattern)
 		includePatterns[i] = repoPattern
