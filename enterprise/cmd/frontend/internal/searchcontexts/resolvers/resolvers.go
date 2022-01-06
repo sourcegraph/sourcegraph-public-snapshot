@@ -69,7 +69,7 @@ func (r *Resolver) SearchContextBySpec(ctx context.Context, args graphqlbackend.
 	return &searchContextResolver{searchContext, r.db}, nil
 }
 
-func (r *Resolver) CreateSearchContext(ctx context.Context, args graphqlbackend.CreateSearchContextArgs) (graphqlbackend.SearchContextResolver, error) {
+func (r *Resolver) CreateSearchContext(ctx context.Context, args graphqlbackend.CreateSearchContextArgs) (_ graphqlbackend.SearchContextResolver, err error) {
 	var namespaceUserID, namespaceOrgID int32
 	if args.SearchContext.Namespace != nil {
 		err := graphqlbackend.UnmarshalNamespaceID(*args.SearchContext.Namespace, &namespaceUserID, &namespaceOrgID)
@@ -78,9 +78,12 @@ func (r *Resolver) CreateSearchContext(ctx context.Context, args graphqlbackend.
 		}
 	}
 
-	repositoryRevisions, err := r.repositoryRevisionsFromInputArgs(ctx, args.Repositories)
-	if err != nil {
-		return nil, err
+	var repositoryRevisions []*types.SearchContextRepositoryRevisions
+	if len(args.Repositories) > 0 {
+		repositoryRevisions, err = r.repositoryRevisionsFromInputArgs(ctx, args.Repositories)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	searchContext, err := searchcontexts.CreateSearchContextWithRepositoryRevisions(
@@ -108,9 +111,12 @@ func (r *Resolver) UpdateSearchContext(ctx context.Context, args graphqlbackend.
 		return nil, err
 	}
 
-	repositoryRevisions, err := r.repositoryRevisionsFromInputArgs(ctx, args.Repositories)
-	if err != nil {
-		return nil, err
+	var repositoryRevisions []*types.SearchContextRepositoryRevisions
+	if len(args.Repositories) > 0 {
+		repositoryRevisions, err = r.repositoryRevisionsFromInputArgs(ctx, args.Repositories)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	original, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
