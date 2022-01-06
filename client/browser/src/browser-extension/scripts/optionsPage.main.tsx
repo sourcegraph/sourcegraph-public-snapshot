@@ -1,7 +1,8 @@
 // We want to polyfill first.
 import '../../shared/polyfills'
 
-import React, { useEffect, useState } from 'react'
+import { uniq } from 'lodash'
+import React, { useCallback, useEffect, useState } from 'react'
 import { render } from 'react-dom'
 import { from, noop, Observable, combineLatest } from 'rxjs'
 import { catchError, map, mapTo } from 'rxjs/operators'
@@ -122,6 +123,7 @@ const observeOptionFlagsWithValues = (): Observable<OptionFlagWithValue[]> => {
 }
 
 const observingIsActivated = observeStorageKey('sync', 'disableExtension').pipe(map(isDisabled => !isDisabled))
+const observingPreviouslyUsedUrls = observeStorageKey('sync', 'previouslyUsedURLs')
 const observingSourcegraphUrl = observeSourcegraphURL(true)
 const observingOptionFlagsWithValues = observeOptionFlagsWithValues()
 
@@ -135,10 +137,6 @@ function handleChangeOptionFlag(key: string, value: boolean): void {
     }
 }
 
-function handleChangeSourcegraphUrl(url: string): void {
-    storage.sync.set({ sourcegraphURL: url }).catch(console.error)
-}
-
 function buildRequestPermissionsHandler({ protocol, host }: TabStatus) {
     return function requestPermissionsHandler(event: React.MouseEvent) {
         event.preventDefault()
@@ -149,9 +147,10 @@ function buildRequestPermissionsHandler({ protocol, host }: TabStatus) {
 }
 
 const Options: React.FunctionComponent = () => {
-    const sourcegraphUrl = useObservable(observingSourcegraphUrl) || ''
+    const sourcegraphUrl = useObservable(observingSourcegraphUrl)
+    const previouslyUsedUrls = useObservable(observingPreviouslyUsedUrls)
     const isActivated = useObservable(observingIsActivated)
-    const optionFlagsWithValues = useObservable(observingOptionFlagsWithValues) || []
+    const optionFlagsWithValues = useObservable(observingOptionFlagsWithValues)
     const [currentTabStatus, setCurrentTabStatus] = useState<
         { status: TabStatus; handler: React.MouseEventHandler } | undefined
     >()
@@ -179,24 +178,32 @@ const Options: React.FunctionComponent = () => {
         }
     }
 
+    const handleChangeSourcegraphUrl = useCallback(
+        (url: string): void => {
+            storage.sync.set({ sourcegraphURL: url }).catch(console.error)
+            storage.sync.set({ previouslyUsedURLs: uniq([...(previouslyUsedUrls || []), url]) }).catch(console.error)
+        },
+        [previouslyUsedUrls]
+    )
+
     return (
         <ThemeWrapper>
             <OptionsPage
                 isFullPage={isFullPage}
-                sourcegraphUrl={sourcegraphUrl}
+                sourcegraphUrl={sourcegraphUrl || ''}
+                suggestedSourcegraphUrls={previouslyUsedUrls || []}
                 onChangeSourcegraphUrl={handleChangeSourcegraphUrl}
                 version={version}
                 validateSourcegraphUrl={validateSourcegraphUrl}
                 isActivated={!!isActivated}
                 onToggleActivated={handleToggleActivated}
-                optionFlags={optionFlagsWithValues}
+                optionFlags={optionFlagsWithValues || []}
                 onChangeOptionFlag={handleChangeOptionFlag}
                 showPrivateRepositoryAlert={
                     currentTabStatus?.status.hasPrivateCloudError && isDefaultSourcegraphUrl(sourcegraphUrl)
                 }
                 showSourcegraphCloudAlert={showSourcegraphCloudAlert}
                 permissionAlert={permissionAlert}
-                currentHost={currentTabStatus?.status.host}
                 requestPermissionsHandler={currentTabStatus?.handler}
             />
         </ThemeWrapper>
