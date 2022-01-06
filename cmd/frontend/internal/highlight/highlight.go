@@ -39,7 +39,7 @@ func init() {
 	obsvCtx := observation.Context{
 		HoneyDataset: &honey.Dataset{
 			Name:       "codeintel-syntax-highlighting",
-			SampleRate: 5, // 1 in 5
+			SampleRate: 100, // 1 in 100
 		},
 	}
 	highlightOp = obsvCtx.Operation(observation.Op{
