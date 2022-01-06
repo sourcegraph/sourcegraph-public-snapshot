@@ -4,6 +4,8 @@ import { BehaviorSubject } from 'rxjs'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
+import { browserExtensionInstalled } from '../../tracking/analyticsUtils'
+
 import { OnboardingTourStepItem, ONBOARDING_STEP_ITEMS } from './data'
 
 const STORAGE_KEY = 'ONBOARDING_TOUR'
@@ -39,7 +41,6 @@ export function useOnboardingTourTracking(
         (eventName: string) => {
             const args = { language: 'Go', page: location.href }
             telemetryService.log(eventName, args, args)
-            console.log('[TourEvents]', eventName, args)
         },
         [telemetryService]
     )
@@ -78,7 +79,6 @@ export function useOnboardingTour(
 
     const onClose = useCallback(() => {
         set('isClosed', true)
-        // TODO: trigger event
     }, [])
 
     const onSignUp = useCallback(() => {
@@ -91,20 +91,24 @@ export function useOnboardingTour(
 
     const onRestart = useCallback(() => {
         clear()
-        // TODO: trigger event
     }, [])
+
+    const isBrowserExtensionInstalled = useObservable(browserExtensionInstalled)
 
     const { steps, isTourCompleted, isClosed } = useMemo(() => {
         const steps = ONBOARDING_STEP_ITEMS.map(step => ({
             ...step,
-            isCompleted: !!store?.completedStepIds?.includes(step.id),
+            isCompleted:
+                step.id === 'TourBrowserExtensions'
+                    ? !!isBrowserExtensionInstalled
+                    : !!store?.completedStepIds?.includes(step.id),
         }))
         return {
             steps,
             isTourCompleted: steps.filter(step => step.isCompleted).length === steps.length,
             isClosed: !!store?.isClosed,
         }
-    }, [store])
+    }, [store, isBrowserExtensionInstalled])
 
     useEffect(() => {
         if (!store) {

@@ -117,6 +117,8 @@
 .thumbnail {
     width: 11rem;
     @media (--sm-breakpoint-down) {
+        margin-right: auto;
+        margin-left: auto;
         margin-top: 3.5rem;
         text-align: center;
     }
