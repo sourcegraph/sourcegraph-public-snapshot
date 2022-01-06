@@ -32,7 +32,6 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-# hadolint ignore=DL3018
 RUN apk add --no-cache --verbose \
     # We require git 2.34.1 because we use git-repack with flag --write-midx.
     'git>=2.34.1' \
@@ -82,7 +81,6 @@ COPY --from=sourcegraph/prometheus:server /prometheus.sh /prometheus.sh
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/prometheus:server /usr/share/prometheus /usr/share/prometheus
 
-# hadolint ignore=DL3018
 RUN set -ex && \
     addgroup -S grafana && \
     adduser -S -G grafana grafana && \

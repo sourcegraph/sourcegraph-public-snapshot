@@ -31,7 +31,6 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-# hadolint ignore=DL3018
 RUN apk add --no-cache \
     # We require git 2.34.1 because we use git-repack with flag --write-midx.
     'git>=2.34.1' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main  \
