@@ -192,7 +192,8 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":puppeteer::electric_plug: Puppeteer tests prep",
 		bk.Key(prepStepKey),
 		bk.Env("ENTERPRISE", "1"),
-		bk.Cmd("COVERAGE_INSTRUMENT=true dev/ci/yarn-build.sh client/web"),
+		bk.Env("COVERAGE_INSTRUMENT", "true"),
+		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Cmd("dev/ci/create-client-artifact.sh"))
 
 	// Chunk web integration tests to save time via parallel execution.
