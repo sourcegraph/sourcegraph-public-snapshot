@@ -1,7 +1,7 @@
 import { isEqual } from 'lodash'
 import { useEffect, useRef } from 'react'
 
-import { isErrorLike } from '../util/errors'
+import { isErrorLike } from '@sourcegraph/common'
 
 import type { HoverOverlayProps } from './HoverOverlay'
 

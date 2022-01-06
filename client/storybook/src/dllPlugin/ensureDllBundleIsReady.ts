@@ -4,11 +4,13 @@ import path from 'path'
 
 import signale from 'signale'
 
-import { dllPluginConfig, storybookWorkspacePath, rootPath } from '../webpack.config.common'
+import { ROOT_PATH } from '@sourcegraph/build-config'
+
+import { dllPluginConfig, storybookWorkspacePath } from '../webpack.config.common'
 
 // Build DLL bundle with `yarn build:dll-bundle` if it's not available.
 export const ensureDllBundleIsReady = (): void => {
-    signale.start(`Checking if DLL bundle is available: ${path.relative(rootPath, dllPluginConfig.path)}`)
+    signale.start(`Checking if DLL bundle is available: ${path.relative(ROOT_PATH, dllPluginConfig.path)}`)
 
     // eslint-disable-next-line no-sync
     if (!fs.existsSync(dllPluginConfig.path)) {

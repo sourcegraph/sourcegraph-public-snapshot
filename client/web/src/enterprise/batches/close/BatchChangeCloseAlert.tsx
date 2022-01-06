@@ -1,9 +1,9 @@
 import * as H from 'history'
 import React, { useCallback, useState } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+import { isErrorLike, asError } from '@sourcegraph/common'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { AlertLink, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { Scalars } from '../../../graphql-operations'
@@ -88,12 +88,9 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
                     {!viewerCanAdminister && (
                         <div className="alert alert-warning">
                             You don't have permission to close this batch change. See{' '}
-                            <a
-                                className="alert-link"
-                                href="https://docs.sourcegraph.com/batch_changes/explanations/permissions_in_batch_changes"
-                            >
+                            <AlertLink to="https://docs.sourcegraph.com/batch_changes/explanations/permissions_in_batch_changes">
                                 Permissions in batch changes
-                            </a>{' '}
+                            </AlertLink>{' '}
                             for more information about the batch changes permission model.
                         </div>
                     )}
@@ -112,7 +109,7 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
                             onClick={onClose}
                             disabled={isClosing === true || !viewerCanAdminister}
                         >
-                            {isClosing === true && <LoadingSpinner className="icon-inline" />} Close batch change
+                            {isClosing === true && <LoadingSpinner />} Close batch change
                         </button>
                     </div>
                 </div>

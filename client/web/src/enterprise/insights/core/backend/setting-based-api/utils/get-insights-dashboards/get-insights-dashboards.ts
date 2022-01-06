@@ -1,5 +1,5 @@
+import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { ConfiguredSubjectOrError } from '@sourcegraph/shared/src/settings/settings'
-import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { Settings } from '../../../../../../../schema/settings.schema'
 import { InsightDashboard } from '../../../../types'

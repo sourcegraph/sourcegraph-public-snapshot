@@ -2,8 +2,8 @@ import EyeIcon from 'mdi-react/EyeIcon'
 import React, { useEffect } from 'react'
 import { useLocation } from 'react-router'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { RenderMode } from '@sourcegraph/shared/src/util/url'
+import { TooltipController } from '@sourcegraph/wildcard'
 
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
@@ -29,7 +29,7 @@ export const ToggleRenderedFileMode: React.FunctionComponent<ToggledRenderedFile
     const location = useLocation()
 
     useEffect(() => {
-        Tooltip.forceUpdate()
+        TooltipController.forceUpdate()
     }, [mode])
 
     if (actionType === 'dropdown') {

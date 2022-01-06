@@ -4,11 +4,11 @@ import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, distinctUntilKeyChanged, map, mapTo, tap, withLatestFrom } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
 import { refreshAuthenticatedUser, AuthenticatedUser } from '../../auth'
@@ -171,9 +171,7 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                 {isErrorLike(this.state.submissionOrError) && (
                                     <ErrorAlert className="my-2" error={this.state.submissionOrError} />
                                 )}
-                                {this.state.submissionOrError === 'loading' && (
-                                    <LoadingSpinner className="icon-inline" />
-                                )}
+                                {this.state.submissionOrError === 'loading' && <LoadingSpinner />}
                             </Form>
                         </ModalPage>
                     ) : (

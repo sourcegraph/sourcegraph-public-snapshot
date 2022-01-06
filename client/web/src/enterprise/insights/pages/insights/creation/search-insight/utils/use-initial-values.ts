@@ -1,6 +1,6 @@
 import { useLocation } from 'react-router-dom'
 
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isErrorLike } from '@sourcegraph/common'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { CreateInsightFormFields } from '../types'

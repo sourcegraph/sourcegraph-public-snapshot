@@ -5,14 +5,14 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { requestGraphQL } from '../../backend/graphql'
@@ -250,7 +250,7 @@ export class OrgArea extends React.Component<Props> {
 
         return (
             <ErrorBoundary location={this.props.location}>
-                <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
                     <Switch>
                         {this.props.orgAreaRoutes.map(
                             ({ path, exact, render, condition = () => true, fullPage }) =>

@@ -24,8 +24,8 @@ type InsightPermStore struct {
 // code insights in the timeseries database. This approach makes the assumption that most users have access to most
 // repos - which is highly likely given the public / private model that repos use today.
 func (i *InsightPermStore) GetUnauthorizedRepoIDs(ctx context.Context) (results []api.RepoID, err error) {
-	db := i.Store.Handle().DB()
-	store := database.Repos(db)
+	db := database.NewDB(i.Store.Handle().DB())
+	store := db.Repos()
 	conds, err := database.AuthzQueryConds(ctx, db)
 	if err != nil {
 		return []api.RepoID{}, err

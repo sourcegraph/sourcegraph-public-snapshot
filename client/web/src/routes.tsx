@@ -74,7 +74,7 @@ function passThroughToServer(): React.ReactNode {
 export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: PageRoutes.Index,
-        render: () => <Redirect to="/search" />,
+        render: () => <Redirect to={PageRoutes.Search} />,
         exact: true,
     },
     {
@@ -88,7 +88,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             getExperimentalFeatures().showMultilineSearchConsole ? (
                 <SearchConsolePage {...props} />
             ) : (
-                <Redirect to="/search" />
+                <Redirect to={PageRoutes.Search} />
             ),
         exact: true,
     },
@@ -98,7 +98,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             useExperimentalFeatures.getState().showSearchNotebook ? (
                 <SearchNotebookPage {...props} />
             ) : (
-                <Redirect to="/search" />
+                <Redirect to={PageRoutes.Search} />
             ),
         exact: true,
     },
@@ -137,7 +137,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
                     setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
                 />
             ) : (
-                <Redirect to="/search" />
+                <Redirect to={PageRoutes.Search} />
             ),
 
         exact: true,

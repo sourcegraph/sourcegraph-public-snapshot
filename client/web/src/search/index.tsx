@@ -4,8 +4,7 @@ import { map } from 'rxjs/operators'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { ISavedSearch } from '@sourcegraph/shared/src/graphql/schema'
-import { discreteValueAliases, escapeSpaces, FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { Filter } from '@sourcegraph/shared/src/search/query/token'
+import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
@@ -203,15 +202,6 @@ export interface SearchStreamingProps {
         queryObservable: Observable<string>,
         options: StreamSearchOptions
     ) => Observable<AggregateStreamingSearchResults>
-}
-
-export function getGlobalSearchContextFilter(query: string): { filter: Filter; spec: string } | null {
-    const globalContextFilter = findFilter(query, FilterType.context, FilterKind.Global)
-    if (!globalContextFilter) {
-        return null
-    }
-    const searchContextSpec = globalContextFilter.value?.value || ''
-    return { filter: globalContextFilter, spec: searchContextSpec }
 }
 
 export const isSearchContextSpecAvailable = memoizeObservable(

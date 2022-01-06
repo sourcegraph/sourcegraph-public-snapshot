@@ -1,9 +1,9 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
@@ -111,7 +111,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
             {loading && (
                 // loading state for 1 click creation insight values resolve operation
                 <div>
-                    <LoadingSpinner className="icon-inline" /> Resolving search query
+                    <LoadingSpinner /> Resolving search query
                 </div>
             )}
 

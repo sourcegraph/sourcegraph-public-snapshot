@@ -27,8 +27,9 @@ type Container struct {
 	// is responsible for, so that the impact of issues in it is clear.
 	Description string
 
-	// List of Template Variables to apply to the dashboard
-	Templates []sdk.TemplateVar
+	// Variables define the variables that can be to applied to the dashboard for this
+	// container, such as instances or shards.
+	Variables []ContainerVariable
 
 	// Groups of observable information about the container.
 	Groups []Group
@@ -51,6 +52,11 @@ func (c *Container) validate() error {
 	if c.Description != withPeriod(c.Description) || c.Description != upperFirst(c.Description) {
 		return errors.Errorf("Description must be sentence starting with an uppercase letter and ending with period; found \"%s\"", c.Description)
 	}
+	for i, v := range c.Variables {
+		if err := v.validate(); err != nil {
+			return errors.Errorf("Variable %d %q: %v", i, c.Name, err)
+		}
+	}
 	for i, g := range c.Groups {
 		if err := g.validate(); err != nil {
 			return errors.Errorf("Group %d %q: %v", i, g.Title, err)
@@ -72,20 +78,15 @@ func (c *Container) renderDashboard() *sdk.Board {
 	board.SharedCrosshair = true
 	board.Editable = false
 	board.AddTags("builtin")
-	board.Templating.List = append([]sdk.TemplateVar{{
-		Label:      "Filter alert level",
-		Name:       "alert_level",
-		AllValue:   ".*",
-		Current:    sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"},
-		IncludeAll: true,
-		Options: []sdk.Option{
-			{Text: "all", Value: "$__all", Selected: true},
-			{Text: "critical", Value: "critical"},
-			{Text: "warning", Value: "warning"},
-		},
-		Query: "critical,warning",
-		Type:  "custom",
-	}}, c.Templates...)
+	alertLevelVariable := ContainerVariable{
+		Label:   "Alert level",
+		Name:    "alert_level",
+		Options: []string{"critical", "warning"},
+	}
+	board.Templating.List = []sdk.TemplateVar{alertLevelVariable.toGrafanaTemplateVar()}
+	for _, variable := range c.Variables {
+		board.Templating.List = append(board.Templating.List, variable.toGrafanaTemplateVar())
+	}
 	board.Annotations.List = []sdk.Annotation{{
 		Name:       "Alert events",
 		Datasource: StringPtr("Prometheus"),
@@ -328,6 +329,78 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 	return &promRulesFile{
 		Groups: []promGroup{group},
 	}, nil
+}
+
+// ContainerVariable describes a template variable that can be applied container dashboard
+// for filtering purposes.
+type ContainerVariable struct {
+	// Name is the name of the variable to substitute the value for, e.g. "alert_level"
+	// to replace "$alert_level" in queries
+	Name string
+	// Label is a human-readable name for the variable, e.g. "Alert level"
+	Label string
+
+	// Query is the query to generate the possible values. Cannot be used in conjunction
+	// with Options
+	Query string
+	// Options are the pre-defined possible values for this variable. Cannot be used in
+	// conjunction with Query
+	Options []string
+
+	// Multi indicates whether or not to allow multi-selection for this variable filter
+	Multi bool
+}
+
+func (c *ContainerVariable) validate() error {
+	if c.Name == "" {
+		return errors.New("ContainerVariable.Name is required")
+	}
+	if c.Label == "" {
+		return errors.New("ContainerVariable.Label is required")
+	}
+	if c.Query == "" && len(c.Options) == 0 {
+		return errors.New("ContainerVariable.Query and ContainerVariable.Options cannot both be set")
+	}
+	return nil
+}
+
+// toGrafanaTemplateVar generates the Grafana template variable configuration for this
+// container variable.
+func (c *ContainerVariable) toGrafanaTemplateVar() sdk.TemplateVar {
+	variable := sdk.TemplateVar{
+		Name:  c.Name,
+		Label: c.Label,
+		Multi: c.Multi,
+
+		Datasource: StringPtr("Prometheus"),
+		IncludeAll: true,
+
+		AllValue: ".*",
+		// Apply the AllValue to a template variable by default
+		Current: sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"},
+	}
+
+	switch {
+	case c.Query != "":
+		variable.Type = "query"
+		variable.Query = c.Query
+		variable.Refresh = sdk.BoolInt{
+			Flag:  true,
+			Value: Int64Ptr(2), // Refresh on time range change
+		}
+		variable.Sort = 3
+
+	case len(c.Options) > 0:
+		variable.Type = "custom"
+		variable.Query = strings.Join(c.Options, ",")
+		// Add the AllValue as a default
+		variable.Options = []sdk.Option{{Text: "all", Value: "$__all", Selected: true}}
+		for _, option := range c.Options {
+			variable.Options = append(variable.Options, sdk.Option{Text: option, Value: option})
+		}
+	}
+
+	return variable
 }
 
 // Group describes a group of observable information about a container.

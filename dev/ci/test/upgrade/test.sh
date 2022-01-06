@@ -43,7 +43,7 @@ popd
 # Load variables set up by init-server, disabling `-x` to avoid printing variables
 set +x
 # shellcheck disable=SC1091
-source /root/.profile
+source /root/.sg_envrc
 set -x
 
 # Stop old Sourcegraph release

@@ -15,6 +15,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -44,7 +45,6 @@ import {
     PatternTypeProps,
     ParsedSearchQueryProps,
     isSearchContextSpecAvailable,
-    getGlobalSearchContextFilter,
     SearchContextInputProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'

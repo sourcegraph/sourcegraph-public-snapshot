@@ -38,7 +38,7 @@ func TestDequeue(t *testing.T) {
 		return transformedJob, nil
 	}
 
-	executorStore := NewMockExecutorStore()
+	executorStore := NewMockStore()
 
 	handler := newHandler(executorStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
@@ -58,7 +58,7 @@ func TestDequeue(t *testing.T) {
 }
 
 func TestDequeueNoRecord(t *testing.T) {
-	handler := newHandler(NewMockExecutorStore(), QueueOptions{Store: workerstoremocks.NewMockStore()})
+	handler := newHandler(NewMockStore(), QueueOptions{Store: workerstoremocks.NewMockStore()})
 
 	_, dequeued, err := handler.dequeue(context.Background(), "deadbeef")
 	if err != nil {
@@ -78,7 +78,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 	fakeEntryID := 99
 	store.AddExecutionLogEntryFunc.SetDefaultReturn(fakeEntryID, nil)
 
-	executorStore := NewMockExecutorStore()
+	executorStore := NewMockStore()
 
 	handler := newHandler(executorStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
@@ -117,7 +117,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 func TestAddExecutionLogEntryUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.AddExecutionLogEntryFunc.SetDefaultReturn(0, workerstore.ErrExecutionLogEntryNotUpdated)
-	executorStore := NewMockExecutorStore()
+	executorStore := NewMockStore()
 	handler := newHandler(executorStore, QueueOptions{Store: store})
 
 	entry := workerutil.ExecutionLogEntry{
@@ -136,7 +136,7 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
-	executorStore := NewMockExecutorStore()
+	executorStore := NewMockStore()
 
 	handler := newHandler(executorStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
@@ -175,7 +175,7 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 func TestUpdateExecutionLogEntryUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.UpdateExecutionLogEntryFunc.SetDefaultReturn(workerstore.ErrExecutionLogEntryNotUpdated)
-	executorStore := NewMockExecutorStore()
+	executorStore := NewMockStore()
 	handler := newHandler(executorStore, QueueOptions{Store: store})
 
 	entry := workerutil.ExecutionLogEntry{
@@ -195,7 +195,7 @@ func TestMarkComplete(t *testing.T) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
-	executorStore := NewMockExecutorStore()
+	executorStore := NewMockStore()
 
 	handler := newHandler(executorStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
@@ -223,7 +223,7 @@ func TestMarkComplete(t *testing.T) {
 func TestMarkCompleteUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.MarkCompleteFunc.SetDefaultReturn(false, nil)
-	executorStore := NewMockExecutorStore()
+	executorStore := NewMockStore()
 	handler := newHandler(executorStore, QueueOptions{Store: store})
 
 	if err := handler.markComplete(context.Background(), "deadbeef", 42); err != ErrUnknownJob {
@@ -235,7 +235,7 @@ func TestMarkCompleteStoreError(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	internalErr := errors.New("something went wrong")
 	store.MarkCompleteFunc.SetDefaultReturn(false, internalErr)
-	executorStore := NewMockExecutorStore()
+	executorStore := NewMockStore()
 	handler := newHandler(executorStore, QueueOptions{Store: store})
 
 	if err := handler.markComplete(context.Background(), "deadbeef", 42); err == nil || errors.UnwrapAll(err).Error() != internalErr.Error() {
@@ -251,7 +251,7 @@ func TestMarkErrored(t *testing.T) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
-	executorStore := NewMockExecutorStore()
+	executorStore := NewMockStore()
 
 	handler := newHandler(executorStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
@@ -282,7 +282,7 @@ func TestMarkErrored(t *testing.T) {
 func TestMarkErroredUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.MarkErroredFunc.SetDefaultReturn(false, nil)
-	executorStore := NewMockExecutorStore()
+	executorStore := NewMockStore()
 	handler := newHandler(executorStore, QueueOptions{Store: store})
 
 	if err := handler.markErrored(context.Background(), "deadbeef", 42, "OH NO"); err != ErrUnknownJob {
@@ -294,7 +294,7 @@ func TestMarkErroredStoreError(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	storeErr := errors.New("something went wrong")
 	store.MarkErroredFunc.SetDefaultReturn(false, storeErr)
-	executorStore := NewMockExecutorStore()
+	executorStore := NewMockStore()
 	handler := newHandler(executorStore, QueueOptions{Store: store})
 
 	if err := handler.markErrored(context.Background(), "deadbeef", 42, "OH NO"); err == nil || errors.UnwrapAll(err).Error() != storeErr.Error() {
@@ -310,7 +310,7 @@ func TestMarkFailed(t *testing.T) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
-	executorStore := NewMockExecutorStore()
+	executorStore := NewMockStore()
 
 	handler := newHandler(executorStore, QueueOptions{Store: store, RecordTransformer: recordTransformer})
 
@@ -341,7 +341,7 @@ func TestMarkFailed(t *testing.T) {
 func TestMarkFailedUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.MarkFailedFunc.SetDefaultReturn(false, nil)
-	executorStore := NewMockExecutorStore()
+	executorStore := NewMockStore()
 	handler := newHandler(executorStore, QueueOptions{Store: store})
 
 	if err := handler.markFailed(context.Background(), "deadbeef", 42, "OH NO"); err != ErrUnknownJob {
@@ -353,7 +353,7 @@ func TestMarkFailedStoreError(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	storeErr := errors.New("something went wrong")
 	store.MarkFailedFunc.SetDefaultReturn(false, storeErr)
-	executorStore := NewMockExecutorStore()
+	executorStore := NewMockStore()
 	handler := newHandler(executorStore, QueueOptions{Store: store})
 
 	if err := handler.markFailed(context.Background(), "deadbeef", 42, "OH NO"); err == nil || errors.UnwrapAll(err).Error() != storeErr.Error() {
@@ -371,7 +371,7 @@ func TestHeartbeat(t *testing.T) {
 		return []int{testKnownID}, nil
 	})
 
-	executorStore := NewMockExecutorStore()
+	executorStore := NewMockStore()
 
 	executor := types.Executor{
 		Hostname:        "test-hostname",

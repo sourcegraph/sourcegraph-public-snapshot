@@ -28,7 +28,7 @@ var (
 	addReposConfig = addRepos.String("config", "", "Path to the external service config. (Required)")
 
 	home    = os.Getenv("HOME")
-	profile = home + "/.profile"
+	profile = home + "/.sg_envrc"
 )
 
 func main() {
@@ -98,7 +98,7 @@ func initSourcegraph() {
 	}
 
 	envvar := "export SOURCEGRAPH_SUDO_TOKEN=" + token
-	file, err := os.OpenFile(profile, os.O_APPEND|os.O_WRONLY, 0755)
+	file, err := os.Create(profile)
 	if err != nil {
 		log.Fatal(err)
 	}

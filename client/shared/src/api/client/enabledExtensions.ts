@@ -3,6 +3,8 @@ import { combineLatest, from, Observable, of, throwError } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError, distinctUntilChanged, map, publishReplay, refCount, shareReplay, switchMap } from 'rxjs/operators'
 
+import { asError, isErrorLike } from '@sourcegraph/common'
+
 import { checkOk } from '../../backend/fetch'
 import {
     ConfiguredExtension,
@@ -14,7 +16,6 @@ import { ExtensionManifest } from '../../extensions/extensionManifest'
 import { areExtensionsSame } from '../../extensions/extensions'
 import { queryConfiguredRegistryExtensions } from '../../extensions/helpers'
 import { PlatformContext } from '../../platform/context'
-import { asError, isErrorLike } from '../../util/errors'
 
 /**
  * @returns An observable that emits the list of extensions configured in the viewer's final settings upon

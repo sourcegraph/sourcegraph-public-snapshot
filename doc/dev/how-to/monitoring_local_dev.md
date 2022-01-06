@@ -61,7 +61,7 @@ Running just Prometheus is a convenient way to validate the generated recording 
 You can start up a standalone Prometheus using:
 
 ```sh
-./dev/prometheus.sh
+sg run prometheus
 ```
 
 The loaded generated recording and alert rules are available at `http://localhost:9090/rules`.
@@ -99,7 +99,7 @@ The docsite is used to serve generated monitoring documentation, such as the [al
 You can spin it up by running:
 
 ```sh
-yarn docsite:serve
+sg run docsite
 ```
 
 Learn more about docsite development in the [product documentation implementation guide](documentation_implementation.md).
@@ -115,10 +115,10 @@ This means that you can:
 * Run the generator to regenerate and reload monitoring services
 * Validate the result of your changes immediately (for example, by checking Prometheus rules in `/rules` or Grafana dashboards in `/-/debug/grafana`)
 
-To run the generator and trigger a reload:
+To run the generator and trigger a reload on changes:
 
 ```sh
-RELOAD=true go generate ./monitoring
+sg run monitoring-generator
 ```
 
 Make sure to provide the following parameters as well, where relevant:

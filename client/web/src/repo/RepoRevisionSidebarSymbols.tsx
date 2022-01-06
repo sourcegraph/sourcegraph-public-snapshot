@@ -5,7 +5,6 @@ import * as React from 'react'
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -27,30 +26,16 @@ import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
 
-function symbolIsActive(symbolLocation: string, currentLocation: H.Location): boolean {
-    const current = parseBrowserRepoURL(H.createPath(currentLocation))
-    const symbol = parseBrowserRepoURL(symbolLocation)
-    return (
-        current.repoName === symbol.repoName &&
-        current.revision === symbol.revision &&
-        current.filePath === symbol.filePath &&
-        isEqual(current.position, symbol.position)
-    )
-}
-
-const symbolIsActiveTrue = (): boolean => true
-const symbolIsActiveFalse = (): boolean => false
-
 interface SymbolNodeProps {
     node: SymbolNodeFields
-    location: H.Location
     onHandleClick: () => void
+    isActive: boolean
 }
 
-const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location, onHandleClick }) => {
-    const isActiveFunc = symbolIsActive(node.url, location) ? symbolIsActiveTrue : symbolIsActiveFalse
+const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, onHandleClick, isActive }) => {
+    const isActiveFunc = (): boolean => isActive
     return (
-        <li className={styles.repoRevisionSidebarSymbolsNode} data-tooltip={node.location.resource.path}>
+        <li className={styles.repoRevisionSidebarSymbolsNode}>
             <NavLink
                 to={node.url}
                 isActive={isActiveFunc}
@@ -184,6 +169,17 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSid
         />
     )
 
+    const currentLocation = parseBrowserRepoURL(H.createPath(location))
+    const isSymbolActive = (symbolUrl: string): boolean => {
+        const symbolLocation = parseBrowserRepoURL(symbolUrl)
+        return (
+            currentLocation.repoName === symbolLocation.repoName &&
+            currentLocation.revision === symbolLocation.revision &&
+            currentLocation.filePath === symbolLocation.filePath &&
+            isEqual(currentLocation.position, symbolLocation.position)
+        )
+    }
+
     return (
         <ConnectionContainer className={classNames('h-100', styles.repoRevisionSidebarSymbols)} compact={true}>
             <ConnectionForm
@@ -199,9 +195,13 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSid
             {error && <ConnectionError errors={[error.message]} compact={true} />}
             {connection && (
                 <ConnectionList compact={true}>
-                    <Tooltip />
                     {connection.nodes.map((node, index) => (
-                        <SymbolNode key={index} node={node} location={location} onHandleClick={onHandleSymbolClick} />
+                        <SymbolNode
+                            key={index}
+                            node={node}
+                            onHandleClick={onHandleSymbolClick}
+                            isActive={isSymbolActive(node.url)}
+                        />
                     ))}
                 </ConnectionList>
             )}

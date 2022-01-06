@@ -84,8 +84,6 @@ extend type Query {
     isSearchContextAvailable(spec: String!): Boolean!
 }
 
-extend union SearchSuggestion = SearchContext
-
 """
 A search context. Specifies a set of repositories to be searched.
 """
@@ -117,6 +115,11 @@ type SearchContext implements Node {
     default organization search context ("@org").
     """
     autoDefined: Boolean!
+    """
+    Sourcegraph search query that defines the search context.
+    e.g. "r:^github\.com/org (rev:bar or rev:HEAD) file:^sub/dir"
+    """
+    query: String!
     """
     Repositories and their revisions that will be searched when querying.
     """
@@ -208,6 +211,11 @@ input SearchContextInput {
     Namespace of the search context (user or org). If not set, search context is considered instance-level.
     """
     namespace: ID
+    """
+    Sourcegraph search query that defines the search context.
+    e.g. "r:^github\.com/org (rev:bar or rev:HEAD) file:^sub/dir"
+    """
+    query: String!
 }
 
 """
@@ -233,6 +241,11 @@ input SearchContextEditInput {
     instance-level search contexts are available only to site-admins.
     """
     public: Boolean!
+    """
+    Sourcegraph search query that defines the search context.
+    e.g. "r:^github\.com/org (rev:bar or rev:HEAD) file:^sub/dir"
+    """
+    query: String!
 }
 
 """
