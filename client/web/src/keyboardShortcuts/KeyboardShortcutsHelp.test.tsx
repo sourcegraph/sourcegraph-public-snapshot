@@ -30,7 +30,6 @@ describe('KeyboardShortcutsHelp', () => {
 
         await waitFor(() => {
             expect(screen.getByText(/keyboard shortcuts/i)).toBeInTheDocument()
-            expect(screen.getByRole('dialog')).toHaveClass('show')
         })
 
         expect(document.body).toMatchSnapshot()
