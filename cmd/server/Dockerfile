@@ -32,10 +32,9 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-# hadolint ignore=DL3018
 RUN apk add --no-cache --verbose \
     # We require git 2.34.1 because we use git-repack with flag --write-midx.
-    'git=~2.34.1' \
+    'git>=2.34.1' \
     git-p4 \
     --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main  \
     # NOTE that the Postgres version we run is different
@@ -43,11 +42,11 @@ RUN apk add --no-cache --verbose \
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
     && apk add --no-cache --verbose \
-    'bash=~5.0.17' \
-    'redis=~5.0' \
+    'bash>=5.0.17' \
+    'redis>=5.0' \
     python2 \
     python3 \
-    'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=~14.5.0' \
+    'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current>=14.5.0' \
     postgresql=12.9-r0 \
     postgresql-contrib
 
@@ -82,7 +81,6 @@ COPY --from=sourcegraph/prometheus:server /prometheus.sh /prometheus.sh
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/prometheus:server /usr/share/prometheus /usr/share/prometheus
 
-# hadolint ignore=DL3018
 RUN set -ex && \
     addgroup -S grafana && \
     adduser -S -G grafana grafana && \

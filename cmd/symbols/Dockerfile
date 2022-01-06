@@ -23,7 +23,6 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-# hadolint ignore=DL3018
 RUN apk add --no-cache bind-tools ca-certificates mailcap tini
 
 COPY ctags-install-alpine.sh /ctags-install-alpine.sh

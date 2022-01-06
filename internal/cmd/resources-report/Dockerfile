@@ -13,7 +13,6 @@ FROM sourcegraph/alpine-3.12:120059_2021-12-09_b34c7b2@sha256:9a1fde12f56fea0202
 # hadolint ignore=DL3002
 USER root
 
-# hadolint ignore=DL3018
 RUN apk add --no-cache ca-certificates
 
 COPY --from=builder /bin/resources-report /usr/local/bin/

@@ -5,7 +5,6 @@
 
 FROM sourcegraph/alpine-3.12:120059_2021-12-09_b34c7b2@sha256:9a1fde12f56fea02027cf4caeebdddfedb7b73bf8db6c16f7907a6e04a29134c
 
-# hadolint ignore=DL3018
 RUN apk --no-cache add pcre sqlite-libs
 
 # The comby/comby image is a small binary-only distribution. See the bin and src directories
