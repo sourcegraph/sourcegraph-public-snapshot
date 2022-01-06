@@ -22,8 +22,20 @@ const config: Meta = {
 
 export default config
 
-export const ModalExample: Story = () => (
+export const Default: Story = () => (
     <Modal>
+        <h1>Hello world!</h1>
+    </Modal>
+)
+
+export const PositionCentered: Story = () => (
+    <Modal position="center">
+        <h1>Hello world!</h1>
+    </Modal>
+)
+
+export const PositionFull: Story = () => (
+    <Modal position="full">
         <h1>Hello world!</h1>
     </Modal>
 )
