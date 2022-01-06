@@ -72,7 +72,7 @@ export const TosConsentModal: React.FunctionComponent<{ afterTosAccepted: () => 
                     />
                 </form>
                 <p className="mt-5">
-                    If you do not agree, <a href="/-/sign-out">Sign Out</a> and contact your site admin to have your
+                    If you do not agree, <a href="/-/sign-out">sign out</a> and contact your site admin to have your
                     account deleted.
                 </p>
                 {error && (

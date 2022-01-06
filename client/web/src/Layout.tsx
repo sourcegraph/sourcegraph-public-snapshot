@@ -182,7 +182,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     useScrollToLocationHash(props.location)
 
-    const [tosAccepted, setTosAccepted] = useState(false)
+    const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
     useEffect(() => setTosAccepted(!props.authenticatedUser || props.authenticatedUser.tosAccepted), [
         props.authenticatedUser,
     ])
