@@ -52,6 +52,10 @@ export interface SourcegraphVSCodeExtensionAPI
     getCorsSetting: () => string
     // Update Cors Setting - return true when updated successfully
     updateCorsUri: (uri: string) => Promise<boolean>
+    // Get Last Selected Search Context from Local Storage
+    getLastSelectedSearchContext: () => string
+    // Update Last Selected Search Context in Local Storage
+    updateLastSelectedSearchContext: (context: string) => Promise<boolean>
     // For extension host sidebar
     // mainThreadAPI methods
 }

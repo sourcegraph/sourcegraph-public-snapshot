@@ -47,6 +47,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         sourcegraphVSCodeExtensionAPI,
     ])
     const [hasAccessToken, setHasAccessToken] = useState<boolean | undefined>(undefined)
+    const [lastSelectedSearchContext, setLastSelectedSearchContext] = useState<string | undefined>(undefined)
     const sourcegraphSettings =
         useObservable(
             useMemo(() => wrapRemoteObservable(sourcegraphVSCodeExtensionAPI.getSettings()), [
@@ -66,6 +67,55 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         [searchActions]
     )
 
+    const fetchSuggestions = useCallback(
+        (query: string): Observable<SearchMatch[]> =>
+            platformContext
+                .requestGraphQL<SearchResult, SearchVariables>({
+                    request: searchQuery,
+                    variables: { query, patternType: null },
+                    mightContainPrivateInfo: true,
+                })
+                .pipe(
+                    map(dataOrThrowErrors),
+                    map(results => convertGQLSearchToSearchMatches(results)),
+                    catchError(() => [])
+                ),
+        [platformContext]
+    )
+
+    const setSelectedSearchContextSpec = (spec: string): void => {
+        setLastSelectedSearchContext(spec)
+        getAvailableSearchContextSpecOrDefault({
+            spec,
+            defaultSpec: DEFAULT_SEARCH_CONTEXT_SPEC,
+            platformContext,
+        })
+            .toPromise()
+            .then(availableSearchContextSpecOrDefault => {
+                searchActions.setSelectedSearchContextSpec(availableSearchContextSpecOrDefault)
+            })
+            .catch(() => {
+                // TODO error handling
+            })
+
+        sourcegraphVSCodeExtensionAPI
+            .updateLastSelectedSearchContext(spec)
+            .then(response => console.log(response))
+            .catch(error => console.log(error))
+    }
+
+    const onSignUpClick = useCallback(
+        (event?: React.FormEvent): void => {
+            event?.preventDefault()
+            platformContext.telemetryService.log(
+                'VSCESearchPageClicked',
+                { campaign: 'Sign up link' },
+                { campaign: 'Sign up link' }
+            )
+        },
+        [platformContext.telemetryService]
+    )
+
     useEffect(() => {
         // Check for Access Token to display sign up CTA
         if (hasAccessToken === undefined) {
@@ -76,6 +126,32 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                 })
                 // TODO error handling
                 .catch(() => setHasAccessToken(false))
+        }
+
+        if (lastSelectedSearchContext === undefined) {
+            setLoading(true)
+            sourcegraphVSCodeExtensionAPI
+                .getLastSelectedSearchContext()
+                .then(spec => {
+                    if (spec) {
+                        setLastSelectedSearchContext(spec)
+                        getAvailableSearchContextSpecOrDefault({
+                            spec,
+                            defaultSpec: DEFAULT_SEARCH_CONTEXT_SPEC,
+                            platformContext,
+                        })
+                            .toPromise()
+                            .then(availableSearchContextSpecOrDefault => {
+                                searchActions.setSelectedSearchContextSpec(availableSearchContextSpecOrDefault)
+                            })
+                            .catch(() => {
+                                // TODO error handling
+                            })
+                    }
+                })
+                // TODO error handling
+                .catch(error => console.log(error))
+            setLoading(false)
         }
 
         const subscriptions = new Subscription()
@@ -122,50 +198,8 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         searchActions,
         platformContext,
         hasAccessToken,
+        lastSelectedSearchContext,
     ])
-
-    const fetchSuggestions = useCallback(
-        (query: string): Observable<SearchMatch[]> =>
-            platformContext
-                .requestGraphQL<SearchResult, SearchVariables>({
-                    request: searchQuery,
-                    variables: { query, patternType: null },
-                    mightContainPrivateInfo: true,
-                })
-                .pipe(
-                    map(dataOrThrowErrors),
-                    map(results => convertGQLSearchToSearchMatches(results)),
-                    catchError(() => [])
-                ),
-        [platformContext]
-    )
-
-    const setSelectedSearchContextSpec = (spec: string): void => {
-        getAvailableSearchContextSpecOrDefault({
-            spec,
-            defaultSpec: DEFAULT_SEARCH_CONTEXT_SPEC,
-            platformContext,
-        })
-            .toPromise()
-            .then(availableSearchContextSpecOrDefault => {
-                searchActions.setSelectedSearchContextSpec(availableSearchContextSpecOrDefault)
-            })
-            .catch(() => {
-                // TODO error handling
-            })
-    }
-
-    const onSignUpClick = useCallback(
-        (event?: React.FormEvent): void => {
-            event?.preventDefault()
-            platformContext.telemetryService.log(
-                'VSCESearchPageClicked',
-                { campaign: 'Sign up link' },
-                { campaign: 'Sign up link' }
-            )
-        },
-        [platformContext.telemetryService]
-    )
 
     return (
         <div>
@@ -181,47 +215,52 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                         Search your code and 2M+ open source repositories
                     </div>
                     <div className={classNames(styles.searchContainer, styles.searchContainerWithContentBelow)}>
-                        <Form className="d-flex my-2" onSubmit={onSubmit}>
-                            {/* TODO temporary settings provider w/ mock in memory storage */}
-                            <SearchBox
-                                isSourcegraphDotCom={true}
-                                // Platform context props
-                                platformContext={platformContext}
-                                telemetryService={platformContext.telemetryService}
-                                // Search context props
-                                searchContextsEnabled={true}
-                                showSearchContext={true}
-                                showSearchContextManagement={true}
-                                hasUserAddedExternalServices={false}
-                                hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
-                                defaultSearchContextSpec={DEFAULT_SEARCH_CONTEXT_SPEC}
-                                // TODO store search context in vs code settings?
-                                setSelectedSearchContextSpec={setSelectedSearchContextSpec}
-                                selectedSearchContextSpec={selectedSearchContextSpec}
-                                fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
-                                fetchSearchContexts={fetchSearchContexts}
-                                getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                                // Case sensitivity props
-                                caseSensitive={caseSensitive}
-                                setCaseSensitivity={searchActions.setCaseSensitivity}
-                                // Pattern type props
-                                patternType={patternType}
-                                setPatternType={searchActions.setPatternType}
-                                // Misc.
-                                isLightTheme={theme === 'theme-light'}
-                                authenticatedUser={null} // Used for search context CTA, which we won't show here.
-                                queryState={queryState}
-                                onChange={searchActions.setQuery}
-                                onSubmit={onSubmit}
-                                autoFocus={true}
-                                fetchSuggestions={fetchSuggestions}
-                                settingsCascade={sourcegraphSettings}
-                                globbing={globbing}
-                                // TODO(tj): instead of cssvar, can pipe in font settings from extension
-                                // to be able to pass it to Monaco!
-                                className={classNames(styles.withEditorFont, 'flex-grow-1 flex-shrink-past-contents')}
-                            />
-                        </Form>
+                        {!loading && (
+                            <Form className="d-flex my-2" onSubmit={onSubmit}>
+                                {/* TODO temporary settings provider w/ mock in memory storage */}
+                                <SearchBox
+                                    isSourcegraphDotCom={true}
+                                    // Platform context props
+                                    platformContext={platformContext}
+                                    telemetryService={platformContext.telemetryService}
+                                    // Search context props
+                                    searchContextsEnabled={true}
+                                    showSearchContext={true}
+                                    showSearchContextManagement={true}
+                                    hasUserAddedExternalServices={false}
+                                    hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
+                                    defaultSearchContextSpec={DEFAULT_SEARCH_CONTEXT_SPEC}
+                                    // TODO store search context in vs code settings?
+                                    setSelectedSearchContextSpec={setSelectedSearchContextSpec}
+                                    selectedSearchContextSpec={selectedSearchContextSpec}
+                                    fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                                    fetchSearchContexts={fetchSearchContexts}
+                                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                                    // Case sensitivity props
+                                    caseSensitive={caseSensitive}
+                                    setCaseSensitivity={searchActions.setCaseSensitivity}
+                                    // Pattern type props
+                                    patternType={patternType}
+                                    setPatternType={searchActions.setPatternType}
+                                    // Misc.
+                                    isLightTheme={theme === 'theme-light'}
+                                    authenticatedUser={null} // Used for search context CTA, which we won't show here.
+                                    queryState={queryState}
+                                    onChange={searchActions.setQuery}
+                                    onSubmit={onSubmit}
+                                    autoFocus={true}
+                                    fetchSuggestions={fetchSuggestions}
+                                    settingsCascade={sourcegraphSettings}
+                                    globbing={globbing}
+                                    // TODO(tj): instead of cssvar, can pipe in font settings from extension
+                                    // to be able to pass it to Monaco!
+                                    className={classNames(
+                                        styles.withEditorFont,
+                                        'flex-grow-1 flex-shrink-past-contents'
+                                    )}
+                                />
+                            </Form>
+                        )}
                     </div>
                     <div className="flex-grow-1">
                         <HomePanels

@@ -6,6 +6,8 @@ import vscode, { env } from 'vscode'
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
+import { LocalStorageService } from '../localStorageService'
+
 import { invalidateClient, requestGraphQLFromVSCode } from './backend/requestGraphQl'
 import { initializeSourcegraphSettings } from './backend/settings'
 import { toSourcegraphLanguage } from './code-intel/languages'
@@ -36,6 +38,8 @@ import {
 import { createSearchSidebarMediator } from './webview/search-sidebar/mediator'
 
 export function activate(context: vscode.ExtensionContext): void {
+    // Initialize the global application manager
+    const storageManager = new LocalStorageService(context.workspaceState)
     // TODO: Close all editors (search panel and remote files) and restart Sourcegraph extension host
     // any time sourcegraph url or TODO access token change to reduce risk of data leaks in logging.
     // Pass this to GraphQL client to avoid making requests to the new instance before restarting VS Code.
@@ -156,6 +160,9 @@ export function activate(context: vscode.ExtensionContext): void {
         // Get Cors from Setting
         getCorsSetting: () => corsSetting,
         updateCorsUri: (uri: string) => updateCorsSetting(uri),
+        // Get last selected search context from Setting
+        getLastSelectedSearchContext: () => storageManager.getValue('sg-last-selected-context'),
+        updateLastSelectedSearchContext: (spec: string) => storageManager.setValue('sg-last-selected-context', spec),
     }
 
     // Track current active webview panel to make sure only one panel exists at a time
