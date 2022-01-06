@@ -151,10 +151,7 @@ async function webpackDevelopmentServer() {
     }
     compilationDoneOnce = true
 
-    printSuccessBanner([
-      '✱ Sourcegraph is really ready now!',
-      `Click here: https://${sockHost}:${sockPort}`
-    ])
+    printSuccessBanner(['✱ Sourcegraph is really ready now!', `Click here: https://${sockHost}:${sockPort}`])
   })
 
   const server = new WebpackDevServer(options, compiler)

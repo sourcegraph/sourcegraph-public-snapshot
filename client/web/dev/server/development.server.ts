@@ -116,7 +116,7 @@ async function startWebpackDevelopmentServer({
                 [
                     'Webpack build is ready!',
                     `Development HTTP server is ready at ${HTTP_WEB_SERVER_URL}`,
-                    `Development HTTPS server is ready at ${HTTPS_WEB_SERVER_URL}`
+                    `Development HTTPS server is ready at ${HTTPS_WEB_SERVER_URL}`,
                 ],
                 signale.log.bind(signale)
             )
