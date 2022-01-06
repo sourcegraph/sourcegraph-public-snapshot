@@ -267,7 +267,7 @@ func ZoektIndexServer() *monitoring.Container {
 							Description: "# of compound shards (per instance)",
 							Query:       "sum(index_number_compound_shards{instance=~`${instance:regex}`}) by (instance)",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}}").Unit(monitoring.Number),
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
 								The total number of compound shards per instance.
