@@ -1,8 +1,7 @@
+import Dialog from '@reach/dialog'
 import * as H from 'history'
 import React, { useEffect, useState, useRef } from 'react'
 import { useHistory } from 'react-router'
-
-import { Modal } from '@sourcegraph/wildcard'
 
 type Fn = () => void
 interface Props {
@@ -56,7 +55,7 @@ export const AwayPrompt: React.FunctionComponent<Props> = props => {
     }, [history, when])
 
     return pendingLocation ? (
-        <Modal position="top-third" aria-labelledby={header}>
+        <Dialog className="modal-body modal-body--top-third p-4 rounded border" aria-labelledby={header}>
             <h3 className="text-dark mb-4">{header}</h3>
             <div className="form-group mb-4">{message}</div>
             <div className="d-flex justify-content-end">
@@ -67,6 +66,6 @@ export const AwayPrompt: React.FunctionComponent<Props> = props => {
                     {button_ok_text}
                 </button>
             </div>
-        </Modal>
+        </Dialog>
     ) : null
 }
