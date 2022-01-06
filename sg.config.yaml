@@ -101,6 +101,7 @@ env:
 
   # Code Insights uses a separate database, because it's easier to run TimescaleDB in
   # Docker than install as a Postgres extension in dev environments.
+#  CODEINSIGHTS_PGDATASOURCE: postgres://postgres:password@127.0.0.1:5435/postgres
   CODEINSIGHTS_PGDATASOURCE: postgres://sourcegraph:sourcegraph@127.0.0.1:5435/postgres
   DB_STARTUP_TIMEOUT: 120s # codeinsights-db needs more time to start in some instances.
   DISABLE_CODE_INSIGHTS_HISTORICAL: true
