@@ -709,7 +709,7 @@ func (s *SearchStreamClient) search(query string, dec streamhttp.FrontendStreamD
 	if err != nil {
 		return err
 	}
-	// NOTE: This header is required to authenticate our session with a session cookie, see:
+	// Note: Sending this header enables us to use session cookie auth without sending a trusted Origin header.
 	// https://docs.sourcegraph.com/dev/security/csrf_security_model#authentication-in-api-endpoints
 	req.Header.Set("X-Requested-With", "Sourcegraph")
 	s.Client.addCookies(req)
