@@ -14,7 +14,7 @@
     for code in "${codes[@]}"; do
         if [ "$code" != "$BUILDKITE_COMMAND_EXIT_STATUS" ]; then
             # If the Buildkite exit code is a soft fail, do nothing either.
-            exit $code
+            exit "$code"
         fi
     done
 
