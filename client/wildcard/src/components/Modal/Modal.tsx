@@ -8,13 +8,25 @@ import { MODAL_POSITIONS } from './constants'
 import styles from './Modal.module.scss'
 
 export interface ModalProps extends DialogProps {
+    /**
+     * The position of the modal on the screen
+     *
+     * @default "top-third"
+     */
     position?: typeof MODAL_POSITIONS[number]
 }
 
 /**
- * TODO: Update
+ * A Modal component.
+ *
+ * This component should be used to render a modal dialog over the top of the page.
+ * It should be typically used for primary content that requires user action.
+ * If this does not fit your use case, you may wish to consider using the Popover component instead.
+ *
+ * @see — Building accessible Modals: https://www.w3.org/TR/2019/NOTE-wai-aria-practices-1.1-20190814/examples/dialog-modal/dialog.html
+ * @see — Docs https://reach.tech/dialog
  */
-export const Modal = React.forwardRef(({ children, className, position, ...props }, reference) => (
+export const Modal = React.forwardRef(({ children, className, position = 'top-third', ...props }, reference) => (
     <Dialog
         ref={reference}
         {...props}
