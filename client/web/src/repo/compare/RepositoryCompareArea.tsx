@@ -8,10 +8,10 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
 
+import { HoveredToken, createHoverifier, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
+import { isDefined } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
-import { createHoverifier, Hoverifier, HoverState } from '@sourcegraph/shared/src/codeintellify'
-import { HoveredToken } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
@@ -19,7 +19,7 @@ import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { property, isDefined } from '@sourcegraph/shared/src/util/types'
+import { property } from '@sourcegraph/shared/src/util/types'
 import {
     FileSpec,
     ModeSpec,

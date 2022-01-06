@@ -66,6 +66,7 @@
     "./client/storybook",
     "./client/extension-api-types",
     "./client/extension-api",
+    "./client/codeintellify",
   ],
   "go.lintTool": "golangci-lint",
   "shellformat.flag": "-i 2 -ci",

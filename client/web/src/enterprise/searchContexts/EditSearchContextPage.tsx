@@ -4,8 +4,7 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
-import { asError } from '@sourcegraph/common'
-import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
+import { asError, isErrorLike } from '@sourcegraph/common'
 import {
     Scalars,
     SearchContextEditInput,
