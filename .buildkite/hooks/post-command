@@ -8,7 +8,16 @@
 
     buildevents step "$BUILDKITE_BUILD_ID" "$BUILDKITE_STEP_ID" "$STEP_START" "$BUILDKITE_STEP_KEY"
 
-    if [ "$BUILDKITE_COMMAND_EXIT_STATUS" -ne 0 ]; then
-        buildevents build "$BUILDKITE_BUILD_ID" "$BUILD_START_TIME" failure
-    fi
+    # We want to report only if we're getting a non zero exit code that is not a soft failure code.
+    # Turn the string of exit codes "1 2 3 4" into an array of strings
+    IFS=' ' read -ra codes <<<"$SOFT_FAIL_EXIT_CODES 0" # append exit code 0 for the test below.
+    for code in "${codes[@]}"; do
+        if [ "$code" != "$BUILDKITE_COMMAND_EXIT_STATUS" ]; then
+            # If the Buildkite exit code is a soft fail, do nothing either.
+            exit $code
+        fi
+    done
+
+    # None of the exit codes were 0 or soft fails, report the failure then.
+    buildevents build "$BUILDKITE_BUILD_ID" "$BUILD_START_TIME" failure
 )
