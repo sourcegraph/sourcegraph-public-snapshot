@@ -1,6 +1,7 @@
 package definitions
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/grafana-tools/sdk"
@@ -14,6 +15,7 @@ func ZoektIndexServer() *monitoring.Container {
 		containerName        = "zoekt-indexserver"
 		bundledContainerName = "indexed-search"
 	)
+	podNameRegex := fmt.Sprintf(".*%s.*", bundledContainerName)
 
 	return &monitoring.Container{
 		Name: "zoekt-indexserver",
@@ -32,7 +34,6 @@ func ZoektIndexServer() *monitoring.Container {
 				Refresh:    sdk.BoolInt{Flag: true, Value: monitoring.Int64Ptr(2)}, // Refresh on time range change
 				Sort:       3,
 				IncludeAll: true,
-				AllValue:   ".*",
 				Current:    sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"},
 			},
 		},
@@ -247,6 +248,106 @@ func ZoektIndexServer() *monitoring.Container {
 							Panel:          monitoring.Panel().LegendFormat("{{instance}} jobs"),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "A queue that is constantly growing could be a leading indicator of a bottleneck or under-provisioning",
+						},
+					},
+				},
+			},
+			{
+				Title:  "Network I/O pod metrics (only available on Kubernetes)",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "network_sent_bytes_aggregate",
+							Description: "transmission rate over 5m (aggregate)",
+							Query:       fmt.Sprintf("sum(rate(container_network_transmit_bytes_total{container_label_io_kubernetes_pod_name=~`%s`}[5m]))", podNameRegex),
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat(bundledContainerName).Unit(monitoring.BytesPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "The rate of bytes sent over the network across all Zoekt pods",
+						},
+						{
+							Name:        "network_received_packets_per_instance",
+							Description: "transmission rate over 5m (per instance)",
+							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_bytes_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").Unit(monitoring.BytesPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "The amount of bytes sent over the network by individual Zoekt pods",
+						},
+					},
+					{
+						{
+							Name:        "network_received_bytes_aggregate",
+							Description: "receive rate over 5m (aggregate)",
+							Query:       fmt.Sprintf("sum(rate(container_network_receive_bytes_total{container_label_io_kubernetes_pod_name=~`%s`}[5m]))", podNameRegex),
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat(bundledContainerName).Unit(monitoring.BytesPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "The amount of bytes received from the network across Zoekt pods",
+						},
+						{
+							Name:        "network_received_bytes_per_instance",
+							Description: "receive rate over 5m (per instance)",
+							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_bytes_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").Unit(monitoring.BytesPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "The amount of bytes received from the network by individual Zoekt pods",
+						},
+					},
+					{
+						{
+							Name:        "network_transmitted_packets_dropped_by_instance",
+							Description: "transmit packet drop rate over 5m (by instance)",
+							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_packets_dropped_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").Unit(monitoring.PacketsPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "An increase in dropped packets could be a leading indicator of network saturation.",
+						},
+						{
+							Name:        "network_transmitted_packets_error_total",
+							Description: "errors encountered while transmitting over 5m (per instance)",
+							Query:       fmt.Sprintf("sum(rate(container_network_transmit_errors_total{container_label_io_kubernetes_pod_name=~`%s`}[5m]))", podNameRegex),
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}} errors").With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "An increase in transmission errors could indicate a networking issue",
+						},
+						{
+							Name:        "network_received_packets_dropped_by_instance",
+							Description: "receive packet drop rate over 5m (by instance)",
+							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_packets_dropped_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").Unit(monitoring.PacketsPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "An increase in dropped packets could be a leading indicator of network saturation.",
+						},
+						{
+							Name:        "network_transmitted_packets_errors_by_instance",
+							Description: "errors encountered while receiving over 5m (per instance)",
+							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_errors_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}} errors").With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "An increase in errors while receiving could indicate a networking issue.",
 						},
 					},
 				},
