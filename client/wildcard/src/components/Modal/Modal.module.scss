@@ -1,0 +1,47 @@
+@import '@reach/dialog/styles.css';
+
+[data-reach-dialog-overlay] {
+    // var(--gray-04) at 0.5 opacity
+    background-color: rgba(219, 226, 240, 0.5);
+}
+
+:global(.theme-dark) {
+    [data-reach-dialog-overlay] {
+        // var(--gray-08) at 0.5 opacity
+        background-color: rgba(52, 58, 77, 0.5);
+    }
+}
+
+[data-reach-dialog-content] {
+    background-color: var(--color-bg-1);
+}
+
+.modal {
+    background-color: var(--color-bg-1);
+    padding: 1rem;
+    width: 32rem;
+    max-width: 100vw;
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+/*
+ * Positions
+ */
+.center,
+.top-third {
+    transform: translate(-50%, -50%);
+    position: absolute;
+    top: 50%;
+    margin: 0;
+    left: 50%;
+}
+
+.top-third {
+    top: 33%;
+}
+
+.full {
+    width: 100%;
+}
