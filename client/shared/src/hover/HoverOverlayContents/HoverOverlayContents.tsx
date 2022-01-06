@@ -3,7 +3,7 @@ import { upperFirst } from 'lodash'
 import React from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import hoverOverlayStyle from '../HoverOverlay.module.scss'
 import { HoverOverlayBaseProps } from '../HoverOverlay.types'
@@ -31,7 +31,7 @@ export const HoverOverlayContents: React.FunctionComponent<HoverOverlayContentsP
     if (hoverOrError === 'loading') {
         return (
             <div className={classNames(hoverOverlayStyle.loaderRow)}>
-                <LoadingSpinner className={iconClassName} />
+                <LoadingSpinner inline={false} className={iconClassName} />
             </div>
         )
     }

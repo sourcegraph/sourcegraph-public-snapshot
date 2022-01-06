@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
@@ -136,7 +136,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                     })}
                 >
                     <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
-                        {loading ? <LoadingSpinner className="icon-inline" /> : 'Sign in'}
+                        {loading ? <LoadingSpinner /> : 'Sign in'}
                     </button>
                 </div>
             </Form>

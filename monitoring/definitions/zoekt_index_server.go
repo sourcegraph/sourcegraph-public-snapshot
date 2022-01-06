@@ -21,19 +21,12 @@ func ZoektIndexServer() *monitoring.Container {
 		Title:                    "Zoekt Index Server",
 		Description:              "Indexes repositories and populates the search index.",
 		NoSourcegraphDebugServer: true,
-		Templates: []sdk.TemplateVar{
+		Variables: []monitoring.ContainerVariable{
 			{
-				Label:      "Instance",
-				Name:       "instance",
-				Type:       "query",
-				Datasource: monitoring.StringPtr("Prometheus"),
-				Query:      "label_values(index_num_assigned, instance)",
-				Multi:      true,
-				Refresh:    sdk.BoolInt{Flag: true, Value: monitoring.Int64Ptr(2)}, // Refresh on time range change
-				Sort:       3,
-				IncludeAll: true,
-				AllValue:   ".*",
-				Current:    sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"},
+				Label: "Instance",
+				Name:  "instance",
+				Query: "label_values(index_num_assigned, instance)",
+				Multi: true,
 			},
 		},
 		Groups: []monitoring.Group{
@@ -274,7 +267,7 @@ func ZoektIndexServer() *monitoring.Container {
 							Description: "# of compound shards (per instance)",
 							Query:       "sum(index_number_compound_shards{instance=~`${instance:regex}`}) by (instance)",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}}").Unit(monitoring.Number),
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
 								The total number of compound shards per instance.

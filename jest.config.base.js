@@ -30,9 +30,7 @@ const config = {
   // unexpected token import/export", then add it here. See
   // https://github.com/facebook/create-react-app/issues/5241#issuecomment-426269242 for more information on why
   // this is necessary.
-  transformIgnorePatterns: [
-    '/node_modules/(?!abortable-rx|@sourcegraph/react-loading-spinner|@sourcegraph/comlink|monaco-editor|marked)',
-  ],
+  transformIgnorePatterns: ['/node_modules/(?!abortable-rx|@sourcegraph/comlink|monaco-editor|marked)'],
 
   moduleNameMapper: {
     '\\.s?css$': 'identity-obj-proxy',

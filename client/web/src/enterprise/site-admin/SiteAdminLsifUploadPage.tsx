@@ -3,8 +3,8 @@ import { RouteComponentProps, Redirect } from 'react-router'
 import { catchError } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'
 import { PageTitle } from '../../components/PageTitle'
@@ -32,7 +32,7 @@ export const SiteAdminLsifUploadPage: FunctionComponent<Props> = ({
         <div className="site-admin-lsif-upload-page w-100">
             <PageTitle title="LSIF uploads - Admin" />
             {!uploadOrError ? (
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             ) : isErrorLike(uploadOrError) ? (
                 <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} />
             ) : !uploadOrError.projectRoot ? (

@@ -192,6 +192,11 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                         return of(configErrorResult)
                     }
                     const repositoryNames = config.map(({ repository }) => repository)
+
+                    if (repositoryNames.length === 0) {
+                        return of({ type: 'repositories', repositories: [] } as RepositoriesParseResult)
+                    }
+
                     return fetchRepositoriesByNames(repositoryNames).pipe(
                         map(repositories => {
                             const repositoryNameToID = new Map(repositories.map(({ id, name }) => [name, id]))

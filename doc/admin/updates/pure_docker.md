@@ -8,9 +8,15 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-## 3.34 -> 3.35
+## 3.35.0 -> 3.35.1
+**Due to issues related to Code Insights on the 3.35.0 release, users are advised to upgrade to 3.35.1 as soon as possible.**
 
-> WARNING: **We are currently investigating issues related to Code Insights on this release. Users are advised to hold off on upgrading to 3.35 until a fix is available.**
+To upgrade, please perform the changes in the following diff:
+[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ba0d94eb945fd3371ed888e4b7177828b33acd3d](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/ba0d94eb945fd3371ed888e4b7177828b33acd3d)
+
+## 3.34 -> 3.35.1
+
+**Due to issues related to Code Insights on the 3.35.0 release, users are advised to upgrade directly to 3.35.1.**
 
 The `query-runner` service has been decomissioned in the 3.35.0 release. You can safely remove the `query-runner` service from your installation.
 

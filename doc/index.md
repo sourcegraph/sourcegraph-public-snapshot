@@ -67,10 +67,12 @@ You can quickly try out Sourcegraph locally using Docker, which takes only a few
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap start-sourcegraph-command" id="dockerInstall"><code>docker run -d<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.35.0<span class="iconify copy-text" data-icon="mdi:clipboard-arrow-left-outline" data-inline="false"></span></code>
+<pre class="pre-wrap start-sourcegraph-command" id="dockerInstall"><code>docker run -d<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.35.1<span class="iconify copy-text" data-icon="mdi:clipboard-arrow-left-outline" data-inline="false"></span></code>
 </pre>
 
 For next steps, visit the [Docker installation documentation](admin/install/docker/index.md).
+
+> NOTE: Due to the Windows enviroment, using Sourcegraph with Windows currently isn't fully supported. Testing instructions for running Sourcegraph locally on a Windows machine can be found [here](admin/install/docker/index.md#testing-sourcegraph-on-windows)
 
 > WARNING: **We *do not* recommend using this method for a production instance** - see [Getting started](#getting-started) for more options.
 

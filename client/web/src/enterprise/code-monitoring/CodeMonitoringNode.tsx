@@ -6,9 +6,9 @@ import { switchMap, catchError, startWith, takeUntil, tap, delay, mergeMap } fro
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
 
@@ -106,7 +106,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                     )}
                 </div>
                 <div className="d-flex">
-                    {toggleMonitorOrError === LOADING && <LoadingSpinner className="icon-inline mr-2" />}
+                    {toggleMonitorOrError === LOADING && <LoadingSpinner className="mr-2" />}
                     <div className={styles.toggleWrapper} data-testid="toggle-monitor-enabled">
                         <Toggle
                             onClick={toggleMonitor}

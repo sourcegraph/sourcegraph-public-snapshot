@@ -4,7 +4,6 @@ import { EMPTY, Observable } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -19,7 +18,7 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SelfHostedCtaLink } from '@sourcegraph/web/src/components/SelfHostedCtaLink'
-import { Container, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Container, PageHeader, ProductStatusBadge, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -384,7 +383,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 <h3 className="text-muted">Sorry, we couldn’t fetch your repositories. Try again?</h3>
             ) : !externalServices ? (
                 <div className="d-flex justify-content-center mt-4">
-                    <LoadingSpinner className="icon-inline" />
+                    <LoadingSpinner />
                 </div>
             ) : hasRepos ? (
                 <RepositoriesList

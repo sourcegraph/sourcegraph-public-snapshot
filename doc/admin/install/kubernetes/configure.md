@@ -56,7 +56,7 @@ We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference re
 - Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](update.md) and [install your Sourcegraph instance](./index.md#installation).
 
   ```bash
-  export SOURCEGRAPH_VERSION="v3.35.0"
+  export SOURCEGRAPH_VERSION="v3.35.1"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
 
