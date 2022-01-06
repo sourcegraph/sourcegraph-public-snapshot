@@ -24,7 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Issue preventing searches from completing when certain patterns contain `@`. [#29489](https://github.com/sourcegraph/sourcegraph/pull/29489)
 
 ### Removed
 
