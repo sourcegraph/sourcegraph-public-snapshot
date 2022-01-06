@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/cockroachdb/errors"
 )
 
 type ComputeResult interface {
 	RepoName() string
+	RepoID() string
 	Revhash() string
 	FilePath() string
 	MatchValues() []string
@@ -61,6 +64,7 @@ func decodeComputeResult(result json.RawMessage) (ComputeResult, error) {
 		if err := json.Unmarshal(result, &v); err != nil {
 			return nil, err
 		}
+		log15.Info("decodeComputeResult", "v", v)
 		return &v, nil
 	case "ComputeText":
 		return nil, errors.Errorf("cannot decode search result: unsupported TypeName: %s", string(result))
@@ -74,9 +78,14 @@ type computeMatchContext struct {
 	Commit     string
 	Repository struct {
 		Name string
+		Id   string
 	}
 	Path    string
 	Matches []computeMatch
+}
+
+func (c computeMatchContext) RepoID() string {
+	return c.Repository.Id
 }
 
 func (c computeMatchContext) Counts() map[string]int {

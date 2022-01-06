@@ -71,6 +71,41 @@ func (r *workHandler) fetchSeries(ctx context.Context, seriesID string) (*types.
 	return &result[0], nil
 }
 
+func (r *workHandler) handleCapture(ctx context.Context, job *Job) (err error) {
+	if store.PersistMode(job.PersistMode) != store.RecordMode {
+		return nil
+	}
+	log15.Info("Handling recordings for capture series", "series_id", job.SeriesID)
+	results, err := query.ComputeSearch(ctx, job.SearchQuery)
+	if err != nil {
+		return err
+	}
+
+	var recordings []store.RecordSeriesPointArgs
+
+	recordTime := time.Now()
+	if job.RecordTime != nil {
+		recordTime = *job.RecordTime
+	}
+
+	for _, result := range results {
+		log15.Info("repoId from capture", "repo_id", result.RepoID())
+		repoId, idErr := graphqlbackend.UnmarshalRepositoryID(graphql.ID(result.RepoID()))
+		if idErr != nil {
+			err = multierror.Append(err, errors.Wrap(idErr, "UnmarshalRepositoryIDCapture"))
+			continue
+		}
+		for value, count := range result.Counts() {
+			recordings = append(recordings, ToRecording(job, float64(count), recordTime, result.RepoName(), repoId, &value)...)
+		}
+	}
+
+	if recordErr := r.insightsStore.RecordSeriesPoints(ctx, recordings); recordErr != nil {
+		err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
+	}
+	return err
+}
+
 func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
 	defer func() {
 		if err != nil {
@@ -90,6 +125,10 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	series, err := r.getSeries(ctx, job.SeriesID)
 	if err != nil {
 		return err
+	}
+
+	if !series.JustInTime && series.GeneratedFromCaptureGroups {
+		return r.handleCapture(ctx, job)
 	}
 
 	// Actually perform the search query.
@@ -200,7 +239,7 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 			continue
 		}
 
-		args := ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID)
+		args := ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID, nil)
 		if recordErr := tx.RecordSeriesPoints(ctx, args); recordErr != nil {
 			err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
 		}
@@ -208,7 +247,7 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	return err
 }
 
-func ToRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID) []store.RecordSeriesPointArgs {
+func ToRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID, capture *string) []store.RecordSeriesPointArgs {
 	args := make([]store.RecordSeriesPointArgs, 0, len(record.DependentFrames)+1)
 	base := store.RecordSeriesPointArgs{
 		SeriesID: record.SeriesID,
@@ -216,6 +255,7 @@ func ToRecording(record *Job, value float64, recordTime time.Time, repoName stri
 			SeriesID: record.SeriesID,
 			Time:     recordTime,
 			Value:    value,
+			Capture:  capture,
 		},
 		RepoName:    &repoName,
 		RepoID:      &repoID,
