@@ -70,8 +70,6 @@ func NewHandler(db database.DB, m *mux.Router, schema *graphql.Schema, githubWeb
 		database.WebhookLogs(db, keyring.Default().WebhookLogKey),
 	)
 
-	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gh)))
-
 	githubWebhook.Register(&gh)
 
 	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gh)))
