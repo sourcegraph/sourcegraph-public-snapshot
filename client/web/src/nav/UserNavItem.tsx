@@ -145,18 +145,24 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         target={targetID}
                         placement="bottom"
                         isOpen={true}
-                        modifiers={{
-                            offset: {
-                                offset: '0, 10px',
+                        modifiers={[
+                            {
+                                name: 'offset',
+                                enabled: true,
+                                phase: 'main',
+                                fn: () => {},
+                                options: {
+                                    offset: [0, 10],
+                                },
                             },
-                        }}
+                        ]}
                         className={styles.tooltip}
                     >
                         Install the browser extension from here later
                     </Tooltip>
                 )}
             </DropdownToggle>
-            <DropdownMenu right={true} className={styles.dropdownMenu}>
+            <DropdownMenu end={true} className={styles.dropdownMenu}>
                 <DropdownItem header={true} className="py-1">
                     Signed in as <strong>@{props.authenticatedUser.username}</strong>
                 </DropdownItem>

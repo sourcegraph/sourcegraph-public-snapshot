@@ -28,7 +28,9 @@ exports[`Tooltip Hoverable Tooltip Handles multiple tooltips properly 1`] = `
     >
       <div
         class="tooltip show tooltip show tooltipAuto bs-tooltip-auto"
-        style="position: absolute; top: 0px; left: 0px; opacity: 0; pointer-events: none;"
+        data-popper-placement="top"
+        data-popper-reference-hidden="true"
+        style="position: absolute; left: 0px; top: 0px; bottom: 0px; transform: translate(0px, 0px);"
       >
         <div
           class="tooltip-inner tooltipInner"
@@ -37,7 +39,8 @@ exports[`Tooltip Hoverable Tooltip Handles multiple tooltips properly 1`] = `
           Tooltip 2
         </div>
         <span
-          class="arrow arrow"
+          class="arrow tooltip-arrow"
+          style="position: absolute; left: 0px; transform: translate(0px, 0px);"
         />
       </div>
     </div>
@@ -73,7 +76,9 @@ exports[`Tooltip Hoverable Tooltip Shows tooltip properly on hover 1`] = `
     >
       <div
         class="tooltip show tooltip show tooltipAuto bs-tooltip-auto"
-        style="position: absolute; top: 0px; left: 0px; opacity: 0; pointer-events: none;"
+        data-popper-placement="top"
+        data-popper-reference-hidden="true"
+        style="position: absolute; left: 0px; top: 0px; bottom: 0px; transform: translate(0px, 0px);"
       >
         <div
           class="tooltip-inner tooltipInner"
@@ -82,7 +87,8 @@ exports[`Tooltip Hoverable Tooltip Shows tooltip properly on hover 1`] = `
           Tooltip 1
         </div>
         <span
-          class="arrow arrow"
+          class="arrow tooltip-arrow"
+          style="position: absolute; left: 0px; transform: translate(0px, 0px);"
         />
       </div>
     </div>

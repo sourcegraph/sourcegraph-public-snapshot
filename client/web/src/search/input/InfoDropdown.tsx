@@ -48,7 +48,7 @@ export class InfoDropdown extends React.Component<Props, State> {
                     >
                         <HelpCircleOutlineIcon className="icon-inline small" />
                     </DropdownToggle>
-                    <DropdownMenu right={true} className={classNames('pb-0', styles.item)}>
+                    <DropdownMenu end={true} className={classNames('pb-0', styles.item)}>
                         <DropdownItem header={true}>
                             <strong>{this.props.title}</strong>
                         </DropdownItem>

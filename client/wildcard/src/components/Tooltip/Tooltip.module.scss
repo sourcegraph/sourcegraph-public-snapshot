@@ -49,7 +49,7 @@
         opacity: var(--tooltip-opacity);
     }
 
-    .arrow {
+    span {
         position: absolute;
         display: block;
         width: var(--tooltip-arrow-width);
@@ -68,7 +68,7 @@
 .tooltip-top {
     padding: var(--tooltip-arrow-height) 0;
 
-    .arrow {
+    span {
         bottom: 0;
 
         &::before {
@@ -81,8 +81,7 @@
 
 .tooltip-right {
     padding: 0 var(--tooltip-arrow-height);
-
-    .arrow {
+    span {
         left: 0;
         width: var(--tooltip-arrow-height);
         height: var(--tooltip-arrow-width);
@@ -99,7 +98,7 @@
 .tooltip-bottom {
     padding: var(--tooltip-arrow-height) 0;
 
-    .arrow {
+    span {
         top: 0;
 
         &::before {
@@ -113,7 +112,7 @@
 .tooltip-left {
     padding: 0 var(--tooltip-arrow-height);
 
-    .arrow {
+    span {
         right: 0;
         width: var(--tooltip-arrow-height);
         height: var(--tooltip-arrow-width);
@@ -128,16 +127,16 @@
 }
 
 .tooltip-auto {
-    &[x-placement^='top'] {
+    &[data-popper-placement^='top'] {
         @extend .tooltip-top;
     }
-    &[x-placement^='right'] {
+    &[data-popper-placement^='right'] {
         @extend .tooltip-right;
     }
-    &[x-placement^='bottom'] {
+    &[data-popper-placement^='bottom'] {
         @extend .tooltip-bottom;
     }
-    &[x-placement^='left'] {
+    &[data-popper-placement^='left'] {
         @extend .tooltip-left;
     }
 }

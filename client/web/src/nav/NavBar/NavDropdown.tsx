@@ -1,3 +1,4 @@
+import { Modifier } from '@popperjs/core'
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
@@ -26,18 +27,20 @@ interface NavDropdownProps {
     items: NavDropdownItem[]
 }
 
-const DROPDOWN_MODIFIERS = {
-    flip: {
-        enabled: false,
-    },
-    offset: {
+const DROPDOWN_MODIFIERS: Modifier<string, unknown>[] = [
+    {
+        name: 'offset',
         enabled: true,
-        // Offset menu to the top so that the menu overlaps with the toggle button.
-        // This prevents the menu from closing when moving mouse cursor from the button
-        // to the menu.
-        offset: '-10,-2',
+        phase: 'main',
+        fn: () => {},
+        options: {
+            // Offset menu to the top so that the menu overlaps with the toggle button.
+            // This prevents the menu from closing when moving mouse cursor from the button
+            // to the menu.
+            offset: [-10, 2],
+        },
     },
-}
+]
 
 export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleItem, mobileHomeItem, items }) => {
     const location = useLocation()

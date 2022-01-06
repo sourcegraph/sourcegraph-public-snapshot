@@ -40,7 +40,7 @@ exports[`UserNavItem simple 1`] = `
     </a>
     <div
       aria-hidden="true"
-      class="dropdownMenu dropdown-menu dropdown-menu-right"
+      class="dropdownMenu dropdown-menu dropdown-menu-end"
       role="menu"
       tabindex="-1"
     >

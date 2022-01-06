@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import ExportIcon from 'mdi-react/ExportIcon'
 import PlusThickIcon from 'mdi-react/PlusThickIcon'
-import React, { useMemo } from 'react'
+import React from 'react'
 import FocusLock from 'react-focus-lock'
 import { Popover } from 'reactstrap'
 
@@ -48,16 +48,7 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
             popperClassName={classNames('shadow border', styles.installBrowserExtensionPopover)}
             innerClassName="border-0"
             placement="bottom"
-            boundariesElement="window"
-            modifiers={useMemo(
-                () => ({
-                    offset: {
-                        offset: '0, 0',
-                        enabled: true,
-                    },
-                }),
-                []
-            )}
+            offset={[0, 0]}
         >
             {isOpen && (
                 <FocusLock returnFocus={true}>

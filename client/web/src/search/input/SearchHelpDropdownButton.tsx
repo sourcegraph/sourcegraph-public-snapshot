@@ -31,7 +31,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent = () => {
                     aria-hidden="true"
                 />
             </DropdownToggle>
-            <DropdownMenu right={true} className="pb-0">
+            <DropdownMenu end={true} className="pb-0">
                 <DropdownItem header={true}>
                     <strong>Search reference</strong>
                 </DropdownItem>

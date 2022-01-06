@@ -10,7 +10,8 @@ import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import TooltipPopoverWrapper from 'reactstrap/lib/TooltipPopoverWrapper'
+// import TooltipPopoverWrapper from 'reactstrap/src/TooltipPopoverWrapper'
+import { Tooltip } from 'reactstrap'
 import { from, Subscription } from 'rxjs'
 import { filter, switchMap } from 'rxjs/operators'
 import stringScore from 'string-score'
@@ -404,7 +405,7 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
             {showCaret && <MenuDropdownIcon />}
 
             {/* Need to use TooltipPopoverWrapper to apply classNames to inner element, see https://github.com/reactstrap/reactstrap/issues/1484 */}
-            <TooltipPopoverWrapper
+            <Tooltip
                 isOpen={isOpen}
                 toggle={toggleIsOpen}
                 popperClassName={popoverClassName}
@@ -417,7 +418,7 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
                 hideArrow={true}
             >
                 <CommandList {...props} onSelect={close} />
-            </TooltipPopoverWrapper>
+            </Tooltip>
             {keyboardShortcutForShow?.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={toggleIsOpen} />
             ))}

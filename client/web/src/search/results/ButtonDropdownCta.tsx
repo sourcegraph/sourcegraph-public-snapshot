@@ -65,7 +65,7 @@ export const ButtonDropdownCta: React.FunctionComponent<ButtonDropdownCtaProps> 
             >
                 {button}
             </DropdownToggle>
-            <DropdownMenu right={true} className={styles.container}>
+            <DropdownMenu end={true} className={styles.container}>
                 <div className="d-flex mb-3">
                     <div className="d-flex align-items-center mr-3">
                         <div className={styles.icon}>{icon}</div>

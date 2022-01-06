@@ -299,7 +299,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       class="form-check"
     >
       <label
-        class="mb-1 d-block form-check-label"
+        class="mb-1 d-block form-check-label form-label"
       >
         <input
           class="form-check-input"
@@ -321,7 +321,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         )
       </label>
       <label
-        class="mb-1 d-block form-check-label"
+        class="mb-1 d-block form-check-label form-label"
       >
         <input
           class="form-check-input"
@@ -338,7 +338,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         )
       </label>
       <label
-        class="mb-1 d-block form-check-label"
+        class="mb-1 d-block form-check-label form-label"
       >
         <input
           class="form-check-input"
@@ -360,7 +360,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         )
       </label>
       <label
-        class="mb-1 d-block form-check-label"
+        class="mb-1 d-block form-check-label form-label"
       >
         <input
           class="form-check-input"

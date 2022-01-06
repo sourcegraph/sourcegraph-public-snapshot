@@ -197,7 +197,7 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, routes })
             >
                 <span>Feedback</span>
             </DropdownToggle>
-            <DropdownMenu right={true} className={styles.menu}>
+            <DropdownMenu end={true} className={styles.menu}>
                 <FeedbackPromptContent closePrompt={forceClose} routeMatch={match} />
             </DropdownMenu>
         </ButtonDropdown>

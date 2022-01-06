@@ -316,7 +316,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             </a>
             <div
               aria-hidden="true"
-              class="container dropdown-menu dropdown-menu-right"
+              class="container dropdown-menu dropdown-menu-end"
               role="menu"
               tabindex="-1"
             >
@@ -421,7 +421,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
             </a>
             <div
               aria-hidden="true"
-              class="container dropdown-menu dropdown-menu-right"
+              class="container dropdown-menu dropdown-menu-end"
               role="menu"
               tabindex="-1"
             >
@@ -741,7 +741,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
             </a>
             <div
               aria-hidden="true"
-              class="container dropdown-menu dropdown-menu-right"
+              class="container dropdown-menu dropdown-menu-end"
               role="menu"
               tabindex="-1"
             >
@@ -846,7 +846,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
             </a>
             <div
               aria-hidden="true"
-              class="container dropdown-menu dropdown-menu-right"
+              class="container dropdown-menu dropdown-menu-end"
               role="menu"
               tabindex="-1"
             >

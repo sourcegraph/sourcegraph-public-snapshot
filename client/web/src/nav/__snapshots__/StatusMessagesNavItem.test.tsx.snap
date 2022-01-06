@@ -44,7 +44,7 @@ exports[`StatusMessagesNavItem no messages 1`] = `
     </a>
     <div
       aria-hidden="true"
-      class="p-0 dropdownMenu dropdown-menu dropdown-menu-right"
+      class="p-0 dropdownMenu dropdown-menu dropdown-menu-end"
       role="menu"
       tabindex="-1"
     >
@@ -141,7 +141,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
     </a>
     <div
       aria-hidden="true"
-      class="p-0 dropdownMenu dropdown-menu dropdown-menu-right"
+      class="p-0 dropdownMenu dropdown-menu dropdown-menu-end"
       role="menu"
       tabindex="-1"
     >
@@ -238,7 +238,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
     </a>
     <div
       aria-hidden="true"
-      class="p-0 dropdownMenu dropdown-menu dropdown-menu-right"
+      class="p-0 dropdownMenu dropdown-menu dropdown-menu-end"
       role="menu"
       tabindex="-1"
     >
@@ -335,7 +335,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
     </a>
     <div
       aria-hidden="true"
-      class="p-0 dropdownMenu dropdown-menu dropdown-menu-right"
+      class="p-0 dropdownMenu dropdown-menu dropdown-menu-end"
       role="menu"
       tabindex="-1"
     >
@@ -432,7 +432,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
     </a>
     <div
       aria-hidden="true"
-      class="p-0 dropdownMenu dropdown-menu dropdown-menu-right"
+      class="p-0 dropdownMenu dropdown-menu dropdown-menu-end"
       role="menu"
       tabindex="-1"
     >
@@ -529,7 +529,7 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
     </a>
     <div
       aria-hidden="true"
-      class="p-0 dropdownMenu dropdown-menu dropdown-menu-right"
+      class="p-0 dropdownMenu dropdown-menu dropdown-menu-end"
       role="menu"
       tabindex="-1"
     >
@@ -626,7 +626,7 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
     </a>
     <div
       aria-hidden="true"
-      class="p-0 dropdownMenu dropdown-menu dropdown-menu-right"
+      class="p-0 dropdownMenu dropdown-menu dropdown-menu-end"
       role="menu"
       tabindex="-1"
     >

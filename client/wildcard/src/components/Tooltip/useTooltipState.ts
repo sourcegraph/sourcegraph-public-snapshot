@@ -1,4 +1,4 @@
-import Popper from 'popper.js'
+import Popper from '@popperjs/core'
 import { useEffect, useState } from 'react'
 
 import { TooltipController } from './TooltipController'

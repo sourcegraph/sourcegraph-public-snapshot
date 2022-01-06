@@ -1,4 +1,4 @@
-import Popper from 'popper.js'
+import * as Popper from '@popperjs/core'
 
 import { Tooltip } from './constants'
 import styles from './Tooltip.module.scss'

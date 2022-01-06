@@ -485,7 +485,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     {this.renderIcon()}
                 </DropdownToggle>
 
-                <DropdownMenu right={true} className={classNames('p-0', styles.dropdownMenu)}>
+                <DropdownMenu end={true} className={classNames('p-0', styles.dropdownMenu)}>
                     <div className={styles.dropdownMenuContent}>
                         <small className={classNames('d-inline-block text-muted', styles.sync)}>Code sync status</small>
                         {isErrorLike(this.state.messagesOrError) ? (
