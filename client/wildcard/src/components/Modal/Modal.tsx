@@ -7,7 +7,7 @@ import { ForwardReferenceComponent } from '../../types'
 import { MODAL_POSITIONS } from './constants'
 import styles from './Modal.module.scss'
 
-export interface ModalProps extends DialogProps {
+interface BaseModalProps extends DialogProps {
     /**
      * The position of the modal on the screen
      *
@@ -15,6 +15,16 @@ export interface ModalProps extends DialogProps {
      */
     position?: typeof MODAL_POSITIONS[number]
 }
+
+interface VisiblyLabelledModal extends BaseModalProps {
+    'aria-labelledby': string
+}
+
+interface InvisiblyLabelledModal extends BaseModalProps {
+    'aria-label': string
+}
+
+export type ModalProps = VisiblyLabelledModal | InvisiblyLabelledModal
 
 /**
  * A Modal component.

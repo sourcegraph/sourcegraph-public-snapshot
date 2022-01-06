@@ -23,19 +23,19 @@ const config: Meta = {
 export default config
 
 export const Default: Story = () => (
-    <Modal>
+    <Modal aria-label="Welcome message">
         <h1>Hello world!</h1>
     </Modal>
 )
 
 export const PositionCentered: Story = () => (
-    <Modal position="center">
+    <Modal position="center" aria-label="Welcome message">
         <h1>Hello world!</h1>
     </Modal>
 )
 
 export const PositionFull: Story = () => (
-    <Modal position="full">
+    <Modal position="full" aria-label="Welcome message">
         <h1>Hello world!</h1>
     </Modal>
 )
