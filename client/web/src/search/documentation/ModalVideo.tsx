@@ -67,7 +67,12 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
         <>
             <div className={classNames(styles.wrapper, className)}>{thumbnailElement}</div>
             {isOpen && (
-                <Modal className={styles.modal} onDismiss={() => toggleDialog(false)} aria-labelledby={id}>
+                <Modal
+                    position="center"
+                    className={styles.modal}
+                    onDismiss={() => toggleDialog(false)}
+                    aria-labelledby={id}
+                >
                     <div className={styles.modalContent}>
                         <div className={styles.modalHeader}>
                             <h3 id={id}>{title}</h3>

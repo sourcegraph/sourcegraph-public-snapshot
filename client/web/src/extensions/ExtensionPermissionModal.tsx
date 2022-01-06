@@ -15,7 +15,7 @@ export const ExtensionPermissionModal: React.FunctionComponent<{
     const labelId = `label--permission-${extensionID}`
 
     return (
-        <Modal onDismiss={denyPermission} aria-labelledby={labelId}>
+        <Modal position="center" onDismiss={denyPermission} aria-labelledby={labelId}>
             <h3 id={labelId}>Add {name || extensionID} Sourcegraph extension?</h3>
             <p className="mb-0 mt-3">It will be able to:</p>
             <ul className="list-dashed">

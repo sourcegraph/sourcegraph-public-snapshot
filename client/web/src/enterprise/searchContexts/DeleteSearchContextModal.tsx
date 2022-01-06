@@ -47,6 +47,7 @@ export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchConte
 
     return (
         <Modal
+            position="center"
             isOpen={isOpen}
             onDismiss={toggleDeleteModal}
             aria-labelledby={deleteLabelId}

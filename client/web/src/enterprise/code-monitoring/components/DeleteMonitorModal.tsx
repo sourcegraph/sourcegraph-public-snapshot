@@ -48,7 +48,13 @@ export const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({
     )
 
     return (
-        <Modal isOpen={isOpen} onDismiss={toggleDeleteModal} aria-labelledby={deleteLabelId} data-testid="delete-modal">
+        <Modal
+            position="center"
+            isOpen={isOpen}
+            onDismiss={toggleDeleteModal}
+            aria-labelledby={deleteLabelId}
+            data-testid="delete-modal"
+        >
             <h3 className="text-danger" id={deleteLabelId}>
                 Delete code monitor?
             </h3>
