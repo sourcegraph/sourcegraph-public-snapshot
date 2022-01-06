@@ -229,7 +229,12 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
     }
 
     return (
-        <Modal className={styles.modal} onDismiss={() => props.onClose()} aria-labelledby={FUZZY_MODAL_TITLE}>
+        <Modal
+            position="center"
+            className={styles.modal}
+            onDismiss={() => props.onClose()}
+            aria-labelledby={FUZZY_MODAL_TITLE}
+        >
             <div className={styles.content}>
                 <div className={styles.header}>
                     <h3 className="mb-0" id={FUZZY_MODAL_TITLE}>
