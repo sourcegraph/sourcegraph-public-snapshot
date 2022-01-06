@@ -15,7 +15,7 @@ RUN cp ./target/release/syntect_server /syntect_server
 ################################
 FROM golang:1.15.2-alpine@sha256:fc801399d044a8e01f125eeb5aa3f160a0d12d6e03ba17a1d0b22ce50dfede81 as hss
 
-RUN apk add --no-cache git=~2.26.3
+RUN apk add --no-cache git>=2.26.3
 RUN git clone https://github.com/slimsag/http-server-stabilizer /repo
 WORKDIR /repo
 RUN git checkout v1.0.4 && go build -o /http-server-stabilizer .
