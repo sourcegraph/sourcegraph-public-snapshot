@@ -143,6 +143,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
                 {/* TODO: This is a temporary searchResultsInfoBar */}
                 <div className={classNames('flex-grow-1 result-container', styles.searchResultsInfoBar)}>
                     <div className={styles.row}>
+                        <small>{results?.results.length} results found</small>
                         <div className={styles.expander} />
                         <ul className="nav align-items-center">
                             <li className={styles.divider} aria-hidden="true" />
