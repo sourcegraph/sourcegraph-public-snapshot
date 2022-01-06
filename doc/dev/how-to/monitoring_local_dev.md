@@ -33,13 +33,21 @@ For Kubernetes deployments, you can do this by getting `kubectl` connected to a 
 kubectl port-forward svc/prometheus 9090:30090
 ```
 
-Then, you can start up a standalone Grafana using:
+You can use this in your local dev workflow by replacing the contents of the [`prometheus` section in `sg.config.yaml`](https://github.com/sourcegraph/sourcegraph/blob/d0a7cbacc7f0da6e3fba3cde82651e414c9224c0/sg.config.yaml#L609-L659) with just:
 
-```sh
-./dev/grafana.sh
+```yaml
+prometheus:
+  cmd: |
+     kubectl port-forward svc/prometheus 9090:30090
 ```
 
-Dashboards will be available at `localhost:3030`.
+Then, you can start up the local dev monitoring stack by using:
+
+```sh
+sg start monitoring
+```
+
+Grafana dashboards will be available at `localhost:3370`.
 
 Note that instead of `kubectl`, you can use whichever port-forwarding mechanism you wish to connect to a remote Prometheus instance as well, as long as Prometheus is available on port `9090` locally.
 The dev targets for Grafana are defined in the following files:
