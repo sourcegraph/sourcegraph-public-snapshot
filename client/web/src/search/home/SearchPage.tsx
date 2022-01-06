@@ -55,7 +55,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
     const { extensionViews: ExtensionViewsSection } = props
     const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
     const onboardingTourEnabled = useExperimentalFeatures(features => features.showOnboardingTour ?? false)
-    const hasSearchQuery = !!useNavbarQueryState(state => state.searchQueryFromURL)
+    const hasSearchQuery = useNavbarQueryState(state => state.searchQueryFromURL) !== ''
     useEffect(() => props.telemetryService.logViewEvent('Home'), [props.telemetryService])
 
     return (
@@ -73,7 +73,7 @@ export const SearchPage: React.FunctionComponent<SearchPageProps> = props => {
             >
                 <SearchPageInput
                     {...props}
-                    showOnboardingTour={onboardingTourEnabled && hasSearchQuery}
+                    showOnboardingTour={onboardingTourEnabled && !hasSearchQuery}
                     source="home"
                 />
                 <ExtensionViewsSection
