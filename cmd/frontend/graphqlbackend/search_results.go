@@ -1262,7 +1262,7 @@ func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
 	}
 }
 
-func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) (sr *SearchResults, err error) {
+func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) (_ *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "Results", "")
 	defer func() {
 		tr.SetError(err)
@@ -1274,52 +1274,113 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 		wantCount = *count
 	}
 
+	var (
+		mu    sync.Mutex
+		stats streaming.Stats
+		alert *searchAlert
+		dedup = result.NewDeduper()
+		// TODO: This concurrency limit should be dynamic and in the future informed by a user's rate limit quota.
+		sem = semaphore.NewWeighted(16)
+	)
+
+	g, ctx := errgroup.WithContext(ctx)
 	for _, q := range plan {
-		predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*SearchResults, error) {
-			// Disable streaming for subqueries so we can use
-			// the results rather than sending them back to the caller
-			orig := r.stream
-			r.stream = nil
-			defer func() { r.stream = orig }()
+		q := q
+		g.Go(func() error {
+			if err := sem.Acquire(ctx, 1); err != nil {
+				return err
+			}
 
-			plan, err := pred.Plan(q)
+			defer sem.Release(1)
+
+			predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*SearchResults, error) {
+				// Disable streaming for subqueries so we can use
+				// the results rather than sending them back to the caller
+				orig := r.stream
+				r.stream = nil
+				defer func() { r.stream = orig }()
+
+				plan, err := pred.Plan(q)
+				if err != nil {
+					return nil, err
+				}
+				return r.resultsRecursive(ctx, plan)
+			})
+			if errors.Is(err, ErrPredicateNoResults) {
+				return nil
+			}
 			if err != nil {
-				return nil, err
+				// Fail if predicate processing fails.
+				return err
 			}
-			return r.resultsRecursive(ctx, plan)
+
+			var newResult *SearchResults
+			if predicatePlan != nil {
+				// If a predicate filter generated a new plan, evaluate that plan.
+				newResult, err = r.resultsRecursive(ctx, predicatePlan)
+			} else {
+				newResult, err = r.evaluate(ctx, q)
+			}
+
+			if err != nil || newResult == nil {
+				// Fail if any subexpression fails.
+				return err
+			}
+
+			var selectMatch func(result.Match) result.Match
+			if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
+				sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
+				selectMatch = func(m result.Match) result.Match {
+					return m.Select(sp)
+				}
+			} else {
+				selectMatch = func(m result.Match) result.Match {
+					return m
+				}
+			}
+
+			mu.Lock()
+			defer mu.Unlock()
+
+			if newResult.Alert != nil {
+				// TODO: Aggregate all alerts instead of picking the first one the is non-nil.
+				alert = newResult.Alert
+			}
+
+			if len(dedup.Results()) >= wantCount {
+				return context.Canceled
+			}
+
+			// BUG: When we find enough results we stop adding them to dedupper,
+			// but don't adjust the stats accordingly. This bug was here
+			// before, and remains after making query evaluation concurrent.
+			stats.Update(&newResult.Stats)
+
+			for _, m := range newResult.Matches {
+				match := selectMatch(m)
+				if dedup.Add(match); len(dedup.Results()) >= wantCount {
+					return context.Canceled
+				}
+			}
+
+			return nil
 		})
-		if errors.Is(err, ErrPredicateNoResults) {
-			continue
-		}
-		if err != nil {
-			// Fail if predicate processing fails.
-			return nil, err
-		}
-		if predicatePlan != nil {
-			// If a predicate filter generated a new plan, evaluate that plan.
-			return r.resultsRecursive(ctx, predicatePlan)
-		}
-
-		newResult, err := r.evaluate(ctx, q)
-		if err != nil {
-			// Fail if any subexpression fails.
-			return nil, err
-		}
-
-		if newResult != nil {
-			newResult.Matches = result.Select(newResult.Matches, q)
-			sr = union(sr, newResult)
-			if len(sr.Matches) > wantCount {
-				sr.Matches = sr.Matches[:wantCount]
-				break
-			}
-		}
 	}
 
-	if sr != nil {
-		r.sortResults(sr.Matches)
+	if err := g.Wait(); err != nil && err != context.Canceled {
+		return nil, err
 	}
-	return sr, err
+
+	matches := dedup.Results()
+	if len(matches) > 0 {
+		r.sortResults(matches)
+	}
+
+	return &SearchResults{
+		Matches: matches,
+		Stats:   stats,
+		Alert:   alert,
+	}, err
 }
 
 // searchResultsToRepoNodes converts a set of search results into repository nodes
