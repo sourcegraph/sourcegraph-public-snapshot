@@ -3,7 +3,7 @@ import { replaceRange } from '../../util/strings'
 import { FILTERS, FilterType } from './filters'
 import { scanSearchQuery } from './scanner'
 import { Filter, Token } from './token'
-import { filterExists, findFilters, getGlobalSearchContextFilter } from './validate'
+import { operatorExists, filterExists, findFilters, findFilter, FilterKind } from './validate'
 
 export function appendContextFilter(query: string, searchContextSpec: string | undefined): string {
     return !filterExists(query, FilterType.context) && searchContextSpec
@@ -104,10 +104,16 @@ export const sanitizeQueryForTelemetry = (query: string): string => {
  * Example: context:ctx a or b -> context:ctx (a or b)
  */
 export function parenthesizeQueryWithGlobalContext(query: string): string {
-    const globalSearchContextFilter = getGlobalSearchContextFilter(query)
-    if (!globalSearchContextFilter) {
+    if (!operatorExists(query)) {
+        // no need to parenthesize a flat, atomic query.
         return query
     }
-    const queryWithOmittedContext = omitFilter(query, globalSearchContextFilter.filter)
-    return appendContextFilter(`(${queryWithOmittedContext})`, globalSearchContextFilter.spec)
+    const globalContextFilter = findFilter(query, FilterType.context, FilterKind.Global)
+    if (!globalContextFilter) {
+        // don't parenthesize a query that contains `context` subexpressions already.
+        return query
+    }
+    const searchContextSpec = globalContextFilter.value?.value || ''
+    const queryWithOmittedContext = omitFilter(query, globalContextFilter)
+    return appendContextFilter(`(${queryWithOmittedContext})`, searchContextSpec)
 }
