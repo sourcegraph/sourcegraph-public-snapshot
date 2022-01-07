@@ -1,21 +1,13 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`TextArea Renders status 'false' correctly 1`] = `
-<label
-  class="w-100"
->
-  <textarea
-    class="textarea form-control"
-  />
-</label>
+<textarea
+  class="textarea form-control"
+/>
 `;
 
 exports[`TextArea Renders status 'true' correctly 1`] = `
-<label
-  class="w-100"
->
-  <textarea
-    class="textarea form-control is-invalid"
-  />
-</label>
+<textarea
+  class="textarea form-control is-invalid"
+/>
 `;

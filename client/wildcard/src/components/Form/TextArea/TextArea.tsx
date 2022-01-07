@@ -5,7 +5,7 @@ import styles from './TextArea.module.scss'
 
 export interface TextAreaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
     /** Title of textarea. Used as label */
-    label?: string
+    label?: ReactNode
     /** Description block shown below the textarea. */
     message?: ReactNode
     /** Custom class name for root label element. */

@@ -11,20 +11,11 @@ describe('TextArea', () => {
             <TextArea title="TextArea loading" message="random message" placeholder="TextArea" />
         )
         expect(container.firstChild).toMatchInlineSnapshot(`
-            <label
-              class="w-100"
-            >
-              <textarea
-                class="textarea form-control"
-                placeholder="TextArea"
-                title="TextArea loading"
-              />
-              <small
-                class="text-muted form-text"
-              >
-                random message
-              </small>
-            </label>
+            <textarea
+              class="textarea form-control"
+              placeholder="TextArea"
+              title="TextArea loading"
+            />
         `)
     })
 

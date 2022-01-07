@@ -2,14 +2,13 @@ import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import TickIcon from 'mdi-react/TickIcon'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import TextAreaAutosize from 'react-textarea-autosize'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { gql, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { Button, LoadingSpinner, useAutoFocus } from '@sourcegraph/wildcard'
+import { Button, FlexTextArea, LoadingSpinner, useAutoFocus } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'
@@ -134,13 +133,13 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                 <Form onSubmit={handleSubmit}>
                     <h3 className="mb-0">What’s on your mind?</h3>
 
-                    <TextAreaAutosize
+                    <FlexTextArea
                         onChange={handleTextChange}
                         value={text}
                         minRows={3}
                         maxRows={6}
                         placeholder="What’s going well? What could be better?"
-                        className={classNames('form-control', styles.textarea)}
+                        className={styles.textarea}
                         autoFocus={true}
                         ref={textAreaReference}
                     />
