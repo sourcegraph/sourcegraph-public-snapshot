@@ -79,10 +79,10 @@ update insights_query_runner_jobs
 where id = ?;
 ```
 
-## OOB Migration is not at 100%
+## OOB Migration has made progress, but is stuck before reaching 100%
 This out-of-band migration is titled: **Migrating insight definitions from settings files to database tables as a last stage to use the GraphQL API.**
 
-The out-of-band migration shouldn't take more than an hour to complete. (It really shouldn't take more than a few minutes.) So if the progress hasn't reached 100% at this time there's definitely an issue.
+The out-of-band migration shouldn't take more than an hour to complete. (It really shouldn't take more than a few minutes.) If the progress hasn't reached 100% in this duration some records may be stuck due to errors.
 
 Known issues:
 - Deleted users/orgs will cause processing errors, and those jobs wil need to be manually marked as complete.
