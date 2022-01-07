@@ -65,7 +65,10 @@
         "searchContextsQuery": {
           "description": "Enables query based search contexts",
           "type": "boolean",
-          "default": false
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         },
         "searchStats": {
           "description": "Enables a button on the search results page that shows language statistics about the results for a search query.",
