@@ -97,7 +97,9 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         }
     }, [isSearchPage, isFuzzyFinderVisible])
 
-    const { fuzzyFinderCaseInsensitiveFileCountThreshold } = getExperimentalFeatures(props.settingsCascade.final)
+    const { fuzzyFinder, fuzzyFinderCaseInsensitiveFileCountThreshold } = getExperimentalFeatures(
+        props.settingsCascade.final
+    )
 
     return (
         <Form
@@ -129,7 +131,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                     input?.select()
                 }}
             />
-            {props.isRepositoryRelatedPage && retainFuzzyFinderCache && (
+            {props.isRepositoryRelatedPage && retainFuzzyFinderCache && fuzzyFinder && (
                 <FuzzyFinder
                     caseInsensitiveFileCountThreshold={fuzzyFinderCaseInsensitiveFileCountThreshold}
                     setIsVisible={bool => setIsFuzzyFinderVisible(bool)}

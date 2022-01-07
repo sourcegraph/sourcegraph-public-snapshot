@@ -172,7 +172,7 @@
           }
         },
         "fuzzyFinder": {
-          "description": "DEPRECATED: Enables fuzzy finder with keyboard shortcut `t`.",
+          "description": "Enables fuzzy finder with keyboard shortcut `t`.",
           "type": "boolean",
           "default": true,
           "!go": {
