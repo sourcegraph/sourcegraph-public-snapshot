@@ -40,7 +40,12 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
                 <span
                   class="search-filter-keyword"
                 >
-                  repo:
+                  repo
+                </span>
+                <span
+                  class="search-filter-separator"
+                >
+                  :
                 </span>
                 sourcegraph
               </span>
@@ -60,7 +65,12 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
                 <span
                   class="search-filter-keyword"
                 >
-                  repo:
+                  repo
+                </span>
+                <span
+                  class="search-filter-separator"
+                >
+                  :
                 </span>
                 test
               </span>
@@ -113,7 +123,12 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
                 <span
                   class="search-filter-keyword"
                 >
-                  repo:
+                  repo
+                </span>
+                <span
+                  class="search-filter-separator"
+                >
+                  :
                 </span>
                 test
               </span>
@@ -133,7 +148,12 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
                 <span
                   class="search-filter-keyword"
                 >
-                  repo:
+                  repo
+                </span>
+                <span
+                  class="search-filter-separator"
+                >
+                  :
                 </span>
                 sourcegraph
               </span>
@@ -153,7 +173,12 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
                 <span
                   class="search-filter-keyword"
                 >
-                  repo:
+                  repo
+                </span>
+                <span
+                  class="search-filter-separator"
+                >
+                  :
                 </span>
                 test-two
               </span>
@@ -216,7 +241,12 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
                 <span
                   class="search-filter-keyword"
                 >
-                  repo:
+                  repo
+                </span>
+                <span
+                  class="search-filter-separator"
+                >
+                  :
                 </span>
                 test
               </span>
@@ -236,7 +266,12 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
                 <span
                   class="search-filter-keyword"
                 >
-                  repo:
+                  repo
+                </span>
+                <span
+                  class="search-filter-separator"
+                >
+                  :
                 </span>
                 sourcegraph
               </span>
@@ -256,7 +291,12 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
                 <span
                   class="search-filter-keyword"
                 >
-                  repo:
+                  repo
+                </span>
+                <span
+                  class="search-filter-separator"
+                >
+                  :
                 </span>
                 test-two
               </span>
@@ -319,7 +359,12 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
                 <span
                   class="search-filter-keyword"
                 >
-                  repo:
+                  repo
+                </span>
+                <span
+                  class="search-filter-separator"
+                >
+                  :
                 </span>
                 test
               </span>
@@ -339,7 +384,12 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
                 <span
                   class="search-filter-keyword"
                 >
-                  repo:
+                  repo
+                </span>
+                <span
+                  class="search-filter-separator"
+                >
+                  :
                 </span>
                 sourcegraph
               </span>
