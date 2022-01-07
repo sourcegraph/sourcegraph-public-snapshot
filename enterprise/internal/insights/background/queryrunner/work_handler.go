@@ -45,6 +45,10 @@ func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.In
 	var val *types.InsightSeries
 	var ok bool
 
+	if seriesID == "23IQRS4Vohsb6ZK6cmHz1uS0oPx" {
+		log15.Info("asdf")
+	}
+
 	r.mu.RLock()
 	val, ok = r.seriesCache[seriesID]
 	r.mu.RUnlock()
@@ -95,9 +99,16 @@ func (r *workHandler) handleCapture(ctx context.Context, job *Job) (err error) {
 			err = multierror.Append(err, errors.Wrap(idErr, "UnmarshalRepositoryIDCapture"))
 			continue
 		}
-		for value, count := range result.Counts() {
-			recordings = append(recordings, ToRecording(job, float64(count), recordTime, result.RepoName(), repoId, &value)...)
+		grouped := query.GroupByCaptureMatch(results)
+		for _, groupedResults := range grouped {
+			recordings = append(recordings, ToRecording(job, float64(groupedResults.Count), recordTime, result.RepoName(), repoId, &groupedResults.Value)...)
 		}
+		// for value, count := range result.Counts() {
+		// 	if repoId == 11 {
+		// 		log15.Info("stopem")
+		// 	}
+		// 	recordings = append(recordings, ToRecording(job, float64(count), recordTime, result.RepoName(), repoId, &value)...)
+		// }
 	}
 
 	if recordErr := r.insightsStore.RecordSeriesPoints(ctx, recordings); recordErr != nil {
@@ -112,7 +123,9 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 			log15.Error("insights.queryrunner.workHandler", "error", err)
 		}
 	}()
-
+	if record.RecordID() == 674 {
+		log15.Info("674asdf")
+	}
 	err = r.limiter.Wait(ctx)
 	if err != nil {
 		return err
@@ -126,8 +139,10 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	if err != nil {
 		return err
 	}
-
-	if !series.JustInTime && series.GeneratedFromCaptureGroups {
+	if series == nil {
+		log15.Error("nil series", "series_id", job.SeriesID)
+	}
+	if !series.JustInTime && series.GeneratedFromCaptureGroups { // getting a nil pointer dereference from something in the background?
 		return r.handleCapture(ctx, job)
 	}
 
