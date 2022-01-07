@@ -19,17 +19,6 @@ You can also watch [this video](https://drive.google.com/file/d/1DXjjf1YXr8Od8vG
 - Stripe's `pay` command, [described here](https://buttondown.email/nelhage/archive/papers-i-love-gg/)
 - [Stack Exchange Local Environment Setup](https://twitter.com/nick_craver/status/1375871107773956103?s=21) command
 
-## Long term
+## Contributing
 
-The following are ideas for what could/should be built into `sg`:
-
-- Create `sg setup` command that sets up local environment, including dependencies https://github.com/sourcegraph/sourcegraph/issues/24900
-- Replace every shell script in `./dev` with an `sg` command
-  - Replace `./dev/generate.sh` with an `sg generate` command https://github.com/sourcegraph/sourcegraph/issues/25441
-  - Replace `./dev/drop-entire-local-database-and-redis.sh` with an `sg` command
-  - ...
-- Get rid of the `dev-private` repository and handle shared site-configuration, credentials, and licenses in `sg`.
-- Build log handling into `sg` so it's easier to debug what's happening in a local environment. https://github.com/sourcegraph/sourcegraph/issues/25442
-- Add `sg generate-graphql-resolver-and-stub-methods` command that has a better name but creates all the boilerplate needed to create new GraphQL resolvers in Go
-
-See all [`sg` tickets](https://github.com/sourcegraph/sourcegraph/labels/sg).
+Inspired and want to contribute? Head on over to [contributing to `sg`](index.md#contributing-to-sg)!
