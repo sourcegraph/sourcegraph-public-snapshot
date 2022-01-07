@@ -8,15 +8,15 @@ import (
 )
 
 func TestParseTag(t *testing.T) {
-
+	stdout.Out.SetVerbose()
 	tests := []struct {
 		name    string
 		tag     string
 		want    *SgImageTag
 		wantErr bool
 	}{
-		// TODO: Add test cases.
-		{"base",
+		{
+			"base",
 			"12345_2021-01-02_abcdefg",
 			&SgImageTag{
 				buildNum:  12345,
@@ -24,6 +24,12 @@ func TestParseTag(t *testing.T) {
 				shortSHA1: "abcdefg",
 			},
 			false,
+		},
+		{
+			"err",
+			"3.25.5",
+			nil,
+			true,
 		},
 	}
 	for _, tt := range tests {
@@ -53,6 +59,11 @@ func Test_findLatestTag(t *testing.T) {
 			"base",
 			[]string{"v3.25.2", "12345_2022-01-01_asbcefg"},
 			"12345_2022-01-01_asbcefg",
+		},
+		{
+			"higher_build_first",
+			[]string{"99981_2022-01-15_999999a", "99982_2022-01-29_999999b"},
+			"99982_2022-01-29_999999b",
 		},
 	}
 	for _, tt := range tests {
