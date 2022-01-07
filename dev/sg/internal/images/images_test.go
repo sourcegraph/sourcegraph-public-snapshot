@@ -49,7 +49,6 @@ func Test_findLatestTag(t *testing.T) {
 		tags []string
 		want string
 	}{
-		// TODO: Add test cases.
 		{
 			"base",
 			[]string{"v3.25.2", "12345_2022-01-01_asbcefg"},
