@@ -131,6 +131,7 @@ message MonikerOccurrence {
   string moniker_id = 1;
   // The start/end range where this moniker appears.
   Range range = 2;
+  repeated int32 range_compressed = 6;
   // Is this the location where the moniker is defined or referenced?
   Role role = 3;
   // (optional) Markdown-formatted documentation for this specific range.  If
