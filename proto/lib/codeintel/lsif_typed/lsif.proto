@@ -14,31 +14,30 @@ package lib.codeintel.lsif_typed;
 
 option go_package = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed/";
 
-// LsifValue defines a single LSIF value that. An LSIF index is a stream of values.
-message LsifValues {
-    repeated LsifValue values = 1;
-}
-
-message LsifValue {
-  oneof value {
-    // Metadata about this index. Must appear once (and only once) at the start of this index.
+// Index represents an LSIF index. An index can be consumed in a streaming
+// fashion by consuming one value at a time. In Java, use `parseDelimetedFrom` to
+// consume the index in a streaming fashion. For other languages like Go, you
+// need to write custom logic that decodes one LSIF `Value` at a time.
+message Index {
+    // Metadata about this index.
     Metadata metadata = 1;
+    // Documents that belong to this index or the packages that are defined by this index.
+    repeated Document document = 2;
     // Packages that are either referenced from this index or the packages that are defined by this index.
-    Package package = 2;
-    Document document = 3;
-    // External monikers that are referenced but not defined in this index.
-    Moniker moniker = 4;
-  }
+    repeated Package package = 3;
+    // Symbols that are defined outside of this index but are referenced from inside this index.
+    repeated Symbol external_symbols = 4;
 }
 
 message Metadata {
   enum PositionEncoding {
       POSITION_ENCODING_UNSPECIFIED = 0;
-      POSITION_ENCODING_UTF16 = 1;
+      POSITION_ENCODING_UTF8 = 1;
+      POSITION_ENCODING_UTF16 = 2;
   }
-  ToolInfo toolInfo = 1;
-  string projectRoot = 2;
-  PositionEncoding positionEncoding = 3;
+  ToolInfo tool_info = 1;
+  string project_root = 2;
+  PositionEncoding position_encoding = 3;
 }
 
 message ToolInfo {
@@ -46,106 +45,23 @@ message ToolInfo {
     string version = 2;
 }
 
-// Position defines a single offset in a source file.
-message Position {
-  // 0-based line number in the source file. Editors typically use 1-based line
-  // numbers so make sure to increment this number before displaying it in a UI.
-  // References the last line in the source if this number exceeds the actual number
-  // of lines in the source file.
-  int32 line = 1;
-  // 0-based column number of the line assuming UTF-8 string encoding.
-  // References the last character in this line if this number exceeds the
-  // actual number of characters in line.
-  int32 character = 2;
-}
-
-// Range defines the slice of a source file between two offset positions.
-message Range {
-  // The beginning of this range.
-  Position start = 1;
-  // The end of this range. Must appear later in the file than the start position.
-  Position end = 2;
-}
-
-// Moniker defines a symbol, such as a function or an interface.
-message Moniker {
-  enum Unique {
-      UNIQUE_UNSPECIFIED = 0;
-      UNIQUE_DOCUMENT = 1;
-      UNIQUE_GLOBAL = 2;
-  }
-  // The identifier of this moniker, which can be referenced from
-  // MonikerOccurence. An empty id means this moniker can be ignored.
-  // Globally unique monikers must encode the `package_id` in order to
-  // permit incremental indexing. Bumping up the version of an external
-  // dependency should change moniker IDs that reference symbols from that
-  // package.
-  string id = 1;
-  // Determines whether this moniker is local to a single document or if can be
-  // referenced from multiple documents.
-  // Document monikers (`Document.monikers`) can be either local or global.
-  // Toplevel monikers (`LsifValue.value`) must be global.
-  Unique unique = 2;
-  // (optional, but strongly recommended) The markdown-formatted documentation
-  // for this moniker. This field is repeated to allow different kinds of
-  // documentation.  For example, it's nice to include both the signature of a
-  // method (parameters and return type) along with the accompanying docstring.
-  repeated string markdown_hover = 3;
-  // (optional) Links to the original package that defines this moniker to
-  // enable navigation across different LSIF indexes (whether they come from
-  // different projects or git repositories). This field must be non-empty for
-  // toplevel monikers (`LsifValue.value`).
-  string package_id = 4;
-  // (optional) Monikers that are "implemented" by this moniker. For example,
-  // the moniker of a TypeScript or Java class that implements an interface
-  // should list the interface here.
-  repeated string implementation_monikers = 5;
-  // (optional) Monikers that should be included together with this moniker when
-  // resolving "find references".  For example, the moniker of a TypeScript or
-  // Java method that implements an interface method should list the interface
-  // method here.
-  repeated string reference_monikers = 6;
-}
-
-// MonikerOccurrence describes the appearance of a moniker at a given range in a
-// source file.
-message MonikerOccurrence {
-  enum Role {
-    ROLE_UNSPECIFIED = 0;
-    ROLE_DEFINITION = 1;
-    ROLE_REFERENCE = 2;
-  }
-  // Reference to the `Moniker.id` field.
-  string moniker_id = 1;
-  // The start/end range where this moniker appears.
-  Range range = 2;
-  // Is this the location where the moniker is defined or referenced?
-  Role role = 3;
-  // (optional) Markdown-formatted documentation for this specific range.  If
-  // empty, the `Moniker.markdown_hover` field is used instead. One example
-  // where this field might be useful is when the moniker represents a generic
-  // function (with abstract type parameters such as `List<T>`) and at this
-  // occurrence we know the exact values (such as `List<String>`).
-  repeated string markdown_hover = 4;
-}
-
 // Document defines information about a particular source file.
 message Document {
   // URI-formatted absolute path of the source file on disk (example "file:///path/to/some/file/on/disk.ts").
   string uri = 1;
-  // Moniker occurrences that appear in this file.
-  repeated MonikerOccurrence occurrences = 2;
-  // Monikers that are defined within this document.
-  repeated Moniker monikers = 3;
+  // Symbol occurrences that appear in this file.
+  repeated Occurrence occurrences = 2;
+  // Symbols that are defined within this document.
+  repeated Symbol symbols = 3;
 }
 
 // Package defines a publishable artifact such as an npm package, Docker
 // container, JVM dependency, or a Cargo crate.
 message Package {
   // The unique identifier of this package that can be referenced from
-  // `Moniker.package_id`.  This ID is not intended to be displayed to humans,
+  // `Symbol.package_uri`.  This URI is not intended to be displayed to humans,
   // but it's recommended to use a human-readable format to aid with debugging.
-  string id = 1;
+  string uri = 1;
   // Name of this package, for example "@types/react" or "com.google.guava:guava".
   string name = 2;
   // Version of this package, for example "0.1.0" or "2.1.5".
@@ -154,3 +70,90 @@ message Package {
   string manager = 4;
 }
 
+
+// Symbol defines a symbol, such as a function or an interface.
+message Symbol {
+  enum Unique {
+      UNIQUE_UNSPECIFIED = 0;
+      UNIQUE_DOCUMENT = 1;
+      UNIQUE_GLOBAL = 2;
+  }
+  // The identifier of this symbol, which can be referenced from
+  // Occurence. An empty uri means this symbol can be ignored.
+  string uri = 1;
+  // Determines whether this symbol is local to a single document or if can be
+  // referenced from multiple documents.
+  // Document symbols (`Document.symbols`) can be either local or global.
+  // External symbols (`Index.external_symbols`) must be global.
+  Unique unique = 2;
+  // (optional, but strongly recommended) The markdown-formatted documentation
+  // for this symbol. This field is repeated to allow different kinds of
+  // documentation.  For example, it's nice to include both the signature of a
+  // method (parameters and return type) along with the accompanying docstring.
+  repeated string documentation = 3;
+  // (optional) Links to the original package that defines this symbol to
+  // enable navigation across different LSIF indexes (whether they come from
+  // different projects or git repositories). This field must be non-empty for
+  // toplevel symbols (`Value.value`).
+  string package_uri = 4;
+  // (optional) Symbols that should be included together with this symbol when
+  // resolving "find references".  For example, the symbol of a TypeScript or
+  // Java method that implements an interface method should list the interface
+  // method here.
+  repeated string reference_symbols = 5;
+  // (optional) Symbols that are "implemented" by this symbol. For example,
+  // the symbol of a TypeScript or Java class that implements an interface
+  // should list the interface here.
+  repeated string implementation_symbols = 6;
+}
+
+// Occurrence associates a source position with a symbol and/or highlighting information.
+message Occurrence {
+  enum Role {
+    ROLE_UNSPECIFIED = 0;
+    ROLE_DEFINITION = 1;
+    ROLE_REFERENCE = 2;
+  }
+  enum Highlight {
+      HIGHLIGHT_UNSPECIFIED = 0;
+      HIGHLIGHT_STRING_LITERAL = 1;
+      HIGHLIGHT_NUMERIC_LITERAL = 2;
+      HIGHLIGHT_IDENTIFIER = 3;
+      HIGHLIGHT_METHOD_IDENTIFIER = 4;
+      HIGHLIGHT_TYPE_IDENTIFIER = 5;
+      HIGHLIGHT_TERM_IDENTIFIER = 6;
+      HIGHLIGHT_LOCAL_IDENTIFIER = 7;
+      HIGHLIGHT_SHADED_IDENTIFIER = 8;
+      HIGHLIGHT_PACKAGE_IDENTIFIER = 9;
+  }
+  // The source position of this occurrence. Must be exactly three or four elements:
+  //
+  // - Four elements: [startLine, startCharacter, endLine, endCharacter]
+  // - Three elements: [startLine, startCharacter, endCharacter] (endLine == startLine)
+  //
+  // Line numbers and characters are always 0-based. Make sure to increment the
+  // line/character values before displaying them in an editor-like UI because
+  // editors conventionally use 1-based numbers.
+  //
+  // Ranges appear frequently in real-world LSIF payloads, the `repeated int32`
+  // encoding was chosen over the LSP `Range(start:Position,end:Position)`
+  // encoding for performance reasons.  Benchmarks reveal that this change alone
+  // reduces the total payload size by ~2x in both compressed JSON or Protobuf
+  // encoding. This encoding is admittedly more embarrassing to work with in
+  // some programming languages but we hope the increased performance
+  // improvements make up for it.
+  repeated int32 range = 1;
+  // References the `Symbol.uri` field. Can be empty if this is only a
+  // highlighting occurrence.
+  string symbol_uri = 2;
+  // Is the symbol_uri defined or referenced at this occurrence?
+  Role symbol_role = 3;
+  // (optional) Markdown-formatted documentation for this specific range.  If
+  // empty, the `Symbol.documentation` field is used instead. One example
+  // where this field might be useful is when the symbol represents a generic
+  // function (with abstract type parameters such as `List<T>`) and at this
+  // occurrence we know the exact values (such as `List<String>`).
+  repeated string symbol_documentation = 4;
+  // What syntax highlighting class should be used for this range?
+  Highlight highlight = 5;
+}
