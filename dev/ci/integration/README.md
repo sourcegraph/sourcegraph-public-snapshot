@@ -7,7 +7,7 @@ This directory is home to the integration tests that run in [Sourcegraph's Build
 Each subdirectory describes a suite of integration tests, and should contain:
 
 - `run.sh`: the main entrypoint used in Buildkite to run the test, including setup.
-- `test.sh`: the actual tests themselves - this should be just be the tests themselves, *without* any additional setup.
+- `test.sh`: the actual tests themselves - this should be just be the tests themselves, _without_ any additional setup.
 - Anything else required to run tests.
 
 ## Requirements
