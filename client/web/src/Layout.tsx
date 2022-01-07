@@ -8,7 +8,7 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/validate'
+import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'

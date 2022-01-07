@@ -3,8 +3,8 @@ import React from 'react'
 
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/validate'
 
 import { AuthenticatedUser } from '../../../auth'
 import { getExperimentalFeatures } from '../../../stores'
