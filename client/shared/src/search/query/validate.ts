@@ -84,6 +84,12 @@ export function filterExists(
     )
 }
 
+/** Returns true if the query contains operators. */
+export const operatorExists = (query: string): boolean => {
+    const result = scanSearchQuery(query)
+    return result.type === 'success' && result.term.some(term => term.type === 'keyword')
+}
+
 /**
  * Returns true if the query contains a pattern.
  */
