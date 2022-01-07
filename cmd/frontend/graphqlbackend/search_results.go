@@ -883,25 +883,6 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context, args *search.TextPara
 	return r.resultsWithTimeoutSuggestion(ctx, args, jobs)
 }
 
-// union returns the union of two sets of search results and merges common search data.
-func union(left, right *SearchResults) *SearchResults {
-	if right == nil {
-		return left
-	}
-	if left == nil {
-		return right
-	}
-
-	if left.Matches != nil && right.Matches != nil {
-		left.Matches = result.Union(left.Matches, right.Matches)
-		left.Stats.Update(&right.Stats)
-		return left
-	} else if right.Matches != nil {
-		return right
-	}
-	return left
-}
-
 // intersect returns the intersection of two sets of search result content
 // matches, based on whether a single file path contains content matches in both sets.
 func intersect(left, right *SearchResults) *SearchResults {
@@ -1358,6 +1339,11 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 
 			for _, m := range newResult.Matches {
 				match := selectMatch(m)
+
+				if match == nil {
+					continue
+				}
+
 				if dedup.Add(match); len(dedup.Results()) >= wantCount {
 					return context.Canceled
 				}
