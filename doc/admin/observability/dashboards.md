@@ -12786,7 +12786,7 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_
 
 <br />
 
-#### zoekt-indexserver: network_transmitted_packets_error_total
+#### zoekt-indexserver: network_transmitted_packets_errors_per_instance
 
 <p class="subtitle">Errors encountered while transmitting over 5m (per instance)</p>
 
@@ -12801,7 +12801,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(container_network_transmit_errors_total{container_label_io_kubernetes_pod_name=~`.*indexed-search.*`}[5m]))`
+Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_errors_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))`
 
 </details>
 

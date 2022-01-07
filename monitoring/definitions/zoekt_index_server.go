@@ -15,7 +15,6 @@ func ZoektIndexServer() *monitoring.Container {
 		containerName        = "zoekt-indexserver"
 		bundledContainerName = "indexed-search"
 	)
-	podNameRegex := fmt.Sprintf(".*%s.*", bundledContainerName)
 
 	return &monitoring.Container{
 		Name: "zoekt-indexserver",
@@ -365,7 +364,7 @@ func ZoektIndexServer() *monitoring.Container {
 						{
 							Name:        "network_sent_bytes_aggregate",
 							Description: "transmission rate over 5m (aggregate)",
-							Query:       fmt.Sprintf("sum(rate(container_network_transmit_bytes_total{container_label_io_kubernetes_pod_name=~`%s`}[5m]))", podNameRegex),
+							Query:       fmt.Sprintf("sum(rate(container_network_transmit_bytes_total{%s}[5m]))", shared.CadvisorPodNameMatcher(bundledContainerName)),
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat(bundledContainerName).Unit(monitoring.BytesPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
 								p.GraphPanel.Legend.RightSide = true
@@ -389,7 +388,7 @@ func ZoektIndexServer() *monitoring.Container {
 						{
 							Name:        "network_received_bytes_aggregate",
 							Description: "receive rate over 5m (aggregate)",
-							Query:       fmt.Sprintf("sum(rate(container_network_receive_bytes_total{container_label_io_kubernetes_pod_name=~`%s`}[5m]))", podNameRegex),
+							Query:       fmt.Sprintf("sum(rate(container_network_receive_bytes_total{%s}[5m]))", shared.CadvisorPodNameMatcher(bundledContainerName)),
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat(bundledContainerName).Unit(monitoring.BytesPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
 								p.GraphPanel.Legend.RightSide = true
@@ -422,9 +421,9 @@ func ZoektIndexServer() *monitoring.Container {
 							Interpretation: "An increase in dropped packets could be a leading indicator of network saturation.",
 						},
 						{
-							Name:        "network_transmitted_packets_error_total",
+							Name:        "network_transmitted_packets_errors_per_instance",
 							Description: "errors encountered while transmitting over 5m (per instance)",
-							Query:       fmt.Sprintf("sum(rate(container_network_transmit_errors_total{container_label_io_kubernetes_pod_name=~`%s`}[5m]))", podNameRegex),
+							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_errors_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}} errors").With(func(o monitoring.Observable, p *sdk.Panel) {
 								p.GraphPanel.Legend.RightSide = true
