@@ -8,9 +8,10 @@ describe('experimentalFeatures store', () => {
     it('returns experimental feature flags', () => {
         setExperimentalFeaturesFromSettings({
             subjects: null,
-            final: { experimentalFeatures: { showSearchContext: false } },
+            final: { experimentalFeatures: { fuzzyFinder: true, showSearchContext: false } },
         })
 
+        expect(useExperimentalFeatures.getState()).toHaveProperty('fuzzyFinder', true)
         expect(useExperimentalFeatures.getState()).toHaveProperty('showSearchContext', false)
     })
 })
