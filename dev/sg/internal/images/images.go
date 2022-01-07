@@ -218,7 +218,11 @@ func (i *imageRepository) fetchAuthToken(registryName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		data, _ := io.ReadAll(resp.Body)
+		return "", errors.New(resp.Status + ": " + string(data))
+	}
+
 	result := struct {
 		AccessToken string `json:"access_token"`
 	}{}
@@ -336,7 +340,7 @@ func (i *imageRepository) fetchDigest(tag string) (digest.Digest, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
+	if resp.StatusCode != 200 {
 		data, _ := io.ReadAll(resp.Body)
 		return "", errors.New(resp.Status + ": " + string(data))
 	}
@@ -371,10 +375,12 @@ func (i *imageRepository) fetchAllTags() ([]string, error) {
 	req.Header.Add("Authorization", "Bearer "+i.authToken)
 
 	resp, err := http.DefaultClient.Do(req)
-	if err != nil || resp.StatusCode > 200 {
-		b, _ := io.ReadAll(resp.Body)
-		println(b)
+	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode != 200 {
+		data, _ := io.ReadAll(resp.Body)
+		return nil, errors.New(resp.Status + ": " + string(data))
 	}
 	defer resp.Body.Close()
 	result := struct {
