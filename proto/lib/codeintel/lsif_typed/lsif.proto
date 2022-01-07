@@ -115,6 +115,18 @@ message MonikerOccurrence {
     ROLE_DEFINITION = 1;
     ROLE_REFERENCE = 2;
   }
+  enum Highlight {
+      HIGHLIGHT_UNSPECIFIED = 0;
+      HIGHLIGHT_STRING_LITERAL = 1;
+      HIGHLIGHT_NUMERIC_LITERAL = 2;
+      HIGHLIGHT_IDENTIFIER = 3;
+      HIGHLIGHT_METHOD_IDENTIFIER = 4;
+      HIGHLIGHT_TYPE_IDENTIFIER = 5;
+      HIGHLIGHT_TERM_IDENTIFIER = 6;
+      HIGHLIGHT_LOCAL_IDENTIFIER = 7;
+      HIGHLIGHT_SHADED_IDENTIFIER = 8;
+      HIGHLIGHT_PACKAGE_IDENTIFIER = 9;
+  }
   // Reference to the `Moniker.id` field.
   string moniker_id = 1;
   // The start/end range where this moniker appears.
@@ -127,6 +139,8 @@ message MonikerOccurrence {
   // function (with abstract type parameters such as `List<T>`) and at this
   // occurrence we know the exact values (such as `List<String>`).
   repeated string markdown_hover = 4;
+  // What syntax highlighting class should be used for this range.
+  Highlight highlight = 5;
 }
 
 // Document defines information about a particular source file.
