@@ -15,7 +15,7 @@ import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/validate'
+import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 

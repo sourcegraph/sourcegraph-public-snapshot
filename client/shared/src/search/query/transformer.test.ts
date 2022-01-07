@@ -1,4 +1,5 @@
 import { FilterType } from './filters'
+import { FilterKind, findFilter } from './query'
 import { Filter } from './token'
 import {
     appendContextFilter,
@@ -8,7 +9,6 @@ import {
     updateFilter,
     updateFilters,
 } from './transformer'
-import { FilterKind, findFilter } from './validate'
 
 expect.addSnapshotSerializer({
     serialize: value => value as string,

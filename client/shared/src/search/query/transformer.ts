@@ -1,9 +1,10 @@
 import { replaceRange } from '../../util/strings'
 
 import { FILTERS, FilterType } from './filters'
+import { findFilters, findFilter, FilterKind } from './query'
 import { scanSearchQuery } from './scanner'
 import { Filter, Token } from './token'
-import { operatorExists, filterExists, findFilters, findFilter, FilterKind } from './validate'
+import { operatorExists, filterExists } from './validate'
 
 export function appendContextFilter(query: string, searchContextSpec: string | undefined): string {
     return !filterExists(query, FilterType.context) && searchContextSpec

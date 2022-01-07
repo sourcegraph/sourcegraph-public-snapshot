@@ -5,8 +5,8 @@ import RegexIcon from 'mdi-react/RegexIcon'
 import React, { useCallback } from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
+import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../..'
