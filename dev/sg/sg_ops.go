@@ -49,7 +49,7 @@ func constructOpsCmdLongHelp() string {
 	fmt.Fprintf(&out, "Supported subcommands")
 	fmt.Fprintf(&out, "update-images -> Updates images when run from the root of a 'deploy-sourcegraph-*' repo")
 	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "Supports: deploy-sourcegraph, deploy-sourcegraph-dogfood, deploy-sourcegraph-dot-com")
+	fmt.Fprintf(&out, "Supports internal deploy Sourcegraph repos (non-customer facing)")
 
 	return out.String()
 }
