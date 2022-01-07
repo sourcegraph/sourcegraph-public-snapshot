@@ -20,4 +20,7 @@
 
     # None of the exit codes were 0 or soft fails, report the failure then.
     buildevents build "$BUILDKITE_BUILD_ID" "$BUILD_START_TIME" failure
+
+    # Return the original exit code
+    exit $BUILDKITE_COMMAND_EXIT_STATUS"
 )
