@@ -22,5 +22,5 @@
     buildevents build "$BUILDKITE_BUILD_ID" "$BUILD_START_TIME" failure
 
     # Return the original exit code
-    exit $BUILDKITE_COMMAND_EXIT_STATUS"
+    exit "$BUILDKITE_COMMAND_EXIT_STATUS"
 )
