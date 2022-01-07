@@ -26,19 +26,18 @@ You can follow the instructions below for spinning up individual monitoring comp
 #### Grafana
 
 Running just Grafana is a convenient way to validate dashboards.
+
 When doing so, you may wish to connect Grafana to a remote Prometheus instance that you have administrator access to (such as [Sourcegraph's instances](https://handbook.sourcegraph.com/engineering/deployments/instances)), to show more real data than is available on your dev server.
-For Kubernetes deployments, you can do this by getting `kubectl` connected to a Sourcegraph cluster and then port-forwarding Prometheus via:
 
-```sh
-kubectl port-forward svc/prometheus 9090:30090
-```
-
-You can use this in your local dev workflow by replacing the contents of the [`prometheus` section in `sg.config.yaml`](https://github.com/sourcegraph/sourcegraph/blob/d0a7cbacc7f0da6e3fba3cde82651e414c9224c0/sg.config.yaml#L609-L659) with just:
+For Kubernetes deployments, you can accomplish this by creating a [sg.config.overwrite.yaml file](../background-information/sg/index.md#Configuration) that replaces your local Prometheus instance with a `kubectl` command that port-forwards traffic from the Prometheus service on the Kubernetes cluster that you're currently connected to:
 
 ```yaml
-prometheus:
-  cmd: |
-     kubectl port-forward svc/prometheus 9090:30090
+# sg.config.overwrite.yaml
+
+commands:
+  prometheus:
+    cmd: |
+      kubectl port-forward svc/prometheus 9090:30090
 ```
 
 Then, you can start up the local dev monitoring stack by using:
@@ -49,7 +48,7 @@ sg start monitoring
 
 Grafana dashboards will be available at `localhost:3370`.
 
-Note that instead of `kubectl`, you can use whichever port-forwarding mechanism you wish to connect to a remote Prometheus instance as well, as long as Prometheus is available on port `9090` locally.
+Note that instead of `kubectl`, you can replace the command in the sg.config.overwrite.yaml above to use whichever port-forwarding mechanism you wish to use to connect to a remote Prometheus instance (as long as Prometheus is available on port `9090` locally).
 The dev targets for Grafana are defined in the following files:
 
 * Non-Linux: [`dev/grafana/all/datasources.yaml`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/grafana/all/datasources.yaml)
