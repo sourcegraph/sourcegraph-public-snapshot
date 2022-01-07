@@ -717,10 +717,6 @@ func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 		tr.Finish()
 	}()
 
-	if Mocks.Repos.List != nil {
-		return Mocks.Repos.List(ctx, opt)
-	}
-
 	// always having ID in ORDER BY helps Postgres create a more performant query plan
 	if len(opt.OrderBy) == 0 || (len(opt.OrderBy) == 1 && opt.OrderBy[0].Field != RepoListID) {
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
