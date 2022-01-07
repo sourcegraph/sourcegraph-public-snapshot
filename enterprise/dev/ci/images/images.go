@@ -16,7 +16,7 @@ const (
 	// SourcegraphDockerPublishRegistry is a public registry for final images, and does not require authentication to pull from.
 	SourcegraphDockerPublishRegistry = "index.docker.io/sourcegraph"
 	MainBranchTagPublishFormat       = "%05d_%10s_%7s"
-	MainBranchDateFormat             = "2006-01-02"
+	DefaultTagDateFormat             = "2006-01-02"
 	DefaultBranchTagFormat           = "%s_%05d_%10s_%7s" // encodes branch inside the tag as well
 )
 
