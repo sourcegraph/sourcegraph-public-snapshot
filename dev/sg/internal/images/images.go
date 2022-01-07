@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/distribution/distribution/v3/reference"
@@ -15,6 +16,8 @@ import (
 	"sigs.k8s.io/kustomize/kyaml/kio"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
+
+var seenImageRepos = map[string]imageRepository{}
 
 func Parse(path string) error {
 
@@ -52,7 +55,7 @@ var _ kio.Filter = &imageFilter{}
 func (imageFilter) Filter(in []*yaml.RNode) ([]*yaml.RNode, error) {
 	for _, r := range in {
 		if err := findImage(r); err != nil {
-			if errors.Is(err, ErrNoImages) || errors.Is(err, ErrNoUpdateNeeded) {
+			if errors.As(err, &ErrNoImage{}) || errors.Is(err, ErrNoUpdateNeeded) {
 				stdout.Out.Verbosef("Encountered expected err: %v\n", err)
 				continue
 			}
@@ -78,14 +81,16 @@ func findImage(r *yaml.RNode) error {
 	}
 	if containers == nil && initContainers == nil {
 
-		stdout.Out.Verbosef("no images founds in %s:%s \n", r.GetKind(), r.GetName())
-		return ErrNoImages
+		return ErrNoImage{
+			Kind: r.GetKind(),
+			Name: r.GetName(),
+		}
 	}
 
 	var lookupImage = func(node *yaml.RNode) error {
 		image := node.Field("image")
 		if image == nil {
-			return fmt.Errorf("couldn't find image for container %s", node.GetName())
+			return fmt.Errorf("couldn't find image for container %s within %w", node.GetName(), ErrNoImage{r.GetKind(), r.GetName()})
 		}
 		s, err := image.Value.String()
 		if err != nil {
@@ -118,6 +123,13 @@ type ImageReference struct {
 	Tag      string        // insiders
 }
 
+type imageRepository struct {
+	name             string
+	isDockerRegistry bool
+	authToken        string
+	imageRef         *ImageReference
+}
+
 func (image ImageReference) String() string {
 	return fmt.Sprintf("%s/%s:%s@%s", image.Registry, image.Name, image.Tag, image.Digest)
 }
@@ -147,47 +159,33 @@ func updateImage(rawImage string) (string, error) {
 			imgRef.Digest = newCanonical.Digest()
 		}
 	}
-
-	imgRepo := &imageRepository{
-		name: imgRef.Name,
+	if prevRepo, ok := seenImageRepos[imgRef.Name]; ok {
+		if imgRef.Tag == prevRepo.imageRef.Tag {
+			// no update needed
+			return imgRef.String(), ErrNoUpdateNeeded
+		}
+		if prevRepo.checkLegacy(rawImage) {
+			prevRepo.imageRef.Registry = legacyDockerhub
+			return prevRepo.imageRef.String(), nil
+		}
+		return prevRepo.imageRef.String(), nil
 	}
-	imgRepo.authToken, err = imgRepo.fetchAuthToken(imgRef.Registry)
+
+	repo, err := createAndFillImageRepository(imgRef)
 	if err != nil {
+		if errors.Is(err, ErrNoUpdateNeeded) {
+			return imgRef.String(), ErrNoUpdateNeeded
+		}
 		return "", err
 	}
 
-	tags, err := imgRepo.fetchAllTags()
-	if err != nil {
-		return "", err
+	seenImageRepos[imgRef.Name] = *repo
+
+	if repo.checkLegacy(rawImage) {
+		repo.imageRef.Registry = legacyDockerhub
+		return repo.imageRef.String(), nil
 	}
-
-	latestTag := findLatestTag(tags)
-	if latestTag == imgRef.Tag || latestTag == "" {
-		// do nothing
-		return imgRef.String(), ErrNoUpdateNeeded
-	}
-
-	// also get digest for latestTag
-	newDigest, err := imgRepo.fetchDigest(latestTag)
-	if err != nil {
-		return "", err
-	}
-	newImgRef := imgRef
-	newImgRef.Tag = latestTag
-	newImgRef.Digest = newDigest
-
-	// prevent changing the registry if they are equivalent
-	if newImgRef.Registry == dockerhub && strings.Contains(rawImage, legacyDockerhub) {
-		newImgRef.Registry = legacyDockerhub
-	}
-
-	return newImgRef.String(), nil
-}
-
-type imageRepository struct {
-	name             string
-	isDockerRegistry bool
-	authToken        string
+	return repo.imageRef.String(), nil
 }
 
 const (
@@ -196,7 +194,16 @@ const (
 )
 
 var ErrNoUpdateNeeded = errors.New("no update needed")
-var ErrNoImages = errors.New("no images found in resource")
+
+type ErrNoImage struct {
+	Kind string
+	Name string
+}
+
+func (m ErrNoImage) Error() string {
+	return fmt.Sprintf("no images found for resource: %s of kind: %s", m.Name, m.Kind)
+}
+
 var ErrUnsupportedRegistry = errors.New("unsupported registry")
 
 func (i *imageRepository) fetchAuthToken(registryName string) (string, error) {
@@ -222,19 +229,62 @@ func (i *imageRepository) fetchAuthToken(registryName string) (string, error) {
 	return result.AccessToken, nil
 }
 
+func createAndFillImageRepository(ref *ImageReference) (repo *imageRepository, err error) {
+
+	repo = &imageRepository{name: ref.Name, imageRef: ref}
+	repo.authToken, err = repo.fetchAuthToken(ref.Registry)
+	if err != nil {
+		return nil, nil
+	}
+	tags, err := repo.fetchAllTags()
+	if err != nil {
+		return nil, err
+	}
+
+	repo.imageRef = &ImageReference{
+		Registry: ref.Registry,
+		Name:     ref.Name,
+		Digest:   "",
+		Tag:      ref.Tag,
+	}
+
+	latestTag := findLatestTag(tags)
+	if latestTag == ref.Tag || latestTag == "" {
+		return repo, ErrNoUpdateNeeded
+	}
+	repo.imageRef.Tag = latestTag
+
+	dig, err := repo.fetchDigest(latestTag)
+	if err != nil {
+		return nil, err
+	}
+	repo.imageRef.Digest = dig
+
+	return repo, nil
+}
+
 type SgImageTag struct {
 	buildNum  int
 	date      string
 	shortSHA1 string
 }
 
+// ParseTag creates SgImageTag structs for strings that follow MainBranchTagPublishFormat
 func ParseTag(t string) (*SgImageTag, error) {
 	s := SgImageTag{}
 	t = strings.TrimSpace(t)
-	n, err := fmt.Sscanf(t, "%05d_%10s_%7s", &s.buildNum, &s.date, &s.shortSHA1)
-	if n != 3 || err != nil {
-		return nil, fmt.Errorf("unable to convert tag: %s\n", t)
+	var err error
+	n := strings.Split(t, "_")
+	if len(n) != 3 {
+		return nil, fmt.Errorf("unable to convert tag: %s", t)
 	}
+	s.buildNum, err = strconv.Atoi(n[0])
+	if err != nil {
+		return nil, fmt.Errorf("unable to convert tag: %v", err)
+	}
+
+	s.date = n[1]
+	s.shortSHA1 = n[2]
 	return &s, nil
 }
 
@@ -257,6 +307,15 @@ func findLatestTag(tags []string) string {
 	return targetTag
 }
 
+// CheckLegacy prevents changing the registry if they are equivalent, internally legacyDockerhub is resolved to dockerhub
+// Most helpful during printing
+func (i *imageRepository) checkLegacy(rawImage string) bool {
+	if i.imageRef.Registry == dockerhub && strings.Contains(rawImage, legacyDockerhub) {
+		return true
+	}
+	return false
+}
+
 // snippets below from https://github.com/sourcegraph/update-docker-tags/blob/46711ff8882cfe09eaaef0f8b9f2d8c2ee7660ff/update-docker-tags.go#L258-L303
 
 // Effectively the same as:
@@ -264,7 +323,7 @@ func findLatestTag(tags []string) string {
 // 	$ curl -H "Authorization: Bearer $token" https://index.docker.io/v2/sourcegraph/server/tags/list
 //
 func (i *imageRepository) fetchDigest(tag string) (digest.Digest, error) {
-	req, err := http.NewRequest("GET", "https://index.docker.io/v2/"+i.name+"/manifests/"+tag, nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://index.docker.io/v2/%s/manifests/%s", i.name, tag), nil)
 	if err != nil {
 		return "", err
 	}
@@ -300,6 +359,9 @@ const dockerImageTagsURL = "https://index.docker.io/v2/%s/tags/list"
 func (i *imageRepository) fetchAllTags() ([]string, error) {
 	if !i.isDockerRegistry {
 		return nil, ErrUnsupportedRegistry
+	}
+	if i.authToken == "" {
+		return nil, fmt.Errorf("missing auth token")
 	}
 
 	req, err := http.NewRequest("GET", fmt.Sprintf(dockerImageTagsURL, i.name), nil)
