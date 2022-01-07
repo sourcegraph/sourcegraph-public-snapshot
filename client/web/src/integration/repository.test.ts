@@ -374,6 +374,15 @@ describe('Repository', () => {
                         },
                     },
                 }),
+                FileNames: () => ({
+                    repository: {
+                        __typename: 'Repository',
+                        commit: {
+                            __typename: 'GitCommit',
+                            fileNames: ['README.md'],
+                        },
+                    },
+                }),
             })
 
             // Mock `Date.now` to stabilize timestamps
@@ -475,6 +484,15 @@ describe('Repository', () => {
                         },
                     },
                 }),
+                FileNames: () => ({
+                    repository: {
+                        __typename: 'Repository',
+                        commit: {
+                            __typename: 'GitCommit',
+                            fileNames: ['README.md'],
+                        },
+                    },
+                }),
             })
 
             await driver.page.goto(
@@ -533,6 +551,15 @@ describe('Repository', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, ['readme.md']),
+                FileNames: () => ({
+                    repository: {
+                        __typename: 'Repository',
+                        commit: {
+                            __typename: 'GitCommit',
+                            fileNames: ['README.md'],
+                        },
+                    },
+                }),
             })
 
             await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
@@ -570,6 +597,15 @@ describe('Repository', () => {
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
                 ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, ['readme.md']),
+                FileNames: () => ({
+                    repository: {
+                        __typename: 'Repository',
+                        commit: {
+                            __typename: 'GitCommit',
+                            fileNames: ['README.md'],
+                        },
+                    },
+                }),
             })
 
             await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
@@ -773,6 +809,15 @@ describe('Repository', () => {
                                     },
                                 },
                             ],
+                        },
+                    },
+                }),
+                FileNames: () => ({
+                    repository: {
+                        __typename: 'Repository',
+                        commit: {
+                            __typename: 'GitCommit',
+                            fileNames: ['README.md'],
                         },
                     },
                 }),
