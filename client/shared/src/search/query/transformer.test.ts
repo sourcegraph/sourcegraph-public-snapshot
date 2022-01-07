@@ -114,11 +114,17 @@ describe('sanitizeQueryForTelemetry', () => {
 })
 
 describe('parenthesizeQueryWithGlobalContext', () => {
-    test('query without context', () => expect(parenthesizeQueryWithGlobalContext('a or b')).toEqual('a or b'))
+    test('query without context', () =>
+        expect(parenthesizeQueryWithGlobalContext('a or b')).toMatchInlineSnapshot('a or b'))
 
-    test('query with global context filter', () =>
-        expect(parenthesizeQueryWithGlobalContext('context:ctx a or b')).toEqual('context:ctx (a or b)'))
+    test('do not parenthesize query without operators', () =>
+        expect(parenthesizeQueryWithGlobalContext('context:ctx a')).toMatchInlineSnapshot('context:ctx a'))
 
-    test('query with nested context', () =>
-        expect(parenthesizeQueryWithGlobalContext('(context:ctx a) or b')).toEqual('(context:ctx a) or b'))
+    test('parenthesize query with global context filter', () =>
+        expect(parenthesizeQueryWithGlobalContext('context:ctx a or b')).toMatchInlineSnapshot('context:ctx (a or b)'))
+
+    test('do not parenthesize query with nested context', () =>
+        expect(parenthesizeQueryWithGlobalContext('(context:ctx a) or b')).toMatchInlineSnapshot(
+            '(context:ctx a) or b'
+        ))
 })
