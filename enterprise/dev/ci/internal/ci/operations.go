@@ -309,7 +309,7 @@ func backendIntegrationTests(candidateImageTag string) operations.Operation {
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("IMAGE",
 				images.DevRegistryImage("server", candidateImageTag)),
-			bk.Cmd("./dev/ci/backend-integration.sh"),
+			bk.Cmd("dev/ci/integration/backend/run.sh"),
 			bk.ArtifactPaths("./*.log"))
 	}
 }
@@ -397,7 +397,7 @@ func codeIntelQA(candidateTag string) operations.Operation {
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-			bk.Cmd("dev/ci/test/code-intel/test.sh"),
+			bk.Cmd("dev/ci/integration/code-intel/run.sh"),
 			bk.ArtifactPaths("./*.log"))
 	}
 }
@@ -417,7 +417,7 @@ func serverE2E(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("./dev/ci/test/e2e/test.sh"),
+			bk.Cmd("dev/ci/integration/e2e/run.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -439,7 +439,7 @@ func serverQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("./dev/ci/test/qa/test.sh"),
+			bk.Cmd("dev/ci/integration/qa/run.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -460,7 +460,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("./dev/ci/test/upgrade/test.sh"),
+			bk.Cmd("dev/ci/integration/upgrade/run.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -478,7 +478,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 // 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 // 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 // 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-// 			bk.Cmd("./dev/ci/test/cluster/cluster-test.sh"),
+// 			bk.Cmd("./dev/ci/integration/cluster/run.sh"),
 // 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 // 	}
 // }

@@ -4,7 +4,7 @@
 # passed a path to a bash script that runs the actual tests against a running instance. The passed
 # script will be passed a single parameter: the target URL from which the instance is accessible.
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../../"
+cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
 root_dir=$(pwd)
 set -ex
 
@@ -15,14 +15,6 @@ fi
 
 URL="http://localhost:7080"
 
-if curl --output /dev/null --silent --head --fail $URL; then
-  echo "❌ Can't run a new Sourcegraph instance on $URL because another instance is already running."
-  echo "❌ The last time this happened, there was a runaway integration test run on the same Buildkite agent and the fix was to delete the pod and rebuild."
-  exit 1
-fi
-
-echo "--- Running a daemonized $IMAGE as the test subject..."
-CONTAINER="$(docker container run -d -e GOTRACEBACK=all "$IMAGE")"
 function cleanup() {
   exit_status=$?
   if [ $exit_status -ne 0 ]; then
@@ -30,7 +22,6 @@ function cleanup() {
     echo "^^^ +++"
   fi
 
-  jobs -p -r | xargs kill
   echo "--- dump server logs"
   docker logs --timestamps "$CONTAINER" >"$root_dir/server.log" 2>&1
   echo "--- docker cleanup"
@@ -46,11 +37,9 @@ function cleanup() {
 }
 trap cleanup EXIT
 
-docker exec "$CONTAINER" apk add --no-cache socat
-# Connect the server container's port 7080 to localhost:7080 so that integration tests
-# can hit it. This is similar to port-forwarding via SSH tunneling, but uses `docker exec`
-# as the transport.
-socat tcp-listen:7080,reuseaddr,fork system:"docker exec -i $CONTAINER socat stdio 'tcp:localhost:7080'" &
+echo "--- Running a daemonized $IMAGE as the test subject..."
+CONTAINER="sourcegraph"
+CLEAN="true" "${root_dir}"/dev/run-server-image.sh -d --name $CONTAINER
 
 echo "--- Waiting for $URL to be up"
 set +e
