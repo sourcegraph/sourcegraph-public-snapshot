@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -53,7 +53,7 @@ func TestLogMiddleware(t *testing.T) {
 		}})
 		defer conf.Mock(nil)
 
-		store := dbmock.NewMockWebhookLogStore()
+		store := database.NewMockWebhookLogStore()
 
 		handler := http.HandlerFunc(basicHandler)
 		mw := NewLogMiddleware(store)
@@ -73,7 +73,7 @@ func TestLogMiddleware(t *testing.T) {
 	})
 
 	t.Run("logging enabled", func(t *testing.T) {
-		store := dbmock.NewMockWebhookLogStore()
+		store := database.NewMockWebhookLogStore()
 		store.CreateFunc.SetDefaultHook(func(c context.Context, log *types.WebhookLog) error {
 			assert.Equal(t, es, *log.ExternalServiceID)
 			assert.Equal(t, http.StatusCreated, log.StatusCode)

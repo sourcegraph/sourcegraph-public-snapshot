@@ -10,14 +10,13 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestNamespace(t *testing.T) {
 	t.Run("user", func(t *testing.T) {
 		const wantUserID = 3
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 			if id != wantUserID {
 				t.Errorf("got %d, want %d", id, wantUserID)
@@ -25,7 +24,7 @@ func TestNamespace(t *testing.T) {
 			return &types.User{ID: wantUserID, Username: "alice"}, nil
 		})
 
-		db := dbmock.NewMockDB()
+		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		RunTests(t, []*Test{
@@ -53,7 +52,7 @@ func TestNamespace(t *testing.T) {
 
 	t.Run("organization", func(t *testing.T) {
 		const wantOrgID = 3
-		orgs := dbmock.NewMockOrgStore()
+		orgs := database.NewMockOrgStore()
 		orgs.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.Org, error) {
 			if id != wantOrgID {
 				t.Errorf("got %d, want %d", id, wantOrgID)
@@ -61,7 +60,7 @@ func TestNamespace(t *testing.T) {
 			return &types.Org{ID: wantOrgID, Name: "acme"}, nil
 		})
 
-		db := dbmock.NewMockDB()
+		db := database.NewMockDB()
 		db.OrgsFunc.SetDefaultReturn(orgs)
 
 		RunTests(t, []*Test{
@@ -93,7 +92,7 @@ func TestNamespace(t *testing.T) {
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, dbmock.NewMockDB()),
+				Schema: mustParseGraphQLSchema(t, database.NewMockDB()),
 				Query: fmt.Sprintf(`
 				{
 					namespace(id: %q) {
@@ -125,7 +124,7 @@ func TestNamespaceByName(t *testing.T) {
 			wantUserID = 123
 		)
 
-		ns := dbmock.NewMockNamespaceStore()
+		ns := database.NewMockNamespaceStore()
 		ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
 			if name != wantName {
 				t.Errorf("got %q, want %q", name, wantName)
@@ -133,7 +132,7 @@ func TestNamespaceByName(t *testing.T) {
 			return &database.Namespace{Name: "alice", User: wantUserID}, nil
 		})
 
-		users := dbmock.NewMockUserStore()
+		users := database.NewMockUserStore()
 		users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 			if id != wantUserID {
 				t.Errorf("got %d, want %d", id, wantUserID)
@@ -141,7 +140,7 @@ func TestNamespaceByName(t *testing.T) {
 			return &types.User{ID: wantUserID, Username: wantName}, nil
 		})
 
-		db := dbmock.NewMockDB()
+		db := database.NewMockDB()
 		db.NamespacesFunc.SetDefaultReturn(ns)
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -176,7 +175,7 @@ func TestNamespaceByName(t *testing.T) {
 			wantOrgID = 3
 		)
 
-		ns := dbmock.NewMockNamespaceStore()
+		ns := database.NewMockNamespaceStore()
 		ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
 			if name != wantName {
 				t.Errorf("got %q, want %q", name, wantName)
@@ -184,7 +183,7 @@ func TestNamespaceByName(t *testing.T) {
 			return &database.Namespace{Name: "alice", Organization: wantOrgID}, nil
 		})
 
-		orgs := dbmock.NewMockOrgStore()
+		orgs := database.NewMockOrgStore()
 		orgs.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.Org, error) {
 			if id != wantOrgID {
 				t.Errorf("got %d, want %d", id, wantOrgID)
@@ -192,7 +191,7 @@ func TestNamespaceByName(t *testing.T) {
 			return &types.Org{ID: wantOrgID, Name: "acme"}, nil
 		})
 
-		db := dbmock.NewMockDB()
+		db := database.NewMockDB()
 		db.NamespacesFunc.SetDefaultReturn(ns)
 		db.OrgsFunc.SetDefaultReturn(orgs)
 
@@ -223,9 +222,9 @@ func TestNamespaceByName(t *testing.T) {
 	})
 
 	t.Run("invalid", func(t *testing.T) {
-		ns := dbmock.NewMockNamespaceStore()
+		ns := database.NewMockNamespaceStore()
 		ns.GetByNameFunc.SetDefaultReturn(nil, database.ErrNamespaceNotFound)
-		db := dbmock.NewMockDB()
+		db := database.NewMockDB()
 		db.NamespacesFunc.SetDefaultReturn(ns)
 
 		RunTests(t, []*Test{

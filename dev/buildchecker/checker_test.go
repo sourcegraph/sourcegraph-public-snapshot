@@ -26,6 +26,7 @@ func (m *mockBranchLocker) Lock(context.Context, []CommitInfo, string) (func() e
 func TestCheckBuilds(t *testing.T) {
 	// Simple end-to-end tests of the buildchecker entrypoint with mostly fixed parameters
 	ctx := context.Background()
+	slackUser := NewMockSlackUserResolver("commit", nil)
 	testOptions := CheckOptions{
 		FailuresThreshold: 2,
 		BuildTimeout:      time.Hour,
@@ -82,7 +83,7 @@ func TestCheckBuilds(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var lock = &mockBranchLocker{}
-			res, err := CheckBuilds(ctx, lock, tt.builds, testOptions)
+			res, err := CheckBuilds(ctx, lock, slackUser, tt.builds, testOptions)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.wantLocked, res.LockBranch)
 			// Mock always returns an action, check it's always assigned correctly

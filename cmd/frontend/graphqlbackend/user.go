@@ -255,7 +255,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 // CurrentUser returns the authenticated user if any. If there is no authenticated user, it returns
 // (nil, nil). If some other error occurs, then the error is returned.
 func CurrentUser(ctx context.Context, db database.DB) (*UserResolver, error) {
-	user, err := database.Users(db).GetByCurrentAuthUser(ctx)
+	user, err := db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
 			return nil, nil

@@ -25,7 +25,7 @@ export type LinkProps = { to: string | H.LocationDescriptor<any>; ref?: React.Re
  *
  * @see setLinkComponent
  */
-export let Link: React.ComponentType<LinkProps>
+export let Link: React.FunctionComponent<LinkProps>
 
 if (process.env.NODE_ENV !== 'production') {
     // Fail with helpful message if setLinkComponent has not been called when the <Link> component is used.

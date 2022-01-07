@@ -25,18 +25,16 @@ for analytics.
 
 The standard use of a feature flag for A/B testing a frontend feature will look like the following:
 
-1) Implement the feature that you want to be behind a feature flag
-2) Deploy to sourcegraph.com
-3) Create the feature flag through the GraphQL API
-4) Measure the effect of the feature flag
-5) Disable or delete the feature flag
-6) Remove the code that references the feature flag
-
-Feature flags can also be used in the backend through `featureflag.FromContext()`, but this
-example specifically applies to frontend flags.
-
+1. Implement the feature that you want to be behind a feature flag
+2. Deploy to sourcegraph.com
+3. Create the feature flag through the GraphQL API
+4. Measure the effect of the feature flag
+5. Disable or delete the feature flag
+6. Remove the code that references the feature flag
 
 ### Implement the feature flag
+
+#### Frontend
 
 In the frontend, evaluated feature flags map for the current user is available on 
 the SourcegraphWebAppState. The map can be prop-drilled into the components that need access to the feature flags.
@@ -60,6 +58,26 @@ const evaluatedFeatureFlagValue = featureFlags.get('my-feature-flag') ?? false
 
 featureFlags.get('unknown-feature-flag') // compiler error
 ```
+
+#### Backend
+
+In the backend, the [`featureflag` package](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/featureflag/middleware.go) provides
+the implementation of feature flag functionality.
+
+The entrypoint for most developers that wish to read feature flags should be [the `featureFlag.FromContext` function](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/featureflag/middleware.go?L78-83), which retrieves the current set of feature flags from a request's context object. [`featureFlag.GetBool / featureFlag.GetBoolOr`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@c2c03ab/-/blob/internal/featureflag/flagset.go?L5-15) can then be used to read flags from the [`FlagSet`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@c2c03ab/-/blob/internal/featureflag/flagset.go?L3) that [`featureFlag.FromContext`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/featureflag/middleware.go?L78-83) returns.
+
+Example:
+
+```go
+import "github.com/sourcegraph/sourcegraph/internal/featureflag"
+
+flags := featureFlag.FromContext(ctx)
+value := flags.GetBoolOr("foo", false)
+
+doSomething(value)
+```
+
+When writing code that uses feature flags, you may wish to avoid needing to pass a `context.Context` (for `featureFlag.FromContext()`) in every function that consumes it for a variety of reasons (avoiding mixing concerns, lack of type safety, etc.). See [search: add Features type #28969](https://github.com/sourcegraph/sourcegraph/pull/28969) for an example of a pattern in the search code base that successfully minimizes the need to pass around a full context object.
 
 ### Create the feature flag through the GraphQL API
 

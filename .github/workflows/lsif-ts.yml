@@ -23,6 +23,7 @@ jobs:
           - client/shared
           - client/web
           - client/wildcard
+          - client/common
     steps:
       # Setup
       - name: Checkout

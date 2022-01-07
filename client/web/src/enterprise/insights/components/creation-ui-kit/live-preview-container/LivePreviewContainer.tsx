@@ -3,8 +3,8 @@ import RefreshIcon from 'mdi-react/RefreshIcon'
 import React, { PropsWithChildren, ReactElement, ReactNode } from 'react'
 import { ChartContent } from 'sourcegraph'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { LineChartLayoutOrientation, LineChartSettingsContext, ChartViewContentLayout } from '../../../../../views'
 import * as View from '../../../../../views'

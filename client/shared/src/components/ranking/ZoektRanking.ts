@@ -8,7 +8,7 @@ export class ZoektRanking implements PerFileResultRanking {
         return results(matches, Number.MAX_VALUE, context)
     }
     public collapsedResults(matches: MatchItem[], context: number): RankingResult {
-        return results(matches, 1, context)
+        return results(matches, 5, context)
     }
 }
 

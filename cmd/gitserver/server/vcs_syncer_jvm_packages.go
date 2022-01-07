@@ -489,7 +489,11 @@ func classFileMajorVersion(byteCodeJarPath string) (string, error) {
 		return version, nil
 	}
 
-	return "", errors.Errorf("failed to infer JVM version for jar %s because it doesn't contain any classfiles", byteCodeJarPath)
+	// We didn't find any `*.class` files so we can use any Java version.
+	// Maven don't have to contain classfiles, some artifacts like
+	// 'io.smallrye:smallrye-health-ui:3.1.1' only contain HTML/css/png/js
+	// files.
+	return "8", nil
 }
 
 func classFileEntryMajorVersion(byteCodeJarPath string, zipEntry *zip.File) (string, error) {

@@ -1,5 +1,5 @@
+import { isErrorLike } from '@sourcegraph/common'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { Settings } from '../../../../../../../../schema/settings.schema'

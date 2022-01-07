@@ -277,10 +277,6 @@ LIMIT 1
 // GetVerifiedEmails returns a list of verified emails from the candidate list. Some emails are excluded
 // from the results list because of unverified or simply don't exist.
 func (s *userEmailsStore) GetVerifiedEmails(ctx context.Context, emails ...string) ([]*UserEmail, error) {
-	if Mocks.UserEmails.GetVerifiedEmails != nil {
-		return Mocks.UserEmails.GetVerifiedEmails(ctx, emails...)
-	}
-
 	if len(emails) == 0 {
 		return []*UserEmail{}, nil
 	}
@@ -303,10 +299,6 @@ type UserEmailsListOptions struct {
 
 // ListByUser returns a list of emails that are associated to the given user.
 func (s *userEmailsStore) ListByUser(ctx context.Context, opt UserEmailsListOptions) ([]*UserEmail, error) {
-	if Mocks.UserEmails.ListByUser != nil {
-		return Mocks.UserEmails.ListByUser(ctx, opt)
-	}
-
 	conds := []*sqlf.Query{
 		sqlf.Sprintf("user_id=%s", opt.UserID),
 	}

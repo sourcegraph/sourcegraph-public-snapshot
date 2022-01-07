@@ -1,7 +1,7 @@
 import React, { useState, FunctionComponent } from 'react'
 
+import { asError, ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Badge } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'

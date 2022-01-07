@@ -1,68 +1,64 @@
-# Running Vagrant based tests locally
+# Running e2e/qa tests locally
 
 ## Requirements
 
-- [Vagrant](https://www.vagrantup.com/downloads)
-- [vagrant-env](https://github.com/gosuri/vagrant-env)
-- [gcloud credentials](https://cloud.google.com/sdk/gcloud/reference/auth/login)
+Before running tests export these environment variables:
+
+```
+export LOG_STATUS_MESSAGES=true
+export NO_CLEANUP=false
+export SOURCEGRAPH_SUDO_USER=admin
+export SOURCEGRAPH_BASE_URL="http://127.0.0.1:7080"
+export TEST_USER_EMAIL="test@sourcegraph.com"
+export TEST_USER_PASSWORD="supersecurepassword"
+export INCLUDE_ADMIN_ONBOARDING="false"
+# Set the IMAGE to whichever version of Sourcegraph you want to test
+export IMAGE="sourcegraph/server:insiders"
+# Set the following to a valid github token. Your personal github token should have access to all the repos in the Sourcegraph github required to run these tests.
+export GITHUB_TOKEN=<insert token here>
+```
 
 ## Running tests
 
-Each machine listed in [servers.yaml](servers.yaml) corresponds to a different test type. To list the available Vagrant boxes, execute:
+### E2E
 
-```shell
-$ vagrant status
-Current machine states:
+From the root of this repository:
 
-sourcegraph-e2e             not created (google)
-sourcegraph-qa-test         not created (google)
-sourcegraph-code-intel-test not created (google)
-sourcegraph-upgrade         not created (google)
-$
+```
+./dev/ci/e2e.sh
 ```
 
-Copy [this 1password entry](https://start.1password.com/open/i?a=HEDEDSLHPBFGRBTKAKJWE23XX4&v=dnrhbauihkhjs5ag6vszsme45a&i=mn37wmu5dzhll6qxcnpmutvlq4&h=team-sourcegraph.1password.com) into a `.env` file this directory. This is used to populate the environment variables for each test.
+### QA
 
-To run the tests, simply execute the following:
+From the root of this repository
 
-```shell
-$ vagrant up <machine>
+1.
+
+```
+CLEAN="true" ./dev/run-server-image.sh -d --name sourcegraph
 ```
 
-where `<machine>` is one of those listed above.
+1. Login to the instance at `http://locahost:7080` and create a user with the following details.
 
-Once the tests are finished, you can destroy the machine by executing the following:
-
-```shell
-$ vagrant destroy -f <machine>
+```
+email=test@sourcegraph.com
+user=admin
+password=supersecurepassword
 ```
 
-To login into the machine by executing:
+1. Create an access token with admin access, copy the value and export it as follows:
 
-```shell
-$ vagrant ssh <machine>
+```
+export SOURCEGRAPH_SUDO_TOKEN=<insert token here>
 ```
 
-**Note:** these tests rsync the sourcegraph directory to the machine in Google Cloud. Depending on your connection speed, this could take a while.
+1. Run the QA tests as follows.
 
-## Adding tests
-
-All machines are defined in the [servers.yaml](servers.yaml) file, and have a number of configuarable options based on the requirements of your test.
-
-All commands should be wrapped into a bach script, which is run as part of the `shell_commands` block. An example of a new test is provided below, pay special attention to the `name` and the corresponding directory where the `test.sh` is stored.
-
-```yaml
-- name: new-vagrant-test
-  box: google/gce
-  machine_type: 'custom-16-20480'
-  project_id: sourcegraph-ci
-  external_ip: false
-  use_private_ip: true
-  network: default
-  username: buildkite
-  ssh_key_path: '~/.ssh/id_rsa'
-  shell_commands:
-    - |
-      cd /sourcegraph
-      ./dev/ci/test/new-vagrant-test/test.sh
 ```
+cd client/web
+yarn run test:regression
+```
+
+### Codeintel QA
+
+TODO: add instrucions to run codeintel QA locally

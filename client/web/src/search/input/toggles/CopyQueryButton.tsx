@@ -6,9 +6,9 @@ import React, { useCallback, useRef, useEffect } from 'react'
 import { Observable, merge, of } from 'rxjs'
 import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { TooltipController } from '@sourcegraph/wildcard'
 
 interface Props {
     fullQuery: string
@@ -36,7 +36,7 @@ export const CopyQueryButton: React.FunctionComponent<Props> = (props: Props) =>
                 clicks.pipe(
                     tap(copyFullQuery),
                     switchMapTo(merge(of(true), of(false).pipe(delay(2000)))),
-                    tap(() => Tooltip.forceUpdate()),
+                    tap(() => TooltipController.forceUpdate()),
                     startWith(false)
                 ),
             [copyFullQuery]

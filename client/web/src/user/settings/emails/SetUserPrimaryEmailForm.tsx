@@ -2,8 +2,8 @@ import classNames from 'classnames'
 import React, { useState, FunctionComponent, useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'

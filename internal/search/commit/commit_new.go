@@ -5,13 +5,13 @@ import (
 	"context"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
-	"golang.org/x/sync/errgroup"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -33,6 +33,8 @@ type CommitSearch struct {
 	Limit         int
 
 	Db database.DB
+
+	IsRequired bool
 }
 
 func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
@@ -61,7 +63,12 @@ func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 		return err
 	}
 
-	g, ctx := errgroup.WithContext(ctx)
+	var (
+		wg       sync.WaitGroup
+		errMux   sync.Mutex
+		multiErr *multierror.Error
+	)
+
 	for _, repoRev := range repoRevs {
 		repoRev := repoRev // we close over repoRev in onMatches
 
@@ -88,18 +95,25 @@ func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 			})
 		}
 
-		g.Go(func() error {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
 			limitHit, err := gitserver.DefaultClient.Search(ctx, args, onMatches)
 			stream.Send(streaming.SearchEvent{
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
 				},
 			})
-			return err
-		})
+
+			errMux.Lock()
+			multiErr = multierror.Append(multiErr, err)
+			errMux.Unlock()
+		}()
 	}
 
-	return g.Wait()
+	wg.Wait()
+	return multiErr.ErrorOrNil()
 }
 
 func (j CommitSearch) Name() string {
@@ -109,7 +123,11 @@ func (j CommitSearch) Name() string {
 	return "Commit"
 }
 
-func (j *CommitSearch) ExpandUsernames(ctx context.Context, db dbutil.DB) (err error) {
+func (j CommitSearch) Required() bool {
+	return j.IsRequired
+}
+
+func (j *CommitSearch) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
 	protocol.ReduceWith(j.Query, func(n protocol.Node) protocol.Node {
 		if err != nil {
 			return n
@@ -143,19 +161,19 @@ func (j *CommitSearch) ExpandUsernames(ctx context.Context, db dbutil.DB) (err e
 // For example, given a list ["foo", "@alice"] where the user "alice" has 2 email addresses
 // "alice@example.com" and "alice@example.org", it would return ["foo", "alice@example\\.com",
 // "alice@example\\.org"].
-func expandUsernamesToEmails(ctx context.Context, db dbutil.DB, values []string) (expandedValues []string, err error) {
+func expandUsernamesToEmails(ctx context.Context, db database.DB, values []string) (expandedValues []string, err error) {
 	expandOne := func(ctx context.Context, value string) ([]string, error) {
 		if isPossibleUsernameReference := strings.HasPrefix(value, "@"); !isPossibleUsernameReference {
 			return nil, nil
 		}
 
-		user, err := database.Users(db).GetByUsername(ctx, strings.TrimPrefix(value, "@"))
+		user, err := db.Users().GetByUsername(ctx, strings.TrimPrefix(value, "@"))
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		} else if err != nil {
 			return nil, err
 		}
-		emails, err := database.UserEmails(db).ListByUser(ctx, database.UserEmailsListOptions{
+		emails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 			UserID: user.ID,
 		})
 		if err != nil {

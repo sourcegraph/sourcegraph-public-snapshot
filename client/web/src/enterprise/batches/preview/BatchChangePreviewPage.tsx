@@ -3,9 +3,8 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect, useMemo } from 'react'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -61,7 +60,7 @@ export const BatchChangePreviewPage: React.FunctionComponent<BatchChangePreviewP
     if (spec === undefined) {
         return (
             <div className="text-center">
-                <LoadingSpinner className="icon-inline mx-auto my-4" />
+                <LoadingSpinner className="mx-auto my-4" />
             </div>
         )
     }

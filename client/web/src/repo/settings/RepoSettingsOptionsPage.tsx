@@ -4,9 +4,8 @@ import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError } from '@sourcegraph/shared/src/util/errors'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { asError } from '@sourcegraph/common'
+import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'
 import { ExternalServiceCard } from '../../components/externalServices/ExternalServiceCard'
@@ -69,7 +68,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                 <PageTitle title="Repository settings" />
                 <PageHeader path={[{ text: 'Settings' }]} headingElement="h2" className="mb-3" />
                 <Container className="repo-settings-options-page">
-                    {this.state.loading && <LoadingSpinner className="icon-inline" />}
+                    {this.state.loading && <LoadingSpinner />}
                     {this.state.error && <ErrorAlert error={this.state.error} />}
                     {services.length > 0 && (
                         <div className="mb-3">

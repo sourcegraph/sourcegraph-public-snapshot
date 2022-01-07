@@ -9,13 +9,13 @@ import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { isErrorLike } from '@sourcegraph/common'
 import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '..'
 import blockStyles from '../SearchNotebookBlock.module.scss'
@@ -269,7 +269,7 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
                 )}
                 {blobLines && blobLines === LOADING && (
                     <div className={classNames('d-flex justify-content-center py-3', styles.highlightedFileWrapper)}>
-                        <LoadingSpinner />
+                        <LoadingSpinner inline={false} />
                     </div>
                 )}
                 {blobLines && blobLines !== LOADING && !isErrorLike(blobLines) && (

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { FunctionComponent, useState } from 'react'
 
 import { defaultDurationValues } from '../shared'
@@ -8,6 +9,7 @@ export interface DurationSelectProps {
     disabled: boolean
     onChange?: (value: number | null) => void
     durationValues?: { value: number; displayText: string }[]
+    className?: string
 }
 
 const defaultCustomValue = 24
@@ -20,6 +22,7 @@ export const DurationSelect: FunctionComponent<DurationSelectProps> = ({
     disabled,
     onChange,
     durationValues = defaultDurationValues,
+    className,
 }) => {
     const [isCustom, setIsCustom] = useState(
         value !== null && !durationValues.map(({ value }) => value).includes(toInt(value))
@@ -29,7 +32,7 @@ export const DurationSelect: FunctionComponent<DurationSelectProps> = ({
         <div className="input-group">
             <select
                 id={id}
-                className="form-control"
+                className={classNames('form-control', className)}
                 value={isCustom ? 'custom' : value || undefined}
                 disabled={disabled}
                 onChange={event => {
