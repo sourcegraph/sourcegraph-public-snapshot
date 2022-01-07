@@ -164,10 +164,10 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	edb.Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection = func(context.Context, int32) (bool, error) {
 		return true, nil
 	}
-	database.Mocks.Repos.ListExternalServiceUserIDsByRepoID = func(ctx context.Context, repoID api.RepoID) ([]int32, error) {
+	repos.Mocks.ListExternalServiceUserIDsByRepoID = func(ctx context.Context, repoID api.RepoID) ([]int32, error) {
 		return []int32{1}, nil
 	}
-	database.Mocks.Repos.ListExternalServiceRepoIDsByUserID = func(ctx context.Context, userID int32) ([]api.RepoID, error) {
+	repos.Mocks.ListExternalServiceRepoIDsByUserID = func(ctx context.Context, userID int32) ([]api.RepoID, error) {
 		return []api.RepoID{2, 3, 4}, nil
 	}
 	eauthz.MockProviderFromExternalService = func(siteConfig schema.SiteConfiguration, svc *types.ExternalService) (authz.Provider, error) {
@@ -708,12 +708,12 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		edb.Mocks.Perms.SetRepoPendingPermissions = func(ctx context.Context, accounts *extsvc.Accounts, p *authz.RepoPermissions) error {
 			return nil
 		}
-		database.Mocks.Repos.ListExternalServiceUserIDsByRepoID = func(ctx context.Context, repoID api.RepoID) ([]int32, error) {
+		repos.Mocks.ListExternalServiceUserIDsByRepoID = func(ctx context.Context, repoID api.RepoID) ([]int32, error) {
 			return []int32{}, nil
 		}
 		defer func() {
 			edb.Mocks.Perms = edb.MockPerms{}
-			database.Mocks.Repos = database.MockRepos{}
+			repos.Mocks = repos.ReposMocks{}
 		}()
 
 		s := newPermsSyncer()
