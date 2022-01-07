@@ -2,12 +2,13 @@ package images
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/distribution/distribution/v3/reference"
 	"github.com/opencontainers/go-digest"
@@ -44,9 +45,7 @@ func Parse(path string) error {
 	return err
 }
 
-type imageFilter struct {
-	options map[string]string
-}
+type imageFilter struct{}
 
 var _ kio.Filter = &imageFilter{}
 
@@ -218,6 +217,7 @@ func (i *imageRepository) fetchAuthToken(registryName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		data, _ := io.ReadAll(resp.Body)
 		return "", errors.New(resp.Status + ": " + string(data))

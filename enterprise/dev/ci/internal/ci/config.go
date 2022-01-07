@@ -93,10 +93,10 @@ func NewConfig(now time.Time) Config {
 	case runType.Is(MainBranch):
 		// This tag is used for deploying continuously. Only ever generate this on the
 		// main branch.
-		tag = fmt.Sprintf(images.MainBranchTagPublishFormat, buildNumber, now.Format(images.MainBranchDateFormat), commit)
+		tag = fmt.Sprintf(images.MainBranchTagPublishFormat, buildNumber, now.Format(images.DefaultTagDateFormat), commit)
 	default:
 		// Encode branch inside build tag by default.
-		tag = fmt.Sprintf(images.DefaultBranchTagFormat, strings.ReplaceAll(branch, "/", "-"), buildNumber, now.Format(images.MainBranchDateFormat), commit)
+		tag = fmt.Sprintf(images.DefaultBranchTagFormat, strings.ReplaceAll(branch, "/", "-"), buildNumber, now.Format(images.DefaultBranchTagFormat), commit)
 	}
 	if runType.Is(ImagePatch, ImagePatchNoTest, ExecutorPatchNoTest) {
 		// Add additional patch suffix
