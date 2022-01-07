@@ -7,12 +7,27 @@ import { createPortal } from 'react-dom'
 import { getPositionMiddlewares, Target } from './utils'
 
 interface FloatingPanelProps extends React.HTMLAttributes<HTMLDivElement> {
-    target: Target
+    /**
+     * Note supporting string for backwards compatibility with Reactstrap
+     */
+    target?: Target
     placement?: Placement
     strategy?: Strategy
     padding?: OffsetOptions
     constraints?: Element[]
     middlewares?: Middleware[]
+
+    isOpen?: boolean
+}
+
+const getTargetFromId = (targetId: string): Target => {
+    const element = document.querySelector(`#${targetId}`)
+
+    if (!element) {
+        throw new Error(`The target ID: ${targetId} was not found in the DOM.`)
+    }
+
+    return element
 }
 
 /**
@@ -21,29 +36,34 @@ interface FloatingPanelProps extends React.HTMLAttributes<HTMLDivElement> {
  */
 export const Popover: React.FunctionComponent<FloatingPanelProps> = props => {
     const {
-        target,
+        target: targetElementOrId,
         placement = 'right',
         strategy = 'absolute',
         children,
         padding = 0,
         constraints,
         middlewares,
+        isOpen,
         ...otherProps
     } = props
 
     const floatingReference = useRef<HTMLDivElement>(null)
 
     useLayoutEffect(() => {
+        const target = typeof targetElementOrId === 'string' ? getTargetFromId(targetElementOrId) : targetElementOrId
+
         const floating = floatingReference.current
 
-        if (!floating) {
+        if (!floating || !target) {
             return
         }
 
         function update(): void {
-            if (!floating) {
+            if (!floating || !target) {
                 return
             }
+
+            console.log(target, floating)
 
             computePosition(target, floating, {
                 placement,
@@ -73,7 +93,11 @@ export const Popover: React.FunctionComponent<FloatingPanelProps> = props => {
         return () => {
             window.removeEventListener('scroll', update)
         }
-    }, [target, floatingReference, placement, strategy, padding, constraints, middlewares])
+    }, [targetElementOrId, floatingReference, placement, strategy, padding, constraints, middlewares])
+
+    if (!isOpen) {
+        return null
+    }
 
     return (
         <FloatingPanelContent {...otherProps} portal={strategy === 'fixed'} ref={floatingReference}>
@@ -104,13 +128,13 @@ const FloatingPanelContent = forwardRef<HTMLDivElement, FloatingPanelContentProp
 
     return element.current ? (
         createPortal(
-            <div ref={reference} {...otherProps}>
+            <div ref={reference} {...otherProps} className="d-block dropdown-menu">
                 {children}
             </div>,
             element.current
         )
     ) : (
-        <div ref={reference} {...otherProps}>
+        <div ref={reference} {...otherProps} className="d-block dropdown-menu">
             {children}
         </div>
     )

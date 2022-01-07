@@ -1,9 +1,8 @@
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Popover } from 'reactstrap'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import {
@@ -19,6 +18,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { Popover } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -132,61 +132,39 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
     revision,
     resolvedRevisionOrError,
     repo,
-}) => (
-    <button
-        type="button"
-        className="btn btn-sm btn-outline-secondary d-flex align-items-center text-nowrap"
-        key="repo-revision"
-        id="repo-revision-popover"
-        aria-label="Change revision"
-    >
-        {(revision && revision === resolvedRevisionOrError.commitID
-            ? resolvedRevisionOrError.commitID.slice(0, 7)
-            : revision) ||
-            resolvedRevisionOrError.defaultBranch ||
-            'HEAD'}
-        <RepoRevisionChevronDownIcon className="icon-inline" />
-        <RepoRevisionContainerPopover
-            repo={repo}
-            resolvedRevisionOrError={resolvedRevisionOrError}
-            revision={revision}
-        />
-    </button>
-)
-
-interface RepoRevisionContainerPopoverProps extends Pick<RepoRevisionContainerProps, 'repo' | 'revision'> {
-    resolvedRevisionOrError: ResolvedRevision
-}
-
-const RepoRevisionContainerPopover: React.FunctionComponent<RepoRevisionContainerPopoverProps> = ({
-    repo,
-    resolvedRevisionOrError,
-    revision,
 }) => {
+    const buttonReference = useRef<HTMLButtonElement>(null)
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
 
     return (
-        <Popover
-            isOpen={popoverOpen}
-            toggle={togglePopover}
-            placement="bottom-start"
-            target="repo-revision-popover"
-            trigger="legacy"
-            hideArrow={true}
-            fade={false}
-            popperClassName="border-0"
-        >
-            <RevisionsPopover
-                repo={repo.id}
-                repoName={repo.name}
-                defaultBranch={resolvedRevisionOrError.defaultBranch}
-                currentRev={revision}
-                currentCommitID={resolvedRevisionOrError.commitID}
-                togglePopover={togglePopover}
-                onSelect={togglePopover}
-            />
-        </Popover>
+        <>
+            <button
+                ref={buttonReference}
+                type="button"
+                className="btn btn-sm btn-outline-secondary d-flex align-items-center text-nowrap"
+                aria-label="Change revision"
+                onClick={togglePopover}
+            >
+                {(revision && revision === resolvedRevisionOrError.commitID
+                    ? resolvedRevisionOrError.commitID.slice(0, 7)
+                    : revision) ||
+                    resolvedRevisionOrError.defaultBranch ||
+                    'HEAD'}
+                <RepoRevisionChevronDownIcon className="icon-inline" />
+            </button>
+            <Popover isOpen={popoverOpen} placement="bottom-start" target={buttonReference.current}>
+                <RevisionsPopover
+                    repo={repo.id}
+                    repoName={repo.name}
+                    defaultBranch={resolvedRevisionOrError.defaultBranch}
+                    currentRev={revision}
+                    currentCommitID={resolvedRevisionOrError.commitID}
+                    togglePopover={togglePopover}
+                    onSelect={togglePopover}
+                />
+            </Popover>
+        </>
     )
 }
 
