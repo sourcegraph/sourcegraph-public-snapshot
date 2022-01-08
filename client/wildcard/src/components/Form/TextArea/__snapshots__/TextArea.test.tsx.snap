@@ -1,21 +1,20 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`TextArea Renders status 'false' correctly 1`] = `
-<label
-  class="w-100"
->
-  <textarea
-    class="textarea form-control"
-  />
-</label>
-`;
-
-exports[`TextArea Renders status 'true' correctly 1`] = `
-<label
-  class="w-100"
->
-  <textarea
-    class="textarea form-control is-invalid"
-  />
-</label>
+exports[`TextArea should render correctly 1`] = `
+<DocumentFragment>
+  <label
+    class="label"
+  >
+    <textarea
+      class="textarea form-control is-valid"
+      placeholder="TextArea"
+      title="TextArea loading"
+    />
+    <small
+      class="valid-feedback"
+    >
+      random message
+    </small>
+  </label>
+</DocumentFragment>
 `;

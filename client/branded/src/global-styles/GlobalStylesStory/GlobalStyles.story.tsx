@@ -11,6 +11,7 @@ import 'storybook-addon-designs'
 
 import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
+import { TextArea } from '@sourcegraph/wildcard'
 
 import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
@@ -441,8 +442,7 @@ export const Forms: Story = () => (
                 </select>
             </div>
             <div className="form-group">
-                <label htmlFor="example-textarea">Example textarea</label>
-                <textarea className="form-control" id="example-textarea" rows={3} />
+                <TextArea label="Example textarea" id="example-textarea" rows={3} />
             </div>
             <div className="form-group form-check">
                 <input type="checkbox" className="form-check-input" id="exampleCheck1" />
@@ -496,7 +496,7 @@ export const Forms: Story = () => (
             <fieldset>
                 <div className="form-group">
                     <input className="form-control form-control-sm mb-1" type="text" placeholder="Small input" />
-                    <textarea className="form-control form-control-sm mb-1" placeholder="Small textarea" />
+                    <TextArea size="small" className="mb-1" placeholder="Small textarea" />
                     <select className="custom-select custom-select-sm mb-1">
                         <option>Small select</option>
                     </select>

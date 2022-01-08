@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React, { ReactNode } from 'react'
 
-import { RadioButton } from '@sourcegraph/wildcard'
+import { RadioButton, TextArea } from '@sourcegraph/wildcard'
 import 'storybook-addon-designs'
 
 import styles from './FormFieldVariants.module.scss'
@@ -69,16 +69,18 @@ export const FormFieldVariants: React.FunctionComponent = () => (
                 </fieldset>
             )}
         />
-        <WithVariantsAndMessageElements
-            field={({ className, message, ...props }) => (
+        <WithVariants
+            field={({ className, message, variant, ...props }) => (
                 <fieldset className="form-group">
-                    <textarea
+                    <TextArea
+                        message={message}
                         placeholder="This is sample content in a text area that spans four lines to see how it fits."
-                        className={classNames('form-control', className)}
+                        className={className}
                         rows={4}
+                        isValid={variant === 'invalid' ? false : variant === 'valid' ? true : undefined}
+                        disabled={variant === 'disabled'}
                         {...props}
                     />
-                    {message}
                 </fieldset>
             )}
         />
@@ -107,6 +109,7 @@ export const FormFieldVariants: React.FunctionComponent = () => (
                     label="Radio button"
                     isValid={variant === 'invalid' ? false : variant === 'valid' ? true : undefined}
                     message={message}
+                    disabled={variant === 'disabled'}
                     {...props}
                 />
             )}
