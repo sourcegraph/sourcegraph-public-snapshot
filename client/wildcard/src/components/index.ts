@@ -1,7 +1,7 @@
 export { Button } from './Button'
 export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
-export { Checkbox, Input, RadioButton, Select, TextArea } from './Form'
+export { Checkbox, FlexTextArea, Input, RadioButton, Select, TextArea } from './Form'
 export { Grid } from './Grid'
 export { LoadingSpinner } from './LoadingSpinner'
 export { PageHeader } from './PageHeader'
