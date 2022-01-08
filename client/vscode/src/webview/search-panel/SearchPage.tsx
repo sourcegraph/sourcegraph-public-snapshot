@@ -7,7 +7,7 @@ import { catchError, map } from 'rxjs/operators'
 import { SearchBox } from '@sourcegraph/branded/src/search/input/SearchBox'
 import { getFullQuery } from '@sourcegraph/branded/src/search/input/toggles/Toggles'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { getAvailableSearchContextSpecOrDefault } from '@sourcegraph/shared/src/search'
 import {
     fetchAutoDefinedSearchContexts,
@@ -22,7 +22,10 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { SearchBetaIcon } from '@sourcegraph/web/src/search/CtaIcons'
 
-import { SearchResult, SearchVariables } from '../../graphql-operations'
+import { FileTree } from '../../file-system/FileTree'
+import { SourcegraphUri } from '../../file-system/SourcegraphUri'
+import { FileNamesResult, FileNamesVariables, SearchResult, SearchVariables } from '../../graphql-operations'
+import { LocalRecentSeachProps } from '../contract'
 import { WebviewPageProps } from '../platform/context'
 
 import { HomePanels } from './HomePanels'
@@ -48,6 +51,8 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
     ])
     const [hasAccessToken, setHasAccessToken] = useState<boolean | undefined>(undefined)
     const [lastSelectedSearchContext, setLastSelectedSearchContext] = useState<string | undefined>(undefined)
+    const [localRecentSearches, setLocalRecentSearches] = useState<LocalRecentSeachProps[] | undefined>(undefined)
+    const [fileVariables, setFileVariables] = useState<FileNamesVariables | undefined>(undefined)
     const sourcegraphSettings =
         useObservable(
             useMemo(() => wrapRemoteObservable(sourcegraphVSCodeExtensionAPI.getSettings()), [
@@ -104,6 +109,10 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
             .catch(error => console.log(error))
     }
 
+    const getFiles = (variables: FileNamesVariables): void => {
+        setFileVariables(variables)
+    }
+
     const onSignUpClick = useCallback(
         (event?: React.FormEvent): void => {
             event?.preventDefault()
@@ -127,27 +136,35 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                 // TODO error handling
                 .catch(() => setHasAccessToken(false))
         }
-
+        // Get Recent Search History from Local Storage
+        if (localRecentSearches === undefined) {
+            sourcegraphVSCodeExtensionAPI
+                .getLocalRecentSearch()
+                .then(response => {
+                    setLocalRecentSearches(response)
+                })
+                .catch(() => {
+                    // TODO error handling
+                })
+        }
         if (lastSelectedSearchContext === undefined) {
             setLoading(true)
             sourcegraphVSCodeExtensionAPI
                 .getLastSelectedSearchContext()
                 .then(spec => {
-                    if (spec) {
-                        setLastSelectedSearchContext(spec)
-                        getAvailableSearchContextSpecOrDefault({
-                            spec,
-                            defaultSpec: DEFAULT_SEARCH_CONTEXT_SPEC,
-                            platformContext,
+                    setLastSelectedSearchContext(spec)
+                    getAvailableSearchContextSpecOrDefault({
+                        spec,
+                        defaultSpec: DEFAULT_SEARCH_CONTEXT_SPEC,
+                        platformContext,
+                    })
+                        .toPromise()
+                        .then(availableSearchContextSpecOrDefault => {
+                            searchActions.setSelectedSearchContextSpec(availableSearchContextSpecOrDefault)
                         })
-                            .toPromise()
-                            .then(availableSearchContextSpecOrDefault => {
-                                searchActions.setSelectedSearchContextSpec(availableSearchContextSpecOrDefault)
-                            })
-                            .catch(() => {
-                                // TODO error handling
-                            })
-                    }
+                        .catch(() => {
+                            // TODO error handling
+                        })
                 })
                 // TODO error handling
                 .catch(error => console.log(error))
@@ -155,6 +172,39 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         }
 
         const subscriptions = new Subscription()
+
+        // TODO: GET FILE TREE TO BUILD REPO PAGE
+        if (fileVariables !== undefined) {
+            const fileNamesQuery = gql`
+                query FileNames($repository: String!, $revision: String!) {
+                    repository(name: $repository) {
+                        commit(rev: $revision) {
+                            fileNames
+                        }
+                    }
+                }
+            `
+            ;(async () => {
+                const host = await instanceHostname
+                const repoUri = SourcegraphUri.parse(`sourcegraph://${host}/${fileVariables.repository}`)
+                const parent: string | undefined = repoUri.repositoryUri()
+                console.log('parent', parent)
+                const files = await platformContext
+                    .requestGraphQL<FileNamesResult, FileNamesVariables>({
+                        request: fileNamesQuery,
+                        variables: fileVariables,
+                        mightContainPrivateInfo: true,
+                    })
+                    .toPromise()
+                if (files.data?.repository?.commit?.fileNames) {
+                    const tree = new FileTree(repoUri, files.data?.repository?.commit?.fileNames)
+                    const directChildren = tree.directChildren(repoUri.path || '')
+                    for (const child of directChildren) {
+                        console.log('child', child)
+                    }
+                }
+            })().catch(error => console.error(error))
+        }
 
         if (queryToRun.query) {
             setLoading(true)
@@ -171,6 +221,32 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
 
             if (selectedSearchContextSpec) {
                 queryString = appendContextFilter(queryString, selectedSearchContextSpec)
+            }
+
+            if (fullQuery && localRecentSearches !== undefined && localRecentSearches.length < 12) {
+                // query to add to search history
+                const newSearchHistory = {
+                    lastQuery: queryToRun.query,
+                    lastSelectedSearchContextSpec: selectedSearchContextSpec || '',
+                    lastCaseSensitive: caseSensitive,
+                    lastPatternType: patternType,
+                    lastFullQuery: fullQuery,
+                }
+                if (localRecentSearches[localRecentSearches.length - 1]?.lastFullQuery !== fullQuery) {
+                    let currentLocalSearchHistory = localRecentSearches
+                    // Local Search History is limited to 10
+                    if (localRecentSearches.length > 9) {
+                        currentLocalSearchHistory = localRecentSearches.slice(-9)
+                    }
+                    const newRecentSearches = [...currentLocalSearchHistory, newSearchHistory]
+                    setLocalRecentSearches(newRecentSearches)
+                    sourcegraphVSCodeExtensionAPI
+                        .setLocalRecentSearch(newRecentSearches)
+                        .then(response => {
+                            console.log('Added to search history', response)
+                        }) // TODO error handling
+                        .catch(error => console.log(error))
+                }
             }
 
             const subscription = platformContext
@@ -199,6 +275,10 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         platformContext,
         hasAccessToken,
         lastSelectedSearchContext,
+        localRecentSearches,
+        fullQuery,
+        fileVariables,
+        instanceHostname,
     ])
 
     return (
@@ -354,6 +434,16 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                                     </a>
                                 </div>
                             )}
+                            {/* TODO: This is a temporary repo file viewer */}
+                            {/* <section className={classNames('test-tree-entries mb-3')}>
+                                <h2>Files and directories</h2>
+                                <TreeEntriesSection
+                                    parentPath={filePath}
+                                    entries={treeOrError.entries}
+                                    fileDecorationsByPath={fileDecorationsByPath}
+                                    isLightTheme={props.isLightTheme}
+                                />
+                            </section> */}
                             {fullQuery && (
                                 <SearchResults
                                     platformContext={platformContext}
@@ -362,6 +452,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                                     settings={sourcegraphSettings}
                                     instanceHostname={instanceHostname}
                                     fullQuery={fullQuery}
+                                    getFiles={getFiles}
                                 />
                             )}
                         </div>

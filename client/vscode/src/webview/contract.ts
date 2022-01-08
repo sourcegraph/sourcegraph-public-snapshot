@@ -7,6 +7,8 @@ import { QueryState } from '@sourcegraph/shared/src/search/helpers'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
+import { LocalRecentSeachProps } from '../../localStorageService'
+
 import { SearchSidebarMediator } from './search-sidebar/mediator'
 
 /**
@@ -56,6 +58,10 @@ export interface SourcegraphVSCodeExtensionAPI
     getLastSelectedSearchContext: () => string
     // Update Last Selected Search Context in Local Storage
     updateLastSelectedSearchContext: (context: string) => Promise<boolean>
+    // Get Last Selected Search Context from Local Storage
+    getLocalRecentSearch: () => LocalRecentSeachProps[]
+    // Update Last Selected Search Context in Local Storage
+    setLocalRecentSearch: (searches: LocalRecentSeachProps[]) => Promise<boolean>
     // For extension host sidebar
     // mainThreadAPI methods
 }
@@ -74,6 +80,7 @@ export interface QueryStateWithInputProps {
     queryState: QueryState
     caseSensitive: boolean
     patternType: SearchPatternType
+    executed?: boolean
 }
 
 export interface SourcegraphVSCodeSearchSidebarAPI {}
@@ -95,4 +102,12 @@ export interface SourcegraphVSCodeExtensionHostAPI
     // TODO addWorkspaceRoot if necessary?
     // references
     // get editor decorations
+}
+
+export interface LocalRecentSeachProps {
+    lastQuery: string
+    lastSelectedSearchContextSpec: string
+    lastCaseSensitive: boolean
+    lastPatternType: string
+    lastFullQuery: string
 }

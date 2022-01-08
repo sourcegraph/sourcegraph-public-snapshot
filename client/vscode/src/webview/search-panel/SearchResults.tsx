@@ -17,7 +17,13 @@ import {
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
 import { SourcegraphUri } from '../../file-system/SourcegraphUri'
-import { CommitSearchResultFields, FileMatchFields, RepositoryFields, SearchResult } from '../../graphql-operations'
+import {
+    CommitSearchResultFields,
+    FileMatchFields,
+    FileNamesVariables,
+    RepositoryFields,
+    SearchResult,
+} from '../../graphql-operations'
 import { WebviewPageProps } from '../platform/context'
 
 import styles from './SearchResults.module.scss'
@@ -27,10 +33,11 @@ interface SearchResultsProps extends WebviewPageProps {
     settings: SettingsCascadeOrError<Settings>
     instanceHostname: Promise<string>
     fullQuery: string
+    getFiles: (variables: FileNamesVariables) => void
 }
 
 export const SearchResults = React.memo<SearchResultsProps>(
-    ({ platformContext, theme, sourcegraphVSCodeExtensionAPI, settings, instanceHostname, fullQuery }) => {
+    ({ platformContext, theme, sourcegraphVSCodeExtensionAPI, settings, instanceHostname, fullQuery, getFiles }) => {
         const executedQuery = useQueryState(({ state }) => state.queryToRun.query)
         const searchResults = useQueryState(({ state }) => state.searchResults)
         const searchActions = useQueryState(({ actions }) => actions)
@@ -80,6 +87,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
                     }
                     case 'repo': {
                         searchActions.setQuery({ query: `repo:^${result.repository}$` })
+                        getFiles({ repository: result.repository, revision: 'HEAD' })
                         return sourcegraphVSCodeExtensionAPI.openFile(`sourcegraph://${host}/${result.repository}`)
                     }
                     // TODO ensure component always calls this for VSCE (usually a link)

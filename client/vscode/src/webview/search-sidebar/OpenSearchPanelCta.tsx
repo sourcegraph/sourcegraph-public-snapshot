@@ -40,13 +40,13 @@ export const OpenSearchPanelCta: React.FunctionComponent<OpenSearchPanelCtaProps
                 </a>
             </p>
         </div>
-        <button
+        {/* <button
             type="button"
             onClick={() => sourcegraphVSCodeExtensionAPI.openSearchPanel()}
             className={classNames('mb-2 btn btn-sm w-100 border-0 font-weight-normal', styles.button)}
         >
             Open Search Panel
-        </button>
+        </button> */}
         {/* Display warning if user is using VS Code Web */}
         {!onDesktop && <p>IMPORTANT: Please add Access Token and CORS to use Sourcegraph on VS Code Web.</p>}
     </div>

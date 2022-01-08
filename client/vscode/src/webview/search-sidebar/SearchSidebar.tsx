@@ -1,25 +1,29 @@
 import classNames from 'classnames'
-import React, { useEffect, useMemo, useState } from 'react'
+import RefreshIcon from 'mdi-react/RefreshIcon'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Form } from 'reactstrap'
 import create, { UseStore } from 'zustand'
 
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded/src/components/SyntaxHighlightedSearchQuery'
 import { SearchSidebar as BrandedSearchSidebar } from '@sourcegraph/branded/src/search/results/sidebar/SearchSidebar'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
+import { Link } from '@sourcegraph/shared/src/components/Link'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchQueryState, updateQuery } from '@sourcegraph/shared/src/search/searchQueryState'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
+import { LocalRecentSeachProps } from '../contract'
 import { WebviewPageProps } from '../platform/context'
 
 import { OpenSearchPanelCta } from './OpenSearchPanelCta'
 import styles from './SearchSidebar.module.scss'
 import { SidebarAuthCheck } from './SidebarAuthCheck'
-
 interface SearchSidebarProps extends Pick<WebviewPageProps, 'platformContext' | 'sourcegraphVSCodeExtensionAPI'> {}
 
 export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeExtensionAPI, platformContext }) => {
+    const [openedSearchPanel, setOpenedSearchPanel] = useState<boolean>(false)
     const useQueryState: UseStore<SearchQueryState> = useMemo(() => {
         const useStore = create<SearchQueryState>((set, get) => ({
             queryState: { query: '' },
@@ -36,7 +40,6 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
             },
             submitSearch: (_parameters, updates = []) => {
                 const updatedQuery = updateQuery(get().queryState.query, updates)
-
                 // TODO error handling
                 sourcegraphVSCodeExtensionAPI
                     .submitActiveWebviewSearch({
@@ -69,7 +72,6 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
             sourcegraphVSCodeExtensionAPI,
         ])
     ) ?? { final: {}, subjects: [] }
-
     useEffect(() => {
         // On changes that originate from user input in the search webview panel itself,
         // we don't want to trigger another query state update, which would lead to an infinite loop.
@@ -78,7 +80,14 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
         if (activeQueryState) {
             // useQueryState.getState().setQueryState(activeQueryState)
             useQueryState.setState({ queryState: activeQueryState.queryState })
+            if (activeQueryState.executed) {
+                setOpenedSearchPanel(true)
+            }
         }
+
+        // if (queryToRun && !openedSearchPanel) {
+        //     setOpenedSearchPanel(true)
+        // }
     }, [activeQueryState, useQueryState])
 
     // Check if User is currently on VS Code Desktop or VS Code Web
@@ -88,6 +97,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
     const [validating, setValidating] = useState(true)
     const [hasAccount, setHasAccount] = useState(false)
     const [validAccessToken, setValidAccessToken] = useState<boolean>(false)
+    const [localRecentSearches, setLocalRecentSearches] = useState<LocalRecentSeachProps[] | undefined>(undefined)
 
     // Get current access token, cros, and platform settings
     useEffect(() => {
@@ -113,8 +123,16 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
                     setHasAccessToken(response)
                     setHasAccount(response)
                 })
-                // TODO error handling
                 .catch(() => setHasAccessToken(false))
+            // Get Local Search History
+            sourcegraphVSCodeExtensionAPI
+                .getLocalRecentSearch()
+                .then(response => {
+                    setLocalRecentSearches(response)
+                })
+                .catch(() => {
+                    // TODO error handling
+                })
         }
         // Validate Token
         if (!validAccessToken) {
@@ -143,7 +161,23 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
         hasAccount,
         platformContext,
         setHasAccessToken,
+        localRecentSearches,
     ])
+
+    const onRefreshHistory = useCallback(
+        (event?: React.FormEvent): void => {
+            event?.preventDefault()
+            sourcegraphVSCodeExtensionAPI
+                .getLocalRecentSearch()
+                .then(response => {
+                    setLocalRecentSearches(response)
+                })
+                .catch(() => {
+                    // TODO error handling
+                })
+        },
+        [sourcegraphVSCodeExtensionAPI]
+    )
 
     // On submit, validate access token and update VS Code settings through API.
     // Open search tab on successful validation.
@@ -182,13 +216,12 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
         setValidating(false)
     }
 
-    if (!activeQueryState?.queryState.query) {
-        // There's no ACTIVE search panel
+    // There's no ACTIVE search panel
 
-        // We need to add API to query all open search panels
+    // We need to add API to query all open search panels
 
-        // If no open, show button + CTA to open search panel (links to sign up etc.)
-
+    // If no open, show button + CTA to open search panel (links to sign up etc.)
+    if (!openedSearchPanel) {
         return (
             <>
                 {!validating && onDesktop !== undefined && (
@@ -242,18 +275,45 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
     const { caseSensitive, patternType } = activeQueryState
 
     return (
-        <BrandedSearchSidebar
-            forceButton={true}
-            className={styles.sidebarContainer}
-            filters={dynamicFilters}
-            useQueryState={useQueryState}
-            patternType={patternType}
-            caseSensitive={caseSensitive}
-            settingsCascade={settingsCascade}
-            telemetryService={{
-                log: () => {},
-                logViewEvent: () => {},
-            }}
-        />
+        <>
+            {/* HISTORY SIDEBAR */}
+            <div className={styles.sidebarSection}>
+                <button
+                    type="button"
+                    className={classNames('btn btn-outline-secondary', styles.sidebarSectionCollapseButton)}
+                    onClick={onRefreshHistory}
+                >
+                    <h5 className="flex-grow-1">Recent History</h5>
+                    <RefreshIcon className="icon-inline mr-1" />
+                </button>
+                <div className={classNames('p-1', styles.sidebarSectionList)}>
+                    {localRecentSearches
+                        ?.slice(0)
+                        .reverse()
+                        .map((search, index) => (
+                            <div key={index}>
+                                <small key={index} className={styles.sidebarSectionListItem}>
+                                    <Link to="/">
+                                        <SyntaxHighlightedSearchQuery query={search.lastQuery} />
+                                    </Link>
+                                </small>
+                            </div>
+                        ))}
+                </div>
+            </div>
+            <BrandedSearchSidebar
+                forceButton={true}
+                className={styles.sidebarContainer}
+                filters={dynamicFilters}
+                useQueryState={useQueryState}
+                patternType={patternType}
+                caseSensitive={caseSensitive}
+                settingsCascade={settingsCascade}
+                telemetryService={{
+                    log: () => {},
+                    logViewEvent: () => {},
+                }}
+            />
+        </>
     )
 }

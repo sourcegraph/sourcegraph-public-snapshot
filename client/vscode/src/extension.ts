@@ -29,7 +29,7 @@ import {
     endpointCorsSetting,
     updateCorsSetting,
 } from './settings/endpointSetting'
-import { SourcegraphVSCodeExtensionAPI } from './webview/contract'
+import { LocalRecentSeachProps, SourcegraphVSCodeExtensionAPI } from './webview/contract'
 import {
     initializeExtensionHostWebview,
     initializeSearchPanelWebview,
@@ -163,6 +163,9 @@ export function activate(context: vscode.ExtensionContext): void {
         // Get last selected search context from Setting
         getLastSelectedSearchContext: () => storageManager.getValue('sg-last-selected-context'),
         updateLastSelectedSearchContext: (spec: string) => storageManager.setValue('sg-last-selected-context', spec),
+        // Get last selected search context from Setting
+        getLocalRecentSearch: () => storageManager.getLocalRecentSearch(),
+        setLocalRecentSearch: (searches: LocalRecentSeachProps[]) => storageManager.setLocalRecentSearch(searches),
     }
 
     // Track current active webview panel to make sure only one panel exists at a time

@@ -9,6 +9,7 @@ import { VsCodeApi } from '../vsCodeApi'
 export const DEFAULT_SEARCH_CONTEXT_SPEC = 'global'
 
 const initialSearchState: SearchState = {
+    executed: false,
     caseSensitive: false,
     patternType: SearchPatternType.literal,
     queryState: {
@@ -22,6 +23,7 @@ const initialSearchState: SearchState = {
 }
 
 interface SearchState {
+    executed: boolean | undefined
     caseSensitive: boolean
     patternType: SearchPatternType
     /** QueryState used for the input. Updated on input. */
@@ -53,10 +55,10 @@ export function createUseQueryState(vsCodeApi: VsCodeApi<State['state']>): UseSt
             },
             submitQuery: queryState => {
                 if (queryState) {
-                    set(({ state }) => ({ state: { ...state, queryState, queryToRun: queryState } }))
+                    set(({ state }) => ({ state: { ...state, queryState, queryToRun: queryState, executed: true } }))
                 } else {
                     // Sync queryToRun with current queryState.
-                    set(({ state }) => ({ state: { ...state, queryToRun: state.queryState } }))
+                    set(({ state }) => ({ state: { ...state, queryToRun: state.queryState, executed: true } }))
                 }
             },
             updateResults: searchResults => {

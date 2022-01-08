@@ -30,6 +30,7 @@ const webviewAPI: SourcegraphVSCodeSearchWebviewAPI = {
                     subscriber.next(queryState)
                 },
                 ({ state }) => ({
+                    executed: state.executed,
                     queryState: state.queryState,
                     caseSensitive: state.caseSensitive,
                     patternType: state.patternType,
@@ -39,6 +40,7 @@ const webviewAPI: SourcegraphVSCodeSearchWebviewAPI = {
             const initialState = useQueryState.getState().state
 
             subscriber.next({
+                executed: initialState.executed,
                 queryState: initialState.queryState,
                 caseSensitive: initialState.caseSensitive,
                 patternType: initialState.patternType,
