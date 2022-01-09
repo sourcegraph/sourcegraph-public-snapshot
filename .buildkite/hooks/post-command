@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 (
+    exit_code="$BUILDKITE_COMMAND_EXIT_STATUS"
+    echo "JHJH ----- $exit_code"
     BUILDEVENT_APIKEY=$CI_BUILDEVENT_API_KEY
     BUILDEVENT_DATASET="$CI_BUILDEVENT_DATASET"
     export BUILDEVENT_DATASET
@@ -12,9 +14,9 @@
     # Turn the string of exit codes "1 2 3 4" into an array of strings
     IFS=' ' read -ra codes <<<"$SOFT_FAIL_EXIT_CODES 0" # append exit code 0 for the test below.
     for code in "${codes[@]}"; do
-        if [ "$code" == "$BUILDKITE_COMMAND_EXIT_STATUS" ]; then
+        if [ "$code" == "$exit_code" ]; then
             # If the Buildkite exit code is a soft fail, do nothing either.
-            echo "JHJHJH $BUILDKITE_COMMAND_EXIT_STATUS"
+            echo "JHJHJH $exit_code"
             exit "$code"
         fi
     done
@@ -25,5 +27,5 @@
     echo "JHJHJH $BUILDKITE_COMMAND_EXIT_STATUS"
 
     # Return the original exit code
-    exit "$BUILDKITE_COMMAND_EXIT_STATUS"
+    exit "$exit_code
 )
