@@ -27,5 +27,5 @@
     echo "JHJHJH $BUILDKITE_COMMAND_EXIT_STATUS"
 
     # Return the original exit code
-    exit "$exit_code
+    exit "$exit_code"
 )
