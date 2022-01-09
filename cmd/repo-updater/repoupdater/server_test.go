@@ -169,12 +169,11 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 	}
 
 	type testCase struct {
-		name  string
-		store *repos.Store
-		repo  api.RepoName
-		res   *protocol.RepoUpdateResponse
-		err   string
-		init  func(database.DB) *repos.Store
+		name string
+		repo api.RepoName
+		res  *protocol.RepoUpdateResponse
+		err  string
+		init func(database.DB) *repos.Store
 	}
 
 	testCases := []testCase{{
