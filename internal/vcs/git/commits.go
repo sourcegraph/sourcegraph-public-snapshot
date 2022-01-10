@@ -147,6 +147,7 @@ func CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName st
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return nil, err
