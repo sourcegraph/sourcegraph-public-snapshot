@@ -2,7 +2,6 @@
 
 (
     exit_code="$BUILDKITE_COMMAND_EXIT_STATUS"
-    echo "JHJH ----- $exit_code"
     BUILDEVENT_APIKEY=$CI_BUILDEVENT_API_KEY
     BUILDEVENT_DATASET="$CI_BUILDEVENT_DATASET"
     export BUILDEVENT_DATASET
@@ -16,15 +15,12 @@
     for code in "${codes[@]}"; do
         if [ "$code" == "$exit_code" ]; then
             # If the Buildkite exit code is a soft fail, do nothing either.
-            echo "JHJHJH $exit_code"
             exit "$code"
         fi
     done
 
     # None of the exit codes were 0 or soft fails, report the failure then.
     buildevents build "$BUILDKITE_BUILD_ID" "$BUILD_START_TIME" failure
-
-    echo "JHJHJH $BUILDKITE_COMMAND_EXIT_STATUS"
 
     # Return the original exit code
     exit "$exit_code"
