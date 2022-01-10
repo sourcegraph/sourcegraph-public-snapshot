@@ -1,119 +1,161 @@
-import { Placement, Strategy } from '@floating-ui/core'
-import { Options as OffsetOptions } from '@floating-ui/core/src/middleware/offset'
-import { computePosition, Middleware } from '@floating-ui/dom'
-import React, { forwardRef, useLayoutEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
-import { useMergeRefs } from 'use-callback-ref';
+import { noop } from 'lodash'
+import React, {
+    createContext,
+    forwardRef,
+    MutableRefObject,
+    useCallback,
+    useContext,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
+import FocusLock from 'react-focus-lock'
+import { useCallbackRef, useMergeRefs } from 'use-callback-ref'
 
-import { getPositionMiddlewares, Target } from './utils'
+import { useOnClickOutside, useKeyboard } from '../../hooks'
+import { ForwardReferenceComponent } from '../../types'
 
-interface FloatingPanelProps extends React.HTMLAttributes<HTMLDivElement> {
-    target: Target
-    placement?: Placement
-    strategy?: Strategy
-    padding?: OffsetOptions
-    constraints?: (Element | Window | VisualViewport)[]
-    middlewares?: Middleware[]
+import { FloatingPanel, FloatingPanelProps } from './floating-panel/FloatingPanel'
+
+enum PopoverOpenEventReason {
+    TriggerClick = 'TriggerClick',
+    TriggerFocus = 'TriggerFocus',
+    TriggerBlur = 'TriggerBlur',
+    ClickOutside = 'ClickOutside',
+    Esc = 'Esc',
 }
 
-/**
- * Render floating panel element (tooltip, popover) according to target position,
- * parents scroll box rectangles, floating settings (like placement and target sizes)
- */
-export const Popover = forwardRef<HTMLDivElement, FloatingPanelProps>((props, reference) => {
-    const {
-        target,
-        placement = 'right',
-        strategy = 'absolute',
-        children,
-        padding = 0,
-        constraints,
-        middlewares,
-        ...otherProps
-    } = props
+interface PopoverOpenEvent {
+    isOpen: boolean
+    reason: PopoverOpenEventReason
+}
 
-    const floatingReference = useRef<HTMLDivElement>(null)
-    const mergedReference = useMergeRefs([floatingReference, reference])
+interface PopoverContextData {
+    isOpen: boolean
+    targetElement: HTMLElement | null
+    tailElement: HTMLElement | null
+    anchor?: MutableRefObject<HTMLElement | null>
+    setOpen: (event: PopoverOpenEvent) => void
+    setTargetElement: (element: HTMLElement | null) => void
+    setTailElement: (element: HTMLElement | null) => void
+}
 
-    useLayoutEffect(() => {
-        const floating = floatingReference.current
+const DEFAULT_CONTEXT_VALUE: PopoverContextData = {
+    isOpen: false,
+    targetElement: null,
+    tailElement: null,
+    setOpen: noop,
+    setTargetElement: noop,
+    setTailElement: noop,
+}
 
-        if (!floating) {
-            return
-        }
+const PopoverContext = createContext<PopoverContextData>(DEFAULT_CONTEXT_VALUE)
 
-        function update(): void {
-            if (!floating) {
-                return
+interface PopoverProps {
+    anchor?: MutableRefObject<HTMLElement | null>
+    open?: boolean
+    onOpenChange?: (event: PopoverOpenEvent) => void
+}
+
+const Popover: React.FunctionComponent<PopoverProps> = props => {
+    const { children, anchor, open, onOpenChange = noop } = props
+
+    const [targetElement, setTargetElement] = useState<HTMLElement | null>(null)
+    const [tailElement, setTailElement] = useState<HTMLElement | null>(null)
+
+    const [isInternalOpen, setInternalOpen] = useState<boolean>(false)
+    const isControlled = open !== undefined
+    const isOpen = isControlled ? open : isInternalOpen
+    const setOpen = useCallback(
+        event => {
+            if (!isControlled) {
+                setInternalOpen(event)
             }
 
-            computePosition(target, floating, {
-                placement,
-                middleware: middlewares ?? getPositionMiddlewares({ target, floating, strategy, padding, constraints }),
-            })
-                .then(({ x: xCoordinate, y: yCoordinate, middlewareData }) => {
-                    const { referenceHidden } = middlewareData.hide ?? {}
-
-                    Object.assign(floating.style, {
-                        position: strategy,
-                        top: 0,
-                        left: 0,
-                        visibility: referenceHidden ? 'hidden' : 'visible',
-                        transform: `translate(${Math.round(xCoordinate ?? 0)}px,${Math.round(yCoordinate ?? 0)}px)`,
-                    })
-                })
-                .catch(() => {
-                    Object.assign(floating.style, { visibility: 'hidden' })
-                })
-        }
-
-        // Initial (on mount) tooltip position calculation
-        update()
-
-        window.addEventListener('scroll', update, true)
-
-        return () => {
-            window.removeEventListener('scroll', update)
-        }
-    }, [target, floatingReference, placement, strategy, padding, constraints, middlewares])
-
-    return (
-        <FloatingPanelContent {...otherProps} portal={strategy === 'fixed'} ref={mergedReference}>
-            {children}
-        </FloatingPanelContent>
+            onOpenChange(event)
+        },
+        [isControlled, onOpenChange]
     )
-})
 
-interface FloatingPanelContentProps extends React.HTMLAttributes<HTMLDivElement> {
-    portal: boolean
+    const context = useMemo(
+        () => ({
+            isOpen,
+            targetElement,
+            tailElement,
+            anchor,
+            setOpen,
+            setTargetElement,
+            setTailElement,
+        }),
+        [isOpen, targetElement, tailElement, anchor, setOpen]
+    )
+
+    return <PopoverContext.Provider value={context}>{children}</PopoverContext.Provider>
 }
 
-const FloatingPanelContent = forwardRef<HTMLDivElement, FloatingPanelContentProps>((props, reference) => {
-    const { portal, children, ...otherProps } = props
-    const element = useRef(portal ? document.createElement('div') : null)
+interface PopoverTriggerProps {}
 
-    // Add a container element right after the body tag
-    useLayoutEffect(() => {
-        const container = element.current
-        if (!container) {
+const PopoverTrigger = forwardRef((props, reference) => {
+    const { as: Component = 'button', onClick = noop, ...otherProps } = props
+    const { setTargetElement, setOpen, isOpen } = useContext(PopoverContext)
+
+    const callbackReference = useCallbackRef<HTMLButtonElement>(null, setTargetElement)
+    const mergedReference = useMergeRefs([reference, callbackReference])
+
+    const handleClick: React.MouseEventHandler<HTMLButtonElement> = event => {
+        setOpen({ isOpen: !isOpen, reason: PopoverOpenEventReason.TriggerClick })
+        onClick(event)
+    }
+
+    return <Component ref={mergedReference} onClick={handleClick} {...otherProps} />
+}) as ForwardReferenceComponent<'button', PopoverTriggerProps>
+
+interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' | 'marker'> {
+    open?: boolean
+}
+
+const PopoverContent: React.FunctionComponent<PopoverContentProps> = props => {
+    const { open, children, ...otherProps } = props
+    const { isOpen, targetElement, anchor, setOpen } = useContext(PopoverContext)
+
+    const reference = useRef<HTMLDivElement>(null)
+
+    // Catch any outside click of popover element
+    useOnClickOutside(reference, event => {
+        if (targetElement?.contains(event.target as Node)) {
             return
         }
 
-        document.body.append(container)
+        setOpen({ isOpen: false, reason: PopoverOpenEventReason.ClickOutside })
+    })
 
-        return () => container.remove()
-    }, [])
+    // Close popover on escape
+    useKeyboard({ detectKeys: ['Escape'] }, () => setOpen({ isOpen: false, reason: PopoverOpenEventReason.Esc }))
 
-    return element.current ? (
-        createPortal(
-            <div ref={reference} {...otherProps}>
-                {children}
-            </div>,
-            element.current
-        )
-    ) : (
-        <div ref={reference} {...otherProps}>
-            {children}
-        </div>
+    if (!isOpen && !open) {
+        return null
+    }
+
+    return (
+        <FloatingPanel {...otherProps} ref={reference} target={anchor?.current ?? targetElement}>
+            <FocusLock returnFocus={true}>{children}</FocusLock>
+        </FloatingPanel>
     )
-})
+}
+
+const Root = Popover
+const Trigger = PopoverTrigger
+const Content = PopoverContent
+
+export {
+    Root,
+    Trigger,
+    Content,
+    //
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+    PopoverOpenEventReason,
+}
+
+export type { PopoverOpenEvent, PopoverProps, PopoverTriggerProps, PopoverContentProps }
