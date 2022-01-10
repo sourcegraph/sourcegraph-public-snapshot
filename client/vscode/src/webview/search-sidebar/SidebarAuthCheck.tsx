@@ -87,7 +87,7 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                                 className={classNames('my-3 btn btn-link', styles.textLink)}
                                 onClick={() => setHasAccount(true)}
                             >
-                                Create an account
+                                Have an account
                             </button>
                         </div>
                     ) : (

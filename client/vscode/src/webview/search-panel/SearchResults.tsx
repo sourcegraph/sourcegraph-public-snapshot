@@ -1,10 +1,12 @@
 import classNames from 'classnames'
+import BookmarkOutlineIcon from 'mdi-react/BookmarkOutlineIcon'
 import ShareOutlineIcon from 'mdi-react/ShareOutlineIcon'
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { StreamingSearchResultsList } from '@sourcegraph/branded/src/search/results/StreamingSearchResultsList'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import {
     AggregateStreamingSearchResults,
     CommitMatch,
@@ -15,36 +17,80 @@ import {
     SymbolMatch,
 } from '@sourcegraph/shared/src/search/stream'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { AuthenticatedUser } from '@sourcegraph/web/src/auth'
+import {
+    CreateSavedSearchResult,
+    CreateSavedSearchVariables,
+    TreeEntriesVariables,
+} from '@sourcegraph/web/src/graphql-operations'
+import { BookmarkRadialGradientIcon } from '@sourcegraph/web/src/search/CtaIcons'
+import { ButtonDropdownCta, ButtonDropdownCtaProps } from '@sourcegraph/web/src/search/results/ButtonDropdownCta'
 
 import { SourcegraphUri } from '../../file-system/SourcegraphUri'
-import {
-    CommitSearchResultFields,
-    FileMatchFields,
-    FileNamesVariables,
-    RepositoryFields,
-    SearchResult,
-} from '../../graphql-operations'
+import { CommitSearchResultFields, FileMatchFields, RepositoryFields, SearchResult } from '../../graphql-operations'
 import { WebviewPageProps } from '../platform/context'
 
+import { createSavedSearchQuery } from './queries'
+import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
 import styles from './SearchResults.module.scss'
 
 import { useQueryState } from '.'
+
 interface SearchResultsProps extends WebviewPageProps {
     settings: SettingsCascadeOrError<Settings>
     instanceHostname: Promise<string>
     fullQuery: string
-    getFiles: (variables: FileNamesVariables) => void
+    getFiles: (variables: TreeEntriesVariables) => void
+    authenticatedUser: AuthenticatedUser | null
 }
 
 export const SearchResults = React.memo<SearchResultsProps>(
-    ({ platformContext, theme, sourcegraphVSCodeExtensionAPI, settings, instanceHostname, fullQuery, getFiles }) => {
+    ({
+        platformContext,
+        theme,
+        sourcegraphVSCodeExtensionAPI,
+        settings,
+        instanceHostname,
+        fullQuery,
+        getFiles,
+        authenticatedUser,
+    }) => {
         const executedQuery = useQueryState(({ state }) => state.queryToRun.query)
         const searchResults = useQueryState(({ state }) => state.searchResults)
         const searchActions = useQueryState(({ actions }) => actions)
+        const [openSavedSearchCreateForm, setOpenSavedSearchCreateForm] = useState<boolean>(false)
+        const [savedSearchFields, setSavedSearchFields] = useState<Omit<SavedQueryFields, 'id'> | undefined>(undefined)
         const fetchHighlightedFileLineRangesWithContext = useCallback(
             (parameters: FetchFileParameters) => fetchHighlightedFileLineRanges({ ...parameters, platformContext }),
             [platformContext]
         )
+
+        useEffect(() => {
+            // create save search
+            if (savedSearchFields !== undefined && authenticatedUser) {
+                const fields = {
+                    description: savedSearchFields.description,
+                    query: savedSearchFields.query,
+                    notifyOwner: savedSearchFields.notify,
+                    notifySlack: savedSearchFields.notifySlack,
+                    userID: authenticatedUser.id,
+                    orgID: null,
+                }
+                ;(async () => {
+                    const savedSearch = await platformContext
+                        .requestGraphQL<CreateSavedSearchResult, CreateSavedSearchVariables>({
+                            request: createSavedSearchQuery,
+                            variables: fields,
+                            mightContainPrivateInfo: true,
+                        })
+                        .toPromise()
+                    if (savedSearch.data) {
+                        setSavedSearchFields(undefined)
+                        setOpenSavedSearchCreateForm(false)
+                    }
+                })().catch(error => console.error(error))
+            }
+        }, [authenticatedUser, platformContext, savedSearchFields])
 
         if (!searchResults) {
             // TODO this component should only be rendered when there are results, update props.
@@ -72,7 +118,6 @@ export const SearchResults = React.memo<SearchResultsProps>(
         const onSelect = (result: SearchMatch): void => {
             ;(async () => {
                 const host = await instanceHostname
-
                 switch (result.type) {
                     case 'commit': {
                         return sourcegraphVSCodeExtensionAPI.openFile(`sourcegraph://${host}${result.url}`)
@@ -87,7 +132,13 @@ export const SearchResults = React.memo<SearchResultsProps>(
                     }
                     case 'repo': {
                         searchActions.setQuery({ query: `repo:^${result.repository}$` })
-                        getFiles({ repository: result.repository, revision: 'HEAD' })
+                        getFiles({
+                            repoName: result.repository,
+                            commitID: '',
+                            revision: 'HEAD',
+                            filePath: '/',
+                            first: 2500,
+                        })
                         return sourcegraphVSCodeExtensionAPI.openFile(`sourcegraph://${host}/${result.repository}`)
                     }
                     // TODO ensure component always calls this for VSCE (usually a link)
@@ -135,6 +186,30 @@ export const SearchResults = React.memo<SearchResultsProps>(
             })
         }
 
+        interface ExperimentalActionButtonProps extends ButtonDropdownCtaProps {
+            showExperimentalVersion: boolean
+            nonExperimentalLinkTo?: string
+            isNonExperimentalLinkDisabled?: boolean
+            onNonExperimentalLinkClick?: () => void
+            className?: string
+        }
+
+        const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButtonProps> = props => {
+            if (props.showExperimentalVersion) {
+                return <ButtonDropdownCta {...props} />
+            }
+            return (
+                <ButtonLink
+                    className={classNames('btn btn-sm btn-outline-secondary text-decoration-none', props.className)}
+                    to={props.nonExperimentalLinkTo}
+                    onSelect={props.onNonExperimentalLinkClick}
+                    disabled={props.isNonExperimentalLinkDisabled}
+                >
+                    {props.button}
+                </ButtonLink>
+            )
+        }
+
         const onShareResultsClick = (): void => {
             ;(async () => {
                 const host = await instanceHostname
@@ -146,15 +221,43 @@ export const SearchResults = React.memo<SearchResultsProps>(
             })
         }
 
-        return (
-            <div className={styles.streamingSearchResultsContainer}>
-                {/* TODO: This is a temporary searchResultsInfoBar */}
+        const SearchResultsInfoBar: React.FunctionComponent = () => {
+            const showActionButtonExperimentalVersion = !authenticatedUser
+
+            const saveSearchButton = useMemo(
+                () => (
+                    <li className={classNames('mr-2', styles.navItem)}>
+                        <ExperimentalActionButton
+                            showExperimentalVersion={showActionButtonExperimentalVersion}
+                            onNonExperimentalLinkClick={() => setOpenSavedSearchCreateForm(true)}
+                            className="test-save-search-link"
+                            button={
+                                <>
+                                    <BookmarkOutlineIcon className="icon-inline mr-1" />
+                                    Save search
+                                </>
+                            }
+                            icon={<BookmarkRadialGradientIcon />}
+                            title="Saved searches"
+                            copyText="Save your searches and quickly run them again. Free for registered users."
+                            source="Saved"
+                            viewEventName="SearchResultSavedSeachCTAShown"
+                            returnTo=""
+                            telemetryService={platformContext.telemetryService}
+                        />
+                    </li>
+                ),
+                [showActionButtonExperimentalVersion]
+            )
+
+            return (
                 <div className={classNames('flex-grow-1 result-container', styles.searchResultsInfoBar)}>
                     <div className={styles.row}>
                         <small>{results?.results.length} results found</small>
                         <div className={styles.expander} />
                         <ul className="nav align-items-center">
                             <li className={styles.divider} aria-hidden="true" />
+                            {saveSearchButton}
                             <li className={classNames('mr-2', styles.navItem)} data-tooltip="Share results link">
                                 <button
                                     type="button"
@@ -168,6 +271,37 @@ export const SearchResults = React.memo<SearchResultsProps>(
                         </ul>
                     </div>
                 </div>
+            )
+        }
+
+        const onSubmitSaveSearch = (fields: Omit<SavedQueryFields, 'id'>): void => {
+            setSavedSearchFields(fields)
+        }
+
+        const defaultValue: Partial<SavedQueryFields> = {
+            id: '',
+            description: '',
+            query: fullQuery,
+            notify: false,
+            notifySlack: false,
+            slackWebhookURL: null,
+        }
+
+        return (
+            <div className={styles.streamingSearchResultsContainer}>
+                {/* TODO: This is a temporary searchResultsInfoBar */}
+                <SearchResultsInfoBar />
+                {openSavedSearchCreateForm && (
+                    <SavedSearchForm
+                        authenticatedUser={authenticatedUser}
+                        submitLabel="Add saved search"
+                        title="Add saved search"
+                        defaultValues={defaultValue}
+                        onSubmit={onSubmitSaveSearch}
+                        loading={!fullQuery}
+                        error={undefined}
+                    />
+                )}
                 <StreamingSearchResultsList
                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
                     isLightTheme={theme === 'theme-light'}
@@ -186,7 +320,6 @@ export const SearchResults = React.memo<SearchResultsProps>(
                     // In build, copy ui/assets/img folder to dist/
                     assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
                 />
-
                 {searchResults.search?.results.limitHit && (
                     <div className="alert alert-info d-flex m-3">
                         <p className="m-0">

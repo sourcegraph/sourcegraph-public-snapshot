@@ -7,7 +7,10 @@ import { catchError, map } from 'rxjs/operators'
 import { SearchBox } from '@sourcegraph/branded/src/search/input/SearchBox'
 import { getFullQuery } from '@sourcegraph/branded/src/search/input/toggles/Toggles'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { AuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
+import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
+import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { getAvailableSearchContextSpecOrDefault } from '@sourcegraph/shared/src/search'
 import {
     fetchAutoDefinedSearchContexts,
@@ -20,17 +23,17 @@ import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/setting
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
+import { TreeEntriesResult, TreeEntriesVariables } from '@sourcegraph/web/src/graphql-operations'
 import { SearchBetaIcon } from '@sourcegraph/web/src/search/CtaIcons'
 
-import { FileTree } from '../../file-system/FileTree'
-import { SourcegraphUri } from '../../file-system/SourcegraphUri'
-import { FileNamesResult, FileNamesVariables, SearchResult, SearchVariables } from '../../graphql-operations'
+import { SearchResult, SearchVariables } from '../../graphql-operations'
 import { LocalRecentSeachProps } from '../contract'
 import { WebviewPageProps } from '../platform/context'
 
 import { HomePanels } from './HomePanels'
 import styles from './index.module.scss'
-import { searchQuery } from './queries'
+import { searchQuery, treeEntriesQuery } from './queries'
+import { RepoPage } from './RepoPage'
 import { convertGQLSearchToSearchMatches, SearchResults } from './SearchResults'
 import { DEFAULT_SEARCH_CONTEXT_SPEC } from './state'
 
@@ -50,9 +53,16 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         sourcegraphVSCodeExtensionAPI,
     ])
     const [hasAccessToken, setHasAccessToken] = useState<boolean | undefined>(undefined)
+    const [validAccessToken, setValidAccessToken] = useState<boolean>(false)
     const [lastSelectedSearchContext, setLastSelectedSearchContext] = useState<string | undefined>(undefined)
     const [localRecentSearches, setLocalRecentSearches] = useState<LocalRecentSeachProps[] | undefined>(undefined)
-    const [fileVariables, setFileVariables] = useState<FileNamesVariables | undefined>(undefined)
+    // File Tree
+    const [openRepoFileTree, setOpenRepoFileTree] = useState<boolean>(false)
+    const [fileVariables, setFileVariables] = useState<TreeEntriesVariables | undefined>(undefined)
+    const [entries, setEntries] = useState<Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url' | 'path'>[] | undefined>(
+        undefined
+    )
+    const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
     const sourcegraphSettings =
         useObservable(
             useMemo(() => wrapRemoteObservable(sourcegraphVSCodeExtensionAPI.getSettings()), [
@@ -67,6 +77,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
     const onSubmit = useCallback(
         (event?: React.FormEvent): void => {
             event?.preventDefault()
+            setOpenRepoFileTree(false)
             searchActions.submitQuery()
         },
         [searchActions]
@@ -109,8 +120,9 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
             .catch(error => console.log(error))
     }
 
-    const getFiles = (variables: FileNamesVariables): void => {
+    const getFiles = (variables: TreeEntriesVariables): void => {
         setFileVariables(variables)
+        setOpenRepoFileTree(true)
     }
 
     const onSignUpClick = useCallback(
@@ -136,6 +148,24 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                 // TODO error handling
                 .catch(() => setHasAccessToken(false))
         }
+        if (!validAccessToken) {
+            ;(async () => {
+                const currentUser = await platformContext
+                    .requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>({
+                        request: currentAuthStateQuery,
+                        variables: {},
+                        mightContainPrivateInfo: true,
+                    })
+                    .toPromise()
+                if (currentUser.data) {
+                    setAuthenticatedUser(currentUser.data.currentUser)
+                    setValidAccessToken(true)
+                } else {
+                    setValidAccessToken(false)
+                }
+            })().catch(error => console.error(error))
+        }
+
         // Get Recent Search History from Local Storage
         if (localRecentSearches === undefined) {
             sourcegraphVSCodeExtensionAPI
@@ -173,35 +203,18 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
 
         const subscriptions = new Subscription()
 
-        // TODO: GET FILE TREE TO BUILD REPO PAGE
-        if (fileVariables !== undefined) {
-            const fileNamesQuery = gql`
-                query FileNames($repository: String!, $revision: String!) {
-                    repository(name: $repository) {
-                        commit(rev: $revision) {
-                            fileNames
-                        }
-                    }
-                }
-            `
+        // create file tree
+        if (openRepoFileTree && fileVariables) {
             ;(async () => {
-                const host = await instanceHostname
-                const repoUri = SourcegraphUri.parse(`sourcegraph://${host}/${fileVariables.repository}`)
-                const parent: string | undefined = repoUri.repositoryUri()
-                console.log('parent', parent)
                 const files = await platformContext
-                    .requestGraphQL<FileNamesResult, FileNamesVariables>({
-                        request: fileNamesQuery,
+                    .requestGraphQL<TreeEntriesResult, TreeEntriesVariables>({
+                        request: treeEntriesQuery,
                         variables: fileVariables,
                         mightContainPrivateInfo: true,
                     })
                     .toPromise()
-                if (files.data?.repository?.commit?.fileNames) {
-                    const tree = new FileTree(repoUri, files.data?.repository?.commit?.fileNames)
-                    const directChildren = tree.directChildren(repoUri.path || '')
-                    for (const child of directChildren) {
-                        console.log('child', child)
-                    }
+                if (files.data?.repository?.commit?.tree) {
+                    setEntries(files.data.repository.commit.tree.entries)
                 }
             })().catch(error => console.error(error))
         }
@@ -279,6 +292,8 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         fullQuery,
         fileVariables,
         instanceHostname,
+        validAccessToken,
+        openRepoFileTree,
     ])
 
     return (
@@ -435,16 +450,21 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                                 </div>
                             )}
                             {/* TODO: This is a temporary repo file viewer */}
-                            {/* <section className={classNames('test-tree-entries mb-3')}>
-                                <h2>Files and directories</h2>
-                                <TreeEntriesSection
-                                    parentPath={filePath}
-                                    entries={treeOrError.entries}
-                                    fileDecorationsByPath={fileDecorationsByPath}
-                                    isLightTheme={props.isLightTheme}
-                                />
-                            </section> */}
-                            {fullQuery && (
+                            {openRepoFileTree && fileVariables && entries !== undefined && (
+                                <section className={classNames('test-tree-entries mb-3')}>
+                                    <h2>Files and directories</h2>
+                                    <RepoPage
+                                        platformContext={platformContext}
+                                        theme={theme}
+                                        getFiles={getFiles}
+                                        entries={entries}
+                                        instanceHostname={instanceHostname}
+                                        sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                                        selectedRepoName={fileVariables.repoName}
+                                    />
+                                </section>
+                            )}
+                            {fullQuery && !openRepoFileTree && (
                                 <SearchResults
                                     platformContext={platformContext}
                                     theme={theme}
@@ -453,6 +473,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                                     instanceHostname={instanceHostname}
                                     fullQuery={fullQuery}
                                     getFiles={getFiles}
+                                    authenticatedUser={authenticatedUser}
                                 />
                             )}
                         </div>

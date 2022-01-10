@@ -107,3 +107,81 @@ export const searchQuery = gql`
         }
     }
 `
+
+export const fileNamesQuery = gql`
+    query FileNames($repository: String!, $revision: String!) {
+        repository(name: $repository) {
+            commit(rev: $revision) {
+                fileNames
+            }
+        }
+    }
+`
+
+const savedSearchFragment = gql`
+    fragment SavedSearchFields on SavedSearch {
+        id
+        description
+        notify
+        notifySlack
+        query
+        namespace {
+            __typename
+            id
+            namespaceName
+        }
+        slackWebhookURL
+    }
+`
+
+export const createSavedSearchQuery = gql`
+    mutation CreateSavedSearch(
+        $description: String!
+        $query: String!
+        $notifyOwner: Boolean!
+        $notifySlack: Boolean!
+        $userID: ID
+        $orgID: ID
+    ) {
+        createSavedSearch(
+            description: $description
+            query: $query
+            notifyOwner: $notifyOwner
+            notifySlack: $notifySlack
+            userID: $userID
+            orgID: $orgID
+        ) {
+            ...SavedSearchFields
+        }
+    }
+    ${savedSearchFragment}
+`
+export const treeEntriesQuery = gql`
+    query TreeEntries($repoName: String!, $revision: String!, $commitID: String!, $filePath: String!, $first: Int) {
+        repository(name: $repoName) {
+            commit(rev: $commitID, inputRevspec: $revision) {
+                tree(path: $filePath) {
+                    ...TreeFields
+                }
+            }
+        }
+    }
+    fragment TreeFields on GitTree {
+        isRoot
+        url
+        entries(first: $first, recursiveSingleChild: true) {
+            ...TreeEntryFields
+        }
+    }
+    fragment TreeEntryFields on TreeEntry {
+        name
+        path
+        isDirectory
+        url
+        submodule {
+            url
+            commit
+        }
+        isSingleChild
+    }
+`
