@@ -22,7 +22,7 @@ func Init() (*sql.DB, error) {
 		return nil, err
 	}
 
-	return conn.(*sql.DB), err
+	return conn.(*sql.DB), nil
 }
 
 var initDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{}, error) {
