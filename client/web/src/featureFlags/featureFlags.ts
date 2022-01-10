@@ -6,6 +6,8 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { requestGraphQL } from '../backend/graphql'
 import { FetchFeatureFlagsResult } from '../graphql-operations'
 
+import { getOverrideKey } from './lib/getOverrideKey'
+
 class ProxyMap<K extends string, V extends boolean> extends Map<K, V> {
     constructor(private getter?: (key: K, value: V | undefined) => V | undefined) {
         super()
@@ -47,8 +49,13 @@ export function fetchFeatureFlags(): Observable<FlagSet> {
             const result = new ProxyMap<FeatureFlagName, boolean>((key: FeatureFlagName, value?: boolean):
                 | boolean
                 | undefined => {
-                const localValue = localStorage.getItem(key)
-                return typeof localValue !== 'undefined' && localValue !== null ? Boolean(localValue) : value
+                const overriddenValue = localStorage.getItem(getOverrideKey(key))
+
+                return overriddenValue !== 'undefined' &&
+                    overriddenValue !== null &&
+                    ['true', 'false'].includes(overriddenValue)
+                    ? (JSON.parse(overriddenValue) as boolean)
+                    : value
             })
             for (const flag of data.viewerFeatureFlags) {
                 result.set(flag.name as FeatureFlagName, flag.value)

@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react'
 
+import { getOverrideKey } from './lib/getOverrideKey'
+
 /**
  * Overrides feature flag based on initial URL query parameters
  *
@@ -19,9 +21,9 @@ export const FeatureFlagsAgent = React.memo(() => {
             }
             const featureFlagValue = urlParameters.get('feature-flag-value')
             if (!featureFlagValue) {
-                localStorage.removeItem(featureFlagKey)
+                localStorage.removeItem(getOverrideKey(featureFlagKey))
             } else {
-                localStorage.setItem(featureFlagKey, Boolean(featureFlagValue).toString())
+                localStorage.setItem(getOverrideKey(featureFlagKey), Boolean(featureFlagValue === 'true').toString())
             }
         } catch (error) {
             console.error(error)
