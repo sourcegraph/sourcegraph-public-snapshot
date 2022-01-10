@@ -24,9 +24,20 @@ function cleanup() {
 
   echo "--- dump server logs"
   docker logs --timestamps "$CONTAINER" >"$root_dir/server.log" 2>&1
-  echo "--- docker cleanup"
+
+  echo "--- $CONTAINER cleanup"
   docker container rm -f "$CONTAINER"
   docker image rm -f "$IMAGE"
+
+  echo "--- docker cleanup"
+  if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
+    # shellcheck disable=SC2046
+    docker rm -f $(docker ps -aq)
+  fi
+  if [[ $(docker images -q | wc -l) -gt 0 ]]; then
+    # shellcheck disable=SC2046
+    docker rmi -f $(docker images -q)
+  fi
 
   if [ $exit_status -ne 0 ]; then
     # This command will fail, so our last step will be expanded. We don't want
