@@ -177,24 +177,12 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 		}
 	}
 
-	// if args.From != nil {
-	// 	opts.From = &args.From.Time
-	// }
-	// if args.To != nil {
-	// 	opts.To = &args.To.Time
-	// }
-
-	// to preserve backwards compatibility, we are going to keep the arguments on this resolver for now. Ideally
-	// we would deprecate these in favor of passing arguments from a higher level resolver (insight view) to match
-	// the model of how we want default filters to work at the insight view level. That said, we will only inherit
-	// higher resolver filters if provided filter arguments are nil.
 	if filters.IncludeRepoRegex != nil {
 		opts.IncludeRepoRegex = *filters.IncludeRepoRegex
 	}
 	if filters.ExcludeRepoRegex != nil {
 		opts.ExcludeRepoRegex = *filters.ExcludeRepoRegex
 	}
-
 	groupedByCapture := make(map[string][]store.SeriesPoint)
 	allPoints, err := r.timeSeriesStore.SeriesPoints(ctx, opts)
 	if err != nil {

@@ -47,10 +47,6 @@ func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.In
 	var val *types.InsightSeries
 	var ok bool
 
-	if seriesID == "23IQRS4Vohsb6ZK6cmHz1uS0oPx" {
-		log15.Info("asdf")
-	}
-
 	r.mu.RLock()
 	val, ok = r.seriesCache[seriesID]
 	r.mu.RUnlock()
@@ -137,15 +133,11 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	if err != nil {
 		return err
 	}
-	if series == nil {
-		log15.Error("nil series", "series_id", job.SeriesID)
-		return nil
-	}
-	if !series.JustInTime && series.GeneratedFromCaptureGroups { // getting a nil pointer dereference from something in the background?
-		return r.handleComputeSearch(ctx, job)
-	}
 
 	// Actually perform the search query.
+	if !series.JustInTime && series.GeneratedFromCaptureGroups {
+		return r.handleComputeSearch(ctx, job)
+	}
 	//
 	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
 	// repository on Sourcegraph - so we must be careful to only record insightful information that
