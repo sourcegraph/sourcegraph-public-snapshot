@@ -1,6 +1,6 @@
 import { NotificationType } from 'sourcegraph'
 
-import { HoverOverlayProps as GenericHoverOverlayProps } from '@sourcegraph/shared/src/codeintellify'
+import { HoverOverlayProps as GenericHoverOverlayProps } from '@sourcegraph/codeintellify'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { HoverMerged } from '../api/client/types/hover'

@@ -24,6 +24,7 @@ type GitserverRepoStore interface {
 	SetCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus, shardID string) error
 	SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error
 	SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error
+	IterateWithNonemptyLastError(ctx context.Context, repoFn func(repo types.RepoGitserverStatus) error) error
 }
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
@@ -81,6 +82,50 @@ INSERT INTO
 
 	return errors.Wrap(err, "creating GitserverRepo")
 }
+
+// IterateWithNonemptyLastError iterates over repos w/ non-empty last_error field and calls the repoFn for these repos.
+// note that this currently filters out any repos which do not have an associated external service where cloud_default = true.
+func (s *gitserverRepoStore) IterateWithNonemptyLastError(ctx context.Context, repoFn func(repo types.RepoGitserverStatus) error) error {
+	rows, err := s.Query(ctx, sqlf.Sprintf(nonemptyLastErrorQuery))
+	if err != nil {
+		return errors.Wrap(err, "fetching repos with nonempty last_error")
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var gr types.GitserverRepo
+		var rgs types.RepoGitserverStatus
+		if err := rows.Scan(
+			&rgs.Name,
+			&dbutil.NullString{S: &gr.LastError},
+		); err != nil {
+			return errors.Wrap(err, "scanning row")
+		}
+		err := repoFn(rgs)
+		if err != nil {
+			// Abort
+			return errors.Wrap(err, "calling repoFn")
+		}
+	}
+
+	if rows.Err() != nil {
+		return errors.Wrap(rows.Err(), "iterating rows")
+	}
+
+	return nil
+}
+
+const nonemptyLastErrorQuery = `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.IterateWithNonemptyLastError
+SELECT
+	repo.name,
+	gr.last_error
+FROM repo
+	LEFT JOIN gitserver_repos gr ON repo.id = gr.repo_id
+	INNER JOIN external_service_repos esr ON repo.id = esr.repo_id
+	INNER JOIN external_services es on esr.external_service_id = es.id
+WHERE gr.last_error != '' AND repo.deleted_at is NULL AND es.cloud_default IS True
+`
 
 type IterateRepoGitserverStatusOptions struct {
 	// If set, will only iterate over repos that have not been assigned to a shard

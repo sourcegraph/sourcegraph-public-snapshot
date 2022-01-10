@@ -57,6 +57,7 @@ const defaultProps: SearchContextMenuProps = {
                     description: 'Only code in version 1.5',
                     updatedAt: '2021-03-15T19:39:11Z',
                     viewerCanManage: true,
+                    query: '',
                     repositories: [],
                 },
             ],

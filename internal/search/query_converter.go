@@ -17,9 +17,9 @@ import (
 	zoekt "github.com/google/zoekt/query"
 )
 
-// unionRegexp separates values with a | operator to create a string
+// UnionRegExps separates values with a | operator to create a string
 // representing a union of regexp patterns.
-func unionRegexp(values []string) string {
+func UnionRegExps(values []string) string {
 	if len(values) == 0 {
 		// As a regular expression, "()" and "" are equivalent so this
 		// condition wouldn't ordinarily be needed to distinguish these
@@ -63,7 +63,7 @@ func LangToFileRegexp(lang string) string {
 	for _, filename := range filenamesFromLanguage[lang] {
 		patterns = append(patterns, "^"+regexp.QuoteMeta(filename)+"$")
 	}
-	return unionRegexp(patterns)
+	return UnionRegExps(patterns)
 }
 
 func mapSlice(values []string, f func(string) string) []string {
@@ -164,7 +164,7 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 
 		// Values dependent on parameters.
 		IncludePatterns:              filesInclude,
-		ExcludePattern:               unionRegexp(filesExclude),
+		ExcludePattern:               UnionRegExps(filesExclude),
 		FilePatternsReposMustInclude: filesReposMustInclude,
 		FilePatternsReposMustExclude: filesReposMustExclude,
 		Languages:                    langInclude,

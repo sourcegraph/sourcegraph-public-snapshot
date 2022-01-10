@@ -525,7 +525,7 @@ func newSchemaResolver(db database.DB) *schemaResolver {
 			return webhookLogByID(ctx, db, id)
 		},
 		"Executor": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return executorByID(ctx, db, id)
+			return executorByID(ctx, db, id, r)
 		},
 	}
 	return r

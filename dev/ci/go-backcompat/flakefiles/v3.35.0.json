@@ -1,0 +1,1 @@
+[{ "path": "enterprise/internal/insights", "prefix": "Test", "reason": "Code insights is deprecating TimescaleDB" }]

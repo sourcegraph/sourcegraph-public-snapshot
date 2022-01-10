@@ -6,7 +6,7 @@ env:
   PGDATABASE: sourcegraph
   PGSSLMODE: disable
   SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: 'true'
-  
+
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
   SRC_LOG_LEVEL: info
   SRC_LOG_FORMAT: condensed
@@ -313,7 +313,7 @@ commands:
       ENTERPRISE: 1
 
   web-standalone-http:
-    cmd: yarn workspace @sourcegraph/web serve:dev
+    cmd: yarn workspace @sourcegraph/web serve:dev --color
     install: yarn --no-progress
     env:
       WEBPACK_SERVE_INDEX: true

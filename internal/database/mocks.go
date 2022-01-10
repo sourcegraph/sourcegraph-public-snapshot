@@ -2740,9 +2740,6 @@ type MockDB struct {
 	// ExecContextFunc is an instance of a mock function object controlling
 	// the behavior of the method ExecContext.
 	ExecContextFunc *DBExecContextFunc
-	// ExecutorsFunc is an instance of a mock function object controlling
-	// the behavior of the method Executors.
-	ExecutorsFunc *DBExecutorsFunc
 	// ExternalServicesFunc is an instance of a mock function object
 	// controlling the behavior of the method ExternalServices.
 	ExternalServicesFunc *DBExternalServicesFunc
@@ -2755,6 +2752,9 @@ type MockDB struct {
 	// GlobalStateFunc is an instance of a mock function object controlling
 	// the behavior of the method GlobalState.
 	GlobalStateFunc *DBGlobalStateFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *DBHandleFunc
 	// NamespacesFunc is an instance of a mock function object controlling
 	// the behavior of the method Namespaces.
 	NamespacesFunc *DBNamespacesFunc
@@ -2854,11 +2854,6 @@ func NewMockDB() *MockDB {
 				return nil, nil
 			},
 		},
-		ExecutorsFunc: &DBExecutorsFunc{
-			defaultHook: func() ExecutorStore {
-				return nil
-			},
-		},
 		ExternalServicesFunc: &DBExternalServicesFunc{
 			defaultHook: func() ExternalServiceStore {
 				return nil
@@ -2876,6 +2871,11 @@ func NewMockDB() *MockDB {
 		},
 		GlobalStateFunc: &DBGlobalStateFunc{
 			defaultHook: func() GlobalStateStore {
+				return nil
+			},
+		},
+		HandleFunc: &DBHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
 				return nil
 			},
 		},
@@ -3021,11 +3021,6 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.ExecContext")
 			},
 		},
-		ExecutorsFunc: &DBExecutorsFunc{
-			defaultHook: func() ExecutorStore {
-				panic("unexpected invocation of MockDB.Executors")
-			},
-		},
 		ExternalServicesFunc: &DBExternalServicesFunc{
 			defaultHook: func() ExternalServiceStore {
 				panic("unexpected invocation of MockDB.ExternalServices")
@@ -3044,6 +3039,11 @@ func NewStrictMockDB() *MockDB {
 		GlobalStateFunc: &DBGlobalStateFunc{
 			defaultHook: func() GlobalStateStore {
 				panic("unexpected invocation of MockDB.GlobalState")
+			},
+		},
+		HandleFunc: &DBHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockDB.Handle")
 			},
 		},
 		NamespacesFunc: &DBNamespacesFunc{
@@ -3176,9 +3176,6 @@ func NewMockDBFrom(i DB) *MockDB {
 		ExecContextFunc: &DBExecContextFunc{
 			defaultHook: i.ExecContext,
 		},
-		ExecutorsFunc: &DBExecutorsFunc{
-			defaultHook: i.Executors,
-		},
 		ExternalServicesFunc: &DBExternalServicesFunc{
 			defaultHook: i.ExternalServices,
 		},
@@ -3190,6 +3187,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		GlobalStateFunc: &DBGlobalStateFunc{
 			defaultHook: i.GlobalState,
+		},
+		HandleFunc: &DBHandleFunc{
+			defaultHook: i.Handle,
 		},
 		NamespacesFunc: &DBNamespacesFunc{
 			defaultHook: i.Namespaces,
@@ -3873,105 +3873,6 @@ func (c DBExecContextFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// DBExecutorsFunc describes the behavior when the Executors method of the
-// parent MockDB instance is invoked.
-type DBExecutorsFunc struct {
-	defaultHook func() ExecutorStore
-	hooks       []func() ExecutorStore
-	history     []DBExecutorsFuncCall
-	mutex       sync.Mutex
-}
-
-// Executors delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockDB) Executors() ExecutorStore {
-	r0 := m.ExecutorsFunc.nextHook()()
-	m.ExecutorsFunc.appendCall(DBExecutorsFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Executors method of
-// the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBExecutorsFunc) SetDefaultHook(hook func() ExecutorStore) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Executors method of the parent MockDB instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *DBExecutorsFunc) PushHook(hook func() ExecutorStore) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *DBExecutorsFunc) SetDefaultReturn(r0 ExecutorStore) {
-	f.SetDefaultHook(func() ExecutorStore {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *DBExecutorsFunc) PushReturn(r0 ExecutorStore) {
-	f.PushHook(func() ExecutorStore {
-		return r0
-	})
-}
-
-func (f *DBExecutorsFunc) nextHook() func() ExecutorStore {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBExecutorsFunc) appendCall(r0 DBExecutorsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBExecutorsFuncCall objects describing the
-// invocations of this function.
-func (f *DBExecutorsFunc) History() []DBExecutorsFuncCall {
-	f.mutex.Lock()
-	history := make([]DBExecutorsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBExecutorsFuncCall is an object that describes an invocation of method
-// Executors on an instance of MockDB.
-type DBExecutorsFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 ExecutorStore
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBExecutorsFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBExecutorsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // DBExternalServicesFunc describes the behavior when the ExternalServices
 // method of the parent MockDB instance is invoked.
 type DBExternalServicesFunc struct {
@@ -4367,6 +4268,105 @@ func (c DBGlobalStateFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBGlobalStateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBHandleFunc describes the behavior when the Handle method of the parent
+// MockDB instance is invoked.
+type DBHandleFunc struct {
+	defaultHook func() *basestore.TransactableHandle
+	hooks       []func() *basestore.TransactableHandle
+	history     []DBHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Handle() *basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(DBHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBHandleFunc) SetDefaultHook(hook func() *basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockDB instance invokes the hook at the front
+// of the queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *DBHandleFunc) PushHook(hook func() *basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBHandleFunc) SetDefaultReturn(r0 *basestore.TransactableHandle) {
+	f.SetDefaultHook(func() *basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBHandleFunc) PushReturn(r0 *basestore.TransactableHandle) {
+	f.PushHook(func() *basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *DBHandleFunc) nextHook() func() *basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBHandleFunc) appendCall(r0 DBHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBHandleFuncCall objects describing the
+// invocations of this function.
+func (f *DBHandleFunc) History() []DBHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]DBHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBHandleFuncCall is an object that describes an invocation of method
+// Handle on an instance of MockDB.
+type DBHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -26020,6 +26020,9 @@ type MockSearchContextsStore struct {
 	// ExecFunc is an instance of a mock function object controlling the
 	// behavior of the method Exec.
 	ExecFunc *SearchContextsStoreExecFunc
+	// GetAllQueriesFunc is an instance of a mock function object
+	// controlling the behavior of the method GetAllQueries.
+	GetAllQueriesFunc *SearchContextsStoreGetAllQueriesFunc
 	// GetAllRevisionsForReposFunc is an instance of a mock function object
 	// controlling the behavior of the method GetAllRevisionsForRepos.
 	GetAllRevisionsForReposFunc *SearchContextsStoreGetAllRevisionsForReposFunc
@@ -26077,6 +26080,11 @@ func NewMockSearchContextsStore() *MockSearchContextsStore {
 		ExecFunc: &SearchContextsStoreExecFunc{
 			defaultHook: func(context.Context, *sqlf.Query) error {
 				return nil
+			},
+		},
+		GetAllQueriesFunc: &SearchContextsStoreGetAllQueriesFunc{
+			defaultHook: func(context.Context) ([]string, error) {
+				return nil, nil
 			},
 		},
 		GetAllRevisionsForReposFunc: &SearchContextsStoreGetAllRevisionsForReposFunc{
@@ -26152,6 +26160,11 @@ func NewStrictMockSearchContextsStore() *MockSearchContextsStore {
 				panic("unexpected invocation of MockSearchContextsStore.Exec")
 			},
 		},
+		GetAllQueriesFunc: &SearchContextsStoreGetAllQueriesFunc{
+			defaultHook: func(context.Context) ([]string, error) {
+				panic("unexpected invocation of MockSearchContextsStore.GetAllQueries")
+			},
+		},
 		GetAllRevisionsForReposFunc: &SearchContextsStoreGetAllRevisionsForReposFunc{
 			defaultHook: func(context.Context, []api.RepoID) (map[api.RepoID][]string, error) {
 				panic("unexpected invocation of MockSearchContextsStore.GetAllRevisionsForRepos")
@@ -26214,6 +26227,9 @@ func NewMockSearchContextsStoreFrom(i SearchContextsStore) *MockSearchContextsSt
 		},
 		ExecFunc: &SearchContextsStoreExecFunc{
 			defaultHook: i.Exec,
+		},
+		GetAllQueriesFunc: &SearchContextsStoreGetAllQueriesFunc{
+			defaultHook: i.GetAllQueries,
 		},
 		GetAllRevisionsForReposFunc: &SearchContextsStoreGetAllRevisionsForReposFunc{
 			defaultHook: i.GetAllRevisionsForRepos,
@@ -26791,6 +26807,115 @@ func (c SearchContextsStoreExecFuncCall) Args() []interface{} {
 // invocation.
 func (c SearchContextsStoreExecFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// SearchContextsStoreGetAllQueriesFunc describes the behavior when the
+// GetAllQueries method of the parent MockSearchContextsStore instance is
+// invoked.
+type SearchContextsStoreGetAllQueriesFunc struct {
+	defaultHook func(context.Context) ([]string, error)
+	hooks       []func(context.Context) ([]string, error)
+	history     []SearchContextsStoreGetAllQueriesFuncCall
+	mutex       sync.Mutex
+}
+
+// GetAllQueries delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockSearchContextsStore) GetAllQueries(v0 context.Context) ([]string, error) {
+	r0, r1 := m.GetAllQueriesFunc.nextHook()(v0)
+	m.GetAllQueriesFunc.appendCall(SearchContextsStoreGetAllQueriesFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetAllQueries method
+// of the parent MockSearchContextsStore instance is invoked and the hook
+// queue is empty.
+func (f *SearchContextsStoreGetAllQueriesFunc) SetDefaultHook(hook func(context.Context) ([]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetAllQueries method of the parent MockSearchContextsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *SearchContextsStoreGetAllQueriesFunc) PushHook(hook func(context.Context) ([]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *SearchContextsStoreGetAllQueriesFunc) SetDefaultReturn(r0 []string, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *SearchContextsStoreGetAllQueriesFunc) PushReturn(r0 []string, r1 error) {
+	f.PushHook(func(context.Context) ([]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *SearchContextsStoreGetAllQueriesFunc) nextHook() func(context.Context) ([]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SearchContextsStoreGetAllQueriesFunc) appendCall(r0 SearchContextsStoreGetAllQueriesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SearchContextsStoreGetAllQueriesFuncCall
+// objects describing the invocations of this function.
+func (f *SearchContextsStoreGetAllQueriesFunc) History() []SearchContextsStoreGetAllQueriesFuncCall {
+	f.mutex.Lock()
+	history := make([]SearchContextsStoreGetAllQueriesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SearchContextsStoreGetAllQueriesFuncCall is an object that describes an
+// invocation of method GetAllQueries on an instance of
+// MockSearchContextsStore.
+type SearchContextsStoreGetAllQueriesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SearchContextsStoreGetAllQueriesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SearchContextsStoreGetAllQueriesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // SearchContextsStoreGetAllRevisionsForReposFunc describes the behavior
@@ -31298,9 +31423,9 @@ type MockUserEmailsStore struct {
 	// GetFunc is an instance of a mock function object controlling the
 	// behavior of the method Get.
 	GetFunc *UserEmailsStoreGetFunc
-	// GetInitialSiteAdminEmailFunc is an instance of a mock function object
-	// controlling the behavior of the method GetInitialSiteAdminEmail.
-	GetInitialSiteAdminEmailFunc *UserEmailsStoreGetInitialSiteAdminEmailFunc
+	// GetInitialSiteAdminInfoFunc is an instance of a mock function object
+	// controlling the behavior of the method GetInitialSiteAdminInfo.
+	GetInitialSiteAdminInfoFunc *UserEmailsStoreGetInitialSiteAdminInfoFunc
 	// GetLatestVerificationSentEmailFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetLatestVerificationSentEmail.
@@ -31360,9 +31485,9 @@ func NewMockUserEmailsStore() *MockUserEmailsStore {
 				return "", false, nil
 			},
 		},
-		GetInitialSiteAdminEmailFunc: &UserEmailsStoreGetInitialSiteAdminEmailFunc{
-			defaultHook: func(context.Context) (string, error) {
-				return "", nil
+		GetInitialSiteAdminInfoFunc: &UserEmailsStoreGetInitialSiteAdminInfoFunc{
+			defaultHook: func(context.Context) (string, bool, error) {
+				return "", false, nil
 			},
 		},
 		GetLatestVerificationSentEmailFunc: &UserEmailsStoreGetLatestVerificationSentEmailFunc{
@@ -31447,9 +31572,9 @@ func NewStrictMockUserEmailsStore() *MockUserEmailsStore {
 				panic("unexpected invocation of MockUserEmailsStore.Get")
 			},
 		},
-		GetInitialSiteAdminEmailFunc: &UserEmailsStoreGetInitialSiteAdminEmailFunc{
-			defaultHook: func(context.Context) (string, error) {
-				panic("unexpected invocation of MockUserEmailsStore.GetInitialSiteAdminEmail")
+		GetInitialSiteAdminInfoFunc: &UserEmailsStoreGetInitialSiteAdminInfoFunc{
+			defaultHook: func(context.Context) (string, bool, error) {
+				panic("unexpected invocation of MockUserEmailsStore.GetInitialSiteAdminInfo")
 			},
 		},
 		GetLatestVerificationSentEmailFunc: &UserEmailsStoreGetLatestVerificationSentEmailFunc{
@@ -31529,8 +31654,8 @@ func NewMockUserEmailsStoreFrom(i UserEmailsStore) *MockUserEmailsStore {
 		GetFunc: &UserEmailsStoreGetFunc{
 			defaultHook: i.Get,
 		},
-		GetInitialSiteAdminEmailFunc: &UserEmailsStoreGetInitialSiteAdminEmailFunc{
-			defaultHook: i.GetInitialSiteAdminEmail,
+		GetInitialSiteAdminInfoFunc: &UserEmailsStoreGetInitialSiteAdminInfoFunc{
+			defaultHook: i.GetInitialSiteAdminInfo,
 		},
 		GetLatestVerificationSentEmailFunc: &UserEmailsStoreGetLatestVerificationSentEmailFunc{
 			defaultHook: i.GetLatestVerificationSentEmail,
@@ -31901,37 +32026,37 @@ func (c UserEmailsStoreGetFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// UserEmailsStoreGetInitialSiteAdminEmailFunc describes the behavior when
-// the GetInitialSiteAdminEmail method of the parent MockUserEmailsStore
+// UserEmailsStoreGetInitialSiteAdminInfoFunc describes the behavior when
+// the GetInitialSiteAdminInfo method of the parent MockUserEmailsStore
 // instance is invoked.
-type UserEmailsStoreGetInitialSiteAdminEmailFunc struct {
-	defaultHook func(context.Context) (string, error)
-	hooks       []func(context.Context) (string, error)
-	history     []UserEmailsStoreGetInitialSiteAdminEmailFuncCall
+type UserEmailsStoreGetInitialSiteAdminInfoFunc struct {
+	defaultHook func(context.Context) (string, bool, error)
+	hooks       []func(context.Context) (string, bool, error)
+	history     []UserEmailsStoreGetInitialSiteAdminInfoFuncCall
 	mutex       sync.Mutex
 }
 
-// GetInitialSiteAdminEmail delegates to the next hook function in the queue
+// GetInitialSiteAdminInfo delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockUserEmailsStore) GetInitialSiteAdminEmail(v0 context.Context) (string, error) {
-	r0, r1 := m.GetInitialSiteAdminEmailFunc.nextHook()(v0)
-	m.GetInitialSiteAdminEmailFunc.appendCall(UserEmailsStoreGetInitialSiteAdminEmailFuncCall{v0, r0, r1})
-	return r0, r1
+func (m *MockUserEmailsStore) GetInitialSiteAdminInfo(v0 context.Context) (string, bool, error) {
+	r0, r1, r2 := m.GetInitialSiteAdminInfoFunc.nextHook()(v0)
+	m.GetInitialSiteAdminInfoFunc.appendCall(UserEmailsStoreGetInitialSiteAdminInfoFuncCall{v0, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
-// GetInitialSiteAdminEmail method of the parent MockUserEmailsStore
-// instance is invoked and the hook queue is empty.
-func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) SetDefaultHook(hook func(context.Context) (string, error)) {
+// GetInitialSiteAdminInfo method of the parent MockUserEmailsStore instance
+// is invoked and the hook queue is empty.
+func (f *UserEmailsStoreGetInitialSiteAdminInfoFunc) SetDefaultHook(hook func(context.Context) (string, bool, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetInitialSiteAdminEmail method of the parent MockUserEmailsStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) PushHook(hook func(context.Context) (string, error)) {
+// GetInitialSiteAdminInfo method of the parent MockUserEmailsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UserEmailsStoreGetInitialSiteAdminInfoFunc) PushHook(hook func(context.Context) (string, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -31939,21 +32064,21 @@ func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) PushHook(hook func(context
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) SetDefaultReturn(r0 string, r1 error) {
-	f.SetDefaultHook(func(context.Context) (string, error) {
-		return r0, r1
+func (f *UserEmailsStoreGetInitialSiteAdminInfoFunc) SetDefaultReturn(r0 string, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context) (string, bool, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) PushReturn(r0 string, r1 error) {
-	f.PushHook(func(context.Context) (string, error) {
-		return r0, r1
+func (f *UserEmailsStoreGetInitialSiteAdminInfoFunc) PushReturn(r0 string, r1 bool, r2 error) {
+	f.PushHook(func(context.Context) (string, bool, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) nextHook() func(context.Context) (string, error) {
+func (f *UserEmailsStoreGetInitialSiteAdminInfoFunc) nextHook() func(context.Context) (string, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -31966,28 +32091,28 @@ func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) nextHook() func(context.Co
 	return hook
 }
 
-func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) appendCall(r0 UserEmailsStoreGetInitialSiteAdminEmailFuncCall) {
+func (f *UserEmailsStoreGetInitialSiteAdminInfoFunc) appendCall(r0 UserEmailsStoreGetInitialSiteAdminInfoFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// UserEmailsStoreGetInitialSiteAdminEmailFuncCall objects describing the
+// UserEmailsStoreGetInitialSiteAdminInfoFuncCall objects describing the
 // invocations of this function.
-func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) History() []UserEmailsStoreGetInitialSiteAdminEmailFuncCall {
+func (f *UserEmailsStoreGetInitialSiteAdminInfoFunc) History() []UserEmailsStoreGetInitialSiteAdminInfoFuncCall {
 	f.mutex.Lock()
-	history := make([]UserEmailsStoreGetInitialSiteAdminEmailFuncCall, len(f.history))
+	history := make([]UserEmailsStoreGetInitialSiteAdminInfoFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// UserEmailsStoreGetInitialSiteAdminEmailFuncCall is an object that
-// describes an invocation of method GetInitialSiteAdminEmail on an instance
+// UserEmailsStoreGetInitialSiteAdminInfoFuncCall is an object that
+// describes an invocation of method GetInitialSiteAdminInfo on an instance
 // of MockUserEmailsStore.
-type UserEmailsStoreGetInitialSiteAdminEmailFuncCall struct {
+type UserEmailsStoreGetInitialSiteAdminInfoFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -31996,19 +32121,22 @@ type UserEmailsStoreGetInitialSiteAdminEmailFuncCall struct {
 	Result0 string
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c UserEmailsStoreGetInitialSiteAdminEmailFuncCall) Args() []interface{} {
+func (c UserEmailsStoreGetInitialSiteAdminInfoFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c UserEmailsStoreGetInitialSiteAdminEmailFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+func (c UserEmailsStoreGetInitialSiteAdminInfoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // UserEmailsStoreGetLatestVerificationSentEmailFunc describes the behavior

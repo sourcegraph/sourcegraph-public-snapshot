@@ -3505,11 +3505,6 @@
   resolved "https://registry.npmjs.org/@sourcegraph/prettierrc/-/prettierrc-3.0.3.tgz#51bfa9b2588fe35121593fa877143e6373028289"
   integrity sha512-FQ1/Ued4I02R0JkrHHofDN163juVxUnPALzfxPZrDZUHv+c3jHjfZhmTHEz+Wd+g3b7MFk0fkj36nZSnvPyU8A==
 
-"@sourcegraph/react-loading-spinner@0.0.7":
-  version "0.0.7"
-  resolved "https://registry.npmjs.org/@sourcegraph/react-loading-spinner/-/react-loading-spinner-0.0.7.tgz#e1d0bb1c13e6e8051cf3e0471c6aee0ca24dec45"
-  integrity sha512-F4GMp+8XhlRQzEngc+CwbalT8zy8vXMxMrUjhm2cslTjWgWuSft0vSNCmCJDVPshpG/B+Ehb/OzpLLAzsG2JKg==
-
 "@sourcegraph/stylelint-config@^1.3.0":
   version "1.3.0"
   resolved "https://registry.npmjs.org/@sourcegraph/stylelint-config/-/stylelint-config-1.3.0.tgz#2f624bfd0f30b5d1087c5413816464bf2dda9c45"

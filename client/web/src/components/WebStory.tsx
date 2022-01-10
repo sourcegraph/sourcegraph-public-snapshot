@@ -6,6 +6,8 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { MockedStoryProvider, MockedStoryProviderProps } from '@sourcegraph/storybook/src/apollo/MockedStoryProvider'
 import { usePrependStyles } from '@sourcegraph/storybook/src/hooks/usePrependStyles'
 import { useTheme } from '@sourcegraph/storybook/src/hooks/useTheme'
+// Add root Tooltip for Storybook
+// eslint-disable-next-line no-restricted-imports
 import { Tooltip } from '@sourcegraph/wildcard'
 
 import webStyles from '../SourcegraphWebApp.scss'

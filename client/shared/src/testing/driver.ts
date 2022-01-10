@@ -26,11 +26,12 @@ import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/oper
 import { Key } from 'ts-key-enum'
 import webExt from 'web-ext'
 
+import { isDefined } from '@sourcegraph/common'
+
 import { ExternalServiceKind } from '../graphql-operations'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
 import { IMutation, IQuery, IRepository } from '../graphql/schema'
 import { Settings } from '../settings/settings'
-import { isDefined } from '../util/types'
 
 import { getConfig } from './config'
 import { formatPuppeteerConsoleMessage } from './console'

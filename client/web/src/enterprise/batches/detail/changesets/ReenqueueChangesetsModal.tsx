@@ -2,7 +2,7 @@ import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
@@ -56,7 +56,7 @@ export const ReenqueueChangesetsModal: React.FunctionComponent<ReenqueueChangese
                     Cancel
                 </button>
                 <button type="button" onClick={onSubmit} disabled={isLoading === true} className="btn btn-primary">
-                    {isLoading === true && <LoadingSpinner className="icon-inline" />}
+                    {isLoading === true && <LoadingSpinner />}
                     Re-enqueue
                 </button>
             </div>

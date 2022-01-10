@@ -5,8 +5,7 @@ import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
@@ -174,7 +173,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                             </button>
                             {this.state.loading && (
                                 <div className="icon-inline">
-                                    <LoadingSpinner className="icon-inline" />
+                                    <LoadingSpinner />
                                 </div>
                             )}
                         </Form>

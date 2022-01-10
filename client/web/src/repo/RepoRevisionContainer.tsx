@@ -27,9 +27,10 @@ import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
-import { PatternTypeProps, SearchContextProps, SearchStreamingProps } from '../search'
+import { SearchContextProps, SearchStreamingProps } from '../search'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { RouteDescriptor } from '../util/contributions'
 
@@ -57,7 +58,6 @@ export interface RepoRevisionContainerContext
         HoverThresholdProps,
         ActivationProps,
         Omit<RepoContainerContext, 'onDidUpdateExternalLinks'>,
-        PatternTypeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         RevisionSpec,
         BreadcrumbSetters,
@@ -65,7 +65,8 @@ export interface RepoRevisionContainerContext
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        FeatureFlagProps {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
@@ -92,11 +93,11 @@ interface RepoRevisionContainerProps
         ExtensionsControllerProps,
         ThemeProps,
         ActivationProps,
-        PatternTypeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         RevisionSpec,
         BreadcrumbSetters,
         ActionItemsBarProps,
+        FeatureFlagProps,
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,

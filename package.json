@@ -334,7 +334,6 @@
     "@sentry/browser": "^6.13.2",
     "@slimsag/react-shortcuts": "^1.2.1",
     "@sourcegraph/extension-api-classes": "^1.1.0",
-    "@sourcegraph/react-loading-spinner": "0.0.7",
     "@sqs/jsonc-parser": "^1.0.3",
     "@types/svgo": "2.6.0",
     "@visx/annotation": "^1.7.2",
