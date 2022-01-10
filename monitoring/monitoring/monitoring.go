@@ -469,7 +469,6 @@ const (
 	ObservableOwnerSearchCore      ObservableOwner = "search-core"
 	ObservableOwnerBatches         ObservableOwner = "batches"
 	ObservableOwnerCodeIntel       ObservableOwner = "code-intel"
-	ObservableOwnerDistribution    ObservableOwner = "distribution"
 	ObservableOwnerSecurity        ObservableOwner = "security"
 	ObservableOwnerWeb             ObservableOwner = "web"
 	ObservableOwnerCoreApplication ObservableOwner = "core application"
