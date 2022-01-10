@@ -80,7 +80,7 @@ container. If this situation applies to you, you'll need to install `lsif-clang`
 local dev environment.
 
 1. Install `lsif-clang` in your environment using the [instructions in the `lsif-clang`
-   repository](https://github.com/sourcegraph/lsif-clang/blob/llvmorg-10.0.0-lsif-clang/docs/install.md).
+   repository](https://github.com/sourcegraph/lsif-clang/blob/main/docs/install.md).
 
 1. [Install the `src` CLI](https://github.com/sourcegraph/src-cli).
 
