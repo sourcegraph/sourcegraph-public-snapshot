@@ -91,6 +91,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		})
 	}
 
+	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
+	const minimumUpgradeableVersion = "3.35.0"
+
 	// Set up operations that add steps to a pipeline.
 	var ops operations.Set
 
@@ -104,7 +107,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// set it up separately from CoreTestOperations
 			ops.Append(triggerAsync(buildOptions))
 		}
-		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{}))
+		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 
 	case BackendIntegrationTests:
 		ops.Append(
@@ -112,7 +115,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			backendIntegrationTests(c.candidateImageTag()))
 
 		// Run default set of PR checks as well
-		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{}))
+		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 
 	case BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
@@ -150,7 +153,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Trivy security scans
 		ops.Append(trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
-		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{}))
+		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion}))
 		// Publish images after everything is done
 		ops.Append(wait,
 			publishFinalDockerImage(c, patchImage))
@@ -204,10 +207,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Core tests
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{
 			ChromaticShouldAutoAccept: c.RunType.Is(MainBranch),
+			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 		}))
-
-		// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-		const minimumUpgradeableVersion = "3.35.0"
 
 		// Various integration tests
 		ops.Append(
