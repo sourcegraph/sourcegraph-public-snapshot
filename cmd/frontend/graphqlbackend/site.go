@@ -177,7 +177,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	prev := globals.ConfigurationServerFrontendOnly.Raw()
 	unredacted, err := conf.UnredactSecrets(args.Input, prev)
 	if err != nil {
-		return false, errors.Errorf("error unredacting secrets: %s", unredacted)
+		return false, errors.Errorf("error unredacting secrets: %s", err)
 	}
 	prev.Site = unredacted
 	// TODO(slimsag): future: actually pass lastID through to prevent race conditions
