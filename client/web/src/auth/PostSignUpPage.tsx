@@ -135,7 +135,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
             <div className={classNames(signInSignUpCommonStyles.signinSignupPage, styles.postSignupPage)}>
                 <PageTitle title="Welcome" />
                 <HeroPage
-                    lessPadding={true}
+                    lessPadding={false}
                     className="text-left"
                     body={
                         <div className={classNames('pb-1', styles.container)}>
