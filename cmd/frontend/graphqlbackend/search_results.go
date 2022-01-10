@@ -19,8 +19,6 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"golang.org/x/sync/errgroup"
-	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
@@ -883,6 +881,25 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context, args *search.TextPara
 	return r.resultsWithTimeoutSuggestion(ctx, args, jobs)
 }
 
+// union returns the union of two sets of search results and merges common search data.
+func union(left, right *SearchResults) *SearchResults {
+	if right == nil {
+		return left
+	}
+	if left == nil {
+		return right
+	}
+
+	if left.Matches != nil && right.Matches != nil {
+		left.Matches = result.Union(left.Matches, right.Matches)
+		left.Stats.Update(&right.Stats)
+		return left
+	} else if right.Matches != nil {
+		return right
+	}
+	return left
+}
+
 // intersect returns the intersection of two sets of search result content
 // matches, based on whether a single file path contains content matches in both sets.
 func intersect(left, right *SearchResults) *SearchResults {
@@ -1012,77 +1029,23 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 		wantCount, _ = strconv.Atoi(count) // Invariant: count is already validated
 	}
 
-	var (
-		mu     sync.Mutex
-		stats  streaming.Stats
-		alerts []*searchAlert
-		dedup  = result.NewDeduper()
-		// NOTE(tsenart): In the future, when we have the need for more intelligent rate limiting,
-		// this concurrency limit should probably be informed by a user's rate limit quota
-		// at any given time.
-		sem = semaphore.NewWeighted(16)
-	)
-
-	g, ctx := errgroup.WithContext(ctx)
+	result := &SearchResults{}
 	for _, term := range operands {
-		term := term
-		g.Go(func() error {
-			if err := sem.Acquire(ctx, 1); err != nil {
-				return err
+		new, err := r.evaluatePatternExpression(ctx, q.MapPattern(term))
+		if err != nil {
+			return nil, err
+		}
+		if new != nil {
+			result = union(result, new)
+			// Do not rely on result.Stats.resultCount because it may
+			// count non-content matches and there's no easy way to know.
+			if len(result.Matches) > wantCount {
+				result.Matches = result.Matches[:wantCount]
+				return result, nil
 			}
-
-			defer sem.Release(1)
-
-			new, err := r.evaluatePatternExpression(ctx, q.MapPattern(term))
-			if err != nil || new == nil {
-				return err
-			}
-
-			mu.Lock()
-			defer mu.Unlock()
-
-			if new.Alert != nil {
-				alerts = append(alerts, new.Alert)
-			}
-
-			// Check if another go-routine has already produced enough results.
-			if wantCount <= 0 {
-				return context.Canceled
-			}
-
-			// BUG: When we find enough results we stop adding them to dedupper,
-			// but don't adjust the stats accordingly. This bug was here
-			// before, and remains after making OR query evaluation concurrent.
-			stats.Update(&new.Stats)
-
-			for _, m := range new.Matches {
-				wantCount = m.Limit(wantCount)
-				if dedup.Add(m); wantCount <= 0 {
-					return context.Canceled
-				}
-			}
-
-			return nil
-		})
+		}
 	}
-
-	if err := g.Wait(); err != nil && err != context.Canceled {
-		return nil, err
-	}
-
-	var alert *searchAlert
-	if len(alerts) > 0 {
-		sort.Slice(alerts, func(i, j int) bool {
-			return alerts[i].priority > alerts[j].priority
-		})
-		alert = alerts[0]
-	}
-
-	return &SearchResults{
-		Matches: dedup.Results(),
-		Stats:   stats,
-		Alert:   alert,
-	}, nil
+	return result, nil
 }
 
 // evaluatePatternExpression evaluates a search pattern containing and/or expressions.
@@ -1260,7 +1223,7 @@ func DetermineStatusForLogs(srr *SearchResultsResolver, err error) string {
 	}
 }
 
-func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) (_ *SearchResults, err error) {
+func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) (sr *SearchResults, err error) {
 	tr, ctx := trace.New(ctx, "Results", "")
 	defer func() {
 		tr.SetError(err)
@@ -1272,130 +1235,52 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 		wantCount = *count
 	}
 
-	var (
-		mu     sync.Mutex
-		stats  streaming.Stats
-		alerts []*searchAlert
-		dedup  = result.NewDeduper()
-		// NOTE(tsenart): In the future, when we have the need for more intelligent rate limiting,
-		// this concurrency limit should probably be informed by a user's rate limit quota
-		// at any given time.
-		sem = semaphore.NewWeighted(16)
-	)
-
-	g, ctx := errgroup.WithContext(ctx)
 	for _, q := range plan {
-		q := q
-		g.Go(func() error {
-			if err := sem.Acquire(ctx, 1); err != nil {
-				return err
-			}
+		predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*SearchResults, error) {
+			// Disable streaming for subqueries so we can use
+			// the results rather than sending them back to the caller
+			orig := r.stream
+			r.stream = nil
+			defer func() { r.stream = orig }()
 
-			defer sem.Release(1)
-
-			predicatePlan, err := substitutePredicates(q, func(pred query.Predicate) (*SearchResults, error) {
-				// Disable streaming for subqueries so we can use
-				// the results rather than sending them back to the caller
-				orig := r.stream
-				r.stream = nil
-				defer func() { r.stream = orig }()
-
-				plan, err := pred.Plan(q)
-				if err != nil {
-					return nil, err
-				}
-				return r.resultsRecursive(ctx, plan)
-			})
-			if errors.Is(err, ErrPredicateNoResults) {
-				return nil
-			}
+			plan, err := pred.Plan(q)
 			if err != nil {
-				// Fail if predicate processing fails.
-				return err
+				return nil, err
 			}
-
-			var newResult *SearchResults
-			if predicatePlan != nil {
-				// If a predicate filter generated a new plan, evaluate that plan.
-				newResult, err = r.resultsRecursive(ctx, predicatePlan)
-			} else {
-				newResult, err = r.evaluate(ctx, q)
-			}
-
-			if err != nil || newResult == nil {
-				// Fail if any subexpression fails.
-				return err
-			}
-
-			var selectMatch func(result.Match) result.Match
-			if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
-				sp, _ := filter.SelectPathFromString(v) // Invariant: select already validated
-				selectMatch = func(m result.Match) result.Match {
-					return m.Select(sp)
-				}
-			} else {
-				selectMatch = func(m result.Match) result.Match {
-					return m
-				}
-			}
-
-			mu.Lock()
-			defer mu.Unlock()
-
-			if newResult.Alert != nil {
-				alerts = append(alerts, newResult.Alert)
-			}
-
-			// Check if another go-routine has already produced enough results.
-			if wantCount <= 0 {
-				return context.Canceled
-			}
-
-			// BUG: When we find enough results we stop adding them to dedupper,
-			// but don't adjust the stats accordingly. This bug was here
-			// before, and remains after making query evaluation concurrent.
-			stats.Update(&newResult.Stats)
-
-			for _, m := range newResult.Matches {
-				match := selectMatch(m)
-
-				if match == nil {
-					continue
-				}
-
-				wantCount = match.Limit(wantCount)
-
-				if dedup.Add(match); wantCount <= 0 {
-					return context.Canceled
-				}
-			}
-
-			return nil
+			return r.resultsRecursive(ctx, plan)
 		})
+		if errors.Is(err, ErrPredicateNoResults) {
+			continue
+		}
+		if err != nil {
+			// Fail if predicate processing fails.
+			return nil, err
+		}
+		if predicatePlan != nil {
+			// If a predicate filter generated a new plan, evaluate that plan.
+			return r.resultsRecursive(ctx, predicatePlan)
+		}
+
+		newResult, err := r.evaluate(ctx, q)
+		if err != nil {
+			// Fail if any subexpression fails.
+			return nil, err
+		}
+
+		if newResult != nil {
+			newResult.Matches = result.Select(newResult.Matches, q)
+			sr = union(sr, newResult)
+			if len(sr.Matches) > wantCount {
+				sr.Matches = sr.Matches[:wantCount]
+				break
+			}
+		}
 	}
 
-	if err := g.Wait(); err != nil && err != context.Canceled {
-		return nil, err
+	if sr != nil {
+		r.sortResults(sr.Matches)
 	}
-
-	matches := dedup.Results()
-	if len(matches) > 0 {
-		r.sortResults(matches)
-	}
-
-	var alert *searchAlert
-	if len(alerts) > 0 {
-		sort.Slice(alerts, func(i, j int) bool {
-			return alerts[i].priority > alerts[j].priority
-		})
-		alert = alerts[0]
-	}
-
-	return &SearchResults{
-		Matches: matches,
-		Stats:   stats,
-		Alert:   alert,
-	}, err
+	return sr, err
 }
 
 // searchResultsToRepoNodes converts a set of search results into repository nodes
@@ -1771,13 +1656,11 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	// per backend. This works better than batch based since we have higher
 	// defaults.
 	stream := r.stream
-
 	if stream != nil {
 		var cancelOnLimit context.CancelFunc
 		ctx, stream, cancelOnLimit = streaming.WithLimit(ctx, stream, limit)
 		defer cancelOnLimit()
 	}
-
 	agg := run.NewAggregator(r.db, stream)
 
 	// This ensures we properly cleanup in the case of an early return. In

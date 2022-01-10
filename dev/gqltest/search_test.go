@@ -1013,13 +1013,8 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:            `Or distributive property on commits deduplicates and merges`,
 				query:           `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
-				exactMatchCount: 30,
+				exactMatchCount: 35,
 				skip:            skipStream,
-			},
-			{
-				name:            `Exact default count is respected in OR queries`,
-				query:           `foo OR bar OR (type:repo diff)`,
-				exactMatchCount: 30,
 			},
 		}
 		for _, test := range tests {
