@@ -1,2 +1,2 @@
-export { Popover } from './Popover'
-export { getScrollParents } from '@floating-ui/dom'
+export * from './Popover'
+export * from './tether'
