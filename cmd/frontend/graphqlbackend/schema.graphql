@@ -218,9 +218,12 @@ type Mutation {
     """
     createPassword(newPassword: String!): EmptyResponse
     """
-    Sets the current user to accept the site's Terms of Service and Privacy Policy.
+    Sets the user to accept the site's Terms of Service and Privacy Policy.
+    If the ID is ommitted, the current user is assumed.
+
+    Only the user or site admins may perform this mutation.
     """
-    setTosAccepted: EmptyResponse!
+    setTosAccepted(userID: ID): EmptyResponse!
     """
     Creates an access token that grants the privileges of the specified user (referred to as the access token's
     "subject" user after token creation). The result is the access token value, which the caller is responsible

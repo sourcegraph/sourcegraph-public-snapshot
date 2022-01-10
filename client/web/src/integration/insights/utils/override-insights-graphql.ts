@@ -73,6 +73,7 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
                 displayName: null,
                 siteAdmin: true,
                 tags: [],
+                tosAccepted: true,
                 url: '/users/test',
                 settingsURL: '/users/test/settings',
                 organizations: {
