@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source ~/.profile
+source $HOME/.profile
 
 # Fetch the latest origin/master to accurately determine the set of changed
 # files on this branch.
