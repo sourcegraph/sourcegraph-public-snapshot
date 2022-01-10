@@ -163,7 +163,7 @@ func uploadMultipartIndex(ctx context.Context, httpClient Client, opts UploadOpt
 // parts are received and the multipart upload is finalized, or until the record is deleted by
 // a background process after an expiry period.
 func uploadMultipartIndexInit(ctx context.Context, httpClient Client, opts UploadOptions, numParts int) (id int, err error) {
-	_, complete := logPending(
+	retry, complete := logPending(
 		opts.Output,
 		"Preparing multipart upload",
 		"Prepared multipart upload",
@@ -172,6 +172,10 @@ func uploadMultipartIndexInit(ctx context.Context, httpClient Client, opts Uploa
 	defer func() { complete(err) }()
 
 	err = makeRetry(opts.MaxRetries, opts.RetryInterval)(func(attempt int) (bool, error) {
+		if attempt != 0 {
+			retry(fmt.Sprintf("Failed to prepare multipart upload (will retry; attempt #%d)", attempt))
+		}
+
 		return performUploadRequest(ctx, httpClient, uploadRequestOptions{
 			UploadOptions: opts,
 			Target:        &id,
@@ -250,7 +254,7 @@ func uploadMultipartIndexParts(ctx context.Context, httpClient Client, opts Uplo
 // uploadMultipartIndexFinalize performs the request to stitch the uploaded parts together and
 // mark it ready as processing in the backend.
 func uploadMultipartIndexFinalize(ctx context.Context, httpClient Client, opts UploadOptions, id int) (err error) {
-	_, complete := logPending(
+	retry, complete := logPending(
 		opts.Output,
 		"Finalizing multipart upload",
 		"Finalized multipart upload",
@@ -259,6 +263,10 @@ func uploadMultipartIndexFinalize(ctx context.Context, httpClient Client, opts U
 	defer func() { complete(err) }()
 
 	return makeRetry(opts.MaxRetries, opts.RetryInterval)(func(attempt int) (bool, error) {
+		if attempt != 0 {
+			retry(fmt.Sprintf("Failed to finalize multipart upload (will retry; attempt #%d)", attempt))
+		}
+
 		return performUploadRequest(ctx, httpClient, uploadRequestOptions{
 			UploadOptions: opts,
 			UploadID:      id,
@@ -320,6 +328,7 @@ func logPending(out *output.Output, pendingMessage, successMessage, failureMessa
 	pending := out.Pending(output.Line("", output.StylePending, pendingMessage))
 
 	retry := func(message string) {
+		pending.Destroy()
 		out.WriteLine(output.Line(output.EmojiFailure, output.StyleReset, message))
 		pending = out.Pending(output.Line("", output.StylePending, pendingMessage))
 	}
