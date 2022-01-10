@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	metricLabels    = []string{"mutation", "route", "success", "source"}
+	metricLabels    = []string{"mutation", "route", "success"}
 	requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_graphql_request_duration_seconds",
 		Help:    "GraphQL request latencies in seconds.",
@@ -24,7 +24,6 @@ func instrumentGraphQL(data traceData) {
 	duration := time.Since(data.execStart)
 	labels := prometheus.Labels{
 		"route":    data.requestName,
-		"source":   data.requestSource,
 		"success":  strconv.FormatBool(len(data.queryErrors) == 0),
 		"mutation": strconv.FormatBool(strings.Contains(data.queryParams.Query, "mutation")),
 	}
