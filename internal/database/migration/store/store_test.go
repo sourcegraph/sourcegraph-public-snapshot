@@ -23,12 +23,20 @@ func TestEnsureSchemaTable(t *testing.T) {
 		t.Fatalf("expected query to fail due to missing schema table")
 	}
 
+	if err := store.Exec(ctx, sqlf.Sprintf("SELECT * FROM migration_logs")); err == nil {
+		t.Fatalf("expected query to fail due to missing logs table")
+	}
+
 	if err := store.EnsureSchemaTable(ctx); err != nil {
 		t.Fatalf("unexpected error ensuring schema table exists: %s", err)
 	}
 
 	if err := store.Exec(ctx, sqlf.Sprintf("SELECT * FROM test_migrations_table")); err != nil {
 		t.Fatalf("unexpected error querying version table: %s", err)
+	}
+
+	if err := store.Exec(ctx, sqlf.Sprintf("SELECT * FROM migration_logs")); err != nil {
+		t.Fatalf("unexpected error querying logs table: %s", err)
 	}
 
 	if err := store.EnsureSchemaTable(ctx); err != nil {
