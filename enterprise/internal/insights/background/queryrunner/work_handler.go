@@ -39,6 +39,8 @@ type workHandler struct {
 
 	mu          sync.RWMutex
 	seriesCache map[string]*types.InsightSeries
+
+	computeSearch func(context.Context, string) ([]query.ComputeResult, error)
 }
 
 func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
@@ -75,23 +77,18 @@ func (r *workHandler) fetchSeries(ctx context.Context, seriesID string) (*types.
 	return &result[0], nil
 }
 
-func (r *workHandler) handleCapture(ctx context.Context, job *Job) (err error) {
-	if store.PersistMode(job.PersistMode) != store.RecordMode {
-		return nil
-	}
+func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job) (_ []store.RecordSeriesPointArgs, err error) {
 	log15.Info("Handling recordings for capture series", "series_id", job.SeriesID)
-	results, err := query.ComputeSearch(ctx, job.SearchQuery)
+	results, err := r.computeSearch(ctx, job.SearchQuery)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	var recordings []store.RecordSeriesPointArgs
-
 	recordTime := time.Now()
 	if job.RecordTime != nil {
 		recordTime = *job.RecordTime
 	}
 
+	var recordings []store.RecordSeriesPointArgs
 	groupedByRepo := query.GroupByRepository(results)
 	for repoKey, byRepo := range groupedByRepo {
 		groupedByCapture := query.GroupByCaptureMatch(byRepo)
@@ -102,14 +99,30 @@ func (r *workHandler) handleCapture(ctx context.Context, job *Job) (err error) {
 		}
 		log15.Info("results from capture", "repo_id", repoId, "time", recordTime, "groupedByCapture", groupedByCapture, "query", job.SearchQuery)
 		for _, group := range groupedByCapture {
-			recordings = append(recordings, ToRecording(job, float64(group.Count), recordTime, byRepo[0].RepoName(), repoId, &group.Value)...)
+			log15.Info("group", "group", group)
+			capture := group.Value
+			recordings = append(recordings, ToRecording(job, float64(group.Count), recordTime, byRepo[0].RepoName(), repoId, &capture)...)
 		}
 	}
+	return recordings, nil
+}
 
+func (r *workHandler) handleComputeSearch(ctx context.Context, job *Job) (err error) {
+	if store.PersistMode(job.PersistMode) != store.RecordMode {
+		return nil
+	}
+	recordings, err := r.generateComputeRecordings(ctx, job)
+	if err != nil {
+		return err
+	}
 	if recordErr := r.insightsStore.RecordSeriesPoints(ctx, recordings); recordErr != nil {
 		err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
 	}
 	return err
+}
+
+func (r *workHandler) HandleBasicSearch(ctx context.Context) {
+
 }
 
 func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
@@ -138,7 +151,7 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		log15.Error("nil series", "series_id", job.SeriesID)
 	}
 	if !series.JustInTime && series.GeneratedFromCaptureGroups { // getting a nil pointer dereference from something in the background?
-		return r.handleCapture(ctx, job)
+		return r.handleComputeSearch(ctx, job)
 	}
 
 	// Actually perform the search query.
