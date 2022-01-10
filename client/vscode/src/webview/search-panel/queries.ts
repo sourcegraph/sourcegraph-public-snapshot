@@ -185,3 +185,24 @@ export const treeEntriesQuery = gql`
         isSingleChild
     }
 `
+
+export const eventsQuery = gql`
+    query EventLogsData($userId: ID!, $first: Int, $eventName: String!) {
+        node(id: $userId) {
+            ... on User {
+                __typename
+                eventLogs(first: $first, eventName: $eventName) {
+                    nodes {
+                        argument
+                        timestamp
+                        url
+                    }
+                    pageInfo {
+                        hasNextPage
+                    }
+                    totalCount
+                }
+            }
+        }
+    }
+`

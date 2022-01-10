@@ -82,13 +82,21 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
             useQueryState.setState({ queryState: activeQueryState.queryState })
             if (activeQueryState.executed) {
                 setOpenedSearchPanel(true)
+                sourcegraphVSCodeExtensionAPI
+                    .getLocalRecentSearch()
+                    .then(response => {
+                        setLocalRecentSearches(response)
+                    })
+                    .catch(() => {
+                        // TODO error handling
+                    })
             }
         }
 
         // if (queryToRun && !openedSearchPanel) {
         //     setOpenedSearchPanel(true)
         // }
-    }, [activeQueryState, useQueryState])
+    }, [activeQueryState, sourcegraphVSCodeExtensionAPI, useQueryState])
 
     // Check if User is currently on VS Code Desktop or VS Code Web
     const [onDesktop, setOnDesktop] = useState<boolean | undefined>(undefined)

@@ -6,7 +6,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { StreamingSearchResultsList } from '@sourcegraph/branded/src/search/results/StreamingSearchResultsList'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import {
     AggregateStreamingSearchResults,
     CommitMatch,
@@ -199,14 +198,14 @@ export const SearchResults = React.memo<SearchResultsProps>(
                 return <ButtonDropdownCta {...props} />
             }
             return (
-                <ButtonLink
+                <button
+                    type="button"
                     className={classNames('btn btn-sm btn-outline-secondary text-decoration-none', props.className)}
-                    to={props.nonExperimentalLinkTo}
-                    onSelect={props.onNonExperimentalLinkClick}
+                    onClick={props.onNonExperimentalLinkClick}
                     disabled={props.isNonExperimentalLinkDisabled}
                 >
                     {props.button}
-                </ButtonLink>
+                </button>
             )
         }
 
@@ -229,7 +228,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
                     <li className={classNames('mr-2', styles.navItem)}>
                         <ExperimentalActionButton
                             showExperimentalVersion={showActionButtonExperimentalVersion}
-                            onNonExperimentalLinkClick={() => setOpenSavedSearchCreateForm(true)}
+                            onNonExperimentalLinkClick={() => setOpenSavedSearchCreateForm(!openSavedSearchCreateForm)}
                             className="test-save-search-link"
                             button={
                                 <>

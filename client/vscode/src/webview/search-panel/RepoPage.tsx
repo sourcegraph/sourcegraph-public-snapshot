@@ -11,6 +11,8 @@ import { WebviewPageProps } from '../platform/context'
 
 import styles from './SearchResults.module.scss'
 
+import { useQueryState } from '.'
+
 interface RepoPageProps extends WebviewPageProps {
     entries: Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url' | 'path'>[]
     instanceHostname: Promise<string>
@@ -25,12 +27,15 @@ export const RepoPage: React.FunctionComponent<RepoPageProps> = ({
     getFiles,
     selectedRepoName,
 }) => {
+    const searchActions = useQueryState(({ actions }) => actions)
+
     const onSelect = (isDirectory: boolean, path: string, url: string): void => {
         ;(async () => {
             const host = await instanceHostname
 
             switch (isDirectory) {
                 case true: {
+                    searchActions.setQuery({ query: `repo:^${selectedRepoName}$ file:^${path}` })
                     return getFiles({
                         repoName: selectedRepoName,
                         commitID: '',
