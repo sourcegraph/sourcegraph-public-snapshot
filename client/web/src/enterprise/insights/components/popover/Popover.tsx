@@ -1,31 +1,23 @@
-import ReachPopover, { Position, positionDefault } from '@reach/popover'
 import classNames from 'classnames'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import FocusLock from 'react-focus-lock'
+
+import { Popover as FloatingPanel, getScrollParents } from '@sourcegraph/wildcard'
 
 import { useKeyboard } from './hooks/use-keyboard'
 import { useOnClickOutside } from './hooks/use-outside-click'
+import { Placement } from '@floating-ui/dom';
 
 interface PopoverProps extends React.HTMLAttributes<HTMLDivElement> {
     target: React.RefObject<HTMLElement>
     positionTarget?: React.RefObject<HTMLElement>
-    position?: Position
     isOpen?: boolean
     onVisibilityChange?: (open: boolean) => void
     className?: string
 }
 
 export const Popover: React.FunctionComponent<PopoverProps> = props => {
-    const {
-        isOpen,
-        target,
-        positionTarget = target,
-        position = positionDefault,
-        children,
-        className,
-        onVisibilityChange,
-        ...otherProps
-    } = props
+    const { isOpen, target, positionTarget = target, children, className, onVisibilityChange, ...otherProps } = props
 
     const isControlledReference = useRef(isOpen !== undefined)
     const popoverReference = useRef<HTMLDivElement>(null)
@@ -87,21 +79,29 @@ export const Popover: React.FunctionComponent<PopoverProps> = props => {
     // Close popover on escape
     useKeyboard({ detectKeys: ['Escape'] }, handleEscapePress)
 
-    if (!isPopoverVisible) {
+    const constraints = useMemo(() => (positionTarget.current ? getScrollParents(positionTarget.current) : []), [
+        positionTarget,
+    ])
+
+    if (!isPopoverVisible || !positionTarget.current) {
         return null
     }
 
     return (
-        <ReachPopover
+        <FloatingPanel
             ref={popoverReference}
-            targetRef={positionTarget}
-            // hidden={true}
-            position={position}
+            target={positionTarget.current}
             className={classNames('d-block dropdown-menu', className)}
+            strategy="fixed"
             role="dialog"
+            placement="left"
+            padding={TARGET_PADDING}
+            constraints={constraints}
             {...otherProps}
         >
             <FocusLock returnFocus={true}>{children}</FocusLock>
-        </ReachPopover>
+        </FloatingPanel>
     )
 }
+
+const TARGET_PADDING = { mainAxis: 10, crossAxis: 0 }
