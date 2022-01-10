@@ -192,9 +192,9 @@ func TestIndexedSearch(t *testing.T) {
 			},
 			wantMatchCount: 3,
 			wantMatchKeys: []result.Key{
-				{Repo: "foo/bar", Commit: "1", Path: "baz.go"},
-				{Repo: "foo/bar", Commit: "1", Path: "baz.go"},
-				{Repo: "foo/bar", Commit: "2", Path: "bam.go"},
+				{Repo: "foo/bar", Rev: "HEAD", Commit: "1", Path: "baz.go"},
+				{Repo: "foo/bar", Rev: "dev", Commit: "1", Path: "baz.go"},
+				{Repo: "foo/bar", Rev: "dev", Commit: "2", Path: "bam.go"},
 			},
 			wantMatchInputRevs: []string{
 				"HEAD",
@@ -225,7 +225,7 @@ func TestIndexedSearch(t *testing.T) {
 			},
 			wantUnindexed: makeRepositoryRevisions("foo/bar@unindexed"),
 			wantMatchKeys: []result.Key{
-				{Repo: "foo/bar", Commit: "1", Path: "baz.go"},
+				{Repo: "foo/bar", Rev: "HEAD", Commit: "1", Path: "baz.go"},
 			},
 			wantMatchCount:     1,
 			wantMatchInputRevs: []string{"HEAD"},
