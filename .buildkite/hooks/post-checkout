@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source ~/.profile
+
 # Fetch the latest origin/master to accurately determine the set of changed
 # files on this branch.
 echo "Running git fetch..."
