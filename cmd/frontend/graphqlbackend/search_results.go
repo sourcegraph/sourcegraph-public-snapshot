@@ -1045,6 +1045,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 				alerts = append(alerts, new.Alert)
 			}
 
+			// Check if another go-routine has already produced enough results.
 			if wantCount <= 0 {
 				return context.Canceled
 			}
@@ -1345,6 +1346,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 				alerts = append(alerts, newResult.Alert)
 			}
 
+			// Check if another go-routine has already produced enough results.
 			if wantCount <= 0 {
 				return context.Canceled
 			}
