@@ -268,3 +268,36 @@ func strPtr(err error) *string {
 	text := err.Error()
 	return &text
 }
+
+type migrationLog struct {
+	Schema  string
+	Version int
+	Up      bool
+	Success *bool
+}
+
+// scanMigrationLogs scans a slice of migration logs from the return value of `*Store.query`.
+func scanMigrationLogs(rows *sql.Rows, queryErr error) (_ []migrationLog, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var logs []migrationLog
+	for rows.Next() {
+		var log migrationLog
+
+		if err := rows.Scan(
+			&log.Schema,
+			&log.Version,
+			&log.Up,
+			&log.Success,
+		); err != nil {
+			return nil, err
+		}
+
+		logs = append(logs, log)
+	}
+
+	return logs, nil
+}
