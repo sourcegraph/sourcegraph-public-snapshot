@@ -20,11 +20,11 @@ if [ $# -eq 0 ]; then
   exit 1
 fi
 
-while getopts 's:m' flag; do
+while getopts 't:s:m' flag; do
   case "${flag}" in
     s) SECTION="${OPTARG}" ;;
     m) MARKDOWN='true' ;;
-    k) TYPE="${OPTARG}" ;;
+    t) TYPE="${OPTARG}" ;;
     *)
       print_usage
       exit 1
