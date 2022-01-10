@@ -31,7 +31,7 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
 
     const createNotebook = useCallback(() => {
         const location = {
-            pathname: PageRoutes.SearchNotebook,
+            pathname: PageRoutes.CreateNotebook,
             hash: serializeBlocks(
                 entries.map(
                     (entry): BlockInput => {
