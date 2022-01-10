@@ -11,7 +11,7 @@ asdf install
 echo "done installing"
 
 # Tmp fix until PR is merged 
-wget https://www.dropbox.com/s/j4qyute1lgk28xq/buildevents?dl=1 && chmod +x buildevents && mv buildevents /usr/local/bin
+wget https://www.dropbox.com/s/j4qyute1lgk28xq/buildevents?dl=1 -O buildevents && chmod +x buildevents && mv buildevents /usr/local/bin
 
 # Link the trace-script so we can have pretty steps in the buildkite ui
 ln -s "$(pwd)/enterprise/dev/trace-command.sh" tr 2>/dev/null || true
