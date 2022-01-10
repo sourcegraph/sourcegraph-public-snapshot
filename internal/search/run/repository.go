@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"math"
+	"regexp"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -69,25 +70,12 @@ func (s *RepoSearch) Run(ctx context.Context, stream streaming.Sender, repos sea
 		opts.RepoFilters = append(make([]string, 0, len(opts.RepoFilters)), opts.RepoFilters...)
 		opts.CaseSensitiveRepoFilters = s.Args.Query.IsCaseSensitive()
 
-		patternPrefix := strings.SplitN(s.Args.PatternInfo.Pattern, "@", 2)
-		if len(patternPrefix) == 0 {
-			// No "@" in pattern? We're good.
-			opts.RepoFilters = append(opts.RepoFilters, s.Args.PatternInfo.Pattern)
-		} else if patternPrefix[0] != "" {
-			// Extend the repo search using the pattern value, but
-			// since the pattern contains @, only search the part
-			// prefixed by the first @. This because downstream
-			// logic will get confused by the presence of @ and try
-			// to resolve repo revisions. See #27816.
-			opts.RepoFilters = append(opts.RepoFilters, patternPrefix[0])
-		} else {
-			// This pattern starts with @, of the form "@thing". We can't
-			// consistently handle search repos of this form, because
-			// downstream logic will attempt to interpret "thing" as a repo
-			// revision, may fail, and cause us to raise an alert for any
-			// non `type:repo` search. Better to not attempt a repo search.
+		p, ok := validRepoPattern(s.Args.PatternInfo.Pattern)
+		if !ok {
+			// skip running a repo search for this pattern
 			return nil
 		}
+		opts.RepoFilters = append(opts.RepoFilters, p)
 	}
 
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, s.Limit)
@@ -125,6 +113,41 @@ func (*RepoSearch) Name() string {
 
 func (s *RepoSearch) Required() bool {
 	return s.IsRequired
+}
+
+// validRepoPattern returns true if the pattern part of a query can be used to
+// search repos. A problematic case we check for is when the pattern contains `@`,
+// which may confuse downstream logic to interpret it as part of `repo@rev` syntax.
+func validRepoPattern(pattern string) (string, bool) {
+	patternPrefix := strings.SplitN(pattern, "@", 2)
+	if len(patternPrefix) == 1 {
+		// No "@" in pattern? We're good.
+		return pattern, true
+	}
+
+	if patternPrefix[0] != "" {
+		// Extend the repo search using the pattern value, but
+		// since the pattern contains @, only search the part
+		// prefixed by the first @. This because downstream
+		// logic will get confused by the presence of @ and try
+		// to resolve repo revisions. See #27816.
+		if _, err := regexp.Compile(patternPrefix[0]); err != nil {
+			// Prefix is not valid regexp, so just reject it. This can happen for patterns where we've automatically added `(...).*?(...)`
+			// such as `foo @bar` which becomes `(foo).*?(@bar)`, which when stripped becomes `(foo).*?(` which is unbalanced and invalid.
+			// Why is this a mess? Because validation for everything, including repo values, should be done up front so far possible, not downtsream
+			// after possible modifications. By the time we reach this code, the pattern should already have been considered valid to continue with
+			// a search. But fixing the order of concerns for repo code is not something @rvantonder is doing today.
+			return "", false
+		}
+		return patternPrefix[0], true
+	}
+
+	// This pattern starts with @, of the form "@thing". We can't
+	// consistently handle search repos of this form, because
+	// downstream logic will attempt to interpret "thing" as a repo
+	// revision, may fail, and cause us to raise an alert for any
+	// non `type:repo` search. Better to not attempt a repo search.
+	return "", false
 }
 
 func repoRevsToRepoMatches(ctx context.Context, repos []*search.RepositoryRevisions) []result.Match {

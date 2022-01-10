@@ -1,8 +1,8 @@
 import React, { useRef, useState } from 'react'
 
-import { FeedbackPromptContent } from '@sourcegraph/web/src/nav/Feedback'
 import { Button, ProductStatusBadge } from '@sourcegraph/wildcard'
 
+import { FeedbackPromptContent } from '../../../../nav/Feedback'
 import { flipRightPosition } from '../context-menu/utils'
 import { Popover } from '../popover/Popover'
 
