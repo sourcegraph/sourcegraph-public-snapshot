@@ -4,6 +4,7 @@ import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { NEVER } from 'rxjs'
 
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { SearchPatternType } from './graphql-operations'
@@ -56,9 +57,11 @@ describe('Layout', () => {
         useNavbarQueryState.setState({ searchPatternType: SearchPatternType.literal })
 
         render(
-            <BrowserRouter>
-                <Layout {...defaultProps} history={history} location={history.location} />
-            </BrowserRouter>
+            <MockedTestProvider>
+                <BrowserRouter>
+                    <Layout {...defaultProps} history={history} location={history.location} />
+                </BrowserRouter>
+            </MockedTestProvider>
         )
 
         expect(useNavbarQueryState.getState().searchPatternType).toBe(SearchPatternType.regexp)
@@ -71,9 +74,11 @@ describe('Layout', () => {
         useNavbarQueryState.setState({ searchPatternType: SearchPatternType.literal })
 
         render(
-            <BrowserRouter>
-                <Layout {...defaultProps} history={history} location={history.location} />
-            </BrowserRouter>
+            <MockedTestProvider>
+                <BrowserRouter>
+                    <Layout {...defaultProps} history={history} location={history.location} />
+                </BrowserRouter>
+            </MockedTestProvider>
         )
 
         expect(useNavbarQueryState.getState().searchPatternType).toBe(SearchPatternType.literal)
@@ -86,9 +91,11 @@ describe('Layout', () => {
         useNavbarQueryState.setState({ searchCaseSensitivity: false })
 
         render(
-            <BrowserRouter>
-                <Layout {...defaultProps} history={history} location={history.location} />
-            </BrowserRouter>
+            <MockedTestProvider>
+                <BrowserRouter>
+                    <Layout {...defaultProps} history={history} location={history.location} />
+                </BrowserRouter>
+            </MockedTestProvider>
         )
 
         expect(useNavbarQueryState.getState().searchCaseSensitivity).toBe(true)
@@ -101,9 +108,11 @@ describe('Layout', () => {
         useNavbarQueryState.setState({ searchCaseSensitivity: false })
 
         render(
-            <BrowserRouter>
-                <Layout {...defaultProps} history={history} location={history.location} />
-            </BrowserRouter>
+            <MockedTestProvider>
+                <BrowserRouter>
+                    <Layout {...defaultProps} history={history} location={history.location} />
+                </BrowserRouter>
+            </MockedTestProvider>
         )
 
         expect(useNavbarQueryState.getState().searchCaseSensitivity).toBe(false)
