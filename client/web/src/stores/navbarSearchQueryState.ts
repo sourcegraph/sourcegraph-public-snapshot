@@ -5,14 +5,16 @@
 // (see https://github.com/sourcegraph/sourcegraph/issues/21200).
 import create from 'zustand'
 
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { parseSearchURL } from '../search'
 import { QueryState, SubmitSearchParameters, submitSearch, toggleSubquery, canSubmitSearch } from '../search/helpers'
-import { defaultCaseSensitiveFromSettings } from '../util/settings'
+import { defaultCaseSensitiveFromSettings, defaultPatternTypeFromSettings } from '../util/settings'
 
 type QueryStateUpdate = QueryState | ((queryState: QueryState) => QueryState)
 
@@ -73,6 +75,7 @@ export interface NavbarQueryState {
      */
     queryState: QueryState
     searchCaseSensitivity: boolean
+    searchPatternType: SearchPatternType
 
     // ACTIONS
     /**
@@ -86,14 +89,16 @@ export interface NavbarQueryState {
      * is empty.
      * Note that this won't update `queryState` directly.
      */
-    submitSearch: (parameters: Omit<SubmitSearchParameters, 'query' | 'caseSensitive'>, updates?: QueryUpdate[]) => void
-
-    setSearchCaseSensitivity: (caseSensitive: boolean) => void
+    submitSearch: (
+        parameters: Omit<SubmitSearchParameters, 'query' | 'caseSensitive' | 'patternType'>,
+        updates?: QueryUpdate[]
+    ) => void
 }
 
 export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     queryState: { query: '' },
     searchCaseSensitivity: false,
+    searchPatternType: SearchPatternType.literal,
 
     setQueryState: queryStateUpdate => {
         if (typeof queryStateUpdate === 'function') {
@@ -107,17 +112,22 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
         const {
             queryState: { query },
             searchCaseSensitivity: caseSensitive,
+            searchPatternType: patternType,
         } = get()
         const updatedQuery = updateQuery(query, updates)
         if (canSubmitSearch(query, parameters.selectedSearchContextSpec)) {
-            submitSearch({ ...parameters, query: updatedQuery, caseSensitive })
+            submitSearch({ ...parameters, query: updatedQuery, caseSensitive, patternType })
         }
     },
-
-    setSearchCaseSensitivity: (caseSensitive: boolean) => {
-        set({ searchCaseSensitivity: caseSensitive })
-    },
 }))
+
+export function setSearchPatternType(searchPatternType: SearchPatternType): void {
+    useNavbarQueryState.setState({ searchPatternType })
+}
+
+export function setSearchCaseSensitivity(searchCaseSensitivity: boolean): void {
+    useNavbarQueryState.setState({ searchCaseSensitivity })
+}
 
 /**
  * Update or initialize query state related data from URL search parameters
@@ -127,9 +137,10 @@ export function setQueryStateFromURL(urlParameters: string): void {
     const parsedSearchURL = parseSearchURL(urlParameters)
     if (parsedSearchURL.query) {
         // Only update flags if the URL contains a search query.
-        useNavbarQueryState.setState({
+        useNavbarQueryState.setState(state => ({
             searchCaseSensitivity: parsedSearchURL.caseSensitive,
-        })
+            searchPatternType: parsedSearchURL.patternType ?? state.searchPatternType,
+        }))
     }
 }
 
@@ -137,8 +148,45 @@ export function setQueryStateFromURL(urlParameters: string): void {
  * Update or initialize query state related data from settings
  */
 export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Settings>): void {
+    const newState: Partial<Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity'>> = {}
+
     const caseSensitive = defaultCaseSensitiveFromSettings(settings)
     if (caseSensitive) {
-        useNavbarQueryState.setState({ searchCaseSensitivity: caseSensitive })
+        newState.searchCaseSensitivity = caseSensitive
     }
+
+    const searchPatternType = defaultPatternTypeFromSettings(settings)
+    if (caseSensitive) {
+        newState.searchPatternType = searchPatternType
+    }
+
+    // The way Zustand is designed makes it difficult to build up a partial new
+    // state object, hence the cast to any here.
+    useNavbarQueryState.setState(newState as any)
+}
+
+interface BuildSearchQueryURLParameters {
+    query: string
+    patternType?: SearchPatternType
+    caseSensitive?: boolean
+    searchContextSpec?: string
+    searchParametersList?: { key: string; value: string }[]
+}
+
+/**
+ * This function wraps 'buildSearchURLQuery' and uses values from the global
+ * query state for parameters that have not been supplied. This provides a
+ * simple way for components to compose new queries with global query state
+ * without needing access to that state themselves.
+ */
+export function buildSearchURLQueryFromQueryState(parameters: BuildSearchQueryURLParameters): string {
+    const currentState = useNavbarQueryState.getState()
+
+    return buildSearchURLQuery(
+        parameters.query,
+        parameters.patternType ?? currentState.searchPatternType,
+        parameters.caseSensitive ?? currentState.searchCaseSensitivity,
+        parameters.searchContextSpec,
+        parameters.searchParametersList
+    )
 }

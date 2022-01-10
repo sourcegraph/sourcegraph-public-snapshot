@@ -51,7 +51,6 @@ import { PageRoutes, EnterprisePageRoutes } from './routes.constants'
 import { Settings } from './schema/settings.schema'
 import {
     parseSearchURLQuery,
-    PatternTypeProps,
     HomePanelsProps,
     SearchStreamingProps,
     parseSearchURL,
@@ -76,7 +75,6 @@ export interface LayoutProps
         KeyboardShortcutsProps,
         TelemetryProps,
         ActivationProps,
-        PatternTypeProps,
         SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,
@@ -133,42 +131,22 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
     // Update patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
-    const {
-        history,
-        patternType: currentPatternType,
-        selectedSearchContextSpec,
-        location,
-        setPatternType,
-        setSelectedSearchContextSpec,
-    } = props
+    const { history, selectedSearchContextSpec, location, setSelectedSearchContextSpec } = props
 
     useEffect(() => setQueryStateFromURL(location.search), [location.search])
 
-    const { query = '', patternType } = useMemo(() => parseSearchURL(location.search), [location.search])
+    const { query = '' } = useMemo(() => parseSearchURL(location.search), [location.search])
 
     const searchContextSpec = useMemo(() => getGlobalSearchContextFilter(query)?.spec, [query])
 
     useEffect(() => {
         // Only override filters from URL if there is a search query
         if (query) {
-            if (patternType && patternType !== currentPatternType) {
-                setPatternType(patternType)
-            }
-
             if (searchContextSpec && searchContextSpec !== selectedSearchContextSpec) {
                 setSelectedSearchContextSpec(searchContextSpec)
             }
         }
-    }, [
-        history,
-        currentPatternType,
-        selectedSearchContextSpec,
-        patternType,
-        query,
-        setPatternType,
-        setSelectedSearchContextSpec,
-        searchContextSpec,
-    ])
+    }, [history, selectedSearchContextSpec, query, setSelectedSearchContextSpec, searchContextSpec])
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)

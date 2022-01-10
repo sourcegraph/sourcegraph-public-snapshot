@@ -14,7 +14,6 @@ import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHel
 
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
-import { SearchPatternType } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
 import { useExperimentalFeatures } from '../stores'
 import { ThemePreference } from '../stores/themeState'
@@ -46,8 +45,6 @@ const defaultProps = (
     onThemePreferenceChange: () => undefined,
     globbing: false,
     parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-    patternType: SearchPatternType.literal,
-    setPatternType: () => undefined,
     platformContext: {} as any,
     keyboardShortcuts: [],
     selectedSearchContextSpec: '',

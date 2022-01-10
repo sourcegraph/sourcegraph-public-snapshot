@@ -127,8 +127,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             repo,
             resolvedRev: { commitID, defaultBranch },
             match,
-            patternType,
-            setPatternType,
             globbing,
             ...context
         }: RepoRevisionContainerContext &
@@ -181,8 +179,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             const repoRevisionProps = {
                 commitID,
                 filePath,
-                patternType,
-                setPatternType,
                 globbing,
             }
 

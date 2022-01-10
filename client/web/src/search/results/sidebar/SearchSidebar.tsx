@@ -134,9 +134,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     onToggle={persistToggleState}
                 >
                     {getSearchTypeLinks({
-                        caseSensitive: props.caseSensitive,
                         onNavbarQueryChange: setQueryState,
-                        patternType: props.patternType,
                         query,
                         selectedSearchContextSpec: props.selectedSearchContextSpec,
                     })}

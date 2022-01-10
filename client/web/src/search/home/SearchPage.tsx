@@ -9,7 +9,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { PatternTypeProps, HomePanelsProps, ParsedSearchQueryProps, SearchContextInputProps } from '..'
+import { HomePanelsProps, ParsedSearchQueryProps, SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
@@ -31,7 +31,6 @@ export interface SearchPageProps
         ThemePreferenceProps,
         ActivationProps,
         ParsedSearchQueryProps,
-        PatternTypeProps,
         KeyboardShortcutsProps,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
