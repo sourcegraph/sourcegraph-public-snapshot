@@ -1016,6 +1016,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				exactMatchCount: 35,
 				skip:            skipStream,
 			},
+			{
+				name:            `Exact default count is respected in OR queries`,
+				query:           `foo OR bar OR (type:repo diff)`,
+				exactMatchCount: 30,
+			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
