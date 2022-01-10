@@ -3,6 +3,8 @@ import { Observable, from } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { Subscribable } from 'sourcegraph'
 
+import { isDefined } from '@sourcegraph/common'
+
 import { MaybeLoadingResult } from './loading'
 
 /**
@@ -19,11 +21,6 @@ export const toMaybeLoadingProviderResult = <T>(
     value: Subscribable<MaybeLoadingResult<T>> | PromiseLike<T>
 ): Observable<MaybeLoadingResult<T>> =>
     isPromiseLike(value) ? from(value).pipe(map(result => ({ isLoading: false, result }))) : from(value)
-
-/**
- * Returns true if `val` is not `null` or `undefined`
- */
-export const isDefined = <T>(value: T): value is NonNullable<T> => value !== undefined && value !== null
 
 /**
  * Returns a function that returns `true` if the given `key` of the object is not `null` or `undefined`.

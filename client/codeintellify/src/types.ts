@@ -1,6 +1,6 @@
+import { ErrorLike } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 
-import { ErrorLike } from './errors'
 import { LOADING } from './loading'
 import { HoveredToken } from './tokenPosition'
 

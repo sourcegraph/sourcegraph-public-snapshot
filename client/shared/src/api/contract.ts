@@ -1,9 +1,9 @@
 import { Remote, ProxyMarked } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
 
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { ErrorLike } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
-import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify'
 
 import { ConfiguredExtension } from '../extensions/extension'
 import { GraphQLResult } from '../graphql/graphql'

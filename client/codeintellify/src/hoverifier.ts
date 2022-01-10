@@ -35,9 +35,9 @@ import {
     startWith,
 } from 'rxjs/operators'
 
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 
-import { asError, ErrorLike, isErrorLike } from './errors'
 import { elementOverlaps, scrollIntoCenterIfNeeded, toMaybeLoadingProviderResult } from './helpers'
 import { emitLoading, MaybeLoadingResult, LOADING } from './loading'
 import { calculateOverlayPosition } from './overlayPosition'

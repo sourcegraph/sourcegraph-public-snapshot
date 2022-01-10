@@ -15,6 +15,7 @@
     { "path": "../branded" },
     { "path": "../../schema" },
     { "path": "../storybook" },
+    { "path": "../codeintellify" },
     { "path": "../common" },
   ],
   "include": ["**/*", ".*", "./src/**/*.json"],
