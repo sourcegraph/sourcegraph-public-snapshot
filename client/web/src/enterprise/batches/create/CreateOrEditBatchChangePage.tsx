@@ -15,10 +15,9 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
-import { PageHeader, Button, Container, Input, LoadingSpinner } from '@sourcegraph/wildcard'
+import { PageHeader, Button, Container, Input, LoadingSpinner, FeedbackBadge } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
-import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import {
     BatchChangeFields,
     EditBatchChangeFields,

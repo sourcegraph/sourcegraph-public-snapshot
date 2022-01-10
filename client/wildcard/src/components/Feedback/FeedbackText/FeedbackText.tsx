@@ -1,15 +1,20 @@
-import classNames from 'classnames'
 import * as React from 'react'
 
-interface Props {
+interface FeedbackTextProps {
+    /**
+     * @default "Questions/feedback?"
+     */
     headerText?: React.ReactNode
     footerText?: React.ReactNode
     className?: string
 }
 
-export const FeedbackText: React.FunctionComponent<Props> = (props: Props) => (
-    <p className={classNames('feedback-text', props.className)}>
-        {props.headerText || 'Questions/feedback?'} Contact us at{' '}
+/**
+ * An abstract UI component which renders a text for feedback.
+ */
+export const FeedbackText: React.FunctionComponent<FeedbackTextProps> = ({ className, footerText, headerText }) => (
+    <p className={className}>
+        {headerText || 'Questions/feedback?'} Contact us at{' '}
         <a href="https://twitter.com/sourcegraph" target="_blank" rel="noopener noreferrer">
             @sourcegraph
         </a>{' '}
@@ -21,6 +26,6 @@ export const FeedbackText: React.FunctionComponent<Props> = (props: Props) => (
         <a href="https://github.com/sourcegraph/issues/issues" target="_blank" rel="noopener noreferrer">
             public issue tracker
         </a>
-        . {props.footerText}
+        . {footerText}
     </p>
 )
