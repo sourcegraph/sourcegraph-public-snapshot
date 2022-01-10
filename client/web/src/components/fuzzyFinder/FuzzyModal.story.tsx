@@ -29,18 +29,16 @@ const searchValues: SearchValue[] = filenames.map(filename => ({ text: filename 
 const fuzzy = new CaseInsensitiveFuzzySearch(searchValues)
 const fsm: Ready = { key: 'ready', fuzzy }
 const defaultProps = {
-    commitID: 'commitID',
     repoName: 'repoName',
-    initialQuery: 'clientb',
+    commitID: 'commitID',
     initialMaxResults: 10,
+    initialQuery: 'clientb',
     downloadFilenames: filenames,
-    fsm,
-    setFsm: () => {},
-    isVisible: true,
-    onClose: () => {},
-    caseInsensitiveFileCountThreshold: 100,
     isLoading: false,
     isError: undefined,
+    onClose: () => {},
+    fsm,
+    setFsm: () => {},
 }
 const { add } = storiesOf('web/FuzzyFinder', module).addDecorator(story => <WebStory>{() => story()}</WebStory>)
 

@@ -2,7 +2,6 @@ FROM postgres:12.6-alpine@sha256:faf54a67a58ecf4d21e3e68b9a3b33f81a11e8a78653004
 
 # We modify the postgres user/group to reconcile with our previous debian based images
 # and avoid issues with customers migrating.
-# hadolint ignore=DL3018
 RUN apk add --no-cache nss su-exec shadow &&\
     groupmod -g 99 ping &&\
     usermod -u 999 postgres &&\
@@ -13,7 +12,7 @@ RUN apk add --no-cache nss su-exec shadow &&\
 
 # @FIXME: Update redis image
 # Pin busybox=1.32.1-r7 https://github.com/sourcegraph/sourcegraph/issues/27965
-RUN apk add --upgrade --no-cache libxml2=~2.9.12 libgcrypt=~1.8.8 apk-tools=~2.12.7 busybox=~1.32.1
+RUN apk add --upgrade --no-cache libxml2>=2.9.12 libgcrypt>=1.8.8 apk-tools>=2.12.7 busybox>=1.32.1
 
 ENV POSTGRES_PASSWORD='' \
     POSTGRES_USER=sg \

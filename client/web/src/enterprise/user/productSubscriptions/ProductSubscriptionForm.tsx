@@ -8,11 +8,11 @@ import { catchError, startWith, switchMap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { StripeWrapper } from '../../dotcom/billing/StripeWrapper'
@@ -259,7 +259,7 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                             >
                                 {paymentToken === LOADING || submissionState === LOADING ? (
                                     <>
-                                        <LoadingSpinner className="icon-inline mr-2" /> Processing...
+                                        <LoadingSpinner className="mr-2" /> Processing...
                                     </>
                                 ) : paymentValidity !== PaymentValidity.NoPaymentRequired ? (
                                     primaryButtonText

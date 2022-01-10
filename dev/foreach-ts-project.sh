@@ -17,6 +17,7 @@ DIRS=(
   client/browser
   client/build-config
   client/common
+  client/codeintellify
   client/wildcard
   client/extension-api
   client/eslint-plugin-sourcegraph

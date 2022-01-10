@@ -294,7 +294,7 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
 exports[`ActivationChecklist render loading 1`] = `
 <DocumentFragment>
   <div
-    class="loading-spinner icon-inline my-2"
+    class="loadingSpinner icon-inline my-2"
   />
 </DocumentFragment>
 `;

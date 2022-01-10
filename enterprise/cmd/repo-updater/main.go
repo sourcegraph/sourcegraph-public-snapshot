@@ -59,7 +59,7 @@ func enterpriseInit(
 	}
 
 	permsStore := edb.Perms(db, timeutil.Now)
-	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
+	permsSyncer := authz.NewPermsSyncer(db, repoStore, permsStore, timeutil.Now, ratelimit.DefaultRegistry)
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
 	debugDumpers = append(debugDumpers, permsSyncer)
 	if server != nil {

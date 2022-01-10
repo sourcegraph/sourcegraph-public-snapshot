@@ -57,6 +57,9 @@ const (
 	// BitsPerSecond, e.g. for representing network and disk IO.
 	BitsPerSecond UnitType = "bps"
 
+	// BytesPerSecond, e.g. for representing network and disk IO.
+	BytesPerSecond UnitType = "Bps"
+
 	// ReadsPerSecond, e.g for representing disk IO.
 	ReadsPerSecond UnitType = "rps"
 
@@ -65,6 +68,9 @@ const (
 
 	// RequestsPerSecond, e.g. for representing number of HTTP requests per second
 	RequestsPerSecond UnitType = "reqps"
+
+	// PacketsPerSecond, e.g. for representing number of network packets per second
+	PacketsPerSecond UnitType = "pps"
 )
 
 // setPanelSize is a helper to set a panel's size.

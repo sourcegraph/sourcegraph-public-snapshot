@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 var errPermissionsUserMappingConflict = errors.New("The permissions user mapping (site configuration `permissions.userMapping`) cannot be enabled when other authorization providers are in use, please contact site admin to resolve it.")
@@ -18,7 +17,7 @@ var errPermissionsUserMappingConflict = errors.New("The permissions user mapping
 // AuthzQueryConds returns a query clause for enforcing repository permissions.
 // It uses `repo` as the table name to filter out repository IDs and should be
 // used as an AND condition in a complete SQL query.
-func AuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
+func AuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
 	authzAllowByDefault, authzProviders := authz.GetProviders()
 	usePermissionsUserMapping := globals.PermissionsUserMapping().Enabled
 
@@ -43,7 +42,7 @@ func AuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
 	// so correctness is important here.
 	bypassAuthz := a.IsInternal() || (authzAllowByDefault && len(authzProviders) == 0)
 	if !bypassAuthz && a.IsAuthenticated() {
-		currentUser, err := Users(db).GetByCurrentAuthUser(ctx)
+		currentUser, err := db.Users().GetByCurrentAuthUser(ctx)
 		if err != nil {
 			return nil, err
 		}

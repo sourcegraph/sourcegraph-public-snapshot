@@ -46,7 +46,10 @@ func TestMain(m *testing.M) {
 		*githubToken = mockGitHubToken
 	}
 
-	needsSiteInit, err := gqltestutil.NeedsSiteInit(*baseURL)
+	needsSiteInit, resp, err := gqltestutil.NeedsSiteInit(*baseURL)
+	if resp != "" {
+		log.Println("server response: ", resp)
+	}
 	if err != nil {
 		log.Fatal("Failed to check if site needs init: ", err)
 	}

@@ -3,7 +3,7 @@ import { from } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../../api/client/api/common'
 import { Link } from '../../components/Link'
@@ -58,7 +58,7 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
                 )
             ) : (
                 <span className="card-body">
-                    <LoadingSpinner className="icon-inline" /> Loading extensions...
+                    <LoadingSpinner /> Loading extensions...
                 </span>
             )}
             <div className="card-body border-top">
