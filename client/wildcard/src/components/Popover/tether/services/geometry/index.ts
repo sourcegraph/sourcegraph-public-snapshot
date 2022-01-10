@@ -1,4 +1,3 @@
-
 export * from './actions/get-constrained-element'
 export * from './actions/get-element-constraints'
 export * from './actions/get-elements-intersection'

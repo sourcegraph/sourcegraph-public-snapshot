@@ -1,7 +1,7 @@
-import { createRectangleFromPoints, Rectangle } from '../../../models/geometry/rectangle';
-import { Overlapping, Position, Side } from '../../../models/tether-models';
-import { POSITION_VARIANTS } from '../constants';
-import { createPoint } from '../../../models/geometry/point';
+import { createPoint } from '../../../models/geometry/point'
+import { createRectangleFromPoints, Rectangle } from '../../../models/geometry/rectangle'
+import { Overlapping, Position, Side } from '../../../models/tether-models'
+import { POSITION_VARIANTS } from '../constants'
 
 /**
  * Returns constraint rectangle according to target element position
@@ -26,42 +26,40 @@ import { createPoint } from '../../../models/geometry/point';
  * │     └──────┘     │ ┃░░░░░░░░░░░░░░░░░░┃
  * └──────────────────┘ ┗━━━━━━━━━━━━━━━━━━┛
  * ```
+ *
  * @param target - Target rectangle element
  * @param constraint - Original constraint rectangle element
  * @param position - Desirable tooltip position
  * @param overlapping - Overlapping strategy (all, none)
  */
 export function getElementConstraint(
-	target: Rectangle,
-	constraint: Rectangle,
-	position: Position,
-	overlapping: Overlapping
+    target: Rectangle,
+    constraint: Rectangle,
+    position: Position,
+    overlapping: Overlapping
 ): Rectangle {
-	const side = POSITION_VARIANTS[position].positionSides;
-	
-	let x1 = constraint.left;
-	let x2 = constraint.right;
-	let y1 = constraint.top;
-	let y2 = constraint.bottom;
-	
-	if (overlapping == Overlapping.none) {
-		if (side == Side.top) {
-			y1 = Math.min(target.top, constraint.top);
-			y2 = Math.min(target.top, constraint.bottom);
-		} else if (side == Side.right) {
-			x1 = Math.max(target.right, constraint.left);
-			x2 = Math.max(target.right, constraint.right);
-		} else if (side == Side.bottom) {
-			y1 = Math.max(target.bottom, constraint.top);
-			y2 = Math.max(target.bottom, constraint.bottom);
-		} else {
-			x1 = Math.min(target.left, constraint.left);
-			x2 = Math.min(target.left, constraint.right);
-		}
-	}
-	
-	return createRectangleFromPoints(
-		createPoint(x1, y1),
-		createPoint(x2, y2)
-	);
+    const side = POSITION_VARIANTS[position].positionSides
+
+    let xStart = constraint.left
+    let xEnd = constraint.right
+    let yStart = constraint.top
+    let yEnd = constraint.bottom
+
+    if (overlapping === Overlapping.none) {
+        if (side === Side.top) {
+            yStart = Math.min(target.top, constraint.top)
+            yEnd = Math.min(target.top, constraint.bottom)
+        } else if (side === Side.right) {
+            xStart = Math.max(target.right, constraint.left)
+            xEnd = Math.max(target.right, constraint.right)
+        } else if (side === Side.bottom) {
+            yStart = Math.max(target.bottom, constraint.top)
+            yEnd = Math.max(target.bottom, constraint.bottom)
+        } else {
+            xStart = Math.min(target.left, constraint.left)
+            xEnd = Math.min(target.left, constraint.right)
+        }
+    }
+
+    return createRectangleFromPoints(createPoint(xStart, yStart), createPoint(xEnd, yEnd))
 }

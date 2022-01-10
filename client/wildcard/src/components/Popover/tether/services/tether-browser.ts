@@ -1,9 +1,9 @@
-import { createPoint, Point } from '../models/geometry/point';
-import { Rectangle } from '../models/geometry/rectangle';
+import { createPoint, Point } from '../models/geometry/point'
+import { Rectangle } from '../models/geometry/rectangle'
 
 interface ScrollPositions {
-	points: WeakMap<Element, Point>,
-	elements: Element[]
+    points: WeakMap<Element, Point>
+    elements: Element[]
 }
 
 /**
@@ -13,14 +13,14 @@ interface ScrollPositions {
  * @param element - the root element for getting scroll information
  */
 export function getScrollPositions(element: Element): ScrollPositions {
-	const store = new WeakMap<Element, Point>();
-	const scrollElements = getScrollChildren(element);
+    const store = new WeakMap<Element, Point>()
+    const scrollElements = getScrollChildren(element)
 
-	for (const element of scrollElements) {
-		store.set(element, createPoint(element.scrollLeft, element.scrollTop));
-	}
+    for (const element of scrollElements) {
+        store.set(element, createPoint(element.scrollLeft, element.scrollTop))
+    }
 
-	return { elements: scrollElements, points: store };
+    return { elements: scrollElements, points: store }
 }
 
 /**
@@ -29,17 +29,17 @@ export function getScrollPositions(element: Element): ScrollPositions {
  * @param element
  */
 export function getScrollParents(element: Element): HTMLElement[] {
-	const containers: HTMLElement[] = [];
+    const containers: HTMLElement[] = []
 
-	if (element.parentElement !== null) {
-		if (isScrollContainer(element.parentElement)) {
-			containers.push(element.parentElement);
-		}
+    if (element.parentElement !== null) {
+        if (isScrollContainer(element.parentElement)) {
+            containers.push(element.parentElement)
+        }
 
-		containers.push(...getScrollParents(element.parentElement));
-	}
+        containers.push(...getScrollParents(element.parentElement))
+    }
 
-	return containers;
+    return containers
 }
 
 /**
@@ -49,12 +49,12 @@ export function getScrollParents(element: Element): HTMLElement[] {
  * @param positions - scroll positions information.
  */
 export function setScrollPositions(positions: ScrollPositions): void {
-	for(const container of positions.elements) {
-		const position = positions.points.get(container);
+    for (const container of positions.elements) {
+        const position = positions.points.get(container)
 
-		container.scrollLeft = position?.x ?? 0;
-		container.scrollTop = position?.y ?? 0;
-	}
+        container.scrollLeft = position?.x ?? 0
+        container.scrollTop = position?.y ?? 0
+    }
 }
 
 /**
@@ -63,65 +63,66 @@ export function setScrollPositions(positions: ScrollPositions): void {
  * visible.
  */
 export function isVisible(element: HTMLElement | null): boolean {
-	if (element === null) {
-		return true;
-	} if (element.hidden !== null && element.hidden) {
-		return false;
-	} if (element.parentElement !== null) {
-		return isVisible(element.parentElement);
-	}
-		return true;
-
+    if (element === null) {
+        return true
+    }
+    if (element.hidden !== null && element.hidden) {
+        return false
+    }
+    if (element.parentElement !== null) {
+        return isVisible(element.parentElement)
+    }
+    return true
 }
 
 export function setTransform(element: HTMLElement | null, angle: number, offset: Point): void {
-	setStyle(element, 'transform', `translate(${offset.x}px, ${offset.y}px) rotate(${angle}deg)`);
+    setStyle(element, 'transform', `translate(${offset.x}px, ${offset.y}px) rotate(${angle}deg)`)
 }
 
 export function setMaxSize(element: HTMLElement, bounds: Rectangle | null): void {
-	setStyle(element, 'max-width', bounds !== null ? `${bounds.width}px` : '');
-	setStyle(element, 'max-height', bounds !== null ? `${bounds.height}px` : '');
+    setStyle(element, 'max-width', bounds !== null ? `${bounds.width}px` : '')
+    setStyle(element, 'max-height', bounds !== null ? `${bounds.height}px` : '')
 }
 
 export function setVisibility(element: HTMLElement | null, isVisible: boolean): void {
-	if (element !== null && element.hidden !== !isVisible) {
-		element.hidden = !isVisible;
-	}
+    if (element !== null && element.hidden !== !isVisible) {
+        element.hidden = !isVisible
+    }
 }
 
 // ------------- Private API methods ---------------
 
 function setStyle(element: HTMLElement | null, key: string, value: string): void {
-	if (element !== null && element.style.getPropertyValue(key) !== value) {
-		element.style.setProperty(key, value);
-	}
+    if (element !== null && element.style.getPropertyValue(key) !== value) {
+        element.style.setProperty(key, value)
+    }
 }
 
 /**
  * Collect all elements by the root element and below that have scroll.
  */
 function getScrollChildren(element: Element): Element[] {
-	const containers: Element[]= [];
+    const containers: Element[] = []
 
-	if (isScrollContainer(element)) {
-		containers.push(element);
-	}
+    if (isScrollContainer(element)) {
+        containers.push(element)
+    }
 
-	for (const child of [...element.children]) {
-		containers.push(...getScrollChildren(child));
-	}
+    for (const child of [...element.children]) {
+        containers.push(...getScrollChildren(child))
+    }
 
-	return containers;
+    return containers
 }
 
 function isScrollContainer(element: Element): boolean {
-	if (element.scrollWidth > element.clientWidth || element.scrollHeight > element.clientHeight) {
-		const style = getComputedStyle(element);
-		const keywords = new Set(['auto', 'scroll', 'overlay']);
-		const properties = [style.overflow, style.overflowX, style.overflowY];
+    if (element.scrollWidth > element.clientWidth || element.scrollHeight > element.clientHeight) {
+        const style = getComputedStyle(element)
+        const keywords = new Set(['auto', 'scroll', 'overlay'])
+        const properties = [style.overflow, style.overflowX, style.overflowY]
 
-		return properties.some(property => keywords.has(property));
-	}
+        return properties.some(property => keywords.has(property))
+    }
 
-	return false;
+    return false
 }
