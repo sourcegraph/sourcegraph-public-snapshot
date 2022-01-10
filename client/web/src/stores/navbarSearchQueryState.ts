@@ -76,6 +76,7 @@ export interface NavbarQueryState {
     queryState: QueryState
     searchCaseSensitivity: boolean
     searchPatternType: SearchPatternType
+    searchQueryFromURL: string
 
     // ACTIONS
     /**
@@ -99,6 +100,7 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     queryState: { query: '' },
     searchCaseSensitivity: false,
     searchPatternType: SearchPatternType.literal,
+    searchQueryFromURL: '',
 
     setQueryState: queryStateUpdate => {
         if (typeof queryStateUpdate === 'function') {
@@ -134,14 +136,25 @@ export function setSearchCaseSensitivity(searchCaseSensitivity: boolean): void {
  */
 export function setQueryStateFromURL(urlParameters: string): void {
     // This will be updated with the default in settings when the web app mounts.
+    const newState: Partial<
+        Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity' | 'searchQueryFromURL'>
+    > = {}
+
     const parsedSearchURL = parseSearchURL(urlParameters)
+
     if (parsedSearchURL.query) {
         // Only update flags if the URL contains a search query.
-        useNavbarQueryState.setState(state => ({
-            searchCaseSensitivity: parsedSearchURL.caseSensitive,
-            searchPatternType: parsedSearchURL.patternType ?? state.searchPatternType,
-        }))
+        newState.searchCaseSensitivity = parsedSearchURL.caseSensitive
+        if (parsedSearchURL.patternType !== undefined) {
+            newState.searchPatternType = parsedSearchURL.patternType
+        }
     }
+
+    newState.searchQueryFromURL = parsedSearchURL.query ?? ''
+
+    // The way Zustand is designed makes it difficult to build up a partial new
+    // state object, hence the cast to any here.
+    useNavbarQueryState.setState(newState as any)
 }
 
 /**
