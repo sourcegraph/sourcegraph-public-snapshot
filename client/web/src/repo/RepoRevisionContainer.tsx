@@ -66,8 +66,8 @@ export interface RepoRevisionContainerContext
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
-        FeatureFlagProps,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        FeatureFlagProps {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
@@ -99,6 +99,7 @@ interface RepoRevisionContainerProps
         RevisionSpec,
         BreadcrumbSetters,
         ActionItemsBarProps,
+        FeatureFlagProps,
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
