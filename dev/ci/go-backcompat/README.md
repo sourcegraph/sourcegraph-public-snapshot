@@ -1,4 +1,4 @@
-The `flakefiles` contains _flakefiles_ that lists tests to disable when running Postgres backwards compatibility tests (see [go-backcompat/test.sh](../go-backcompat/test.sh)).
+The `flakefiles` directory contains _flakefiles_ that lists tests to disable when running Postgres backwards compatibility tests (see [go-backcompat/test.sh](../go-backcompat/test.sh)).
 
 Since we are running _historic_ tests, we are unable to change or fix them in the presence of flake or acceptable/spurious failures. In these cases, we can add the tests to an explicit lists of tests that we disable prior to invoking `go test`. The content of each flakefile looks similar to the following:
 
