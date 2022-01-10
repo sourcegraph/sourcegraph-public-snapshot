@@ -30,7 +30,7 @@ import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 // This is the root Tooltip usage
 // eslint-disable-next-line no-restricted-imports
-import { Tooltip } from '@sourcegraph/wildcard'
+import { Tooltip, FeedbackText } from '@sourcegraph/wildcard'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
@@ -38,7 +38,6 @@ import { BatchChangesProps, isBatchChangesExecutionEnabled } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { queryExternalServices } from './components/externalServices/backend'
-import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { RouterLinkOrAnchor } from './components/RouterLinkOrAnchor'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
