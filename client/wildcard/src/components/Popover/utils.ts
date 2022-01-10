@@ -1,6 +1,6 @@
 import { VirtualElement, Strategy } from '@floating-ui/core'
 import { Options as OffsetOptions } from '@floating-ui/core/src/middleware/offset'
-import { flip, getScrollParents, hide, limitShift, Middleware, offset, shift } from '@floating-ui/dom'
+import { flip, getScrollParents, size, autoPlacement, hide, limitShift, Middleware, offset, shift } from '@floating-ui/dom'
 
 export type Target = Element | VirtualElement
 
@@ -9,7 +9,7 @@ interface PositionMiddlewaresInput {
     floating: HTMLElement
     strategy: Strategy
     padding?: OffsetOptions
-    constraints?: Element[]
+    constraints?: (Element | Window | VisualViewport)[]
 }
 
 /**
@@ -17,14 +17,33 @@ interface PositionMiddlewaresInput {
  * See https://floating-ui.com/docs/middleware for details and examples.
  */
 export function getPositionMiddlewares(input: PositionMiddlewaresInput): Middleware[] {
-    const { strategy, constraints, padding = 0 } = input
-    const boundary = constraints ?? (getScrollConstraints(input) as Element[])
+    const { strategy, constraints, padding = 0, floating } = input
+    const boundary = (constraints ?? getScrollConstraints(input)) as Element[]
 
     switch (strategy) {
         case 'absolute':
             return [shift({ limiter: limitShift(), boundary }), offset(padding), flip({ boundary })]
         case 'fixed':
-            return [shift({ limiter: limitShift(), boundary }), offset(padding), flip({ boundary }), hide()]
+            return [
+                autoPlacement({
+                    boundary,
+                    alignment: 'start',
+                    autoAlignment: false,
+                }),
+                shift({ limiter: limitShift(), boundary,  }),
+                size({
+                    apply({width}) {
+                        Object.assign(floating.style, {
+                            maxWidth: `${width}px`,
+                            // maxHeight: `${height}px`
+                        });
+                    },
+                    // padding: 20
+                    //  padding: { bottom: 20, left: 20, top: 20, right: 20 }
+                }),
+                offset(padding),
+                hide()
+            ]
     }
 }
 

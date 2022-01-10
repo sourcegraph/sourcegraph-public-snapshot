@@ -27,7 +27,7 @@ export const StandardExample = () => {
                 {buttonElement && (
                     <Popover
                         className={styles.floating}
-                        strategy="absolute"
+                        strategy="fixed"
                         placement="right-start"
                         target={buttonElement}
                     >

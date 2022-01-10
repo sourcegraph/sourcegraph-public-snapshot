@@ -3,6 +3,7 @@ import { Options as OffsetOptions } from '@floating-ui/core/src/middleware/offse
 import { computePosition, Middleware } from '@floating-ui/dom'
 import React, { forwardRef, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { useMergeRefs } from 'use-callback-ref';
 
 import { getPositionMiddlewares, Target } from './utils'
 
@@ -11,7 +12,7 @@ interface FloatingPanelProps extends React.HTMLAttributes<HTMLDivElement> {
     placement?: Placement
     strategy?: Strategy
     padding?: OffsetOptions
-    constraints?: Element[]
+    constraints?: (Element | Window | VisualViewport)[]
     middlewares?: Middleware[]
 }
 
@@ -19,7 +20,7 @@ interface FloatingPanelProps extends React.HTMLAttributes<HTMLDivElement> {
  * Render floating panel element (tooltip, popover) according to target position,
  * parents scroll box rectangles, floating settings (like placement and target sizes)
  */
-export const Popover: React.FunctionComponent<FloatingPanelProps> = props => {
+export const Popover = forwardRef<HTMLDivElement, FloatingPanelProps>((props, reference) => {
     const {
         target,
         placement = 'right',
@@ -32,6 +33,7 @@ export const Popover: React.FunctionComponent<FloatingPanelProps> = props => {
     } = props
 
     const floatingReference = useRef<HTMLDivElement>(null)
+    const mergedReference = useMergeRefs([floatingReference, reference])
 
     useLayoutEffect(() => {
         const floating = floatingReference.current
@@ -76,11 +78,11 @@ export const Popover: React.FunctionComponent<FloatingPanelProps> = props => {
     }, [target, floatingReference, placement, strategy, padding, constraints, middlewares])
 
     return (
-        <FloatingPanelContent {...otherProps} portal={strategy === 'fixed'} ref={floatingReference}>
+        <FloatingPanelContent {...otherProps} portal={strategy === 'fixed'} ref={mergedReference}>
             {children}
         </FloatingPanelContent>
     )
-}
+})
 
 interface FloatingPanelContentProps extends React.HTMLAttributes<HTMLDivElement> {
     portal: boolean
