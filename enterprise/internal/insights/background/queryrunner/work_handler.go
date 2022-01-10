@@ -78,7 +78,6 @@ func (r *workHandler) fetchSeries(ctx context.Context, seriesID string) (*types.
 }
 
 func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job) (_ []store.RecordSeriesPointArgs, err error) {
-	log15.Info("Handling recordings for capture series", "series_id", job.SeriesID)
 	results, err := r.computeSearch(ctx, job.SearchQuery)
 	if err != nil {
 		return nil, err
@@ -97,9 +96,7 @@ func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job) (
 			err = multierror.Append(err, errors.Wrap(idErr, "UnmarshalRepositoryIDCapture"))
 			continue
 		}
-		log15.Info("results from capture", "repo_id", repoId, "time", recordTime, "groupedByCapture", groupedByCapture, "query", job.SearchQuery)
 		for _, group := range groupedByCapture {
-			log15.Info("group", "group", group)
 			capture := group.Value
 			recordings = append(recordings, ToRecording(job, float64(group.Count), recordTime, byRepo[0].RepoName(), repoId, &capture)...)
 		}
@@ -121,19 +118,12 @@ func (r *workHandler) handleComputeSearch(ctx context.Context, job *Job) (err er
 	return err
 }
 
-func (r *workHandler) HandleBasicSearch(ctx context.Context) {
-
-}
-
 func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
 	defer func() {
 		if err != nil {
 			log15.Error("insights.queryrunner.workHandler", "error", err)
 		}
 	}()
-	if record.RecordID() == 674 {
-		log15.Info("674asdf")
-	}
 	err = r.limiter.Wait(ctx)
 	if err != nil {
 		return err
@@ -149,6 +139,7 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	}
 	if series == nil {
 		log15.Error("nil series", "series_id", job.SeriesID)
+		return nil
 	}
 	if !series.JustInTime && series.GeneratedFromCaptureGroups { // getting a nil pointer dereference from something in the background?
 		return r.handleComputeSearch(ctx, job)
