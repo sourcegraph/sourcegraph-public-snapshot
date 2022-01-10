@@ -617,13 +617,8 @@ type PostgresDB struct {
 	db *sql.DB
 }
 
-func NewPostgresDB() (*PostgresDB, error) {
-	db, err := sql.Open("postgres", "postgres://sourcegraph:sourcegraph@localhost:5432/sourcegraph?sslmode=disable")
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = db.Exec("DROP TABLE IF EXISTS rockskip_ancestry")
+func NewPostgresDB(db *sql.DB) (*PostgresDB, error) {
+	_, err := db.Exec("DROP TABLE IF EXISTS rockskip_ancestry")
 	if err != nil {
 		return nil, fmt.Errorf("dropping rockskip_ancestry: %s", err)
 	}

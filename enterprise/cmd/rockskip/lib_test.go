@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os/exec"
 	"sort"
@@ -56,7 +57,13 @@ func TestIndex(t *testing.T) {
 		t.Fatalf("🚨 NewSubprocessGit: %s", err)
 	}
 	defer git.Close()
-	db, err := NewPostgresDB()
+
+	sqlDB, err := sql.Open("postgres", "postgres://sourcegraph:sourcegraph@localhost:5432/sourcegraph?sslmode=disable")
+	if err != nil {
+		t.Fatalf("🚨 sql.Open: %s", err)
+	}
+
+	db, err := NewPostgresDB(sqlDB)
 	if err != nil {
 		t.Fatalf("🚨 NewPostgresDB: %s", err)
 	}
