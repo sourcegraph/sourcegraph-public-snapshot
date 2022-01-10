@@ -13,5 +13,10 @@
   },
   "include": ["**/*", ".*", "./src/**/*.json"],
   "exclude": ["../../node_modules", "./node_modules", "./out"],
-  "references": [{ "path": "../shared" }, { "path": "../storybook" }, { "path": "../common" }],
+  "references": [
+    { "path": "../shared" },
+    { "path": "../storybook" },
+    { "path": "../common" },
+    { "path": "../codeintellify" },
+  ],
 }
