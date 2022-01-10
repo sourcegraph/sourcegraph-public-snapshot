@@ -1,6 +1,7 @@
 package upload
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -105,8 +106,13 @@ func decodeUploadPayload(resp *http.Response, body []byte, target *int) (bool, e
 			return false, ErrUnauthorized
 		}
 
+		suffix := ""
+		if !bytes.HasPrefix(bytes.TrimSpace(body), []byte{'<'}) {
+			suffix = fmt.Sprintf(" (%s)", bytes.TrimSpace(body))
+		}
+
 		// Do not retry client errors
-		return resp.StatusCode >= 500, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+		return resp.StatusCode >= 500, errors.Errorf("unexpected status code: %d%s", resp.StatusCode, suffix)
 	}
 
 	if target == nil {
