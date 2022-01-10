@@ -3,9 +3,11 @@
 # This script runs the codeintel-qa test utility against a candidate server image.
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
-root_dir=$(pwd)
+SG_ROOT=$(pwd)
 set -ex
 
-echo "--- test.sh"
+# Use candidate image built by main pipeline
 export IMAGE="us.gcr.io/sourcegraph-dev/server:${CANDIDATE_VERSION}"
-./dev/ci/integration/run-integration.sh "${root_dir}/dev/ci/integration/code-intel/test.sh"
+
+# Setup single-server instance and run tests
+./dev/ci/run-integration.sh "${SG_ROOT}/dev/ci/test/code-intel/test-against-server.sh"
