@@ -66,8 +66,8 @@ func serveGraphQL(schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInt
 		}
 
 		defer func() {
-			traceGraphQL(traceData)
 			instrumentGraphQL(traceData)
+			traceGraphQL(traceData)
 		}()
 
 		uid, isIP, anonymous := getUID(r)
