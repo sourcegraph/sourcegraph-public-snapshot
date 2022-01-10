@@ -9,6 +9,7 @@ fi
 
 SECTION=''
 MARKDOWN='false'
+TYPE='error'
 
 print_usage() {
   printf "Usage:\necho \"your annotation\" | annotate.sh -s my-section\necho \"your markdown\" | annotate.sh -m -s my-section\n"
@@ -23,6 +24,7 @@ while getopts 's:m' flag; do
   case "${flag}" in
     s) SECTION="${OPTARG}" ;;
     m) MARKDOWN='true' ;;
+    k) TYPE="${OPTARG}" ;;
     *)
       print_usage
       exit 1
@@ -40,7 +42,7 @@ flock 100 || exit 1
 
 if [ ! -f "$FILE" ]; then
   touch $FILE
-  printf "**%s**\n\n" "$BUILDKITE_LABEL" | buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append
+  printf "**%s**\n\n" "$BUILDKITE_LABEL" | buildkite-agent annotate --style $TYPE --context "$BUILDKITE_JOB_ID" --append
 fi
 
 BODY=""
