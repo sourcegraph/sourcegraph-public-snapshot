@@ -18,6 +18,12 @@ type ComputeResult interface {
 	Counts() map[string]int
 }
 
+type GroupedResultsByRepository struct {
+	RepoID      string
+	RepoName    string
+	MatchValues []string
+}
+
 type GroupedResults struct {
 	Value string
 	Count int
@@ -49,6 +55,18 @@ func GroupByCaptureMatch(results []ComputeResult) []GroupedResults {
 		})
 	}
 	return grouped
+}
+
+func GroupByRepository(results []ComputeResult) map[string][]ComputeResult {
+	if len(results) < 1 {
+		return nil
+	}
+	// map repository ID -> list of matches
+	groupedbyRepo := make(map[string][]ComputeResult)
+	for _, result := range results {
+		groupedbyRepo[result.RepoID()] = append(groupedbyRepo[result.RepoID()], result)
+	}
+	return groupedbyRepo
 }
 
 func decodeComputeResult(result json.RawMessage) (ComputeResult, error) {

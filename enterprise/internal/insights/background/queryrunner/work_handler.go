@@ -92,23 +92,18 @@ func (r *workHandler) handleCapture(ctx context.Context, job *Job) (err error) {
 		recordTime = *job.RecordTime
 	}
 
-	for _, result := range results {
-		log15.Info("repoId from capture", "repo_id", result.RepoID())
-		repoId, idErr := graphqlbackend.UnmarshalRepositoryID(graphql.ID(result.RepoID()))
+	groupedByRepo := query.GroupByRepository(results)
+	for repoKey, byRepo := range groupedByRepo {
+		groupedByCapture := query.GroupByCaptureMatch(byRepo)
+		repoId, idErr := graphqlbackend.UnmarshalRepositoryID(graphql.ID(repoKey))
 		if idErr != nil {
 			err = multierror.Append(err, errors.Wrap(idErr, "UnmarshalRepositoryIDCapture"))
 			continue
 		}
-		grouped := query.GroupByCaptureMatch(results)
-		for _, groupedResults := range grouped {
-			recordings = append(recordings, ToRecording(job, float64(groupedResults.Count), recordTime, result.RepoName(), repoId, &groupedResults.Value)...)
+		log15.Info("results from capture", "repo_id", repoId, "time", recordTime, "groupedByCapture", groupedByCapture, "query", job.SearchQuery)
+		for _, group := range groupedByCapture {
+			recordings = append(recordings, ToRecording(job, float64(group.Count), recordTime, byRepo[0].RepoName(), repoId, &group.Value)...)
 		}
-		// for value, count := range result.Counts() {
-		// 	if repoId == 11 {
-		// 		log15.Info("stopem")
-		// 	}
-		// 	recordings = append(recordings, ToRecording(job, float64(count), recordTime, result.RepoName(), repoId, &value)...)
-		// }
 	}
 
 	if recordErr := r.insightsStore.RecordSeriesPoints(ctx, recordings); recordErr != nil {
