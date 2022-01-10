@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-(
-    exit_code="$BUILDKITE_COMMAND_EXIT_STATUS"
-    echo "JHJH ----- $exit_code"
+# (
+    # exit_code="$BUILDKITE_COMMAND_EXIT_STATUS"
+    # echo "JHJH ----- $exit_code"
     # BUILDEVENT_APIKEY=$CI_BUILDEVENT_API_KEY
     # BUILDEVENT_DATASET="$CI_BUILDEVENT_DATASET"
     # export BUILDEVENT_DATASET
@@ -28,4 +28,4 @@
     #
     # # Return the original exit code
     # exit "$exit_code"
-)
+# )
