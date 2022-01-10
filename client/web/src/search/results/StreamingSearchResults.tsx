@@ -234,6 +234,11 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
             <SearchSidebar
                 activation={props.activation}
+                showOnboardingTour={
+                    props.isSourcegraphDotCom &&
+                    !props.authenticatedUser &&
+                    props.featureFlags.get('getting-started-tour')
+                }
                 caseSensitive={caseSensitive}
                 patternType={patternType}
                 settingsCascade={props.settingsCascade}

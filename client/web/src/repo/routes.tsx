@@ -12,6 +12,7 @@ import {
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { Settings } from '../schema/settings.schema'
 import { lazyComponent } from '../util/lazyComponent'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
@@ -128,8 +129,10 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             resolvedRev: { commitID, defaultBranch },
             match,
             globbing,
+            featureFlags,
             ...context
-        }: RepoRevisionContainerContext &
+        }: FeatureFlagProps &
+            RepoRevisionContainerContext &
             RouteComponentProps<{
                 objectType: 'blob' | 'tree' | undefined
                 filePath: string | undefined
@@ -147,6 +150,9 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             const objectType: 'blob' | 'tree' = match.params.objectType || 'tree'
 
             const mode = getModeFromPath(filePath)
+
+            const showOnboardingTour =
+                context.isSourcegraphDotCom && !context.authenticatedUser && featureFlags.get('getting-started-tour')
 
             // Redirect OpenGrok-style line number hashes (#123, #123-321) to query parameter (?L123, ?L123-321)
             const hashLineNumberMatch = window.location.hash.match(/^#?(\d+)(-\d+)?$/)
@@ -192,11 +198,13 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                         className="repo-revision-container__sidebar"
                         isDir={objectType === 'tree'}
                         defaultBranch={defaultBranch || 'HEAD'}
+                        showOnboardingTour={showOnboardingTour}
                     />
                     {!hideRepoRevisionContent && (
                         // Add `.blob-status-bar__container` because this is the
                         // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
                         <BlobStatusBarContainer>
+                            {showOnboardingTour && <div className="onboarding-tour-info-marker mr-3 mb-3" />}
                             <ErrorBoundary location={context.location}>
                                 {objectType === 'blob' ? (
                                     <BlobPage
