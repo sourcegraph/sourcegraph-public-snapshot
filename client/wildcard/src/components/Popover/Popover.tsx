@@ -66,10 +66,10 @@ const Popover: React.FunctionComponent<PopoverProps> = props => {
     const [isInternalOpen, setInternalOpen] = useState<boolean>(false)
     const isControlled = open !== undefined
     const isOpen = isControlled ? open : isInternalOpen
-    const setOpen = useCallback(
+    const setOpen = useCallback<(event: PopoverOpenEvent) => void>(
         event => {
             if (!isControlled) {
-                setInternalOpen(event)
+                setInternalOpen(event.isOpen)
             }
 
             onOpenChange(event)
