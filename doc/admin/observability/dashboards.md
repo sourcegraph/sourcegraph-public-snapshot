@@ -13466,7 +13466,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometh
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100000` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13487,7 +13487,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometh
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100001` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13508,7 +13508,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-alertma
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100100` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13527,7 +13527,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-alertma
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100101` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13550,7 +13550,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometh
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100200` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13571,7 +13571,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-alertma
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100201` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13590,7 +13590,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometh
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100210` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13609,7 +13609,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometh
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100211` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13628,7 +13628,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometh
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100212` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13659,7 +13659,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100300` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13678,7 +13678,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-contain
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100301` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13697,7 +13697,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-contain
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100302` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13740,7 +13740,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-provisi
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100400` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13759,7 +13759,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-provisi
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100401` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13778,7 +13778,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-provisi
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100410` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13797,7 +13797,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-provisi
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100411` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13818,7 +13818,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-pods-av
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100500` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
