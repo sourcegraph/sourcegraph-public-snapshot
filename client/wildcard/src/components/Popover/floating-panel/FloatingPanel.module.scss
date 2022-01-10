@@ -1,14 +1,16 @@
-
 [hidden] {
     display: none;
 }
 
-.floating-panel, .tail {
+.floating-panel,
+.tail {
     position: fixed;
+    display: block;
     top: 0;
     left: 0;
     z-index: 9999;
     overflow: auto;
+    background: var(--body-bg);
 }
 
 .tail {
@@ -24,7 +26,7 @@
     &::before {
         position: absolute;
         border-left: 9px solid transparent;
-        border-top: 9px solid rgba(0,0,0, .8);
+        border-top: 9px solid rgba(0, 0, 0, 0.8);
         border-right: 9px solid transparent;
         right: -1px;
         bottom: -1px;

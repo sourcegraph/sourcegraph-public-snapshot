@@ -1,4 +1,3 @@
-
 // Tether primitive models and structures
 export * from './models/tether-models'
 export * from './models/geometry/point'
