@@ -42,7 +42,7 @@ flock 100 || exit 1
 
 if [ ! -f "$FILE" ]; then
   touch $FILE
-  printf "**%s**\n\n" "$BUILDKITE_LABEL" | buildkite-agent annotate --style $TYPE --context "$BUILDKITE_JOB_ID" --append
+  printf "**%s**\n\n" "$BUILDKITE_LABEL" | buildkite-agent annotate --style "$TYPE" --context "$BUILDKITE_JOB_ID" --append
 fi
 
 BODY=""
