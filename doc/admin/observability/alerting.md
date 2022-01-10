@@ -40,6 +40,7 @@ Once configured, Sourcegraph alerts will automatically be routed to the appropri
   }
 ]
 ```
+> _Note: Learn more about generating a [Slack incoming webhook URL](https://api.slack.com/messaging/webhooks)_
 
 #### PagerDuty
 
