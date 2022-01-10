@@ -1045,7 +1045,7 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 				alerts = append(alerts, new.Alert)
 			}
 
-			if len(dedup.Results()) >= wantCount {
+			if wantCount <= 0 {
 				return context.Canceled
 			}
 
@@ -1055,7 +1055,8 @@ func (r *searchResolver) evaluateOr(ctx context.Context, q query.Basic) (*Search
 			stats.Update(&new.Stats)
 
 			for _, m := range new.Matches {
-				if dedup.Add(m); len(dedup.Results()) >= wantCount {
+				wantCount = m.Limit(wantCount)
+				if dedup.Add(m); wantCount <= 0 {
 					return context.Canceled
 				}
 			}
@@ -1344,7 +1345,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 				alerts = append(alerts, newResult.Alert)
 			}
 
-			if len(dedup.Results()) >= wantCount {
+			if wantCount <= 0 {
 				return context.Canceled
 			}
 
@@ -1360,7 +1361,9 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 					continue
 				}
 
-				if dedup.Add(match); len(dedup.Results()) >= wantCount {
+				wantCount = match.Limit(wantCount)
+
+				if dedup.Add(match); wantCount <= 0 {
 					return context.Canceled
 				}
 			}
@@ -1766,11 +1769,13 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	// per backend. This works better than batch based since we have higher
 	// defaults.
 	stream := r.stream
+
 	if stream != nil {
 		var cancelOnLimit context.CancelFunc
 		ctx, stream, cancelOnLimit = streaming.WithLimit(ctx, stream, limit)
 		defer cancelOnLimit()
 	}
+
 	agg := run.NewAggregator(r.db, stream)
 
 	// This ensures we properly cleanup in the case of an early return. In
