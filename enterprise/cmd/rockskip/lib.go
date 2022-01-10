@@ -671,8 +671,6 @@ func NewPostgresDB() (*PostgresDB, error) {
 		return nil, fmt.Errorf("creating index rockskip_blobs_added_deleted_symbols: %s", err)
 	}
 
-	fmt.Println("TODO use transactions")
-
 	return &PostgresDB{db: db}, nil
 }
 
