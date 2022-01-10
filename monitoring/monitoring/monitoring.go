@@ -487,6 +487,8 @@ func (o ObservableOwner) toMarkdown() string {
 		slug = "code-intelligence"
 	case ObservableOwnerCodeInsights:
 		slug = "developer-insights/code-insights"
+	case ObservableOwnerDevOps:
+		slug = "cloud/devops"
 	case ObservableOwnerSearchCore:
 		slug = "search/core"
 	default:
