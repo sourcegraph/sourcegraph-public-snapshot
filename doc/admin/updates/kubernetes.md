@@ -17,6 +17,8 @@ and any manual migration steps you must perform.
 The query-runner deployment has been removed, so if you deploy with a method other than the `kubectl-apply-all.sh`, a manual removal of the deployment may be necessary.
 Follow the [standard upgrade procedure](../install/kubernetes/update.md) to upgrade your deployment.
 
+There is a [known issue](../../code_insights/how-tos/Troubleshooting.md#oob-migration-has-made-progress-but-is-stuck-before-reaching-100) with the Code Insights out-of-band settings migration not reaching 100% complete when encountering deleted users or organizations.
+
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.34).*
 
 ## 3.33 -> 3.34
