@@ -3,7 +3,6 @@ import { createBrowserHistory } from 'history'
 import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { NEVER } from 'rxjs'
-import sinon from 'sinon'
 
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
@@ -54,64 +53,30 @@ describe('Layout', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=r:golang/oauth2+test+f:travis&patternType=regexp' })
 
-        const setPatternTypeSpy = sinon.spy()
+        useNavbarQueryState.setState({ searchPatternType: SearchPatternType.literal })
 
         render(
             <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    patternType={SearchPatternType.literal}
-                    setPatternType={setPatternTypeSpy}
-                />
+                <Layout {...defaultProps} history={history} location={history.location} />
             </BrowserRouter>
         )
 
-        sinon.assert.called(setPatternTypeSpy)
-        sinon.assert.calledWith(setPatternTypeSpy, SearchPatternType.regexp)
-    })
-
-    it('should not update patternType if URL and context are the same', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis&patternType=regexp' })
-
-        const setPatternTypeSpy = sinon.spy()
-
-        render(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    patternType={SearchPatternType.regexp}
-                    setPatternType={setPatternTypeSpy}
-                />
-            </BrowserRouter>
-        )
-
-        sinon.assert.notCalled(setPatternTypeSpy)
+        expect(useNavbarQueryState.getState().searchPatternType).toBe(SearchPatternType.regexp)
     })
 
     it('should not update patternType if query is empty', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=&patternType=regexp' })
 
-        const setPatternTypeSpy = sinon.spy()
+        useNavbarQueryState.setState({ searchPatternType: SearchPatternType.literal })
 
         render(
             <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    patternType={SearchPatternType.literal}
-                    setPatternType={setPatternTypeSpy}
-                />
+                <Layout {...defaultProps} history={history} location={history.location} />
             </BrowserRouter>
         )
 
-        sinon.assert.notCalled(setPatternTypeSpy)
+        expect(useNavbarQueryState.getState().searchPatternType).toBe(SearchPatternType.literal)
     })
 
     it('should update caseSensitive if different between URL and context', () => {

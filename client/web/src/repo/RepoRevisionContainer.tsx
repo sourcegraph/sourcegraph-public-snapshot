@@ -29,7 +29,7 @@ import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
-import { PatternTypeProps, SearchContextProps, SearchStreamingProps } from '../search'
+import { SearchContextProps, SearchStreamingProps } from '../search'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { RouteDescriptor } from '../util/contributions'
 
@@ -57,7 +57,6 @@ export interface RepoRevisionContainerContext
         HoverThresholdProps,
         ActivationProps,
         Omit<RepoContainerContext, 'onDidUpdateExternalLinks'>,
-        PatternTypeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         RevisionSpec,
         BreadcrumbSetters,
@@ -92,7 +91,6 @@ interface RepoRevisionContainerProps
         ExtensionsControllerProps,
         ThemeProps,
         ActivationProps,
-        PatternTypeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         RevisionSpec,
         BreadcrumbSetters,

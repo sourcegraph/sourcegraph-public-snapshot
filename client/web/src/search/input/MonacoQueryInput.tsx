@@ -10,7 +10,7 @@ import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestio
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
+import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '..'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
@@ -55,7 +55,7 @@ export const DEFAULT_MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstruction
 export interface MonacoQueryInputProps
     extends ThemeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        Pick<PatternTypeProps, 'patternType'>,
+        SearchPatternTypeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState

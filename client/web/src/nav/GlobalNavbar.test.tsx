@@ -11,7 +11,6 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
-import { SearchPatternType } from '../graphql-operations'
 import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreference } from '../stores/themeState'
 
@@ -32,8 +31,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     isLightTheme: true,
     themePreference: ThemePreference.Light,
     parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-    patternType: SearchPatternType.literal,
-    setPatternType: () => undefined,
     platformContext: {} as any,
     settingsCascade: NOOP_SETTINGS_CASCADE,
     batchChangesEnabled: false,
