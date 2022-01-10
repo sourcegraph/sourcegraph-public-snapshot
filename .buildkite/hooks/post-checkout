@@ -10,7 +10,7 @@ echo "install asdf plugins"
 asdf install
 echo "done installing"
 
-# Tmp fix until PR is merged
+# Tmp fix until PR is merged https://github.com/honeycombio/buildevents/pull/137
 wget https://www.dropbox.com/s/j4qyute1lgk28xq/buildevents?dl=1 -O buildevents && chmod +x buildevents && mv buildevents /usr/local/bin
 
 # Link the trace-script so we can have pretty steps in the buildkite ui
