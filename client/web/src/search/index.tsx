@@ -143,12 +143,11 @@ export function quoteIfNeeded(string: string): string {
     return string
 }
 
-export interface ParsedSearchQueryProps {
-    parsedSearchQuery: string
+export interface SearchPatternTypeProps {
+    patternType: SearchPatternType
 }
 
-export interface PatternTypeProps {
-    patternType: SearchPatternType
+export interface SearchPatternTypeMutationProps {
     setPatternType: (patternType: SearchPatternType) => void
 }
 

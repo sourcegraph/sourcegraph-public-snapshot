@@ -9,7 +9,7 @@ import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/que
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
-import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../..'
+import { SearchPatternTypeProps, CaseSensitivityProps, SearchContextProps, SearchPatternTypeMutationProps } from '../..'
 import { SearchPatternType } from '../../../graphql-operations'
 import { KEYBOARD_SHORTCUT_COPY_FULL_QUERY } from '../../../keyboardShortcuts/keyboardShortcuts'
 import { isMacPlatform } from '../../../util'
@@ -20,7 +20,8 @@ import { QueryInputToggle } from './QueryInputToggle'
 import styles from './Toggles.module.scss'
 
 export interface TogglesProps
-    extends PatternTypeProps,
+    extends SearchPatternTypeProps,
+        SearchPatternTypeMutationProps,
         CaseSensitivityProps,
         SettingsCascadeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
@@ -113,7 +114,6 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
     return (
         <div className={classNames(className, styles.toggleContainer)}>
             <QueryInputToggle
-                {...props}
                 title="Case sensitivity"
                 isActive={caseSensitive}
                 onToggle={toggleCaseSensitivity}
@@ -137,7 +137,6 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 ]}
             />
             <QueryInputToggle
-                {...props}
                 title="Regular expression"
                 isActive={patternType === SearchPatternType.regexp}
                 onToggle={toggleRegexp}
@@ -153,7 +152,6 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
             />
             {!structuralSearchDisabled && (
                 <QueryInputToggle
-                    {...props}
                     title="Structural search"
                     className="test-structural-search-toggle"
                     activeClassName="test-structural-search-toggle--active"

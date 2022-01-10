@@ -11,10 +11,9 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useEventObservable, useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { FeedbackBadge } from '@sourcegraph/web/src/components/FeedbackBadge'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { FeedbackBadge, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'

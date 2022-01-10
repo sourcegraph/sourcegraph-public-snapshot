@@ -9,12 +9,19 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
+import { OnboardingTour } from '../../onboarding-tour/OnboardingTour'
 import { ModalVideo } from '../documentation/ModalVideo'
 
 import { CustomersSection } from './CustomersSection'
 import { DynamicWebFonts } from './DynamicWebFonts'
 import { HeroSection } from './HeroSection'
-import { SearchExample, exampleNotebooks, exampleQueries, fonts } from './LoggedOutHomepage.constants'
+import {
+    SearchExample,
+    exampleQueries,
+    exampleTripsAndTricks,
+    fonts,
+    exampleNotebooks,
+} from './LoggedOutHomepage.constants'
 import styles from './LoggedOutHomepage.module.scss'
 import { SelfHostInstructions } from './SelfHostInstructions'
 
@@ -70,93 +77,181 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
     )
 }
 
-export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> = props => (
-    <DynamicWebFonts fonts={fonts}>
-        <div className={styles.loggedOutHomepage}>
-            <div className={styles.helpContent}>
-                {props.featureFlags.get('search-notebook-onboarding') ? (
-                    <SearchExamples
-                        title="Search notebooks"
-                        subtitle="Three ways code search is more efficient than your IDE"
-                        examples={exampleNotebooks}
-                        icon={<BookOutlineIcon />}
-                        {...props}
-                    />
-                ) : (
-                    <SearchExamples
-                        title="Search examples"
-                        subtitle="Find answers faster with code search across multiple repos and commits"
-                        examples={exampleQueries}
-                        icon={<MagnifyingGlassSearchIcon />}
-                        {...props}
-                    />
+interface TipsAndTricksProps extends TelemetryProps {
+    title: string
+    examples: SearchExample[]
+    moreLink: {
+        href: string
+        label: string
+    }
+}
+const TipsAndTricks: React.FunctionComponent<TipsAndTricksProps> = ({
+    title,
+    moreLink,
+    telemetryService,
+    examples,
+}) => {
+    const searchExampleClicked = useCallback(
+        (trackEventName: string) => (): void => telemetryService.log(trackEventName),
+        [telemetryService]
+    )
+    return (
+        <div className={classNames(styles.tipsAndTricks)}>
+            <div className={classNames('mb-2', styles.title)}>{title}</div>
+            <div className={styles.tipsAndTricksExamples}>
+                {examples.map(example => (
+                    <div key={example.query} className={styles.tipsAndTricksExample}>
+                        {example.label}
+                        <Link
+                            to={example.to}
+                            className={classNames('card', styles.tipsAndTricksCard)}
+                            onClick={searchExampleClicked(example.trackEventName)}
+                        >
+                            <SyntaxHighlightedSearchQuery query={example.query} />
+                        </Link>
+                    </div>
+                ))}
+            </div>
+            <a className={styles.tipsAndTricksMore} href={moreLink.href}>
+                {moreLink.label}
+            </a>
+        </div>
+    )
+}
+
+export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> = props => {
+    const isOnboardingFeatureEnabled = props.featureFlags.get('getting-started-tour')
+    const isSearchNotebookFeatureEnabled = props.featureFlags.get('search-notebook-onboarding')
+    return (
+        <DynamicWebFonts fonts={fonts}>
+            <div className={styles.loggedOutHomepage}>
+                {isOnboardingFeatureEnabled && (
+                    <div className={styles.content}>
+                        <OnboardingTour
+                            isFixedHeight={true}
+                            className={styles.onboardingTour}
+                            telemetryService={props.telemetryService}
+                        />
+                        <div className={styles.videoCard}>
+                            <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
+                            <ModalVideo
+                                id="three-ways-to-search-title"
+                                title="Three ways to search"
+                                src="https://www.youtube-nocookie.com/embed/XLfE2YuRwvw"
+                                showCaption={true}
+                                thumbnail={{
+                                    src: `img/watch-and-learn-${props.isLightTheme ? 'light' : 'dark'}.png`,
+                                    alt: 'Watch and learn video thumbnail',
+                                }}
+                                onToggle={isOpen =>
+                                    props.telemetryService.log(
+                                        isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed'
+                                    )
+                                }
+                            />
+                        </div>
+
+                        <TipsAndTricks
+                            title="Tips and Tricks"
+                            examples={exampleTripsAndTricks}
+                            moreLink={{
+                                label: 'More search features',
+                                href: 'https://docs.sourcegraph.com/code_search/explanations/features',
+                            }}
+                            {...props}
+                        />
+                    </div>
                 )}
-                <div className={styles.thumbnail}>
-                    <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
-                    <ModalVideo
-                        id="three-ways-to-search-title"
-                        title="Three ways to search"
-                        src="https://www.youtube-nocookie.com/embed/XLfE2YuRwvw"
-                        thumbnail={{
-                            src: `img/watch-and-learn-${props.isLightTheme ? 'light' : 'dark'}.png`,
-                            alt: 'Watch and learn video thumbnail',
-                        }}
-                        onToggle={isOpen =>
-                            props.telemetryService.log(
-                                isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed'
-                            )
-                        }
-                    />
+                {!isOnboardingFeatureEnabled && (
+                    <div className={styles.helpContent}>
+                        {isSearchNotebookFeatureEnabled ? (
+                            <SearchExamples
+                                title="Search notebooks"
+                                subtitle="Three ways code search is more efficient than your IDE"
+                                examples={exampleNotebooks}
+                                icon={<BookOutlineIcon />}
+                                {...props}
+                            />
+                        ) : (
+                            <SearchExamples
+                                title="Search examples"
+                                subtitle="Find answers faster with code search across multiple repos and commits"
+                                examples={exampleQueries}
+                                icon={<MagnifyingGlassSearchIcon />}
+                                {...props}
+                            />
+                        )}
+
+                        <div className={styles.thumbnail}>
+                            <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
+                            <ModalVideo
+                                id="three-ways-to-search-title"
+                                title="Three ways to search"
+                                src="https://www.youtube-nocookie.com/embed/XLfE2YuRwvw"
+                                thumbnail={{
+                                    src: `img/watch-and-learn-${props.isLightTheme ? 'light' : 'dark'}.png`,
+                                    alt: 'Watch and learn video thumbnail',
+                                }}
+                                onToggle={isOpen =>
+                                    props.telemetryService.log(
+                                        isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed'
+                                    )
+                                }
+                            />
+                        </div>
+                    </div>
+                )}
+
+                <div className={styles.heroSection}>
+                    <HeroSection {...props} />
                 </div>
-            </div>
 
-            <div className={styles.heroSection}>
-                <HeroSection {...props} />
-            </div>
-
-            <div className={styles.communitySearchContextsSection}>
-                <div className="d-block d-md-flex align-items-baseline mb-3">
-                    <div className={classNames(styles.title, 'mr-2')}>Search open source communities</div>
-                    <div className="font-weight-normal text-muted">
-                        Customized search portals for our open source partners
+                <div className={styles.communitySearchContextsSection}>
+                    <div className="d-block d-md-flex align-items-baseline mb-3">
+                        <div className={classNames(styles.title, 'mr-2')}>Search open source communities</div>
+                        <div className="font-weight-normal text-muted">
+                            Customized search portals for our open source partners
+                        </div>
+                    </div>
+                    <div className={styles.loggedOutHomepageCommunitySearchContextListCards}>
+                        {communitySearchContextsList.map(communitySearchContext => (
+                            <div
+                                className={classNames(
+                                    styles.loggedOutHomepageCommunitySearchContextListCard,
+                                    'd-flex align-items-center'
+                                )}
+                                key={communitySearchContext.spec}
+                            >
+                                <img
+                                    className={classNames(
+                                        styles.loggedOutHomepageCommunitySearchContextListIcon,
+                                        'mr-2'
+                                    )}
+                                    src={communitySearchContext.homepageIcon}
+                                    alt={`${communitySearchContext.spec} icon`}
+                                />
+                                <Link
+                                    to={communitySearchContext.url}
+                                    className={classNames(styles.loggedOutHomepageCommunitySearchContextsListingTitle)}
+                                >
+                                    {communitySearchContext.title}
+                                </Link>
+                            </div>
+                        ))}
                     </div>
                 </div>
-                <div className={styles.loggedOutHomepageCommunitySearchContextListCards}>
-                    {communitySearchContextsList.map(communitySearchContext => (
-                        <div
-                            className={classNames(
-                                styles.loggedOutHomepageCommunitySearchContextListCard,
-                                'd-flex align-items-center'
-                            )}
-                            key={communitySearchContext.spec}
-                        >
-                            <img
-                                className={classNames(styles.loggedOutHomepageCommunitySearchContextListIcon, 'mr-2')}
-                                src={communitySearchContext.homepageIcon}
-                                alt={`${communitySearchContext.spec} icon`}
-                            />
-                            <Link
-                                to={communitySearchContext.url}
-                                className={classNames(styles.loggedOutHomepageCommunitySearchContextsListingTitle)}
-                            >
-                                {communitySearchContext.title}
-                            </Link>
-                        </div>
-                    ))}
+
+                <div className={styles.selfHostSection}>
+                    <SelfHostInstructions {...props} />
+                </div>
+
+                <div className={styles.customerSection}>
+                    <CustomersSection {...props} />
                 </div>
             </div>
-
-            <div className={styles.selfHostSection}>
-                <SelfHostInstructions {...props} />
-            </div>
-
-            <div className={styles.customerSection}>
-                <CustomersSection {...props} />
-            </div>
-        </div>
-    </DynamicWebFonts>
-)
-
+        </DynamicWebFonts>
+    )
+}
 const MagnifyingGlassSearchIcon = React.memo(() => (
     <svg width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path
