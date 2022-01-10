@@ -2,6 +2,8 @@ import classNames from 'classnames'
 import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
 import React, { useEffect, useRef, useState } from 'react'
 
+import { useOnClickOutside } from '@sourcegraph/shared/src/util/useOnClickOutside'
+
 import styles from './NotebookTitle.module.scss'
 
 export interface NotebookTitleProps {
@@ -29,6 +31,8 @@ export const NotebookTitle: React.FunctionComponent<NotebookTitleProps> = ({
             updateTitle()
         }
     }
+
+    useOnClickOutside(inputReference, updateTitle)
 
     useEffect(() => {
         if (!isEditing) {
