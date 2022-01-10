@@ -2,11 +2,12 @@ package upload
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"sync"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
