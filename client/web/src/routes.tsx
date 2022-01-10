@@ -11,6 +11,8 @@ import type { LayoutProps } from './Layout'
 import type { ExtensionAlertProps } from './repo/RepoContainer'
 import { PageRoutes } from './routes.constants'
 import { ParsedSearchQueryProps } from './search'
+import { CreateNotebookPage } from './search/notebook/CreateNotebookPage'
+import { SearchNotebooksListPage } from './search/notebook/listPage/SearchNotebooksListPage'
 import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
@@ -93,12 +95,32 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
-        path: PageRoutes.SearchNotebook,
+        path: PageRoutes.CreateNotebook,
+        render: props =>
+            useExperimentalFeatures.getState().showSearchNotebook ? (
+                <CreateNotebookPage {...props} />
+            ) : (
+                <Redirect to="/search" />
+            ),
+        exact: true,
+    },
+    {
+        path: PageRoutes.Notebook,
         render: props =>
             useExperimentalFeatures.getState().showSearchNotebook ? (
                 <SearchNotebookPage {...props} />
             ) : (
                 <Redirect to={PageRoutes.Search} />
+            ),
+        exact: true,
+    },
+    {
+        path: PageRoutes.Notebooks,
+        render: props =>
+            useExperimentalFeatures.getState().showSearchNotebook ? (
+                <SearchNotebooksListPage {...props} />
+            ) : (
+                <Redirect to="/search" />
             ),
         exact: true,
     },

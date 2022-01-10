@@ -2,7 +2,6 @@ export enum PageRoutes {
     Index = '/',
     Search = '/search',
     SearchConsole = '/search/console',
-    SearchNotebook = '/search/notebook',
     SignIn = '/sign-in',
     SignUp = '/sign-up',
     Welcome = '/welcome',
@@ -18,6 +17,9 @@ export enum PageRoutes {
     Extensions = '/extensions',
     Help = '/help',
     Debug = '/-/debug/*',
+    CreateNotebook = '/notebooks/new',
+    Notebook = '/notebooks/:id',
+    Notebooks = '/notebooks',
     RepoContainer = '/:repoRevAndRest+',
 }
 

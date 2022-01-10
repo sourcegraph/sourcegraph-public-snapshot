@@ -144,6 +144,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext)
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring)
+    const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -192,6 +193,22 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         />
     )
 
+    const searchNavBarItems = useMemo(() => {
+        const items = [{ path: '/contexts', content: <>Contexts</> }]
+        return showSearchNotebook
+            ? items.concat([
+                  {
+                      path: '/notebooks',
+                      content: (
+                          <>
+                              Notebooks <ProductStatusBadge className="ml-1" status="beta" />
+                          </>
+                      ),
+                  },
+              ])
+            : items
+    }, [showSearchNotebook])
+
     return (
         <>
             <NavBar
@@ -208,16 +225,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     <NavDropdown
                         toggleItem={{ path: '/search', icon: MagnifyIcon, content: 'Code Search' }}
                         mobileHomeItem={{ content: 'Search home' }}
-                        items={[
-                            {
-                                path: '/contexts',
-                                content: (
-                                    <>
-                                        Contexts <ProductStatusBadge className="ml-1" status="new" />
-                                    </>
-                                ),
-                            },
-                        ]}
+                        items={searchNavBarItems}
                     />
                     {enableCodeMonitoring && (
                         <NavItem icon={CodeMonitoringLogo}>
