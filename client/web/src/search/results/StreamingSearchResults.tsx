@@ -18,7 +18,7 @@ import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import {  useLocalStorage, useObservable } from '@sourcegraph/wildcard'
+import { useLocalStorage, useObservable } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
