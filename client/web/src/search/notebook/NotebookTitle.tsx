@@ -54,6 +54,7 @@ export const NotebookTitle: React.FunctionComponent<NotebookTitleProps> = ({
                 className={styles.titleButton}
                 onClick={() => setIsEditing(true)}
                 onKeyDown={onButtonKeyDown}
+                data-testid="notebook-title-button"
             >
                 <span>{title}</span>
                 <span className={styles.titleEditIcon}>
@@ -71,6 +72,7 @@ export const NotebookTitle: React.FunctionComponent<NotebookTitleProps> = ({
             value={title}
             onChange={event => setTitle(event.target.value)}
             onKeyDown={onKeyDown}
+            data-testid="notebook-title-input"
         />
     )
 }

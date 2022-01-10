@@ -13,12 +13,14 @@ import { PageHeader } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../../auth'
 import { FilteredConnectionFilter } from '../../../components/FilteredConnection'
 import { NotebooksOrderBy } from '../../../graphql-operations'
+import { fetchNotebooks as _fetchNotebooks } from '../backend'
 
 import { SearchNotebooksList } from './SearchNotebooksList'
 import styles from './SearchNotebooksListPage.module.scss'
 
 export interface SearchNotebooksListPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
+    fetchNotebooks?: typeof _fetchNotebooks
 }
 
 type SelectedTab = 'my' | 'explore'
@@ -50,6 +52,7 @@ function setSelectedLocationTab(location: H.Location, history: H.History, select
 export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksListPageProps> = ({
     authenticatedUser,
     telemetryService,
+    fetchNotebooks = _fetchNotebooks,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('SearchNotebooksListPage')
@@ -177,7 +180,11 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                     </div>
                 </div>
                 {selectedTab === 'my' && authenticatedUser && (
-                    <SearchNotebooksList filters={filters} authenticatedUser={authenticatedUser} />
+                    <SearchNotebooksList
+                        fetchNotebooks={fetchNotebooks}
+                        filters={filters}
+                        authenticatedUser={authenticatedUser}
+                    />
                 )}
                 {selectedTab === 'my' && !authenticatedUser && (
                     <UnauthenticatedMyNotebooksSection
@@ -185,7 +192,7 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                         onSelectExploreNotebooks={onSelectExploreNotebooks}
                     />
                 )}
-                {selectedTab === 'explore' && <SearchNotebooksList filters={filters} />}
+                {selectedTab === 'explore' && <SearchNotebooksList fetchNotebooks={fetchNotebooks} filters={filters} />}
             </Page>
         </div>
     )

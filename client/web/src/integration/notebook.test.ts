@@ -291,4 +291,21 @@ describe('Search Notebook', () => {
         )
         expect(fileBlockHeaderText).toEqual('github.com/sourcegraph/sourcegraph/client/web/file.tsx')
     })
+
+    it('Should update the notebook title', async () => {
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
+        await driver.page.waitForSelector('[data-block-id]', { visible: true })
+
+        await driver.page.click('[data-testid="notebook-title-button"]')
+
+        await driver.page.waitForSelector('[data-testid="notebook-title-input"]')
+        await driver.enterText('type', ' Edited')
+
+        await driver.page.keyboard.press('Enter')
+        await driver.page.waitForSelector('[data-testid="notebook-title-button"]')
+        const titleText = await driver.page.evaluate(
+            () => document.querySelector<HTMLButtonElement>('[data-testid="notebook-title-button"]')?.textContent
+        )
+        expect(titleText).toEqual('Notebook Title Edited')
+    })
 })

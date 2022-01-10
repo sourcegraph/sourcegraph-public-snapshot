@@ -17,13 +17,13 @@ import styles from './SearchNotebooksList.module.scss'
 interface SearchNotebooksListProps {
     filters: FilteredConnectionFilter[]
     authenticatedUser?: AuthenticatedUser | null
-    fetchNotebooks?: typeof _fetchNotebooks
+    fetchNotebooks: typeof _fetchNotebooks
 }
 
 export const SearchNotebooksList: React.FunctionComponent<SearchNotebooksListProps> = ({
     filters,
     authenticatedUser,
-    fetchNotebooks = _fetchNotebooks,
+    fetchNotebooks,
 }) => {
     const queryConnection = useCallback(
         (args: Partial<ListNotebooksVariables>) => {
