@@ -1,10 +1,20 @@
-# Running e2e/qa tests locally
+# Integration tests
+
+This directory is home to the integration tests that run in [Sourcegraph's Buildkite pipelines](https://docs.sourcegraph.com/dev/background-information/continuous_integration#buildkite-pipelines).
+
+## Test structure
+
+Each subdirectory describes a suite of integration tests, and should contain:
+
+- `run.sh`: the main entrypoint used in Buildkite to run the test, including setup.
+- `test.sh`: the actual tests themselves - this should be just be the tests themselves, _without_ any additional setup.
+- Anything else required to run tests.
 
 ## Requirements
 
 Before running tests export these environment variables:
 
-```
+```sh
 export LOG_STATUS_MESSAGES=true
 export NO_CLEANUP=false
 export SOURCEGRAPH_SUDO_USER=admin
@@ -24,7 +34,7 @@ export GITHUB_TOKEN=<insert token here>
 
 From the root of this repository:
 
-```
+```sh
 ./dev/ci/e2e.sh
 ```
 
@@ -32,15 +42,15 @@ From the root of this repository:
 
 From the root of this repository
 
-1.
+1. Set up a local Sourcegraph instance
 
-```
+```sh
 CLEAN="true" ./dev/run-server-image.sh -d --name sourcegraph
 ```
 
 1. Login to the instance at `http://locahost:7080` and create a user with the following details.
 
-```
+```sh
 email=test@sourcegraph.com
 user=admin
 password=supersecurepassword
@@ -48,13 +58,13 @@ password=supersecurepassword
 
 1. Create an access token with admin access, copy the value and export it as follows:
 
-```
+```sh
 export SOURCEGRAPH_SUDO_TOKEN=<insert token here>
 ```
 
 1. Run the QA tests as follows.
 
-```
+```sh
 cd client/web
 yarn run test:regression
 ```

@@ -43,7 +43,7 @@ RUN mkdir /sg_config_grafana/provisioning/plugins && chown grafana:root /sg_conf
 
 # @FIXME: Update redis image
 # Pin busybox=1.32.1-r7 https://github.com/sourcegraph/sourcegraph/issues/27965
-RUN apk add --upgrade --no-cache apk-tools=~2.12 krb5-libs=~1.18.4 libssl1.1=~1.1.1l openssl=~1.1.1l busybox=~1.32.1
+RUN apk add --upgrade --no-cache apk-tools>=2.12 krb5-libs>=1.18.4 libssl1.1>=1.1.1l openssl>=1.1.1l busybox>=1.32.1
 
 EXPOSE 3370
 USER grafana

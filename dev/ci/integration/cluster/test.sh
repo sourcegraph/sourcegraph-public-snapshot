@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-# setup DIR for easier pathing /Users/dax/work/sourcegraph/test/cluster
-DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)""
+# setup DIR for easier pathing test dir
+test_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)""
+
 # cd to repo root
 root_dir="$(dirname "${BASH_SOURCE[0]}")/../../../.."
 cd "$root_dir"
@@ -30,21 +31,17 @@ function cluster_cleanup() {
 }
 
 function cluster_setup() {
-  git clone --depth 1 \
-    https://github.com/sourcegraph/deploy-sourcegraph.git \
-    "$DIR/deploy-sourcegraph"
-
   gcloud container clusters get-credentials default-buildkite --zone=us-central1-c --project=sourcegraph-ci
 
   kubectl create ns "$NAMESPACE" -oyaml --dry-run | kubectl apply -f -
   trap cluster_cleanup exit
-  kubectl apply -f "$DIR/storageClass.yaml"
+  kubectl apply -f "$test_dir/storageClass.yaml"
   kubectl config set-context --current --namespace="$NAMESPACE"
   kubectl config current-context
   sleep 15 #wait for namespace to come up
   kubectl get -n "$NAMESPACE" pods
 
-  pushd "$DIR/deploy-sourcegraph"
+  pushd "$test_dir/deploy-sourcegraph"
   set +e
   set +o pipefail
   # See $DOCKER_CLUSTER_IMAGES_TXT in pipeline-steps.go for env var
@@ -71,7 +68,7 @@ function test_setup() {
   # shellcheck disable=SC1091
   source /root/.profile
 
-  dev/ci/test/setup-deps.sh
+  dev/ci/integration/setup-deps.sh
 
   sleep 15
   export SOURCEGRAPH_BASE_URL="http://sourcegraph-frontend.$NAMESPACE.svc.cluster.local:30080"
