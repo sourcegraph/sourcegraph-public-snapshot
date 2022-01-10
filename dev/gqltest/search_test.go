@@ -1013,7 +1013,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:            `Or distributive property on commits deduplicates and merges`,
 				query:           `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
-				exactMatchCount: 35,
+				exactMatchCount: 30,
 				skip:            skipStream,
 			},
 			{
