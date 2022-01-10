@@ -482,6 +482,7 @@ func TestLsFiles(t *testing.T) {
 // tests the basic case (all paths returned), then the case with sub-repo permissions specified.
 func runFileListingTest(t *testing.T,
 	listingFunctionToTest func(context.Context, authz.SubRepoPermissionChecker, api.RepoName) ([]string, error)) {
+	t.Helper()
 	gitCommands := []string{
 		"touch file1",
 		"touch file2",

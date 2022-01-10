@@ -22,9 +22,7 @@ func Init() (*sql.DB, error) {
 		return nil, err
 	}
 
-	db := conn.(*sql.DB)
-	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
-	return db, err
+	return conn.(*sql.DB), err
 }
 
 var initDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{}, error) {
@@ -45,5 +43,9 @@ var initDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{}, error) {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
+	if err != nil {
+		return nil, errors.Errorf("Failed to create sub-repo client: %v", err)
+	}
 	return db, nil
 })
