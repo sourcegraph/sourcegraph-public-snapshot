@@ -8,9 +8,8 @@ import { interval, Subject, Subscription } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'
 import { FeedbackText } from '../../components/FeedbackText'
@@ -66,7 +65,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
                 'This repository is currently being cloned from its remote repository.'
             buttonLabel = (
                 <span>
-                    <LoadingSpinner className="icon-inline" /> Cloning...
+                    <LoadingSpinner /> Cloning...
                 </span>
             )
             buttonDisabled = true
@@ -213,7 +212,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                         )}
                         {this.state.loading && (
                             <div className={classNames('alert alert-primary mb-0', styles.alert)}>
-                                <LoadingSpinner className="icon-inline" /> Checking connection...
+                                <LoadingSpinner /> Checking connection...
                             </div>
                         )}
                         {this.state.result &&
@@ -301,7 +300,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                 <PageTitle title="Mirror settings" />
                 <PageHeader path={[{ text: 'Mirroring and cloning' }]} headingElement="h2" className="mb-3" />
                 <Container className="repo-settings-mirror-page">
-                    {this.state.loading && <LoadingSpinner className="icon-inline" />}
+                    {this.state.loading && <LoadingSpinner />}
                     {this.state.error && <ErrorAlert error={this.state.error} />}
                     <div className="form-group">
                         <label>

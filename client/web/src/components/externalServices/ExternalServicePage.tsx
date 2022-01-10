@@ -4,10 +4,10 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { catchError } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, Scalars, AddExternalServiceInput } from '../../graphql-operations'
 import { ErrorAlert } from '../alerts'
@@ -142,7 +142,7 @@ export const ExternalServicePage: React.FunctionComponent<Props> = ({
                 <PageTitle title="External service" />
             )}
             <h2>Update synced repositories</h2>
-            {externalServiceOrError === undefined && <LoadingSpinner className="icon-inline" />}
+            {externalServiceOrError === undefined && <LoadingSpinner />}
             {isErrorLike(externalServiceOrError) && <ErrorAlert className="mb-3" error={externalServiceOrError} />}
             {externalServiceCategory && (
                 <div className="mb-3">

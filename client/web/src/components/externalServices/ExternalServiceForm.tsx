@@ -4,9 +4,9 @@ import React, { useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AddExternalServiceInput } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -120,7 +120,7 @@ export const ExternalServiceForm: React.FunctionComponent<Props> = ({
                 )}
                 disabled={loading}
             >
-                {loading && <LoadingSpinner className="icon-inline" />}
+                {loading && <LoadingSpinner />}
                 {submitName ?? (mode === 'edit' ? 'Update repositories' : 'Add repositories')}
             </button>
         </Form>

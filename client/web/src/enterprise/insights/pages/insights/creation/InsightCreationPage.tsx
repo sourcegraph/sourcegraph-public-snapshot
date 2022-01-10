@@ -1,9 +1,9 @@
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 import { parseDashboardScope } from '../../../core/backend/utils/parse-dashboard-scope'
@@ -53,7 +53,7 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
     const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
 
     if (dashboard === undefined || subjects === undefined) {
-        return <LoadingSpinner />
+        return <LoadingSpinner inline={false} />
     }
 
     const handleInsightCreateRequest = async (event: InsightCreateEvent): Promise<unknown> => {

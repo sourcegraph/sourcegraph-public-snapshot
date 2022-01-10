@@ -5,12 +5,11 @@ import { of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
@@ -117,7 +116,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
             />
 
             {userHasCodeMonitors === 'loading' ? (
-                <LoadingSpinner />
+                <LoadingSpinner inline={false} />
             ) : (
                 <div className="d-flex flex-column">
                     <div className="code-monitoring-page-tabs mb-4">

@@ -10,6 +10,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -593,5 +595,126 @@ func TestDeletingAutoDefinedSearchContext(t *testing.T) {
 	}
 	if err != nil && !strings.Contains(err.Error(), wantErr) {
 		t.Fatalf("wanted error containing %s, got %s", wantErr, err)
+	}
+}
+
+func TestParseRepoOpts(t *testing.T) {
+	for _, tc := range []struct {
+		in  string
+		out []RepoOpts
+		err error
+	}{
+		{
+			in: "(r:foo or r:bar) case:yes archived:only visibility:private (rev:HEAD or rev:TAIL)",
+			out: []RepoOpts{
+				{
+					ReposListOptions: database.ReposListOptions{
+						IncludePatterns:       []string{"foo"},
+						CaseSensitivePatterns: true,
+						OnlyArchived:          true,
+						OnlyPrivate:           true,
+						NoForks:               true,
+					},
+					RevSpecs: []string{"HEAD"},
+				},
+				{
+					ReposListOptions: database.ReposListOptions{
+						IncludePatterns:       []string{"bar"},
+						CaseSensitivePatterns: true,
+						OnlyArchived:          true,
+						OnlyPrivate:           true,
+						NoForks:               true,
+					},
+					RevSpecs: []string{"HEAD"},
+				},
+				{
+					ReposListOptions: database.ReposListOptions{
+						IncludePatterns:       []string{"foo"},
+						CaseSensitivePatterns: true,
+						OnlyArchived:          true,
+						OnlyPrivate:           true,
+						NoForks:               true,
+					},
+					RevSpecs: []string{"TAIL"},
+				},
+				{
+					ReposListOptions: database.ReposListOptions{
+						IncludePatterns:       []string{"bar"},
+						CaseSensitivePatterns: true,
+						OnlyArchived:          true,
+						OnlyPrivate:           true,
+						NoForks:               true,
+					},
+					RevSpecs: []string{"TAIL"},
+				},
+			},
+		},
+		{
+			in: "r:foo|bar@HEAD:TAIL archived:yes",
+			out: []RepoOpts{
+				{
+					ReposListOptions: database.ReposListOptions{
+						IncludePatterns: []string{"foo|bar"},
+						NoForks:         true,
+					},
+					RevSpecs: []string{"HEAD", "TAIL"},
+				},
+			},
+		},
+		{
+			in: "r:foo|bar@HEAD f:^sub/dir lang:go",
+			out: []RepoOpts{
+				{
+					ReposListOptions: database.ReposListOptions{
+						IncludePatterns: []string{"foo|bar"},
+						NoForks:         true,
+						NoArchived:      true,
+					},
+					RevSpecs: []string{"HEAD"},
+				},
+			},
+		},
+		{
+			in: "(r:foo (rev:HEAD or rev:TAIL)) or r:bar@main:dev",
+			out: []RepoOpts{
+				{
+					ReposListOptions: database.ReposListOptions{
+						IncludePatterns: []string{"foo"},
+						NoForks:         true,
+						NoArchived:      true,
+					},
+					RevSpecs: []string{"HEAD"},
+				},
+				{
+					ReposListOptions: database.ReposListOptions{
+						IncludePatterns: []string{"foo"},
+						NoForks:         true,
+						NoArchived:      true,
+					},
+					RevSpecs: []string{"TAIL"},
+				},
+				{
+					ReposListOptions: database.ReposListOptions{
+						IncludePatterns: []string{"bar"},
+						NoForks:         true,
+						NoArchived:      true,
+					},
+					RevSpecs: []string{"main", "dev"},
+				},
+			},
+		},
+	} {
+		t.Run(tc.in, func(t *testing.T) {
+			have, err := ParseRepoOpts(tc.in)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want := tc.out
+			opts := cmpopts.IgnoreUnexported(database.ReposListOptions{})
+			if diff := cmp.Diff(have, want, opts); diff != "" {
+				t.Errorf("mismatch: (-have, +want): %s", diff)
+			}
+		})
 	}
 }

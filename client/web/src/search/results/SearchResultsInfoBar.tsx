@@ -15,7 +15,7 @@ import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/validate'
+import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
@@ -35,6 +35,7 @@ import {
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
 import { CreateCodeInsightButton } from './components/CreateCodeInsightButton'
+import { CreateSearchContextButton } from './components/CreateSearchContextButton'
 import styles from './SearchResultsInfoBar.module.scss'
 
 function getFeatureTourElementFn(isAuthenticatedUser: boolean): (onClose: () => void) => HTMLElement {
@@ -186,6 +187,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
 
     const showActionButtonExperimentalVersion = !props.authenticatedUser
 
+    const searchContextButton = useMemo(
+        () => <CreateSearchContextButton query={props.query} authenticatedUser={props.authenticatedUser} />,
+        [props.authenticatedUser, props.query]
+    )
+
     const codeInsightsButton = useMemo(
         () => (
             <CreateCodeInsightButton
@@ -332,10 +338,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         )}
                     </ActionsContainer>
 
-                    {(codeInsightsButton || createCodeMonitorButton || saveSearchButton) && (
+                    {(searchContextButton || codeInsightsButton || createCodeMonitorButton || saveSearchButton) && (
                         <li className={styles.divider} aria-hidden="true" />
                     )}
 
+                    {searchContextButton}
                     {codeInsightsButton}
                     {createCodeMonitorButton}
                     {saveSearchButton}

@@ -3,16 +3,17 @@ import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-r
 import { Observable } from 'rxjs'
 
 import { ResizablePanel } from '@sourcegraph/branded/src/components/panel/Panel'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { BatchChangesProps } from './batches'
@@ -55,7 +56,6 @@ import {
     SearchStreamingProps,
     parseSearchURL,
     SearchContextProps,
-    getGlobalSearchContextFilter,
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -255,7 +255,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <Suspense
                     fallback={
                         <div className="flex flex-1">
-                            <LoadingSpinner className="icon-inline m-2" />
+                            <LoadingSpinner className="m-2" />
                         </div>
                     }
                 >

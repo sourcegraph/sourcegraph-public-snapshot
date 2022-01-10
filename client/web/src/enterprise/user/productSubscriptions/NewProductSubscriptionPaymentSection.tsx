@@ -7,12 +7,12 @@ import { Observable, of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { formatUserCount, mailtoSales } from '../../../productSubscription/helpers'
@@ -103,7 +103,7 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
         <div className="new-product-subscription-payment-section">
             <div className="form-text mb-2">
                 {previewInvoice === LOADING ? (
-                    <LoadingSpinner className="icon-inline" />
+                    <LoadingSpinner />
                 ) : !productSubscription || previewInvoice === null ? (
                     <>&mdash;</>
                 ) : isErrorLike(previewInvoice) ? (
@@ -141,7 +141,7 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
                         {formatDistanceStrict(parseISO(previewInvoice.afterInvoiceItem.expiresAt), Date.now())} (
                         {formatUserCount(previewInvoice.afterInvoiceItem.userCount)})
                         {/* Include invisible LoadingSpinner to ensure that the height remains constant between loading and total. */}
-                        <LoadingSpinner className="icon-inline invisible" />
+                        <LoadingSpinner className="invisible" />
                     </>
                 )}
             </div>

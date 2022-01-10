@@ -5,10 +5,10 @@ import { Observable } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ALLOW_NAVIGATION } from '@sourcegraph/web/src/components/AwayPrompt'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SearchContextProps } from '../../search'
 
@@ -81,9 +81,7 @@ export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchConte
                     )}
                 </div>
             )}
-            {deleteCompletedOrError && (
-                <div>{deleteCompletedOrError === 'loading' && <LoadingSpinner className="icon-inline" />}</div>
-            )}
+            {deleteCompletedOrError && <div>{deleteCompletedOrError === 'loading' && <LoadingSpinner />}</div>}
         </Dialog>
     )
 }

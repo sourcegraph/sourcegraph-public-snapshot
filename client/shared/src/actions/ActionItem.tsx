@@ -6,7 +6,7 @@ import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ExecuteCommandParameters } from '../api/client/mainthread-api'
 import { ActionContribution, Evaluated } from '../api/protocol'
@@ -277,7 +277,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 )}
                 {showLoadingSpinner && (
                     <div className={styles.loader} data-testid="action-item-spinner">
-                        <LoadingSpinner className={this.props.iconClassName} />
+                        <LoadingSpinner inline={false} className={this.props.iconClassName} />
                     </div>
                 )}
             </ButtonLink>

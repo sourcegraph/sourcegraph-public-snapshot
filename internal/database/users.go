@@ -673,9 +673,6 @@ func (u *userStore) CheckAndDecrementInviteQuota(ctx context.Context, userID int
 }
 
 func (u *userStore) GetByID(ctx context.Context, id int32) (*types.User, error) {
-	if Mocks.Users.GetByID != nil {
-		return Mocks.Users.GetByID(ctx, id)
-	}
 	return u.getOneBySQL(ctx, sqlf.Sprintf("WHERE id=%s AND deleted_at IS NULL LIMIT 1", id))
 }
 
@@ -687,9 +684,6 @@ func (u *userStore) GetByVerifiedEmail(ctx context.Context, email string) (*type
 }
 
 func (u *userStore) GetByUsername(ctx context.Context, username string) (*types.User, error) {
-	if Mocks.Users.GetByUsername != nil {
-		return Mocks.Users.GetByUsername(ctx, username)
-	}
 	return u.getOneBySQL(ctx, sqlf.Sprintf("WHERE u.username=%s AND u.deleted_at IS NULL LIMIT 1", username))
 }
 
@@ -711,10 +705,6 @@ func (u *userStore) GetByUsernames(ctx context.Context, usernames ...string) ([]
 var ErrNoCurrentUser = errors.New("no current user")
 
 func (u *userStore) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
-	if Mocks.Users.GetByCurrentAuthUser != nil {
-		return Mocks.Users.GetByCurrentAuthUser(ctx)
-	}
-
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() {
 		return nil, ErrNoCurrentUser
@@ -752,10 +742,6 @@ func (u *userStore) InvalidateSessionsByID(ctx context.Context, id int32) (err e
 }
 
 func (u *userStore) Count(ctx context.Context, opt *UsersListOptions) (int, error) {
-	if Mocks.Users.Count != nil {
-		return Mocks.Users.Count(ctx, opt)
-	}
-
 	if opt == nil {
 		opt = &UsersListOptions{}
 	}

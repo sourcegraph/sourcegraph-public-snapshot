@@ -6,7 +6,6 @@ import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
 
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { createHoverifier, Hoverifier, HoverState } from '@sourcegraph/shared/src/codeintellify'
@@ -30,6 +29,7 @@ import {
     RevisionSpec,
     UIPositionSpec,
 } from '@sourcegraph/shared/src/util/url'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { requestGraphQL } from '../../backend/graphql'
@@ -241,7 +241,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                     }
                 />
                 {this.state.commitOrError === undefined ? (
-                    <LoadingSpinner className="icon-inline mt-2" />
+                    <LoadingSpinner className="mt-2" />
                 ) : isErrorLike(this.state.commitOrError) ? (
                     <ErrorAlert className="mt-2" error={this.state.commitOrError} />
                 ) : (

@@ -10,11 +10,15 @@ Each section comprehensively describes the steps needed to upgrade, and any manu
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
-## 3.34 -> 3.35
+## 3.35.0 -> 3.35.1
 
-> WARNING: **We are currently investigating issues related to Code Insights on this release. Users are advised to hold off on upgrading to 3.35 until a fix is available.**
+**Due to issues related to Code Insights on the 3.35.0 release, users are advised to upgrade to 3.35.1 as soon as possible.**
 
-The `query-runner` service has been decommissioned in the 3.35.0 release and will be removed during the upgrade.
+## 3.34 -> 3.35.1
+
+**Due to issues related to Code Insights on the 3.35.0 release, users are advised to upgrade directly to 3.35.1.**
+
+The `query-runner` service has been decommissioned in the 3.35 release and will be removed during the upgrade.
 
 Follow the [standard upgrade procedure](../install/docker-compose/operations.md#upgrade) to upgrade your deployment.
 To delete the `query-runner` service, specify `--remove-orphans` to your `docker-compose` command.
