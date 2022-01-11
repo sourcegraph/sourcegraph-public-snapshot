@@ -1,10 +1,10 @@
 import React, { useCallback } from 'react'
-import { Link } from 'react-router-dom'
 import { PieChart, Pie, Tooltip, ResponsiveContainer, PieLabelRenderProps, Cell, TooltipFormatter } from 'recharts'
 
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 
@@ -98,9 +98,11 @@ export const SearchStatsLanguages: React.FunctionComponent<Props> = ({ query, st
                                     <tr key={name || index}>
                                         <td>
                                             {name ? (
-                                                <Link to={urlToSearchWithExtraQuery(`lang:${name.toLowerCase()}`)}>
+                                                <RouterLink
+                                                    to={urlToSearchWithExtraQuery(`lang:${name.toLowerCase()}`)}
+                                                >
                                                     {name}
-                                                </Link>
+                                                </RouterLink>
                                             ) : (
                                                 UNKNOWN_LANGUAGE
                                             )}

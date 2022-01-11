@@ -4,7 +4,6 @@ import { upperFirst } from 'lodash'
 import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
@@ -14,7 +13,7 @@ import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, ProductStatusBadge, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Container, ProductStatusBadge, LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
@@ -70,7 +69,9 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
     useScrollToLocationHash(props.location)
 
     const thisPage = toDocumentationURL({ repoName: props.repo.name, revision: props.revision || '', pathID: '' })
-    useBreadcrumb(useMemo(() => ({ key: 'node', element: <Link to={thisPage}>API docs</Link> }), [thisPage]))
+    useBreadcrumb(
+        useMemo(() => ({ key: 'node', element: <RouterLink to={thisPage}>API docs</RouterLink> }), [thisPage])
+    )
 
     const pagePathID = props.pathID || '/'
     const page =

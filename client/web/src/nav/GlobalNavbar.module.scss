@@ -4,6 +4,8 @@
 }
 
 .link {
+    --link-color: var(--body-color);
+
     color: var(--body-color);
     border-radius: var(--border-radius);
 }

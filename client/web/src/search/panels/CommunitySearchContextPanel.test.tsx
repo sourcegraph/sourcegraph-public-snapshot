@@ -1,7 +1,7 @@
-import { render } from '@testing-library/react'
 import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { CommunitySearchContextsPanel } from './CommunitySearchContextPanel'
 
@@ -12,6 +12,6 @@ describe('CommunitySearchContextPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        expect(render(<CommunitySearchContextsPanel {...props} />).asFragment()).toMatchSnapshot()
+        expect(renderWithRouter(<CommunitySearchContextsPanel {...props} />).asFragment()).toMatchSnapshot()
     })
 })

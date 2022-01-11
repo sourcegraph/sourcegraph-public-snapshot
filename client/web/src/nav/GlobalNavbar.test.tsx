@@ -3,7 +3,6 @@ import { createLocation, createMemoryHistory } from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 
-import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
@@ -55,8 +54,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 }
 
 describe('GlobalNavbar', () => {
-    setLinkComponent(({ children, ...props }) => <a {...props}>{children}</a>)
-    afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
     beforeEach(() => {
         useExperimentalFeatures.setState({ codeMonitoring: false })
     })

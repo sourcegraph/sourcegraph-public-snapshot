@@ -14,10 +14,9 @@ import { useHistory } from 'react-router'
 import { delay, repeatWhen } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
+import { RouterLink, Badge, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { Collapsible } from '../../../components/Collapsible'
@@ -95,9 +94,9 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                 <h3>
                     <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />{' '}
                     {workspace.repository.name}{' '}
-                    <Link to={workspace.repository.url}>
+                    <RouterLink to={workspace.repository.url}>
                         <ExternalLinkIcon className="icon-inline" />
-                    </Link>
+                    </RouterLink>
                 </h3>
                 <button type="button" className="btn btn-link btn-sm p-0 ml-2" onClick={onClose}>
                     <CloseIcon className="icon-inline" />

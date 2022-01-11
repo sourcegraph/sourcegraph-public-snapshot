@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import React, { FunctionComponent } from 'react'
-import { Link } from 'react-router-dom'
+
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../components/DismissibleAlert'
 import globalAlertStyles from '../../global/GlobalAlerts.module.scss'
@@ -36,8 +37,8 @@ export const CodeHostScopeAlerts: FunctionComponent<Props> = ({ authenticatedUse
             className={classNames('alert-info', globalAlertStyles.alert)}
         >
             <span>
-                Update your <Link to="/user/settings/code-hosts">GitHub code host connection</Link> to search private
-                code with Sourcegraph.
+                Update your <RouterLink to="/user/settings/code-hosts">GitHub code host connection</RouterLink> to
+                search private code with Sourcegraph.
             </span>
         </DismissibleAlert>
     )
@@ -64,8 +65,8 @@ export const GitLabScopeAlert: FunctionComponent<Props> = ({ authenticatedUser }
             className={classNames('alert-info', globalAlertStyles.alert)}
         >
             <span>
-                Update your <Link to="/user/settings/code-hosts">GitLab code host connection</Link> to search private
-                code with Sourcegraph.
+                Update your <RouterLink to="/user/settings/code-hosts">GitLab code host connection</RouterLink> to
+                search private code with Sourcegraph.
             </span>
         </DismissibleAlert>
     )

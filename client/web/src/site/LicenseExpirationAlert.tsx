@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { isProductLicenseExpired, formatRelativeExpirationDate } from '../productSubscription/helpers'
@@ -27,9 +27,9 @@ export const LicenseExpirationAlert: React.FunctionComponent<{
                 : 'will expire in ' + formatDistanceStrict(expiresAt, Date.now()) // 'Will expire in two months'
         }
         .&nbsp;
-        <Link className="site-alert__link" to="/site-admin/license">
+        <RouterLink className="site-alert__link" to="/site-admin/license">
             <span className="underline">Renew now</span>
-        </Link>
+        </RouterLink>
         &nbsp;or&nbsp;
         <a className="site-alert__link" href="https://about.sourcegraph.com/contact">
             <span className="underline">contact Sourcegraph</span>

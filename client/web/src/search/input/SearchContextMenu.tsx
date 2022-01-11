@@ -14,10 +14,9 @@ import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
 import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge } from '@sourcegraph/wildcard'
+import { RouterLink, Badge } from '@sourcegraph/wildcard'
 
 import { SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -337,13 +336,13 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                 </button>
                 <span className="flex-grow-1" />
                 {showSearchContextManagement && (
-                    <Link
+                    <RouterLink
                         to="/contexts"
                         className={classNames('btn btn-link btn-sm', styles.footerButton)}
                         onClick={() => closeMenu()}
                     >
                         Manage contexts
-                    </Link>
+                    </RouterLink>
                 )}
             </div>
         </div>

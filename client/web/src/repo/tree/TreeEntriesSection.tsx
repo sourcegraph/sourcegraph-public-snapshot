@@ -5,9 +5,9 @@ import FolderOutlineIcon from 'mdi-react/FolderOutlineIcon'
 import React from 'react'
 
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { FileDecorator } from '../../tree/FileDecorator'
 
@@ -28,7 +28,7 @@ const TreeEntry: React.FunctionComponent<{
     renderedFileDecorations: React.ReactNode
     path: string
 }> = ({ isDirectory, name, url, isColumnLayout, renderedFileDecorations, path }) => (
-    <Link
+    <RouterLink
         to={url}
         className={classNames(
             'test-page-file-decorable',
@@ -53,7 +53,7 @@ const TreeEntry: React.FunctionComponent<{
             </span>
             {renderedFileDecorations}
         </div>
-    </Link>
+    </RouterLink>
 )
 
 interface TreeEntriesSectionProps extends ThemeProps {

@@ -7,7 +7,6 @@ import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React, { ReactElement, useCallback, useMemo, useState } from 'react'
 import { Collapse } from 'reactstrap'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FILTERS, FilterType, isNegatableFilter } from '@sourcegraph/shared/src/search/query/filters'
@@ -15,6 +14,7 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { NavbarQueryState } from '../../../stores/navbarSearchQueryState'
 import { QueryChangeSource } from '../../helpers'
@@ -567,9 +567,9 @@ const SearchReference = React.memo(
                 )}
                 <p className={sidebarStyles.sidebarSectionFooter}>
                     <small>
-                        <Link target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
+                        <RouterLink target="blank" to="https://docs.sourcegraph.com/code_search/reference/queries">
                             Search syntax <ExternalLinkIcon className="icon-inline" />
-                        </Link>
+                        </RouterLink>
                     </small>
                 </p>
             </div>

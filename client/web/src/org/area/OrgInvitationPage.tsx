@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Link, Redirect } from 'react-router-dom'
+import { Redirect } from 'react-router-dom'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, distinctUntilKeyChanged, map, mapTo, tap, withLatestFrom } from 'rxjs/operators'
 
@@ -8,7 +8,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
 import { refreshAuthenticatedUser, AuthenticatedUser } from '../../auth'
@@ -132,17 +132,19 @@ export const OrgInvitationPage = withAuthenticatedUser(
                             <Form className="text-center">
                                 <h3 className="my-0 font-weight-normal">
                                     You've been invited to the{' '}
-                                    <Link to={orgURL(this.props.org.name)}>
+                                    <RouterLink to={orgURL(this.props.org.name)}>
                                         <strong>{this.props.org.name}</strong>
-                                    </Link>{' '}
+                                    </RouterLink>{' '}
                                     organization.
                                 </h3>
                                 <p>
                                     <small className="text-muted">
                                         Invited by{' '}
-                                        <Link to={userURL(this.props.org.viewerPendingInvitation.sender.username)}>
+                                        <RouterLink
+                                            to={userURL(this.props.org.viewerPendingInvitation.sender.username)}
+                                        >
                                             {this.props.org.viewerPendingInvitation.sender.username}
-                                        </Link>
+                                        </RouterLink>
                                     </small>
                                 </p>
                                 <div className="mt-3">
@@ -154,9 +156,9 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                     >
                                         Join {this.props.org.name}
                                     </button>
-                                    <Link className="btn btn-link" to={orgURL(this.props.org.name)}>
+                                    <RouterLink className="btn btn-link" to={orgURL(this.props.org.name)}>
                                         Go to {this.props.org.name}'s profile
-                                    </Link>
+                                    </RouterLink>
                                 </div>
                                 <div>
                                     <button

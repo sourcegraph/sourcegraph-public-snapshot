@@ -1,7 +1,7 @@
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LoaderButton } from '@sourcegraph/web/src/components/LoaderButton'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { FinishWelcomeFlow } from '../PostSignUpPage'
 import { useSteps } from '../Steps/context'
@@ -16,14 +16,14 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish }) => {
     return (
         <div className="d-flex align-items-center justify-content-end mt-4">
             {!currentStep.isLastStep && (
-                <Link
+                <RouterLink
                     to="https://docs.sourcegraph.com/code_search/explanations/code_visibility_on_sourcegraph_cloud"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mr-auto"
                 >
                     <small>Who can see my code on Sourcegraph? </small>
-                </Link>
+                </RouterLink>
             )}
 
             <div>

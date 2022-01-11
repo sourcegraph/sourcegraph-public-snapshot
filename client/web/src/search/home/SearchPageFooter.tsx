@@ -1,10 +1,10 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
 
@@ -75,9 +75,9 @@ export const SearchPageFooter: React.FunctionComponent<
 
     return isSourcegraphDotCom ? (
         <footer className={styles.footer}>
-            <Link to={PageRoutes.Search} aria-label="Home" className="flex-shrink-0">
+            <RouterLink to={PageRoutes.Search} aria-label="Home" className="flex-shrink-0">
                 <BrandLogo isLightTheme={isLightTheme} variant="symbol" className={styles.logo} />
-            </Link>
+            </RouterLink>
 
             <ul className={classNames('d-flex flex-wrap list-unstyled', styles.mainList)}>
                 {footerLinkSections.map(section => (
@@ -122,7 +122,7 @@ export const SearchPageFooter: React.FunctionComponent<
             <h4 className="mb-2 mb-lg-0">Explore and extend</h4>
             <span className="d-flex flex-column flex-md-row align-items-center">
                 <span className="d-flex flex-row mb-2 mb-md-0">
-                    <Link
+                    <RouterLink
                         className="px-3"
                         to="https://docs.sourcegraph.com/integration/browser_extension"
                         rel="noopener noreferrer"
@@ -130,20 +130,20 @@ export const SearchPageFooter: React.FunctionComponent<
                         onClick={() => logLinkClicked('BrowserExtensions')}
                     >
                         Browser extensions
-                    </Link>
+                    </RouterLink>
                     <span aria-hidden="true" className="border-right d-none d-md-inline" />
-                    <Link
+                    <RouterLink
                         className="px-3"
                         to="/extensions"
                         target="_blank"
                         onClick={() => logLinkClicked('SourcegraphExtensions')}
                     >
                         Sourcegraph extensions
-                    </Link>
+                    </RouterLink>
                     <span aria-hidden="true" className="border-right d-none d-md-inline" />
                 </span>
                 <span className="d-flex flex-row">
-                    <Link
+                    <RouterLink
                         className="px-3"
                         to="https://docs.sourcegraph.com/integration/editor"
                         rel="noopener noreferrer"
@@ -151,9 +151,9 @@ export const SearchPageFooter: React.FunctionComponent<
                         onClick={() => logLinkClicked('EditorPlugins')}
                     >
                         Editor plugins
-                    </Link>
+                    </RouterLink>
                     <span aria-hidden="true" className="border-right d-none d-md-inline" />
-                    <Link
+                    <RouterLink
                         className="pl-3"
                         to="https://docs.sourcegraph.com/admin/external_service"
                         rel="noopener noreferrer"
@@ -161,7 +161,7 @@ export const SearchPageFooter: React.FunctionComponent<
                         onClick={() => logLinkClicked('CodeHostIntegrations')}
                     >
                         Code host integrations
-                    </Link>
+                    </RouterLink>
                 </span>
             </span>
         </footer>

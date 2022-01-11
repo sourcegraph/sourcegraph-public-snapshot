@@ -5,14 +5,13 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 import { NamespaceProps } from '../namespaces'
@@ -67,7 +66,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
             <div className={classNames(styles.row, 'list-group-item test-saved-search-list-page-row')}>
                 <div className="d-flex">
                     <MessageTextOutlineIcon className={classNames(styles.rowIcon, 'icon-inline')} />
-                    <Link
+                    <RouterLink
                         to={
                             '/search?' +
                             buildSearchURLQuery(this.props.savedSearch.query, this.props.patternType, false)
@@ -76,16 +75,16 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                         <div className="test-saved-search-list-page-row-title">
                             {this.props.savedSearch.description}
                         </div>
-                    </Link>
+                    </RouterLink>
                 </div>
                 <div>
-                    <Link
+                    <RouterLink
                         className="btn btn-secondary btn-sm test-edit-saved-search-button"
                         to={`${this.props.match.path}/${this.props.savedSearch.id}`}
                         data-tooltip="Saved search settings"
                     >
                         <SettingsIcon className="icon-inline" /> Settings
-                    </Link>{' '}
+                    </RouterLink>{' '}
                     <button
                         type="button"
                         className="btn btn-sm btn-danger test-delete-saved-search-button"
@@ -142,12 +141,12 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                     headingElement="h2"
                     description="Manage notifications and alerts for specific search queries."
                     actions={
-                        <Link
+                        <RouterLink
                             to={`${this.props.match.path}/add`}
                             className="btn btn-primary test-add-saved-search-button"
                         >
                             <PlusIcon className="icon-inline" /> Add saved search
-                        </Link>
+                        </RouterLink>
                     }
                     className="mb-3"
                 />

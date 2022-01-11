@@ -3,7 +3,6 @@ import AddIcon from 'mdi-react/AddIcon'
 import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable, Subject, NEVER } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
 
@@ -11,7 +10,7 @@ import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { useEventObservable, useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
 import { ErrorAlert } from '../../../../components/alerts'
@@ -134,9 +133,9 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
         <div className="site-admin-product-subscription-page">
             <PageTitle title="Product subscription" />
             <div className="mb-2">
-                <Link to="/site-admin/dotcom/product/subscriptions" className="btn btn-link btn-sm">
+                <RouterLink to="/site-admin/dotcom/product/subscriptions" className="btn btn-link btn-sm">
                     <ArrowLeftIcon className="icon-inline" /> All subscriptions
-                </Link>
+                </RouterLink>
             </div>
             {productSubscription === LOADING ? (
                 <LoadingSpinner />
@@ -174,7 +173,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                                     <th className="text-nowrap">Account</th>
                                     <td className="w-100">
                                         <AccountName account={productSubscription.account} /> &mdash;{' '}
-                                        <Link to={productSubscription.url}>View as user</Link>
+                                        <RouterLink to={productSubscription.url}>View as user</RouterLink>
                                     </td>
                                 </tr>
                                 <tr>

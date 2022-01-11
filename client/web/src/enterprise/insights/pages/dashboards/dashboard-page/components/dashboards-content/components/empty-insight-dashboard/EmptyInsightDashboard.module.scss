@@ -9,6 +9,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
+
+    --link-hover-decoration: none;
+    --link-color: var(--text-color);
+
     color: var(--text-color);
 
     &:hover {

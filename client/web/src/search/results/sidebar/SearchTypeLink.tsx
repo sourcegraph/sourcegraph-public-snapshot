@@ -1,10 +1,10 @@
 import classNames from 'classnames'
 import React, { ReactElement, useCallback } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { containsLiteralOrPattern } from '@sourcegraph/shared/src/search/query/validate'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { SearchContextProps } from '../..'
 import { buildSearchURLQueryFromQueryState } from '../../../stores'
@@ -40,9 +40,9 @@ const SearchTypeLink: React.FunctionComponent<SearchTypeLinkProps> = ({
     })
 
     return (
-        <Link to={{ pathname: '/search', search: builtURLQuery }} className={styles.sidebarSectionListItem}>
+        <RouterLink to={{ pathname: '/search', search: builtURLQuery }} className={styles.sidebarSectionListItem}>
             {children}
-        </Link>
+        </RouterLink>
     )
 }
 

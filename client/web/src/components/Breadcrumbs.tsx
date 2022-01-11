@@ -6,7 +6,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Unsubscribable } from 'sourcegraph'
 
 import { isDefined } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import styles from './Breadcrumbs.module.scss'
 
@@ -178,7 +178,7 @@ export const Breadcrumbs: React.FunctionComponent<{ breadcrumbs: BreadcrumbAtDep
                         ) : index === validBreadcrumbs.length - 1 && !location.hash ? (
                             breadcrumb.link.label
                         ) : (
-                            <Link to={breadcrumb.link.to}>{breadcrumb.link.label}</Link>
+                            <RouterLink to={breadcrumb.link.to}>{breadcrumb.link.label}</RouterLink>
                         )}
                     </span>
                 )

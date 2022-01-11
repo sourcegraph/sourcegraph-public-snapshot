@@ -4,7 +4,6 @@ import { EMPTY, Observable } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
@@ -18,7 +17,7 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SelfHostedCtaLink } from '@sourcegraph/web/src/components/SelfHostedCtaLink'
-import { Container, PageHeader, ProductStatusBadge, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Container, PageHeader, ProductStatusBadge, LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -81,21 +80,25 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
             {externalServices?.length !== 0 ? (
                 <span className="text-muted">
-                    <Link to={`${routingPrefix}/repositories/manage`}>Add repositories</Link> to start searching{' '}
-                    {isUserOwner ? 'code with Sourcegraph.' : 'with your team!'}
+                    <RouterLink to={`${routingPrefix}/repositories/manage`}>Add repositories</RouterLink> to start
+                    searching {isUserOwner ? 'code with Sourcegraph.' : 'with your team!'}
                 </span>
             ) : isUserOwner ? (
                 <span className="text-muted">
-                    <Link to={`${routingPrefix}/code-hosts`}>Connect a code host</Link> to add your code to Sourcegraph.{' '}
+                    <RouterLink to={`${routingPrefix}/code-hosts`}>Connect a code host</RouterLink> to add your code to
+                    Sourcegraph.{' '}
                     <span>
                         You can also{' '}
-                        <Link to={`${routingPrefix}/repositories/manage`}>add individual public repositories</Link> from
-                        GitHub.com or GitLab.com.
+                        <RouterLink to={`${routingPrefix}/repositories/manage`}>
+                            add individual public repositories
+                        </RouterLink>{' '}
+                        from GitHub.com or GitLab.com.
                     </span>
                 </span>
             ) : (
                 <span className="text-muted">
-                    <Link to={`${routingPrefix}/code-hosts`}>Connect code hosts</Link> to get started with Sourcegraph.{' '}
+                    <RouterLink to={`${routingPrefix}/code-hosts`}>Connect code hosts</RouterLink> to get started with
+                    Sourcegraph.{' '}
                 </span>
             )}
         </Container>
@@ -288,9 +291,9 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             <p className="align-middle mb-0">
                 Search across all repositories added by {orgName} with{' '}
                 <code className="user-code-hosts-page__code--inline">
-                    <Link className="font-weight-normal" to={`/search?q=context:%40${orgName.toLowerCase()}`}>
+                    <RouterLink className="font-weight-normal" to={`/search?q=context:%40${orgName.toLowerCase()}`}>
                         context:
-                    </Link>
+                    </RouterLink>
                     @{orgName}
                 </code>
                 .
@@ -337,43 +340,43 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 description={
                     <span className="text-muted">
                         All repositories synced with Sourcegraph from {owner.name ? owner.name + "'s" : 'your'}{' '}
-                        <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>.
+                        <RouterLink to={`${routingPrefix}/code-hosts`}>connected code hosts</RouterLink>.
                     </span>
                 }
                 actions={
                     <span>
                         {hasRepos ? (
-                            <Link
+                            <RouterLink
                                 className="btn btn-primary"
                                 to={`${routingPrefix}/repositories/manage`}
                                 onClick={logManageRepositoriesClick}
                             >
                                 Manage repositories
-                            </Link>
+                            </RouterLink>
                         ) : isUserOwner ? (
-                            <Link
+                            <RouterLink
                                 className="btn btn-primary"
                                 to={`${routingPrefix}/repositories/manage`}
                                 onClick={logManageRepositoriesClick}
                             >
                                 <AddIcon className="icon-inline" /> Add repositories
-                            </Link>
+                            </RouterLink>
                         ) : externalServices && externalServices.length !== 0 ? (
-                            <Link
+                            <RouterLink
                                 className="btn btn-primary"
                                 to={`${routingPrefix}/repositories/manage`}
                                 onClick={logManageRepositoriesClick}
                             >
                                 <AddIcon className="icon-inline" /> Add repositories
-                            </Link>
+                            </RouterLink>
                         ) : (
-                            <Link
+                            <RouterLink
                                 className="btn btn-primary"
                                 to={`${routingPrefix}/code-hosts`}
                                 onClick={logManageRepositoriesClick}
                             >
                                 <AddIcon className="icon-inline" /> Connect code hosts
-                            </Link>
+                            </RouterLink>
                         )}
                     </span>
                 }

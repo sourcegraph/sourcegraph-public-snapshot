@@ -1,0 +1,28 @@
+:root {
+    --link-hover-decoration: underline;
+}
+
+// We would try to remove `:global(.btn)` in ButtonLink handle PR
+.anchor-link:not(:global(.btn)) {
+    color: var(--link-color);
+    text-decoration: none;
+
+    &:hover {
+        color: var(--link-hover-color);
+        text-decoration: var(--link-hover-decoration);
+    }
+
+    // And undo these styles for placeholder links/named anchors (without href).
+    // It would be more straightforward to just use a[href] in previous block, but that
+    // causes specificity issues in many other styles that are too complex to fix.
+    // See https://github.com/twbs/bootstrap/issues/19402
+    &:not([href]) {
+        color: inherit;
+        text-decoration: none;
+
+        &:hover {
+            color: inherit;
+            text-decoration: none;
+        }
+    }
+}

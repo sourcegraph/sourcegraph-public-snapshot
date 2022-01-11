@@ -139,6 +139,8 @@ $default-icon-colors: --oc-grape-7, --oc-violet-7, --oc-cyan-9, --oc-indigo-7, -
 
 /* e.g. "close extensions panel", "add extensions" */
 .aux-icon {
+    --link-color: var(--icon-color);
+
     color: var(--icon-color);
 }
 

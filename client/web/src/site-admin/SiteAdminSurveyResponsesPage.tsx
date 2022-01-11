@@ -2,11 +2,10 @@ import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { Badge } from '@sourcegraph/wildcard'
+import { RouterLink, Badge } from '@sourcegraph/wildcard'
 import { BADGE_VARIANTS } from '@sourcegraph/wildcard/src/components/Badge/constants'
 
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -58,7 +57,9 @@ class SurveyResponseNode extends React.PureComponent<SurveyResponseNodeProps, Su
                     <div>
                         <strong>
                             {this.props.node.user ? (
-                                <Link to={userURL(this.props.node.user.username)}>{this.props.node.user.username}</Link>
+                                <RouterLink to={userURL(this.props.node.user.username)}>
+                                    {this.props.node.user.username}
+                                </RouterLink>
                             ) : this.props.node.email ? (
                                 this.props.node.email
                             ) : (
@@ -129,7 +130,7 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
                 <tr>
                     <td>
                         <strong>
-                            <Link to={userURL(this.props.node.username)}>{this.props.node.username}</Link>
+                            <RouterLink to={userURL(this.props.node.username)}>{this.props.node.username}</RouterLink>
                         </strong>
                     </td>
                     <td>

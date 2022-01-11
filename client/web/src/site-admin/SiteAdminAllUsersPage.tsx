@@ -6,12 +6,12 @@ import RadioactiveIcon from 'mdi-react/RadioactiveIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
@@ -123,9 +123,9 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         {window.context.sourcegraphDotComMode ? (
                             <strong>{this.props.node.username}</strong>
                         ) : (
-                            <Link to={`/users/${this.props.node.username}`}>
+                            <RouterLink to={`/users/${this.props.node.username}`}>
                                 <strong>{this.props.node.username}</strong>
-                            </Link>
+                            </RouterLink>
                         )}
                         <br />
                         <span className="text-muted">{this.props.node.displayName}</span>
@@ -145,12 +145,12 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                             </>
                         )}
                         {!window.context.sourcegraphDotComMode && (
-                                <Link
+                                <RouterLink
                                     className="btn btn-sm btn-secondary"
                                     to={`${userURL(this.props.node.username)}/settings`}
                                 >
                                     <SettingsIcon className="icon-inline" /> Settings
-                                </Link>
+                                </RouterLink>
                             ) &&
                             ' '}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
@@ -413,9 +413,9 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">Users</h2>
                     <div>
-                        <Link to="/site-admin/users/new" className="btn btn-primary">
+                        <RouterLink to="/site-admin/users/new" className="btn btn-primary">
                             <AddIcon className="icon-inline" /> Create user account
-                        </Link>
+                        </RouterLink>
                     </div>
                 </div>
                 <FilteredConnection<GQL.IUser, Omit<UserNodeProps, 'node'>>

@@ -2,13 +2,13 @@ import * as H from 'history'
 import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorAlert } from '../../components/alerts'
@@ -80,9 +80,9 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
             <li className="registry-extension-node-row list-group-item d-block py-2">
                 <div className="d-flex w-100 justify-content-between">
                     <div className="mr-2">
-                        <Link className="font-weight-bold" to={this.props.node.url}>
+                        <RouterLink className="font-weight-bold" to={this.props.node.url}>
                             {this.props.node.extensionID}
-                        </Link>{' '}
+                        </RouterLink>{' '}
                         <div className="text-muted small">
                             <RegistryExtensionSourceBadge extension={this.props.node} showText={true} />
                             {this.props.node.updatedAt && (
@@ -94,13 +94,13 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                     </div>
                     <div className="d-flex align-items-center">
                         {this.props.node.viewerCanAdminister && (
-                            <Link
+                            <RouterLink
                                 to={`${this.props.node.url}/-/manage`}
                                 className="btn btn-secondary btn-sm"
                                 title="Manage extension"
                             >
                                 Manage
-                            </Link>
+                            </RouterLink>
                         )}
                         {!this.props.node.isLocal && this.props.node.remoteURL && this.props.node.registryName && (
                             <a
@@ -184,12 +184,12 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">Registry extensions</h2>
                     <div>
-                        <Link className="btn btn-link mr-sm-2" to="/extensions">
+                        <RouterLink className="btn btn-link mr-sm-2" to="/extensions">
                             View extensions
-                        </Link>
-                        <Link className="btn btn-primary" to="/extensions/registry/new">
+                        </RouterLink>
+                        <RouterLink className="btn btn-primary" to="/extensions/registry/new">
                             <AddIcon className="icon-inline" /> Publish new extension
-                        </Link>
+                        </RouterLink>
                     </div>
                 </div>
                 <p>

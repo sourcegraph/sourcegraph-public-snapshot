@@ -3,9 +3,8 @@ import React, { useEffect } from 'react'
 import { useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { RouterLink, PageHeader } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../components/Page'
 import { CodeInsightsIcon } from '../../../components'
@@ -53,16 +52,16 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
                     path={[{ icon: CodeInsightsIcon }, { text: 'Insights' }]}
                     actions={
                         <>
-                            <Link to="/insights/add-dashboard" className="btn btn-outline-secondary mr-2">
+                            <RouterLink to="/insights/add-dashboard" className="btn btn-outline-secondary mr-2">
                                 <PlusIcon className="icon-inline" /> Create new dashboard
-                            </Link>
-                            <Link
+                            </RouterLink>
+                            <RouterLink
                                 to={`/insights/create?dashboardId=${dashboardID}`}
                                 className="btn btn-secondary"
                                 onClick={handleAddMoreInsightClick}
                             >
                                 <PlusIcon className="icon-inline" /> Create new insight
-                            </Link>
+                            </RouterLink>
                         </>
                     }
                     className="mb-3"

@@ -3,10 +3,9 @@ import { from } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, AnchorLink } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../../api/client/api/common'
-import { Link } from '../../components/Link'
 import { useObservable } from '../../util/useObservable'
 
 import { ExtensionsDevelopmentToolsProps } from '.'
@@ -67,7 +66,7 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
                     <div>
                         <p>
                             <span>Load from: </span>
-                            <Link to={sideloadedExtensionURL}>{sideloadedExtensionURL}</Link>
+                            <AnchorLink to={sideloadedExtensionURL}>{sideloadedExtensionURL}</AnchorLink>
                         </p>
                         <div>
                             <button

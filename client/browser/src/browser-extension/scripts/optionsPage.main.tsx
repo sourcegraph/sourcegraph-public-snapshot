@@ -8,7 +8,6 @@ import { catchError, map, mapTo } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
 import { asError } from '@sourcegraph/common'
-import { AnchorLink, setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -51,8 +50,6 @@ const IS_EXTENSION = true
  * A list of protocols where we should *not* show the permissions notification.
  */
 const PERMISSIONS_PROTOCOL_BLOCKLIST = new Set(['chrome:', 'about:', 'safari-web-extension:'])
-
-setLinkComponent(AnchorLink)
 
 const isOptionFlagKey = (key: string): key is OptionFlagKey =>
     !!optionFlagDefinitions.find(definition => definition.key === key)

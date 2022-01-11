@@ -46,6 +46,8 @@
     }
 
     &--noop {
+        --link-color: var(--body-color);
+
         cursor: default;
         color: var(--body-color);
     }

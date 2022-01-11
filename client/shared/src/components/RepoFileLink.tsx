@@ -1,8 +1,8 @@
 import * as React from 'react'
 
-import { appendSubtreeQueryParameter } from '../util/url'
+import { RouterLink } from '@sourcegraph/wildcard'
 
-import { Link } from './Link'
+import { appendSubtreeQueryParameter } from '../util/url'
 
 /**
  * Returns the friendly display form of the repository name (e.g., removing "github.com/").
@@ -47,11 +47,11 @@ export const RepoFileLink: React.FunctionComponent<Props> = ({
     const [fileBase, fileName] = splitPath(filePath)
     return (
         <div className={className}>
-            <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link> ›{' '}
-            <Link to={appendSubtreeQueryParameter(fileURL)}>
+            <RouterLink to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</RouterLink> ›{' '}
+            <RouterLink to={appendSubtreeQueryParameter(fileURL)}>
                 {fileBase ? `${fileBase}/` : null}
                 <strong>{fileName}</strong>
-            </Link>
+            </RouterLink>
         </div>
     )
 }

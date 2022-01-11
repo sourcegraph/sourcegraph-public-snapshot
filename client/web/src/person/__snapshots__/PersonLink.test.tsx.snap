@@ -14,9 +14,9 @@ exports[`PersonLink no user account 1`] = `
 exports[`PersonLink with user account 1`] = `
 <DocumentFragment>
   <a
-    class="a b"
+    class="anchorLink a b"
     data-tooltip="Alice Smith <alice@example.com>"
-    href="u"
+    href="/u"
   >
     alice
   </a>

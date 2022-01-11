@@ -9,7 +9,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
       class="mb-2"
     >
       <a
-        class="btn btn-link btn-sm"
+        class="anchorLink btn btn-link btn-sm"
         href="/site-admin/dotcom/product/subscriptions"
       >
         <arrowlefticon
@@ -87,6 +87,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
               </em>
                — 
               <a
+                class="anchorLink"
                 href="/s"
               >
                 View as user

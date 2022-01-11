@@ -2,7 +2,7 @@ import Dialog from '@reach/dialog'
 import React, { useState, useCallback } from 'react'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { Form } from '../../../../../branded/src/components/Form'
 import { updateExternalService } from '../../../components/externalServices/backend'
@@ -88,14 +88,14 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                     <div className="form-group mb-4">
                         <div className="alert alert-info" role="alert">
                             Updating the access token may affect which repositories can be synced with Sourcegraph.{' '}
-                            <Link
+                            <RouterLink
                                 to="https://docs.sourcegraph.com/cloud/access_tokens_on_cloud"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="font-weight-normal"
                             >
                                 Learn more
-                            </Link>
+                            </RouterLink>
                             .
                         </div>
                         {didAckMachineUserHint ? (

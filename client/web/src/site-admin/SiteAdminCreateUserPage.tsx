@@ -1,13 +1,13 @@
 import classNames from 'classnames'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, mergeMap, tap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
 import { ErrorAlert } from '../components/alerts'
@@ -101,7 +101,7 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                 </p>
                 <p className="mb-4">
                     For information about configuring SSO authentication, see{' '}
-                    <Link to="/help/admin/auth">User authentication</Link> in the Sourcegraph documentation.
+                    <RouterLink to="/help/admin/auth">User authentication</RouterLink> in the Sourcegraph documentation.
                 </p>
                 {this.state.createUserResult ? (
                     <div className="alert alert-success">

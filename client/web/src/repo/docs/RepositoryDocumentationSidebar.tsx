@@ -5,11 +5,11 @@ import FileTreeIcon from 'mdi-react/FileTreeIcon'
 import React, { useCallback, useMemo } from 'react'
 import { Button } from 'reactstrap'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
@@ -75,9 +75,9 @@ const SubpagesList: React.FunctionComponent<Props> = ({ ...props }) => {
                 })
                 return (
                     <div key={pathID}>
-                        <Link id={'index-' + pathID} to={url} className="text-nowrap">
+                        <RouterLink id={'index-' + pathID} to={url} className="text-nowrap">
                             {pathID.slice('/'.length)}&#47;
-                        </Link>
+                        </RouterLink>
                     </div>
                 )
             })}
@@ -91,9 +91,9 @@ const SubpagesList: React.FunctionComponent<Props> = ({ ...props }) => {
                         })
                         return (
                             <div key={pathID}>
-                                <Link id={'index-' + pathID} to={url} className="text-nowrap">
+                                <RouterLink id={'index-' + pathID} to={url} className="text-nowrap">
                                     {pathID.slice('/'.length)}&#47;
-                                </Link>
+                                </RouterLink>
                             </div>
                         )
                     })}

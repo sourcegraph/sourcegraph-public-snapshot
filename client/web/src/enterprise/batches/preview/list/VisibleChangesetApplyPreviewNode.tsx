@@ -8,11 +8,10 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
-import { Badge } from '@sourcegraph/wildcard'
+import { RouterLink, Badge } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetState, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
@@ -498,9 +497,9 @@ const RepoLink: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFiel
         name = spec.targets.changeset.repository.name
     }
     return (
-        <Link to={to} target="_blank" rel="noopener noreferrer" className="d-block d-sm-inline">
+        <RouterLink to={to} target="_blank" rel="noopener noreferrer" className="d-block d-sm-inline">
             {name}
-        </Link>
+        </RouterLink>
     )
 }
 

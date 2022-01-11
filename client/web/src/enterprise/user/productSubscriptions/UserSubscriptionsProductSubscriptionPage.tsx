@@ -2,7 +2,6 @@ import { parseISO } from 'date-fns'
 import * as H from 'history'
 import React, { useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
@@ -10,7 +9,7 @@ import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -71,9 +70,9 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<P
                     !isErrorLike(productSubscription) &&
                     productSubscription.urlForSiteAdmin && (
                         <SiteAdminAlert className="small m-0">
-                            <Link to={productSubscription.urlForSiteAdmin} className="mt-2 d-block">
+                            <RouterLink to={productSubscription.urlForSiteAdmin} className="mt-2 d-block">
                                 View subscription
-                            </Link>
+                            </RouterLink>
                         </SiteAdminAlert>
                     )}
             </div>

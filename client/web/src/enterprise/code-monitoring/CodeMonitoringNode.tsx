@@ -6,9 +6,8 @@ import { switchMap, catchError, startWith, takeUntil, tap, delay, mergeMap } fro
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
 
 import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
 
@@ -87,7 +86,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
             <div className="d-flex justify-content-between align-items-center">
                 <div className="d-flex flex-column">
                     <div className="font-weight-bold">
-                        <Link to={`${location.pathname}/${node.id}`}>{node.description}</Link>
+                        <RouterLink to={`${location.pathname}/${node.id}`}>{node.description}</RouterLink>
                     </div>
                     {/** TODO: Generate this text based on the type of action when new actions are added. */}
                     {node.actions.nodes.length > 0 && (
@@ -115,12 +114,12 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                             disabled={toggleMonitorOrError === LOADING}
                         />
                     </div>
-                    <Link
+                    <RouterLink
                         to={`${location.pathname}/${node.id}`}
                         className={classNames('btn btn-link', styles.editButton)}
                     >
                         Edit
-                    </Link>
+                    </RouterLink>
                 </div>
             </div>
             {isErrorLike(toggleMonitorOrError) && (

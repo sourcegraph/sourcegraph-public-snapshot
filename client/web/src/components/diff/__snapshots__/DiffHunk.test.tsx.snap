@@ -34,7 +34,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           id="anchor_L159"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L159"
           >
             159
@@ -48,7 +48,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           id="anchor_R159"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R159"
           >
             159
@@ -77,7 +77,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           id="anchor_L160"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L160"
           >
             160
@@ -91,7 +91,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           id="anchor_R160"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R160"
           >
             160
@@ -120,7 +120,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           id="anchor_L161"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L161"
           >
             161
@@ -134,7 +134,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           id="anchor_R161"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R161"
           >
             161
@@ -163,7 +163,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           id="anchor_L162"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L162"
           >
             162
@@ -198,7 +198,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           id="anchor_R162"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R162"
           >
             162
@@ -227,7 +227,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           id="anchor_L163"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L163"
           >
             163
@@ -241,7 +241,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           id="anchor_R163"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R163"
           >
             163
@@ -270,7 +270,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           id="anchor_L164"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L164"
           >
             164
@@ -284,7 +284,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           id="anchor_R164"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R164"
           >
             164
@@ -313,7 +313,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           id="anchor_L165"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L165"
           >
             165
@@ -327,7 +327,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           id="anchor_R165"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R165"
           >
             165
@@ -383,7 +383,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           id="anchor_L159"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L159"
           >
             159
@@ -397,7 +397,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           id="anchor_R159"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R159"
           >
             159
@@ -435,7 +435,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           id="anchor_L160"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L160"
           >
             160
@@ -449,7 +449,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           id="anchor_R160"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R160"
           >
             160
@@ -478,7 +478,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           id="anchor_L161"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L161"
           >
             161
@@ -492,7 +492,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           id="anchor_R161"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R161"
           >
             161
@@ -521,7 +521,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           id="anchor_L162"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L162"
           >
             162
@@ -565,7 +565,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           id="anchor_R162"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R162"
           >
             162
@@ -594,7 +594,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           id="anchor_L163"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L163"
           >
             163
@@ -608,7 +608,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           id="anchor_R163"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R163"
           >
             163
@@ -637,7 +637,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           id="anchor_L164"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L164"
           >
             164
@@ -651,7 +651,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           id="anchor_R164"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R164"
           >
             164
@@ -680,7 +680,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           id="anchor_L165"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L165"
           >
             165
@@ -694,7 +694,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           id="anchor_R165"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R165"
           >
             165
@@ -750,7 +750,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           id="anchor_L159"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L159"
           >
             159
@@ -764,7 +764,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           id="anchor_R159"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R159"
           >
             159
@@ -802,7 +802,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           id="anchor_L160"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L160"
           >
             160
@@ -816,7 +816,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           id="anchor_R160"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R160"
           >
             160
@@ -845,7 +845,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           id="anchor_L161"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L161"
           >
             161
@@ -859,7 +859,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           id="anchor_R161"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R161"
           >
             161
@@ -888,7 +888,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           id="anchor_L162"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L162"
           >
             162
@@ -932,7 +932,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           id="anchor_R162"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R162"
           >
             162
@@ -961,7 +961,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           id="anchor_L163"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L163"
           >
             163
@@ -975,7 +975,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           id="anchor_R163"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R163"
           >
             163
@@ -1004,7 +1004,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           id="anchor_L164"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L164"
           >
             164
@@ -1018,7 +1018,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           id="anchor_R164"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R164"
           >
             164
@@ -1047,7 +1047,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           id="anchor_L165"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_L165"
           >
             165
@@ -1061,7 +1061,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           id="anchor_R165"
         >
           <a
-            class="numLine"
+            class="anchorLink numLine"
             href="/#anchor_R165"
           >
             165

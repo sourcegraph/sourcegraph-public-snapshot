@@ -1,8 +1,8 @@
 import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+import { RouteComponentProps } from 'react-router-dom'
 
-import { ProductStatusBadge } from '@sourcegraph/wildcard'
+import { RouterLink, ProductStatusBadge } from '@sourcegraph/wildcard'
 import type { ProductStatusType } from '@sourcegraph/wildcard/src/components/Badge'
 
 import { AuthenticatedUser } from '../../auth'
@@ -95,9 +95,9 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                             </SidebarNavItem>
                         ) : (
                             <div className={styles.newOrgBtnWrapper}>
-                                <Link to="/organizations/new" className="btn btn-outline-secondary btn-sm">
+                                <RouterLink to="/organizations/new" className="btn btn-outline-secondary btn-sm">
                                     <AddIcon className="icon-inline" /> New organization
-                                </Link>
+                                </RouterLink>
                             </div>
                         ))}
                 </SidebarGroup>

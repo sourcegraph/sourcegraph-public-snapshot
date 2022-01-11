@@ -1,9 +1,9 @@
 import * as H from 'history'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert, isAlertDismissed } from '../../../components/DismissibleAlert'
 import { ActiveBulkOperationsConnectionFields } from '../../../graphql-operations'
@@ -46,7 +46,7 @@ export const BulkOperationsAlerts: React.FunctionComponent<BulkOperationsAlertsP
                 <span>
                     {processingCount} bulk {pluralize('operation', processingCount)}{' '}
                     {pluralize('is', processingCount, 'are')} currently running. Click the{' '}
-                    <Link to="?tab=bulkoperations">bulk operations tab</Link> to view.
+                    <RouterLink to="?tab=bulkoperations">bulk operations tab</RouterLink> to view.
                 </span>
             </DismissibleAlert>
         )
@@ -59,8 +59,8 @@ export const BulkOperationsAlerts: React.FunctionComponent<BulkOperationsAlertsP
             <DismissibleAlert className="alert-info" partialStorageKey={`bulkOperation-failed-${latestFailedNode.id}`}>
                 <span>
                     {failedCount} bulk {pluralize('operation', failedCount)} {pluralize('has', failedCount, 'have')}{' '}
-                    recently failed running. Click the <Link to="?tab=bulkoperations">bulk operations tab</Link> to
-                    view.
+                    recently failed running. Click the{' '}
+                    <RouterLink to="?tab=bulkoperations">bulk operations tab</RouterLink> to view.
                 </span>
             </DismissibleAlert>
         )
@@ -76,7 +76,7 @@ export const BulkOperationsAlerts: React.FunctionComponent<BulkOperationsAlertsP
                 <span>
                     {completeCount} bulk {pluralize('operation', completeCount)}{' '}
                     {pluralize('has', completeCount, 'have')} recently finished running. Click the{' '}
-                    <Link to="?tab=bulkoperations">bulk operations tab</Link> to view.
+                    <RouterLink to="?tab=bulkoperations">bulk operations tab</RouterLink> to view.
                 </span>
             </DismissibleAlert>
         )

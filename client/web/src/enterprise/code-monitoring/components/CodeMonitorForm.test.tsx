@@ -1,7 +1,9 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import { createMemoryHistory, createLocation } from 'history'
 import React from 'react'
 import { NEVER } from 'rxjs'
+
+import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { AuthenticatedUser } from '../../../auth'
 
@@ -22,7 +24,7 @@ const PROPS: CodeMonitorFormProps = {
 
 describe('CodeMonitorForm', () => {
     test('Uses trigger query when present', () => {
-        render(<CodeMonitorForm {...PROPS} triggerQuery="foo" />)
+        renderWithRouter(<CodeMonitorForm {...PROPS} triggerQuery="foo" />)
         expect(screen.getByTestId('trigger-query-edit')).toHaveValue('foo')
     })
 })

@@ -12,7 +12,7 @@ import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
-import { Link, Redirect } from 'react-router-dom'
+import { Redirect } from 'react-router-dom'
 import { Observable, EMPTY } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
@@ -34,7 +34,7 @@ import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservabl
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -348,29 +348,32 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                     {repo.description && <p>{repo.description}</p>}
                                     <div className="btn-group">
                                         {enableAPIDocs && (
-                                            <Link
+                                            <RouterLink
                                                 className="btn btn-outline-secondary"
                                                 to={`${treeOrError.url}/-/docs`}
                                             >
                                                 <BookOpenBlankVariantIcon className="icon-inline" /> API docs
-                                            </Link>
+                                            </RouterLink>
                                         )}
-                                        <Link className="btn btn-outline-secondary" to={`${treeOrError.url}/-/commits`}>
+                                        <RouterLink
+                                            className="btn btn-outline-secondary"
+                                            to={`${treeOrError.url}/-/commits`}
+                                        >
                                             <SourceCommitIcon className="icon-inline" /> Commits
-                                        </Link>
-                                        <Link
+                                        </RouterLink>
+                                        <RouterLink
                                             className="btn btn-outline-secondary"
                                             to={`/${encodeURIPathComponent(repo.name)}/-/branches`}
                                         >
                                             <SourceBranchIcon className="icon-inline" /> Branches
-                                        </Link>
-                                        <Link
+                                        </RouterLink>
+                                        <RouterLink
                                             className="btn btn-outline-secondary"
                                             to={`/${encodeURIPathComponent(repo.name)}/-/tags`}
                                         >
                                             <TagIcon className="icon-inline" /> Tags
-                                        </Link>
-                                        <Link
+                                        </RouterLink>
+                                        <RouterLink
                                             className="btn btn-outline-secondary"
                                             to={
                                                 revision
@@ -381,29 +384,29 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             }
                                         >
                                             <HistoryIcon className="icon-inline" /> Compare
-                                        </Link>
-                                        <Link
+                                        </RouterLink>
+                                        <RouterLink
                                             className="btn btn-outline-secondary"
                                             to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
                                         >
                                             <AccountIcon className="icon-inline" /> Contributors
-                                        </Link>
+                                        </RouterLink>
                                         {codeIntelligenceEnabled && (
-                                            <Link
+                                            <RouterLink
                                                 className="btn btn-outline-secondary"
                                                 to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
                                             >
                                                 <BrainIcon className="icon-inline" /> Code Intelligence
-                                            </Link>
+                                            </RouterLink>
                                         )}
                                         {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
                                         {repo.viewerCanAdminister && (
-                                            <Link
+                                            <RouterLink
                                                 className="btn btn-outline-secondary"
                                                 to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
                                             >
                                                 <SettingsIcon className="icon-inline" /> Settings
-                                            </Link>
+                                            </RouterLink>
                                         )}
                                     </div>
                                 </>

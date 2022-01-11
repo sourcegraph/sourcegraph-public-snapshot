@@ -3,8 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
 
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
 import { ErrorAlert } from '../../components/alerts'
@@ -63,8 +62,8 @@ export const NewOrganizationPage: React.FunctionComponent<Props> = ({ history })
                 description={
                     <>
                         An organization is a set of users with associated configuration. See{' '}
-                        <Link to="/help/admin/organizations">Sourcegraph documentation</Link> for information about
-                        configuring organizations.
+                        <RouterLink to="/help/admin/organizations">Sourcegraph documentation</RouterLink> for
+                        information about configuring organizations.
                     </>
                 }
                 className="mb-3"

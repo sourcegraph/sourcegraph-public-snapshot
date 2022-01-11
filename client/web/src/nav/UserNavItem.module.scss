@@ -46,8 +46,12 @@
     min-width: 12rem;
 
     > :global(.dropdown-item) {
+        --link-color: var(--body-color);
+        --link-hover-color: var(--light-text);
+        --link-hover-decoration: none;
+
         &:hover {
-            background-color: var(--link-color);
+            background-color: var(--primary);
             color: var(--light-text);
         }
     }

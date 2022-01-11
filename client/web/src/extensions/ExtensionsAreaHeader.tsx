@@ -1,8 +1,8 @@
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import * as React from 'react'
-import { Link, RouteComponentProps } from 'react-router-dom'
+import { RouteComponentProps } from 'react-router-dom'
 
-import { PageHeader } from '@sourcegraph/wildcard'
+import { RouterLink, PageHeader } from '@sourcegraph/wildcard'
 
 import { ActionButtonDescriptor } from '../util/contributions'
 
@@ -30,9 +30,14 @@ export const ExtensionsAreaHeader: React.FunctionComponent<ExtensionsAreaHeaderP
                 actions={props.actionButtons.map(
                     ({ condition = () => true, to, icon: Icon, label, tooltip }) =>
                         condition(props) && (
-                            <Link className="btn ml-2 btn-secondary" to={to(props)} data-tooltip={tooltip} key={label}>
+                            <RouterLink
+                                className="btn ml-2 btn-secondary"
+                                to={to(props)}
+                                data-tooltip={tooltip}
+                                key={label}
+                            >
                                 {Icon && <Icon className="icon-inline" />} {label}
-                            </Link>
+                            </RouterLink>
                         )
                 )}
             />

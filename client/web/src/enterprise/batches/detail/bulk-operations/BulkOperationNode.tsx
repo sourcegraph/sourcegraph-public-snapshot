@@ -7,10 +7,9 @@ import SyncIcon from 'mdi-react/SyncIcon'
 import UploadIcon from 'mdi-react/UploadIcon'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { BulkOperationState, BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Badge, AlertLink } from '@sourcegraph/wildcard'
+import { RouterLink, Badge, AlertLink } from '@sourcegraph/wildcard'
 
 import { ErrorMessage } from '../../../../components/alerts'
 import { Collapsible } from '../../../../components/Collapsible'
@@ -74,7 +73,8 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
             <div className="flex-grow-1 ml-3">
                 <h4>{OPERATION_TITLES[node.type]}</h4>
                 <p className="mb-0">
-                    <Link to={node.initiator.url}>{node.initiator.username}</Link> <Timestamp date={node.createdAt} />
+                    <RouterLink to={node.initiator.url}>{node.initiator.username}</RouterLink>{' '}
+                    <Timestamp date={node.createdAt} />
                 </p>
             </div>
             {node.state === BulkOperationState.PROCESSING && (

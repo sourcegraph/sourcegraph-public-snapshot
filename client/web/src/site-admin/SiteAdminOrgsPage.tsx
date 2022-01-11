@@ -5,12 +5,12 @@ import DeleteIcon from 'mdi-react/DeleteIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Subject } from 'rxjs'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -58,21 +58,21 @@ const OrgNode: React.FunctionComponent<OrgNodeProps> = ({ node, history, onDidUp
         <li className="list-group-item py-2">
             <div className="d-flex align-items-center justify-content-between">
                 <div>
-                    <Link to={orgURL(node.name)}>
+                    <RouterLink to={orgURL(node.name)}>
                         <strong>{node.name}</strong>
-                    </Link>
+                    </RouterLink>
                     <br />
                     <span className="text-muted">{node.displayName}</span>
                 </div>
                 <div>
-                    <Link
+                    <RouterLink
                         to={`${orgURL(node.name)}/settings`}
                         className="btn btn-sm btn-secondary"
                         data-tooltip="Organization settings"
                     >
                         <SettingsIcon className="icon-inline" /> Settings
-                    </Link>{' '}
-                    <Link
+                    </RouterLink>{' '}
+                    <RouterLink
                         to={`${orgURL(node.name)}/settings/members`}
                         className="btn btn-sm btn-secondary"
                         data-tooltip="Organization members"
@@ -83,7 +83,7 @@ const OrgNode: React.FunctionComponent<OrgNodeProps> = ({ node, history, onDidUp
                                 {node.members.totalCount} {pluralize('member', node.members.totalCount)}
                             </>
                         )}
-                    </Link>{' '}
+                    </RouterLink>{' '}
                     <button
                         type="button"
                         className="btn btn-sm btn-danger"
@@ -118,14 +118,14 @@ export const SiteAdminOrgsPage: React.FunctionComponent<Props> = ({ telemetrySer
             <PageTitle title="Organizations - Admin" />
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h2 className="mb-0">Organizations</h2>
-                <Link to="/organizations/new" className="btn btn-primary test-create-org-button">
+                <RouterLink to="/organizations/new" className="btn btn-primary test-create-org-button">
                     <AddIcon className="icon-inline" /> Create organization
-                </Link>
+                </RouterLink>
             </div>
             <p>
                 An organization is a set of users with associated configuration. See{' '}
-                <Link to="/help/admin/organizations">Sourcegraph documentation</Link> for information about configuring
-                organizations.
+                <RouterLink to="/help/admin/organizations">Sourcegraph documentation</RouterLink> for information about
+                configuring organizations.
             </p>
             {window.context.sourcegraphDotComMode ? (
                 <>
@@ -135,9 +135,9 @@ export const SiteAdminOrgsPage: React.FunctionComponent<Props> = ({ telemetrySer
                     <h3>Enable early access</h3>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <p>Enable early access for organization code host connections and repositories on Cloud.</p>
-                        <Link to="./organizations/early-access-orgs-code" className="btn btn-outline-primary">
+                        <RouterLink to="./organizations/early-access-orgs-code" className="btn btn-outline-primary">
                             Enable early access
-                        </Link>
+                        </RouterLink>
                     </div>
                 </>
             ) : (

@@ -1,11 +1,10 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
@@ -97,9 +96,9 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                 {this.props.authenticatedUser.id !== this.props.user.id ? (
                     <div className="alert alert-danger">
                         Only the user may change their password. Site admins may{' '}
-                        <Link to={`/site-admin/users?query=${encodeURIComponent(this.props.user.username)}`}>
+                        <RouterLink to={`/site-admin/users?query=${encodeURIComponent(this.props.user.username)}`}>
                             reset a user's password
-                        </Link>
+                        </RouterLink>
                         .
                     </div>
                 ) : (

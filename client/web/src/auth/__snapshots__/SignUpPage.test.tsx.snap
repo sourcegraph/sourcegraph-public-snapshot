@@ -94,6 +94,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         >
           Or, 
           <a
+            class="anchorLink"
             href="/?showEmail=true"
           >
             continue with email
@@ -126,6 +127,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         <div>
           Already have an account? 
           <a
+            class="anchorLink"
             href="/sign-in"
           >
             Log in
@@ -307,6 +309,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
         >
           Already have an account? 
           <a
+            class="anchorLink"
             href="/sign-in"
           >
             Sign in

@@ -4,16 +4,14 @@ import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import LinkVariantIcon from 'mdi-react/LinkVariantIcon'
 import React, { RefObject, useEffect, useMemo, useRef } from 'react'
-import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { AnchorLink } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { ProductStatusBadge } from '@sourcegraph/wildcard'
+import { RouterLink, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { RepositoryFields } from '../../graphql-operations'
@@ -78,7 +76,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
             useMemo(
                 () =>
                     depth === 0
-                        ? { key: `node-${depth}`, element: <Link to={thisPage}>{node.label.value}</Link> }
+                        ? { key: `node-${depth}`, element: <RouterLink to={thisPage}>{node.label.value}</RouterLink> }
                         : null,
                 [depth, node.label.value, thisPage]
             )
@@ -138,13 +136,13 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                             level={headingLevel}
                             className={classNames('d-flex align-items-center', styles.heading)}
                         >
-                            <AnchorLink className={styles.headingAnchorLink} to={thisPage}>
+                            <RouterLink className={styles.headingAnchorLink} to={thisPage}>
                                 <LinkVariantIcon className="icon-inline" />
-                            </AnchorLink>
+                            </RouterLink>
                             {depth !== 0 && <DocumentationIcons className="mr-1" tags={node.documentation.tags} />}
-                            <Link className="h" id={hash} to={singleSymbolPage}>
+                            <RouterLink className="h" id={hash} to={singleSymbolPage}>
                                 {node.label.value}
-                            </Link>
+                            </RouterLink>
                         </Heading>
                         {depth === 0 && (
                             <>
@@ -179,9 +177,9 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                                 </div>
                                 <hr />
                                 {onlyPathID && depth === 0 && (
-                                    <Link className="mb-3 mt-2 d-inline-flex" to={thisPage}>
+                                    <RouterLink className="mb-3 mt-2 d-inline-flex" to={thisPage}>
                                         ← View all of {node.label.value.toLowerCase()}
-                                    </Link>
+                                    </RouterLink>
                                 )}
                             </>
                         )}

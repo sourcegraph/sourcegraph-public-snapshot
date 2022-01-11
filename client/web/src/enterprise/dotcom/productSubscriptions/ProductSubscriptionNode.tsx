@@ -1,8 +1,8 @@
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { ProductSubscriptionLabel } from './ProductSubscriptionLabel'
 
@@ -57,9 +57,9 @@ export interface ProductSubscriptionNodeProps {
 export const ProductSubscriptionNode: React.FunctionComponent<ProductSubscriptionNodeProps> = ({ node }) => (
     <tr>
         <td className="text-nowrap">
-            <Link to={node.url} className="mr-3 font-weight-bold">
+            <RouterLink to={node.url} className="mr-3 font-weight-bold">
                 {node.name}
-            </Link>
+            </RouterLink>
         </td>
         <td className="w-100">
             <ProductSubscriptionLabel productSubscription={node} className="mr-3" />

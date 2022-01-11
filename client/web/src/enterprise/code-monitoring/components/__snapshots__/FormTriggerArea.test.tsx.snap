@@ -245,7 +245,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
           class="p-2 my-2 queryInputPreviewLink"
         >
           <a
-            class="test-preview-link queryInputPreviewLinkText"
+            class="anchorLink test-preview-link queryInputPreviewLinkText"
             href="/search?q=test+repo:test&patternType=literal"
             rel="noopener noreferrer"
             target="_blank"

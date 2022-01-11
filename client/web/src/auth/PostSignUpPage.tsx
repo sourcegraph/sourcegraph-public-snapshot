@@ -3,12 +3,12 @@ import React, { FunctionComponent, useState, useEffect, useCallback, useRef } fr
 import { useLocation, useHistory } from 'react-router'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
@@ -142,7 +142,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                             {hasErrors && (
                                 <div className="alert alert-danger mb-4" role="alert">
                                     Sorry, something went wrong. Try refreshing the page or{' '}
-                                    <Link to={PageRoutes.Search}>skip to code search</Link>.
+                                    <RouterLink to={PageRoutes.Search}>skip to code search</RouterLink>.
                                 </div>
                             )}
                             <h2>Get started with Sourcegraph</h2>
@@ -177,14 +177,14 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                     Choose repositories you own or collaborate on from your code hosts.
                                                     We’ll sync and index these repositories so you can search your code
                                                     all in one place.
-                                                    <Link
+                                                    <RouterLink
                                                         to="https://docs.sourcegraph.com/code_search/how-to/adding_repositories_to_cloud"
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                     >
                                                         {' '}
                                                         Learn more
-                                                    </Link>
+                                                    </RouterLink>
                                                 </p>
                                                 <SelectAffiliatedRepos
                                                     authenticatedUser={user}

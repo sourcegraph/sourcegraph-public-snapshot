@@ -3,11 +3,11 @@ import EyeIcon from 'mdi-react/EyeIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -24,9 +24,9 @@ export const ExtensionNoManifestAlert: React.FunctionComponent<{
         {extension.registryExtension?.viewerCanAdminister && (
             <>
                 <br />
-                <Link className="mt-3 btn btn-primary" to={`${extension.registryExtension.url}/-/releases/new`}>
+                <RouterLink className="mt-3 btn btn-primary" to={`${extension.registryExtension.url}/-/releases/new`}>
                     Publish first release of extension
-                </Link>
+                </RouterLink>
             </>
         )}
     </div>
@@ -83,12 +83,12 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                             </button>
                         )}{' '}
                         {this.props.extension.registryExtension?.viewerCanAdminister && (
-                            <Link
+                            <RouterLink
                                 className="btn btn-primary"
                                 to={`${this.props.extension.registryExtension.url}/-/releases/new`}
                             >
                                 Publish new release
-                            </Link>
+                            </RouterLink>
                         )}
                     </div>
                 </div>

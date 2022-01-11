@@ -1,9 +1,8 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ProductStatusBadge } from '@sourcegraph/wildcard'
+import { RouterLink, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 
@@ -61,13 +60,13 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
             </div>
             <div className="text-muted">{copyText}</div>
 
-            <Link
+            <RouterLink
                 className={classNames('btn btn-primary btn-sm', styles.searchContextCtaPromptButton)}
                 to={linkTo}
                 onClick={onClick}
             >
                 {buttonText}
-            </Link>
+            </RouterLink>
             <button
                 type="button"
                 className={classNames(

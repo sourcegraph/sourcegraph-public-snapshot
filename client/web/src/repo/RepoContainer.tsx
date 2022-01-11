@@ -18,7 +18,6 @@ import {
     isRepoSeeOtherErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -31,6 +30,7 @@ import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -233,7 +233,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 element: (
                     <>
                         <div className="d-inline-flex btn-group">
-                            <Link
+                            <RouterLink
                                 to={
                                     resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
                                         ? resolvedRevisionOrError.rootTreeURL
@@ -242,7 +242,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                 className="btn btn-sm btn-outline-secondary text-nowrap test-repo-header-repo-link"
                             >
                                 <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
-                            </Link>
+                            </RouterLink>
                             <button
                                 type="button"
                                 id="repo-popover"

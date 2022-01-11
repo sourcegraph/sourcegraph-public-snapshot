@@ -5,8 +5,8 @@ import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+import { AnchorLink } from '@sourcegraph/wildcard'
 
 import { FeedbackBadge } from '../Feedback'
 
@@ -27,9 +27,9 @@ export const BasicHeader: Story = () => (
     <PageHeader
         path={[{ icon: PuzzleOutlineIcon, text: 'Header' }]}
         actions={
-            <Link to={`${location.pathname}/close`} className="btn btn-secondary mr-1">
+            <AnchorLink to={`${location.pathname}/close`} className="btn btn-secondary mr-1">
                 <SearchIcon className="icon-inline" /> Button with icon
-            </Link>
+            </AnchorLink>
         }
     />
 )
@@ -51,18 +51,18 @@ export const ComplexHeader: Story = () => (
         path={[{ to: '/level-0', icon: PuzzleOutlineIcon }, { to: '/level-1', text: 'Level 1' }, { text: 'Level 2' }]}
         byline={
             <>
-                Created by <Link to="/page">user</Link> 3 months ago
+                Created by <AnchorLink to="/page">user</AnchorLink> 3 months ago
             </>
         }
         description="Enter the description for your section here. This is useful on list and create pages."
         actions={
             <div className="d-flex">
-                <Link to="/page" className="btn btn-secondary mr-2">
+                <AnchorLink to="/page" className="btn btn-secondary mr-2">
                     Secondary
-                </Link>
-                <Link to="/page" className="btn btn-primary text-nowrap">
+                </AnchorLink>
+                <AnchorLink to="/page" className="btn btn-primary text-nowrap">
                     <PlusIcon className="icon-inline" /> Create
-                </Link>
+                </AnchorLink>
             </div>
         }
     />

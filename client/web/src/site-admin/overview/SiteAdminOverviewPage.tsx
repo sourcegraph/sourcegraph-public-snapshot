@@ -6,13 +6,12 @@ import { map, catchError } from 'rxjs/operators'
 import { ErrorLike, asError, isErrorLike } from '@sourcegraph/common'
 import { ActivationProps, percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorAlert } from '../../components/alerts'
@@ -180,25 +179,25 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                 {info && !isErrorLike(info) && (
                     <>
                         {info.repositories !== null && (
-                            <Link
+                            <RouterLink
                                 to="/site-admin/repositories"
                                 className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {numberWithCommas(info.repositories)}{' '}
                                 {pluralize('repository', info.repositories, 'repositories')}
-                            </Link>
+                            </RouterLink>
                         )}
                         {info.repositoryStats !== null && (
-                            <Link
+                            <RouterLink
                                 to="/site-admin/repositories"
                                 className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {BigInt(info.repositoryStats.gitDirBytes).toLocaleString()}{' '}
                                 {pluralize('byte stored', BigInt(info.repositoryStats.gitDirBytes), 'bytes stored')}
-                            </Link>
+                            </RouterLink>
                         )}
                         {info.repositoryStats !== null && (
-                            <Link
+                            <RouterLink
                                 to="/site-admin/repositories"
                                 className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
@@ -208,32 +207,32 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                                     BigInt(info.repositoryStats.indexedLinesCount),
                                     'lines of code indexed'
                                 )}
-                            </Link>
+                            </RouterLink>
                         )}
                         {info.users > 1 && (
-                            <Link
+                            <RouterLink
                                 to="/site-admin/users"
                                 className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {numberWithCommas(info.users)} {pluralize('user', info.users)}
-                            </Link>
+                            </RouterLink>
                         )}
                         {info.orgs > 1 && (
-                            <Link
+                            <RouterLink
                                 to="/site-admin/organizations"
                                 className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {numberWithCommas(info.orgs)} {pluralize('organization', info.orgs)}
-                            </Link>
+                            </RouterLink>
                         )}
                         {info.users > 1 && (
-                            <Link
+                            <RouterLink
                                 to="/site-admin/surveys"
                                 className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {numberWithCommas(info.surveyResponses.totalCount)}{' '}
                                 {pluralize('user survey response', info.surveyResponses.totalCount)}
-                            </Link>
+                            </RouterLink>
                         )}
                         {info.users > 1 &&
                             stats !== undefined &&
@@ -262,13 +261,13 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                                                 <div className="site-admin-overview-page__detail-header">
                                                     <h2>Weekly unique users</h2>
                                                     <h3>
-                                                        <Link
+                                                        <RouterLink
                                                             to="/site-admin/usage-statistics"
                                                             className="btn btn-secondary"
                                                         >
                                                             View all usage statistics{' '}
                                                             <OpenInNewIcon className="icon-inline" />
-                                                        </Link>
+                                                        </RouterLink>
                                                     </h3>
                                                 </div>
                                             }

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../components/time/Timestamp'
 import { BatchSpecFields } from '../../../graphql-operations'
@@ -12,7 +12,8 @@ interface Props extends Pick<BatchSpecFields, 'createdAt' | 'creator'> {}
  */
 export const BatchSpecInfoByline: React.FunctionComponent<Props> = ({ createdAt, creator }) => (
     <>
-        Uploaded <Timestamp date={createdAt} /> by {creator && <Link to={creator.url}>{creator.username}</Link>}
+        Uploaded <Timestamp date={createdAt} /> by{' '}
+        {creator && <RouterLink to={creator.url}>{creator.username}</RouterLink>}
         {!creator && <strong>deleted user</strong>}
     </>
 )

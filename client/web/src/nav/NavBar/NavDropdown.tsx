@@ -5,7 +5,7 @@ import React, { useMemo, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { RouterLink } from '@sourcegraph/wildcard'
 
 import styles from './NavDropdown.module.scss'
 import navItemStyles from './NavItem.module.scss'
@@ -115,24 +115,24 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                     <DropdownMenu modifiers={DROPDOWN_MODIFIERS}>
                         <>
                             {/* This link does not have a role="menuitem" set, because it breaks the keyboard navigation for the dropdown when hidden. */}
-                            <Link
+                            <RouterLink
                                 key={toggleItem.path}
                                 to={toggleItem.path}
                                 className={classNames('dropdown-item', styles.showOnTouchScreen)}
                                 onClick={closeDropdown}
                             >
                                 {mobileHomeItem.content}
-                            </Link>
+                            </RouterLink>
                             {items.map(item => (
-                                <Link
+                                <RouterLink
                                     key={item.path}
                                     to={item.path}
-                                    className="dropdown-item"
+                                    className={classNames('dropdown-item', styles.link)}
                                     onClick={closeDropdown}
                                     role="menuitem"
                                 >
                                     {item.content}
-                                </Link>
+                                </RouterLink>
                             ))}
                         </>
                     </DropdownMenu>

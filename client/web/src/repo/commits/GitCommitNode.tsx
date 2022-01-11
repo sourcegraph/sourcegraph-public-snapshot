@@ -5,9 +5,8 @@ import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import React, { useState, useCallback } from 'react'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { TooltipController } from '@sourcegraph/wildcard'
+import { RouterLink, TooltipController } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { GitCommitFields } from '../../graphql-operations'
@@ -86,14 +85,14 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
             className={classNames('flex-grow-1', styles.message, compact && styles.messageSmall)}
             data-testid="git-commit-node-message"
         >
-            <Link
+            <RouterLink
                 to={node.canonicalURL}
                 className={classNames(messageSubjectClassName, styles.messageSubject)}
                 title={node.message}
                 data-testid="git-commit-node-message-subject"
             >
                 {node.subject}
-            </Link>
+            </RouterLink>
             {node.body && !hideExpandCommitMessageBody && !expandCommitMessageBody && (
                 <button
                     type="button"
@@ -158,9 +157,9 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                         </span>{' '}
                         {node.parents.map((parent, index) => (
                             <div className="d-flex" key={index}>
-                                <Link className={styles.shaAndParentsParent} to={parent.url}>
+                                <RouterLink className={styles.shaAndParentsParent} to={parent.url}>
                                     <code>{parent.oid}</code>
-                                </Link>
+                                </RouterLink>
                                 <button
                                     type="button"
                                     className={classNames('btn btn-icon', styles.shaAndParentsCopy)}
@@ -189,14 +188,14 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
 
     const viewFilesCommitElement = node.tree && (
         <div className="d-flex justify-content-between">
-            <Link
+            <RouterLink
                 className="btn btn-sm btn-outline-secondary align-center d-inline-flex"
                 to={node.tree.canonicalURL}
                 data-tooltip="Browse files in the repository at this point in history"
             >
                 <FileDocumentIcon className="icon-inline mr-1" />
                 Browse files at @{node.abbreviatedOID}
-            </Link>
+            </RouterLink>
             {diffModeSelector()}
         </div>
     )
@@ -220,13 +219,13 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                                 {!showSHAAndParentsRow && (
                                     <div>
                                         <div className="btn-group btn-group-sm mr-2" role="group">
-                                            <Link
+                                            <RouterLink
                                                 className="btn btn-secondary"
                                                 to={node.canonicalURL}
                                                 data-tooltip="View this commit"
                                             >
                                                 <strong>{oidElement}</strong>
-                                            </Link>
+                                            </RouterLink>
                                             <button
                                                 type="button"
                                                 className="btn btn-secondary"
@@ -239,13 +238,13 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                                             </button>
                                         </div>
                                         {node.tree && (
-                                            <Link
+                                            <RouterLink
                                                 className="btn btn-sm btn-secondary"
                                                 to={node.tree.canonicalURL}
                                                 data-tooltip="View files at this commit"
                                             >
                                                 <FileDocumentIcon className="icon-inline mr-1" />
-                                            </Link>
+                                            </RouterLink>
                                         )}
                                     </div>
                                 )}
@@ -259,7 +258,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                         <div className="w-100 d-flex justify-content-between align-items-center flex-wrap-reverse">
                             {bylineElement}
                             {messageElement}
-                            <Link to={node.canonicalURL}>{oidElement}</Link>
+                            <RouterLink to={node.canonicalURL}>{oidElement}</RouterLink>
                             {afterElement}
                         </div>
                         {commitMessageBody}
