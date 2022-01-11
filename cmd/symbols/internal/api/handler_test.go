@@ -53,7 +53,7 @@ func TestHandler(t *testing.T) {
 	parser := parser.NewParser(parserPool, fetcher.NewRepositoryFetcher(gitserverClient, 15, 1000, &observation.TestContext), 0, 10, &observation.TestContext)
 	databaseWriter := writer.NewDatabaseWriter(tmpDir, gitserverClient, parser)
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
-	handler := NewHandler(cachedDatabaseWriter, "", &observation.TestContext)
+	handler := NewHandler(MakeSqliteSearchFunc(NewOperations(&observation.TestContext), cachedDatabaseWriter), "")
 
 	server := httptest.NewServer(handler)
 	defer server.Close()

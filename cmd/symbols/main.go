@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -91,10 +92,10 @@ func main() {
 	go debugserver.NewServerRoutine(ready).Start()
 
 	ctagsParserFactory := parser.NewCtagsParserFactory(
-		config.ctagsCommand,
-		config.ctagsPatternLengthLimit,
-		config.ctagsLogErrors,
-		config.ctagsDebugLogs,
+		config.ctags.Command,
+		config.ctags.PatternLengthLimit,
+		config.ctags.LogErrors,
+		config.ctags.DebugLogs,
 	)
 
 	cache := diskcache.NewStore(config.cacheDir, "symbols",
@@ -107,12 +108,18 @@ func main() {
 		log.Fatalf("Failed to create parser pool: %s", err)
 	}
 
-	gitserverClient := gitserver.NewClient(observationContext)
-	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, 15, config.maxTotalPathsLength, observationContext)
-	parser := parser.NewParser(parserPool, repositoryFetcher, config.requestBufferSize, config.numCtagsProcesses, observationContext)
-	databaseWriter := writer.NewDatabaseWriter(config.cacheDir, gitserverClient, parser)
-	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
-	apiHandler := api.NewHandler(cachedDatabaseWriter, config.ctagsCommand, observationContext)
+	var searchFunc types.SearchFunc
+	if config.useRockskip {
+		searchFunc = api.MakeRockskipSearchFunc(api.NewOperations(observationContext), config.ctags)
+	} else {
+		gitserverClient := gitserver.NewClient(observationContext)
+		repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, 15, config.maxTotalPathsLength, observationContext)
+		parser := parser.NewParser(parserPool, repositoryFetcher, config.requestBufferSize, config.numCtagsProcesses, observationContext)
+		databaseWriter := writer.NewDatabaseWriter(config.cacheDir, gitserverClient, parser)
+		cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
+		searchFunc = api.MakeSqliteSearchFunc(api.NewOperations(observationContext), cachedDatabaseWriter)
+	}
+	apiHandler := api.NewHandler(searchFunc, config.ctags.Command)
 
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,

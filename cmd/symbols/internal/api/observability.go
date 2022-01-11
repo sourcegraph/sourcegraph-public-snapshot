@@ -11,7 +11,7 @@ type operations struct {
 	search *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
+func NewOperations(observationContext *observation.Context) *operations {
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_symbols_api",
