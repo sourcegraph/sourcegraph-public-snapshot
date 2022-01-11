@@ -80,6 +80,7 @@ message Symbol {
       UNIQUE_UNSPECIFIED = 0;
       UNIQUE_DOCUMENT = 1;
       UNIQUE_GLOBAL = 2;
+      UNIQUE_GLOBAL3 = 3;
   }
   // The identifier of this symbol, which can be referenced from
   // Occurence. An empty uri means this symbol can be ignored.
