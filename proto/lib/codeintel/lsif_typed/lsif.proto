@@ -143,10 +143,10 @@ message Occurrence {
   // some programming languages but we hope the increased performance
   // improvements make up for it.
   repeated int32 range = 1;
-  // References the `Symbol.uri` field. Can be empty if this is only a
+  // (optional) References the `Symbol.uri` field. Can be empty if this is only a
   // highlighting occurrence.
   string symbol_uri = 2;
-  // Is the symbol_uri defined or referenced at this occurrence?
+  // (optional) Is the symbol_uri defined or referenced at this occurrence?
   Role symbol_role = 3;
   // (optional) Markdown-formatted documentation for this specific range.  If
   // empty, the `Symbol.documentation` field is used instead. One example
@@ -154,6 +154,6 @@ message Occurrence {
   // function (with abstract type parameters such as `List<T>`) and at this
   // occurrence we know the exact values (such as `List<String>`).
   repeated string symbol_documentation = 4;
-  // What syntax highlighting class should be used for this range?
+  // (optional) What syntax highlighting class should be used for this range?
   Highlight highlight = 5;
 }
