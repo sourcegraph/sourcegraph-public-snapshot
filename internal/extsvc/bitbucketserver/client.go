@@ -878,6 +878,24 @@ func (c *Client) RecentRepos(ctx context.Context, pageToken *PageToken) ([]*Repo
 	return repos, next, err
 }
 
+type CreateForkInput struct {
+	Name          *string                 `json:"name,omitempty"`
+	DefaultBranch *string                 `json:"defaultBranch,omitempty"`
+	Project       *CreateForkInputProject `json:"project,omitempty"`
+}
+
+type CreateForkInputProject struct {
+	Key string `json:"key"`
+}
+
+func (c *Client) Fork(ctx context.Context, projectKey, repoSlug string, input CreateForkInput) (*Repo, error) {
+	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
+
+	var resp Repo
+	_, err := c.send(ctx, "POST", u, nil, input, &resp)
+	return &resp, err
+}
+
 func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results interface{}) (*PageToken, error) {
 	if qry == nil {
 		qry = make(url.Values)
