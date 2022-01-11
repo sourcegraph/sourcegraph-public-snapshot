@@ -48,7 +48,7 @@ add('All states', () => {
                                     externalURL: {
                                         url: 'http://test.test/pr/123',
                                     },
-                                    forkNamespace: boolean('forked', false) ? 'user' : null,
+                                    forkNamespace: index % 2 === 0 ? 'user' : null,
                                     diffStat: {
                                         __typename: 'DiffStat',
                                         added: 10,
