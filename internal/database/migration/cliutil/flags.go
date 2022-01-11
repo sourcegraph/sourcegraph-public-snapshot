@@ -67,7 +67,7 @@ func Up(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 
 	return &ffcli.Command{
 		Name:       "up",
-		ShortUsage: fmt.Sprintf("%s up [-db=all] [-n=0]", commandName),
+		ShortUsage: fmt.Sprintf("%s up [-db=all] [-target=0]", commandName),
 		ShortHelp:  "Run up migrations",
 		FlagSet:    upFlagSet,
 		Exec:       execUp,
@@ -79,7 +79,7 @@ func Down(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 	var (
 		downFlagSet          = flag.NewFlagSet(fmt.Sprintf("%s down", commandName), flag.ExitOnError)
 		downDatabaseNameFlag = downFlagSet.String("db", "", "The target database instance.")
-		downTargetFlag       = downFlagSet.Int("target", 0, "Reset all migrations defined after this target. The default invocation reverts the current migration.")
+		downTargetFlag       = downFlagSet.Int("target", 0, "Reset all migrations defined after this target. Zero (the default) reverts the latest migration.")
 	)
 
 	execDown := func(ctx context.Context, args []string) error {
@@ -102,7 +102,7 @@ func Down(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 
 	return &ffcli.Command{
 		Name:       "down",
-		ShortUsage: fmt.Sprintf("%s down -db=... [-n=1]", commandName),
+		ShortUsage: fmt.Sprintf("%s down -db=... [-target=0]", commandName),
 		ShortHelp:  "Run down migrations",
 		FlagSet:    downFlagSet,
 		Exec:       execDown,
