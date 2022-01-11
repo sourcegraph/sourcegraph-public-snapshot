@@ -13,9 +13,9 @@ import { DropdownItem } from 'reactstrap'
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
 import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
 
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Badge } from '@sourcegraph/wildcard'
 
@@ -30,16 +30,20 @@ import styles from './SearchContextMenu.module.scss'
 export const SearchContextMenuItem: React.FunctionComponent<{
     spec: string
     description: string
+    query: string
     selected: boolean
     isDefault: boolean
     selectSearchContextSpec: (spec: string) => void
     searchFilter: string
     onKeyDown: (key: string) => void
-}> = ({ spec, description, selected, isDefault, selectSearchContextSpec, searchFilter, onKeyDown }) => {
+}> = ({ spec, description, query, selected, isDefault, selectSearchContextSpec, searchFilter, onKeyDown }) => {
     const setContext = useCallback(() => {
         eventLogger.log('SearchContextSelected')
         selectSearchContextSpec(spec)
     }, [selectSearchContextSpec, spec])
+
+    const descriptionOrQuery = description.length > 0 ? description : query
+
     return (
         <DropdownItem
             data-testid="search-context-menu-item"
@@ -56,8 +60,8 @@ export const SearchContextMenuItem: React.FunctionComponent<{
             >
                 <HighlightedSearchContextSpec spec={spec} searchFilter={searchFilter} />
             </small>{' '}
-            <small className={styles.itemDescription} title={description}>
-                {description}
+            <small className={styles.itemDescription} title={descriptionOrQuery}>
+                {descriptionOrQuery}
             </small>
             {isDefault && (
                 <Badge variant="secondary" className={classNames('text-uppercase', styles.itemDefault)}>
@@ -291,6 +295,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                             key={context.id}
                             spec={context.spec}
                             description={context.description}
+                            query={context.query}
                             isDefault={context.spec === defaultSearchContextSpec}
                             selected={context.spec === selectedSearchContextSpec}
                             selectSearchContextSpec={selectSearchContextSpec}

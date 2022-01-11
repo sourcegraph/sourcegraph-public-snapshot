@@ -9,8 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -53,10 +52,10 @@ func TestActionRunner(t *testing.T) {
 			// Create a TestStore.
 			now := time.Now()
 			clock := func() time.Time { return now }
-			s := codemonitors.NewStoreWithClock(db, clock)
-			ctx, ts := storetest.NewTestStore(t, db)
+			s := edb.CodeMonitorsWithClock(db, clock)
+			ctx, ts := edb.NewTestStore(t, db)
 
-			_, _, _, userCtx := storetest.NewTestUser(ctx, t, db)
+			_, _, _, userCtx := edb.NewTestUser(ctx, t, db)
 
 			// Run a complete pipeline from creation of a code monitor to sending of an email.
 			_, err := ts.InsertTestMonitor(userCtx, t)

@@ -19,7 +19,6 @@ export interface TemporarySettingsSchema {
     'user.daysActiveCount': number
     'signup.finishedWelcomeFlow': boolean
     'codemonitor.info.visible': boolean
-    'dotcom.log4jVulnerabilityAnnouncement.visible': boolean
 }
 
 /**

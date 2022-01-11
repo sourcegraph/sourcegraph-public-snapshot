@@ -28,7 +28,6 @@ If you are looking for general information or wish to disclose a vulnerability, 
     - [Known issue](#known-issue)
   - [Improving our CSRF threat model](#improving-our-csrf-threat-model)
     - [Eliminate the username/password manipulation exclusion](#eliminate-the-usernamepassword-manipulation-exclusion)
-    - [API endpoints should default to CORS `*` IFF access token authentication is being performed](#api-endpoints-should-default-to-cors--iff-access-token-authentication-is-being-performed)
 
 # Living document
 
@@ -46,6 +45,12 @@ This is a living document, with a changelog as follows:
 * Nov 16th, 2021: [@slimsag](https://github.com/slimsag) removed our CSRF security tokens/cookies entirely, instead having Sourcegraph rely solely on browser's CORS policies to prevent CSRF attacks. [#7658](https://github.com/sourcegraph/sourcegraph/issues/7658)
   * In practice, this is just as safe and leads to a simpler CSRF threat model which reduces security risks associated with our threat model complexity. 
   * This fixed the theoretical caching vulnerability with CSRF tokens mentioned in the prior bullet point. This was not a real vulnerability, but shows another example of why removing our CSRF tokens was the right choice to reduce complexity and ensure our CSRF threat model is solid and well understood.
+* Dec 6th, 2021: [@slimsag](https://github.com/slimsag) enabled public usage of our API routes.
+  * Previously, only trusted origins (e.g. including those in the site config `corsOrigin` setting) were allowed to issue requests to API routes.
+  * Now, any origin is allowed to issue requests to our API routes and, assuming they pass the authentication layer, will reach the GraphQL backend.
+  * Any origin is allowed to send credentials and cookies to our API routes, e.g. session cookies and access tokens via basic auth.
+  * Only if the request came from a trusted origin will session cookies that came in with the request be respected.
+  * Requests from untrusted origins will NEVER have their session cookies respected, i.e. the request will be served as if an unauthenticated user (unless it includes an access token with the request.) This is the linchpin which ensures we are still protected against CSRF in our API routes.
 
 # Prerequisites
 
@@ -198,6 +203,8 @@ Sourcegraph's API endpoints offer multiple forms of authentication for different
 
 The above forms of authentication are allowed iff the request first is able to make its way through the [API authentication middleware](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40aefef0d+content:%22API:+func%28%22&patternType=literal), which ensures that instances protected by e.g. OIDC or other forms of SSO are considered. Often, for example, allowing the request to go through without using the SSO provider iff the request has an access token present. Otherwise requiring the SSO provider sign off on the request, effectively.
 
+**The linchpin which ensures our API endpoints are not vulnerable to CSRF is in how we do not respect the session cookies included in requests _unless the request came from a trusted origin._** This is critical because we allow authenticated requests (including session cookies) to be sent to us with requests from ANY origin, e.g. attacker.com may issue a POST request via JavaScript or an HTML `<form>` to sourcegraph.com and the browser will include session cookies automatically. The request will pass CORS, because we allow API requests from any origin. BUT because the request did not come from a trusted origin, session cookies will not be respected-the request will not be treated as authenticated-and so CSRF is not possible.
+
 ### How browsers authenticate with the API endpoints
 
 Session cookies. Upon page load, users are given the session cookie and the [`session.CookieMiddlewareWithCSRFSafety`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40aefef0d+CookieMiddlewareWithCSRFSafety%28&patternType=literal) middleware allows the request because:
@@ -247,16 +254,3 @@ We would do well to:
 1. Place these routes into a separate category, so we have "(1) API endpoints, (2) non-API endpoints, and (3) user signup endpoints" or similar.
 2. The routes should be easily identified based on URL path - they should be under a common prefix, not under separate URLs as they are today.
 3. We should ensure the logic for registering these routes is under a distinct location. Today, they are registered under, and inherit all of the middlewares of, the non-API page routes. That is not ideal and could be risky long-term if that logic changes at all without an understanding of how it could impact these "UI routes" (as they are called in code.)
-
-### API endpoints should default to CORS `*` IFF access token authentication is being performed
-
-This may be completed at ANY time. It has NO pre-requisites.
-
-This one is really a no-brainer, really:
-
-1. GitHub, for example, does this with their API.
-2. This is clearly desired by both customers and ourselves alike:
-   1. Sourcegraph @search team: [no CORS header for streaming API #23140](https://github.com/sourcegraph/sourcegraph/issues/23140)
-   2. github1s.com's author requesting API access: [Bug: Using Sourcegraph.com GraphQL API from other websites is broken #18847](https://github.com/sourcegraph/sourcegraph/issues/18847)
-   3. Various enterprise customers requesting it.
-3. By making our API endpoints CORS-restrictive as they are today, even when access token authentication is being performed, we have pushed ourselves and customers into performing more risky behavior by allowing "trusted" origins in their site `corsOrigin` setting (or, much worse, setting it to `"*"`). Again, this is much worse than having a CORS setting of `*` IFF token authentication is being performed. See "[How we protect against CSRF in API endpoints](#how-we-protect-against-csrf-in-api-endpoints)", "[Known issue](#known-issue)"

@@ -9,21 +9,21 @@ import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 import { NamespaceProps } from '../namespaces'
-import { PatternTypeProps } from '../search'
+import { SearchPatternTypeProps } from '../search'
 import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
+import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './SavedSearchListPage.module.scss'
 
-interface NodeProps extends RouteComponentProps, Omit<PatternTypeProps, 'setPatternType'> {
+interface NodeProps extends RouteComponentProps, SearchPatternTypeProps {
     savedSearch: GQL.ISavedSearch
     onDelete: () => void
 }
@@ -113,7 +113,7 @@ interface State {
     savedSearchesOrError?: GQL.ISavedSearch[] | ErrorLike
 }
 
-interface Props extends RouteComponentProps<{}>, NamespaceProps, Omit<PatternTypeProps, 'setPatternType'> {}
+interface Props extends RouteComponentProps<{}>, NamespaceProps {}
 
 export class SavedSearchListPage extends React.Component<Props, State> {
     public subscriptions = new Subscription()
@@ -170,6 +170,8 @@ const SavedSearchListPageContent: React.FunctionComponent<SavedSearchListPageCon
     savedSearchesOrError,
     ...props
 }) => {
+    const searchPatternType = useNavbarQueryState(state => state.searchPatternType)
+
     if (savedSearchesOrError === undefined) {
         return <LoadingSpinner />
     }
@@ -187,7 +189,7 @@ const SavedSearchListPageContent: React.FunctionComponent<SavedSearchListPageCon
         <Container>
             <div className="list-group list-group-flush">
                 {namespaceSavedSearches.map(search => (
-                    <SavedSearchNode key={search.id} {...props} savedSearch={search} />
+                    <SavedSearchNode key={search.id} {...props} patternType={searchPatternType} savedSearch={search} />
                 ))}
             </div>
         </Container>

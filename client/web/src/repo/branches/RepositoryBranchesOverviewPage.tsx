@@ -5,12 +5,12 @@ import { Link, RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { createAggregateError, ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { createAggregateError, ErrorLike, isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorAlert } from '../../components/alerts'
@@ -124,7 +124,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
             <div>
                 <PageTitle title="Branches" />
                 {this.state.dataOrError === undefined ? (
-                    <LoadingSpinner className="icon-inline mt-2" />
+                    <LoadingSpinner className="mt-2" />
                 ) : isErrorLike(this.state.dataOrError) ? (
                     <ErrorAlert className="mt-2" error={this.state.dataOrError} />
                 ) : (

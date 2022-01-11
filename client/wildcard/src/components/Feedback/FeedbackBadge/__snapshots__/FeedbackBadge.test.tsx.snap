@@ -1,0 +1,127 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`FeedbackBadge Renders status 'beta' correctly 1`] = `
+<div
+  class="feedbackBadge"
+>
+  <span
+    class="badge info productStatusBadge productStatusBadge"
+    status="beta"
+  >
+    beta
+  </span>
+  <a
+    class="anchor"
+    href="mailto:support@sourcegraph.com"
+    rel="noopener noreferrer"
+    target="_blank"
+  >
+    Share feedback
+  </a>
+</div>
+`;
+
+exports[`FeedbackBadge Renders status 'experimental' correctly 1`] = `
+<div
+  class="feedbackBadge"
+>
+  <span
+    class="badge info productStatusBadge productStatusBadge"
+    status="experimental"
+  >
+    experimental
+  </span>
+  <a
+    class="anchor"
+    href="mailto:support@sourcegraph.com"
+    rel="noopener noreferrer"
+    target="_blank"
+  >
+    Share feedback
+  </a>
+</div>
+`;
+
+exports[`FeedbackBadge Renders status 'new' correctly 1`] = `
+<div
+  class="feedbackBadge"
+>
+  <span
+    class="badge info productStatusBadge productStatusBadge"
+    status="new"
+  >
+    new
+  </span>
+  <a
+    class="anchor"
+    href="mailto:support@sourcegraph.com"
+    rel="noopener noreferrer"
+    target="_blank"
+  >
+    Share feedback
+  </a>
+</div>
+`;
+
+exports[`FeedbackBadge Renders status 'prototype' correctly 1`] = `
+<div
+  class="feedbackBadge"
+>
+  <span
+    class="badge warning productStatusBadge productStatusBadge"
+    status="prototype"
+  >
+    prototype
+  </span>
+  <a
+    class="anchor"
+    href="mailto:support@sourcegraph.com"
+    rel="noopener noreferrer"
+    target="_blank"
+  >
+    Share feedback
+  </a>
+</div>
+`;
+
+exports[`FeedbackBadge Renders status 'wip' correctly 1`] = `
+<div
+  class="feedbackBadge"
+>
+  <span
+    class="badge warning productStatusBadge productStatusBadge"
+    status="wip"
+  >
+    wip
+  </span>
+  <a
+    class="anchor"
+    href="mailto:support@sourcegraph.com"
+    rel="noopener noreferrer"
+    target="_blank"
+  >
+    Share feedback
+  </a>
+</div>
+`;
+
+exports[`FeedbackBadge renders a FeedbackBadge 1`] = `
+<div
+  class="feedbackBadge"
+>
+  <span
+    class="badge info productStatusBadge productStatusBadge"
+    status="new"
+  >
+    new
+  </span>
+  <a
+    class="anchor"
+    href="mailto:support@sourcegraph.com"
+    rel="noopener noreferrer"
+    target="_blank"
+  >
+    Share feedback
+  </a>
+</div>
+`;

@@ -264,6 +264,11 @@
             }
           ]
         },
+        "search.index.query.contexts": {
+          "description": "Enables indexing of revisions of repos matching any query defined in search contexts.",
+          "type": "boolean",
+          "default": false
+        },
         "versionContexts": {
           "description": "DEPRECATED: Use search contexts instead.\n\nJSON array of version context configuration",
           "type": "array",

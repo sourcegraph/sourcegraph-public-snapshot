@@ -1,4 +1,5 @@
-import { isErrorLike } from '../util/errors'
+import { isErrorLike } from '@sourcegraph/common'
+
 import { hasProperty } from '../util/types'
 
 const CLONE_IN_PROGRESS_ERROR_NAME = 'CloneInProgressError'

@@ -65,6 +65,17 @@
 .invalid-feedback {
     color: var(--danger);
 }
+.form-check {
+    > label,
+    > input:not(:disabled) {
+        cursor: pointer;
+    }
+
+    .form-check-input[disabled] ~ .form-check-label,
+    .form-check-input:disabled ~ .form-check-label {
+        cursor: default;
+    }
+}
 .form-check-input {
     ~ .field-message,
     ~ .valid-feedback,

@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { findFilters } from '@sourcegraph/shared/src/search/query/query'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter as QueryFilter } from '@sourcegraph/shared/src/search/query/token'
-import { findFilters } from '@sourcegraph/shared/src/search/query/validate'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 
 /**

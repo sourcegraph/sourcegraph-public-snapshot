@@ -3,11 +3,11 @@ import { Observable, from, concat } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { DocumentHighlight } from 'sourcegraph'
 
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import {

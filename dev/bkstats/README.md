@@ -6,7 +6,7 @@ Owned by the [DevX team](https://handbook.sourcegraph.com/departments/product-en
 ## Usage
 
 ```
-$ go run main.go -token $BUILDKITE_API_TOKEN -date 2021-10-22 -pipeline sourcegraph
+$ go run main.go -buildkite.token $BUILDKITE_API_TOKEN -date 2021-10-22 -buildkite.pipeline sourcegraph
 # ...
 On 2021-10-22, the pipeline was red for 1h8m32.856s
 ```

@@ -3,8 +3,8 @@ import { useCallback } from 'react'
 import { merge, Observable, of } from 'rxjs'
 import { delay, startWith, switchMapTo, tap } from 'rxjs/operators'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { TooltipController } from '@sourcegraph/wildcard'
 
 type useCopiedHandlerReturn = [() => void, boolean | undefined]
 
@@ -23,7 +23,7 @@ export function useCopyURLHandler(): useCopiedHandlerReturn {
                 clicks.pipe(
                     tap(copyDashboardURL),
                     switchMapTo(merge(of(true), of(false).pipe(delay(2000)))),
-                    tap(() => Tooltip.forceUpdate()),
+                    tap(() => TooltipController.forceUpdate()),
                     startWith(false)
                 ),
             [copyDashboardURL]

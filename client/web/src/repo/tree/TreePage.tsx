@@ -16,7 +16,7 @@ import { Link, Redirect } from 'react-router-dom'
 import { Observable, EMPTY } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -30,12 +30,11 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -49,7 +48,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
 import { CodeInsightsProps } from '../../insights/types'
 import { Settings } from '../../schema/settings.schema'
-import { PatternTypeProps, SearchContextProps } from '../../search'
+import { SearchContextProps } from '../../search'
 import { useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
@@ -115,7 +114,6 @@ interface Props
         ThemeProps,
         TelemetryProps,
         ActivationProps,
-        PatternTypeProps,
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
@@ -146,7 +144,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
     commitID,
     revision,
     filePath,
-    patternType,
     settingsCascade,
     useBreadcrumb,
     codeIntelligenceEnabled,
@@ -329,7 +326,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                 <PageTitle title={getPageTitle()} />
                 {treeOrError === undefined ? (
                     <div>
-                        <LoadingSpinner className="icon-inline" /> Loading files and directories
+                        <LoadingSpinner /> Loading files and directories
                     </div>
                 ) : isErrorLike(treeOrError) ? (
                     // If the tree is actually a blob, be helpful and redirect to the blob page.

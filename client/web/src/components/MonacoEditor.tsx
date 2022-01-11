@@ -46,6 +46,7 @@ const darkRules: monaco.editor.ITokenThemeRule[] = [
     { token: 'closingParen', foreground: '#d68cf3' }, // --search-keyword-color
     { token: 'comment', foreground: '#ffa94d' }, // --oc-orange-4
     // Sourcegraph decorated language tokens
+    { token: 'metaFilterSeparator', foreground: '#868e96' }, // --oc-gray-6
     { token: 'metaRepoRevisionSeparator', foreground: '#4393e7' }, // --search-filter-keyword-color
     { token: 'metaContextPrefix', foreground: '#d68cf3' }, // --search-keyword-color
     { token: 'metaPredicateNameAccess', foreground: '#d68cf3' }, // --search-keyword-color
@@ -106,6 +107,7 @@ const lightRules: monaco.editor.ITokenThemeRule[] = [
     { token: 'closingParen', foreground: '#a112ff' }, // --search-keyword-color
     { token: 'comment', foreground: '#d9480f' }, // --oc-orange-9
     // Sourcegraph decorated language tokens
+    { token: 'metaFilterSeparator', foreground: '#868e96' }, // --oc-gray-6
     { token: 'metaRepoRevisionSeparator', foreground: '#0b70db' }, // --search-filter-keyword-color
     { token: 'metaContextPrefix', foreground: '#a112ff' }, // --search-keyword-color
     { token: 'metaPredicateNameAccess', foreground: '#a112ff' }, // --search-keyword-color

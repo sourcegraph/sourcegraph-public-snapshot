@@ -13,8 +13,28 @@ env:
   CGO_ENABLED: '1'
 
 jobs:
+  touch_sg:
+    name: Touch sourcegraph/sg
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout-sourcegraph-sg
+        uses: actions/checkout@v2
+        with: 
+          repository: sourcegraph/sg
+          token: ${{ secrets.SG_RELEASE_TOKEN }}
+      - name: touch-sourcegraph-sg
+        run: |
+          today=$(date +'%Y-%m-%d-%H-%M')
+          sed -i 's/Latest release: .*/Latest release: '"$today"'/' README.md 
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add README.md
+          git commit -m "Update to latest release"
+          git push
+
   create_release:
     name: create-github-release
+    needs: touch_sg
     runs-on: ubuntu-latest
     outputs:
       release_name: ${{ steps.release.outputs.release_name }}

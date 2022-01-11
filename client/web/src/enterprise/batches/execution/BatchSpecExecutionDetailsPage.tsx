@@ -5,19 +5,18 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, useHistory, useLocation } from 'react-router'
 import { NavLink as RouterLink } from 'react-router-dom'
 
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader, FeedbackBadge } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { ErrorAlert } from '../../../components/alerts'
-import { FeedbackBadge } from '../../../components/FeedbackBadge'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { Duration } from '../../../components/time/Duration'
@@ -62,7 +61,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
     if (loading) {
         return (
             <div className="text-center">
-                <LoadingSpinner inline={true} className="mx-auto my-4" />
+                <LoadingSpinner className="mx-auto my-4" />
             </div>
         )
     }
@@ -261,7 +260,7 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                             {isCanceling !== true && <>Cancel</>}
                             {isCanceling === true && (
                                 <>
-                                    <LoadingSpinner inline={true} /> Canceling
+                                    <LoadingSpinner /> Canceling
                                 </>
                             )}
                         </button>

@@ -5,8 +5,8 @@ import { Link } from 'react-router-dom'
 import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 import { PageTitle } from '../components/PageTitle'
@@ -131,7 +131,7 @@ export class ApiConsole extends React.PureComponent<Props, State> {
                 <PageTitle title="API console" />
                 {this.state.graphiqlOrError === undefined ? (
                     <span className={styles.loader}>
-                        <LoadingSpinner className="icon-inline" /> Loading…
+                        <LoadingSpinner /> Loading…
                     </span>
                 ) : isErrorLike(this.state.graphiqlOrError) ? (
                     <ErrorAlert prefix="Error loading API console" error={this.state.graphiqlOrError} />

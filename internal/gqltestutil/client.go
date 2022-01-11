@@ -15,18 +15,18 @@ import (
 )
 
 // NeedsSiteInit returns true if the instance hasn't done "Site admin init" step.
-func NeedsSiteInit(baseURL string) (bool, error) {
+func NeedsSiteInit(baseURL string) (bool, string, error) {
 	resp, err := http.Get(baseURL + "/sign-in")
 	if err != nil {
-		return false, errors.Wrap(err, "get page")
+		return false, "", errors.Wrap(err, "get page")
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	p, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return false, errors.Wrap(err, "read body")
+		return false, "", errors.Wrap(err, "read body")
 	}
-	return strings.Contains(string(p), `"needsSiteInit":true`), nil
+	return strings.Contains(string(p), `"needsSiteInit":true`), string(p), nil
 }
 
 // SiteAdminInit initializes the instance with given admin account.
