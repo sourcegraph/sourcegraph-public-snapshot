@@ -8,9 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
 	"github.com/cockroachdb/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -49,16 +50,9 @@ func BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOp
 }
 
 func blameFileCmd(ctx context.Context, command cmdFunc, path string, opt *BlameOptions, repo api.RepoName, checker authz.SubRepoPermissionChecker) ([]*Hunk, error) {
-	if checker != nil && checker.Enabled() {
-		a := actor.FromContext(ctx)
-		filtered, err := authz.FilterActorPaths(ctx, checker, a, repo, []string{path})
-		if err != nil {
-			return nil, errors.Wrap(err, "filtering path")
-		}
-		// Expect to get []string{path} back if user has access to this file, otherwise they don't.
-		if len(filtered) != 1 || filtered[0] != path {
-			return nil, nil
-		}
+	a := actor.FromContext(ctx)
+	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil || !hasAccess {
+		return nil, err
 	}
 	if opt == nil {
 		opt = &BlameOptions{}

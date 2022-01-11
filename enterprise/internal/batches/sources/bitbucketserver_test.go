@@ -35,8 +35,8 @@ func TestBitbucketServerSource_LoadChangeset(t *testing.T) {
 	}
 
 	changesets := []*Changeset{
-		{Repo: repo, Changeset: &btypes.Changeset{ExternalID: "2"}},
-		{Repo: repo, Changeset: &btypes.Changeset{ExternalID: "999"}},
+		{RemoteRepo: repo, TargetRepo: repo, Changeset: &btypes.Changeset{ExternalID: "2"}},
+		{RemoteRepo: repo, TargetRepo: repo, Changeset: &btypes.Changeset{ExternalID: "999"}},
 	}
 
 	testCases := []struct {
@@ -130,34 +130,37 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 		{
 			name: "abbreviated refs",
 			cs: &Changeset{
-				Title:     "This is a test PR",
-				Body:      "This is the body of a test PR",
-				BaseRef:   "master",
-				HeadRef:   "test-pr-bbs-11",
-				Repo:      repo,
-				Changeset: &btypes.Changeset{},
+				Title:      "This is a test PR",
+				Body:       "This is the body of a test PR",
+				BaseRef:    "master",
+				HeadRef:    "test-pr-bbs-11",
+				RemoteRepo: repo,
+				TargetRepo: repo,
+				Changeset:  &btypes.Changeset{},
 			},
 		},
 		{
 			name: "success",
 			cs: &Changeset{
-				Title:     "This is a test PR",
-				Body:      "This is the body of a test PR",
-				BaseRef:   "refs/heads/master",
-				HeadRef:   "refs/heads/test-pr-bbs-12",
-				Repo:      repo,
-				Changeset: &btypes.Changeset{},
+				Title:      "This is a test PR",
+				Body:       "This is the body of a test PR",
+				BaseRef:    "refs/heads/master",
+				HeadRef:    "refs/heads/test-pr-bbs-12",
+				RemoteRepo: repo,
+				TargetRepo: repo,
+				Changeset:  &btypes.Changeset{},
 			},
 		},
 		{
 			name: "already exists",
 			cs: &Changeset{
-				Title:     "This is a test PR",
-				Body:      "This is the body of a test PR",
-				BaseRef:   "refs/heads/master",
-				HeadRef:   "refs/heads/always-open-pr-bbs",
-				Repo:      repo,
-				Changeset: &btypes.Changeset{},
+				Title:      "This is a test PR",
+				Body:       "This is the body of a test PR",
+				BaseRef:    "refs/heads/master",
+				HeadRef:    "refs/heads/always-open-pr-bbs",
+				RemoteRepo: repo,
+				TargetRepo: repo,
+				Changeset:  &btypes.Changeset{},
 			},
 			// CreateChangeset is idempotent so if the PR already exists
 			// it is not an error

@@ -18,6 +18,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { Button } from '@sourcegraph/wildcard'
 
 import { SearchPatternTypeProps, CaseSensitivityProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -300,16 +301,18 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
     return (
         <div className={classNames(props.className, styles.searchResultsInfoBar)} data-testid="results-info-bar">
             <div className={styles.row}>
-                <button
-                    type="button"
-                    className={classNames('btn btn-sm btn-outline-secondary d-flex d-lg-none', showFilters && 'active')}
+                <Button
+                    className={classNames('d-flex d-lg-none', showFilters && 'active')}
                     aria-pressed={showFilters}
                     onClick={onShowFiltersClicked}
+                    outline={true}
+                    variant="secondary"
+                    size="sm"
                 >
                     <MenuIcon className="icon-inline mr-1" />
                     Filters
                     {showFilters ? <MenuUpIcon className="icon-inline" /> : <MenuDownIcon className="icon-inline" />}
-                </button>
+                </Button>
 
                 {props.stats}
 
@@ -351,21 +354,23 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                         <>
                             <li className={styles.divider} aria-hidden="true" />
                             <li className={classNames(styles.navItem)}>
-                                <button
-                                    type="button"
+                                <Button
                                     onClick={props.onExpandAllResultsToggle}
-                                    className="btn btn-sm btn-outline-secondary text-decoration-none"
+                                    className="text-decoration-none"
                                     data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
                                     aria-label={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
                                     aria-live="polite"
                                     data-testid="search-result-expand-btn"
+                                    outline={true}
+                                    variant="secondary"
+                                    size="sm"
                                 >
                                     {props.allExpanded ? (
                                         <ArrowCollapseUpIcon className="icon-inline mr-0" />
                                     ) : (
                                         <ArrowExpandDownIcon className="icon-inline mr-0" />
                                     )}
-                                </button>
+                                </Button>
                             </li>
                         </>
                     )}

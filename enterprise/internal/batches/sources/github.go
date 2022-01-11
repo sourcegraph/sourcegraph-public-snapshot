@@ -113,7 +113,7 @@ func (s GithubSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (b
 
 func buildCreatePullRequestInput(c *Changeset) *github.CreatePullRequestInput {
 	return &github.CreatePullRequestInput{
-		RepositoryID: c.Repo.Metadata.(*github.Repository).ID,
+		RepositoryID: c.TargetRepo.Metadata.(*github.Repository).ID,
 		Title:        c.Title,
 		Body:         c.Body,
 		HeadRefName:  git.AbbreviateRef(c.HeadRef),
@@ -128,7 +128,7 @@ func (s GithubSource) createChangeset(ctx context.Context, c *Changeset, prInput
 		if err != github.ErrPullRequestAlreadyExists {
 			return exists, err
 		}
-		repo := c.Repo.Metadata.(*github.Repository)
+		repo := c.TargetRepo.Metadata.(*github.Repository)
 		owner, name, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
 		if err != nil {
 			return exists, errors.Wrap(err, "getting repo owner and name")
@@ -180,7 +180,7 @@ func (s GithubSource) UndraftChangeset(ctx context.Context, c *Changeset) error 
 
 // LoadChangeset loads the latest state of the given Changeset from the codehost.
 func (s GithubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
-	repo := cs.Repo.Metadata.(*github.Repository)
+	repo := cs.TargetRepo.Metadata.(*github.Repository)
 	number, err := strconv.ParseInt(cs.ExternalID, 10, 64)
 	if err != nil {
 		return errors.Wrap(err, "parsing changeset external id")

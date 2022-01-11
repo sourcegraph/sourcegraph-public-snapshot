@@ -9,6 +9,7 @@ import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { useMemo } from 'react'
 
 import { isDefined } from '@sourcegraph/common'
+import { Button } from '@sourcegraph/wildcard'
 
 import { ExecutionLogEntry } from '../../../components/ExecutionLogEntry'
 import { Timeline, TimelineStage } from '../../../components/Timeline'
@@ -30,9 +31,9 @@ export const TimelineModal: React.FunctionComponent<TimelineModalProps> = ({ nod
     >
         <div className="d-flex justify-content-between">
             <h3 className="mb-0">Execution timeline</h3>
-            <button type="button" className="btn btn-link btn-sm p-0 m-0" onClick={onCancel}>
+            <Button className="p-0 m-0" onClick={onCancel} variant="link" size="sm">
                 <CloseIcon className="icon-inline" />
-            </button>
+            </Button>
         </div>
         <ExecutionTimeline node={node} />
         {node.executor && (

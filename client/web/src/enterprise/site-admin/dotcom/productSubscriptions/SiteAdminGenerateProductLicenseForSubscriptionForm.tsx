@@ -10,6 +10,7 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button } from '@sourcegraph/wildcard'
 
 import { mutateGraphQL } from '../../../../backend/graphql'
 import { ErrorAlert } from '../../../../components/alerts'
@@ -127,9 +128,9 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                 <div className="border rounded border-success mb-5">
                     <div className="border-top-0 border-left-0 border-right-0 rounded-0 alert alert-success mb-0 d-flex align-items-center justify-content-between px-3 py-2">
                         <span>Generated product license.</span>
-                        <button type="button" className="btn btn-primary" onClick={dismissAlert} autoFocus={true}>
+                        <Button onClick={dismissAlert} autoFocus={true} variant="primary">
                             Dismiss
-                        </button>
+                        </Button>
                     </div>
                 </div>
             ) : (
@@ -203,14 +204,15 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                         <small className="form-text text-muted d-block mt-1">
                             Set to{' '}
                             {DURATION_LINKS.map(({ label, days }) => (
-                                <button
-                                    type="button"
+                                <Button
                                     key={days}
-                                    className="btn btn-link btn-sm p-0 mr-2"
+                                    className="p-0 mr-2"
                                     onClick={() => setValidDays(days)}
+                                    variant="link"
+                                    size="sm"
                                 >
                                     {label}
-                                </button>
+                                </Button>
                             ))}
                         </small>
                     </div>

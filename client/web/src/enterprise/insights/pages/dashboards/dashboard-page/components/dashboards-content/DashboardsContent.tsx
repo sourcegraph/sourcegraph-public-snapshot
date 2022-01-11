@@ -54,7 +54,11 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const user = useObservable(authenticatedUser)
 
     if (dashboards === undefined) {
-        return <LoadingSpinner inline={false} />
+        return (
+            <div data-testid="loading-spinner">
+                <LoadingSpinner inline={false} />
+            </div>
+        )
     }
 
     const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)

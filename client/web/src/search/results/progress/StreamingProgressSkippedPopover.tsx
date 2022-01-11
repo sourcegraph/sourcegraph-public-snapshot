@@ -5,11 +5,12 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useCallback, useState } from 'react'
-import { Button, Collapse, Form, FormGroup, Input, Label } from 'reactstrap'
+import { Collapse, Form, FormGroup, Input, Label } from 'reactstrap'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
+import { Button } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from '../../../components/SyntaxHighlightedSearchQuery'
 
@@ -61,7 +62,8 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
                 onClick={toggleIsOpen}
                 onKeyDown={onKeyDown}
                 disabled={!skipped.message}
-                color={skipped.severity !== 'info' ? 'outline-danger' : 'outline-primary'}
+                outline={true}
+                variant={skipped.severity !== 'info' ? 'danger' : 'primary'}
             >
                 <h4 className="d-flex align-items-center mb-0 w-100">
                     {skipped.severity === 'info' ? (
@@ -158,7 +160,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                     <Button
                         type="submit"
                         className="mt-2"
-                        color="primary"
+                        variant="primary"
                         disabled={selectedSuggestedSearches.size === 0}
                         data-testid="skipped-popover-form-submit-btn"
                     >

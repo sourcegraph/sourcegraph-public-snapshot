@@ -62,7 +62,7 @@ export const TextAreaExamples: React.FunctionComponent = () => {
                 <div>
                     <TextArea
                         onChange={handleChange}
-                        isError={true}
+                        isValid={false}
                         value={value}
                         label="Error example"
                         message="show an error message"

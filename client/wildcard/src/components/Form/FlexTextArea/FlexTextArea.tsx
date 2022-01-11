@@ -1,7 +1,9 @@
 import classNames from 'classnames'
 import React, { forwardRef, InputHTMLAttributes, Ref, useEffect, useImperativeHandle, useRef, useState } from 'react'
 
-import styles from './FlexTextarea.module.scss'
+import { TextArea, TextAreaProps } from '../TextArea'
+
+import styles from './FlexTextArea.module.scss'
 
 /**
  * Sync value of line height with our global styles
@@ -9,10 +11,12 @@ import styles from './FlexTextarea.module.scss'
  */
 const DEFAULT_TEXTAREA_LINE_HEIGHT = 20
 
-export type IProps = {
+export type FlexTextAreaProps = {
     initialRow?: number
     minRows?: number
     maxRows?: number
+    className?: string
+    containerClassName?: string
 } & InputHTMLAttributes<HTMLInputElement>
 
 /**
@@ -22,8 +26,17 @@ export type IProps = {
  * component to the combobox input component that can take only HTMLInputElement we have to
  * cast all public props of this component from textarea to input element props.
  */
-export const FlexTextArea = forwardRef((props: IProps, reference: Ref<HTMLInputElement | null>) => {
-    const { initialRow = 1, minRows = 1, maxRows = Infinity, className, value, ...otherProps } = props
+export const FlexTextArea = forwardRef((props: FlexTextAreaProps, reference: Ref<HTMLInputElement | null>) => {
+    const {
+        initialRow = 1,
+        minRows = 1,
+        maxRows = Infinity,
+        className,
+        containerClassName,
+        value,
+        size,
+        ...otherProps
+    } = props
     const [rows, setRows] = useState(initialRow)
     const innerReference = useRef<HTMLTextAreaElement>(null)
 
@@ -38,33 +51,36 @@ export const FlexTextArea = forwardRef((props: IProps, reference: Ref<HTMLInputE
         }
 
         const previousRows = target.rows
-        const textareaLineHeight = parseFloat(getComputedStyle(target).lineHeight) ?? DEFAULT_TEXTAREA_LINE_HEIGHT
+        const textareaLineHeight = parseFloat(getComputedStyle(target).lineHeight) || DEFAULT_TEXTAREA_LINE_HEIGHT
 
         // reset number of rows in textarea
         target.rows = minRows
 
-        const currentRows = Math.floor(target.scrollHeight / textareaLineHeight)
+        const currentRows = Math.max(Math.floor(target.scrollHeight / textareaLineHeight), minRows)
 
         if (currentRows === previousRows) {
             target.rows = currentRows
+
+            return
         }
 
         if (currentRows > previousRows) {
             target.scrollTop = target.scrollHeight
         }
 
-        setRows(currentRows < maxRows ? currentRows : maxRows)
+        target.rows = Math.min(currentRows, maxRows)
+        setRows(target.rows)
     }, [maxRows, minRows, value])
 
-    const classes = classNames(styles.textarea, className)
-
     return (
-        <textarea
-            {...(otherProps as InputHTMLAttributes<HTMLTextAreaElement>)}
+        <TextArea
+            {...(otherProps as TextAreaProps)}
             value={value}
             ref={innerReference}
             rows={rows}
-            className={classes}
+            resizeable={false}
+            className={classNames(styles.textarea, containerClassName)}
+            inputClassName={className}
         />
     )
 })
