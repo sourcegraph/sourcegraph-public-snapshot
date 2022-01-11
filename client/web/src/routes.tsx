@@ -103,7 +103,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             useExperimentalFeatures.getState().showSearchNotebook ? (
                 <CreateNotebookPage {...props} />
             ) : (
-                <Redirect to="/search" />
+                <Redirect to={PageRoutes.Search} />
             ),
         exact: true,
     },
@@ -123,7 +123,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             useExperimentalFeatures.getState().showSearchNotebook ? (
                 <SearchNotebooksListPage {...props} />
             ) : (
-                <Redirect to="/search" />
+                <Redirect to={PageRoutes.Search} />
             ),
         exact: true,
     },

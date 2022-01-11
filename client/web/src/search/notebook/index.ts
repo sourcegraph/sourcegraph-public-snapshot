@@ -172,6 +172,9 @@ export class Notebook {
 
     public runAllBlocks(): Observable<typeof DONE[]> {
         const observables: Observable<typeof DONE>[] = []
+        // Iterate over block ids and run each block. We do not iterate over values
+        // because `runBlockById` method assigns a new value for the id so we have
+        // to fetch the block value separately.
         for (const blockId of this.blocks.keys()) {
             this.runBlockById(blockId)
 

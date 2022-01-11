@@ -36,6 +36,7 @@ import {
     KEYBOARD_SHORTCUT_SWITCH_THEME,
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { LayoutRouteProps } from '../routes'
+import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { Settings } from '../schema/settings.schema'
 import { isSearchContextSpecAvailable, SearchContextInputProps } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
@@ -46,7 +47,7 @@ import { showDotComMarketing } from '../util/features'
 
 import { FeedbackPrompt } from './Feedback'
 import styles from './GlobalNavbar.module.scss'
-import { NavDropdown } from './NavBar/NavDropdown'
+import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
 
@@ -186,20 +187,19 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     )
 
     const searchNavBarItems = useMemo(() => {
-        const items = [{ path: '/contexts', content: <>Contexts</> }]
-        return showSearchNotebook
-            ? items.concat([
-                  {
-                      path: '/notebooks',
-                      content: (
-                          <>
-                              Notebooks <ProductStatusBadge className="ml-1" status="beta" />
-                          </>
-                      ),
-                  },
-              ])
-            : items
-    }, [showSearchNotebook])
+        const items: (NavDropdownItem | false)[] = [
+            searchContextsEnabled && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
+            !!showSearchNotebook && {
+                path: PageRoutes.Notebooks,
+                content: (
+                    <>
+                        Notebooks <ProductStatusBadge className="ml-1" status="beta" />
+                    </>
+                ),
+            },
+        ]
+        return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
+    }, [searchContextsEnabled, showSearchNotebook])
 
     return (
         <>

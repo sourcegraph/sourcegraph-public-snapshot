@@ -127,7 +127,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const minimalNavLinks = routeMatch === '/cncf'
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
-    const isSearchNotebooksPage = routeMatch?.startsWith('/notebooks')
+    const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
     // Update patternType, caseSensitivity, and selectedSearchContextSpec based on current URL

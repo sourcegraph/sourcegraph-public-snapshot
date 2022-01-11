@@ -8,10 +8,10 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
-import { CreateNotebookBlockInput, NotebookBlockType } from '../../graphql-operations'
+import { CreateNotebookBlockInput } from '../../graphql-operations'
 
 import { createNotebook } from './backend'
-import { deserializeBlockInput } from './serialize'
+import { blockToGQLInput, deserializeBlockInput } from './serialize'
 
 const LOADING = 'loading' as const
 
@@ -22,14 +22,7 @@ function deserializeBlocks(serializedBlocks: string): CreateNotebookBlockInput[]
             throw new Error(`Unknown block type: ${type}`)
         }
         const block = deserializeBlockInput(type, decodeURIComponent(encodedInput))
-        switch (block.type) {
-            case 'md':
-                return { id: uuid.v4(), type: NotebookBlockType.MARKDOWN, markdownInput: block.input }
-            case 'query':
-                return { id: uuid.v4(), type: NotebookBlockType.QUERY, queryInput: block.input }
-            case 'file':
-                return { id: uuid.v4(), type: NotebookBlockType.FILE, fileInput: block.input }
-        }
+        return blockToGQLInput({ id: uuid.v4(), ...block })
     })
 }
 
