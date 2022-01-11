@@ -74,12 +74,12 @@ const checkChromeExtensionInstalled = (): Observable<boolean> => {
 }
 
 /**
- * Indicates if the current user has the browser extension installed. It waits 1000ms for the browser
+ * Indicates if the current user has the browser extension installed. It waits 3000ms for the browser
  * extension to inject a DOM marker element, and if it doesn't, emits false
  */
 export const browserExtensionInstalled: Observable<boolean> = concat(
     checkChromeExtensionInstalled().pipe(filter(isInstalled => isInstalled)),
-    observeQuerySelector({ selector: EXTENSION_MARKER_ID, timeout: 1000 }).pipe(
+    observeQuerySelector({ selector: EXTENSION_MARKER_ID, timeout: 3000 }).pipe(
         mapTo(true),
         catchError(() => [false])
     )

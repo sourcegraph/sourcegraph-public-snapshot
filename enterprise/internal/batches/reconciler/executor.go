@@ -407,7 +407,7 @@ func (e *executor) changesetSource(ctx context.Context) (sources.ChangesetSource
 
 		// Set the remote repo, which may not be the same as the target repo if
 		// forking is enabled.
-		e.remoteRepo, e.cssErr = loadRemoteRepo(ctx, e.css, e.targetRepo)
+		e.remoteRepo, e.cssErr = loadRemoteRepo(ctx, e.css, e.targetRepo, e.ch)
 	})
 	return e.css, e.cssErr
 }
@@ -459,14 +459,25 @@ func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.So
 
 var errChangesetSourceCannotFork = errors.New("forking is enabled, but the changeset source does not support forks")
 
-func loadRemoteRepo(ctx context.Context, css sources.ChangesetSource, targetRepo *types.Repo) (*types.Repo, error) {
-	if !conf.Get().BatchChangesEnforceForks {
+func loadRemoteRepo(ctx context.Context, css sources.ChangesetSource, targetRepo *types.Repo, ch *btypes.Changeset) (*types.Repo, error) {
+	// If forks are disabled _and_ we're not updating a changeset that was
+	// previously created using a fork, then we don't need to even check if the
+	// changeset source is forkable, let alone set up the remote repo: we can
+	// just return the target repo and be done with it.
+	if !conf.Get().BatchChangesEnforceForks && (ch == nil || ch.ExternalForkNamespace == "") {
 		return targetRepo, nil
 	}
 
 	fss, ok := css.(sources.ForkableChangesetSource)
 	if !ok {
 		return nil, errChangesetSourceCannotFork
+	}
+
+	// If we're updating an existing changeset, we should push/modify the same
+	// fork, even if the user credential would now fork into a different
+	// namespace.
+	if ch != nil && ch.ExternalForkNamespace != "" {
+		return fss.GetNamespaceFork(ctx, targetRepo, ch.ExternalForkNamespace)
 	}
 
 	return fss.GetUserFork(ctx, targetRepo)

@@ -51,7 +51,6 @@ Yarn,@sourcegraph/eslint-plugin-sourcegraph,1.0.0,Apache 2.0,Unknown,Approved
 Yarn,@sourcegraph/eslint-plugin-wildcard,1.0.0,Apache 2.0,Unknown,Approved
 Yarn,@sourcegraph/extension-api-classes,1.1.0,MIT,Unknown,Approved
 Yarn,@sourcegraph/extension-api-types,2.1.0,Apache 2.0,Unknown,Approved
-Yarn,@sourcegraph/react-loading-spinner,0.0.7,ISC,https://github.com/sourcegraph/react-loading-spinner#readme,Approved
 Yarn,@sourcegraph/shared,1.0.0,Apache 2.0,Unknown,Approved
 Yarn,@sourcegraph/storybook,0.0.1,Apache 2.0,Unknown,Approved
 Yarn,@sourcegraph/web,1.10.1,Apache 2.0,Unknown,Approved

@@ -6,11 +6,10 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
-import { isErrorLike } from '@sourcegraph/common'
+import { isErrorLike, isDefined } from '@sourcegraph/common'
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'

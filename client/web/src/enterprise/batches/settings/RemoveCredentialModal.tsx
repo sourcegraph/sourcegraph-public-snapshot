@@ -2,7 +2,7 @@ import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
@@ -83,7 +83,7 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
                         className="btn btn-danger test-remove-credential-modal-submit"
                         onClick={onDelete}
                     >
-                        {isLoading === true && <LoadingSpinner className="icon-inline" />}
+                        {isLoading === true && <LoadingSpinner />}
                         Remove credentials
                     </button>
                 </div>

@@ -4,7 +4,7 @@ import { readFile } from 'mz/fs'
 import Simmer, { Options as SimmerOptions } from 'simmerjs'
 import { SetIntersection } from 'utility-types'
 
-import { DiffPart } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
+import { DiffPart } from '@sourcegraph/codeintellify'
 
 import { CodeHost, MountGetter } from './codeHost'
 import { CodeView, DOMFunctions } from './codeViews'

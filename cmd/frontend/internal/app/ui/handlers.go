@@ -481,6 +481,7 @@ func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 	email := r.URL.Query().Get("email")
+	tosAccepted := r.URL.Query().Get("tos_accepted")
 
 	firstSourceURLCookie, err := r.Cookie("sourcegraphSourceUrl")
 	var firstSourceURL string
@@ -501,6 +502,7 @@ func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 		AnonymousUserID: anonymousUserId,
 		FirstSourceURL:  firstSourceURL,
 		LastSourceURL:   lastSourceURL,
+		HasAgreedToToS:  tosAccepted == "true",
 	})
 	return nil
 }

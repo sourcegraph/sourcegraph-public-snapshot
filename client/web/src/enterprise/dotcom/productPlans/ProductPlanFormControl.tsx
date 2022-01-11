@@ -4,11 +4,10 @@ import { Observable } from 'rxjs'
 import { catchError, map, startWith, tap } from 'rxjs/operators'
 
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { RadioButton } from '@sourcegraph/wildcard'
+import { RadioButton, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -76,7 +75,7 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
     return (
         <div className={classNames('product-plan-form-control', className)}>
             {plans === LOADING ? (
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             ) : isErrorLike(plans) ? (
                 <ErrorAlert error={plans.message} />
             ) : (

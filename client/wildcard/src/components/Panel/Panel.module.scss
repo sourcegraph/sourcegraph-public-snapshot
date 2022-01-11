@@ -1,0 +1,63 @@
+.panel {
+    --panel-handle-size: 2px;
+    --panel-handle-bg-color: var(--border-color-2);
+    --panel-bg-color: var(--color-bg-1);
+
+    position: fixed;
+    background-color: var(--panel-bg-color);
+    overflow-x: hidden;
+    bottom: 0;
+
+    &--bottom {
+        left: 0;
+        right: 0;
+        padding-top: var(--panel-handle-size);
+    }
+
+    &--left {
+        top: 0;
+        left: 0;
+        padding-right: var(--panel-handle-size);
+    }
+
+    &--right {
+        top: 0;
+        right: 0;
+        padding-left: var(--panel-handle-size);
+    }
+}
+
+.handle {
+    background-color: var(--panel-handle-bg-color);
+    position: absolute;
+    user-select: none;
+    z-index: 1;
+
+    &--right,
+    &--left {
+        width: var(--panel-handle-size);
+        cursor: ew-resize;
+        top: 0;
+        bottom: 0;
+    }
+
+    &--right {
+        left: 0;
+    }
+
+    &--left {
+        right: 0;
+    }
+
+    &--bottom {
+        height: var(--panel-handle-size);
+        cursor: ns-resize;
+        left: 0;
+        right: 0;
+        top: 0;
+    }
+
+    &--resizing {
+        --panel-handle-bg-color: var(--border-color);
+    }
+}

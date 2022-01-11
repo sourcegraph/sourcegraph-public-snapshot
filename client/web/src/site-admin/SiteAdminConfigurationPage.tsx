@@ -8,10 +8,10 @@ import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { ErrorAlert } from '../components/alerts'
@@ -343,7 +343,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             alerts.push(
                 <div key="error" className={classNames('alert alert-primary', styles.alert)}>
                     <p>
-                        <LoadingSpinner className="icon-inline" /> Waiting for site to reload...
+                        <LoadingSpinner /> Waiting for site to reload...
                     </p>
                     {Date.now() - this.state.reloadStartedAt > EXPECTED_RELOAD_WAIT && (
                         <p>
@@ -435,7 +435,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     <Link to="/help/admin/config/site_config">documentation</Link> for more information.
                 </p>
                 <div>{alerts}</div>
-                {this.state.loading && <LoadingSpinner className="icon-inline" />}
+                {this.state.loading && <LoadingSpinner />}
                 {this.state.site?.configuration && (
                     <div>
                         <DynamicallyImportedMonacoSettingsEditor

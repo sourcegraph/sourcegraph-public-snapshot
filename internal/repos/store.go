@@ -45,6 +45,13 @@ type Store struct {
 	txctx   context.Context
 }
 
+type ReposMocks struct {
+	ListExternalServiceUserIDsByRepoID func(ctx context.Context, repoID api.RepoID) ([]int32, error)
+	ListExternalServiceRepoIDsByUserID func(ctx context.Context, userID int32) ([]api.RepoID, error)
+}
+
+var Mocks ReposMocks
+
 // NewStore instantiates and returns a new DBStore with prepared statements.
 func NewStore(db dbutil.DB, txOpts sql.TxOptions) *Store {
 	s := basestore.NewWithDB(db, txOpts)
@@ -287,8 +294,8 @@ WHERE repo_id = %s AND user_id IS NOT NULL
 // given repository. These users have proven that they have read access to the
 // repository given records are present in the "external_service_repos" table.
 func (s *Store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) (userIDs []int32, err error) {
-	if database.Mocks.Repos.ListExternalServiceUserIDsByRepoID != nil {
-		return database.Mocks.Repos.ListExternalServiceUserIDsByRepoID(ctx, repoID)
+	if Mocks.ListExternalServiceUserIDsByRepoID != nil {
+		return Mocks.ListExternalServiceUserIDsByRepoID(ctx, repoID)
 	}
 
 	tr, ctx := s.trace(ctx, "Store.ListExternalServiceUserIDsByRepoID")
@@ -324,8 +331,8 @@ AND repo.private
 // user has already proven that they have read access to the repositories since
 // records are present in the "external_service_repos" table.
 func (s *Store) ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, userID int32) (repoIDs []api.RepoID, err error) {
-	if database.Mocks.Repos.ListExternalServiceRepoIDsByUserID != nil {
-		return database.Mocks.Repos.ListExternalServiceRepoIDsByUserID(ctx, userID)
+	if Mocks.ListExternalServiceRepoIDsByUserID != nil {
+		return Mocks.ListExternalServiceRepoIDsByUserID(ctx, userID)
 	}
 
 	tr, ctx := s.trace(ctx, "Store.ListExternalServicePrivateRepoIDsByUserID")

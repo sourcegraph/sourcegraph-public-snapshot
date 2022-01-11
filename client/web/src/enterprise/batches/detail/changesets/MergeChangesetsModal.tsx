@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
@@ -79,7 +79,7 @@ export const MergeChangesetsModal: React.FunctionComponent<MergeChangesetsModalP
                     Cancel
                 </button>
                 <button type="button" onClick={onSubmit} disabled={isLoading === true} className="btn btn-primary">
-                    {isLoading === true && <LoadingSpinner className="icon-inline" />}
+                    {isLoading === true && <LoadingSpinner />}
                     Merge
                 </button>
             </div>
