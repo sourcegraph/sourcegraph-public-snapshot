@@ -28,8 +28,8 @@ function go_test() {
     -covermode=atomic \
     -race \
     -v \
-    $test_packages \
-    | tee "$tmpfile"
+    $test_packages |\
+  tee "$tmpfile"
 
   local xml
   xml=$(go-junit-report <"$tmpfile")
