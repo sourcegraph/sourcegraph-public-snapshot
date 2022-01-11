@@ -68,6 +68,7 @@ func newExternalHTTPHandler(
 
 	// 🚨 SECURITY: This handler implements its own token auth inside enterprise
 	executorProxyHandler := newExecutorProxyHandler()
+
 	githubAppCloudSetupHandler := newGitHubAppCloudSetupHandler()
 
 	// App handler (HTML pages), the call order of middleware is LIFO.
