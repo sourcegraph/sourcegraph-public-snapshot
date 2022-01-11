@@ -251,6 +251,7 @@ export const externalChangesetFieldsFragment = gql`
         externalURL {
             url
         }
+        forkNamespace
         externalID
         diffStat {
             ...DiffStatFields
@@ -264,6 +265,7 @@ export const externalChangesetFieldsFragment = gql`
             description {
                 __typename
                 ... on GitBranchChangesetDescription {
+                    baseRef
                     headRef
                 }
             }
