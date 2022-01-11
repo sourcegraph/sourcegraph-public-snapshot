@@ -24,9 +24,9 @@ function go_test() {
     -race \
     -v \
     $TEST_PACKAGES \
-    | tee "$tmp"
+    | tee "$tmpfile"
 
-  local xml=$(cat "$tmp" | go-junit-report)
+  local xml=$(cat "$tmpfile" | go-junit-report)
   # escape xml output properly for JSON
   local quoted_xml="$( jq --null-input --compact-output --arg str "$xml" '$str' )"
 
