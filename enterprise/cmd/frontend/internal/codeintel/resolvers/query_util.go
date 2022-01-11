@@ -161,7 +161,7 @@ func (r *queryResolver) monikerLocations(ctx context.Context, uploads []store.Du
 func (r *queryResolver) adjustLocations(ctx context.Context, locations []lsifstore.Location) ([]AdjustedLocation, error) {
 	adjustedLocations := make([]AdjustedLocation, 0, len(locations))
 
-	checkerEnabled := r.checker.Enabled()
+	checkerEnabled := r.checker != nil && r.checker.Enabled()
 	var a *actor.Actor
 	if checkerEnabled {
 		a = actor.FromContext(ctx)
