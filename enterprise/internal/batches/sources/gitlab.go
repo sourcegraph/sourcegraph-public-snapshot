@@ -24,6 +24,7 @@ type GitLabSource struct {
 	au     auth.Authenticator
 }
 
+var _ ChangesetSource = &GitLabSource{}
 var _ DraftChangesetSource = &GitLabSource{}
 var _ ForkableChangesetSource = &GitLabSource{}
 
