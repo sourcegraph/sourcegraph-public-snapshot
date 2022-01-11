@@ -57,10 +57,10 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	defer endObservation(1, observation.Args{})
 
 	queries := []*sqlf.Query{
-		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS %s(version bigint NOT NULL PRIMARY KEY, dirty boolean NOT NULL)`, quote(s.migrationsTable)),
+		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS %s(version bigint NOT NULL PRIMARY KEY)`, quote(s.migrationsTable)),
+		sqlf.Sprintf(`ALTER TABLE %s ADD COLUMN IF NOT EXISTS dirty boolean NOT NULL`, quote(s.migrationsTable)),
 
-		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS migration_logs()`),
-		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS id SERIAL PRIMARY KEY`),
+		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS migration_logs(id SERIAL PRIMARY KEY)`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS schema text NOT NULL`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS version integer NOT NULL`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS up bool NOT NULL`),
@@ -70,8 +70,14 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS error_message text`),
 	}
 
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
 	for _, query := range queries {
-		if err := s.Exec(ctx, query); err != nil {
+		if err := tx.Exec(ctx, query); err != nil {
 			return err
 		}
 	}
