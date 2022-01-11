@@ -498,13 +498,21 @@ func (s *GitLabSource) MergeChangeset(ctx context.Context, c *Changeset, squash 
 	return c.Changeset.SetMetadata(updated)
 }
 
+func (s *GitLabSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
+	return s.getFork(ctx, targetRepo, &namespace)
+}
+
 func (s *GitLabSource) GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
+	return s.getFork(ctx, targetRepo, nil)
+}
+
+func (s *GitLabSource) getFork(ctx context.Context, targetRepo *types.Repo, namespace *string) (*types.Repo, error) {
 	project, ok := targetRepo.Metadata.(*gitlab.Project)
 	if !ok {
 		return nil, errors.New("target repo is not a GitLab project")
 	}
 
-	fork, err := s.client.ForkProject(ctx, project, nil)
+	fork, err := s.client.ForkProject(ctx, project, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "forking project")
 	}
