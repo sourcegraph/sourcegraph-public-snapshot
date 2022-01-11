@@ -394,7 +394,7 @@ func ListDirectoryChildren(
 	}
 
 	paths := strings.Split(string(out), "\n")
-	if checker.Enabled() {
+	if checker != nil && checker.Enabled() {
 		paths, err = authz.FilterActorPaths(ctx, checker, actor.FromContext(ctx), repo, paths)
 		if err != nil {
 			return nil, err
