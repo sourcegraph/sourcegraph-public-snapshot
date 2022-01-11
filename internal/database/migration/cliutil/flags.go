@@ -79,7 +79,7 @@ func Down(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 	var (
 		downFlagSet          = flag.NewFlagSet(fmt.Sprintf("%s down", commandName), flag.ExitOnError)
 		downDatabaseNameFlag = downFlagSet.String("db", "", "The target database instance.")
-		downTargetFlag       = downFlagSet.Int("target", 1, "Un-apply all migrations ahead of this target.")
+		downTargetFlag       = downFlagSet.Int("target", 0, "Reset all migrations defined after this target.")
 	)
 
 	execDown := func(ctx context.Context, args []string) error {
@@ -93,8 +93,14 @@ func Down(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 			return flag.ErrHelp
 		}
 
-		if *downTargetFlag == 0 {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: invalid number of migrations"))
+		suppliedTarget := false
+		downFlagSet.Visit(func(f *flag.Flag) {
+			if f.Name == "target" {
+				suppliedTarget = true
+			}
+		})
+		if !suppliedTarget {
+			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: explicit target must be supplied for down migration"))
 			return flag.ErrHelp
 		}
 

@@ -38,8 +38,19 @@ func (ds *Definitions) GetByID(id int) (Definition, bool) {
 }
 
 func (ds *Definitions) UpTo(id, target int) ([]Definition, error) {
+	if target == 0 {
+		return ds.UpFrom(id, 0)
+	}
+
+	if _, ok := ds.GetByID(target); !ok {
+		return nil, errors.Newf("unknown target %d", target)
+	}
 	if target < id {
 		return nil, errors.Newf("migration %d is behind version %d", target, id)
+	}
+	if target == id {
+		// n == 0 has special meaning; handle case immediately
+		return nil, nil
 	}
 
 	return ds.UpFrom(id, target-id)
@@ -67,6 +78,13 @@ func (ds *Definitions) UpFrom(id, n int) ([]Definition, error) {
 }
 
 func (ds *Definitions) DownTo(id, target int) ([]Definition, error) {
+	if target == 0 {
+		return nil, errors.Newf("illegal downgrade target %d", target)
+	}
+
+	if _, ok := ds.GetByID(target); !ok {
+		return nil, errors.Newf("unknown target %d", target)
+	}
 	if id < target {
 		return nil, errors.Newf("migration %d is ahead of version %d", target, id)
 	}
@@ -86,7 +104,7 @@ func (ds *Definitions) DownFrom(id, n int) ([]Definition, error) {
 		return slice[j].ID < slice[i].ID
 	})
 
-	if n > 0 && len(slice) > n {
+	if len(slice) > n {
 		slice = slice[:n]
 	}
 
