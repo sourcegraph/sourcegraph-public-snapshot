@@ -4,9 +4,14 @@
     &:hover button {
         text-decoration: underline;
     }
+
+    figure {
+        margin: 0;
+    }
 }
 
 .thumbnail-button {
+    width: 100%;
     position: relative;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
@@ -15,7 +20,7 @@
 }
 
 .thumbnail-image {
-    width: 11rem;
+    width: 100%;
     // Note: This is to reduce cumulative layout shift
     // It should be as close as possible to the source image aspect ratio
     aspect-ratio: 176/115;

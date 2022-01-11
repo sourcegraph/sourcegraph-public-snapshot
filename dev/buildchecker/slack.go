@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/cockroachdb/errors"
 )
 
 func slackMention(slackUserID string) string {
@@ -41,7 +43,12 @@ cc: @dev-experience-support`
 	return message
 }
 
-func postSlackUpdate(webhook string, summary string) error {
+// postSlackUpdate attempts to send the given summary to at each of the provided webhooks.
+func postSlackUpdate(webhooks []string, summary string) (bool, error) {
+	if len(webhooks) == 0 {
+		return false, nil
+	}
+
 	type slackText struct {
 		Type string `json:"type"`
 		Text string `json:"text"`
@@ -65,32 +72,51 @@ func postSlackUpdate(webhook string, summary string) error {
 		}},
 	}, "", "  ")
 	if err != nil {
-		return fmt.Errorf("failed to post on slack: %w", err)
+		return false, fmt.Errorf("MarshalIndent: %w", err)
 	}
 	log.Println("slackBody: ", string(body))
 
-	req, err := http.NewRequest(http.MethodPost, webhook, bytes.NewBuffer(body))
-	if err != nil {
-		return fmt.Errorf("failed to post on slack: %w", err)
-	}
-	req.Header.Add("Content-Type", "application/json")
+	// Attempt to send a message out to each
+	var errs error
+	var oneSucceeded bool
+	for _, webhook := range webhooks {
+		if len(webhook) == 0 {
+			return false, nil
+		}
 
-	// Perform the HTTP Post on the webhook
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to post on slack: %w", err)
+		log.Println("posting to ", webhook)
+
+		req, err := http.NewRequest(http.MethodPost, webhook, bytes.NewBuffer(body))
+		if err != nil {
+			errs = errors.CombineErrors(errs, fmt.Errorf("%s: NewRequest: %w", webhook, err))
+			continue
+		}
+		req.Header.Add("Content-Type", "application/json")
+
+		// Perform the HTTP Post on the webhook
+		client := &http.Client{Timeout: 10 * time.Second}
+		resp, err := client.Do(req)
+		if err != nil {
+			errs = errors.CombineErrors(errs, fmt.Errorf("%s: client.Do: %w", webhook, err))
+			continue
+		}
+
+		// Parse the response, to check if it succeeded
+		buf := new(bytes.Buffer)
+		_, err = buf.ReadFrom(resp.Body)
+		if err != nil {
+			errs = errors.CombineErrors(errs, fmt.Errorf("%s: buf.ReadFrom(resp.Body): %w", webhook, err))
+			continue
+		}
+		defer resp.Body.Close()
+		if buf.String() != "ok" {
+			errs = errors.CombineErrors(errs, fmt.Errorf("%s: non-ok response from Slack: %s", webhook, buf.String()))
+			continue
+		}
+
+		// Indicate at least one message succeeded
+		oneSucceeded = true
 	}
 
-	// Parse the response, to check if it succeeded
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(resp.Body)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if buf.String() != "ok" {
-		return fmt.Errorf("failed to post on slack: %s", buf.String())
-	}
-	return nil
+	return oneSucceeded, err
 }

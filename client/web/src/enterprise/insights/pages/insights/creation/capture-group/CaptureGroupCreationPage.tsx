@@ -22,7 +22,7 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
     const { telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
 
     const [initialFormValues, setInitialFormValues] = useLocalStorage<CaptureGroupFormFields | undefined>(
-        'insights.code-stats-creation-ui',
+        'insights.capture-group-creation-ui',
         undefined
     )
 
@@ -36,11 +36,11 @@ export const CaptureGroupCreationPage: React.FunctionComponent<CaptureGroupCreat
         await onInsightCreateRequest({ insight })
 
         setInitialFormValues(undefined)
-        telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
+        telemetryService.log('CodeInsightsCaptureGroupCreationPageSubmitClick')
         telemetryService.log(
             'InsightAddition',
-            { insightType: 'codeStatsInsights' },
-            { insightType: 'codeStatsInsights' }
+            { insightType: 'captureGroupInsights' },
+            { insightType: 'captureGroupInsights' }
         )
 
         onSuccessfulCreation(insight)

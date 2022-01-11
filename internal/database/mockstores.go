@@ -9,13 +9,7 @@ var Mocks MockStores
 //   internal/database/mocks.go. If you came here looking for a store that isn't listed,
 //   consider passing in the generated db or stores from there.
 type MockStores struct {
-	AccessTokens MockAccessTokens
-
-	Repos        MockRepos
-	UserEmails   MockUserEmails
-	SubRepoPerms MockSubRepoPerms
-
-	ExternalAccounts MockExternalAccounts
-
+	AccessTokens     MockAccessTokens
+	Repos            MockRepos
 	ExternalServices MockExternalServices
 }

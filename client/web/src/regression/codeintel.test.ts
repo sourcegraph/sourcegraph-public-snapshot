@@ -11,7 +11,7 @@ import { Config, getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { ensureTestExternalService, getUser, setUserSiteAdmin } from './util/api'
+import { ensureTestExternalService, getUser, setTosAccepted, setUserSiteAdmin } from './util/api'
 import { GraphQLClient } from './util/GraphQlClient'
 import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
 import { getTestTools } from './util/init'
@@ -87,6 +87,7 @@ describe('Code intelligence regression test suite', () => {
             throw new Error(`test user ${testUsername} does not exist`)
         }
         await setUserSiteAdmin(gqlClient, user.id, true)
+        await setTosAccepted(gqlClient, user.id)
 
         outerResourceManager.add('Global setting', 'codeIntel.includeForks', await setIncludeForks(gqlClient, true))
     })

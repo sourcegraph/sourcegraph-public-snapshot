@@ -311,10 +311,6 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 }
 
 func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, id int32) error {
-	if Mocks.ExternalAccounts.TouchExpired != nil {
-		return Mocks.ExternalAccounts.TouchExpired(ctx, id)
-	}
-
 	_, err := s.Handle().DB().ExecContext(ctx, `
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchExpired
 UPDATE user_external_accounts
@@ -325,10 +321,6 @@ WHERE id = $1
 }
 
 func (s *userExternalAccountsStore) TouchLastValid(ctx context.Context, id int32) error {
-	if Mocks.ExternalAccounts.TouchLastValid != nil {
-		return Mocks.ExternalAccounts.TouchLastValid(ctx, id)
-	}
-
 	_, err := s.Handle().DB().ExecContext(ctx, `
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchLastValid
 UPDATE user_external_accounts
@@ -471,12 +463,6 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 	}
 
 	return conds
-}
-
-// MockExternalAccounts mocks the Stores.ExternalAccounts DB store.
-type MockExternalAccounts struct {
-	TouchExpired   func(ctx context.Context, id int32) error
-	TouchLastValid func(ctx context.Context, id int32) error
 }
 
 // MaybeEncrypt encrypts data with the given key returns the id of the key. If the key is nil, it returns the data unchanged.

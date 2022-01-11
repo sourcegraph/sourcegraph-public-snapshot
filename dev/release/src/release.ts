@@ -437,6 +437,7 @@ cc @${config.captainGitHubUsername}
                         title: defaultPRMessage,
                         edits: [
                             `${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' 'website/src/components/GetStarted.tsx'`,
+                            `${sed} -i -E 's/sourcegraph\\/server:${versionRegex}/sourcegraph\\/server:${release.version}/g' 'website/src/pages/get-started.tsx'`,
                         ],
                         ...prBodyAndDraftState(
                             [],

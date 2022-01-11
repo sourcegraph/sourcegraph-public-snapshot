@@ -3,11 +3,10 @@ import { Observable, of } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
-import { isErrorLike } from '@sourcegraph/common'
+import { isErrorLike, isDefined } from '@sourcegraph/common'
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { Settings, InsightDashboard as InsightDashboardConfiguration } from '../../../../../schema/settings.schema'
 import { createSanitizedDashboard } from '../../../pages/dashboards/creation/utils/dashboard-sanitizer'
