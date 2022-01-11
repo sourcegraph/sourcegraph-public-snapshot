@@ -153,7 +153,7 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 				UpdatedAt:      now,
 			}
 		} else if len(svcs) == 1 {
-			// We have an existing service, update it
+			// We have an existing github service, update it
 			svc = svcs[0]
 			svc.DisplayName = displayName
 			newConfig, err := jsonc.Edit(svc.Config, strconv.FormatInt(installationID, 10), "githubAppInstallationID")

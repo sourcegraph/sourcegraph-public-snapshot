@@ -92,12 +92,12 @@ func (token *oauthBearerTokenWithJWT) Authenticate(r *http.Request) error {
 	}
 	bearer := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 
-	ss, err := bearer.SignedString(token.key)
+	signedString, err := bearer.SignedString(token.key)
 	if err != nil {
 		return errors.Wrap(err, "sign JWT")
 	}
 
-	r.Header.Set("Authorization", "Bearer "+ss)
+	r.Header.Set("Authorization", "Bearer " + signedString)
 	return nil
 }
 
