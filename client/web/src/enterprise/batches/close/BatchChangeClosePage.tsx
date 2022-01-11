@@ -4,13 +4,12 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useState, useMemo, useCallback } from 'react'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
@@ -96,7 +95,7 @@ export const BatchChangeClosePage: React.FunctionComponent<BatchChangeClosePageP
     if (batchChange === undefined) {
         return (
             <div className="text-center">
-                <LoadingSpinner className="icon-inline mx-auto my-4" />
+                <LoadingSpinner className="mx-auto my-4" />
             </div>
         )
     }

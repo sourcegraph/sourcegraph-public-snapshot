@@ -115,7 +115,10 @@
 }
 
 .thumbnail {
+    width: 11rem;
     @media (--sm-breakpoint-down) {
+        margin-right: auto;
+        margin-left: auto;
         margin-top: 3.5rem;
         text-align: center;
     }
@@ -182,4 +185,85 @@
 .self-host-section,
 .customer-section {
     margin-top: 4rem;
+}
+
+.content {
+    justify-content: center;
+    display: flex;
+    align-items: stretch;
+    margin: 0 auto;
+    gap: 2rem;
+    @media (--md-breakpoint-down) {
+        flex-wrap: wrap;
+    }
+    @media (--sm-breakpoint-down) {
+        flex-direction: column;
+    }
+}
+
+.video-card {
+    max-width: 15rem;
+    @media (--md-breakpoint-down) {
+        min-width: 100%;
+        order: 3;
+    }
+
+    @media (--sm-breakpoint-down) {
+        order: initial;
+    }
+}
+
+.onboarding-tour {
+    width: 18rem;
+
+    @media (--md-breakpoint-down) {
+        max-width: 50%;
+        flex: 1;
+    }
+
+    @media (--sm-breakpoint-down) {
+        max-width: 100%;
+        width: 100%;
+    }
+}
+
+.tips-and-tricks {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    max-width: 25rem;
+
+    @media (--md-breakpoint-down) {
+        min-width: 50%;
+        max-width: 100%;
+        flex: 1;
+    }
+
+    @media (--sm-breakpoint-down) {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    &-examples {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    &-example {
+        display: flex;
+        align-items: center;
+        margin: 0 2rem 0.75rem 0;
+    }
+
+    &-card {
+        margin-left: 0.25rem;
+        font-size: 0.75rem;
+        text-decoration: none !important;
+        padding: 0.25rem 0.75rem;
+        align-self: center;
+    }
+
+    &-more {
+        margin-top: auto;
+    }
 }

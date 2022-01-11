@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 
 import { AuthenticatedUser } from '../../auth'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -203,7 +204,7 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
             {showAlert && (
                 <div className="alert alert-warning mt-4">
                     Cloning your repositories is taking a long time. You can wait for cloning to finish, or{' '}
-                    <Link to="/search" onClick={trackBannerClick}>
+                    <Link to={PageRoutes.Search} onClick={trackBannerClick}>
                         continue to Sourcegraph now
                     </Link>{' '}
                     while cloning continues in the background. Note that you can only search repos that have finished

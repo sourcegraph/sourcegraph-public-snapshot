@@ -14,7 +14,8 @@ const validateRevisions = (revisions: any[]): boolean =>
 
 export function parseConfig(configJSON: string): RepositoryRevisions[] | null {
     const errors: jsonc.ParseError[] = []
-    const config = jsonc.parse(configJSON, errors)
+    const config = jsonc.parse(configJSON || '[]', errors)
+
     if (!config || errors.length > 0 || !Array.isArray(config)) {
         return null
     }

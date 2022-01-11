@@ -34,7 +34,7 @@ We recommend that use the latest version of Sourcegraph and that you have a basi
 
 For the purposes of the tutorial we’ll be using the following repository: [https://github.com/moby/moby](https://github.com/moby/moby) 
 
-Before starting this tutorial, you should first ["Add the repo to Sourcegraph"](../how-to/add_a_repository.md).
+Before starting this tutorial, you should first ["Add the repository to Sourcegraph"](../../code_search/how-to/adding_repositories_to_cloud.md).
 
 
 ### Clone the Go repository locally

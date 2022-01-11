@@ -25,6 +25,7 @@ export const authUser: AuthenticatedUser = {
     tags: [],
     viewerCanAdminister: true,
     databaseID: 0,
+    tosAccepted: true,
 }
 
 export const org: IOrg = {

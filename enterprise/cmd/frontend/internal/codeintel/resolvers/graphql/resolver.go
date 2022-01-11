@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
 const (
@@ -63,6 +64,10 @@ func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 			return r.ConfigurationPolicyByID(ctx, id)
 		},
 	}
+}
+
+func (r *Resolver) ExecutorResolver() executor.Resolver {
+	return r.resolver.ExecutorResolver()
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetUploadByID

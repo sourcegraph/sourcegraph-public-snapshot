@@ -7,11 +7,11 @@ import { Observable, throwError } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useEventObservable, useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -100,7 +100,7 @@ export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionCompone
         <div className="user-subscriptions-edit-product-subscription-page">
             <PageTitle title="Edit subscription" />
             {productSubscription === LOADING ? (
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             ) : isErrorLike(productSubscription) ? (
                 <ErrorAlert className="my-2" error={productSubscription} />
             ) : (

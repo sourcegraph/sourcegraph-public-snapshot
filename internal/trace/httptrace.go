@@ -2,7 +2,6 @@ package trace
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -12,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 
-	"github.com/cockroachdb/errors"
 	"github.com/felixge/httpsnoop"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
@@ -252,7 +250,9 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 		// Notify sentry if the status code indicates our system had an error (e.g. 5xx).
 		if m.Code >= 500 {
 			if requestErrorCause == nil {
-				requestErrorCause = errors.WithStack(&httpErr{status: m.Code, method: r.Method, path: r.URL.Path})
+				// This creates loads of events on which we do not have the stack trace and that are barely usable.
+				// requestErrorCause = errors.WithStack(&httpErr{status: m.Code, method: r.Method, path: r.URL.Path})
+				return
 			}
 
 			sentry.CaptureError(requestErrorCause, map[string]string{
@@ -271,6 +271,17 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 		}
 	}))
 }
+
+// Associated with the above comment aobut the load of events.
+// type httpErr struct {
+// 	status int
+// 	method string
+// 	path   string
+// }
+//
+// func (e *httpErr) Error() string {
+// 	return fmt.Sprintf("HTTP status %d, %s %s", e.status, e.method, e.path)
+// }
 
 func Route(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
@@ -304,14 +315,4 @@ func SetRouteName(r *http.Request, routeName string) {
 	if p, ok := r.Context().Value(routeNameKey).(*string); ok {
 		*p = routeName
 	}
-}
-
-type httpErr struct {
-	status int
-	method string
-	path   string
-}
-
-func (e *httpErr) Error() string {
-	return fmt.Sprintf("HTTP status %d, %s %s", e.status, e.method, e.path)
 }

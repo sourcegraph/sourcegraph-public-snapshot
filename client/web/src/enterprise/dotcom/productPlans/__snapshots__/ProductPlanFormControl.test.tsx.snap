@@ -11,56 +11,74 @@ exports[`ProductPlanFormControl new subscription 1`] = `
       <div
         class="list-group-item p-0"
       >
-        <label
+        <div
           class="p-3 mb-0 d-flex"
-          for="product-plan-form-control__plan0"
         >
-          <input
-            class="mr-2"
-            id="product-plan-form-control__plan0"
-            name="product-plan-form-control__plan"
-            required=""
-            type="radio"
-            value="p0"
-          />
-          <div>
-            <strong>
-              n0
-            </strong>
-            <div
-              class="text-muted"
+          <div
+            class="form-check"
+          >
+            <input
+              class="form-check-input mr-2"
+              id="product-plan-form-control__plan0"
+              label="[object Object]"
+              name="product-plan-form-control__plan"
+              required=""
+              type="radio"
+              value="p0"
+            />
+            <label
+              class="form-check-label"
+              for="product-plan-form-control__plan0"
             >
-              $0.1/user/month (paid yearly)
-            </div>
+              <div>
+                <strong>
+                  n0
+                </strong>
+                <div
+                  class="text-muted"
+                >
+                  $0.1/user/month (paid yearly)
+                </div>
+              </div>
+            </label>
           </div>
-        </label>
+        </div>
       </div>
       <div
         class="list-group-item p-0"
       >
-        <label
+        <div
           class="p-3 mb-0 d-flex"
-          for="product-plan-form-control__plan1"
         >
-          <input
-            class="mr-2"
-            id="product-plan-form-control__plan1"
-            name="product-plan-form-control__plan"
-            required=""
-            type="radio"
-            value="p1"
-          />
-          <div>
-            <strong>
-              n1
-            </strong>
-            <div
-              class="text-muted"
+          <div
+            class="form-check"
+          >
+            <input
+              class="form-check-input mr-2"
+              id="product-plan-form-control__plan1"
+              label="[object Object]"
+              name="product-plan-form-control__plan"
+              required=""
+              type="radio"
+              value="p1"
+            />
+            <label
+              class="form-check-label"
+              for="product-plan-form-control__plan1"
             >
-              $0.38/user/month (paid yearly)
-            </div>
+              <div>
+                <strong>
+                  n1
+                </strong>
+                <div
+                  class="text-muted"
+                >
+                  $0.38/user/month (paid yearly)
+                </div>
+              </div>
+            </label>
           </div>
-        </label>
+        </div>
       </div>
     </div>
     <a

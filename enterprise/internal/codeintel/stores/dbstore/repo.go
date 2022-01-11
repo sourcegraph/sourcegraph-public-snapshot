@@ -37,7 +37,7 @@ func (s *Store) RepoIDsByGlobPatterns(ctx context.Context, patterns []string, li
 	}
 	defer func() { err = tx.Done(err) }()
 
-	authzConds, err := database.AuthzQueryConds(ctx, tx.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(tx.Handle().DB()))
 	if err != nil {
 		return nil, 0, err
 	}

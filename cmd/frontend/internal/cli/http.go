@@ -220,38 +220,55 @@ func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOrigi
 		return false
 	}
 
+	// crossOriginPolicyAPI - handling of API routes.
+	//
+	// Even if the request was not from a trusted origin, we will allow the browser to send it AND
+	// include credentials even. Traditionally, this would be a CSRF vulnerability! But because we
+	// know for a fact that we will only respect sessions (cookie-based-authentication) iff the
+	// request came from a trusted origin, in session.go:CookieMiddlewareWIthCSRFSafety, we know it
+	// is safe to do this.
+	//
+	// This is the ONLY way in which we can enable public access of our Sourcegraph.com API, i.e. to
+	// allow random.com to send requests to our GraphQL and search APIs either unauthenticated or
+	// using an access token.
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 
-	if isTrustedOrigin(r) {
-		// The request came from a trusted origin, either from the browser extension's fixed origin
-		// identifier or from an origin present in the site configuration `corsOrigin` allow list.
-		//
-		// This means we should allow the exact origin to make the request, the browser will grant
-		// their request the ability to authenticate via a session cookie.
-		//
-		// Note: API users also rely on this codepath handling wildcards properly. For example, if
-		// Sourcegraph is behind a corporate VPN an admin may choose to set the CORS origin to "*"
-		// (via a proxy, not what a browser would ever send) and would expect Sourcegraph to respond
-		// appropriately to any Origin request header:
-		//
-		// 	"Origin: *" -> "Access-Control-Allow-Origin: *"
-		// 	"Origin: https://foobar.com" -> "Access-Control-Allow-Origin: https://foobar.com"
-		//
-		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-	}
+	// Note: This must mirror the request's `Origin` header exactly as API users rely on this
+	// codepath handling for example wildcards `*` and `null` origins properly. For example, if
+	// Sourcegraph is behind a corporate VPN an admin may choose to set the CORS origin to "*" (via
+	// a proxy, a browser would never send a literal "*") and would expect Sourcegraph to respond
+	// appropriately with the request's Origin header. Similarly, some environments issue requests
+	// with a `null` Origin header, such as VS Code extensions from within WebViews and Figma
+	// extensions. Thus:
+	//
+	// 	"Origin: *" -> "Access-Control-Allow-Origin: *"
+	// 	"Origin: null" -> "Access-Control-Allow-Origin: null"
+	// 	"Origin: https://foobar.com" -> "Access-Control-Allow-Origin: https://foobar.com"
+	//
+	// Again, this is fine because we allow API requests from any origin and instead prevent CSRF
+	// attacks via enforcing that we only respect session auth iff the origin is trusted. See the
+	// docstring above this one for more info.
+	w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 
 	if r.Method == "OPTIONS" {
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		// Only trusted origins are allowed to send the secure X-Requested-With and X-Sourcegraph-Client
-		// headers, which indicate the client passed CORS AND is a trusted origin.
+		// CRITICAL: Only trusted origins are allowed to send the secure X-Requested-With and
+		// X-Sourcegraph-Client headers, which indicate to us later (in session.go:CookieMiddlewareWIthCSRFSafety)
+		// that the request came from a trusted origin. To understand these secure headers, see
+		// "What does X-Requested-With do anyway?" in https://github.com/sourcegraph/sourcegraph/pull/27931
 		//
-		// In the future, untrusted origins will be allowed to send cross-origin requests with
-		// authentication, but we will only respect session authentication iff the secure header
-		// X-Requested-With is present, indicating the request came from a trusted origin or a
-		// client that does not respect CORS (e.g. curl.)
+		// Any origin may send us POST, GET, OPTIONS requests with arbitrary content types, auth
+		// (session cookies and access tokens), etc. but only trusted origins may send us the secure
+		// X-Requested-With header.
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		if isTrustedOrigin(r) {
+			// X-Sourcegraph-Client is the deprecated form of X-Requested-With, so we treat it the same
+			// way. It is NOT respected anymore, but is left as an allowed header so as to not block
+			// requests that still do include it as e.g. part of a proxy put in front of Sourcegraph.
 			w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization, X-Sourcegraph-Should-Trace")
 		} else {
+			// X-Sourcegraph-Should-Trace just indicates if we should record an HTTP request to our
+			// tracing system and never has an impact on security, it's fine to always allow that
+			// header to be set by browsers.
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Sourcegraph-Should-Trace")
 		}
 		w.WriteHeader(http.StatusOK)

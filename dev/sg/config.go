@@ -167,3 +167,23 @@ func equal(a, b []string) bool {
 
 	return true
 }
+
+func (c *Config) GetEnv(key string) string {
+	// First look into process env, emulating the logic in makeEnv used
+	// in internal/run/run.go
+	val, ok := os.LookupEnv(key)
+	if ok {
+		return val
+	}
+	// Otherwise check in globalConf.Env and *expand* the key, because a value might refer to another env var.
+	return os.Expand(c.Env[key], func(lookup string) string {
+		if lookup == key {
+			return os.Getenv(lookup)
+		}
+
+		if e, ok := c.Env[lookup]; ok {
+			return e
+		}
+		return os.Getenv(lookup)
+	})
+}

@@ -1,5 +1,7 @@
 import { ApolloError, useQuery } from '@apollo/client'
+import * as H from 'history'
 import React, { useState, useEffect, Dispatch, SetStateAction } from 'react'
+import { useHistory } from 'react-router-dom'
 
 import { gql, getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -17,6 +19,10 @@ export interface FuzzyFinderProps extends TelemetryProps {
 
     isVisible: boolean
 
+    location: H.Location
+
+    setCacheRetention: Dispatch<SetStateAction<boolean>>
+
     /**
      * The maximum number of files a repo can have to use case-insensitive fuzzy finding.
      *
@@ -28,20 +34,39 @@ export interface FuzzyFinderProps extends TelemetryProps {
     caseInsensitiveFileCountThreshold?: number
 }
 
-export const FuzzyFinder: React.FunctionComponent<FuzzyFinderProps> = props => {
+export const FuzzyFinder: React.FunctionComponent<FuzzyFinderProps> = ({
+    location: { search, pathname, hash },
+    setCacheRetention,
+    setIsVisible,
+    isVisible,
+    telemetryService,
+}) => {
     // The state machine of the fuzzy finder. See `FuzzyFSM` for more details
     // about the state transititions.
     const [fsm, setFsm] = useState<FuzzyFSM>({ key: 'empty' })
-    const { repoName = '', commitID = '' } = parseBrowserRepoURL(location.pathname + location.search + location.hash)
-    const { downloadFilename, isLoadingFilename, filenameError } = useFilename(repoName, commitID)
+    const { repoName = '', commitID = '', rawRevision = '' } = parseBrowserRepoURL(pathname + search + hash)
+    const { downloadFilename, isLoadingFilename, filenameError } = useFilename(repoName, commitID || rawRevision)
+
+    const history = useHistory()
+    useEffect(
+        () =>
+            history.listen(location => {
+                const url = location.pathname + location.search + location.hash
+                const { repoName: repo = '', commitID: commit = '', rawRevision: raw = '' } = parseBrowserRepoURL(url)
+                if (repo !== repoName || commit !== commitID || raw !== rawRevision) {
+                    setCacheRetention(false)
+                }
+            }),
+        [history, repoName, commitID, rawRevision, setCacheRetention]
+    )
 
     useEffect(() => {
-        if (props.isVisible) {
-            props.telemetryService.log('FuzzyFinderViewed', { action: 'shortcut open' })
+        if (isVisible) {
+            telemetryService.log('FuzzyFinderViewed', { action: 'shortcut open' })
         }
-    }, [props.telemetryService, props.isVisible])
+    }, [telemetryService, isVisible])
 
-    if (!props.isVisible) {
+    if (!isVisible) {
         return null
     }
 
@@ -54,7 +79,7 @@ export const FuzzyFinder: React.FunctionComponent<FuzzyFinderProps> = props => {
             downloadFilenames={downloadFilename}
             isLoading={isLoadingFilename}
             isError={filenameError}
-            onClose={() => props.setIsVisible(false)}
+            onClose={() => setIsVisible(false)}
             fsm={fsm}
             setFsm={setFsm}
         />

@@ -52,6 +52,39 @@ export const exampleNotebooks: SearchExample[] = [
     },
 ]
 
+export const exampleTripsAndTricks: SearchExample[] = [
+    {
+        label: 'Negation:',
+        trackEventName: 'HomepageExampleNegationClicked',
+        query: '-file:tests',
+        to: '/search?q=context:global+r:tests+-file:tests+-file:%28%5E%7C/%29vendor/+auth%28&patternType=literal',
+    },
+    {
+        label: 'Paths:',
+        trackEventName: 'HomepageExamplePathsClicked',
+        query: 'file:web/ui/',
+        to: '/search?q=context:global+r:mono/mono+file:web/ui/+transform+type:symbol&patternType=literal',
+    },
+    {
+        label: 'Search an org’s code:',
+        trackEventName: 'HomepageExampleOrgsClicked',
+        query: 'repo:sourcegraph/.*',
+        to: '/search?q=context:global+repo:sourcegraph/.*&patternType=literal',
+    },
+    {
+        label: 'Operators:',
+        trackEventName: 'HomepageExampleOperatorsClicked',
+        query: '(lang:Typescript or lang:javascript)',
+        to: '/search?q=context:global+%28lang:Typescript+or+lang:javascript%29&patternType=literal',
+    },
+    {
+        label: 'Escaping: ',
+        trackEventName: 'HomepageExampleEscapingClicked',
+        query: 'content:" with spaces"',
+        to: '/search?q=context:global+content:"+with+spaces"&patternType=literal',
+    },
+]
+
 /**
  * Source Sans Pro fonts: https://fonts.google.com/specimen/Source+Sans+Pro
  * Two families required for the `LoggedOutHomepage` UI: Regular 400 and Bold 700.

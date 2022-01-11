@@ -32,8 +32,9 @@ We recommend that use the latest version of Sourcegraph and that you have a basi
 1. ["Sourcegraph quickstart"](../../index.md)
 1. ["Introduction to code intelligence"](../explanations/introduction_to_code_intelligence.md)
 
-For the purposes of the tutorial we’ll be using the following repository: [https://github.com/apache/echarts](https://github.com/apache/echarts). Before starting the tutorial, you should first ["Add the repo to Sourcegraph"](../how-to/add_a_repository.md).
+For the purposes of the tutorial we’ll be using the following repository: [https://github.com/apache/echarts](https://github.com/apache/echarts). 
 
+Before starting this tutorial, you should first ["Add the repository to Sourcegraph"](../../code_search/how-to/adding_repositories_to_cloud.md).
 
 ### Clone the TypeScript repository locally
 
@@ -87,7 +88,7 @@ Install the indexer by running:
 
 
 
-1. Navigate to the **_repo’s root folder_** (where the `package.json/tsconfig.json` is) and run `lsif-tsc -p .`
+1. Navigate to the **_repo’s root folder_** (where the `package.json/tsconfig.json` is) and install depedencies with `npm install` then run `lsif-tsc -p .`
 
 
 2. A `dump.lsif` file should have been generated. This is file you are going to upload to your Sourcegraph instance.

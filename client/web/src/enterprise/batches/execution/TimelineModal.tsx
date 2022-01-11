@@ -8,7 +8,7 @@ import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { useMemo } from 'react'
 
-import { isDefined } from '@sourcegraph/shared/src/util/types'
+import { isDefined } from '@sourcegraph/common'
 
 import { ExecutionLogEntry } from '../../../components/ExecutionLogEntry'
 import { Timeline, TimelineStage } from '../../../components/Timeline'

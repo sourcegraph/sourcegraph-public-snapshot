@@ -447,7 +447,7 @@ func (*RepoSubsetSymbolSearch) Name() string {
 }
 
 func (s *RepoSubsetSymbolSearch) Required() bool {
-	return false
+	return s.IsRequired
 }
 
 type RepoUniverseSymbolSearch struct {

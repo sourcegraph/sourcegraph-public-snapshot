@@ -6,13 +6,13 @@ import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxj
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { requestGraphQL } from '../../backend/graphql'
@@ -24,7 +24,6 @@ import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
 import { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
-import { PatternTypeProps } from '../../search'
 import { RouteDescriptor } from '../../util/contributions'
 
 import { OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
@@ -91,8 +90,7 @@ interface Props
         BreadcrumbsProps,
         BreadcrumbSetters,
         ExtensionsControllerProps,
-        BatchChangesProps,
-        Omit<PatternTypeProps, 'setPatternType'> {
+        BatchChangesProps {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 
@@ -122,8 +120,7 @@ export interface OrgAreaPageProps
         NamespaceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        BatchChangesProps,
-        Omit<PatternTypeProps, 'setPatternType'> {
+        BatchChangesProps {
     /** The org that is the subject of the page. */
     org: OrgAreaOrganizationFields
 
@@ -232,7 +229,6 @@ export class OrgArea extends React.Component<Props> {
             settingsCascade: this.props.settingsCascade,
             isLightTheme: this.props.isLightTheme,
             namespace: this.state.orgOrError,
-            patternType: this.props.patternType,
             telemetryService: this.props.telemetryService,
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
             batchChangesEnabled: this.props.batchChangesEnabled,
@@ -250,7 +246,7 @@ export class OrgArea extends React.Component<Props> {
 
         return (
             <ErrorBoundary location={this.props.location}>
-                <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
                     <Switch>
                         {this.props.orgAreaRoutes.map(
                             ({ path, exact, render, condition = () => true, fullPage }) =>

@@ -36,7 +36,7 @@ func (s *Store) DefinitionDumps(ctx context.Context, monikers []precise.Qualifie
 		qs = append(qs, sqlf.Sprintf("(%s, %s, %s)", moniker.Scheme, moniker.Name, moniker.Version))
 	}
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Store.Handle().DB()))
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (s *Store) ReferenceIDsAndFilters(ctx context.Context, repositoryID int, co
 
 	visibleUploadsQuery := makeVisibleUploadsQuery(repositoryID, commit)
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	authzConds, err := database.AuthzQueryConds(ctx, database.NewDB(s.Store.Handle().DB()))
 	if err != nil {
 		return nil, 0, err
 	}

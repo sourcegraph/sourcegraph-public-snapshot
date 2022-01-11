@@ -42,10 +42,13 @@ func TestIntegration(t *testing.T) {
 		{"Syncer/OrphanedRepos", testOrphanedRepo},
 		{"Syncer/DeleteExternalService", testDeleteExternalService},
 		{"Syncer/AbortSyncWhenThereIsRepoLimitError", testAbortSyncWhenThereIsRepoLimitError},
+		{"Syncer/UserAndOrgReposAreCountedCorrectly", testUserAndOrgReposAreCountedCorrectly},
 		{"Syncer/UserAddedRepos", testUserAddedRepos},
 		{"Syncer/NameConflictOnRename", testNameOnConflictOnRename},
 		{"Syncer/ConflictingSyncers", testConflictingSyncers},
 		{"Syncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources},
+		{"Syncer/SyncReposWithLastErrors", testSyncReposWithLastErrors},
+		{"Syncer/SyncReposWithLastErrorsHitRateLimit", testSyncReposWithLastErrorsHitsRateLimiter},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			db := dbtest.NewDB(t)

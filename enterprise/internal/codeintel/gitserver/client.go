@@ -342,7 +342,7 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 		return nil, err
 	}
 
-	matching, err := git.ListFiles(ctx, repo, api.CommitID(commit), pattern)
+	matching, err := git.ListFiles(ctx, repo, api.CommitID(commit), pattern, authz.DefaultSubRepoPermsChecker)
 	if err == nil {
 		return matching, nil
 	}

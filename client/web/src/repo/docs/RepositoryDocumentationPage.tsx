@@ -8,21 +8,19 @@ import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
-import { asError, ErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Container, ProductStatusBadge, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'
 import { RepositoryFields } from '../../graphql-operations'
-import { FeedbackPrompt } from '../../nav/Feedback/FeedbackPrompt'
+import { FeedbackPrompt } from '../../nav/Feedback'
 import { routes } from '../../routes'
 import { eventLogger } from '../../tracking/eventLogger'
 import { toDocumentationURL } from '../../util/url'
@@ -192,7 +190,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                     }
                 />
             ) : null}
-            {loading ? <LoadingSpinner className="icon-inline m-1" /> : null}
+            {loading ? <LoadingSpinner className="m-1" /> : null}
             {error && error.message === 'page not found' ? <PageNotFound /> : null}
             {error && (error.message === 'no LSIF data' || error.message === 'no LSIF documentation') ? (
                 <div className={styles.container}>

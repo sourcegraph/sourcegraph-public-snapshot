@@ -97,7 +97,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     )
 
     if (loadingPolicyConfig) {
-        return <LoadingSpinner className="icon-inline" />
+        return <LoadingSpinner />
     }
 
     if (policyConfigError || policy === undefined) {
@@ -151,7 +151,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                             )}
                             {isDeleting && (
                                 <>
-                                    <LoadingSpinner className="icon-inline" /> Deleting...
+                                    <LoadingSpinner /> Deleting...
                                 </>
                             )}
                         </Button>
@@ -182,7 +182,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                     {!isSaving && <>{policy.id === '' ? 'Create' : 'Update'} policy</>}
                     {isSaving && (
                         <>
-                            <LoadingSpinner className="icon-inline" /> Saving...
+                            <LoadingSpinner /> Saving...
                         </>
                     )}
                 </Button>

@@ -62,6 +62,14 @@
             "pointer": true
           }
         },
+        "searchContextsQuery": {
+          "description": "Enables query based search contexts",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "searchStats": {
           "description": "Enables a button on the search results page that shows language statistics about the results for a search query.",
           "type": "boolean",
@@ -169,7 +177,7 @@
         "fuzzyFinder": {
           "description": "Enables fuzzy finder with keyboard shortcut `t`.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
             "pointer": true
           }

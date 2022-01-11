@@ -14,9 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	batchesApitest "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors/resolvers/apitest"
-	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -30,7 +29,7 @@ func TestCreateCodeMonitor(t *testing.T) {
 
 	user := insertTestUser(t, db, "cm-user1", true)
 
-	want := &cm.Monitor{
+	want := &edb.Monitor{
 		ID:          1,
 		CreatedBy:   user.ID,
 		CreatedAt:   r.Now(),
@@ -288,15 +287,15 @@ func TestQueryMonitor(t *testing.T) {
 		func() error { _, err := r.store.EnqueueQueryTriggerJobs(ctx); return err },
 		func() error { _, err := r.store.EnqueueActionJobsForMonitor(ctx, 1, 1); return err },
 		func() error {
-			err := (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 1)
+			err := (&edb.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, edb.ActionJobs, edb.Completed, 1)
 			if err != nil {
 				return err
 			}
-			err = (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 2)
+			err = (&edb.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, edb.ActionJobs, edb.Completed, 2)
 			if err != nil {
 				return err
 			}
-			return (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 3)
+			return (&edb.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, edb.ActionJobs, edb.Completed, 3)
 		},
 		func() error { _, err := r.store.EnqueueActionJobsForMonitor(ctx, 1, 1); return err },
 		// Set the job status of trigger job with id = 1 to "completed". Since we already
@@ -308,7 +307,7 @@ func TestQueryMonitor(t *testing.T) {
 		// 1   1     completed
 		// 2   2     queued
 		func() error {
-			return (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.TriggerJobs, storetest.Completed, 1)
+			return (&edb.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, edb.TriggerJobs, edb.Completed, 1)
 		},
 		// This will create a second trigger job (id = 3) for the first monitor. Since
 		// the job with id = 2 is still queued, no new job will be enqueued for query 2.

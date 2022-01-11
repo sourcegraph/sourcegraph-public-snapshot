@@ -3,7 +3,7 @@ import DownloadIcon from 'mdi-react/DownloadIcon'
 import React, { useCallback, useState } from 'react'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { getChangesetDiff } from '../backend'
 
@@ -62,7 +62,7 @@ export const DownloadDiffButton: React.FunctionComponent<DownloadDiffButtonProps
     if (isErrorLike(state)) {
         icon = <AlertCircleIcon className="icon icon-inline" data-tooltip={state?.message} />
     } else if (state === DownloadState.LOADING) {
-        icon = <LoadingSpinner className="icon-inline" />
+        icon = <LoadingSpinner />
     } else {
         icon = <DownloadIcon className="icon-inline" />
     }

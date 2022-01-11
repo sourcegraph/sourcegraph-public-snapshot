@@ -6,11 +6,27 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { requestGraphQL } from '../backend/graphql'
 import { FetchFeatureFlagsResult } from '../graphql-operations'
 
+import { getOverrideKey } from './lib/getOverrideKey'
+
+class ProxyMap<K extends string, V extends boolean> extends Map<K, V> {
+    constructor(private getter?: (key: K, value: V | undefined) => V | undefined) {
+        super()
+    }
+    public get(key: K): V | undefined {
+        const originalValue = super.get(key)
+        return this.getter ? this.getter(key, originalValue) : originalValue
+    }
+}
+
 // A union of all feature flags we currently have.
 // If there are no feature flags at the moment, this should be `never`.
-export type FeatureFlagName = 'search-notebook-onboarding' | 'test-flag' | 'signup-optimization'
+export type FeatureFlagName =
+    | 'search-notebook-onboarding'
+    | 'test-flag'
+    | 'signup-optimization'
+    | 'getting-started-tour'
 
-export type FlagSet = Map<FeatureFlagName, boolean>
+export type FlagSet = ProxyMap<FeatureFlagName, boolean>
 
 /**
  * Fetches the evaluated feature flags for the current user
@@ -30,7 +46,17 @@ export function fetchFeatureFlags(): Observable<FlagSet> {
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            const result = new Map<FeatureFlagName, boolean>()
+            const result = new ProxyMap<FeatureFlagName, boolean>((key: FeatureFlagName, value?: boolean):
+                | boolean
+                | undefined => {
+                const overriddenValue = localStorage.getItem(getOverrideKey(key))
+
+                return overriddenValue !== 'undefined' &&
+                    overriddenValue !== null &&
+                    ['true', 'false'].includes(overriddenValue)
+                    ? (JSON.parse(overriddenValue) as boolean)
+                    : value
+            })
             for (const flag of data.viewerFeatureFlags) {
                 result.set(flag.name as FeatureFlagName, flag.value)
             }

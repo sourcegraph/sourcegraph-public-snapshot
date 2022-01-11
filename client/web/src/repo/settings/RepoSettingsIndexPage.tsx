@@ -8,12 +8,11 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorAlert } from '../../components/alerts'
@@ -177,7 +176,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                     }
                 />
                 <Container>
-                    {this.state.loading && <LoadingSpinner className="icon-inline" />}
+                    {this.state.loading && <LoadingSpinner />}
                     {this.state.error && (
                         <ErrorAlert prefix="Error getting repository index status" error={this.state.error} />
                     )}
