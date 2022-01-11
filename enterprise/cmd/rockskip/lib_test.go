@@ -95,7 +95,7 @@ func TestIndex(t *testing.T) {
 	}
 	paths := []string{}
 	for _, blob := range blobs {
-		paths = append(paths, blob.path)
+		paths = append(paths, blob.Path)
 	}
 
 	cmd := exec.Command("bash", "-c", fmt.Sprintf("git ls-tree -r %s | grep -v \"^160000\" | cut -f2", head))

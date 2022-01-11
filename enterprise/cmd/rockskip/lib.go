@@ -50,11 +50,11 @@ type CommitStatus struct {
 }
 
 type Blob struct {
-	commit  string
-	path    string
-	added   []string
-	deleted []string
-	symbols []string
+	Commit  string
+	Path    string
+	Added   []string
+	Deleted []string
+	Symbols []string
 }
 
 type StatusAMD int
@@ -252,11 +252,11 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 					return err
 				}
 				blob := Blob{
-					commit:  entry.Commit,
-					path:    pathStatus.Path,
-					added:   []string{entry.Commit},
-					deleted: []string{},
-					symbols: symbols,
+					Commit:  entry.Commit,
+					Path:    pathStatus.Path,
+					Added:   []string{entry.Commit},
+					Deleted: []string{},
+					Symbols: symbols,
 				}
 				INSTANTS.Start("InsertBlob")
 				id, err := db.InsertBlob(blob)
@@ -722,7 +722,7 @@ func (db PostgresDB) InsertBlob(blob Blob) (id int, err error) {
 		INSERT INTO rockskip_blobs (commit, path, added, deleted, symbols)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id
-	`, blob.commit, blob.path, pg.Array(blob.added), pg.Array(blob.deleted), pg.Array(blob.symbols)).Scan(&lastInsertId)
+	`, blob.Commit, blob.Path, pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(blob.Symbols)).Scan(&lastInsertId)
 	return lastInsertId, errors.Wrap(err, "InsertBlob")
 }
 
@@ -758,7 +758,7 @@ func (db PostgresDB) Search(hops []string) ([]Blob, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "Search: Scan")
 		}
-		blobs = append(blobs, Blob{commit: commit, path: path, added: added, deleted: deleted, symbols: symbols})
+		blobs = append(blobs, Blob{Commit: commit, Path: path, Added: added, Deleted: deleted, Symbols: symbols})
 	}
 	return blobs, nil
 }
