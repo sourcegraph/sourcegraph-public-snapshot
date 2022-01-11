@@ -9,7 +9,9 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
@@ -40,9 +42,15 @@ func ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name 
 
 // NewFileReader returns an io.ReadCloser reading from the named file at commit.
 // The caller should always close the reader after use
-func NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
+func NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
 	if Mocks.NewFileReader != nil {
 		return Mocks.NewFileReader(commit, name)
+	}
+	a := actor.FromContext(ctx)
+	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, name); err != nil {
+		return nil, err
+	} else if !hasAccess {
+		return nil, os.ErrNotExist
 	}
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetFileReader")

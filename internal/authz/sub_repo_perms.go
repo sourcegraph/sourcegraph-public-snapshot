@@ -332,6 +332,9 @@ func FilterActorPaths(ctx context.Context, checker SubRepoPermissionChecker, a *
 // FilterActorPath will filter the given path for the given actor
 // returning true if the path is allowed to read.
 func FilterActorPath(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, path string) (bool, error) {
+	if checker == nil || !checker.Enabled() {
+		return true, nil
+	}
 	perms, err := ActorPermissions(ctx, checker, a, RepoContent{
 		Repo: repo,
 		Path: path,
