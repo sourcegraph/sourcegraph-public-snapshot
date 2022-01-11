@@ -55,14 +55,16 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                 Use saved searches to alert you to uses of a favorite API, or changes to code you need to monitor.
             </small>
             {authenticatedUser && (
-                <Link
+                <Button
                     to={`/users/${authenticatedUser.username}/searches/add`}
                     onClick={logEvent('SavedSearchesPanelCreateButtonClicked', { source: 'empty view' })}
-                    className="btn btn-secondary mt-2 align-self-center"
+                    className="mt-2 align-self-center"
+                    variant="secondary"
+                    as={Link}
                 >
                     <PlusIcon className="icon-inline" />
                     Create a saved search
-                </Link>
+                </Button>
             )}
         </EmptyPanelContainer>
     )
@@ -129,13 +131,16 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
         <ActionButtonGroup>
             <div className="btn-group btn-group-sm">
                 {authenticatedUser && (
-                    <Link
+                    <Button
                         to={`/users/${authenticatedUser.username}/searches/add`}
-                        className="btn btn-outline-secondary mr-2"
+                        className="mr-2"
                         onClick={logEvent('SavedSearchesPanelCreateButtonClicked', { source: 'toolbar' })}
+                        variant="secondary"
+                        outline={true}
+                        as={Link}
                     >
                         +
-                    </Link>
+                    </Button>
                 )}
             </div>
             <div className="btn-group btn-group-sm">

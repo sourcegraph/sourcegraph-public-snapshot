@@ -8,7 +8,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ProductStatusBadge, Container, PageSelector, RadioButton, TextArea } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Container, PageSelector, RadioButton, TextArea, Button } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
 import {
@@ -901,12 +901,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     disabled={fetchingRepos === 'loading' || !didRepoSelectionChange()}
                 />
 
-                <Link
-                    className="btn btn-secondary test-goto-add-external-service-page"
+                <Button
+                    className="test-goto-add-external-service-page"
                     to={`${routingPrefix}/repositories`}
+                    variant="secondary"
+                    as={Link}
                 >
                     Cancel
-                </Link>
+                </Button>
             </Form>
         </UserSettingReposContainer>
     )

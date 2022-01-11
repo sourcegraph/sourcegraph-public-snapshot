@@ -150,9 +150,9 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                                     <strong>New:</strong> Watch your code for changes with code monitoring to get
                                     notifications.
                                 </div>
-                                <Link to={codeMonitoringUrl} className="btn btn-primary">
+                                <Button to={codeMonitoringUrl} variant="primary" as={Link}>
                                     Go to code monitoring →
-                                </Link>
+                                </Button>
                             </div>
                         </div>
                     )}

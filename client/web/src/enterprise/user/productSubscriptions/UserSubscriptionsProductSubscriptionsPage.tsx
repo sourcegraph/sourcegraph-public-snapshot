@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators'
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -81,9 +81,9 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                 headingElement="h2"
                 path={[{ text: 'Subscriptions' }]}
                 actions={
-                    <Link to={`${props.match.path}/new`} className="btn btn-primary text-nowrap">
+                    <Button to={`${props.match.path}/new`} className="text-nowrap" variant="primary" as={Link}>
                         New subscription
-                    </Link>
+                    </Button>
                 }
                 description={
                     <>

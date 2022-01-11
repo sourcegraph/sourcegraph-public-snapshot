@@ -151,9 +151,9 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                     >
                                         Join {this.props.org.name}
                                     </Button>
-                                    <Link className="btn btn-link" to={orgURL(this.props.org.name)}>
+                                    <Button to={orgURL(this.props.org.name)} variant="link" as={Link}>
                                         Go to {this.props.org.name}'s profile
-                                    </Link>
+                                    </Button>
                                 </div>
                                 <div>
                                     <Button
