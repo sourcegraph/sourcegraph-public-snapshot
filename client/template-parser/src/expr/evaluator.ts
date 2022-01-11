@@ -1,4 +1,4 @@
-import { Context } from '../context'
+import { Context } from '../types'
 
 import { TokenType } from './lexer'
 import { ExpressionNode, Parser, TemplateParser } from './parser'

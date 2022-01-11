@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -48,7 +50,8 @@ func BlameFile(ctx context.Context, repo api.RepoName, path string, opt *BlameOp
 }
 
 func blameFileCmd(ctx context.Context, command cmdFunc, path string, opt *BlameOptions, repo api.RepoName, checker authz.SubRepoPermissionChecker) ([]*Hunk, error) {
-	if hasAccess, err := authz.HasAccessToPath(ctx, checker, repo, path); err != nil || !hasAccess {
+	a := actor.FromContext(ctx)
+	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil || !hasAccess {
 		return nil, err
 	}
 	if opt == nil {

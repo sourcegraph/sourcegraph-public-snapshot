@@ -15,6 +15,7 @@ import * as sourcegraph from 'sourcegraph'
 import { LOADING, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { asError, ErrorLike, isDefined } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
+import { Context } from '@sourcegraph/template-parser'
 
 import { getModeFromPath } from '../../languages'
 import { combineLatestOrDefault } from '../../util/rxjs/combineLatestOrDefault'
@@ -28,7 +29,7 @@ import { ExtensionViewer, ViewerId, ViewerWithPartialModel } from '../viewerType
 
 import { ExtensionCodeEditor } from './api/codeEditor'
 import { providerResultToObservable, ProxySubscribable, proxySubscribable } from './api/common'
-import { computeContext, Context, ContributionScope } from './api/context/context'
+import { computeContext, ContributionScope } from './api/context/context'
 import {
     evaluateContributions,
     filterContributions,

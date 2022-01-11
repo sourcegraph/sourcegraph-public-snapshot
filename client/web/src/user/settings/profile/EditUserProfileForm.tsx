@@ -4,7 +4,7 @@ import { useHistory } from 'react-router'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, Button } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
 import { UpdateUserResult, UpdateUserVariables } from '../../../graphql-operations'
@@ -80,14 +80,9 @@ export const EditUserProfileForm: React.FunctionComponent<Props> = ({ user, init
                     usernameFieldDisabled={!user.viewerCanChangeUsername}
                     disabled={loading}
                 />
-                <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={loading}
-                    id="test-EditUserProfileForm__save"
-                >
+                <Button type="submit" disabled={loading} id="test-EditUserProfileForm__save" variant="primary">
                     Save
-                </button>
+                </Button>
                 {error && <div className="mt-3 alert alert-danger">{error.message}</div>}
                 {data?.updateUser && (
                     <div className="mt-3 mb-0 alert alert-success test-EditUserProfileForm__success">

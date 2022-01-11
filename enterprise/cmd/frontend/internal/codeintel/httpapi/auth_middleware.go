@@ -26,7 +26,7 @@ var DefaultValidatorByCodeHost = AuthValidatorMap{
 	"github.com": enforceAuthViaGitHub,
 }
 
-var errVerificaitonNotSupported = errors.New("verification not supported for code host - see https://github.com/sourcegraph/sourcegraph/issues/4967")
+var errVerificationNotSupported = errors.New("verification not supported for code host - see https://github.com/sourcegraph/sourcegraph/issues/4967")
 
 // authMiddleware wraps the given upload handler with an authorization check. On each initial upload
 // request, the target repository is checked against the supplied auth validators. The matching validator
@@ -60,7 +60,7 @@ func authMiddleware(next http.Handler, db database.DB, authValidators AuthValida
 				return validator(ctx, query, repositoryName)
 			}
 
-			return http.StatusUnprocessableEntity, errVerificaitonNotSupported
+			return http.StatusUnprocessableEntity, errVerificationNotSupported
 		}()
 		if err != nil {
 			if statusCode >= 500 {

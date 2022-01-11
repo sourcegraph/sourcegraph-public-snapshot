@@ -66,6 +66,7 @@
     "./client/storybook",
     "./client/extension-api-types",
     "./client/extension-api",
+    "./client/template-parser",
     "./client/codeintellify",
   ],
   "go.lintTool": "golangci-lint",

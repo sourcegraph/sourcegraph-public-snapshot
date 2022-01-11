@@ -5,7 +5,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { keyExistsIn } from '@sourcegraph/shared/src/util/types'
 import { SelfHostedCta } from '@sourcegraph/web/src/components/SelfHostedCta'
-import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { queryExternalServices } from '../../../components/externalServices/backend'
@@ -243,13 +243,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             <p className="align-middle mb-0">
                 <span className="align-middle">Please try</span>{' '}
                 {owner.type === 'org' ? (
-                    <button
-                        type="button"
-                        className="btn btn-link font-weight-normal shadow-none p-0 border-0"
+                    <Button
+                        className="font-weight-normal shadow-none p-0 border-0"
                         onClick={toggleUpdateModal}
+                        variant="link"
                     >
                         updating the code host connection
-                    </button>
+                    </Button>
                 ) : (
                     <span className="align-middle">reconnecting the code host connection</span>
                 )}{' '}

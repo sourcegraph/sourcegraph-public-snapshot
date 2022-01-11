@@ -44,10 +44,10 @@ export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalP
 
     return (
         <Dialog className={styles.modal} onDismiss={onClose} aria-label="Delete code insight dashboard modal">
-            <button type="button" className={classNames('btn btn-icon', styles.closeButton)} onClick={onClose}>
+            <Button className={classNames('btn-icon', styles.closeButton)} onClick={onClose}>
                 <VisuallyHidden>Close</VisuallyHidden>
                 <CloseIcon />
-            </button>
+            </Button>
 
             <h2 className="text-danger">Delete ”{dashboard.title}”</h2>
 

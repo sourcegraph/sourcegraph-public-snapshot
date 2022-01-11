@@ -11,6 +11,7 @@ import { Subject } from 'rxjs'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -84,15 +85,15 @@ const OrgNode: React.FunctionComponent<OrgNodeProps> = ({ node, history, onDidUp
                             </>
                         )}
                     </Link>{' '}
-                    <button
-                        type="button"
-                        className="btn btn-sm btn-danger"
+                    <Button
                         onClick={deleteOrg}
                         disabled={loading === true}
                         data-tooltip="Delete organization"
+                        variant="danger"
+                        size="sm"
                     >
                         <DeleteIcon className="icon-inline" />
-                    </button>
+                    </Button>
                 </div>
             </div>
             {isErrorLike(loading) && <ErrorAlert className="mt-2" error={loading.message} />}

@@ -124,7 +124,8 @@ func TestDisplayLimit(t *testing.T) {
 				done: make(chan struct{}),
 			}
 
-			database.Mocks.Repos.Metadata = func(ctx context.Context, ids ...api2.RepoID) (_ []*types.SearchedRepo, err error) {
+			repos := database.NewStrictMockRepoStore()
+			repos.MetadataFunc.SetDefaultHook(func(_ context.Context, ids ...api2.RepoID) (_ []*types.SearchedRepo, err error) {
 				res := make([]*types.SearchedRepo, 0, len(ids))
 				for _, id := range ids {
 					res = append(res, &types.SearchedRepo{
@@ -132,9 +133,12 @@ func TestDisplayLimit(t *testing.T) {
 					})
 				}
 				return res, nil
-			}
+			})
+			db := database.NewStrictMockDB()
+			db.ReposFunc.SetDefaultReturn(repos)
 
 			ts := httptest.NewServer(&streamHandler{
+				db:                  db,
 				flushTickerInternal: 1 * time.Millisecond,
 				pingTickerInterval:  1 * time.Millisecond,
 				newSearchResolver: func(_ context.Context, _ database.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {

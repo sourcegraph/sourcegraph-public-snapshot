@@ -33,6 +33,8 @@ describe('StreamingSearchResults', () => {
     const streamingSearchResult = MULTIPLE_SEARCH_RESULT
 
     const defaultProps: StreamingSearchResultsProps = {
+        parsedSearchQuery: 'r:golang/oauth2 test f:travis',
+
         extensionsController,
         telemetryService: NOOP_TELEMETRY_SERVICE,
 
@@ -75,10 +77,7 @@ describe('StreamingSearchResults', () => {
     } as AuthenticatedUser
 
     beforeEach(() => {
-        useNavbarQueryState.setState({
-            searchCaseSensitivity: false,
-            searchQueryFromURL: 'r:golang/oauth2 test f:travis',
-        })
+        useNavbarQueryState.setState({ searchCaseSensitivity: false })
         useExperimentalFeatures.setState({ showSearchContext: true, codeMonitoring: false })
     })
 
@@ -86,7 +85,13 @@ describe('StreamingSearchResults', () => {
         useNavbarQueryState.setState({ searchCaseSensitivity: true, searchPatternType: SearchPatternType.regexp })
         const searchSpy = sinon.spy(defaultProps.streamSearch)
 
-        renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={searchSpy} />)
+        renderWrapper(
+            <StreamingSearchResults
+                {...defaultProps}
+                parsedSearchQuery="r:golang/oauth2 test f:travis"
+                streamSearch={searchSpy}
+            />
+        )
 
         sinon.assert.calledOnce(searchSpy)
         const call = searchSpy.getCall(0)
@@ -260,9 +265,13 @@ describe('StreamingSearchResults', () => {
                 },
             }
 
-            useNavbarQueryState.setState({ searchQueryFromURL: test.parsedSearchQuery })
-
-            renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(results)} />)
+            renderWrapper(
+                <StreamingSearchResults
+                    {...defaultProps}
+                    parsedSearchQuery={test.parsedSearchQuery}
+                    streamSearch={() => of(results)}
+                />
+            )
 
             userEvent.click(await screen.findByText(/some results excluded/i))
             const allChecks = await screen.findAllByTestId('streaming-progress-skipped-suggest-check')

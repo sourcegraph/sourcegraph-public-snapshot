@@ -246,11 +246,13 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                                     type="checkbox"
                                     onChange={onRequestTrialFieldChange}
                                 />
-                                Try Sourcegraph Enterprise free for 30 days{' '}
-                                {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                                <a target="_blank" rel="noopener" href="https://about.sourcegraph.com/pricing">
-                                    <HelpCircleOutlineIcon className="icon-inline" />
-                                </a>
+                                Try Sourcegraph Enterprise free for{' '}
+                                <span className="text-nowrap">
+                                    30 days {/* eslint-disable-next-line react/jsx-no-target-blank */}
+                                    <a target="_blank" rel="noopener" href="https://about.sourcegraph.com/pricing">
+                                        <HelpCircleOutlineIcon className="icon-inline" />
+                                    </a>
+                                </span>
                             </label>
                         </div>
                     </div>

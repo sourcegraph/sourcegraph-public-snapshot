@@ -11,7 +11,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
     >
       <button
         aria-pressed="false"
-        class="btn btn-sm btn-outline-secondary d-flex d-lg-none"
+        class="btn btn-outline-secondary btn-sm d-flex d-lg-none"
         type="button"
       >
         <svg
@@ -82,7 +82,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
           <button
             aria-label="Hide more matches on all results"
             aria-live="polite"
-            class="btn btn-sm btn-outline-secondary text-decoration-none"
+            class="btn btn-outline-secondary btn-sm text-decoration-none"
             data-testid="search-result-expand-btn"
             data-tooltip="Hide more matches on all results"
             type="button"
@@ -117,7 +117,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
     >
       <button
         aria-pressed="false"
-        class="btn btn-sm btn-outline-secondary d-flex d-lg-none"
+        class="btn btn-outline-secondary btn-sm d-flex d-lg-none"
         type="button"
       >
         <svg
@@ -213,7 +213,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           <button
             aria-label="Hide more matches on all results"
             aria-live="polite"
-            class="btn btn-sm btn-outline-secondary text-decoration-none"
+            class="btn btn-outline-secondary btn-sm text-decoration-none"
             data-testid="search-result-expand-btn"
             data-tooltip="Hide more matches on all results"
             type="button"
@@ -248,7 +248,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
     >
       <button
         aria-pressed="false"
-        class="btn btn-sm btn-outline-secondary d-flex d-lg-none"
+        class="btn btn-outline-secondary btn-sm d-flex d-lg-none"
         type="button"
       >
         <svg
@@ -505,7 +505,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           <button
             aria-label="Hide more matches on all results"
             aria-live="polite"
-            class="btn btn-sm btn-outline-secondary text-decoration-none"
+            class="btn btn-outline-secondary btn-sm text-decoration-none"
             data-testid="search-result-expand-btn"
             data-tooltip="Hide more matches on all results"
             type="button"
@@ -540,7 +540,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
     >
       <button
         aria-pressed="false"
-        class="btn btn-sm btn-outline-secondary d-flex d-lg-none"
+        class="btn btn-outline-secondary btn-sm d-flex d-lg-none"
         type="button"
       >
         <svg
@@ -638,7 +638,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
           <button
             aria-label="Hide more matches on all results"
             aria-live="polite"
-            class="btn btn-sm btn-outline-secondary text-decoration-none"
+            class="btn btn-outline-secondary btn-sm text-decoration-none"
             data-testid="search-result-expand-btn"
             data-tooltip="Hide more matches on all results"
             type="button"
@@ -673,7 +673,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
     >
       <button
         aria-pressed="false"
-        class="btn btn-sm btn-outline-secondary d-flex d-lg-none"
+        class="btn btn-outline-secondary btn-sm d-flex d-lg-none"
         type="button"
       >
         <svg
@@ -930,7 +930,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
           <button
             aria-label="Hide more matches on all results"
             aria-live="polite"
-            class="btn btn-sm btn-outline-secondary text-decoration-none"
+            class="btn btn-outline-secondary btn-sm text-decoration-none"
             data-testid="search-result-expand-btn"
             data-tooltip="Hide more matches on all results"
             type="button"
