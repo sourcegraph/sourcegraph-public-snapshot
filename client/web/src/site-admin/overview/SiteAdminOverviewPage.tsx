@@ -4,7 +4,6 @@ import { Observable, of } from 'rxjs'
 import { map, catchError } from 'rxjs/operators'
 
 import { ErrorLike, asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ActivationProps, percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -13,6 +12,7 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorAlert } from '../../components/alerts'
@@ -144,7 +144,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                     ))}
                 </div>
             )}
-            {info === undefined && <LoadingSpinner className="icon-inline" />}
+            {info === undefined && <LoadingSpinner />}
             <div className="pt-3 mb-4">
                 {activation?.completed && (
                     <Collapsible

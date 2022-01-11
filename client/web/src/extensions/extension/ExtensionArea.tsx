@@ -6,7 +6,6 @@ import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxj
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
 import { createAggregateError, ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import {
     ConfiguredRegistryExtension,
     splitExtensionID,
@@ -18,6 +17,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { queryGraphQL } from '../../backend/graphql'
@@ -220,7 +220,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
                 <ExtensionAreaHeader {...this.props} {...context} navItems={this.props.extensionAreaHeaderNavItems} />
                 <div className="container pt-3">
                     <ErrorBoundary location={this.props.location}>
-                        <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
+                        <React.Suspense fallback={<LoadingSpinner className="m-2" />}>
                             <Switch>
                                 {this.props.routes.map(
                                     ({ path, render, exact, condition = () => true }) =>

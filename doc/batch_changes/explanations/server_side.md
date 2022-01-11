@@ -33,7 +33,15 @@ Feedback on server side Batch Changes is very welcome, feel free to open an [iss
 
 ### Can large batch changes execution be distributed on multiple executors?
 
-They can! Each changeset that is computed can be run concurrently, provided there are enough executors available.
+They can! Each changeset that is computed can be assigned to a separate executor, provided there are enough executors available.
+
+### What additional resources do I need to provision to run server-side batch changes?
+
+See [deploying executors](../../admin/deploy_executors.md) page. The short answer is: as little as a single compute instance and a docker registry mirror if you just want to process batch changes at a small scale; an autoscaling group of instances if you want to process large batch changes very fast.
+
+### Can someone accidentally take down the Sourcegraph instance if they run too big a batch change?
+
+No. Executors have been designed for the Sourcegraph instance to offload resource-intensive tasks. The Sourcegraph instance itself only queues up batch changes for processing, tracks execution, then uses the resulting diffs to open and track changesets just as it would for batch changes created locally using the `src-cli`.
 
 ### I have several machines configured as executors, and they don't have the same specs (eg. memory). Can I submit some batch changes specifically to a given machine?
 

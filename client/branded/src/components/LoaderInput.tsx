@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import styles from './LoaderInput.module.scss'
 
@@ -16,6 +16,6 @@ interface Props {
 export const LoaderInput: React.FunctionComponent<Props> = ({ loading, children, className }) => (
     <div className={classNames(styles.container, className)}>
         {children}
-        {loading && <LoadingSpinner className={styles.spinner} />}
+        {loading && <LoadingSpinner inline={false} className={styles.spinner} />}
     </div>
 )

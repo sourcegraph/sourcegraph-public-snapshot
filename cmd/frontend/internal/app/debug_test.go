@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -109,22 +108,18 @@ func Test_prometheusValidator(t *testing.T) {
 }
 
 func TestGrafanaLicensing(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	t.Run("licensed requests succeed", func(t *testing.T) {
-		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-			return &types.User{ID: 1, SiteAdmin: true}, nil
-		}
-		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+		db := database.NewStrictMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
 
 		PreMountGrafanaHook = func() error { return nil }
 		defer func() { PreMountGrafanaHook = nil }()
 
 		router := mux.NewRouter()
-		// nil db as calls are mocked above
-		addGrafana(router, database.NewDB(nil))
+		addGrafana(router, db)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, httptest.NewRequest("GET", "/grafana", nil))
 
@@ -134,17 +129,18 @@ func TestGrafanaLicensing(t *testing.T) {
 	})
 
 	t.Run("non-licensed requests fail", func(t *testing.T) {
-		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-			return &types.User{ID: 1, SiteAdmin: true}, nil
-		}
-		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+		db := database.NewStrictMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
 
 		PreMountGrafanaHook = func() error { return errors.New("test fail") }
 		defer func() { PreMountGrafanaHook = nil }()
 
 		router := mux.NewRouter()
 		// nil db as calls are mocked above
-		addGrafana(router, database.NewDB(nil))
+		addGrafana(router, db)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, httptest.NewRequest("GET", "/grafana", nil))
 

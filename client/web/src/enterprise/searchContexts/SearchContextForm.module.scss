@@ -37,4 +37,11 @@
     &__visibility-title {
         cursor: pointer;
     }
+
+    &__query {
+        border-radius: 0.25rem;
+        padding: 0.5rem;
+        background-color: var(--color-bg-1);
+        border: 1px solid var(--border-color-2);
+    }
 }

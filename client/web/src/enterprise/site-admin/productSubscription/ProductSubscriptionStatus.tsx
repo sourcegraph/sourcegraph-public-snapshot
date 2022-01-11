@@ -5,11 +5,11 @@ import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { numberWithCommas } from '@sourcegraph/shared/src/util/strings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -72,7 +72,7 @@ export const ProductSubscriptionStatus: React.FunctionComponent<Props> = ({ clas
     if (statusOrError === undefined) {
         return (
             <div className="text-center">
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             </div>
         )
     }

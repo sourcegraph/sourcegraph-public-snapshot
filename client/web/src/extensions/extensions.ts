@@ -1,4 +1,4 @@
-import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
 import {
     ConfiguredRegistryExtension,
     isExtensionEnabled,
@@ -7,7 +7,6 @@ import {
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { RegistryExtensionFieldsForList } from '../graphql-operations'
 

@@ -6,7 +6,7 @@ import SyncIcon from 'mdi-react/SyncIcon'
 import React, { useState, useEffect, useCallback } from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, HiddenExternalChangesetFields } from '../../../../graphql-operations'
 import { syncChangeset } from '../backend'
@@ -93,6 +93,7 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
                         typeof lastUpdatedAt !== 'string' && viewerCanAdminister && 'cursor-pointer'
                     )}
                     onClick={enqueueChangeset}
+                    inline={false}
                 />
             </span>
         </small>

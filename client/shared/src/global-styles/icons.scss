@@ -42,14 +42,3 @@ img.icon-inline,
 .icon-inline > .icon-loader {
     stroke: currentColor;
 }
-
-// @sourcegraph/react-loading-spinner coloring
-.theme-light {
-    --loading-spinner-outer-color: var(--gray-05);
-    --loading-spinner-inner-color: var(--gray-08);
-}
-
-.theme-dark {
-    --loading-spinner-outer-color: var(--gray-07);
-    --loading-spinner-inner-color: var(--white);
-}

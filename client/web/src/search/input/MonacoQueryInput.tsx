@@ -10,7 +10,7 @@ import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestio
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
+import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '..'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
@@ -52,14 +52,11 @@ export const DEFAULT_MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstruction
     cursorWidth: 1,
 }
 
-type NativeElementProps = Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'>
-
 export interface MonacoQueryInputProps
     extends ThemeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        Pick<PatternTypeProps, 'patternType'>,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
-        NativeElementProps {
+        SearchPatternTypeProps,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
     onChange: (newState: QueryState) => void
@@ -83,6 +80,14 @@ export interface MonacoQueryInputProps
     height?: string | number
     preventNewLine?: boolean
     editorOptions?: Monaco.editor.IStandaloneEditorConstructionOptions
+
+    /**
+     * NOTE: This is currently only used for Insights code through
+     * the MonacoField component: client/web/src/enterprise/insights/components/form/monaco-field/MonacoField.tsx
+     *
+     * Issue to improve this: https://github.com/sourcegraph/sourcegraph/issues/29438
+     */
+    placeholder?: string
 }
 
 /**
@@ -161,7 +166,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     caseSensitive,
     keyboardShortcutForFocus,
     onEditorCreated: onEditorCreatedCallback,
-    ...nativeElementProps
+    placeholder,
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
 
@@ -376,7 +381,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     return (
         <div
             ref={setContainer}
-            {...nativeElementProps}
+            data-placeholder={placeholder}
             className={classNames('flex-grow-1 flex-shrink-past-contents', className)}
             onFocus={onFocus}
         >

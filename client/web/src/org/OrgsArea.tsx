@@ -13,7 +13,6 @@ import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { BatchChangesProps } from '../batches'
 import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
-import { PatternTypeProps } from '../search'
 
 import { OrgArea, OrgAreaRoute } from './area/OrgArea'
 import { OrgAreaHeaderNavItem } from './area/OrgHeader'
@@ -36,8 +35,7 @@ interface Props
         TelemetryProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        BatchChangesProps,
-        Omit<PatternTypeProps, 'setPatternType'> {
+        BatchChangesProps {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 

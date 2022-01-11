@@ -186,6 +186,7 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: '',
                     viewerCanManage: true,
+                    query: '',
                     repositories: repositories.map(repository => ({
                         __typename: 'SearchContextRepositoryRevisions',
                         revisions: repository.revisions,
@@ -265,6 +266,7 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: true,
+                    query: '',
                     repositories: repositories.map(repository => ({
                         __typename: 'SearchContextRepositoryRevisions',
                         revisions: repository.revisions,
@@ -288,6 +290,7 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: true,
+                    query: '',
                     repositories: [
                         {
                             __typename: 'SearchContextRepositoryRevisions',
@@ -363,6 +366,7 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: false,
+                    query: '',
                     repositories: [],
                 },
             }),
@@ -402,6 +406,7 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: true,
+                    query: '',
                     repositories: [
                         {
                             __typename: 'SearchContextRepositoryRevisions',
@@ -448,6 +453,7 @@ describe('Search contexts', () => {
                     viewerCanManage: false,
                     description: '',
                     repositories: [],
+                    query: '',
                     updatedAt: subDays(new Date(), 1).toISOString(),
                 })) as ISearchContext[]
 
@@ -526,6 +532,7 @@ describe('Search contexts', () => {
                     viewerCanManage: false,
                     description: '',
                     repositories: [],
+                    query: '',
                     updatedAt: subDays(new Date(), 1).toISOString(),
                 })) as ISearchContext[]
 

@@ -3,14 +3,13 @@
 ## General
 
 - [Configure data retention policies](configure_data_retention.md)
-- [Add a GitHub repository to your Sourcegraph instance](add_a_repository.md)
 
 ## Language-specific guides
 
 - [Index a Go repository](index_a_go_repository.md)
 - [Index a TypeScript or JavaScript repository](index_a_typescript_and_javascript_repository.md)
 - [Index a C++ repository](index_a_cpp_repository.md)
-- [Index other languages](index_other_languages.md)
+- [Index a Java, Scala & Kotlin repository](https://sourcegraph.github.io/lsif-java/docs/getting-started.html)
 
 ## Automate uploading LSIF data
 

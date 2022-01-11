@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
-# This runs a published or local server image.
+# This runs a published or local server image for testing and development purposes.
 
+IMAGE=${IMAGE:-sourcegraph/server:${TAG:-insiders}}
+URL=${URL:-"http://localhost:7080"}
 DATA=/tmp/sourcegraph
+
+echo "--- Checking for existing Sourcegraph instance at $URL"
+if curl --output /dev/null --silent --head --fail "$URL"; then
+  echo "❌ Can't run a new Sourcegraph instance on $URL because another instance is already running."
+  echo "❌ The last time this happened, there was a runaway integration test run on the same Buildkite agent and the fix was to delete the pod and rebuild."
+  exit 1
+fi
 
 # shellcheck disable=SC2153
 case "$CLEAN" in
-
   "true")
     clean=y
     ;;
@@ -19,13 +27,11 @@ case "$CLEAN" in
 esac
 
 if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
-  echo "deleting $DATA"
+  echo "--- Deleting $DATA"
   rm -rf $DATA
 fi
 
-# docker run pulls image if not found locally
-IMAGE=${IMAGE:-sourcegraph/server:${TAG:-insiders}}
-echo "starting server ${IMAGE}"
+echo "--- Starting server ${IMAGE}"
 docker run "$@" \
   --publish 7080:7080 \
   --rm \

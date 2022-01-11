@@ -1,9 +1,9 @@
 import classNames from 'classnames'
 import { map } from 'rxjs/operators'
 
+import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { Position } from '@sourcegraph/extension-api-types'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/shared/src/codeintellify'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
