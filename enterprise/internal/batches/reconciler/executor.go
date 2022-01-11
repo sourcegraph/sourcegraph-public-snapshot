@@ -464,7 +464,7 @@ func loadRemoteRepo(ctx context.Context, css sources.ChangesetSource, targetRepo
 	// previously created using a fork, then we don't need to even check if the
 	// changeset source is forkable, let alone set up the remote repo: we can
 	// just return the target repo and be done with it.
-	if !conf.Get().BatchChangesEnforceForks && (ch == nil || ch.ExternalForkNamespace == "") {
+	if !conf.Get().BatchChangesEnforceForks && ch.ExternalForkNamespace == "" {
 		return targetRepo, nil
 	}
 
@@ -476,7 +476,7 @@ func loadRemoteRepo(ctx context.Context, css sources.ChangesetSource, targetRepo
 	// If we're updating an existing changeset, we should push/modify the same
 	// fork, even if the user credential would now fork into a different
 	// namespace.
-	if ch != nil && ch.ExternalForkNamespace != "" {
+	if ch.ExternalForkNamespace != "" {
 		return fss.GetNamespaceFork(ctx, targetRepo, ch.ExternalForkNamespace)
 	}
 
