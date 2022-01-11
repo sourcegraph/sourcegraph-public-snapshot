@@ -28,7 +28,7 @@ function go_test() {
 
   local xml=$(cat "$tmpfile" | go-junit-report)
   # escape xml output properly for JSON
-  local quoted_xml="$( jq --null-input --compact-output --arg str "$xml" '$str' )"
+  local quoted_xml="$( echo $xml | jq -R -s '.' )"
 
   local data=$(cat <<EOF
 {
@@ -37,7 +37,7 @@ function go_test() {
     "CI": "buildkite",
     "key": "$BUILDKITE_BUILD_ID",
     "job_id": "$BUILDKITE_JOB_ID",
-    "branch": "$BUILDKITE_BRANCH_NAME",
+    "branch": "$BUILDKITE_BRANCH",
     "commit_sha": "$BUILDKITE_COMMIT",
     "message": "$BUILDKITE_MESSAGE",
     "url": "$BUILDKITE_BUILD_URL"
@@ -47,11 +47,11 @@ function go_test() {
 EOF
   )
 
-  curl --request POST \
+  echo $data | curl --request POST \
   --url https://analytics-api.buildkite.com/v1/uploads \
   --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY\";" \
   --header 'Content-Type: application/json' \
-  --data "$xml"
+  --data-binary @-
 }
 
 if [ "$1" == "-h" ]; then
