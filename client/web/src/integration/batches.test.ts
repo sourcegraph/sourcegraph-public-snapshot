@@ -683,6 +683,7 @@ describe('Batches', () => {
                                                     __typename: 'GitBranchChangesetDescription',
                                                     baseRef: 'main',
                                                     headRef: 'head-ref',
+                                                    fork: false,
                                                     baseRepository: {
                                                         name: 'github.com/sourcegraph/repo',
                                                         url: 'http://test.test/repo',
