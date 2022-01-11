@@ -7,17 +7,17 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { Badged } from 'sourcegraph'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isDefined, property } from '@sourcegraph/shared/src/util/types'
+import { property } from '@sourcegraph/shared/src/util/types'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import styles from './FileLocations.module.scss'
 
@@ -122,7 +122,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
             return <FileLocationsError error={this.state.locationsOrError} />
         }
         if (this.state.locationsOrError === LOADING) {
-            return <LoadingSpinner className="icon-inline m-1" />
+            return <LoadingSpinner className="m-1" />
         }
         if (this.state.locationsOrError === null || this.state.locationsOrError.length === 0) {
             return this.props.parentContainerIsEmpty ? <FileLocationsNotFound /> : <FileLocationsNoGroupSelected />

@@ -1,6 +1,8 @@
 import Dialog from '@reach/dialog'
 import React from 'react'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
 
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
@@ -49,9 +51,9 @@ export const ViewCredentialModal: React.FunctionComponent<ViewCredentialModalPro
             />
 
             <div className="d-flex justify-content-end">
-                <button type="button" className="btn btn-outline-secondary" onClick={onClose}>
+                <Button onClick={onClose} outline={true} variant="secondary">
                     Close
-                </button>
+                </Button>
             </div>
         </Dialog>
     )

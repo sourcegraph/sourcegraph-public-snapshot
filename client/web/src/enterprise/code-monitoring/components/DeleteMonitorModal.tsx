@@ -4,8 +4,8 @@ import { Observable, throwError } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { CodeMonitorFormProps } from './CodeMonitorForm'
 
@@ -66,25 +66,18 @@ export const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({
             </p>
             {(!deleteCompletedOrError || isErrorLike(deleteCompletedOrError)) && (
                 <div className="text-right">
-                    <button type="button" className="btn btn-outline-secondary mr-2" onClick={toggleDeleteModal}>
+                    <Button className="mr-2" onClick={toggleDeleteModal} outline={true} variant="secondary">
                         Cancel
-                    </button>
-                    <button
-                        type="button"
-                        className="btn btn-danger"
-                        onClick={onDelete}
-                        data-testid="confirm-delete-monitor"
-                    >
+                    </Button>
+                    <Button onClick={onDelete} data-testid="confirm-delete-monitor" variant="danger">
                         Yes, delete code monitor
-                    </button>
+                    </Button>
                     {isErrorLike(deleteCompletedOrError) && (
                         <div className="alert-danger">Error deleting monitor: {deleteCompletedOrError.message}</div>
                     )}
                 </div>
             )}
-            {deleteCompletedOrError && (
-                <div>{deleteCompletedOrError === 'loading' && <LoadingSpinner className="icon-inline" />}</div>
-            )}
+            {deleteCompletedOrError && <div>{deleteCompletedOrError === 'loading' && <LoadingSpinner />}</div>}
         </Dialog>
     )
 }

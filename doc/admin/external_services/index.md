@@ -8,7 +8,7 @@ Sourcegraph by default provides versions of services it needs to operate, includ
 - A second PostgreSQL instance for storing large-volume precise code intelligence data.
 - A [Redis](https://redis.io/) instance for storing short-term information such as user sessions.
 - A second Redis instance for storing cache data.
-- A [MinIO](https://min.io/) instance that serves as a local S3-compatible object storage to hold user uploads before they can be processed.
+- A [MinIO](https://min.io/) instance that serves as a local S3-compatible object storage to hold user uploads before they can be processed. _This data is for temporary storage and content will be automatically deleted once processed._
 - A [Jaeger](https://www.jaegertracing.io/) instance for end-to-end distributed tracing. 
 
 Your Sourcegraph instance can be configured to use an external or managed version of these services. Using a managed version of PostgreSQL can make backups and recovery easier to manage and perform. Using a managed object storage service may decrease your hosting costs as persistent volumes are often more expensive than object storage space.

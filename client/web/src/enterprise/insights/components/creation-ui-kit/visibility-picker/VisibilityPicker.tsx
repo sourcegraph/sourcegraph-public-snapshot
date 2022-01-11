@@ -36,6 +36,8 @@ export interface VisibilityPickerProps {
 
 /**
  * Shared component for visibility field for creation UI pages.
+ *
+ * @deprecated - it's used only for setting based API which is deprecated.
  */
 export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = props => {
     const { value, subjects, onChange, labelClassName } = props

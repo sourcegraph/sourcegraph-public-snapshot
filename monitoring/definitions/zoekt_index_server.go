@@ -1,6 +1,7 @@
 package definitions
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/grafana-tools/sdk"
@@ -21,19 +22,12 @@ func ZoektIndexServer() *monitoring.Container {
 		Title:                    "Zoekt Index Server",
 		Description:              "Indexes repositories and populates the search index.",
 		NoSourcegraphDebugServer: true,
-		Templates: []sdk.TemplateVar{
+		Variables: []monitoring.ContainerVariable{
 			{
-				Label:      "Instance",
-				Name:       "instance",
-				Type:       "query",
-				Datasource: monitoring.StringPtr("Prometheus"),
-				Query:      "label_values(index_num_assigned, instance)",
-				Multi:      true,
-				Refresh:    sdk.BoolInt{Flag: true, Value: monitoring.Int64Ptr(2)}, // Refresh on time range change
-				Sort:       3,
-				IncludeAll: true,
-				AllValue:   ".*",
-				Current:    sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"},
+				Label: "Instance",
+				Name:  "instance",
+				Query: "label_values(index_num_assigned, instance)",
+				Multi: true,
 			},
 		},
 		Groups: []monitoring.Group{
@@ -247,6 +241,217 @@ func ZoektIndexServer() *monitoring.Container {
 							Panel:          monitoring.Panel().LegendFormat("{{instance}} jobs"),
 							Owner:          monitoring.ObservableOwnerSearchCore,
 							Interpretation: "A queue that is constantly growing could be a leading indicator of a bottleneck or under-provisioning",
+						},
+					},
+				},
+			},
+			{
+				Title:  "Compound shards (experimental)",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "compound_shards_aggregate",
+							Description: "# of compound shards (aggregate)",
+							Query:       "sum(index_number_compound_shards) by (app)",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("aggregate").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								The total number of compound shards aggregated over all instances.
+
+								This number should be consistent if the number of indexed repositories doesn't change.
+							`,
+						},
+						{
+							Name:        "compound_shards_per_instance",
+							Description: "# of compound shards (per instance)",
+							Query:       "sum(index_number_compound_shards{instance=~`${instance:regex}`}) by (instance)",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								The total number of compound shards per instance.
+
+								This number should be consistent if the number of indexed repositories doesn't change.
+							`,
+						},
+					},
+					{
+						{
+							Name:        "average_shard_merging_duration_success",
+							Description: "average successful shard merging duration over 1 hour",
+							Query:       "sum(rate(index_shard_merging_duration_seconds_sum{error=\"false\"}[1h])) / sum(rate(index_shard_merging_duration_seconds_count{error=\"false\"}[1h]))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("average").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Average duration of a successful merge over the last hour.
+
+								The duration depends on the target compound shard size. The larger the compound shard the longer a merge will take.
+								Since the target compound shard size is set on start of zoekt-indexserver, the average duration should be consistent.
+							`,
+						},
+						{
+							Name:        "average_shard_merging_duration_error",
+							Description: "average failed shard merging duration over 1 hour",
+							Query:       "sum(rate(index_shard_merging_duration_seconds_sum{error=\"true\"}[1h])) / sum(rate(index_shard_merging_duration_seconds_count{error=\"true\"}[1h]))",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Average duration of a failed merge over the last hour.
+
+								This curve should be flat. Any deviation should be investigated.
+							`,
+						},
+					},
+					{
+						{
+							Name:        "shard_merging_errors_aggregate",
+							Description: "number of errors during shard merging (aggregate)",
+							Query:       "sum(index_shard_merging_duration_seconds_count{error=\"true\"}) by (app)",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("aggregate").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Number of errors during shard merging aggregated over all instances.
+							`,
+						},
+						{
+							Name:        "shard_merging_errors_per_instance",
+							Description: "number of errors during shard merging (per instance)",
+							Query:       "sum(index_shard_merging_duration_seconds_count{instance=~`${instance:regex}`, error=\"true\"}) by (instance)",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Number of errors during shard merging per instance.
+							`,
+						},
+					},
+					{
+						{
+							Name:        "shard_merging_merge_running_per_instance",
+							Description: "if shard merging is running (per instance)",
+							Query:       "max by (instance) (index_shard_merging_running{instance=~`${instance:regex}`})",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Set to 1 if shard merging is running.
+							`,
+						},
+						{
+							Name:        "shard_merging_vacuum_running_per_instance",
+							Description: "if vacuum is running (per instance)",
+							Query:       "max by (instance) (index_vacuum_running{instance=~`${instance:regex}`})",
+							NoAlert:     true,
+							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerSearchCore,
+							Interpretation: `
+								Set to 1 if vacuum is running.
+							`,
+						},
+					},
+				},
+			},
+			{
+				Title:  "Network I/O pod metrics (only available on Kubernetes)",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "network_sent_bytes_aggregate",
+							Description: "transmission rate over 5m (aggregate)",
+							Query:       fmt.Sprintf("sum(rate(container_network_transmit_bytes_total{%s}[5m]))", shared.CadvisorPodNameMatcher(bundledContainerName)),
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat(bundledContainerName).Unit(monitoring.BytesPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "The rate of bytes sent over the network across all Zoekt pods",
+						},
+						{
+							Name:        "network_received_packets_per_instance",
+							Description: "transmission rate over 5m (per instance)",
+							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_bytes_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").Unit(monitoring.BytesPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "The amount of bytes sent over the network by individual Zoekt pods",
+						},
+					},
+					{
+						{
+							Name:        "network_received_bytes_aggregate",
+							Description: "receive rate over 5m (aggregate)",
+							Query:       fmt.Sprintf("sum(rate(container_network_receive_bytes_total{%s}[5m]))", shared.CadvisorPodNameMatcher(bundledContainerName)),
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat(bundledContainerName).Unit(monitoring.BytesPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "The amount of bytes received from the network across Zoekt pods",
+						},
+						{
+							Name:        "network_received_bytes_per_instance",
+							Description: "receive rate over 5m (per instance)",
+							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_bytes_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").Unit(monitoring.BytesPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "The amount of bytes received from the network by individual Zoekt pods",
+						},
+					},
+					{
+						{
+							Name:        "network_transmitted_packets_dropped_by_instance",
+							Description: "transmit packet drop rate over 5m (by instance)",
+							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_packets_dropped_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").Unit(monitoring.PacketsPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "An increase in dropped packets could be a leading indicator of network saturation.",
+						},
+						{
+							Name:        "network_transmitted_packets_errors_per_instance",
+							Description: "errors encountered while transmitting over 5m (per instance)",
+							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_errors_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}} errors").With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "An increase in transmission errors could indicate a networking issue",
+						},
+						{
+							Name:        "network_received_packets_dropped_by_instance",
+							Description: "receive packet drop rate over 5m (by instance)",
+							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_packets_dropped_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").Unit(monitoring.PacketsPerSecond).With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "An increase in dropped packets could be a leading indicator of network saturation.",
+						},
+						{
+							Name:        "network_transmitted_packets_errors_by_instance",
+							Description: "errors encountered while receiving over 5m (per instance)",
+							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_errors_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}} errors").With(func(o monitoring.Observable, p *sdk.Panel) {
+								p.GraphPanel.Legend.RightSide = true
+							}),
+							Owner:          monitoring.ObservableOwnerSearchCore,
+							Interpretation: "An increase in errors while receiving could indicate a networking issue.",
 						},
 					},
 				},

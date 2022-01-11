@@ -3,7 +3,7 @@ import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ProductStatusBadge } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 
@@ -68,16 +68,15 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
             >
                 {buttonText}
             </Link>
-            <button
-                type="button"
-                className={classNames(
-                    'btn btn-outline-secondary btn-sm border-0 ml-2',
-                    styles.searchContextCtaPromptButton
-                )}
+            <Button
+                className={classNames('border-0 ml-2', styles.searchContextCtaPromptButton)}
                 onClick={onDismissClick}
+                outline={true}
+                variant="secondary"
+                size="sm"
             >
                 Don't show this again
-            </button>
+            </Button>
         </div>
     )
 }

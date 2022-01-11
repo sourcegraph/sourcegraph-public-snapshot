@@ -9,6 +9,7 @@ import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operator
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { Button } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorAlert } from '../../components/alerts'
@@ -112,15 +113,16 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                             </a>
                         )}
                         {this.props.node.viewerCanAdminister && (
-                            <button
-                                type="button"
-                                className="btn btn-danger btn-sm ml-1"
+                            <Button
+                                className="ml-1"
                                 onClick={this.deleteExtension}
                                 disabled={loading}
                                 title="Delete extension"
+                                variant="danger"
+                                size="sm"
                             >
                                 Delete
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </div>

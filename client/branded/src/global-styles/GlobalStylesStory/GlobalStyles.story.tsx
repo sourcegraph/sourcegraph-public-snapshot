@@ -11,6 +11,7 @@ import 'storybook-addon-designs'
 
 import { registerHighlightContributions } from '@sourcegraph/shared/src/highlight/contributions'
 import { highlightCodeSafe } from '@sourcegraph/shared/src/util/markdown'
+import { Button } from '@sourcegraph/wildcard'
 
 import { BrandedStory } from '../../components/BrandedStory'
 import { CodeSnippet } from '../../components/CodeSnippet'
@@ -266,43 +267,37 @@ export const ButtonGroups: Story = () => {
                 </p>
                 <div className="mb-2">
                     <div className="btn-group" role="group" aria-label="Basic example">
-                        <button type="button" className="btn btn-secondary">
-                            Left
-                        </button>
-                        <button type="button" className="btn btn-secondary">
-                            Middle
-                        </button>
-                        <button type="button" className="btn btn-secondary">
-                            Right
-                        </button>
+                        <Button variant="secondary">Left</Button>
+                        <Button variant="secondary">Middle</Button>
+                        <Button variant="secondary">Right</Button>
                     </div>{' '}
                     Example with <code>btn-secondary</code>
                 </div>
                 <div className="mb-2">
                     <div className="btn-group" role="group" aria-label="Basic example">
-                        <button type="button" className="btn btn-outline-secondary">
+                        <Button outline={true} variant="secondary">
                             Left
-                        </button>
-                        <button type="button" className="btn btn-outline-secondary">
+                        </Button>
+                        <Button outline={true} variant="secondary">
                             Middle
-                        </button>
-                        <button type="button" className="btn btn-outline-secondary">
+                        </Button>
+                        <Button outline={true} variant="secondary">
                             Right
-                        </button>
+                        </Button>
                     </div>{' '}
                     Example with <code>btn-outline-secondary</code>
                 </div>
                 <div className="mb-2">
                     <div className="btn-group" role="group" aria-label="Basic example">
-                        <button type="button" className="btn btn-outline-primary">
+                        <Button outline={true} variant="primary">
                             Left
-                        </button>
-                        <button type="button" className="btn btn-outline-primary">
+                        </Button>
+                        <Button outline={true} variant="primary">
                             Middle
-                        </button>
-                        <button type="button" className="btn btn-outline-primary">
+                        </Button>
+                        <Button outline={true} variant="primary">
                             Right
-                        </button>
+                        </Button>
                     </div>{' '}
                     Example with <code>btn-outline-primary</code>
                 </div>
@@ -316,15 +311,15 @@ export const ButtonGroups: Story = () => {
                 {['btn-group-lg', '', 'btn-group-sm'].map(size => (
                     <div key={size} className="mb-2">
                         <div className={classNames('btn-group', size)} role="group" aria-label="Sizing example">
-                            <button type="button" className="btn btn-outline-primary">
+                            <Button outline={true} variant="primary">
                                 Left
-                            </button>
-                            <button type="button" className="btn btn-outline-primary">
+                            </Button>
+                            <Button outline={true} variant="primary">
                                 Middle
-                            </button>
-                            <button type="button" className="btn btn-outline-primary">
+                            </Button>
+                            <Button outline={true} variant="primary">
                                 Right
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 ))}
@@ -337,14 +332,16 @@ export const ButtonGroups: Story = () => {
             <div className="mb-2">
                 <div className="btn-group" role="group" aria-label="Basic example">
                     {(['Left', 'Middle', 'Right'] as const).map(option => (
-                        <button
+                        <Button
                             key={option}
-                            className={classNames('btn', 'btn-outline-secondary', option === active && 'active')}
+                            className={classNames(option === active && 'active')}
                             onClick={() => setActive(option)}
                             aria-pressed={option === active}
+                            outline={true}
+                            variant="secondary"
                         >
                             {option}
-                        </button>
+                        </Button>
                     ))}
                 </div>{' '}
                 Example with <code>btn-outline-secondary</code>
@@ -352,14 +349,16 @@ export const ButtonGroups: Story = () => {
             <div className="mb-2">
                 <div className="btn-group" role="group" aria-label="Basic example">
                     {(['Left', 'Middle', 'Right'] as const).map(option => (
-                        <button
+                        <Button
                             key={option}
-                            className={classNames('btn', 'btn-outline-primary', option === active && 'active')}
+                            className={classNames(option === active && 'active')}
                             onClick={() => setActive(option)}
                             aria-pressed={option === active}
+                            outline={true}
+                            variant="primary"
                         >
                             {option}
-                        </button>
+                        </Button>
                     ))}
                 </div>{' '}
                 Example with <code>btn-outline-primary</code>
@@ -394,9 +393,9 @@ export const InputGroups: Story = () => (
             <div className="input-group" style={{ maxWidth: '24rem' }}>
                 <input type="search" className="form-control" placeholder="Search code..." aria-label="Search query" />
                 <div className="input-group-append">
-                    <button className="btn btn-primary" type="submit">
+                    <Button type="submit" variant="primary">
                         Submit
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>
@@ -450,9 +449,9 @@ export const Forms: Story = () => (
                     Check me out
                 </label>
             </div>
-            <button type="submit" className="btn btn-primary">
+            <Button type="submit" variant="primary">
                 Submit
-            </button>
+            </Button>
         </Form>
 
         <h2 className="mt-3">Disabled</h2>
@@ -481,9 +480,9 @@ export const Forms: Story = () => (
                         </label>
                     </div>
                 </div>
-                <button type="submit" className="btn btn-primary">
+                <Button type="submit" variant="primary">
                     Submit
-                </button>
+                </Button>
             </fieldset>
         </Form>
 

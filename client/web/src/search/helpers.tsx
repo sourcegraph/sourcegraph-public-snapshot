@@ -11,11 +11,11 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { SearchType } from './results/StreamingSearchResults'
 
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '.'
+import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '.'
 
 export interface SubmitSearchParameters
     extends Partial<Pick<ActivationProps, 'activation'>>,
-        Pick<PatternTypeProps, 'patternType'>,
+        SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     history: H.History

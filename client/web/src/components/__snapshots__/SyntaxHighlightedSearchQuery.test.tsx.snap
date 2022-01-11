@@ -8,13 +8,23 @@ exports[`SyntaxHighlightedSearchQuery should syntax highlight filter 1`] = `
     <span
       class="search-filter-keyword"
     >
-      repo:
+      repo
+    </span>
+    <span
+      class="search-filter-separator"
+    >
+      :
     </span>
     sourcegraph 
     <span
       class="search-filter-keyword"
     >
-      lang:
+      lang
+    </span>
+    <span
+      class="search-filter-separator"
+    >
+      :
     </span>
     go
   </span>
@@ -29,7 +39,12 @@ exports[`SyntaxHighlightedSearchQuery should syntax highlight filter and operato
     <span
       class="search-filter-keyword"
     >
-      repo:
+      repo
+    </span>
+    <span
+      class="search-filter-separator"
+    >
+      :
     </span>
     sourcegraph test 
     <span
@@ -50,7 +65,12 @@ exports[`SyntaxHighlightedSearchQuery should syntax highlight negated filter 1`]
     <span
       class="search-filter-keyword"
     >
-      -lang:
+      -lang
+    </span>
+    <span
+      class="search-filter-separator"
+    >
+      :
     </span>
     ts test
   </span>

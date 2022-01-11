@@ -8,7 +8,6 @@ import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -17,6 +16,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { ErrorMessage } from '../../components/alerts'
@@ -334,9 +334,9 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 <div>
                     <div className="alert alert-info">
                         Syntax-highlighting this file took too long. &nbsp;
-                        <button type="button" onClick={onExtendTimeoutClick} className="btn btn-sm btn-primary">
+                        <Button onClick={onExtendTimeoutClick} variant="primary" size="sm">
                             Try again
-                        </button>
+                        </Button>
                     </div>
                 </div>
             )}

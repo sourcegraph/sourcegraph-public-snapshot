@@ -3,10 +3,10 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo, useRef, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { authenticatedUser } from '@sourcegraph/web/src/auth'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
@@ -54,7 +54,11 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const user = useObservable(authenticatedUser)
 
     if (dashboards === undefined) {
-        return <LoadingSpinner />
+        return (
+            <div data-testid="loading-spinner">
+                <LoadingSpinner inline={false} />
+            </div>
+        )
     }
 
     const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)

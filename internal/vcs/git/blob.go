@@ -9,6 +9,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -45,8 +46,11 @@ func NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, 
 	if Mocks.NewFileReader != nil {
 		return Mocks.NewFileReader(commit, name)
 	}
-	if hasAccess, err := authz.HasAccessToPath(ctx, checker, repo, name); err != nil || !hasAccess {
+	a := actor.FromContext(ctx)
+	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, name); err != nil {
 		return nil, err
+	} else if !hasAccess {
+		return nil, os.ErrNotExist
 	}
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetFileReader")

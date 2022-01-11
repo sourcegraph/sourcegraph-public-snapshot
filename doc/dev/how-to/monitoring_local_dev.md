@@ -26,22 +26,29 @@ You can follow the instructions below for spinning up individual monitoring comp
 #### Grafana
 
 Running just Grafana is a convenient way to validate dashboards.
+
 When doing so, you may wish to connect Grafana to a remote Prometheus instance that you have administrator access to (such as [Sourcegraph's instances](https://handbook.sourcegraph.com/engineering/deployments/instances)), to show more real data than is available on your dev server.
-For Kubernetes deployments, you can do this by getting `kubectl` connected to a Sourcegraph cluster and then port-forwarding Prometheus via:
 
-```sh
-kubectl port-forward svc/prometheus 9090:30090
+For Kubernetes deployments, you can accomplish this by creating a [sg.config.overwrite.yaml file](../background-information/sg/index.md#Configuration) that replaces your local Prometheus instance with a `kubectl` command that port-forwards traffic from the Prometheus service on the Kubernetes cluster that you're currently connected to:
+
+```yaml
+# sg.config.overwrite.yaml
+
+commands:
+  prometheus:
+    cmd: |
+      kubectl port-forward svc/prometheus 9090:30090
 ```
 
-Then, you can start up a standalone Grafana using:
+Then, you can start up the local dev monitoring stack by using:
 
 ```sh
-./dev/grafana.sh
+sg start monitoring
 ```
 
-Dashboards will be available at `localhost:3030`.
+Grafana dashboards will be available at `localhost:3370`.
 
-Note that instead of `kubectl`, you can use whichever port-forwarding mechanism you wish to connect to a remote Prometheus instance as well, as long as Prometheus is available on port `9090` locally.
+Note that instead of `kubectl`, you can replace the command in the sg.config.overwrite.yaml above to use whichever port-forwarding mechanism you wish to use to connect to a remote Prometheus instance (as long as Prometheus is available on port `9090` locally).
 The dev targets for Grafana are defined in the following files:
 
 * Non-Linux: [`dev/grafana/all/datasources.yaml`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/grafana/all/datasources.yaml)
@@ -53,7 +60,7 @@ Running just Prometheus is a convenient way to validate the generated recording 
 You can start up a standalone Prometheus using:
 
 ```sh
-./dev/prometheus.sh
+sg run prometheus
 ```
 
 The loaded generated recording and alert rules are available at `http://localhost:9090/rules`.
@@ -91,7 +98,7 @@ The docsite is used to serve generated monitoring documentation, such as the [al
 You can spin it up by running:
 
 ```sh
-yarn docsite:serve
+sg run docsite
 ```
 
 Learn more about docsite development in the [product documentation implementation guide](documentation_implementation.md).
@@ -107,10 +114,10 @@ This means that you can:
 * Run the generator to regenerate and reload monitoring services
 * Validate the result of your changes immediately (for example, by checking Prometheus rules in `/rules` or Grafana dashboards in `/-/debug/grafana`)
 
-To run the generator and trigger a reload:
+To run the generator and trigger a reload on changes:
 
 ```sh
-RELOAD=true go generate ./monitoring
+sg run monitoring-generator
 ```
 
 Make sure to provide the following parameters as well, where relevant:

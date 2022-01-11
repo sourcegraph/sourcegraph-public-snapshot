@@ -28,6 +28,7 @@ const onSubmit = (): Observable<ISearchContext> =>
         autoDefined: false,
         description: 'Repositories on Sourcegraph',
         repositories: [],
+        query: '',
         updatedAt: subDays(new Date(), 1).toISOString(),
         viewerCanManage: true,
     })
@@ -41,6 +42,7 @@ const searchContextToEdit: ISearchContext = {
     public: true,
     autoDefined: false,
     description: 'Repositories on Sourcegraph',
+    query: '',
     repositories: [
         {
             __typename: 'SearchContextRepositoryRevisions',
@@ -72,6 +74,7 @@ const authUser: AuthenticatedUser = {
     tags: [],
     viewerCanAdminister: true,
     databaseID: 0,
+    tosAccepted: true,
 }
 
 const deleteSearchContext = sinon.fake(() => NEVER)
@@ -86,6 +89,7 @@ add(
                     authenticatedUser={authUser}
                     onSubmit={onSubmit}
                     deleteSearchContext={deleteSearchContext}
+                    isSourcegraphDotCom={false}
                 />
             )}
         </WebStory>
@@ -104,6 +108,7 @@ add(
                     authenticatedUser={authUser}
                     onSubmit={onSubmit}
                     deleteSearchContext={deleteSearchContext}
+                    isSourcegraphDotCom={false}
                 />
             )}
         </WebStory>

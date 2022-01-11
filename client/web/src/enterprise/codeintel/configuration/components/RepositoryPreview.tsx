@@ -1,8 +1,8 @@
 import classNames from 'classnames'
 import React, { FunctionComponent } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { usePreviewRepositoryFilter } from '../hooks/usePreviewRepositoryFilter'
 
@@ -22,7 +22,7 @@ export const RepositoryPreview: FunctionComponent<RepositoryPreviewProps> = ({ p
             {previewError && <ErrorAlert prefix="Error fetching matching repositories" error={previewError} />}
 
             {previewLoading ? (
-                <LoadingSpinner className={styles.loading} />
+                <LoadingSpinner inline={false} className={styles.loading} />
             ) : (
                 preview && (
                     <>

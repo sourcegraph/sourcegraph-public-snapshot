@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 )
 
 type CreateBatchChangeArgs struct {
@@ -797,7 +798,7 @@ type BatchSpecWorkspaceResolver interface {
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	PlaceInQueue() *int32
 
-	Executor(ctx context.Context) (*ExecutorResolver, error)
+	Executor(ctx context.Context) (*gql.ExecutorResolver, error)
 }
 
 type BatchSpecWorkspaceStagesResolver interface {
