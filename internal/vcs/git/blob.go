@@ -7,10 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
