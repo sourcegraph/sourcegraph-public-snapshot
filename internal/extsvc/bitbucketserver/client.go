@@ -888,7 +888,7 @@ type CreateForkInputProject struct {
 	Key string `json:"key"`
 }
 
-func (c *Client) CreateFork(ctx context.Context, projectKey, repoSlug string, input CreateForkInput) (*Repo, error) {
+func (c *Client) Fork(ctx context.Context, projectKey, repoSlug string, input CreateForkInput) (*Repo, error) {
 	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
 
 	var resp Repo

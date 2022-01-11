@@ -335,7 +335,7 @@ func (s BitbucketServerSource) GetUserFork(ctx context.Context, targetRepo *type
 
 	// If not, then we need to create a fork.
 	if fork == nil {
-		fork, err = s.client.CreateFork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{})
+		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{})
 		if err != nil {
 			return nil, errors.Wrapf(err, "creating user fork for %q", user)
 		}
@@ -355,7 +355,7 @@ func (s BitbucketServerSource) GetNamespaceFork(ctx context.Context, targetRepo 
 
 	// If not, then we need to create a fork.
 	if fork == nil {
-		fork, err = s.client.CreateFork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{
+		fork, err = s.client.Fork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{
 			Project: &bitbucketserver.CreateForkInputProject{Key: namespace},
 		})
 		if err != nil {

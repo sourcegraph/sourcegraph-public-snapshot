@@ -1274,7 +1274,7 @@ func TestClient_CreateFork(t *testing.T) {
 	cli, save := NewTestClient(t, fixture, *update)
 	defer save()
 
-	have, err := cli.CreateFork(ctx, "SGDEMO", "go", CreateForkInput{})
+	have, err := cli.Fork(ctx, "SGDEMO", "go", CreateForkInput{})
 	assert.Nil(t, err)
 	assert.NotNil(t, have)
 	assert.Equal(t, "go", have.Slug)
