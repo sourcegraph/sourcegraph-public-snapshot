@@ -5,11 +5,11 @@ Sourcegraph Cloud protects your organization’s private code using repository p
 
 ## Public repositories
 
-If a repository is public on GitHub.com or GitLab.com, other users on Sourcegraph Cloud can view and search across that repository. The repository will appear in the global search context. If a public repository is moved to private on the code host, Sourcegraph will respect the updated permissions. 
+If a repository is public on GitHub.com or GitLab.com, other users on Sourcegraph Cloud can view and search across that repository. The repository will appear in the global search context. If a public repository is made private on the code host, that repository will no longer appear in the global search context. 
 
 ## Private repositories
 
-TL;DR: Users on Sourcegraph can only see a private repository if they have permissions to see that repository on your code host and if they are a member of the organization on Sourcegraph. 
+TL;DR: Users on Sourcegraph can only see a private repository if they have permissions to see that repository on your code host and if they are a member of your organization on Sourcegraph. 
 
 If a repository your organization has added to Sourcegraph Cloud is private on GitHub.com or GitLab.com, only users who have permission to access that repository on the code host and are members of your organization on Sourcegraph Cloud can view and search that repository. The repository will not appear in search results for other users.
 
