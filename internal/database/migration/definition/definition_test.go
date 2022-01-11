@@ -98,21 +98,19 @@ func TestDownFrom(t *testing.T) {
 		{ID: 15, UpFilename: "15.up.sql"},
 	}}
 
-	t.Run("no limit", func(t *testing.T) {
+	t.Run("zero", func(t *testing.T) {
 		// middle of sequence
 		ds, err := definitions.DownFrom(14, 0)
 		if err != nil {
 			t.Fatalf("unexpected error")
 		}
+		if len(ds) != 0 {
+			var definitionIDs []int
+			for _, definition := range ds {
+				definitionIDs = append(definitionIDs, definition.ID)
+			}
 
-		var definitionIDs []int
-		for _, definition := range ds {
-			definitionIDs = append(definitionIDs, definition.ID)
-		}
-
-		expectedIDs := []int{14, 13, 12, 11}
-		if diff := cmp.Diff(expectedIDs, definitionIDs); diff != "" {
-			t.Fatalf("unexpected ids (-want +got):\n%s", diff)
+			t.Fatalf("expected no definitions, got %v", definitionIDs)
 		}
 	})
 
