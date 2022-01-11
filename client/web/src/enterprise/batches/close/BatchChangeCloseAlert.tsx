@@ -1,9 +1,9 @@
 import * as H from 'history'
 import React, { useCallback, useState } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
+import { isErrorLike, asError } from '@sourcegraph/common'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { Button, AlertLink, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { Scalars } from '../../../graphql-operations'
@@ -88,32 +88,29 @@ export const BatchChangeCloseAlert: React.FunctionComponent<BatchChangeCloseAler
                     {!viewerCanAdminister && (
                         <div className="alert alert-warning">
                             You don't have permission to close this batch change. See{' '}
-                            <a
-                                className="alert-link"
-                                href="https://docs.sourcegraph.com/batch_changes/explanations/permissions_in_batch_changes"
-                            >
+                            <AlertLink to="https://docs.sourcegraph.com/batch_changes/explanations/permissions_in_batch_changes">
                                 Permissions in batch changes
-                            </a>{' '}
+                            </AlertLink>{' '}
                             for more information about the batch changes permission model.
                         </div>
                     )}
                     <div className="d-flex justify-content-end">
-                        <button
-                            type="button"
-                            className="btn btn-secondary mr-2 test-batches-close-abort-btn"
+                        <Button
+                            className="mr-2 test-batches-close-abort-btn"
                             onClick={onCancel}
                             disabled={isClosing === true || !viewerCanAdminister}
+                            variant="secondary"
                         >
                             Cancel
-                        </button>
-                        <button
-                            type="button"
-                            className="btn btn-danger test-batches-confirm-close-btn"
+                        </Button>
+                        <Button
+                            className="test-batches-confirm-close-btn"
                             onClick={onClose}
                             disabled={isClosing === true || !viewerCanAdminister}
+                            variant="danger"
                         >
-                            {isClosing === true && <LoadingSpinner className="icon-inline" />} Close batch change
-                        </button>
+                            {isClosing === true && <LoadingSpinner />} Close batch change
+                        </Button>
                     </div>
                 </div>
             </div>

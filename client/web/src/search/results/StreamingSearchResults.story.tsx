@@ -4,7 +4,6 @@ import React from 'react'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -37,7 +36,6 @@ const streamingSearchResult: AggregateStreamingSearchResults = {
 
 const defaultProps: StreamingSearchResultsProps = {
     parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-    patternType: SearchPatternType.literal,
 
     extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,

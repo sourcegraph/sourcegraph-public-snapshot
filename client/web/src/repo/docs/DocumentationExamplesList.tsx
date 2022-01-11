@@ -5,12 +5,12 @@ import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { RepositoryFields } from '../../graphql-operations'
 
@@ -57,7 +57,7 @@ export const DocumentationExamplesList: React.FunctionComponent<Props> = ({
     return (
         <div className="documentation-examples">
             {referencesLocations === LOADING ? (
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             ) : (
                 (referencesLocations as GQL.ILocationConnection).nodes.map(location => (
                     <DocumentationExamplesListItem

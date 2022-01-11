@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { Button } from '@sourcegraph/wildcard'
 
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
 import { FuzzySearch, FuzzySearchResult, SearchIndexing, SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -239,9 +240,9 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                     <h3 className="mb-0" id={FUZZY_MODAL_TITLE}>
                         Find file
                     </h3>
-                    <button type="button" className="btn btn-icon" onClick={() => props.onClose()} aria-label="Close">
+                    <Button className="btn-icon" onClick={() => props.onClose()} aria-label="Close">
                         <CloseIcon className={classNames('icon-inline', styles.closeIcon)} />
-                    </button>
+                    </Button>
                 </div>
                 <input
                     autoComplete="off"
@@ -274,13 +275,13 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                 </div>
                 {fuzzyResultElement}
                 {!isComplete && (
-                    <button
-                        className={classNames('btn btn-secondary', styles.showMore)}
-                        type="button"
+                    <Button
+                        className={styles.showMore}
                         onClick={() => setMaxResults(maxResults + props.initialMaxResults)}
+                        variant="secondary"
                     >
                         Show more
-                    </button>
+                    </Button>
                 )}
             </div>
         </Dialog>

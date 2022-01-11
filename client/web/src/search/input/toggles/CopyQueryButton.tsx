@@ -6,9 +6,9 @@ import React, { useCallback, useRef, useEffect } from 'react'
 import { Observable, merge, of } from 'rxjs'
 import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
 
-import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button, TooltipController } from '@sourcegraph/wildcard'
 
 interface Props {
     fullQuery: string
@@ -36,7 +36,7 @@ export const CopyQueryButton: React.FunctionComponent<Props> = (props: Props) =>
                 clicks.pipe(
                     tap(copyFullQuery),
                     switchMapTo(merge(of(true), of(false).pipe(delay(2000)))),
-                    tap(() => Tooltip.forceUpdate()),
+                    tap(() => TooltipController.forceUpdate()),
                     startWith(false)
                 ),
             [copyFullQuery]
@@ -46,16 +46,15 @@ export const CopyQueryButton: React.FunctionComponent<Props> = (props: Props) =>
     const copyFullQueryTooltip = `Copy full query\n${props.isMacPlatform ? '⌘' : 'Ctrl'}+⇧+C`
     return (
         <>
-            <button
-                type="button"
-                className={classNames('btn btn-icon btn-link-sm', props.className)}
+            <Button
+                className={classNames('btn-icon btn-link-sm', props.className)}
                 data-tooltip={copied ? 'Copied!' : copyFullQueryTooltip}
                 aria-label={copied ? 'Copied!' : copyFullQueryTooltip}
                 aria-live="polite"
                 onClick={nextClick}
             >
                 <ClipboardOutlineIcon size={16} className="icon-inline" />
-            </button>
+            </Button>
             {props.keyboardShortcutForFullCopy.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={copyFullQuery} allowDefault={false} ignoreInput={true} />
             ))}

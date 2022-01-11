@@ -217,7 +217,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
       data-testid="action-item-spinner"
     >
       <div
-        class="loading-spinner "
+        class="loadingSpinner"
       />
     </div>
   </a>

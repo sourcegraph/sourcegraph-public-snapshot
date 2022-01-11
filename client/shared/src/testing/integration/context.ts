@@ -13,8 +13,9 @@ import * as prettier from 'prettier'
 import { Subject, Subscription, throwError } from 'rxjs'
 import { first, timeoutWith } from 'rxjs/operators'
 
+import { asError } from '@sourcegraph/common'
+
 import { ErrorGraphQLResult, SuccessGraphQLResult } from '../../graphql/graphql'
-import { asError } from '../../util/errors'
 import { keyExistsIn } from '../../util/types'
 import { recordCoverage } from '../coverage'
 import { Driver } from '../driver'

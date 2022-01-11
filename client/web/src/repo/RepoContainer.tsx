@@ -11,6 +11,7 @@ import { UncontrolledPopover } from 'reactstrap'
 import { NEVER, ObservableInput, of } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import {
     isCloneInProgressErrorLike,
     isRepoNotFoundErrorLike,
@@ -26,11 +27,11 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -40,11 +41,12 @@ import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { IS_CHROME } from '../marketing/util'
 import { Settings } from '../schema/settings.schema'
-import { PatternTypeProps, SearchContextProps, searchQueryForRepoRevision, SearchStreamingProps } from '../search'
+import { SearchContextProps, searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { useNavbarQueryState } from '../stores'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
@@ -77,7 +79,6 @@ export interface RepoContainerContext
         HoverThresholdProps,
         TelemetryProps,
         ActivationProps,
-        PatternTypeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         BreadcrumbSetters,
         ActionItemsBarProps,
@@ -85,7 +86,8 @@ export interface RepoContainerContext
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        FeatureFlagProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -119,7 +121,6 @@ interface RepoContainerProps
         ActivationProps,
         ThemeProps,
         ExtensionAlertProps,
-        PatternTypeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         BreadcrumbSetters,
         BreadcrumbsProps,
@@ -127,7 +128,8 @@ interface RepoContainerProps
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        FeatureFlagProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -242,14 +244,16 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             >
                                 <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
                             </Link>
-                            <button
-                                type="button"
+                            <Button
                                 id="repo-popover"
-                                className={classNames('btn btn-sm btn-outline-secondary', styles.repoChange)}
+                                className={styles.repoChange}
                                 aria-label="Change repository"
+                                outline={true}
+                                variant="secondary"
+                                size="sm"
                             >
                                 <ChevronDownIcon className="icon-inline" />
-                            </button>
+                            </Button>
                         </div>
                         <UncontrolledPopover
                             placement="bottom-start"

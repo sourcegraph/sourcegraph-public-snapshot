@@ -9,7 +9,7 @@ import { Observable } from 'rxjs'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, Button } from '@sourcegraph/wildcard'
 
 import { FileDiffFields } from '../../graphql-operations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
@@ -100,13 +100,13 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
             <a id={anchor} aria-hidden={true} />
             <div className={classNames('test-file-diff-node', styles.fileDiffNode, className)}>
                 <div className={styles.header}>
-                    <button type="button" className="btn btn-sm btn-icon mr-2" onClick={toggleExpand}>
+                    <Button className="btn-icon mr-2" onClick={toggleExpand} size="sm">
                         {expanded ? (
                             <ChevronDownIcon className="icon-inline" />
                         ) : (
                             <ChevronRightIcon className="icon-inline" />
                         )}
-                    </button>
+                    </Button>
                     <div className={classNames('align-items-baseline', styles.headerPathStat)}>
                         {!node.oldPath && (
                             <Badge variant="success" className="text-uppercase mr-2">
@@ -147,9 +147,9 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                     ) : !node.newPath && !renderDeleted ? (
                         <div className="text-muted m-2">
                             <p className="mb-0">Deleted files aren't rendered by default.</p>
-                            <button type="button" className="btn btn-link m-0 p-0" onClick={onClickToViewDeleted}>
+                            <Button className="m-0 p-0" onClick={onClickToViewDeleted} variant="link">
                                 Click here to view.
-                            </button>
+                            </Button>
                         </div>
                     ) : (
                         <FileDiffHunks

@@ -85,15 +85,6 @@ func (r *githubSlackUserResolver) fetchTeamData(ctx context.Context) error {
 	return outerErr
 }
 
-func getEmailByGitHubHandle(team map[string]teamMember, handle string) string {
-	for _, member := range team {
-		if member.GitHub == handle {
-			return member.Email
-		}
-	}
-	return ""
-}
-
 func fetchTeamData(ctx context.Context) (map[string]teamMember, error) {
 	resp, err := ctxhttp.Get(ctx, http.DefaultClient, teamDataURL)
 	if err != nil {

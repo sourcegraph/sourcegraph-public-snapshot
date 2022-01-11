@@ -2,10 +2,15 @@ import signale from 'signale'
 import { DllPlugin, Configuration } from 'webpack'
 import { WebpackManifestPlugin } from 'webpack-manifest-plugin'
 
-import { getMonacoCSSRule, getMonacoTTFRule, getMonacoWebpackPlugin } from '@sourcegraph/build-config'
+import {
+    getMonacoCSSRule,
+    getMonacoTTFRule,
+    getMonacoWebpackPlugin,
+    getBasicCSSLoader,
+} from '@sourcegraph/build-config'
 
 import { getWebpackStats, getVendorModules } from './dllPlugin'
-import { monacoEditorPath, dllPluginConfig, getBasicCSSLoader, dllBundleManifestPath } from './webpack.config.common'
+import { monacoEditorPath, dllPluginConfig, dllBundleManifestPath } from './webpack.config.common'
 
 const webpackStats = getWebpackStats()
 signale.await('Waiting for Webpack to build DLL bundle based on vendor stats.')

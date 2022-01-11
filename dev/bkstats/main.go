@@ -20,10 +20,10 @@ var shortDateFormat = "2006-01-02"
 var longDateFormat = "2006-01-02 15:04 (MST)"
 
 func init() {
-	flag.StringVar(&token, "token", "", "mandatory buildkite token")
+	flag.StringVar(&token, "buildkite.token", "", "mandatory buildkite token")
 	flag.StringVar(&date, "date", "", "date for builds")
-	flag.StringVar(&pipeline, "pipeline", "sourcegraph", "name of the pipeline to inspect")
-	flag.StringVar(&slack, "slack", "", "Slack Webhook URL to post the results on")
+	flag.StringVar(&pipeline, "buildkite.pipeline", "sourcegraph", "name of the pipeline to inspect")
+	flag.StringVar(&slack, "slack.webhook", "", "Slack Webhook URL to post the results on")
 }
 
 type event struct {
@@ -166,7 +166,18 @@ func postOnSlack(report *report) error {
 					Text: report.summary,
 				},
 			},
-			{
+		},
+	}
+
+	if len(report.details) > 0 {
+		// Add the details block only if there are details, otherwise Slack API will
+		// consider the block to be invalid and will reject it.
+		var text string
+		for _, detail := range report.details {
+			text += "• " + detail + " \n"
+		}
+		slackBody.Blocks = append(slackBody.Blocks,
+			slackBlock{
 				Type: "context",
 				Elements: []slackText{
 					{
@@ -175,7 +186,7 @@ func postOnSlack(report *report) error {
 					},
 				},
 			},
-		},
+		)
 	}
 
 	body, err := json.MarshalIndent(slackBody, "", "  ")

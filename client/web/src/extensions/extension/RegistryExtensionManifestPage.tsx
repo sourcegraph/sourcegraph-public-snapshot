@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom'
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Button } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -77,10 +78,10 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                     </div>
                     <div>
                         {this.props.extension.manifest && (
-                            <button type="button" className="btn btn-secondary" onClick={this.onViewModeButtonClick}>
+                            <Button onClick={this.onViewModeButtonClick} variant="secondary">
                                 <EyeIcon className="icon-inline" /> Use{' '}
                                 {this.state.viewMode === ViewMode.Plain ? ViewMode.Rich : ViewMode.Plain} viewer
-                            </button>
+                            </Button>
                         )}{' '}
                         {this.props.extension.registryExtension?.viewerCanAdminister && (
                             <Link

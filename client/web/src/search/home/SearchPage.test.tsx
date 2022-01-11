@@ -11,7 +11,6 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
-import { SearchPatternType } from '../../graphql-operations'
 import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
 import { authUser } from '../panels/utils'
@@ -52,8 +51,6 @@ describe('SearchPage', () => {
         authenticatedUser: authUser,
         globbing: false,
         parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-        patternType: SearchPatternType.literal,
-        setPatternType: () => undefined,
         platformContext: {} as any,
         keyboardShortcuts: [],
         searchContextsEnabled: true,

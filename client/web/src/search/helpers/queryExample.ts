@@ -1,7 +1,7 @@
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { CharacterRange } from '@sourcegraph/shared/src/search/query/token'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/validate'
 
 /**
  * A QueryExample is a structured representation of a query fragment possibly

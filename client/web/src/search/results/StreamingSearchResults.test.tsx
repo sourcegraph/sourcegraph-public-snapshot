@@ -34,7 +34,6 @@ describe('StreamingSearchResults', () => {
 
     const defaultProps: StreamingSearchResultsProps = {
         parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-        patternType: SearchPatternType.literal,
 
         extensionsController,
         telemetryService: NOOP_TELEMETRY_SERVICE,
@@ -83,14 +82,13 @@ describe('StreamingSearchResults', () => {
     })
 
     it('should call streaming search API with the right parameters from URL', async () => {
-        useNavbarQueryState.setState({ searchCaseSensitivity: true })
+        useNavbarQueryState.setState({ searchCaseSensitivity: true, searchPatternType: SearchPatternType.regexp })
         const searchSpy = sinon.spy(defaultProps.streamSearch)
 
         renderWrapper(
             <StreamingSearchResults
                 {...defaultProps}
                 parsedSearchQuery="r:golang/oauth2 test f:travis"
-                patternType={SearchPatternType.regexp}
                 streamSearch={searchSpy}
             />
         )
@@ -279,10 +277,12 @@ describe('StreamingSearchResults', () => {
             const allChecks = await screen.findAllByTestId('streaming-progress-skipped-suggest-check')
 
             for (const check of allChecks) {
-                userEvent.click(check)
+                userEvent.click(check, undefined, { skipPointerEventsCheck: true })
             }
 
-            userEvent.click(await screen.findByText(/search again/i, { selector: 'button[type=submit]' }))
+            userEvent.click(await screen.findByText(/search again/i, { selector: 'button[type=submit]' }), undefined, {
+                skipPointerEventsCheck: true,
+            })
 
             expect(helpers.submitSearch).toBeCalledTimes(index + 1)
             const args = submitSearchMock.mock.calls[index][0]

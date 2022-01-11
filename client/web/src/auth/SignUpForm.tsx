@@ -9,7 +9,7 @@ import { fromFetch } from 'rxjs/fetch'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/common'
 import {
     useInputValidation,
     ValidationOptions,
@@ -21,7 +21,7 @@ import { LoaderButton } from '../components/LoaderButton'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY, LAST_SOURCE_URL_KEY } from '../tracking/eventLogger'
-import { enterpriseTrial, signupTerms } from '../util/features'
+import { enterpriseTrial } from '../util/features'
 
 import { OrDivider } from './OrDivider'
 import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
@@ -246,11 +246,13 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                                     type="checkbox"
                                     onChange={onRequestTrialFieldChange}
                                 />
-                                Try Sourcegraph Enterprise free for 30 days{' '}
-                                {/* eslint-disable-next-line react/jsx-no-target-blank */}
-                                <a target="_blank" rel="noopener" href="https://about.sourcegraph.com/pricing">
-                                    <HelpCircleOutlineIcon className="icon-inline" />
-                                </a>
+                                Try Sourcegraph Enterprise free for{' '}
+                                <span className="text-nowrap">
+                                    30 days {/* eslint-disable-next-line react/jsx-no-target-blank */}
+                                    <a target="_blank" rel="noopener" href="https://about.sourcegraph.com/pricing">
+                                        <HelpCircleOutlineIcon className="icon-inline" />
+                                    </a>
+                                </span>
                             </label>
                         </div>
                     </div>
@@ -288,7 +290,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                     </>
                 )}
 
-                {!experimental && signupTerms && (
+                {!experimental && (
                     <p className="mt-3 mb-0">
                         <small className="form-text text-muted">
                             By signing up, you agree to our {/* eslint-disable-next-line react/jsx-no-target-blank */}

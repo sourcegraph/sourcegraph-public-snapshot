@@ -8,10 +8,9 @@ import UploadIcon from 'mdi-react/UploadIcon'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BulkOperationState, BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, AlertLink } from '@sourcegraph/wildcard'
 
 import { ErrorMessage } from '../../../../components/alerts'
 import { Collapsible } from '../../../../components/Collapsible'
@@ -108,13 +107,13 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
                                     <span className="text-muted">On hidden repository</span>
                                 ) : (
                                     <>
-                                        <LinkOrSpan className="alert-link" to={error.changeset.externalURL?.url}>
+                                        <AlertLink to={error.changeset.externalURL?.url ?? ''}>
                                             {error.changeset.title} <ExternalLinkIcon className="icon-inline" />
-                                        </LinkOrSpan>{' '}
+                                        </AlertLink>{' '}
                                         on{' '}
-                                        <Link className="alert-link" to={error.changeset.repository.url}>
+                                        <AlertLink to={error.changeset.repository.url}>
                                             repository {error.changeset.repository.name}
-                                        </Link>
+                                        </AlertLink>
                                         .
                                     </>
                                 )}

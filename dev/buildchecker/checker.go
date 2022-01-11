@@ -7,13 +7,11 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/google/go-github/v41/github"
 )
 
 type CheckOptions struct {
 	FailuresThreshold int
 	BuildTimeout      time.Duration
-	GitHubClient      *github.Client
 }
 
 type CommitInfo struct {

@@ -4,8 +4,8 @@ import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
@@ -91,17 +91,14 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                             disabled={this.state.submitOrError === 'loading'}
                         />
                     </div>
-                    <button
-                        className="btn btn-primary btn-block mt-4"
+                    <Button
+                        className="btn-block mt-4"
                         type="submit"
                         disabled={this.state.submitOrError === 'loading'}
+                        variant="primary"
                     >
-                        {this.state.submitOrError === 'loading' ? (
-                            <LoadingSpinner className="icon-inline" />
-                        ) : (
-                            'Send reset password link'
-                        )}
-                    </button>
+                        {this.state.submitOrError === 'loading' ? <LoadingSpinner /> : 'Send reset password link'}
+                    </Button>
                 </Form>
                 <span className="form-text text-muted">
                     <Link to="/sign-in">Return to sign in</Link>
@@ -206,17 +203,14 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                             disabled={this.state.submitOrError === 'loading'}
                         />
                     </div>
-                    <button
-                        className="btn btn-primary btn-block mt-4"
+                    <Button
+                        className="btn-block mt-4"
                         type="submit"
                         disabled={this.state.submitOrError === 'loading'}
+                        variant="primary"
                     >
-                        {this.state.submitOrError === 'loading' ? (
-                            <LoadingSpinner className="icon-inline" />
-                        ) : (
-                            'Reset password'
-                        )}
-                    </button>
+                        {this.state.submitOrError === 'loading' ? <LoadingSpinner /> : 'Reset password'}
+                    </Button>
                 </Form>
             </>
         )

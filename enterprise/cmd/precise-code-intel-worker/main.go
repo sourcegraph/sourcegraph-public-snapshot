@@ -95,6 +95,12 @@ func main() {
 		log.Fatalf("Failed to initialize upload store: %s", err)
 	}
 
+	// Initialize sub-repo permissions client
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
+	if err != nil {
+		log.Fatalf("Failed to create sub-repo client: %v", err)
+	}
+
 	// Initialize metrics
 	mustRegisterQueueMetric(observationContext, workerStore)
 

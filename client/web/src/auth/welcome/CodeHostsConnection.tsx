@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike } from '@sourcegraph/common'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
@@ -38,7 +38,7 @@ export const CodeHostsConnection: React.FunctionComponent<CodeHostsConnection> =
     if (loading || !externalServices) {
         return (
             <div className="d-flex justify-content-center">
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             </div>
         )
     }

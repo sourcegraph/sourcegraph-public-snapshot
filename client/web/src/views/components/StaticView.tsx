@@ -1,8 +1,8 @@
 import React, { forwardRef } from 'react'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import * as View from './view'
 

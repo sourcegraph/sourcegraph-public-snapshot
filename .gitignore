@@ -1,6 +1,3 @@
-/vagrant_ansible_inventory_default
-.vagrant
-
 # Vim
 *.swp
 

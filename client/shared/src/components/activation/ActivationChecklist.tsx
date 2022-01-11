@@ -6,7 +6,7 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ActivationCompletionStatus, ActivationStep } from './Activation'
 import styles from './ActivationChecklist.module.scss'
@@ -60,7 +60,7 @@ export const ActivationChecklist: React.FunctionComponent<ActivationChecklistPro
     buttonClassName,
 }) => {
     if (!completed) {
-        return <LoadingSpinner className="icon-inline my-2" />
+        return <LoadingSpinner className="my-2" />
     }
 
     return (

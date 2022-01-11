@@ -161,7 +161,7 @@ func (r *queryResolver) monikerLocations(ctx context.Context, uploads []store.Du
 func (r *queryResolver) adjustLocations(ctx context.Context, locations []lsifstore.Location) ([]AdjustedLocation, error) {
 	adjustedLocations := make([]AdjustedLocation, 0, len(locations))
 
-	checkerEnabled := r.checker.Enabled()
+	checkerEnabled := r.checker != nil && r.checker.Enabled()
 	var a *actor.Actor
 	if checkerEnabled {
 		a = actor.FromContext(ctx)
@@ -174,18 +174,13 @@ func (r *queryResolver) adjustLocations(ctx context.Context, locations []lsifsto
 
 		if !checkerEnabled {
 			adjustedLocations = append(adjustedLocations, adjustedLocation)
-			continue
-		}
-
-		// sub-repo checker is enabled, proceeding with check
-		include, err := authz.FilterActorPath(ctx, r.checker, a, api.RepoName(adjustedLocation.Dump.RepositoryName), adjustedLocation.Path)
-
-		if err != nil {
-			return nil, err
-		}
-
-		if include {
-			adjustedLocations = append(adjustedLocations, adjustedLocation)
+		} else {
+			repo := api.RepoName(adjustedLocation.Dump.RepositoryName)
+			if include, err := authz.FilterActorPath(ctx, r.checker, a, repo, adjustedLocation.Path); err != nil {
+				return nil, err
+			} else if include {
+				adjustedLocations = append(adjustedLocations, adjustedLocation)
+			}
 		}
 	}
 
