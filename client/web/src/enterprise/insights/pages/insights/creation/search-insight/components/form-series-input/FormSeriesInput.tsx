@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
-import { Button } from '@sourcegraph/wildcard/src'
+import { Button } from '@sourcegraph/wildcard'
 
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../../../components/form/hooks/useField'

@@ -17,7 +17,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs, Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { Collapsible } from '../../../components/Collapsible'
@@ -99,9 +99,9 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                         <ExternalLinkIcon className="icon-inline" />
                     </Link>
                 </h3>
-                <button type="button" className="btn btn-link btn-sm p-0 ml-2" onClick={onClose}>
+                <Button className="p-0 ml-2" onClick={onClose} variant="link" size="sm">
                     <CloseIcon className="icon-inline" />
-                </button>
+                </Button>
             </div>
             <div className="text-muted">
                 {workspace.path && <>{workspace.path} | </>}
@@ -129,9 +129,9 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                     <>
                         {' '}
                         |{' '}
-                        <button type="button" className="text-muted btn btn-link m-0 p-0" onClick={toggleShowTimeline}>
+                        <Button className="text-muted m-0 p-0" onClick={toggleShowTimeline} variant="link">
                             Timeline
-                        </button>
+                        </Button>
                     </>
                 )}
             </div>
@@ -140,14 +140,15 @@ export const WorkspaceDetails: React.FunctionComponent<WorkspaceDetailsProps> = 
                 <>
                     <div className="d-flex my-3 w-100">
                         <ErrorAlert error={workspace.failureMessage} className="flex-grow-1 mb-0" />
-                        <button
-                            type="button"
-                            className="btn btn-outline-danger ml-2"
+                        <Button
+                            className="ml-2"
                             onClick={onRetry}
                             disabled={retrying === true}
+                            outline={true}
+                            variant="danger"
                         >
                             <SyncIcon className="icon-inline" /> Retry
-                        </button>
+                        </Button>
                     </div>
                     {isErrorLike(retrying) && <ErrorAlert error={retrying} />}
                 </>

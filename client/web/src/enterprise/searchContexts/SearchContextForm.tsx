@@ -17,7 +17,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ALLOW_NAVIGATION, AwayPrompt } from '@sourcegraph/web/src/components/AwayPrompt'
-import { Container, RadioButton } from '@sourcegraph/wildcard'
+import { Container, Button, RadioButton } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SearchContextProps } from '../../search'
@@ -416,28 +416,30 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                 )}
             </Container>
             <div className="d-flex">
-                <button
+                <Button
                     type="submit"
-                    className="btn btn-primary mr-2 test-search-context-submit-button"
+                    className="mr-2 test-search-context-submit-button"
                     data-testid="search-context-submit-button"
                     disabled={searchContextOrError && searchContextOrError === LOADING}
+                    variant="primary"
                 >
                     {!searchContext ? 'Create search context' : 'Save'}
-                </button>
-                <button type="button" onClick={onCancel} className="btn btn-outline-secondary">
+                </Button>
+                <Button onClick={onCancel} outline={true} variant="secondary">
                     Cancel
-                </button>
+                </Button>
                 {searchContext && (
                     <>
                         <div className="flex-grow-1" />
-                        <button
-                            type="button"
+                        <Button
                             data-testid="search-context-delete-button"
-                            className="btn btn-outline-secondary text-danger"
+                            className="text-danger"
                             onClick={toggleDeleteModal}
+                            outline={true}
+                            variant="secondary"
                         >
                             Delete
-                        </button>
+                        </Button>
                         <DeleteSearchContextModal
                             isOpen={showDeleteModal}
                             deleteSearchContext={deleteSearchContext}

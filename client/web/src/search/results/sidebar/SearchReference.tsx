@@ -15,6 +15,7 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { Button } from '@sourcegraph/wildcard'
 
 import { NavbarQueryState } from '../../../stores/navbarSearchQueryState'
 import { QueryChangeSource } from '../../helpers'
@@ -325,7 +326,7 @@ const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProp
     // We only use valid queries as examples, so this will always be true
     if (scanResult.type === 'success') {
         return (
-            <button className="btn p-0 flex-1" type="button" onClick={() => onClick?.(example)}>
+            <Button className="p-0 flex-1" onClick={() => onClick?.(example)}>
                 {scanResult.term.map((term, index) => {
                     switch (term.type) {
                         case 'filter':
@@ -345,7 +346,7 @@ const SearchReferenceExample: React.FunctionComponent<SearchReferenceExampleProp
                             return example.slice(term.range.start, term.range.end)
                     }
                 })}
-            </button>
+            </Button>
         )
     }
     return null
@@ -377,11 +378,7 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                     [styles.active]: !collapsed,
                 })}
             >
-                <button
-                    className="btn p-0 flex-1"
-                    type="button"
-                    onClick={event => onClick(searchReference, event.altKey)}
-                >
+                <Button className="p-0 flex-1" onClick={event => onClick(searchReference, event.altKey)}>
                     <span className="text-monospace">
                         {buttonTextPrefix}
                         {searchReference.tokens.map(token => (
@@ -390,10 +387,9 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                             </span>
                         ))}
                     </span>
-                </button>
-                <button
-                    type="button"
-                    className={classNames('btn btn-icon', styles.collapseButton)}
+                </Button>
+                <Button
+                    className={classNames('btn-icon', styles.collapseButton)}
                     onClick={event => {
                         event.stopPropagation()
                         setCollapsed(collapsed => !collapsed)
@@ -402,7 +398,7 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                 >
                     <small className="text-monospace">i</small>
                     <CollapseIcon className="icon-inline" />
-                </button>
+                </Button>
             </span>
             <Collapse isOpen={!collapsed}>
                 <div className={styles.description}>

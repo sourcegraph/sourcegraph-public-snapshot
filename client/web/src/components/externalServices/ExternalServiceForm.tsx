@@ -6,7 +6,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AddExternalServiceInput } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -112,17 +112,18 @@ export const ExternalServiceForm: React.FunctionComponent<Props> = ({
                     <small>Use Ctrl+Space for completion, and hover over JSON properties for documentation.</small>
                 </p>
             </div>
-            <button
+            <Button
                 type="submit"
                 className={classNames(
-                    'btn btn-primary mb-3',
+                    'mb-3',
                     mode === 'create' ? 'test-add-external-service-button' : 'test-update-external-service-button'
                 )}
                 disabled={loading}
+                variant="primary"
             >
                 {loading && <LoadingSpinner />}
                 {submitName ?? (mode === 'edit' ? 'Update repositories' : 'Add repositories')}
-            </button>
+            </Button>
         </Form>
     )
 }

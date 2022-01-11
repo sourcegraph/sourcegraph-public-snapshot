@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React, { FormEventHandler, RefObject, useContext } from 'react'
 
-import { Button } from '@sourcegraph/wildcard/src'
+import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../components/LoaderButton'

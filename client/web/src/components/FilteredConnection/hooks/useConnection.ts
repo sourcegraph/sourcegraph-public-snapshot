@@ -3,8 +3,7 @@ import { useCallback, useMemo, useRef } from 'react'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { asGraphQLResult, hasNextPage, parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
-import { useSearchParameters } from '@sourcegraph/wildcard'
-import { useInterval } from '@sourcegraph/wildcard/src/hooks/useInterval'
+import { useSearchParameters, useInterval } from '@sourcegraph/wildcard'
 
 import { Connection, ConnectionQueryArguments } from '../ConnectionType'
 

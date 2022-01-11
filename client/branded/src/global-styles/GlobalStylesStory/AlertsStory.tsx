@@ -4,6 +4,8 @@ import classNames from 'classnames'
 import { flow } from 'lodash'
 import React from 'react'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { SEMANTIC_COLORS } from './constants'
 import { preventDefault } from './utils'
 
@@ -29,13 +31,9 @@ export const AlertsStory: Story = () => (
                 <h4>A shiny info alert with a button - check it out!</h4>
                 It can also contain text without links.
             </div>
-            <button
-                type="button"
-                className="btn btn-info"
-                onClick={flow(preventDefault, action('alert button clicked'))}
-            >
+            <Button onClick={flow(preventDefault, action('alert button clicked'))} variant="info">
                 Call to action
-            </button>
+            </Button>
         </div>
     </>
 )
