@@ -169,7 +169,7 @@ func (s *Store) Up(ctx context.Context, definition definition.Definition) (err e
 	ctx, endObservation := s.operations.up.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if err := s.runMigrationQuery(ctx, true, definition.ID-1, definition.ID, definition.ID, definition.UpQuery); err != nil {
+	if err := s.runMigrationQuery(ctx, definition.ID, true, definition.UpQuery); err != nil {
 		return err
 	}
 
@@ -180,15 +180,22 @@ func (s *Store) Down(ctx context.Context, definition definition.Definition) (err
 	ctx, endObservation := s.operations.down.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if err := s.runMigrationQuery(ctx, false, definition.ID, definition.ID-1, definition.ID, definition.DownQuery); err != nil {
+	if err := s.runMigrationQuery(ctx, definition.ID, false, definition.DownQuery); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *Store) runMigrationQuery(ctx context.Context, up bool, expectedCurrentVersion, targetVersion, sourceVersion int, query *sqlf.Query) (err error) {
-	logID, err := s.setVersion(ctx, up, expectedCurrentVersion, targetVersion, sourceVersion)
+func (s *Store) runMigrationQuery(ctx context.Context, definitionVersion int, up bool, query *sqlf.Query) (err error) {
+	targetVersion := definitionVersion
+	expectedCurrentVersion := definitionVersion - 1
+	if !up {
+		targetVersion = definitionVersion - 1
+		expectedCurrentVersion = definitionVersion
+	}
+
+	logID, err := s.setVersion(ctx, up, expectedCurrentVersion, targetVersion, definitionVersion)
 	if err != nil {
 		return err
 	}
