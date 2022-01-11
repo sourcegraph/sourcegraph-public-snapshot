@@ -1,13 +1,6 @@
 // Protobuf schema for the new "LSIF typed" format. See RFC 519 for more details:
 // https://docs.google.com/document/d/1bfAZm4K2KUHCMoZiO4qFV7yZmK7wyYxI8MsEL-I6IJg/edit#heading=h.trqab8y0kufp
 
-// Install the `buf` command-line tool to re-generate the code for this file.
-// The commands to re-generate the code on macOS:
-//   brew tap bufbuild/buf && brew install buf
-//   go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-//   buf generate
-// See https://buf.build/ for more details.
-
 syntax = "proto3";
 
 package lib.codeintel.lsif_typed;
