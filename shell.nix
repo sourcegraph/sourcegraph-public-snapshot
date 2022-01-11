@@ -12,8 +12,8 @@
 # Pin a specific version of nixpkgs to ensure we get the same packages.
 { pkgs ? import (fetchTarball {
   url =
-    "https://github.com/NixOS/nixpkgs/archive/9675a865c9c3eeec36c06361f7215e109925654c.tar.gz";
-  sha256 = "1agsmz77bwdpga9p35ayw4pmwacpa4m31d43c6zdksr7qkknyavx";
+    "https://github.com/NixOS/nixpkgs/archive/2b914ee8e20c7082b18a550bd93e1e7b384adc0f.tar.gz";
+  sha256 = "0qnhrm4ywci89kvl35vwd85ldid3g1z74gqsj1b4hw06186dvcnp";
 }) { }, ... }:
 
 let

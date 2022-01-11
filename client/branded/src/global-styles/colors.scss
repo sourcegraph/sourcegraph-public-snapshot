@@ -142,6 +142,7 @@ $theme-colors: (
     --border-active-color: var(--primary);
     --search-query-text-color: var(--gray-12);
     --search-filter-keyword-color: var(--primary);
+    --search-filter-separator-color: var(--oc-gray-6);
     --search-keyword-color: var(--purple);
     --infobar-warning-color: var(--oc-red-8);
     --icon-color: var(--gray-06);
@@ -198,6 +199,7 @@ $theme-colors: (
     --border-active-color: #4393e7;
     --search-query-text-color: var(--gray-04);
     --search-filter-keyword-color: #4393e7;
+    --search-filter-separator-color: var(--oc-gray-6);
     --search-keyword-color: var(--pink);
     --infobar-warning-color: #f05151;
     --icon-color: var(--gray-05);

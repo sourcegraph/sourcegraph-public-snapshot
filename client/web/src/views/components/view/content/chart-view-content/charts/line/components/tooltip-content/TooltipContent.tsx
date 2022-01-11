@@ -1,7 +1,7 @@
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip'
 import React, { ReactElement, useMemo } from 'react'
 
-import { isDefined } from '@sourcegraph/shared/src/util/types'
+import { isDefined } from '@sourcegraph/common'
 
 import { LineChartSeriesWithData, Point } from '../../types'
 import { getLineStroke } from '../LineChartContent'

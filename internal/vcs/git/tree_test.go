@@ -7,8 +7,10 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"runtime"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -208,7 +210,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir1/file1 should exist, contain "infile1", have the right mtime, and be a file.
-		file1Data, err := ReadFile(ctx, test.repo, test.first, "dir1/file1", 0)
+		file1Data, err := ReadFile(ctx, test.repo, test.first, "dir1/file1", 0, nil)
 		if err != nil {
 			t.Errorf("%s: fs1.ReadFile(dir1/file1): %s", label, err)
 			continue
@@ -232,13 +234,13 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// file 2 shouldn't exist in the 1st commit.
-		_, err = ReadFile(ctx, test.repo, test.first, "file 2", 0)
+		_, err = ReadFile(ctx, test.repo, test.first, "file 2", 0, nil)
 		if !os.IsNotExist(err) {
 			t.Errorf("%s: fs1.Open(file 2): got err %v, want os.IsNotExist (file 2 should not exist in this commit)", label, err)
 		}
 
 		// file 2 should exist in the 2nd commit.
-		_, err = ReadFile(ctx, test.repo, test.second, "file 2", 0)
+		_, err = ReadFile(ctx, test.repo, test.second, "file 2", 0, nil)
 		if err != nil {
 			t.Errorf("%s: fs2.Open(file 2): %s", label, err)
 			continue
@@ -249,7 +251,7 @@ func TestRepository_FileSystem(t *testing.T) {
 			t.Errorf("%s: fs2.Stat(dir1/file1): %s", label, err)
 			continue
 		}
-		if _, err := ReadFile(ctx, test.repo, test.second, "dir1/file1", 0); err != nil {
+		if _, err := ReadFile(ctx, test.repo, test.second, "dir1/file1", 0, nil); err != nil {
 			t.Errorf("%s: fs2.Open(dir1/file1): %s", label, err)
 			continue
 		}
@@ -451,7 +453,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		// .gitmodules file is entries[0]
 		checkSubmoduleFileInfo(label+" (ReadDir)", entries[1])
 
-		_, err = ReadFile(ctx, test.repo, commitID, "submod", 0)
+		_, err = ReadFile(ctx, test.repo, commitID, "submod", 0, nil)
 		if err != nil {
 			t.Errorf("%s: fs.Open(submod): %s", label, err)
 			continue
@@ -459,9 +461,29 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 	}
 }
 
+func TestListFiles(t *testing.T) {
+	t.Parallel()
+
+	pattern := regexp.MustCompile("file")
+
+	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
+		return ListFiles(ctx, repo, "HEAD", pattern, checker)
+	})
+}
+
 func TestLsFiles(t *testing.T) {
 	t.Parallel()
 
+	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
+		return LsFiles(ctx, checker, repo, "HEAD")
+	})
+}
+
+// runFileListingTest tests the specified function which must return a list of filenames and an error. The test first
+// tests the basic case (all paths returned), then the case with sub-repo permissions specified.
+func runFileListingTest(t *testing.T,
+	listingFunctionToTest func(context.Context, authz.SubRepoPermissionChecker, api.RepoName) ([]string, error)) {
+	t.Helper()
 	gitCommands := []string{
 		"touch file1",
 		"touch file2",
@@ -480,7 +502,7 @@ func TestLsFiles(t *testing.T) {
 		return false
 	})
 
-	files, err := LsFiles(ctx, checker, repo, "HEAD")
+	files, err := listingFunctionToTest(ctx, checker, repo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -504,7 +526,7 @@ func TestLsFiles(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
-	files, err = LsFiles(ctx, checker, repo, "HEAD")
+	files, err = listingFunctionToTest(ctx, checker, repo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -585,5 +607,69 @@ func TestCleanDirectoriesForLsTree(t *testing.T) {
 
 	if diff := cmp.Diff(expected, actual); diff != "" {
 		t.Errorf("unexpected ls-tree args (-want +got):\n%s", diff)
+	}
+}
+
+func TestListDirectoryChildren(t *testing.T) {
+	gitCommands := []string{
+		"mkdir -p dir{1..3}/sub{1..3}",
+		"touch dir1/sub1/file",
+		"touch dir1/sub2/file",
+		"touch dir2/sub1/file",
+		"touch dir2/sub2/file",
+		"touch dir3/sub1/file",
+		"touch dir3/sub3/file",
+		"git add .",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+
+	repo := MakeGitRepository(t, gitCommands...)
+
+	ctx := context.Background()
+
+	checker := authz.NewMockSubRepoPermissionChecker()
+	// Start disabled
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return false
+	})
+
+	dirnames := []string{"dir1/", "dir2/", "dir3/"}
+	children, err := ListDirectoryChildren(ctx, checker, repo, "HEAD", dirnames)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := map[string][]string{
+		"dir1/": {"dir1/sub1", "dir1/sub2"},
+		"dir2/": {"dir2/sub1", "dir2/sub2"},
+		"dir3/": {"dir3/sub1", "dir3/sub3"},
+	}
+	if diff := cmp.Diff(expected, children); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// With filtering
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		if strings.Contains(content.Path, "dir1/") {
+			return authz.Read, nil
+		}
+		return authz.None, nil
+	})
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 1,
+	})
+	children, err = ListDirectoryChildren(ctx, checker, repo, "HEAD", dirnames)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected = map[string][]string{
+		"dir1/": {"dir1/sub1", "dir1/sub2"},
+		"dir2/": nil,
+		"dir3/": nil,
+	}
+	if diff := cmp.Diff(expected, children); diff != "" {
+		t.Fatal(diff)
 	}
 }

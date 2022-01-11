@@ -49,7 +49,7 @@ type UserEmailsStore interface {
 	Add(ctx context.Context, userID int32, email string, verificationCode *string) error
 	Done(error) error
 	Get(ctx context.Context, userID int32, email string) (emailCanonicalCase string, verified bool, err error)
-	GetInitialSiteAdminEmail(ctx context.Context) (email string, err error)
+	GetInitialSiteAdminInfo(ctx context.Context) (email string, tosAccepted bool, err error)
 	GetLatestVerificationSentEmail(ctx context.Context, email string) (*UserEmail, error)
 	GetPrimaryEmail(ctx context.Context, id int32) (email string, verified bool, err error)
 	GetVerifiedEmails(ctx context.Context, emails ...string) ([]*UserEmail, error)
@@ -88,19 +88,19 @@ func (s *userEmailsStore) Transact(ctx context.Context) (UserEmailsStore, error)
 	return &userEmailsStore{Store: txBase}, err
 }
 
-// GetInitialSiteAdminEmail returns a best guess of the email of the initial Sourcegraph installer/site admin.
-// Because the initial site admin's email isn't marked, this returns the email of the active site admin with
-// the lowest user ID.
+// GetInitialSiteAdminInfo returns a best guess of the email and terms of service acceptance of the initial
+// Sourcegraph installer/site admin. Because the initial site admin's email isn't marked, this returns the
+// info of the active site admin with the lowest user ID.
 //
 // If the site has not yet been initialized, returns an empty string.
-func (s *userEmailsStore) GetInitialSiteAdminEmail(ctx context.Context) (email string, err error) {
+func (s *userEmailsStore) GetInitialSiteAdminInfo(ctx context.Context) (email string, tosAccepted bool, err error) {
 	if init, err := GlobalStateWith(s).SiteInitialized(ctx); err != nil || !init {
-		return "", err
+		return "", false, err
 	}
-	if err := s.Handle().DB().QueryRowContext(ctx, "SELECT email FROM user_emails JOIN users ON user_emails.user_id=users.id WHERE users.site_admin AND users.deleted_at IS NULL ORDER BY users.id ASC LIMIT 1").Scan(&email); err != nil {
-		return "", errors.New("initial site admin email not found")
+	if err := s.Handle().DB().QueryRowContext(ctx, "SELECT email, tos_accepted FROM user_emails JOIN users ON user_emails.user_id=users.id WHERE users.site_admin AND users.deleted_at IS NULL ORDER BY users.id ASC LIMIT 1").Scan(&email, &tosAccepted); err != nil {
+		return "", false, errors.New("initial site admin email not found")
 	}
-	return email, nil
+	return email, tosAccepted, nil
 }
 
 // GetPrimaryEmail gets the oldest email associated with the user, preferring a verified email to an

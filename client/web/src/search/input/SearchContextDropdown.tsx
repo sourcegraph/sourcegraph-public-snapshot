@@ -120,7 +120,8 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 data-tooltip={disabledTooltipText}
             >
                 <code className={classNames('test-selected-search-context-spec', styles.buttonContent)}>
-                    <span className="search-filter-keyword">context:</span>
+                    <span className="search-filter-keyword">context</span>
+                    <span className="search-filter-separator">:</span>
                     {selectedSearchContextSpec?.startsWith('@') ? (
                         <>
                             <span className="search-keyword">@</span>

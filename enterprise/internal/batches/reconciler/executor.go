@@ -17,6 +17,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -49,7 +50,11 @@ type executor struct {
 	cssErr  error
 	cssOnce sync.Once
 
-	repo *types.Repo
+	// remoteRepo represents the repo that should be pushed to.
+	remoteRepo *types.Repo
+
+	// targetRepo represents the repo where the changeset should be opened.
+	targetRepo *types.Repo
 }
 
 func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
@@ -57,8 +62,11 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		return nil
 	}
 
-	// Load the changeset repo.
-	e.repo, err = e.tx.Repos().Get(ctx, e.ch.RepoID)
+	// Load the target repo.
+	//
+	// Note that the remote repo is lazily set when a changeset source is
+	// requested, since it isn't useful outside of that context.
+	e.targetRepo, err = e.tx.Repos().Get(ctx, e.ch.RepoID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load repository")
 	}
@@ -149,11 +157,11 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	pushConf, err := css.GitserverPushConfig(ctx, e.tx.ExternalServices(), e.repo)
+	pushConf, err := css.GitserverPushConfig(ctx, e.tx.ExternalServices(), e.remoteRepo)
 	if err != nil {
 		return err
 	}
-	opts, err := buildCommitOpts(e.repo, e.spec, pushConf)
+	opts, err := buildCommitOpts(e.targetRepo, e.spec, pushConf)
 	if err != nil {
 		return err
 	}
@@ -163,12 +171,13 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 // publishChangeset creates the given changeset on its code host.
 func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err error) {
 	cs := &sources.Changeset{
-		Title:     e.spec.Spec.Title,
-		Body:      e.spec.Spec.Body,
-		BaseRef:   e.spec.Spec.BaseRef,
-		HeadRef:   e.spec.Spec.HeadRef,
-		Repo:      e.repo,
-		Changeset: e.ch,
+		Title:      e.spec.Spec.Title,
+		Body:       e.spec.Spec.Body,
+		BaseRef:    e.spec.Spec.BaseRef,
+		HeadRef:    e.spec.Spec.HeadRef,
+		RemoteRepo: e.remoteRepo,
+		TargetRepo: e.targetRepo,
+		Changeset:  e.ch,
 	}
 
 	// Depending on the changeset, we may want to add to the body (for example,
@@ -254,7 +263,11 @@ func (e *executor) loadChangeset(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	repoChangeset := &sources.Changeset{Repo: e.repo, Changeset: e.ch}
+	repoChangeset := &sources.Changeset{
+		RemoteRepo: e.remoteRepo,
+		TargetRepo: e.targetRepo,
+		Changeset:  e.ch,
+	}
 	return css.LoadChangeset(ctx, repoChangeset)
 }
 
@@ -262,12 +275,13 @@ func (e *executor) loadChangeset(ctx context.Context) error {
 // according to its ChangesetSpec and the delta previously computed.
 func (e *executor) updateChangeset(ctx context.Context) (err error) {
 	cs := sources.Changeset{
-		Title:     e.spec.Spec.Title,
-		Body:      e.spec.Spec.Body,
-		BaseRef:   e.spec.Spec.BaseRef,
-		HeadRef:   e.spec.Spec.HeadRef,
-		Repo:      e.repo,
-		Changeset: e.ch,
+		Title:      e.spec.Spec.Title,
+		Body:       e.spec.Spec.Body,
+		BaseRef:    e.spec.Spec.BaseRef,
+		HeadRef:    e.spec.Spec.HeadRef,
+		RemoteRepo: e.remoteRepo,
+		TargetRepo: e.targetRepo,
+		Changeset:  e.ch,
 	}
 
 	// Depending on the changeset, we may want to add to the body (for example,
@@ -295,7 +309,11 @@ func (e *executor) reopenChangeset(ctx context.Context) (err error) {
 		return err
 	}
 
-	cs := sources.Changeset{Repo: e.repo, Changeset: e.ch}
+	cs := sources.Changeset{
+		RemoteRepo: e.remoteRepo,
+		TargetRepo: e.targetRepo,
+		Changeset:  e.ch,
+	}
 	if err := css.ReopenChangeset(ctx, &cs); err != nil {
 		return errors.Wrap(err, "updating changeset")
 	}
@@ -333,7 +351,11 @@ func (e *executor) closeChangeset(ctx context.Context) (err error) {
 		return err
 	}
 
-	cs := &sources.Changeset{Changeset: e.ch, Repo: e.repo}
+	cs := &sources.Changeset{
+		Changeset:  e.ch,
+		RemoteRepo: e.remoteRepo,
+		TargetRepo: e.targetRepo,
+	}
 
 	if err := css.CloseChangeset(ctx, cs); err != nil {
 		return errors.Wrap(err, "closing changeset")
@@ -354,12 +376,13 @@ func (e *executor) undraftChangeset(ctx context.Context) (err error) {
 	}
 
 	cs := &sources.Changeset{
-		Title:     e.spec.Spec.Title,
-		Body:      e.spec.Spec.Body,
-		BaseRef:   e.spec.Spec.BaseRef,
-		HeadRef:   e.spec.Spec.HeadRef,
-		Repo:      e.repo,
-		Changeset: e.ch,
+		Title:      e.spec.Spec.Title,
+		Body:       e.spec.Spec.Body,
+		BaseRef:    e.spec.Spec.BaseRef,
+		HeadRef:    e.spec.Spec.HeadRef,
+		RemoteRepo: e.remoteRepo,
+		TargetRepo: e.targetRepo,
+		Changeset:  e.ch,
 	}
 
 	if err := draftCss.UndraftChangeset(ctx, cs); err != nil {
@@ -377,7 +400,14 @@ func (e *executor) sleep() {
 
 func (e *executor) changesetSource(ctx context.Context) (sources.ChangesetSource, error) {
 	e.cssOnce.Do(func() {
-		e.css, e.cssErr = loadChangesetSource(ctx, e.tx, e.sourcer, e.ch, e.repo)
+		e.css, e.cssErr = loadChangesetSource(ctx, e.tx, e.sourcer, e.ch, e.targetRepo)
+		if e.cssErr != nil {
+			return
+		}
+
+		// Set the remote repo, which may not be the same as the target repo if
+		// forking is enabled.
+		e.remoteRepo, e.cssErr = loadRemoteRepo(ctx, e.css, e.targetRepo, e.ch)
 	})
 	return e.css, e.cssErr
 }
@@ -425,6 +455,32 @@ func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.So
 		}
 	}
 	return css, nil
+}
+
+var errChangesetSourceCannotFork = errors.New("forking is enabled, but the changeset source does not support forks")
+
+func loadRemoteRepo(ctx context.Context, css sources.ChangesetSource, targetRepo *types.Repo, ch *btypes.Changeset) (*types.Repo, error) {
+	// If forks are disabled _and_ we're not updating a changeset that was
+	// previously created using a fork, then we don't need to even check if the
+	// changeset source is forkable, let alone set up the remote repo: we can
+	// just return the target repo and be done with it.
+	if !conf.Get().BatchChangesEnforceForks && ch.ExternalForkNamespace == "" {
+		return targetRepo, nil
+	}
+
+	fss, ok := css.(sources.ForkableChangesetSource)
+	if !ok {
+		return nil, errChangesetSourceCannotFork
+	}
+
+	// If we're updating an existing changeset, we should push/modify the same
+	// fork, even if the user credential would now fork into a different
+	// namespace.
+	if ch.ExternalForkNamespace != "" {
+		return fss.GetNamespaceFork(ctx, targetRepo, ch.ExternalForkNamespace)
+	}
+
+	return fss.GetUserFork(ctx, targetRepo)
 }
 
 func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) error {

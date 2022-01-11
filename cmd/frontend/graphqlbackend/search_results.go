@@ -1293,9 +1293,14 @@ func searchResultsToRepoNodes(matches []result.Match) ([]query.Node, error) {
 			return nil, errors.Errorf("expected type %T, but got %T", &result.RepoMatch{}, match)
 		}
 
+		repoFieldValue := "^" + regexp.QuoteMeta(string(repoMatch.Name)) + "$"
+		if repoMatch.Rev != "" {
+			repoFieldValue += "@" + repoMatch.Rev
+		}
+
 		nodes = append(nodes, query.Parameter{
 			Field: query.FieldRepo,
-			Value: "^" + regexp.QuoteMeta(string(repoMatch.Name)) + "$",
+			Value: repoFieldValue,
 		})
 	}
 
@@ -1312,6 +1317,11 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 			return nil, errors.Errorf("expected type %T, but got %T", &result.FileMatch{}, match)
 		}
 
+		repoFieldValue := "^" + regexp.QuoteMeta(string(fileMatch.Repo.Name)) + "$"
+		if fileMatch.InputRev != nil {
+			repoFieldValue += "@" + *fileMatch.InputRev
+		}
+
 		// We create AND nodes to match both the repo and the file at the same time so
 		// we don't get files of the same name from different repositories.
 		nodes = append(nodes, query.Operator{
@@ -1319,7 +1329,7 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 			Operands: []query.Node{
 				query.Parameter{
 					Field: query.FieldRepo,
-					Value: "^" + regexp.QuoteMeta(string(fileMatch.Repo.Name)) + "$",
+					Value: repoFieldValue,
 				},
 				query.Parameter{
 					Field: query.FieldFile,

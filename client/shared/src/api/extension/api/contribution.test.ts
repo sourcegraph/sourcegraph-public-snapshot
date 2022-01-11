@@ -1,7 +1,7 @@
+import { Context, parse, parseTemplate } from '@sourcegraph/template-parser'
+
 import { ContributableMenu, Contributions, Evaluated } from '../../protocol'
 
-import { Context } from './context/context'
-import { parse, parseTemplate } from './context/expr/evaluator'
 import {
     evaluateContributions,
     filterContributions,

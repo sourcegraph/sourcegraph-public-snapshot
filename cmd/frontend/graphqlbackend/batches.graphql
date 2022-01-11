@@ -449,6 +449,13 @@ type ExternalChangeset implements Node & Changeset {
     externalURL: ExternalLink
 
     """
+    If the changeset was opened from a fork, this is the namespace of the fork
+    (which will generally correspond to a user or organisation name on the code
+    host).
+    """
+    forkNamespace: String
+
+    """
     The review state of this changeset. This is only set once the changeset is published on the code host.
     """
     reviewState: ChangesetReviewState
@@ -894,11 +901,11 @@ type GitBranchChangesetDescription {
 
     """
     The repository that contains the branch with this changeset's changes.
-
-    Fork repositories and cross-repository changesets are not yet supported. Therefore,
-    headRepository must be equal to baseRepository.
     """
     headRepository: Repository!
+        @deprecated(
+            reason: "Unused. Sourcegraph does not populate a full repository when creating a changeset on a fork. Use ExternalChangeset.forkNamespace instead."
+        )
 
     """
     The full name of the Git ref that holds the changes proposed by this changeset. This ref will

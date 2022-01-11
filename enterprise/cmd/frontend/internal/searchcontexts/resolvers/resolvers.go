@@ -343,19 +343,19 @@ func (r *searchContextResolver) ID() graphql.ID {
 	return marshalSearchContextID(searchcontexts.GetSearchContextSpec(r.sc))
 }
 
-func (r *searchContextResolver) Name(ctx context.Context) string {
+func (r *searchContextResolver) Name() string {
 	return r.sc.Name
 }
 
-func (r *searchContextResolver) Description(ctx context.Context) string {
+func (r *searchContextResolver) Description() string {
 	return r.sc.Description
 }
 
-func (r *searchContextResolver) Public(ctx context.Context) bool {
+func (r *searchContextResolver) Public() bool {
 	return r.sc.Public
 }
 
-func (r *searchContextResolver) AutoDefined(ctx context.Context) bool {
+func (r *searchContextResolver) AutoDefined() bool {
 	return searchcontexts.IsAutoDefinedSearchContext(r.sc)
 }
 
@@ -363,7 +363,7 @@ func (r *searchContextResolver) Spec() string {
 	return searchcontexts.GetSearchContextSpec(r.sc)
 }
 
-func (r *searchContextResolver) UpdatedAt(ctx context.Context) graphqlbackend.DateTime {
+func (r *searchContextResolver) UpdatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.sc.UpdatedAt}
 }
 
@@ -418,20 +418,20 @@ type searchContextConnectionResolver struct {
 	hasNextPage    bool
 }
 
-func (s *searchContextConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.SearchContextResolver, error) {
-	return s.searchContexts, nil
+func (s *searchContextConnectionResolver) Nodes() []graphqlbackend.SearchContextResolver {
+	return s.searchContexts
 }
 
-func (s *searchContextConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return s.totalCount, nil
+func (s *searchContextConnectionResolver) TotalCount() int32 {
+	return s.totalCount
 }
 
-func (s *searchContextConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (s *searchContextConnectionResolver) PageInfo() *graphqlutil.PageInfo {
 	if len(s.searchContexts) == 0 || !s.hasNextPage {
-		return graphqlutil.HasNextPage(false), nil
+		return graphqlutil.HasNextPage(false)
 	}
 	// The after value (offset) for the next page is computed from the current after value + the number of retrieved search contexts
-	return graphqlutil.NextPageCursor(marshalSearchContextCursor(s.afterCursor + int32(len(s.searchContexts)))), nil
+	return graphqlutil.NextPageCursor(marshalSearchContextCursor(s.afterCursor + int32(len(s.searchContexts))))
 }
 
 type searchContextRepositoryRevisionsResolver struct {
@@ -439,10 +439,10 @@ type searchContextRepositoryRevisionsResolver struct {
 	revisions  []string
 }
 
-func (r *searchContextRepositoryRevisionsResolver) Repository(ctx context.Context) *graphqlbackend.RepositoryResolver {
+func (r *searchContextRepositoryRevisionsResolver) Repository() *graphqlbackend.RepositoryResolver {
 	return r.repository
 }
 
-func (r *searchContextRepositoryRevisionsResolver) Revisions(ctx context.Context) []string {
+func (r *searchContextRepositoryRevisionsResolver) Revisions() []string {
 	return r.revisions
 }

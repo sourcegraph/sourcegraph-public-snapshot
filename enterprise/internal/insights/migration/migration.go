@@ -167,6 +167,14 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		userStore := database.Users(m.postgresDB)
 		user, err := userStore.GetByID(ctx, userId)
 		if err != nil {
+			// If the user doesn't exist, just mark the job complete.
+			if strings.Contains(err.Error(), "user not found") {
+				err = jobStoreTx.MarkCompleted(ctx, job.UserId, job.OrgId)
+				if err != nil {
+					return errors.Wrap(err, "MarkCompleted")
+				}
+				return nil
+			}
 			return errors.Wrap(err, "UserStoreGetByID")
 		}
 		subjectName = replaceIfEmpty(&user.DisplayName, user.Username)
@@ -176,6 +184,14 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		migrationContext.orgIds = []int{*job.OrgId}
 		org, err := orgStore.GetByID(ctx, orgId)
 		if err != nil {
+			// If the org doesn't exist, just mark the job complete.
+			if strings.Contains(err.Error(), "org not found") {
+				err = jobStoreTx.MarkCompleted(ctx, job.UserId, job.OrgId)
+				if err != nil {
+					return errors.Wrap(err, "MarkCompleted")
+				}
+				return nil
+			}
 			return errors.Wrap(err, "OrgStoreGetByID")
 		}
 		subjectName = replaceIfEmpty(org.DisplayName, org.Name)
@@ -265,7 +281,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 
 	err = jobStoreTx.MarkCompleted(ctx, job.UserId, job.OrgId)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "MarkCompleted")
 	}
 
 	return nil

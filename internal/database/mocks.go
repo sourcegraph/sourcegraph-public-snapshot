@@ -31423,9 +31423,9 @@ type MockUserEmailsStore struct {
 	// GetFunc is an instance of a mock function object controlling the
 	// behavior of the method Get.
 	GetFunc *UserEmailsStoreGetFunc
-	// GetInitialSiteAdminEmailFunc is an instance of a mock function object
-	// controlling the behavior of the method GetInitialSiteAdminEmail.
-	GetInitialSiteAdminEmailFunc *UserEmailsStoreGetInitialSiteAdminEmailFunc
+	// GetInitialSiteAdminInfoFunc is an instance of a mock function object
+	// controlling the behavior of the method GetInitialSiteAdminInfo.
+	GetInitialSiteAdminInfoFunc *UserEmailsStoreGetInitialSiteAdminInfoFunc
 	// GetLatestVerificationSentEmailFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetLatestVerificationSentEmail.
@@ -31485,9 +31485,9 @@ func NewMockUserEmailsStore() *MockUserEmailsStore {
 				return "", false, nil
 			},
 		},
-		GetInitialSiteAdminEmailFunc: &UserEmailsStoreGetInitialSiteAdminEmailFunc{
-			defaultHook: func(context.Context) (string, error) {
-				return "", nil
+		GetInitialSiteAdminInfoFunc: &UserEmailsStoreGetInitialSiteAdminInfoFunc{
+			defaultHook: func(context.Context) (string, bool, error) {
+				return "", false, nil
 			},
 		},
 		GetLatestVerificationSentEmailFunc: &UserEmailsStoreGetLatestVerificationSentEmailFunc{
@@ -31572,9 +31572,9 @@ func NewStrictMockUserEmailsStore() *MockUserEmailsStore {
 				panic("unexpected invocation of MockUserEmailsStore.Get")
 			},
 		},
-		GetInitialSiteAdminEmailFunc: &UserEmailsStoreGetInitialSiteAdminEmailFunc{
-			defaultHook: func(context.Context) (string, error) {
-				panic("unexpected invocation of MockUserEmailsStore.GetInitialSiteAdminEmail")
+		GetInitialSiteAdminInfoFunc: &UserEmailsStoreGetInitialSiteAdminInfoFunc{
+			defaultHook: func(context.Context) (string, bool, error) {
+				panic("unexpected invocation of MockUserEmailsStore.GetInitialSiteAdminInfo")
 			},
 		},
 		GetLatestVerificationSentEmailFunc: &UserEmailsStoreGetLatestVerificationSentEmailFunc{
@@ -31654,8 +31654,8 @@ func NewMockUserEmailsStoreFrom(i UserEmailsStore) *MockUserEmailsStore {
 		GetFunc: &UserEmailsStoreGetFunc{
 			defaultHook: i.Get,
 		},
-		GetInitialSiteAdminEmailFunc: &UserEmailsStoreGetInitialSiteAdminEmailFunc{
-			defaultHook: i.GetInitialSiteAdminEmail,
+		GetInitialSiteAdminInfoFunc: &UserEmailsStoreGetInitialSiteAdminInfoFunc{
+			defaultHook: i.GetInitialSiteAdminInfo,
 		},
 		GetLatestVerificationSentEmailFunc: &UserEmailsStoreGetLatestVerificationSentEmailFunc{
 			defaultHook: i.GetLatestVerificationSentEmail,
@@ -32026,37 +32026,37 @@ func (c UserEmailsStoreGetFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// UserEmailsStoreGetInitialSiteAdminEmailFunc describes the behavior when
-// the GetInitialSiteAdminEmail method of the parent MockUserEmailsStore
+// UserEmailsStoreGetInitialSiteAdminInfoFunc describes the behavior when
+// the GetInitialSiteAdminInfo method of the parent MockUserEmailsStore
 // instance is invoked.
-type UserEmailsStoreGetInitialSiteAdminEmailFunc struct {
-	defaultHook func(context.Context) (string, error)
-	hooks       []func(context.Context) (string, error)
-	history     []UserEmailsStoreGetInitialSiteAdminEmailFuncCall
+type UserEmailsStoreGetInitialSiteAdminInfoFunc struct {
+	defaultHook func(context.Context) (string, bool, error)
+	hooks       []func(context.Context) (string, bool, error)
+	history     []UserEmailsStoreGetInitialSiteAdminInfoFuncCall
 	mutex       sync.Mutex
 }
 
-// GetInitialSiteAdminEmail delegates to the next hook function in the queue
+// GetInitialSiteAdminInfo delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockUserEmailsStore) GetInitialSiteAdminEmail(v0 context.Context) (string, error) {
-	r0, r1 := m.GetInitialSiteAdminEmailFunc.nextHook()(v0)
-	m.GetInitialSiteAdminEmailFunc.appendCall(UserEmailsStoreGetInitialSiteAdminEmailFuncCall{v0, r0, r1})
-	return r0, r1
+func (m *MockUserEmailsStore) GetInitialSiteAdminInfo(v0 context.Context) (string, bool, error) {
+	r0, r1, r2 := m.GetInitialSiteAdminInfoFunc.nextHook()(v0)
+	m.GetInitialSiteAdminInfoFunc.appendCall(UserEmailsStoreGetInitialSiteAdminInfoFuncCall{v0, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
-// GetInitialSiteAdminEmail method of the parent MockUserEmailsStore
-// instance is invoked and the hook queue is empty.
-func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) SetDefaultHook(hook func(context.Context) (string, error)) {
+// GetInitialSiteAdminInfo method of the parent MockUserEmailsStore instance
+// is invoked and the hook queue is empty.
+func (f *UserEmailsStoreGetInitialSiteAdminInfoFunc) SetDefaultHook(hook func(context.Context) (string, bool, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetInitialSiteAdminEmail method of the parent MockUserEmailsStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) PushHook(hook func(context.Context) (string, error)) {
+// GetInitialSiteAdminInfo method of the parent MockUserEmailsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UserEmailsStoreGetInitialSiteAdminInfoFunc) PushHook(hook func(context.Context) (string, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -32064,21 +32064,21 @@ func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) PushHook(hook func(context
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) SetDefaultReturn(r0 string, r1 error) {
-	f.SetDefaultHook(func(context.Context) (string, error) {
-		return r0, r1
+func (f *UserEmailsStoreGetInitialSiteAdminInfoFunc) SetDefaultReturn(r0 string, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context) (string, bool, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) PushReturn(r0 string, r1 error) {
-	f.PushHook(func(context.Context) (string, error) {
-		return r0, r1
+func (f *UserEmailsStoreGetInitialSiteAdminInfoFunc) PushReturn(r0 string, r1 bool, r2 error) {
+	f.PushHook(func(context.Context) (string, bool, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) nextHook() func(context.Context) (string, error) {
+func (f *UserEmailsStoreGetInitialSiteAdminInfoFunc) nextHook() func(context.Context) (string, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -32091,28 +32091,28 @@ func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) nextHook() func(context.Co
 	return hook
 }
 
-func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) appendCall(r0 UserEmailsStoreGetInitialSiteAdminEmailFuncCall) {
+func (f *UserEmailsStoreGetInitialSiteAdminInfoFunc) appendCall(r0 UserEmailsStoreGetInitialSiteAdminInfoFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// UserEmailsStoreGetInitialSiteAdminEmailFuncCall objects describing the
+// UserEmailsStoreGetInitialSiteAdminInfoFuncCall objects describing the
 // invocations of this function.
-func (f *UserEmailsStoreGetInitialSiteAdminEmailFunc) History() []UserEmailsStoreGetInitialSiteAdminEmailFuncCall {
+func (f *UserEmailsStoreGetInitialSiteAdminInfoFunc) History() []UserEmailsStoreGetInitialSiteAdminInfoFuncCall {
 	f.mutex.Lock()
-	history := make([]UserEmailsStoreGetInitialSiteAdminEmailFuncCall, len(f.history))
+	history := make([]UserEmailsStoreGetInitialSiteAdminInfoFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// UserEmailsStoreGetInitialSiteAdminEmailFuncCall is an object that
-// describes an invocation of method GetInitialSiteAdminEmail on an instance
+// UserEmailsStoreGetInitialSiteAdminInfoFuncCall is an object that
+// describes an invocation of method GetInitialSiteAdminInfo on an instance
 // of MockUserEmailsStore.
-type UserEmailsStoreGetInitialSiteAdminEmailFuncCall struct {
+type UserEmailsStoreGetInitialSiteAdminInfoFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -32121,19 +32121,22 @@ type UserEmailsStoreGetInitialSiteAdminEmailFuncCall struct {
 	Result0 string
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c UserEmailsStoreGetInitialSiteAdminEmailFuncCall) Args() []interface{} {
+func (c UserEmailsStoreGetInitialSiteAdminInfoFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c UserEmailsStoreGetInitialSiteAdminEmailFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+func (c UserEmailsStoreGetInitialSiteAdminInfoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // UserEmailsStoreGetLatestVerificationSentEmailFunc describes the behavior

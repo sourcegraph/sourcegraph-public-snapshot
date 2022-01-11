@@ -398,7 +398,6 @@
     "react-scroll-manager": "^1.0.3",
     "react-sticky-box": "^0.9.3",
     "react-stripe-elements": "^6.1.2",
-    "react-textarea-autosize": "^8.3.0",
     "react-visibility-sensor": "^5.1.1",
     "reactstrap": "^8.9.0",
     "recharts": "^1.8.5",

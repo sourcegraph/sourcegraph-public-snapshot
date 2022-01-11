@@ -17,6 +17,7 @@ import styles from './SiteInitPage.module.scss'
 const initSite = async (args: SignUpArguments): Promise<void> => {
     const pingUrl = new URL('https://sourcegraph.com/ping-from-self-hosted')
     pingUrl.searchParams.set('email', args.email)
+    pingUrl.searchParams.set('tos_accepted', 'true') // Terms of Service are required to be accepted
 
     await fetch(pingUrl.toString(), {
         credentials: 'include',
