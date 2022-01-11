@@ -31,7 +31,7 @@ func newProgressCallbackReader(r io.Reader, readerLen int64, progress output.Pro
 
 	progressCallback := func(totalRead int64) {
 		if debounceInterval <= time.Since(lastUpdated) {
-			// Calculate progress through the reader; do not every complete
+			// Calculate progress through the reader; do not ever complete
 			// as we wait for the HTTP request finish the remaining small
 			// percentage.
 
