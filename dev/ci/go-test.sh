@@ -12,9 +12,11 @@ EOF
 }
 
 function go_test() {
-  local test_packages="$1"
-  local tmpfile=$(mktemp)
-  trap "rm $tmpfile" EXIT
+  local test_packages
+  test_packages="$1"
+  local tmpfile
+  tmpfile=$(mktemp)
+  trap "rm \"$tmpfile\"" EXIT
 
   # shellcheck disable=SC2086
   go test \
@@ -23,14 +25,17 @@ function go_test() {
     -covermode=atomic \
     -race \
     -v \
-    $TEST_PACKAGES \
+    $test_packages \
     | tee "$tmpfile"
 
-  local xml=$(cat "$tmpfile" | go-junit-report)
+  local xml
+  xml=$(cat "$tmpfile" | go-junit-report)
   # escape xml output properly for JSON
-  local quoted_xml="$( echo $xml | jq -R -s '.' )"
+  local quoted_xml
+  quoted_xml="$(echo $xml | jq -R -s '.')"
 
-  local data=$(cat <<EOF
+  local data=$(
+    cat <<EOF
 {
   "format": "junit",
   "run_env": {
@@ -47,11 +52,12 @@ function go_test() {
 EOF
   )
 
-  echo $data | curl --request POST \
-  --url https://analytics-api.buildkite.com/v1/uploads \
-  --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY\";" \
-  --header 'Content-Type: application/json' \
-  --data-binary @-
+  echo "$data" | curl \
+    --request POST \
+    --url https://analytics-api.buildkite.com/v1/uploads \
+    --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY\";" \
+    --header 'Content-Type: application/json' \
+    --data-binary @-
 }
 
 if [ "$1" == "-h" ]; then
