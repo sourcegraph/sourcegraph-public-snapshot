@@ -57,9 +57,7 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	defer endObservation(1, observation.Args{})
 
 	queries := []*sqlf.Query{
-		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS %s()`, quote(s.migrationsTable)),
-		sqlf.Sprintf(`ALTER TABLE %s ADD COLUMN IF NOT EXISTS version bigint NOT NULL PRIMARY KEY`, quote(s.migrationsTable)),
-		sqlf.Sprintf(`ALTER TABLE %s ADD COLUMN IF NOT EXISTS dirty boolean NOT NULL`, quote(s.migrationsTable)),
+		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS %s(version bigint NOT NULL PRIMARY KEY, dirty boolean NOT NULL)`, quote(s.migrationsTable)),
 
 		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS migration_logs()`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS id SERIAL PRIMARY KEY`),
