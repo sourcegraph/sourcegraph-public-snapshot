@@ -33,12 +33,22 @@ func Init(
 	conf conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	appConfig := conf.SiteConfig().Dotcom.GithubAppCloud
-	if !envvar.SourcegraphDotComMode() || appConfig.AppID == "" {
+	if !envvar.SourcegraphDotComMode() {
 		enterpriseServices.NewGitHubAppCloudSetupHandler = func() http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotFound)
-				_, _ = w.Write([]byte("Sourcegraph Cloud GitHub App setup is only available on sourcegraph.com or is not enabled"))
+				_, _ = w.Write([]byte("Sourcegraph Cloud GitHub App setup is only available on sourcegraph.com"))
+			})
+		}
+		return nil
+	}
+
+	appConfig := conf.SiteConfig().Dotcom.GithubAppCloud
+	if appConfig.AppID == "" {
+		enterpriseServices.NewGitHubAppCloudSetupHandler = func() http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusNotFound)
+				_, _ = w.Write([]byte("Sourcegraph Cloud GitHub App setup is not enabled"))
 			})
 		}
 		return nil
