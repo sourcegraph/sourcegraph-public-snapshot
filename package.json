@@ -431,5 +431,6 @@
     "history": "4.5.1",
     "cssnano": "4.1.10",
     "webpack": "5"
-  }
+  },
+  "version": "0.0.0"
 }
