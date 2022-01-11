@@ -1,8 +1,8 @@
+import classNames from 'classnames'
 import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import React from 'react'
 
 import { Badge } from '@sourcegraph/wildcard'
-import classNames from 'classnames'
 import { BadgeProps } from '@sourcegraph/wildcard/src/components/Badge'
 
 export interface BranchProps extends Pick<BadgeProps, 'variant'> {
