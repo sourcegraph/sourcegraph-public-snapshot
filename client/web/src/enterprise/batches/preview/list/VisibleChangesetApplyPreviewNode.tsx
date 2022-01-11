@@ -12,7 +12,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
-import { Badge, Button } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetState, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
@@ -29,6 +29,7 @@ import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescripti
 import { PreviewActions } from './PreviewActions'
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
 import styles from './VisibleChangesetApplyPreviewNode.module.scss'
+import { Branch, BranchMerge } from '../../Branch'
 
 export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
     node: VisibleChangesetApplyPreviewFields
@@ -516,12 +517,13 @@ const References: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFi
             {spec.delta.baseRefChanged &&
                 spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate' &&
                 spec.targets.changeset.currentSpec?.description.__typename === 'GitBranchChangesetDescription' && (
-                    <Badge variant="danger" className="mr-2" as="del">
-                        {spec.targets.changeset.currentSpec?.description.baseRef}
-                    </Badge>
+                    <Branch className="mr-2" deleted name={spec.targets.changeset.currentSpec?.description.baseRef} />
                 )}
-            <Badge variant="primary">{spec.targets.changesetSpec.description.baseRef}</Badge> &larr;{' '}
-            <Badge variant="primary">{spec.targets.changesetSpec.description.headRef}</Badge>
+            <BranchMerge
+                baseRef={spec.targets.changesetSpec.description.baseRef}
+                forkNamespace={spec.targets.changesetSpec.description.fork ? '' : null}
+                headRef={spec.targets.changesetSpec.description.headRef}
+            />
         </div>
     )
 }

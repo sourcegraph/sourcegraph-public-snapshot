@@ -1,15 +1,14 @@
 import classNames from 'classnames'
-import SourceForkIcon from 'mdi-react/SourceForkIcon'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { Badge } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, ChangesetState } from '../../../../graphql-operations'
 
 import { ChangesetLabel } from './ChangesetLabel'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
 import { ExternalChangesetTitle } from './ExternalChangesetTitle'
+import { BranchMerge } from '../../Branch'
 
 export interface ExternalChangesetInfoCellProps {
     node: ExternalChangesetFields
@@ -54,7 +53,7 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                         {node.repository.name}
                     </Link>{' '}
                     {hasHeadReference(node) && (
-                        <ExternalBranch
+                        <BranchMerge
                             baseRef={node.currentSpec.description.baseRef}
                             forkNamespace={node.forkNamespace}
                             headRef={node.currentSpec.description.headRef}
@@ -90,30 +89,3 @@ function hasHeadReference(node: ExternalChangesetFields): node is ExternalChange
 } {
     return node.currentSpec?.description.__typename === 'GitBranchChangesetDescription'
 }
-
-interface ExternalBranchProps {
-    baseRef: string
-    forkNamespace: string | null
-    headRef: string
-}
-
-const ExternalBranch: React.FunctionComponent<ExternalBranchProps> = ({ baseRef, forkNamespace, headRef }) => (
-    <div className="d-block d-sm-inline-block">
-        <Badge variant="secondary" className="text-monospace">
-            {baseRef}
-        </Badge>
-        <span className="p-1">&larr;</span>
-        {forkNamespace ? (
-            <>
-                <Badge variant="secondary" className="text-monospace">
-                    <SourceForkIcon className="icon-inline mr-1" />
-                    {forkNamespace}:{headRef}
-                </Badge>
-            </>
-        ) : (
-            <Badge variant="secondary" className="text-monospace">
-                {headRef}
-            </Badge>
-        )}
-    </div>
-)
