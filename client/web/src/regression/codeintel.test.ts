@@ -1,6 +1,5 @@
-import { applyEdits } from '@sqs/jsonc-parser'
+import { applyEdits, JSONPath } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import { JSONPath } from '@sqs/jsonc-parser/lib/main'
 import expect from 'expect'
 import { describe, before, after, test } from 'mocha'
 import { ElementHandle } from 'puppeteer'

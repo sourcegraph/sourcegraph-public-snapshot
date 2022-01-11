@@ -188,6 +188,10 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	// Run enterprise setup hook
 	enterprise := enterpriseSetupHook(db, conf.DefaultClient())
 
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
+	if err != nil {
+		log.Fatalf("Failed to create sub-repo client: %v", err)
+	}
 	ui.InitRouter(db, enterprise.CodeIntelResolver)
 
 	if len(os.Args) >= 2 {
@@ -247,11 +251,6 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { updatecheck.Start(db) })
-
-	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
-	if err != nil {
-		log.Fatalf("Failed to create sub-repo client: %v", err)
-	}
 
 	schema, err := graphqlbackend.NewSchema(db,
 		enterprise.BatchChangesResolver,

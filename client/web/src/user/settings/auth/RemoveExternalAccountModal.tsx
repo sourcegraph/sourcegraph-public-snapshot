@@ -4,6 +4,7 @@ import React, { useCallback, useState } from 'react'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { Button } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { Scalars, DeleteExternalAccountResult, DeleteExternalAccountVariables } from '../../../graphql-operations'
@@ -66,17 +67,18 @@ export const RemoveExternalAccountModal: React.FunctionComponent<{
                     use {name} to sign in to Sourcegraph.
                 </div>
                 <div className="d-flex justify-content-end">
-                    <button
-                        type="button"
+                    <Button
                         disabled={isLoading}
-                        className="btn btn-outline-secondary mr-2"
+                        className="mr-2"
                         onClick={onDidCancel}
+                        outline={true}
+                        variant="secondary"
                     >
                         Cancel
-                    </button>
-                    <button type="submit" disabled={isLoading} className="btn btn-danger">
+                    </Button>
+                    <Button type="submit" disabled={isLoading} variant="danger">
                         Yes, disconnect {name}
-                    </button>
+                    </Button>
                 </div>
             </Form>
         </Dialog>

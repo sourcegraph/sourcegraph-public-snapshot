@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
+import { Button } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../components/Sidebar'
 
@@ -54,10 +55,9 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
             <SidebarGroup>
                 <SidebarGroupHeader label="Categories" />
                 {['All' as const, ...EXTENSION_CATEGORIES].map(category => (
-                    <button
-                        type="button"
+                    <Button
                         className={classNames(
-                            'btn text-left sidebar__link--inactive d-flex w-100',
+                            'text-left sidebar__link--inactive d-flex w-100',
                             selectedCategory === category && 'btn-primary'
                         )}
                         data-test-extension-category={category}
@@ -65,7 +65,7 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
                         onClick={() => onSelectCategory(category)}
                     >
                         {category}
-                    </button>
+                    </Button>
                 ))}
             </SidebarGroup>
 

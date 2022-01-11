@@ -4,6 +4,7 @@ import React from 'react'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { Button } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
@@ -122,9 +123,9 @@ export const AddExternalServicesPage: React.FunctionComponent<AddExternalService
                         </li>
                     </ul>
                     <div className="d-flex justify-content-end">
-                        <button className="btn btn-light" onClick={dismissPrivacyWarning} type="button">
+                        <Button className="btn-light" onClick={dismissPrivacyWarning}>
                             Do not show this again
-                        </button>
+                        </Button>
                     </div>
                 </div>
             )}

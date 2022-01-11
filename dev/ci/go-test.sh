@@ -11,6 +11,58 @@ Run go tests, optionally restricting which ones based on the only and exclude co
 EOF
 }
 
+function go_test() {
+  local test_packages
+  test_packages="$1"
+  local tmpfile
+  tmpfile=$(mktemp)
+  # Interpolate tmpfile right now, so the trap set by the function
+  # always work, even if ran outside the function body.
+  # shellcheck disable=SC2064
+  trap "rm \"$tmpfile\"" EXIT
+
+  # shellcheck disable=SC2086
+  go test \
+    -timeout 10m \
+    -coverprofile=coverage.txt \
+    -covermode=atomic \
+    -race \
+    -v \
+    $test_packages | tee "$tmpfile"
+
+  local xml
+  xml=$(go-junit-report <"$tmpfile")
+  # escape xml output properly for JSON
+  local quoted_xml
+  quoted_xml="$(echo "$xml" | jq -R -s '.')"
+
+  local data
+  data=$(
+    cat <<EOF
+{
+  "format": "junit",
+  "run_env": {
+    "CI": "buildkite",
+    "key": "$BUILDKITE_BUILD_ID",
+    "job_id": "$BUILDKITE_JOB_ID",
+    "branch": "$BUILDKITE_BRANCH",
+    "commit_sha": "$BUILDKITE_COMMIT",
+    "message": "$BUILDKITE_MESSAGE",
+    "url": "$BUILDKITE_BUILD_URL"
+  },
+  "data": $quoted_xml
+}
+EOF
+  )
+
+  echo "$data" | curl \
+    --request POST \
+    --url https://analytics-api.buildkite.com/v1/uploads \
+    --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY\";" \
+    --header 'Content-Type: application/json' \
+    --data-binary @-
+}
+
 if [ "$1" == "-h" ]; then
   usage
   exit 1
@@ -26,6 +78,17 @@ fi
 if [ -n "$FILTER_ACTION" ]; then
   echo -e "--- :information_source: \033[0;34mFiltering go tests: $FILTER_ACTION $FILTER_TARGETS\033[0m"
 fi
+
+# Buildkite analytics
+
+# https://github.com/sourcegraph/sourcegraph/issues/28469
+# TODO is that the best way to handle this?
+go install github.com/jstemmer/go-junit-report@latest
+asdf reshim golang
+
+# TODO move to manifest
+# https://github.com/sourcegraph/sourcegraph/issues/28469
+BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY=$(gcloud secrets versions access latest --secret="BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY" --project="sourcegraph-ci" --quiet)
 
 # For searcher
 echo "--- comby install"
@@ -50,8 +113,7 @@ find . -name go.mod -exec dirname '{}' \; | while read -r d; do
       TEST_PACKAGES=$(go list ./... | { grep -v "$patterns" || true; }) # -v to reject
       if [ -n "$TEST_PACKAGES" ]; then
         echo "--- $d go test"
-        # shellcheck disable=SC2086
-        go test -timeout 10m -coverprofile=coverage.txt -covermode=atomic -race $TEST_PACKAGES
+        go_test "$TEST_PACKAGES"
       else
         echo "--- $d go test (skipping)"
       fi
@@ -60,8 +122,7 @@ find . -name go.mod -exec dirname '{}' \; | while read -r d; do
       TEST_PACKAGES=$(go list ./... | { grep "$patterns" || true; }) # select only what we need
       if [ -n "$TEST_PACKAGES" ]; then
         echo "--- $d go test"
-        # shellcheck disable=SC2086
-        go test -timeout 10m -coverprofile=coverage.txt -covermode=atomic -race $TEST_PACKAGES
+        go_test "$TEST_PACKAGES"
       else
         echo "--- $d go test (skipping)"
       fi
@@ -69,8 +130,7 @@ find . -name go.mod -exec dirname '{}' \; | while read -r d; do
     *)
       TEST_PACKAGES="./..."
       echo "--- $d go test"
-      # shellcheck disable=SC2086
-      go test -timeout 10m -coverprofile=coverage.txt -covermode=atomic -race $TEST_PACKAGES
+      go_test "$TEST_PACKAGES"
       ;;
   esac
 

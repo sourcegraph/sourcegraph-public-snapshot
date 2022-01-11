@@ -34,6 +34,7 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     onThemePreferenceChange: () => undefined,
     authenticatedUser: authUser,
     globbing: false,
+    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     platformContext: {} as any,
     keyboardShortcuts: [],
     searchContextsEnabled: true,

@@ -8,6 +8,7 @@ import React, { useEffect, useState } from 'react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
+import { Button } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
 
@@ -34,9 +35,9 @@ add('GitHub', () => (
             }, [])
             return (
                 <>
-                    <button className="btn" id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
+                    <Button id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
                         <GithubIcon className="icon-inline" />
-                    </button>
+                    </Button>
                     <InstallBrowserExtensionPopover
                         url=""
                         serviceKind={serviceKind}
@@ -68,9 +69,9 @@ add(
                 }, [])
                 return (
                     <>
-                        <button className="btn" id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
+                        <Button id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
                             <GitlabIcon className="icon-inline" />
-                        </button>
+                        </Button>
                         <InstallBrowserExtensionPopover
                             url=""
                             serviceKind={serviceKind}
@@ -106,9 +107,9 @@ add(
                 }, [])
                 return (
                     <>
-                        <button className="btn" id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
+                        <Button id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
                             <PhabricatorIcon className="icon-inline" />
-                        </button>
+                        </Button>
                         <InstallBrowserExtensionPopover
                             url=""
                             serviceKind={serviceKind}
@@ -144,9 +145,9 @@ add(
                 }, [])
                 return (
                     <>
-                        <button className="btn" id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
+                        <Button id={targetID} onClick={() => setOpen(isOpen => !isOpen)}>
                             <BitbucketIcon className="icon-inline" />
-                        </button>
+                        </Button>
 
                         <InstallBrowserExtensionPopover
                             url=""

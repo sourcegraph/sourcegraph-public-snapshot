@@ -10,6 +10,7 @@ import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
+import { Button } from '@sourcegraph/wildcard'
 
 import { knownCodeHosts } from '../knownCodeHosts'
 
@@ -182,9 +183,9 @@ export const OptionsPage: React.FunctionComponent<OptionsPageProps> = ({
             {showPrivateRepositoryAlert && <PrivateRepositoryAlert />}
             <section className={styles.section}>
                 <p className="mb-0">
-                    <button type="button" className="btn btn-link btn-sm p-0" onClick={toggleAdvancedSettings}>
+                    <Button className="p-0" onClick={toggleAdvancedSettings} variant="link" size="sm">
                         <small>{showAdvancedSettings ? 'Hide' : 'Show'} advanced settings</small>
-                    </button>
+                    </Button>
                 </p>
                 {showAdvancedSettings && (
                     <OptionsPageAdvancedSettings optionFlags={optionFlags} onChangeOptionFlag={onChangeOptionFlag} />
@@ -226,9 +227,9 @@ const PermissionAlert: React.FunctionComponent<PermissionAlertProps> = ({
         <p className={styles.permissionText}>
             <strong>Grant permissions</strong> to use the Sourcegraph extension on {name}.
         </p>
-        <button type="button" onClick={onClickGrantPermissions} className="btn btn-sm btn-primary">
+        <Button onClick={onClickGrantPermissions} variant="primary" size="sm">
             <small>Grant permissions</small>
-        </button>
+        </Button>
     </section>
 )
 

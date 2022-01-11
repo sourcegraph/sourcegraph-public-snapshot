@@ -3,6 +3,8 @@ import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useState } from 'react'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import styles from './ModalVideo.module.scss'
 
 interface ModalVideoProps {
@@ -50,13 +52,13 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
             <figure>
                 {thumbnailElement}
                 <figcaption>
-                    <button
-                        type="button"
-                        className="btn btn-link font-weight-normal p-0 pt-2 w-100"
+                    <Button
+                        variant="link"
+                        className="font-weight-normal p-0 pt-2 w-100"
                         onClick={() => toggleDialog(true)}
                     >
                         {title}
-                    </button>
+                    </Button>
                 </figcaption>
             </figure>
         )
@@ -74,14 +76,9 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
                     <div className={styles.modalContent}>
                         <div className={styles.modalHeader}>
                             <h3 id={id}>{title}</h3>
-                            <button
-                                type="button"
-                                className="btn btn-icon p-1"
-                                onClick={() => toggleDialog(false)}
-                                aria-label="Close"
-                            >
+                            <Button className="btn-icon p-1" onClick={() => toggleDialog(false)} aria-label="Close">
                                 <CloseIcon className="icon-inline" />
-                            </button>
+                            </Button>
                         </div>
                         <div className="w-100">
                             <div className={styles.iframeVideoWrapper}>

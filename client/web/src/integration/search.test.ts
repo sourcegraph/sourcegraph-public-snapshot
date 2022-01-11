@@ -198,7 +198,7 @@ describe('Search', () => {
 
             // File autocomplete from repo search bar
             await driver.page.waitForSelector('#monaco-query-input')
-            await driver.page.click('#monaco-query-input')
+            await driver.page.focus('#monaco-query-input')
             await driver.page.keyboard.type('jwtmi')
             await driver.page.waitForSelector('#monaco-query-input .suggest-widget.visible')
             await driver.findElementWithText('jwtmiddleware.go', {

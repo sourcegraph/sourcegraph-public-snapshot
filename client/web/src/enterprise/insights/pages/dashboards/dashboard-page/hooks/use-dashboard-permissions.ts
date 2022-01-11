@@ -67,7 +67,7 @@ export function useDashboardPermissions(
         if (isCustomInsightDashboard(dashboard)) {
             // Global scope permission handling
             if (isGlobalSubject(dashboardOwner)) {
-                const canBeEdited = dashboardOwner.viewerCanAdminister && dashboardOwner.allowSiteSettingsEdits
+                const canBeEdited = dashboardOwner.viewerCanAdminister
 
                 if (!canBeEdited) {
                     return {
