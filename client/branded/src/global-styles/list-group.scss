@@ -80,7 +80,7 @@
         pointer-events: none;
 
         :global(.theme-light) & {
-            background-color: var(--list-group-disabled-bg);
+            background-color: var(--white);
         }
     }
 
