@@ -83,9 +83,7 @@ function importingFailed(node: ExternalChangesetFields): boolean {
     return node.state === ChangesetState.FAILED && !hasHeadReference(node)
 }
 
-function hasHeadReference(
-    node: ExternalChangesetFields
-): node is ExternalChangesetFields & {
+function hasHeadReference(node: ExternalChangesetFields): node is ExternalChangesetFields & {
     currentSpec: typeof node.currentSpec & {
         description: { __typename: 'GitBranchChangesetDescription' }
     }
@@ -104,7 +102,7 @@ const ExternalBranch: React.FunctionComponent<ExternalBranchProps> = ({ baseRef,
         <Badge variant="secondary" className="text-monospace">
             {baseRef}
         </Badge>
-        <span className="p-2">&larr;</span>
+        <span className="p-1">&larr;</span>
         {forkNamespace ? (
             <>
                 <Badge variant="secondary" className="text-monospace">
