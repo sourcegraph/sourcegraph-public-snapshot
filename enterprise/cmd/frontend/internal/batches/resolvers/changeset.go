@@ -358,6 +358,13 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 	return externallink.NewResolver(url, r.changeset.ExternalServiceType), nil
 }
 
+func (r *changesetResolver) ForkNamespace() *string {
+	if namespace := r.changeset.ExternalForkNamespace; namespace != "" {
+		return &namespace
+	}
+	return nil
+}
+
 func (r *changesetResolver) ReviewState(ctx context.Context) *string {
 	if !r.changeset.Published() {
 		return nil

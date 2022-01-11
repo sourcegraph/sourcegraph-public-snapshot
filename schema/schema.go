@@ -1609,6 +1609,8 @@ type SiteConfiguration struct {
 	BatchChangesDisableWebhooksWarning bool `json:"batchChanges.disableWebhooksWarning,omitempty"`
 	// BatchChangesEnabled description: Enables/disables the Batch Changes feature.
 	BatchChangesEnabled *bool `json:"batchChanges.enabled,omitempty"`
+	// BatchChangesEnforceForks description: When enabled, all branches created by batch changes will be pushed to forks of the original repository.
+	BatchChangesEnforceForks bool `json:"batchChanges.enforceForks,omitempty"`
 	// BatchChangesRestrictToAdmins description: When enabled, only site admins can create and apply batch changes.
 	BatchChangesRestrictToAdmins *bool `json:"batchChanges.restrictToAdmins,omitempty"`
 	// BatchChangesRolloutWindows description: Specifies specific windows, which can have associated rate limits, to be used when publishing changesets. All days and times are handled in UTC.
