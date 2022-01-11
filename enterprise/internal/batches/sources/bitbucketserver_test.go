@@ -9,6 +9,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+	"github.com/stretchr/testify/assert"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -682,3 +683,145 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 		}
 	})
 }
+
+func TestBitbucketServerSource_GetUserFork(t *testing.T) {
+	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
+	if instanceURL == "" {
+		// The test fixtures and golden files were generated with
+		// this config pointed to bitbucket.sgdev.org
+		instanceURL = "https://bitbucket.sgdev.org"
+	}
+
+	newBitbucketServerRepo := func(key, slug string, id int) *types.Repo {
+		return &types.Repo{
+			Metadata: &bitbucketserver.Repo{
+				ID:      id,
+				Slug:    slug,
+				Project: &bitbucketserver.Project{Key: key},
+			},
+		}
+	}
+
+	newExternalService := func(t *testing.T, token *string) *types.ExternalService {
+		var actualToken string
+		if token == nil {
+			actualToken = os.Getenv("BITBUCKET_SERVER_TOKEN")
+		} else {
+			actualToken = *token
+		}
+
+		return &types.ExternalService{
+			Kind: extsvc.KindBitbucketServer,
+			Config: marshalJSON(t, &schema.BitbucketServerConnection{
+				Url:   instanceURL,
+				Token: actualToken,
+			}),
+		}
+	}
+
+	testName := func(t *testing.T) string {
+		return strings.ReplaceAll(t.Name(), "/", "_")
+	}
+
+	ctx := context.Background()
+
+	lg := log15.New()
+	lg.SetHandler(log15.DiscardHandler())
+
+	t.Run("bad username", func(t *testing.T) {
+		cf, save := newClientFactory(t, testName(t))
+		defer save(t)
+
+		svc := newExternalService(t, strPtr("invalid"))
+
+		bbsSrc, err := NewBitbucketServerSource(svc, cf)
+		assert.Nil(t, err)
+
+		fork, err := bbsSrc.GetUserFork(ctx, newBitbucketServerRepo("SOUR", "read-only", 10103))
+		assert.Nil(t, fork)
+		assert.NotNil(t, err)
+		assert.Contains(t, err.Error(), "getting username")
+	})
+
+	t.Run("not a fork", func(t *testing.T) {
+		name := testName(t)
+		cf, save := newClientFactory(t, name)
+		defer save(t)
+
+		svc := newExternalService(t, nil)
+		// If an update is run by someone who's not aharvey, this needs to be a
+		// repo that isn't a fork.
+		target := newBitbucketServerRepo("~AHARVEY", "old-talk", 0)
+
+		bbsSrc, err := NewBitbucketServerSource(svc, cf)
+		assert.Nil(t, err)
+
+		fork, err := bbsSrc.GetUserFork(ctx, target)
+		assert.Nil(t, fork)
+		assert.ErrorIs(t, err, errNotAFork)
+	})
+
+	t.Run("not forked from parent", func(t *testing.T) {
+		name := testName(t)
+		cf, save := newClientFactory(t, name)
+		defer save(t)
+
+		svc := newExternalService(t, nil)
+		// We'll give the target repo the incorrect ID, which will result in the
+		// parent check in getFork() failing.
+		target := newBitbucketServerRepo("SOUR", "read-only", 0)
+
+		bbsSrc, err := NewBitbucketServerSource(svc, cf)
+		assert.Nil(t, err)
+
+		fork, err := bbsSrc.GetUserFork(ctx, target)
+		assert.Nil(t, fork)
+		assert.ErrorIs(t, err, errNotForkedFromParent)
+	})
+
+	t.Run("already forked", func(t *testing.T) {
+		name := testName(t)
+		cf, save := newClientFactory(t, name)
+		defer save(t)
+
+		svc := newExternalService(t, nil)
+		target := newBitbucketServerRepo("SOUR", "read-only", 10103)
+
+		bbsSrc, err := NewBitbucketServerSource(svc, cf)
+		assert.Nil(t, err)
+
+		user, err := bbsSrc.client.AuthenticatedUsername(ctx)
+		assert.Nil(t, err)
+
+		fork, err := bbsSrc.GetUserFork(ctx, target)
+		assert.Nil(t, err)
+		assert.NotNil(t, fork)
+		assert.Equal(t, "~"+strings.ToUpper(user), fork.Metadata.(*bitbucketserver.Repo).Project.Key)
+
+		testutil.AssertGolden(t, "testdata/golden/"+name, update(name), fork)
+	})
+
+	t.Run("new fork", func(t *testing.T) {
+		name := testName(t)
+		cf, save := newClientFactory(t, name)
+		defer save(t)
+
+		svc := newExternalService(t, nil)
+		target := newBitbucketServerRepo("SGDEMO", "go", 10060)
+
+		bbsSrc, err := NewBitbucketServerSource(svc, cf)
+		assert.Nil(t, err)
+
+		user, err := bbsSrc.client.AuthenticatedUsername(ctx)
+		assert.Nil(t, err)
+
+		fork, err := bbsSrc.GetUserFork(ctx, target)
+		assert.Nil(t, err)
+		assert.NotNil(t, fork)
+		assert.Equal(t, "~"+strings.ToUpper(user), fork.Metadata.(*bitbucketserver.Repo).Project.Key)
+
+		testutil.AssertGolden(t, "testdata/golden/"+name, update(name), fork)
+	})
+}
+
+func strPtr(s string) *string { return &s }
