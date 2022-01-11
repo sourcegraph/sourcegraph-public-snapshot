@@ -16,6 +16,9 @@ function go_test() {
   test_packages="$1"
   local tmpfile
   tmpfile=$(mktemp)
+  # Interpolate tmpfile right now, so the trap set by the function
+  # always work, even if ran outside the function body.
+  # shellcheck disable=SC2064
   trap "rm \"$tmpfile\"" EXIT
 
   # shellcheck disable=SC2086
@@ -29,10 +32,10 @@ function go_test() {
     | tee "$tmpfile"
 
   local xml
-  xml=$(cat "$tmpfile" | go-junit-report)
+  xml=$(go-junit-report <"$tmpfile")
   # escape xml output properly for JSON
   local quoted_xml
-  quoted_xml="$(echo $xml | jq -R -s '.')"
+  quoted_xml="$(echo "$xml" | jq -R -s '.')"
 
   local data=$(
     cat <<EOF
