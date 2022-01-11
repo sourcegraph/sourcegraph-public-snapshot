@@ -82,11 +82,7 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                             responseType === OrganizationInvitationResponseType.ACCEPT
                                         )
                                     ),
-                                    concatMap(() => [
-                                        // Refresh current user's list of organizations.
-                                        refreshAuthenticatedUser(),
-                                        { submissionOrError: null },
-                                    ]),
+                                    concatMap(() => concat(refreshAuthenticatedUser(), [{ submissionOrError: null }])),
                                     catchError(error => [{ submissionOrError: asError(error) }])
                                 )
                             )
