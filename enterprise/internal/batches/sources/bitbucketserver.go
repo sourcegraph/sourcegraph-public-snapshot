@@ -101,18 +101,19 @@ func (s BitbucketServerSource) ValidateAuthenticator(ctx context.Context) error 
 func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
 	var exists bool
 
-	repo := c.Repo.Metadata.(*bitbucketserver.Repo)
+	remoteRepo := c.RemoteRepo.Metadata.(*bitbucketserver.Repo)
+	targetRepo := c.TargetRepo.Metadata.(*bitbucketserver.Repo)
 
 	pr := &bitbucketserver.PullRequest{Title: c.Title, Description: c.Body}
 
-	pr.ToRef.Repository.Slug = repo.Slug
-	pr.ToRef.Repository.ID = repo.ID
-	pr.ToRef.Repository.Project.Key = repo.Project.Key
+	pr.ToRef.Repository.Slug = targetRepo.Slug
+	pr.ToRef.Repository.ID = targetRepo.ID
+	pr.ToRef.Repository.Project.Key = targetRepo.Project.Key
 	pr.ToRef.ID = git.EnsureRefPrefix(c.BaseRef)
 
-	pr.FromRef.Repository.Slug = repo.Slug
-	pr.FromRef.Repository.ID = repo.ID
-	pr.FromRef.Repository.Project.Key = repo.Project.Key
+	pr.FromRef.Repository.Slug = remoteRepo.Slug
+	pr.FromRef.Repository.ID = remoteRepo.ID
+	pr.FromRef.Repository.Project.Key = remoteRepo.Project.Key
 	pr.FromRef.ID = git.EnsureRefPrefix(c.HeadRef)
 
 	err := s.client.CreatePullRequest(ctx, pr)
@@ -153,7 +154,7 @@ func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset)
 
 // LoadChangeset loads the latest state of the given Changeset from the codehost.
 func (s BitbucketServerSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
-	repo := cs.Repo.Metadata.(*bitbucketserver.Repo)
+	repo := cs.TargetRepo.Metadata.(*bitbucketserver.Repo)
 	number, err := strconv.Atoi(cs.ExternalID)
 	if err != nil {
 		return err

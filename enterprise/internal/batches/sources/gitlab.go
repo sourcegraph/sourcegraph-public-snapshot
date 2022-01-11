@@ -105,7 +105,7 @@ func (s GitLabSource) ValidateAuthenticator(ctx context.Context) error {
 // CreateChangeset creates a GitLab merge request. If it already exists,
 // *Changeset will be populated and the return value will be true.
 func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
-	project := c.Repo.Metadata.(*gitlab.Project)
+	project := c.TargetRepo.Metadata.(*gitlab.Project)
 	exists := false
 	source := git.AbbreviateRef(c.HeadRef)
 	target := git.AbbreviateRef(c.BaseRef)
@@ -166,7 +166,7 @@ func (s *GitLabSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (
 
 // CloseChangeset closes the merge request on GitLab, leaving it unlocked.
 func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
-	project := c.Repo.Metadata.(*gitlab.Project)
+	project := c.TargetRepo.Metadata.(*gitlab.Project)
 	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
@@ -196,7 +196,7 @@ func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 
 // LoadChangeset loads the given merge request from GitLab and updates it.
 func (s *GitLabSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
-	project := cs.Repo.Metadata.(*gitlab.Project)
+	project := cs.TargetRepo.Metadata.(*gitlab.Project)
 
 	iid, err := strconv.ParseInt(cs.ExternalID, 10, 64)
 	if err != nil {
@@ -225,7 +225,7 @@ func (s *GitLabSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 
 // ReopenChangeset closes the merge request on GitLab, leaving it unlocked.
 func (s *GitLabSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
-	project := c.Repo.Metadata.(*gitlab.Project)
+	project := c.TargetRepo.Metadata.(*gitlab.Project)
 	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
@@ -390,7 +390,7 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
 	}
-	project := c.Repo.Metadata.(*gitlab.Project)
+	project := c.TargetRepo.Metadata.(*gitlab.Project)
 
 	// Avoid accidentally undrafting the changeset by checking its current
 	// status.
@@ -434,7 +434,7 @@ func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error
 
 // CreateComment posts a comment on the Changeset.
 func (s *GitLabSource) CreateComment(ctx context.Context, c *Changeset, text string) error {
-	project := c.Repo.Metadata.(*gitlab.Project)
+	project := c.TargetRepo.Metadata.(*gitlab.Project)
 	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
@@ -450,7 +450,7 @@ func (s *GitLabSource) MergeChangeset(ctx context.Context, c *Changeset, squash 
 	if !ok {
 		return errors.New("Changeset is not a GitLab merge request")
 	}
-	project := c.Repo.Metadata.(*gitlab.Project)
+	project := c.TargetRepo.Metadata.(*gitlab.Project)
 
 	updated, err := s.client.MergeMergeRequest(ctx, project, mr, squash)
 	if err != nil {

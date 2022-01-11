@@ -408,6 +408,12 @@
       "group": "BatchChanges",
       "default": true
     },
+    "batchChanges.enforceForks": {
+      "description": "When enabled, all branches created by batch changes will be pushed to forks of the original repository.",
+      "type": "boolean",
+      "group": "BatchChanges",
+      "default": false
+    },
     "batchChanges.restrictToAdmins": {
       "description": "When enabled, only site admins can create and apply batch changes.",
       "type": "boolean",
