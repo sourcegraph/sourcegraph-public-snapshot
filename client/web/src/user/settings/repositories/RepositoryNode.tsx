@@ -8,9 +8,8 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TickIcon from 'mdi-react/TickIcon'
 import React, { useCallback } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -44,7 +43,7 @@ const StatusIcon: React.FunctionComponent<StatusIconProps> = ({ mirrorInfo }) =>
     if (mirrorInfo.cloneInProgress) {
         return (
             <small data-tooltip="Clone in progress." className="mr-2 text-success">
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             </small>
         )
     }

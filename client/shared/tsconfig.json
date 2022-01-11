@@ -13,5 +13,5 @@
   },
   "include": ["**/*", ".*", "./src/**/*.json"],
   "exclude": ["../../node_modules", "./node_modules", "./out", "./src/end-to-end"],
-  "references": [{ "path": "../common" }],
+  "references": [{ "path": "../common" }, { "path": "../codeintellify" }],
 }

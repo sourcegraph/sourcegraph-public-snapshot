@@ -3,13 +3,13 @@ package background
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
 func StartBackgroundJobs(ctx context.Context, db database.DB) {
-	codeMonitorsStore := codemonitors.NewStore(db)
+	codeMonitorsStore := edb.CodeMonitors(db)
 
 	triggerMetrics := newMetricsForTriggerQueries()
 	actionMetrics := newActionMetrics()

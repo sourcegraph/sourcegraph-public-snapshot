@@ -40,11 +40,12 @@ import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { IS_CHROME } from '../marketing/util'
 import { Settings } from '../schema/settings.schema'
-import { PatternTypeProps, SearchContextProps, searchQueryForRepoRevision, SearchStreamingProps } from '../search'
+import { SearchContextProps, searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { useNavbarQueryState } from '../stores'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
@@ -77,7 +78,6 @@ export interface RepoContainerContext
         HoverThresholdProps,
         TelemetryProps,
         ActivationProps,
-        PatternTypeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         BreadcrumbSetters,
         ActionItemsBarProps,
@@ -85,7 +85,8 @@ export interface RepoContainerContext
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        FeatureFlagProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -119,7 +120,6 @@ interface RepoContainerProps
         ActivationProps,
         ThemeProps,
         ExtensionAlertProps,
-        PatternTypeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         BreadcrumbSetters,
         BreadcrumbsProps,
@@ -127,7 +127,8 @@ interface RepoContainerProps
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps {
+        CodeInsightsProps,
+        FeatureFlagProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]

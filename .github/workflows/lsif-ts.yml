@@ -24,6 +24,7 @@ jobs:
           - client/web
           - client/wildcard
           - client/common
+          - client/codeintellify
     steps:
       # Setup
       - name: Checkout

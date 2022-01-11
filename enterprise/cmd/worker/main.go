@@ -46,6 +46,10 @@ func main() {
 	shared.Start(additionalJobs, registerEnterpriseMigrations)
 }
 
+func init() {
+	oobmigration.ReturnEnterpriseMigrations = true
+}
+
 // setAuthProviders waits for the database to be initialized, then periodically refreshes the
 // global authz providers. This changes the repositories that are visible for reads based on the
 // current actor stored in an operation's context, which is likely an internal actor for many of

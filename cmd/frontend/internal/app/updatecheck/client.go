@@ -116,9 +116,9 @@ func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
 	return usagestatsdeprecated.GetUsersActiveTodayCount(ctx)
 }
 
-func getInitialSiteAdminEmail(ctx context.Context, db database.DB) (_ string, err error) {
-	defer recordOperation("getInitialSiteAdminEmail")(&err)
-	return database.UserEmails(db).GetInitialSiteAdminEmail(ctx)
+func getInitialSiteAdminInfo(ctx context.Context, db database.DB) (_ string, _ bool, err error) {
+	defer recordOperation("getInitialSiteAdminInfo")(&err)
+	return database.UserEmails(db).GetInitialSiteAdminInfo(ctx)
 }
 
 func getAndMarshalBatchChangesUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
@@ -350,9 +350,9 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		logFunc("telemetry: database.Users.Count failed", "error", err)
 	}
 	r.TotalUsers = int32(totalUsers)
-	r.InitialAdminEmail, err = getInitialSiteAdminEmail(ctx, db)
+	r.InitialAdminEmail, r.TosAccepted, err = getInitialSiteAdminInfo(ctx, db)
 	if err != nil {
-		logFunc("telemetry: database.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
+		logFunc("telemetry: database.UserEmails.GetInitialSiteAdminInfo failed", "error", err)
 	}
 
 	r.DependencyVersions, err = getDependencyVersions(ctx, db, logFunc)

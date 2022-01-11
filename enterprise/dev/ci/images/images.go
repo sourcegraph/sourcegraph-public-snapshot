@@ -15,6 +15,9 @@ const (
 	SourcegraphDockerDevRegistry = "us.gcr.io/sourcegraph-dev"
 	// SourcegraphDockerPublishRegistry is a public registry for final images, and does not require authentication to pull from.
 	SourcegraphDockerPublishRegistry = "index.docker.io/sourcegraph"
+	MainBranchTagPublishFormat       = "%05d_%10s_%7s"
+	DefaultTagDateFormat             = "2006-01-02"
+	DefaultBranchTagFormat           = "%s_%05d_%10s_%7s" // encodes branch inside the tag as well
 )
 
 // DevRegistryImage returns the name of the image for the given app and tag on the

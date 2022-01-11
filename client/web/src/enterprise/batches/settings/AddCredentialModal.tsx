@@ -4,7 +4,7 @@ import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
@@ -196,7 +196,7 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                                     disabled={isLoading === true || credential.length === 0}
                                     className="btn btn-primary test-add-credential-modal-submit"
                                 >
-                                    {isLoading === true && <LoadingSpinner className="icon-inline" />}
+                                    {isLoading === true && <LoadingSpinner />}
                                     {requiresSSH ? 'Next' : 'Add credential'}
                                 </button>
                             </div>

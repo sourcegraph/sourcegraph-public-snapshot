@@ -34,17 +34,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.35.0")
+	latestReleaseDockerServerImageBuild = newBuild("3.35.1")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.35.0")
+	latestReleaseKubernetesBuild = newBuild("3.35.1")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.35.0")
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.35.1")
 )
 
 func getLatestRelease(deployType string) build {
@@ -195,6 +195,7 @@ type pingRequest struct {
 	CodeMonitoringUsage json.RawMessage `json:"codeMonitoringUsage"`
 	CodeHostVersions    json.RawMessage `json:"codeHostVersions"`
 	InitialAdminEmail   string          `json:"initAdmin"`
+	TosAccepted         bool            `json:"tosAccepted"`
 	TotalUsers          int32           `json:"totalUsers"`
 	HasRepos            bool            `json:"repos"`
 	EverSearched        bool            `json:"searched"`
@@ -237,6 +238,7 @@ func readPingRequestFromQuery(q url.Values) (*pingRequest, error) {
 		HasRepos:             toBool(q.Get("repos")),
 		EverSearched:         toBool(q.Get("searched")),
 		EverFindRefs:         toBool(q.Get("refs")),
+		TosAccepted:          toBool(q.Get("tosAccepted")),
 	}, nil
 }
 
@@ -345,7 +347,7 @@ func logPing(r *http.Request, pr *pingRequest, hasUpdate bool) {
 		now := time.Now().UTC()
 		rounded := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		millis := rounded.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
-		go hubspotutil.SyncUser(pr.InitialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true, LatestPing: millis})
+		go hubspotutil.SyncUser(pr.InitialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true, LatestPing: millis, HasAgreedToToS: pr.TosAccepted})
 	}
 }
 

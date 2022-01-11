@@ -18,5 +18,6 @@
     { "path": "client/storybook" },
     { "path": "dev/release" },
     { "path": "schema" },
+    { "path": "client/codeintellify" },
   ],
 }
