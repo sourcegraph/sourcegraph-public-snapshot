@@ -1,3 +1,7 @@
+-- +++
+-- parent: 1528395908
+-- +++
+
 BEGIN;
 
 -- Undo the changes corresponding to https://github.com/sourcegraph/sourcegraph/pull/25715
