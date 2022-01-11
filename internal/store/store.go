@@ -327,6 +327,25 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, largeFilePatterns []string, 
 			if err != nil {
 				return err
 			}
+		case tar.TypeSymlink:
+			// We cannot use tr.Read like we do for normal files because tr.Read returns (0,
+			// io.EOF) for symlinks. We zip symlinks by setting the mode bits explicitly and
+			// writing the link's target path as content.
+
+			// ignore symlinks if they match the filter
+			if filter(hdr) {
+				continue
+			}
+			fh := &zip.FileHeader{
+				Name:   hdr.Name,
+				Method: zip.Store,
+			}
+			fh.SetMode(os.ModeSymlink)
+			w, err := zw.CreateHeader(fh)
+			if err != nil {
+				return err
+			}
+			w.Write([]byte(hdr.Linkname))
 		default:
 			continue
 		}
