@@ -40,6 +40,11 @@ type DraftChangesetSource interface {
 type ForkableChangesetSource interface {
 	ChangesetSource
 
+	// GetNamespaceFork returns a repo pointing to a fork of the given repo in
+	// the given namespace, ensuring that the fork exists and is a fork of the
+	// target repo.
+	GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error)
+
 	// GetUserFork returns a repo pointing to a fork of the given repo in the
 	// currently authenticated user's namespace.
 	GetUserFork(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error)
