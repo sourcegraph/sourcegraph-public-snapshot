@@ -17,6 +17,7 @@ import { Button } from '@sourcegraph/wildcard'
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetState, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
+import { Branch, BranchMerge } from '../../Branch'
 import { Description } from '../../Description'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
 import { ExternalChangesetTitle } from '../../detail/changesets/ExternalChangesetTitle'
@@ -29,7 +30,6 @@ import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescripti
 import { PreviewActions } from './PreviewActions'
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
 import styles from './VisibleChangesetApplyPreviewNode.module.scss'
-import { Branch, BranchMerge } from '../../Branch'
 
 export interface VisibleChangesetApplyPreviewNodeProps extends ThemeProps {
     node: VisibleChangesetApplyPreviewFields
@@ -517,7 +517,11 @@ const References: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFi
             {spec.delta.baseRefChanged &&
                 spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate' &&
                 spec.targets.changeset.currentSpec?.description.__typename === 'GitBranchChangesetDescription' && (
-                    <Branch className="mr-2" deleted name={spec.targets.changeset.currentSpec?.description.baseRef} />
+                    <Branch
+                        className="mr-2"
+                        deleted={true}
+                        name={spec.targets.changeset.currentSpec?.description.baseRef}
+                    />
                 )}
             <BranchMerge
                 baseRef={spec.targets.changesetSpec.description.baseRef}
