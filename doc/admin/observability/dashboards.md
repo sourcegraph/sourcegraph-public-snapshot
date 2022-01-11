@@ -2896,6 +2896,90 @@ Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*
 
 <br />
 
+#### frontend: p90_successful_sentinel_duration_by_query_5m
+
+<p class="subtitle">P90 successful sentinel search duration by query over 5m</p>
+
+- The 90th percentile search duration for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102330` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[5m])) by (le, source))`
+
+</details>
+
+<br />
+
+#### frontend: p90_sentinel_stream_latency_by_query_5m
+
+<p class="subtitle">P90 sentinel stream latency by query over 5m</p>
+
+- The 90th percentile search latency for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102331` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[5m])) by (le, source))`
+
+</details>
+
+<br />
+
+#### frontend: p90_failed_duration_by_query_5m
+
+<p class="subtitle">P90 failed sentinel search duration by query over 5m</p>
+
+- The 90th percentile search duration for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102340` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status=~`(timeout|error|partial_timeout)`}[5m])) by (le, source))`
+
+</details>
+
+<br />
+
+#### frontend: p90_sentinel_stream_latency_by_query_5m
+
+<p class="subtitle">P90 sentinel stream latency by query over 5m</p>
+
+- The 90th percentile search latency for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102341` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[5m])) by (le, source))`
+
+</details>
+
+<br />
+
 #### frontend: unsuccessful_status_rate_5m
 
 <p class="subtitle">Unsuccessful status rate per 5m</p>
@@ -2904,7 +2988,7 @@ Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102330` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102350` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 

@@ -690,6 +690,58 @@ func Frontend() *monitoring.Container {
 					},
 					{
 						{
+							Name:        "p90_successful_sentinel_duration_by_query_5m",
+							Description: "p90 successful sentinel search duration by query over 5m",
+							Query:       `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[5m])) by (le, source))`,
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
+								monitoring.PanelOptions.LegendOnRight(),
+								monitoring.PanelOptions.HoverShowAll(),
+								monitoring.PanelOptions.HoverSort("descending"),
+								monitoring.PanelOptions.Fill(0),
+							),
+							Owner: monitoring.ObservableOwnerSearch,
+							Interpretation: `
+								- The 90th percentile search duration for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+							`,
+						},
+						{
+							Name:        "p90_sentinel_stream_latency_by_query_5m",
+							Description: "p90 sentinel stream latency by query over 5m",
+							Query:       `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[5m])) by (le, source))`,
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
+								monitoring.PanelOptions.LegendOnRight(),
+								monitoring.PanelOptions.HoverShowAll(),
+								monitoring.PanelOptions.HoverSort("descending"),
+								monitoring.PanelOptions.Fill(0),
+							),
+							Owner: monitoring.ObservableOwnerSearch,
+							Interpretation: `
+								- The 90th percentile search latency for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+							`,
+						},
+					},
+					{
+						{
+							Name:        "p90_failed_duration_by_query_5m",
+							Description: "p90 failed sentinel search duration by query over 5m",
+							Query:       "histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[5m])) by (le, source))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{source}}").Unit(monitoring.Seconds).With(
+								monitoring.PanelOptions.LegendOnRight(),
+								monitoring.PanelOptions.HoverShowAll(),
+								monitoring.PanelOptions.HoverSort("descending"),
+								monitoring.PanelOptions.Fill(0),
+							),
+							Owner: monitoring.ObservableOwnerSearch,
+							Interpretation: `
+								- The 90th percentile search duration of _unsuccessful_ sentinel queries (by error or timeout), broken down by query. Useful for debugging how the performance of failed requests affect UX.
+							`,
+						},
+					},
+					{
+						{
 							Name:        "unsuccessful_status_rate_5m",
 							Description: "unsuccessful status rate per 5m",
 							Query:       `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="success"}[5m])) by (status)`,
@@ -697,7 +749,7 @@ func Frontend() *monitoring.Container {
 							Panel:       monitoring.Panel().LegendFormat("{{status}}"),
 							Owner:       monitoring.ObservableOwnerSearch,
 							Interpretation: `
-								- The rate of unsuccessful sentinel query, broken down by failure type
+								- The rate of unsuccessful sentinel queries, broken down by failure type.
 							`,
 						},
 					},
