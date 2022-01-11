@@ -7,8 +7,8 @@ import React, { useEffect, useMemo } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
-import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationDropdown } from '@sourcegraph/shared/src/components/activation/ActivationDropdown'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -20,11 +20,6 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { WebCommandListPopoverButton } from '@sourcegraph/web/src/components/shared'
-import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/web/src/nav'
-import { FeedbackPrompt } from '@sourcegraph/web/src/nav/Feedback/FeedbackPrompt'
-import { NavDropdown } from '@sourcegraph/web/src/nav/NavBar/NavDropdown'
-import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNavItem'
 import { ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -32,6 +27,7 @@ import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
+import { WebCommandListPopoverButton } from '../components/shared'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import {
@@ -41,20 +37,20 @@ import {
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { LayoutRouteProps } from '../routes'
 import { Settings } from '../schema/settings.schema'
-import {
-    PatternTypeProps,
-    ParsedSearchQueryProps,
-    isSearchContextSpecAvailable,
-    SearchContextInputProps,
-} from '../search'
+import { isSearchContextSpecAvailable, SearchContextInputProps } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
 
+import { FeedbackPrompt } from './Feedback'
 import styles from './GlobalNavbar.module.scss'
+import { NavDropdown } from './NavBar/NavDropdown'
+import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
+
+import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -66,8 +62,6 @@ interface Props
         ThemePreferenceProps,
         ExtensionAlertAnimationProps,
         ActivationProps,
-        ParsedSearchQueryProps,
-        PatternTypeProps,
         SearchContextInputProps,
         CodeInsightsProps,
         BatchChangesProps {
@@ -101,7 +95,6 @@ interface Props
 export const GlobalNavbar: React.FunctionComponent<Props> = ({
     authRequired,
     showSearchBox,
-    patternType,
     variant,
     isLightTheme,
     branding,
@@ -117,7 +110,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
     branding = branding ?? window.context?.branding
 
-    const query = props.parsedSearchQuery
+    const query = useNavbarQueryState(state => state.searchQueryFromURL)
 
     const globalSearchContextSpec = useMemo(() => getGlobalSearchContextFilter(query), [query])
 
@@ -185,7 +178,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             location={location}
             history={history}
             isLightTheme={isLightTheme}
-            patternType={patternType}
             isSourcegraphDotCom={isSourcegraphDotCom}
             searchContextsEnabled={searchContextsEnabled}
             isRepositoryRelatedPage={isRepositoryRelatedPage}

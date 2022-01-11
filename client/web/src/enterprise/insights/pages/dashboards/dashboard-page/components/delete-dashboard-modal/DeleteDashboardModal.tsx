@@ -5,7 +5,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 import { useHistory } from 'react-router-dom'
 
-import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
+import { isErrorLike } from '@sourcegraph/common'
 import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../components/alerts'

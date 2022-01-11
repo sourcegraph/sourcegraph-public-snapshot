@@ -11,8 +11,7 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
-import { SearchPatternType } from '../graphql-operations'
-import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
+import { useExperimentalFeatures } from '../stores'
 import { ThemePreference } from '../stores/themeState'
 
 import { GlobalNavbar } from './GlobalNavbar'
@@ -31,9 +30,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     onThemePreferenceChange: () => undefined,
     isLightTheme: true,
     themePreference: ThemePreference.Light,
-    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-    patternType: SearchPatternType.literal,
-    setPatternType: () => undefined,
     platformContext: {} as any,
     settingsCascade: NOOP_SETTINGS_CASCADE,
     batchChangesEnabled: false,
@@ -62,7 +58,6 @@ describe('GlobalNavbar', () => {
     setLinkComponent(({ children, ...props }) => <a {...props}>{children}</a>)
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
     beforeEach(() => {
-        useNavbarQueryState.setState({ searchCaseSensitivity: false })
         useExperimentalFeatures.setState({ codeMonitoring: false })
     })
 

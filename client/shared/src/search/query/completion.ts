@@ -4,8 +4,9 @@ import { Observable } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
+import { isDefined } from '@sourcegraph/common'
+
 import { SymbolKind } from '../../graphql-operations'
-import { isDefined } from '../../util/types'
 import { MatchedSymbol, PathMatch, RepositoryMatch, SearchMatch } from '../stream'
 
 import { FilterType, isNegatableFilter, resolveFilter, FILTERS, escapeSpaces } from './filters'

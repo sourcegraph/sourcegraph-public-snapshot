@@ -5,6 +5,7 @@
     { "path": "../branded" },
     { "path": "../../schema" },
     { "path": "../common" },
+    { "path": "../codeintellify" },
   ],
   "compilerOptions": {
     "module": "commonjs",

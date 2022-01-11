@@ -5,8 +5,10 @@ import { combineLatest, from, ReplaySubject } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
+import { Context } from '@sourcegraph/template-parser'
+
 import { wrapRemoteObservable } from '../api/client/api/common'
-import { Context, ContributionScope } from '../api/extension/api/context/context'
+import { ContributionScope } from '../api/extension/api/context/context'
 import { Contributions, Evaluated } from '../api/protocol'
 import { getContributedActionItems } from '../contributions/contributions'
 import { TelemetryProps } from '../telemetry/telemetryService'

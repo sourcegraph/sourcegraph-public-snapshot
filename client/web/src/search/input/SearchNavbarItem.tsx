@@ -10,23 +10,17 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FuzzyFinder } from '@sourcegraph/web/src/components/fuzzyFinder/FuzzyFinder'
 
-import { PatternTypeProps, SearchContextInputProps, parseSearchURLQuery } from '..'
+import { SearchContextInputProps, parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '../../keyboardShortcuts/keyboardShortcuts'
-import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
-import { NavbarQueryState } from '../../stores/navbarSearchQueryState'
+import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
+import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 import { getExperimentalFeatures } from '../../util/get-experimental-features'
 import { SubmitSearchParameters } from '../helpers'
 
 import { SearchBox } from './SearchBox'
 
-interface Props
-    extends ActivationProps,
-        PatternTypeProps,
-        SettingsCascadeProps,
-        ThemeProps,
-        SearchContextInputProps,
-        TelemetryProps {
+interface Props extends ActivationProps, SettingsCascadeProps, ThemeProps, SearchContextInputProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -41,11 +35,11 @@ const selectQueryState = ({
     setQueryState,
     submitSearch,
     searchCaseSensitivity,
-    setSearchCaseSensitivity,
+    searchPatternType,
 }: NavbarQueryState): Pick<
     NavbarQueryState,
-    'queryState' | 'setQueryState' | 'submitSearch' | 'searchCaseSensitivity' | 'setSearchCaseSensitivity'
-> => ({ queryState, setQueryState, submitSearch, searchCaseSensitivity, setSearchCaseSensitivity })
+    'queryState' | 'setQueryState' | 'submitSearch' | 'searchCaseSensitivity' | 'searchPatternType'
+> => ({ queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType })
 
 /**
  * The search item in the navbar
@@ -56,13 +50,10 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
     // or remove the search help button
     const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
     const [isFuzzyFinderVisible, setIsFuzzyFinderVisible] = useState(false)
-    const {
-        queryState,
-        setQueryState,
-        submitSearch,
-        searchCaseSensitivity,
-        setSearchCaseSensitivity,
-    } = useNavbarQueryState(selectQueryState, shallow)
+    const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType } = useNavbarQueryState(
+        selectQueryState,
+        shallow
+    )
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const showSearchContextManagement = useExperimentalFeatures(
         features => features.showSearchContextManagement ?? false
@@ -72,14 +63,13 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         (parameters: Partial<SubmitSearchParameters> = {}) => {
             submitSearch({
                 history: props.history,
-                patternType: props.patternType,
                 source: 'nav',
                 activation: props.activation,
                 selectedSearchContextSpec: props.selectedSearchContextSpec,
                 ...parameters,
             })
         },
-        [submitSearch, props.history, props.patternType, props.activation, props.selectedSearchContextSpec]
+        [submitSearch, props.history, props.activation, props.selectedSearchContextSpec]
     )
 
     const onSubmit = useCallback(
@@ -112,6 +102,8 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 showSearchContextManagement={showSearchContextManagement}
                 caseSensitive={searchCaseSensitivity}
                 setCaseSensitivity={setSearchCaseSensitivity}
+                patternType={searchPatternType}
+                setPatternType={setSearchPatternType}
                 queryState={queryState}
                 onChange={setQueryState}
                 onSubmit={onSubmit}
