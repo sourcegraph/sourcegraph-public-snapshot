@@ -49,9 +49,9 @@ func Init(
 		return errors.Wrap(err, "decode private key")
 	}
 
-	auther, err := auth.NewOAuthBearerTokenWithJWT(appConfig.AppID, privateKey)
+	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appConfig.AppID, privateKey)
 	if err != nil {
-		return errors.Wrap(err, "new authenticator with JWT")
+		return errors.Wrap(err, "new authenticator with GitHub App")
 	}
 
 	apiURL, err := url.Parse("https://github.com")
