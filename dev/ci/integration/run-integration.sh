@@ -62,6 +62,9 @@ function cleanup() {
 trap cleanup EXIT
 
 pushd "$compose_dir"
+
+echo "--- Generating compose config"
+# Overwrite image versions
 if [ -z "$DOCKER_COMPOSE_IMAGES" ]; then
   # Expects newline-delimited list of image names to update, see pipeline generator for
   # how this variable is generated.
@@ -72,7 +75,11 @@ if [ -z "$DOCKER_COMPOSE_IMAGES" ]; then
   done < <(printf '%s\n' "$DOCKER_COMPOSE_IMAGES")
 fi
 
-echo "--- Generating compose config"
+# Removals cannot be done with override, so we use yq
+yq eval 'del(services.caddy)' --inplace docker-compose.yaml
+yq eval 'del(volumes.caddy)' --inplace docker-compose.yaml
+
+# Make further adjustments with override
 COMPOSE_FILES="-f docker-compose.yaml -f docker-compose.integration.yaml"
 docker-compose $COMPOSE_FILES config
 
