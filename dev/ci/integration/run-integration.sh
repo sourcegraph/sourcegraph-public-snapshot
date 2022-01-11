@@ -17,8 +17,6 @@ git clone --depth 1 \
   "$clone_dir"
 compose_dir="$test_dir/deploy-sourcegraph-docker/docker-compose"
 
-cp "dev/ci/integration/docker-compose.integration.yaml" "$compose_dir"
-
 function docker_cleanup() {
   echo "--- docker cleanup"
   if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
@@ -62,23 +60,29 @@ function cleanup() {
 trap cleanup EXIT
 
 pushd "$compose_dir"
+
+echo "--- Generating compose config"
+# Overwrite image versions
 if [ -z "$DOCKER_COMPOSE_IMAGES" ]; then
   # Expects newline-delimited list of image names to update, see pipeline generator for
   # how this variable is generated.
-  echo "--- Updating images"
   while IFS= read -r line; do
     echo "$line"
     grep -lr './' -e "index.docker.io/sourcegraph/$line" --include \*.yaml | xargs sed -i -E "s#index.docker.io/sourcegraph/$line:.*#us.gcr.io/sourcegraph-dev/$line:$VERSION#g"
   done < <(printf '%s\n' "$DOCKER_COMPOSE_IMAGES")
 fi
 
-echo "--- Generating compose config"
-COMPOSE_FILES="-f docker-compose.yaml -f docker-compose.integration.yaml"
-docker-compose $COMPOSE_FILES config
+# Customize deployment
+yq eval 'del(.services.caddy)' --inplace docker-compose.yaml
+yq eval 'del(.services.prometheus)' --inplace docker-compose.yaml
+yq eval 'del(.services.grafana)' --inplace docker-compose.yaml
+yq eval 'del(.services.jaeger)' --inplace docker-compose.yaml
+yq eval '.services.*.cpus = 1' --inplace docker-compose.yaml
+yq eval '.services.sourcegraph-frontend-0.ports = [ "0.0.0.0:7080:3080" ]' --inplace docker-compose.yaml
+docker-compose config
 
 echo "--- Running Sourcegraph"
-docker-compose $COMPOSE_FILES up \
-  --detach --force-recreate --renew-anon-volumes --quiet-pull
+docker-compose up --detach --force-recreate --renew-anon-volumes --quiet-pull
 popd
 
 URL="http://localhost:7080"
