@@ -387,6 +387,7 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 		c.ExternalServiceType = extsvc.TypeGitLab
 		c.ExternalBranch = git.EnsureRefPrefix(pr.SourceBranch)
 		c.ExternalUpdatedAt = pr.UpdatedAt.Time
+		c.ExternalForkNamespace = pr.SourceProjectNamespace
 	default:
 		return errors.New("unknown changeset type")
 	}
