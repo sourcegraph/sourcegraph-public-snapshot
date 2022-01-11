@@ -36,6 +36,9 @@ message Metadata {
       POSITION_ENCODING_UTF16 = 2;
   }
   ToolInfo tool_info = 1;
+  // URI-encoded absolute path to the root directory of this index. All
+  // documents in this index must appear in a subdirectory of this root
+  // directory.
   string project_root = 2;
   PositionEncoding position_encoding = 3;
 }
@@ -47,8 +50,8 @@ message ToolInfo {
 
 // Document defines information about a particular source file.
 message Document {
-  // URI-formatted absolute path of the source file on disk (example "file:///path/to/some/file/on/disk.ts").
-  string uri = 1;
+  // Relative path to the `Index.project_root` directory.
+  string relative_path = 1;
   // Symbol occurrences that appear in this file.
   repeated Occurrence occurrences = 2;
   // Symbols that are defined within this document.
