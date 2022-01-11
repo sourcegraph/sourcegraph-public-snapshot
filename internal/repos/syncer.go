@@ -359,6 +359,7 @@ func (s *Syncer) syncRepo(
 						"error", err2,
 					)
 				}
+				s.notifyDeleted(ctx, stored.ID)
 			}
 		}()
 	}
@@ -422,6 +423,21 @@ func (e *RepoLimitError) Error() string {
 		)
 	} else {
 		return "expected either userID or orgID to be defined"
+	}
+}
+
+func (s *Syncer) notifyDeleted(ctx context.Context, deleted ...api.RepoID) {
+	var d Diff
+	for _, id := range deleted {
+		d.Deleted = append(d.Deleted, &types.Repo{ID: id})
+	}
+	observeDiff(d)
+
+	if s.Synced != nil && d.Len() > 0 {
+		select {
+		case <-ctx.Done():
+		case s.Synced <- d:
+		}
 	}
 }
 
@@ -701,18 +717,7 @@ func (s *Syncer) delete(ctx context.Context, svc *types.ExternalService, seen ma
 	// We do deletion in a best effort manner, returning any errors for individual repos that failed to be deleted.
 	deleted, err := s.Store.DeleteExternalServiceReposNotIn(ctx, svc, seen)
 
-	var d Diff
-	for _, id := range deleted {
-		d.Deleted = append(d.Deleted, &types.Repo{ID: id})
-	}
-	observeDiff(d)
-
-	if s.Synced != nil && d.Len() > 0 {
-		select {
-		case <-ctx.Done():
-		case s.Synced <- d:
-		}
-	}
+	s.notifyDeleted(ctx, deleted...)
 
 	return len(deleted), err
 }

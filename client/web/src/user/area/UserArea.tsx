@@ -2,7 +2,6 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { gql, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
@@ -10,6 +9,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
@@ -19,7 +19,6 @@ import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
 import { UserAreaUserFields, UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
-import { PatternTypeProps } from '../../search'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
@@ -76,7 +75,6 @@ interface UserAreaProps
         BreadcrumbsProps,
         BreadcrumbSetters,
         BatchChangesProps,
-        Omit<PatternTypeProps, 'setPatternType'>,
         UserExternalServicesOrRepositoriesUpdateProps {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
@@ -106,7 +104,6 @@ export interface UserAreaRouteContext
         BreadcrumbsProps,
         BreadcrumbSetters,
         BatchChangesProps,
-        Omit<PatternTypeProps, 'setPatternType'>,
         UserExternalServicesOrRepositoriesUpdateProps {
     /** The user area main URL. */
     url: string

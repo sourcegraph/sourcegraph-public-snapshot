@@ -7,8 +7,10 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -41,5 +43,9 @@ var initDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{}, error) {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
+	if err != nil {
+		return nil, errors.Errorf("Failed to create sub-repo client: %v", err)
+	}
 	return db, nil
 })

@@ -4,8 +4,8 @@ import create from 'zustand'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/graphql/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/validate'
 
 import { useExperimentalFeatures } from './experimentalFeatures'
 

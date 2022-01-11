@@ -2,8 +2,8 @@ import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
@@ -61,7 +61,7 @@ export const DetachChangesetsModal: React.FunctionComponent<DetachChangesetsModa
                     Cancel
                 </button>
                 <button type="button" onClick={onSubmit} disabled={isLoading === true} className="btn btn-primary">
-                    {isLoading === true && <LoadingSpinner className="icon-inline" />}
+                    {isLoading === true && <LoadingSpinner />}
                     Detach
                 </button>
             </div>

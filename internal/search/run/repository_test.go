@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/google/zoekt"
@@ -12,6 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+
+	"github.com/hexops/autogold"
 )
 
 func TestRepoShouldBeAdded(t *testing.T) {
@@ -142,4 +145,15 @@ func repoShouldBeAdded(ctx context.Context, zoekt zoekt.Streamer, repo *search.R
 		return false, err
 	}
 	return len(rsta) == 1, nil
+}
+
+func Test_validRepoPattern(t *testing.T) {
+	test := func(input string) string {
+		_, ok := validRepoPattern(input)
+		return strconv.FormatBool(ok)
+	}
+	autogold.Want("normal pattern", "true").Equal(t, test("ok ok"))
+	autogold.Want("normal pattern with space", "true").Equal(t, test("ok @thing"))
+	autogold.Want("unsupported prefix", "false").Equal(t, test("@nope"))
+	autogold.Want("unsupported regexp", "false").Equal(t, test("(nope).*?(@(thing))"))
 }

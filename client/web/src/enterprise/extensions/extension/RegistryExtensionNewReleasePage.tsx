@@ -8,7 +8,6 @@ import { map, catchError, tap, concatMap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
@@ -18,6 +17,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -179,7 +179,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                         </label>
                                         {bundleOrError === undefined ? (
                                             <div>
-                                                <LoadingSpinner className="icon-inline" />
+                                                <LoadingSpinner />
                                             </div>
                                         ) : isErrorLike(bundleOrError) ? (
                                             <ErrorAlert error={bundleOrError} />
@@ -213,7 +213,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                 {updateOrError &&
                                     !isErrorLike(updateOrError) &&
                                     (updateOrError === LOADING ? (
-                                        <LoadingSpinner className="icon-inline" />
+                                        <LoadingSpinner />
                                     ) : (
                                         <span className="text-success">
                                             <CheckCircleIcon className="icon-inline" /> Published release successfully.

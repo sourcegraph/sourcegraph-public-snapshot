@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { createAggregateError } from '@sourcegraph/common'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { Scalars, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
@@ -19,7 +19,7 @@ import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { PersonLink } from '../../person/PersonLink'
-import { quoteIfNeeded, searchQueryForRepoRevision, PatternTypeProps } from '../../search'
+import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 
@@ -32,7 +32,7 @@ interface QuerySpec {
     path: string | null
 }
 
-interface RepositoryContributorNodeProps extends QuerySpec, Omit<PatternTypeProps, 'setPatternType'> {
+interface RepositoryContributorNodeProps extends QuerySpec {
     node: GQL.IRepositoryContributor
     repoName: string
     globbing: boolean
@@ -44,7 +44,6 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
     revisionRange,
     after,
     path,
-    patternType,
     globbing,
 }) => {
     const commit = node.commits.nodes[0] as GQL.IGitCommit | undefined
@@ -82,7 +81,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
                 </div>
                 <div className={styles.count}>
                     <Link
-                        to={`/search?${buildSearchURLQuery(query, patternType, false)}`}
+                        to={`/search?${buildSearchURLQuery(query, SearchPatternType.literal, false)}`}
                         className="font-weight-bold"
                         data-tooltip={
                             revisionRange?.includes('..') &&
@@ -165,16 +164,13 @@ const queryRepositoryContributors = memoizeObservable(
 
 const equalOrEmpty = (a: string | null, b: string | null): boolean => a === b || (!a && !b)
 
-interface Props
-    extends RepositoryStatsAreaPageProps,
-        RouteComponentProps<{}>,
-        Omit<PatternTypeProps, 'setPatternType'> {
+interface Props extends RepositoryStatsAreaPageProps, RouteComponentProps<{}> {
     globbing: boolean
 }
 
 class FilteredContributorsConnection extends FilteredConnection<
     GQL.IRepositoryContributor,
-    Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path' | 'patternType' | 'globbing'>
+    Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path' | 'globbing'>
 > {}
 
 interface State extends QuerySpec {}
@@ -370,7 +366,6 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                         revisionRange,
                         after,
                         path,
-                        patternType: this.props.patternType,
                         globbing: this.props.globbing,
                     }}
                     defaultFirst={20}

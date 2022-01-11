@@ -5,12 +5,12 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { ISavedSearch, SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { ISavedSearch } from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser } from '../../auth'
+import { buildSearchURLQueryFromQueryState } from '../../stores'
 
 import { ActionButtonGroup } from './ActionButtonGroup'
 import { EmptyPanelContainer } from './EmptyPanelContainer'
@@ -22,11 +22,9 @@ interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
     fetchSavedSearches: () => Observable<ISavedSearch[]>
-    patternType: SearchPatternType
 }
 
 export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
-    patternType,
     authenticatedUser,
     fetchSavedSearches,
     className,
@@ -83,7 +81,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                             <div className="d-flex justify-content-between">
                                 <small>
                                     <Link
-                                        to={'/search?' + buildSearchURLQuery(search.query, patternType, false)}
+                                        to={'/search?' + buildSearchURLQueryFromQueryState({ query: search.query })}
                                         className=" p-0"
                                         onClick={logEvent('SavedSearchesPanelSearchClicked')}
                                     >

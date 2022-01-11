@@ -3,7 +3,7 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../components/alerts'
 
@@ -28,7 +28,7 @@ export const SuggestionsPanel: React.FunctionComponent<SuggestionsPanelProps> = 
     if (suggestions === undefined) {
         return (
             <div className={styles.loadingPanel}>
-                <LoadingSpinner />
+                <LoadingSpinner inline={false} />
             </div>
         )
     }

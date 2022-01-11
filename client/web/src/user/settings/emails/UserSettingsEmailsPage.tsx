@@ -2,10 +2,9 @@ import classNames from 'classnames'
 import React, { FunctionComponent, useEffect, useState, useCallback } from 'react'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -70,7 +69,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
     }, [fetchEmails])
 
     if (statusOrError === 'loading') {
-        return <LoadingSpinner className="icon-inline" />
+        return <LoadingSpinner />
     }
 
     if (isErrorLike(statusOrError)) {

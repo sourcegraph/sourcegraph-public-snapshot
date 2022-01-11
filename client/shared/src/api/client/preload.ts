@@ -1,5 +1,6 @@
+import { isDefined } from '@sourcegraph/common'
+
 import { ConfiguredExtension, getScriptURLFromExtensionManifest } from '../../extensions/extension'
-import { isDefined } from '../../util/types'
 import { ExecutableExtension, extensionsWithMatchedActivationEvent } from '../extension/activation'
 
 /** Ensure that we only add <link> tags once for each scriptURL */

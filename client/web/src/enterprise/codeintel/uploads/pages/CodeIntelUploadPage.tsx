@@ -7,7 +7,6 @@ import { Observable } from 'rxjs'
 import { takeWhile } from 'rxjs/operators'
 
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -15,7 +14,7 @@ import {
     FilteredConnection,
     FilteredConnectionQueryArguments,
 } from '@sourcegraph/web/src/components/FilteredConnection'
-import { Button, Container, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { ErrorAlert } from '../../../../components/alerts'
@@ -155,7 +154,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
             {isErrorLike(uploadOrError) ? (
                 <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} />
             ) : !uploadOrError ? (
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             ) : (
                 <>
                     <PageHeader

@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { Form } from 'reactstrap'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
@@ -10,12 +10,17 @@ import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/s
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { PatternTypeProps, ParsedSearchQueryProps, SearchContextInputProps, CaseSensitivityProps } from '..'
+import { SearchContextInputProps, CaseSensitivityProps, SearchPatternTypeProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
-import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
+import {
+    useExperimentalFeatures,
+    useNavbarQueryState,
+    setSearchCaseSensitivity,
+    setSearchPatternType,
+} from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { canSubmitSearch, submitSearch, SubmitSearchParameters } from '../helpers'
 import { SearchBox } from '../input/SearchBox'
@@ -29,10 +34,8 @@ interface Props
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
-        PatternTypeProps,
         KeyboardShortcutsProps,
         TelemetryProps,
-        ParsedSearchQueryProps,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         Pick<SubmitSearchParameters, 'source'>,
         SearchContextInputProps {
@@ -47,11 +50,14 @@ interface Props
     /** A query fragment to be prepended to queries. This will not appear in the input until a search is submitted. */
     hiddenQueryPrefix?: string
     autoFocus?: boolean
+    showOnboardingTour?: boolean
 }
 
-const queryStateSelector = (state: NavbarQueryState): CaseSensitivityProps => ({
+const queryStateSelector = (
+    state: NavbarQueryState
+): Pick<CaseSensitivityProps, 'caseSensitive'> & SearchPatternTypeProps => ({
     caseSensitive: state.searchCaseSensitivity,
-    setCaseSensitivity: state.setSearchCaseSensitivity,
+    patternType: state.searchPatternType,
 })
 
 export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) => {
@@ -59,7 +65,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     const [userQueryState, setUserQueryState] = useState({
         query: props.queryPrefix ? props.queryPrefix : '',
     })
-    const { caseSensitive, setCaseSensitivity } = useNavbarQueryState(queryStateSelector, shallow)
+    const { caseSensitive, patternType } = useNavbarQueryState(queryStateSelector, shallow)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const showSearchContextManagement = useExperimentalFeatures(
         features => features.showSearchContextManagement ?? false
@@ -71,19 +77,11 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     const quickLinks =
         (isSettingsValid<Settings>(props.settingsCascade) && props.settingsCascade.final.quicklinks) || []
 
-    // This component is also used on the CommunitySearchContextPage.
-    // The search onboarding tour should only be shown on the homepage.
-    const isHomepage = useMemo(() => props.location.pathname === '/search' && !props.parsedSearchQuery, [
-        props.location.pathname,
-        props.parsedSearchQuery,
-    ])
-    const showOnboardingTour = useExperimentalFeatures(features => features.showOnboardingTour ?? false) && isHomepage
-
     const tourContainer = useRef<HTMLDivElement>(null)
 
     const { shouldFocusQueryInput, ...onboardingTourQueryInputProps } = useSearchOnboardingTour({
         ...props,
-        showOnboardingTour,
+        showOnboardingTour: props.showOnboardingTour ?? false,
         queryState: userQueryState,
         setQueryState: setUserQueryState,
         stepsContainer: tourContainer.current ?? undefined,
@@ -100,7 +98,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     source: 'home',
                     query,
                     history: props.history,
-                    patternType: props.patternType,
+                    patternType,
                     caseSensitive,
                     activation: props.activation,
                     selectedSearchContextSpec: props.selectedSearchContextSpec,
@@ -110,7 +108,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
         },
         [
             props.history,
-            props.patternType,
+            patternType,
             caseSensitive,
             props.activation,
             props.selectedSearchContextSpec,
@@ -140,12 +138,14 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         showSearchContext={showSearchContext}
                         showSearchContextManagement={showSearchContextManagement}
                         caseSensitive={caseSensitive}
-                        setCaseSensitivity={setCaseSensitivity}
+                        patternType={patternType}
+                        setPatternType={setSearchPatternType}
+                        setCaseSensitivity={setSearchCaseSensitivity}
                         submitSearchOnToggle={submitSearchOnChange}
                         queryState={userQueryState}
                         onChange={setUserQueryState}
                         onSubmit={onSubmit}
-                        autoFocus={showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
+                        autoFocus={props.showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
                     />
                 </div>
                 <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />

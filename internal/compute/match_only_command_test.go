@@ -137,4 +137,75 @@ func Test_matchOnly(t *testing.T) {
   ],
   "path": "bedge"
 }`).Equal(t, test("a(b(c))(de)f(g)h", match))
+
+	autogold.Want("compute regexp submatch includes all matches on line", `{
+  "matches": [
+    {
+      "value": "a",
+      "range": {
+        "start": {
+          "offset": -1,
+          "line": 1,
+          "column": 0
+        },
+        "end": {
+          "offset": -1,
+          "line": 1,
+          "column": 1
+        }
+      },
+      "environment": {
+        "1": {
+          "value": "a",
+          "range": {
+            "start": {
+              "offset": -1,
+              "line": 1,
+              "column": 0
+            },
+            "end": {
+              "offset": -1,
+              "line": 1,
+              "column": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "value": "g",
+      "range": {
+        "start": {
+          "offset": -1,
+          "line": 1,
+          "column": 6
+        },
+        "end": {
+          "offset": -1,
+          "line": 1,
+          "column": 7
+        }
+      },
+      "environment": {
+        "1": {
+          "value": "g",
+          "range": {
+            "start": {
+              "offset": -1,
+              "line": 1,
+              "column": 6
+            },
+            "end": {
+              "offset": -1,
+              "line": 1,
+              "column": 7
+            }
+          }
+        }
+      }
+    }
+  ],
+  "path": "bedge"
+}`).Equal(t, test("([ag])", match))
+
 }

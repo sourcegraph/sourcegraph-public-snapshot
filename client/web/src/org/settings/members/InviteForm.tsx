@@ -7,10 +7,10 @@ import { map } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -131,7 +131,7 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                                 data-tooltip="Add immediately without sending invitation (site admins only)"
                             >
                                 {loading === 'addUserToOrganization' ? (
-                                    <LoadingSpinner className="icon-inline" />
+                                    <LoadingSpinner />
                                 ) : (
                                     <AddIcon className="icon-inline" />
                                 )}{' '}
@@ -154,7 +154,7 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                                 onClick={viewerCanAddUserToOrganization ? onInviteClick : undefined}
                             >
                                 {loading === 'inviteUserToOrganization' ? (
-                                    <LoadingSpinner className="icon-inline" />
+                                    <LoadingSpinner />
                                 ) : (
                                     <EmailOpenOutlineIcon className="icon-inline" />
                                 )}{' '}

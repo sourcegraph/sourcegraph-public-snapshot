@@ -16,6 +16,7 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useMatchMedia } from '@sourcegraph/shared/src/util/useMatchMedia'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
+import { OnboardingTour } from '../onboarding-tour/OnboardingTour'
 import { Tree } from '../tree/Tree'
 
 import styles from './RepoRevisionSidebar.module.scss'
@@ -28,6 +29,7 @@ interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps,
     className: string
     history: H.History
     location: H.Location
+    showOnboardingTour?: boolean
 }
 
 const SIZE_STORAGE_KEY = 'repo-revision-sidebar'
@@ -84,9 +86,12 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
             handlePosition="right"
             storageKey={SIZE_STORAGE_KEY}
             element={
-                <div className="d-flex w-100">
+                <div className="d-flex flex-column w-100">
+                    {props.showOnboardingTour && (
+                        <OnboardingTour className="mb-1 mr-3" telemetryService={props.telemetryService} />
+                    )}
                     <Tabs
-                        className="w-100 test-repo-revision-sidebar pr-3"
+                        className="w-100 h-100 test-repo-revision-sidebar pr-3"
                         defaultIndex={tabIndex}
                         onChange={handleTabsChange}
                     >
