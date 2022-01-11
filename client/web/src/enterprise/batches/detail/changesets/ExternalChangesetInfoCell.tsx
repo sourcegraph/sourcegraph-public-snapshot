@@ -4,11 +4,11 @@ import React from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 
 import { ExternalChangesetFields, ChangesetState } from '../../../../graphql-operations'
+import { BranchMerge } from '../../Branch'
 
 import { ChangesetLabel } from './ChangesetLabel'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
 import { ExternalChangesetTitle } from './ExternalChangesetTitle'
-import { BranchMerge } from '../../Branch'
 
 export interface ExternalChangesetInfoCellProps {
     node: ExternalChangesetFields
@@ -82,7 +82,9 @@ function importingFailed(node: ExternalChangesetFields): boolean {
     return node.state === ChangesetState.FAILED && !hasHeadReference(node)
 }
 
-function hasHeadReference(node: ExternalChangesetFields): node is ExternalChangesetFields & {
+function hasHeadReference(
+    node: ExternalChangesetFields
+): node is ExternalChangesetFields & {
     currentSpec: typeof node.currentSpec & {
         description: { __typename: 'GitBranchChangesetDescription' }
     }
