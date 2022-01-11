@@ -2,18 +2,18 @@
 version: 1
 interactions:
 - request:
-    body: '{"query":"\nmutation CreatePullRequestComment($input: AddCommentInput!)
-      {\n  addComment(input: $input) {\n    subject { id }\n  }\n}\n","variables":{"input":{"subjectId":"MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5","body":"test-comment"}}}'
+    body: '{}'
     form: {}
     headers:
       Accept:
-      - application/vnd.github.antiope-preview+json
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
       Content-Type:
       - application/json; charset=utf-8
-    url: https://api.github.com/graphql
+    url: https://api.github.com/repos/sourcegraph-testing/unforkable/forks
     method: POST
   response:
-    body: '{"data":{"addComment":{"subject":{"id":"MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5"}}}}'
+    body: '{"message":"The repository exists, but forking is disabled.","documentation_url":"https://docs.github.com/rest/reference/repos#create-a-fork"}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -27,7 +27,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 30 Dec 2021 22:43:33 GMT
+      - Fri, 31 Dec 2021 00:02:26 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -37,30 +37,31 @@ interactions:
       Vary:
       - Accept-Encoding, Accept, X-Requested-With
       X-Accepted-Oauth-Scopes:
-      - repo
+      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
       X-Github-Media-Type:
-      - github.v4; param=antiope-preview; format=json
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
+        format=json
       X-Github-Request-Id:
-      - DCB4:3D8A:1B3AA2D:51869CE:61CE3613
+      - D406:7EDF:79CC9E:15383C9:61CE4892
       X-Oauth-Scopes:
       - read:discussion, read:org, read:packages, read:public_key, read:repo_hook,
         read:user, repo, workflow
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4874"
+      - "4960"
       X-Ratelimit-Reset:
-      - "1640906777"
+      - "1640910677"
       X-Ratelimit-Resource:
-      - graphql
+      - core
       X-Ratelimit-Used:
-      - "126"
+      - "40"
       X-Xss-Protection:
       - "0"
-    status: 200 OK
-    code: 200
+    status: 403 Forbidden
+    code: 403
     duration: ""

@@ -1,6 +1,7 @@
 package github
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -144,6 +145,31 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result interface{
 		return nil, err
 	}
 
+	return c.request(ctx, req, result)
+}
+
+func (c *V3Client) requestPost(ctx context.Context, requestURI string, payload, result interface{}) error {
+	_, err := c.post(ctx, requestURI, payload, result)
+	return err
+}
+
+func (c *V3Client) post(ctx context.Context, requestURI string, payload, result interface{}) (http.Header, error) {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling payload")
+	}
+
+	req, err := http.NewRequest("POST", requestURI, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	return c.request(ctx, req, result)
+}
+
+func (c *V3Client) request(ctx context.Context, req *http.Request, result interface{}) (http.Header, error) {
 	// Include node_id (GraphQL ID) in response. See
 	// https://developer.github.com/changes/2017-12-19-graphql-node-id/.
 	//
@@ -161,7 +187,7 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result interface{
 		req.Header.Add("Accept", "application/vnd.github.nebula-preview+json")
 	}
 
-	err = c.rateLimit.Wait(ctx)
+	err := c.rateLimit.Wait(ctx)
 	if err != nil {
 		// We don't want to return a misleading rate limit exceeded error if the error is coming
 		// from the context.
@@ -678,4 +704,24 @@ func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*
 		repos = append(repos, convertRestRepo(restRepo))
 	}
 	return repos, nil
+}
+
+// Fork forks the given repository. If org is given, then the repository will
+// be forked into that organisation, otherwise the repository is forked into
+// the authenticated user's account.
+func (c *V3Client) Fork(ctx context.Context, owner, repo string, org *string) (*Repository, error) {
+	// GitHub's fork endpoint will happily accept either a new or existing fork,
+	// and returns a valid repository either way. As such, we don't need to check
+	// if there's already an extant fork.
+
+	payload := struct {
+		Org *string `json:"organization,omitempty"`
+	}{Org: org}
+
+	var restRepo restRepository
+	if err := c.requestPost(ctx, "repos/"+owner+"/"+repo+"/forks", payload, &restRepo); err != nil {
+		return nil, err
+	}
+
+	return convertRestRepo(restRepo), nil
 }
