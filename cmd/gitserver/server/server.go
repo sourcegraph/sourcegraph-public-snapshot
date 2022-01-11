@@ -2378,7 +2378,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 	// Revision not found, update before returning.
 	err := s.doRepoUpdate(ctx, repo)
 	if err != nil {
-		log15.Warn("failed to ensure revision", "error", err, "repo", repo, "rev", rev)
+		log15.Warn("failed to perform background repo update", "error", err, "repo", repo, "rev", rev)
 	}
 	return true
 }
