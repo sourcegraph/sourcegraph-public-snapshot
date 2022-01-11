@@ -11,6 +11,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
+	"github.com/stretchr/testify/assert"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -29,10 +30,10 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			defer func() { _ = recover() }()
 
 			p := newGitLabChangesetSourceTestProvider(t)
+			repo := &types.Repo{Metadata: struct{}{}}
 			_, _ = p.source.CreateChangeset(p.ctx, &Changeset{
-				TargetRepo: &types.Repo{
-					Metadata: struct{}{},
-				},
+				RemoteRepo: repo,
+				TargetRepo: repo,
 			})
 			t.Error("invalid metadata did not panic")
 		})
@@ -127,10 +128,10 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			defer func() { _ = recover() }()
 
 			p := newGitLabChangesetSourceTestProvider(t)
+			repo := &types.Repo{Metadata: struct{}{}}
 			_ = p.source.CloseChangeset(p.ctx, &Changeset{
-				TargetRepo: &types.Repo{
-					Metadata: struct{}{},
-				},
+				RemoteRepo: repo,
+				TargetRepo: repo,
 			})
 			t.Error("invalid metadata did not panic")
 		})
@@ -171,10 +172,10 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			defer func() { _ = recover() }()
 
 			p := newGitLabChangesetSourceTestProvider(t)
+			repo := &types.Repo{Metadata: struct{}{}}
 			_ = p.source.ReopenChangeset(p.ctx, &Changeset{
-				TargetRepo: &types.Repo{
-					Metadata: struct{}{},
-				},
+				RemoteRepo: repo,
+				TargetRepo: repo,
 			})
 			t.Error("invalid metadata did not panic")
 		})
@@ -217,20 +218,24 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			p := newGitLabChangesetSourceTestProvider(t)
 
+			repo := &types.Repo{Metadata: struct{}{}}
 			_ = p.source.LoadChangeset(p.ctx, &Changeset{
-				TargetRepo: &types.Repo{Metadata: struct{}{}},
+				RemoteRepo: repo,
+				TargetRepo: repo,
 			})
 			t.Error("invalid metadata did not panic")
 		})
 
 		t.Run("error from ParseInt", func(t *testing.T) {
 			p := newGitLabChangesetSourceTestProvider(t)
+			repo := &types.Repo{Metadata: &gitlab.Project{}}
 			if err := p.source.LoadChangeset(p.ctx, &Changeset{
 				Changeset: &btypes.Changeset{
 					ExternalID: "foo",
 					Metadata:   &gitlab.MergeRequest{},
 				},
-				TargetRepo: &types.Repo{Metadata: &gitlab.Project{}},
+				RemoteRepo: repo,
+				TargetRepo: repo,
 			}); err == nil {
 				t.Error("invalid ExternalID did not result in an error")
 			}
@@ -354,6 +359,12 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 		})
 
 		t.Run("integration", func(t *testing.T) {
+			repo := &types.Repo{
+				Metadata: &gitlab.Project{
+					// sourcegraph/sourcegraph
+					ProjectCommon: gitlab.ProjectCommon{ID: 16606088},
+				},
+			}
 			testCases := []struct {
 				name string
 				cs   *Changeset
@@ -362,27 +373,24 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 				{
 					name: "found",
 					cs: &Changeset{
-						TargetRepo: &types.Repo{Metadata: &gitlab.Project{
-							// sourcegraph/sourcegraph
-							ProjectCommon: gitlab.ProjectCommon{ID: 16606088},
-						}},
-						Changeset: &btypes.Changeset{ExternalID: "2"},
+						RemoteRepo: repo,
+						TargetRepo: repo,
+						Changeset:  &btypes.Changeset{ExternalID: "2"},
 					},
 				},
 				{
 					name: "not-found",
 					cs: &Changeset{
-						TargetRepo: &types.Repo{Metadata: &gitlab.Project{
-							// sourcegraph/sourcegraph
-							ProjectCommon: gitlab.ProjectCommon{ID: 16606088},
-						}},
-						Changeset: &btypes.Changeset{ExternalID: "100000"},
+						RemoteRepo: repo,
+						TargetRepo: repo,
+						Changeset:  &btypes.Changeset{ExternalID: "100000"},
 					},
 					err: "Changeset with external ID 100000 not found",
 				},
 				{
 					name: "project-not-found",
 					cs: &Changeset{
+						RemoteRepo: repo,
 						TargetRepo: &types.Repo{Metadata: &gitlab.Project{
 							ProjectCommon: gitlab.ProjectCommon{ID: 999999999999},
 						}},
@@ -674,10 +682,10 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			defer func() { _ = recover() }()
 
 			p := newGitLabChangesetSourceTestProvider(t)
+			repo := &types.Repo{Metadata: struct{}{}}
 			_ = p.source.CreateComment(p.ctx, &Changeset{
-				TargetRepo: &types.Repo{
-					Metadata: struct{}{},
-				},
+				RemoteRepo: repo,
+				TargetRepo: repo,
 			}, commentBody)
 			t.Error("invalid metadata did not panic")
 		})
@@ -732,11 +740,10 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 				}
 
 				ctx := context.Background()
+				repo := &types.Repo{Metadata: newGitLabProject(16606088)}
 				cs := &Changeset{
-					TargetRepo: &types.Repo{Metadata: &gitlab.Project{
-						// sourcegraph/sourcegraph
-						ProjectCommon: gitlab.ProjectCommon{ID: 16606088},
-					}},
+					RemoteRepo: repo,
+					TargetRepo: repo,
 					Changeset: &btypes.Changeset{Metadata: &gitlab.MergeRequest{
 						IID: gitlab.ID(2),
 					}},
@@ -862,10 +869,12 @@ type gitLabChangesetSourceTestProvider struct {
 // internal/extsvc/gitlab functions.
 func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTestProvider {
 	prov := gitlab.NewClientProvider(&url.URL{}, &panicDoer{})
+	repo := &types.Repo{Metadata: &gitlab.Project{}}
 	p := &gitLabChangesetSourceTestProvider{
 		changeset: &Changeset{
 			Changeset:  &btypes.Changeset{},
-			TargetRepo: &types.Repo{Metadata: &gitlab.Project{}},
+			RemoteRepo: repo,
+			TargetRepo: repo,
 			HeadRef:    "refs/heads/head",
 			BaseRef:    "refs/heads/base",
 			Title:      "title",
@@ -873,13 +882,14 @@ func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTe
 		},
 		ctx: context.Background(),
 		mr: &gitlab.MergeRequest{
-			ID:           1,
-			IID:          2,
-			ProjectID:    3,
-			Title:        "title",
-			Description:  "description",
-			SourceBranch: "head",
-			TargetBranch: "base",
+			ID:              1,
+			IID:             2,
+			ProjectID:       3,
+			SourceProjectID: 3,
+			Title:           "title",
+			Description:     "description",
+			SourceBranch:    "head",
+			TargetBranch:    "base",
 		},
 		source: &GitLabSource{
 			client: prov.GetClient(),
@@ -1129,4 +1139,51 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestDecorateMergeRequestData(t *testing.T) {
+	ctx := context.Background()
+
+	// The test fixtures use publicly available merge requests, and should be
+	// able to be updated at any time without any action required.
+	createSource := func(t *testing.T) *GitLabSource {
+		cf, save := newClientFactory(t, t.Name())
+		t.Cleanup(func() { save(t) })
+
+		src, err := newGitLabSource(&schema.GitLabConnection{
+			Url:   "https://gitlab.com",
+			Token: os.Getenv("GITLAB_TOKEN"),
+		}, cf, nil)
+
+		assert.Nil(t, err)
+		return src
+	}
+
+	src := createSource(t)
+
+	// https://gitlab.com/sourcegraph/src-cli/-/merge_requests/1
+	forked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606399), 1)
+	assert.Nil(t, err)
+
+	// https://gitlab.com/sourcegraph/sourcegraph/-/merge_requests/2
+	unforked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606088), 2)
+	assert.Nil(t, err)
+
+	t.Run("fork", func(t *testing.T) {
+		err := createSource(t).decorateMergeRequestData(ctx, newGitLabProject(int(forked.ProjectID)), forked)
+		assert.Nil(t, err)
+		assert.Equal(t, "LawnGnome", forked.SourceProjectNamespace)
+	})
+
+	t.Run("not a fork", func(t *testing.T) {
+		err := createSource(t).decorateMergeRequestData(ctx, newGitLabProject(int(unforked.ProjectID)), unforked)
+		assert.Nil(t, err)
+		assert.Equal(t, "", unforked.SourceProjectNamespace)
+	})
+}
+
+func newGitLabProject(id int) *gitlab.Project {
+	return &gitlab.Project{
+		ProjectCommon: gitlab.ProjectCommon{ID: id},
+	}
 }
