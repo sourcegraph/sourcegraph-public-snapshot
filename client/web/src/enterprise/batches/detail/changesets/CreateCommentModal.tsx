@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, TextArea } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
@@ -58,17 +58,16 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             <Form onSubmit={onSubmit}>
                 <div className="form-group">
-                    <label htmlFor="token">Comment text</label>
-                    <textarea
+                    <TextArea
                         id="token"
                         name="token"
-                        className="form-control"
                         placeholder={PLACEHOLDER_COMMENT}
                         required={true}
                         rows={8}
                         minLength={1}
                         value={commentBody}
                         onChange={onChangeInput}
+                        label="Comment text"
                     />
                 </div>
                 <div className="d-flex justify-content-end">
