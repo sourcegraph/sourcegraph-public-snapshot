@@ -10,6 +10,7 @@ services:
     # Disable caddy
     entrypoint: ["echo", "Caddy disabled"]
     restart: "no"
+    volumes: []
 
   zoekt-webserver-0:
     # Gentler resource requirements

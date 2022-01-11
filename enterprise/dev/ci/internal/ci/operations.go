@@ -336,13 +336,12 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 // Adds backend integration tests step.
 //
 // Runtime: ~11m
-func backendIntegrationTests(candidateImageTag string) operations.Operation {
+func backendIntegrationTests(candidateTag string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":chains: Backend integration tests",
-			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
-			bk.Env("IMAGE",
-				images.DevRegistryImage("server", candidateImageTag)),
+			bk.DependsOn(candidateImageStepKeys(images.DeploySourcegraphDockerImages)...),
+			bk.Env("VERSION", candidateTag),
+			bk.Env("DOCKER_IMAGES", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
 			bk.Cmd("dev/ci/integration/backend/run.sh"),
 			bk.ArtifactPaths("./*.log"))
 	}
