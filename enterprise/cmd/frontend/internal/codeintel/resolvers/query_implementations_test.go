@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -50,6 +51,7 @@ func TestImplementations(t *testing.T) {
 		"s1/main.go",
 		uploads,
 		newOperations(&observation.TestContext),
+		authz.NewMockSubRepoPermissionChecker(),
 	)
 	adjustedLocations, _, err := resolver.Implementations(context.Background(), 10, 20, 50, "")
 	if err != nil {
@@ -167,6 +169,7 @@ func TestImplementationsRemote(t *testing.T) {
 		"s1/main.go",
 		uploads,
 		newOperations(&observation.TestContext),
+		authz.NewMockSubRepoPermissionChecker(),
 	)
 	adjustedLocations, _, err := resolver.Implementations(context.Background(), 10, 20, 50, "")
 	if err != nil {
