@@ -2,14 +2,15 @@ package search
 
 import (
 	"context"
+	"html/template"
 	"sort"
 	"strings"
 
-	"html/template"
-
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	stream "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -85,7 +86,7 @@ func groupLineMatches(lineMatches []*result.LineMatch) []group {
 }
 
 func fetchContent(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (content []byte, err error) {
-	content, err = git.ReadFile(ctx, repo, commit, path, 0)
+	content, err = git.ReadFile(ctx, repo, commit, path, 0, authz.DefaultSubRepoPermsChecker)
 	if err != nil {
 		return nil, err
 	}
