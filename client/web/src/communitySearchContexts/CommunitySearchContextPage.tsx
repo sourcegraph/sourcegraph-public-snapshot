@@ -23,7 +23,7 @@ import { SyntaxHighlightedSearchQuery } from '@sourcegraph/web/src/components/Sy
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { SearchContextInputProps, SearchContextProps } from '../search'
+import { ParsedSearchQueryProps, SearchContextInputProps, SearchContextProps } from '../search'
 import { submitSearch } from '../search/helpers'
 import { SearchPageInput } from '../search/home/SearchPageInput'
 import { useNavbarQueryState } from '../stores'
@@ -39,6 +39,7 @@ export interface CommunitySearchContextPageProps
         ThemePreferenceProps,
         ActivationProps,
         TelemetryProps,
+        ParsedSearchQueryProps,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
