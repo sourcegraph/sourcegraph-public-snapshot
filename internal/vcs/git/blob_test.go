@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -87,16 +86,11 @@ func TestRead(t *testing.T) {
 				return authz.None, nil
 			})
 			rc, err := NewFileReader(ctx, repo, commitID, test.file, checker)
-			if err != nil {
-				t.Fatal(err)
+			if err != os.ErrNotExist {
+				t.Fatalf("unexpected error: %s", err)
 			}
-			bytes, err := io.ReadAll(rc)
-			if err != nil {
-				t.Fatal(err)
-			}
-			expectedBytes := []byte("")
-			if !reflect.DeepEqual(bytes, expectedBytes) {
-				t.Fatalf("expected reader to return empty content, got %v istead", bytes)
+			if rc != nil {
+				t.Fatal("expected reader to be nil")
 			}
 		})
 	}

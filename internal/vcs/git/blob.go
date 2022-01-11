@@ -45,8 +45,10 @@ func NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, 
 	if Mocks.NewFileReader != nil {
 		return Mocks.NewFileReader(commit, name)
 	}
-	if hasAccess, err := authz.HasAccessToPath(ctx, checker, repo, name); err != nil || !hasAccess {
-		return io.NopCloser(strings.NewReader("")), err
+	if hasAccess, err := authz.HasAccessToPath(ctx, checker, repo, name); err != nil {
+		return nil, err
+	} else if !hasAccess {
+		return nil, os.ErrNotExist
 	}
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetFileReader")
