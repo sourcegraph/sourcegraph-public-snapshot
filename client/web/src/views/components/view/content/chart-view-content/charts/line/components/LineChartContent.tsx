@@ -4,7 +4,6 @@ import { Group } from '@visx/group'
 import { Axis, DataProvider, GlyphSeries, LineSeries, Tooltip, TooltipProvider, XYChart } from '@visx/xychart'
 import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip'
 import { XYCHART_EVENT_SOURCE } from '@visx/xychart/lib/constants'
-import isValidNumber from '@visx/xychart/lib/typeguards/isValidNumber'
 import { EventHandlerParams } from '@visx/xychart/lib/types'
 import classNames from 'classnames'
 import React, { ReactElement, useCallback, useMemo, useState, MouseEvent, useRef } from 'react'
@@ -147,17 +146,15 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
         (info: EventHandlerParams<Point>) => {
             info.event?.persist()
 
-            // According to types from visx/xychart index can be undefined
-            const activeDatumIndex = hoveredDatum?.index
             const line = series.find(line => line.dataKey === info.key)
 
-            if (!info.event || !line || !isValidNumber(activeDatumIndex)) {
+            if (!info.event || !line || !hoveredDatum?.datum) {
                 return
             }
 
             onDatumZoneClick({
                 originEvent: info.event as MouseEvent<unknown>,
-                link: line?.linkURLs?.[activeDatumIndex],
+                link: line?.linkURLs?.[+hoveredDatum.datum.x],
             })
         },
         [series, onDatumZoneClick, hoveredDatum]
@@ -216,7 +213,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
         ...otherHandlers,
     }
 
-    const hoveredDatumLink = hoveredDatum?.line?.linkURLs?.[hoveredDatum?.index]
+    const hoveredDatumLink = hoveredDatum?.line?.linkURLs?.[+hoveredDatum?.datum?.x]
     const rootClasses = classNames(styles.content, { [styles.contentWithCursor]: !!hoveredDatumLink })
 
     return (
