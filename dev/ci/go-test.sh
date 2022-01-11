@@ -29,7 +29,7 @@ function go_test() {
     -race \
     -v \
     $test_packages |\
-  tee "$tmpfile"
+    tee "$tmpfile"
 
   local xml
   xml=$(go-junit-report <"$tmpfile")
