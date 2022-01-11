@@ -243,6 +243,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
                             viewEventName="SearchResultSavedSeachCTAShown"
                             returnTo=""
                             telemetryService={platformContext.telemetryService}
+                            isNonExperimentalLinkDisabled={showActionButtonExperimentalVersion}
                         />
                     </li>
                 ),
@@ -290,7 +291,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
             <div className={styles.streamingSearchResultsContainer}>
                 {/* TODO: This is a temporary searchResultsInfoBar */}
                 <SearchResultsInfoBar />
-                {openSavedSearchCreateForm && (
+                {authenticatedUser && openSavedSearchCreateForm && (
                     <SavedSearchForm
                         authenticatedUser={authenticatedUser}
                         submitLabel="Add saved search"

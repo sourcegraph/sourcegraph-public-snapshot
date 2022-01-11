@@ -5,9 +5,10 @@ import React from 'react'
 import { render } from 'react-dom'
 
 import { AnchorLink, setLinkComponent } from '@sourcegraph/shared/src/components/Link'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { SourcegraphVSCodeExtensionAPI, SourcegraphVSCodeSearchSidebarAPI } from '../contract'
-import { createPlatformContext } from '../platform/context'
+import { createPlatformContext, WebviewPageProps } from '../platform/context'
 import { createEndpointsForWebToNode } from '../platform/webviewEndpoint'
 import { adaptToEditorTheme } from '../theme'
 
@@ -27,11 +28,19 @@ const platformContext = createPlatformContext(sourcegraphVSCodeExtensionAPI)
 
 setLinkComponent(AnchorLink)
 
-// eslint-disable-next-line rxjs/no-ignored-observable
-adaptToEditorTheme()
+// Get theme
+const themes = adaptToEditorTheme()
 
-const Main: React.FC = () => (
-    <SearchSidebar platformContext={platformContext} sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI} />
-)
+const Main: React.FC = () => {
+    const theme = useObservable(themes) || 'theme-dark'
+
+    const commonPageProps: WebviewPageProps = {
+        sourcegraphVSCodeExtensionAPI,
+        platformContext,
+        theme,
+    }
+
+    return <SearchSidebar {...commonPageProps} />
+}
 
 render(<Main />, document.querySelector('#root'))

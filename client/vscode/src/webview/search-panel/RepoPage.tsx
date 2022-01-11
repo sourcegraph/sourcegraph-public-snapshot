@@ -54,40 +54,47 @@ export const RepoPage: React.FunctionComponent<RepoPageProps> = ({
         })
     }
     return (
-        <div className={classNames('test-tree-entries mb-3', styles.section)}>
-            <div
-                className={classNames('pr-2', styles.treeEntriesSectionColumns, styles.treeEntriesSectionNoDecorations)}
-            >
-                {entries.map(entry => (
-                    <Link
-                        key={entry.name}
-                        to={entry.url}
-                        className={classNames(
-                            'test-page-file-decorable',
-                            styles.treeEntry,
-                            entry.isDirectory && 'font-weight-bold',
-                            `test-tree-entry-${entry.isDirectory ? 'directory' : 'file'}`,
-                            entries.length < 7 && styles.treeEntryNoColumns
-                        )}
-                        title={entry.path}
-                        data-testid="tree-entry"
-                        onClick={() => onSelect(entry.isDirectory, entry.path, entry.url)}
-                    >
-                        <div
+        <section className={classNames('test-tree-entries mb-3 p-2')}>
+            <h2>Files and directories</h2>
+            <div className={classNames('test-tree-entries mb-3 py-2', styles.section, styles.filesContainer)}>
+                <div
+                    className={classNames(
+                        'pr-2',
+                        styles.treeEntriesSectionColumns,
+                        styles.treeEntriesSectionNoDecorations
+                    )}
+                >
+                    {entries.map(entry => (
+                        <Link
+                            key={entry.name}
+                            to={entry.url}
                             className={classNames(
-                                'd-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden'
+                                'test-page-file-decorable',
+                                styles.treeEntry,
+                                entry.isDirectory && 'font-weight-bold',
+                                `test-tree-entry-${entry.isDirectory ? 'directory' : 'file'}`,
+                                entries.length < 7 && styles.treeEntryNoColumns
                             )}
+                            title={entry.path}
+                            data-testid="tree-entry"
+                            onClick={() => onSelect(entry.isDirectory, entry.path, entry.url)}
                         >
-                            <span>
-                                {entry.isDirectory && <FolderOutlineIcon className="icon-inline mr-1" />}
-                                {!entry.isDirectory && <FileDocumentOutlineIcon className="icon-inline mr-1" />}
-                                {entry.name}
-                                {entry.isDirectory && '/'}
-                            </span>
-                        </div>
-                    </Link>
-                ))}
+                            <div
+                                className={classNames(
+                                    'd-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden'
+                                )}
+                            >
+                                <span>
+                                    {entry.isDirectory && <FolderOutlineIcon className="icon-inline mr-1" />}
+                                    {!entry.isDirectory && <FileDocumentOutlineIcon className="icon-inline mr-1" />}
+                                    {entry.name}
+                                    {entry.isDirectory && '/'}
+                                </span>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
             </div>
-        </div>
+        </section>
     )
 }

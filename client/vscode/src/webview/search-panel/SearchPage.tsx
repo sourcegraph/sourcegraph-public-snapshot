@@ -339,7 +339,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                                     setPatternType={searchActions.setPatternType}
                                     // Misc.
                                     isLightTheme={theme === 'theme-light'}
-                                    authenticatedUser={null} // Used for search context CTA, which we won't show here.
+                                    authenticatedUser={authenticatedUser} // Used for search context CTA, which we won't show here.
                                     queryState={queryState}
                                     onChange={searchActions.setQuery}
                                     onSubmit={onSubmit}
@@ -395,7 +395,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                             setPatternType={searchActions.setPatternType}
                             // Misc.
                             isLightTheme={theme === 'theme-light'}
-                            authenticatedUser={null} // Used for search context CTA, which we won't show here.
+                            authenticatedUser={authenticatedUser} // Used for search context CTA, which we won't show here.
                             queryState={queryState}
                             onChange={searchActions.setQuery}
                             onSubmit={onSubmit}
@@ -413,56 +413,26 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
                     ) : (
                         // Display Sign up banner if no access token is detected (assuming they do not have a Sourcegraph account)
                         <div className={classNames(styles.streamingSearchResultsContainer)}>
-                            {!hasAccessToken && (
-                                <div className="card my-2 mr-3 d-flex p-3 flex-md-row flex-column align-items-center">
-                                    <div className="mr-md-3">
-                                        <SearchBetaIcon />
-                                    </div>
-                                    <div
-                                        className={classNames(
-                                            'flex-1 my-md-0 my-2',
-                                            styles.streamingSearchResultsCtaContainer
-                                        )}
-                                    >
-                                        <div className={classNames('mb-1', styles.streamingSearchResultsCtaTitle)}>
-                                            <strong>
-                                                Sign up to add your public and private repositories and access other
-                                                features
-                                            </strong>
-                                        </div>
-                                        <div
-                                            className={classNames(
-                                                'text-muted',
-                                                styles.streamingSearchResultsCtaDescription
-                                            )}
-                                        >
-                                            Do all the things editors can’t: search multiple repos & commit history,
-                                            monitor, save searches and more.
-                                        </div>
-                                    </div>
-                                    <a
-                                        className={classNames('btn', styles.streamingSearchResultsBtn)}
-                                        href="https://sourcegraph.com/sign-up?src=SearchCTA"
-                                        onClick={onSignUpClick}
-                                    >
-                                        <span className={styles.streamingSearchResultsText}>Create a free account</span>
-                                    </a>
-                                </div>
+                            {!authenticatedUser && platformContext.telemetryService && (
+                                <SearchPageCta
+                                    icon={<SearchBetaIcon />}
+                                    ctaTitle="Sign up to add your public and private repositories and access other features"
+                                    ctaDescription="Do all the things editors can’t: search multiple repos & commit history, monitor, save searches and more."
+                                    buttonText="Create a free account"
+                                    onClickAction={onSignUpClick}
+                                />
                             )}
                             {/* TODO: This is a temporary repo file viewer */}
                             {openRepoFileTree && fileVariables && entries !== undefined && (
-                                <section className={classNames('test-tree-entries mb-3')}>
-                                    <h2>Files and directories</h2>
-                                    <RepoPage
-                                        platformContext={platformContext}
-                                        theme={theme}
-                                        getFiles={getFiles}
-                                        entries={entries}
-                                        instanceHostname={instanceHostname}
-                                        sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
-                                        selectedRepoName={fileVariables.repoName}
-                                    />
-                                </section>
+                                <RepoPage
+                                    platformContext={platformContext}
+                                    theme={theme}
+                                    getFiles={getFiles}
+                                    entries={entries}
+                                    instanceHostname={instanceHostname}
+                                    sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                                    selectedRepoName={fileVariables.repoName}
+                                />
                             )}
                             {fullQuery && !openRepoFileTree && (
                                 <SearchResults
@@ -483,3 +453,38 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
         </div>
     )
 }
+
+interface SearchPageCtaProps {
+    icon: JSX.Element
+    ctaTitle: string
+    ctaDescription: string
+    buttonText: string
+    onClickAction?: () => void
+}
+
+export const SearchPageCta: React.FunctionComponent<SearchPageCtaProps> = ({
+    icon,
+    ctaTitle,
+    ctaDescription,
+    buttonText,
+    onClickAction,
+}) => (
+    <div className="card my-2 mr-3 d-flex p-3 flex-md-row flex-column align-items-center">
+        <div className="mr-md-3">{icon}</div>
+        <div className={classNames('flex-1 my-md-0 my-2', styles.streamingSearchResultsCtaContainer)}>
+            <div className={classNames('mb-1', styles.streamingSearchResultsCtaTitle)}>
+                <strong>{ctaTitle}</strong>
+            </div>
+            <div className={classNames('text-muted', styles.streamingSearchResultsCtaDescription)}>
+                {ctaDescription}
+            </div>
+        </div>
+        <a
+            className={classNames('btn', styles.streamingSearchResultsBtn)}
+            href="https://sourcegraph.com/sign-up?src=SearchCTA"
+            onClick={onClickAction}
+        >
+            <span className={styles.streamingSearchResultsText}>{buttonText}</span>
+        </a>
+    </div>
+)
