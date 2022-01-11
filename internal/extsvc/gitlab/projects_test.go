@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // TestClient_GetProject tests the behavior of GetProject.
@@ -99,4 +101,127 @@ func TestClient_GetProject_nonexistent(t *testing.T) {
 	if proj != nil {
 		t.Error("proj != nil")
 	}
+}
+
+func TestClient_ForkProject(t *testing.T) {
+	ctx := context.Background()
+
+	// We'll grab a project to use in the other tests.
+	project, err := createTestClient(t).GetProject(ctx, GetProjectOp{
+		PathWithNamespace: "sourcegraph/src-cli",
+		CommonOp:          CommonOp{NoCache: true},
+	})
+	assert.Nil(t, err)
+
+	t.Run("success", func(t *testing.T) {
+		// For this test to be updated, src-cli must _not_ have been forked into
+		// the user associated with $GITLAB_TOKEN.
+		fork, err := createTestClient(t).ForkProject(ctx, project, nil)
+		assert.Nil(t, err)
+		assert.NotNil(t, fork)
+
+		upstreamName, err := project.Name()
+		assert.Nil(t, err)
+		forkName, err := fork.Name()
+		assert.Nil(t, err)
+		assert.Equal(t, upstreamName, forkName)
+	})
+
+	t.Run("already forked", func(t *testing.T) {
+		// For this test to be updated, src-cli must have been forked into the user
+		// associated with $GITLAB_TOKEN.
+		fork, err := createTestClient(t).ForkProject(ctx, project, nil)
+		assert.Nil(t, err)
+		assert.NotNil(t, fork)
+
+		upstreamName, err := project.Name()
+		assert.Nil(t, err)
+		forkName, err := fork.Name()
+		assert.Nil(t, err)
+		assert.Equal(t, upstreamName, forkName)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		mock := mockHTTPEmptyResponse{http.StatusNotFound}
+		c := newTestClient(t)
+		c.httpClient = &mock
+
+		fork, err := c.ForkProject(ctx, project, nil)
+		assert.Nil(t, fork)
+		assert.NotNil(t, err)
+	})
+}
+
+func TestProjectCommon_Name(t *testing.T) {
+	t.Run("errors", func(t *testing.T) {
+		for name, pc := range map[string]ProjectCommon{
+			"empty":      {PathWithNamespace: ""},
+			"no slashes": {PathWithNamespace: "foo"},
+		} {
+			t.Run(name, func(t *testing.T) {
+				name, err := pc.Name()
+				assert.Equal(t, "", name)
+				assert.NotNil(t, err)
+			})
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		for name, tc := range map[string]struct {
+			pc   ProjectCommon
+			want string
+		}{
+			"single namespace": {
+				pc:   ProjectCommon{PathWithNamespace: "foo/bar"},
+				want: "bar",
+			},
+			"nested namespaces": {
+				pc:   ProjectCommon{PathWithNamespace: "foo/bar/quux/baz"},
+				want: "baz",
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				name, err := tc.pc.Name()
+				assert.Nil(t, err)
+				assert.Equal(t, tc.want, name)
+			})
+		}
+	})
+}
+
+func TestProjectCommon_Namespace(t *testing.T) {
+	t.Run("errors", func(t *testing.T) {
+		for name, pc := range map[string]ProjectCommon{
+			"empty":      {PathWithNamespace: ""},
+			"no slashes": {PathWithNamespace: "foo"},
+		} {
+			t.Run(name, func(t *testing.T) {
+				ns, err := pc.Namespace()
+				assert.Equal(t, "", ns)
+				assert.NotNil(t, err)
+			})
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		for name, tc := range map[string]struct {
+			pc   ProjectCommon
+			want string
+		}{
+			"single namespace": {
+				pc:   ProjectCommon{PathWithNamespace: "foo/bar"},
+				want: "foo",
+			},
+			"nested namespaces": {
+				pc:   ProjectCommon{PathWithNamespace: "foo/bar/quux/baz"},
+				want: "foo/bar/quux",
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				ns, err := tc.pc.Namespace()
+				assert.Nil(t, err)
+				assert.Equal(t, tc.want, ns)
+			})
+		}
+	})
 }

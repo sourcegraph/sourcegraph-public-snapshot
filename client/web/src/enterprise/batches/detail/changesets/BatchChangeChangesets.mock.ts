@@ -29,6 +29,7 @@ export const BATCH_CHANGE_CHANGESETS: (ExternalChangesetFields | HiddenExternalC
             externalURL: {
                 url: 'http://test.test/pr/123',
             },
+            forkNamespace: null,
             diffStat: {
                 __typename: 'DiffStat',
                 added: 10,
@@ -49,6 +50,7 @@ export const BATCH_CHANGE_CHANGESETS: (ExternalChangesetFields | HiddenExternalC
                 type: ChangesetSpecType.BRANCH,
                 description: {
                     __typename: 'GitBranchChangesetDescription',
+                    baseRef: 'my-branch',
                     headRef: 'my-branch',
                 },
             },
