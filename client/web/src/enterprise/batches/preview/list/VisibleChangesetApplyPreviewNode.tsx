@@ -12,7 +12,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, Button } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetState, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
@@ -67,9 +67,8 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
 
     return (
         <>
-            <button
-                type="button"
-                className="btn btn-icon test-batches-expand-preview d-none d-sm-block mx-1"
+            <Button
+                className="btn-icon test-batches-expand-preview d-none d-sm-block mx-1"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
@@ -78,7 +77,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                 ) : (
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
-            </button>
+            </Button>
             {selectable ? (
                 <SelectBox node={node} selectable={selectable} />
             ) : (
@@ -162,14 +161,15 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                 <ApplyDiffStat spec={node} />
             </div>
             {/* The button for expanding the information used on xs devices. */}
-            <button
-                type="button"
+            <Button
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
                 className={classNames(
                     styles.visibleChangesetApplyPreviewNodeShowDetails,
-                    'btn btn-outline-secondary d-block d-sm-none test-batches-expand-preview'
+                    'd-block d-sm-none test-batches-expand-preview'
                 )}
+                outline={true}
+                variant="secondary"
             >
                 {isExpanded ? (
                     <ChevronDownIcon className="icon-inline" aria-label="Close section" />
@@ -177,7 +177,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
-            </button>
+            </Button>
             {isExpanded && (
                 <>
                     <div

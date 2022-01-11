@@ -10,7 +10,8 @@ import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
 import type { ExtensionAlertProps } from './repo/RepoContainer'
 import { PageRoutes } from './routes.constants'
-import { getExperimentalFeatures, useExperimentalFeatures, useNavbarQueryState } from './stores'
+import { ParsedSearchQueryProps } from './search'
+import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
@@ -32,6 +33,7 @@ const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
         Omit<LayoutProps, 'match'>,
+        ParsedSearchQueryProps,
         ThemeProps,
         ThemePreferenceProps,
         BreadcrumbsProps,
@@ -77,12 +79,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: PageRoutes.Search,
-        render: props =>
-            useNavbarQueryState.getState().searchQueryFromURL ? (
-                <StreamingSearchResults {...props} />
-            ) : (
-                <SearchPage {...props} />
-            ),
+        render: props => (props.parsedSearchQuery ? <StreamingSearchResults {...props} /> : <SearchPage {...props} />),
         exact: true,
     },
     {

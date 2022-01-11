@@ -12,6 +12,7 @@ import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators
 
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
@@ -133,15 +134,15 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                     <div>
                         {window.context.sourcegraphDotComMode && (
                             <>
-                                <button
-                                    type="button"
-                                    className="btn btn-sm btn-secondary"
+                                <Button
                                     onClick={() => this.toggleOrgCreationTag(orgCreationLabel === 'Enable')}
                                     disabled={this.state.loading}
                                     data-tooltip={`${orgCreationLabel} user tag to allow user to create organizations`}
+                                    variant="secondary"
+                                    size="sm"
                                 >
                                     {orgCreationLabel} org creation
-                                </button>{' '}
+                                </Button>{' '}
                             </>
                         )}
                         {!window.context.sourcegraphDotComMode && (
@@ -154,68 +155,69 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                             ) &&
                             ' '}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-secondary"
+                            <Button
                                 onClick={this.invalidateSessions}
                                 disabled={this.state.loading}
                                 data-tooltip="Force the user to re-authenticate on their next request"
+                                variant="secondary"
+                                size="sm"
                             >
                                 Force sign-out
-                            </button>
+                            </Button>
                         )}{' '}
                         {window.context.resetPasswordEnabled && (
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-secondary"
+                            <Button
                                 onClick={this.randomizePassword}
                                 disabled={this.state.loading || !!this.state.resetPasswordURL}
+                                variant="secondary"
+                                size="sm"
                             >
                                 Reset password
-                            </button>
+                            </Button>
                         )}{' '}
                         {this.props.node.id !== this.props.authenticatedUser.id &&
                             (this.props.node.siteAdmin ? (
-                                <button
-                                    type="button"
-                                    className="btn btn-sm btn-secondary"
+                                <Button
                                     onClick={this.demoteFromSiteAdmin}
                                     disabled={this.state.loading}
+                                    variant="secondary"
+                                    size="sm"
                                 >
                                     Revoke site admin
-                                </button>
+                                </Button>
                             ) : (
-                                <button
-                                    type="button"
+                                <Button
                                     key="promote"
-                                    className="btn btn-sm btn-secondary"
                                     onClick={this.promoteToSiteAdmin}
                                     disabled={this.state.loading}
+                                    variant="secondary"
+                                    size="sm"
                                 >
                                     Promote to site admin
-                                </button>
+                                </Button>
                             ))}{' '}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-danger"
+                            <Button
                                 onClick={this.deleteUser}
                                 disabled={this.state.loading}
                                 data-tooltip="Delete user"
+                                variant="danger"
+                                size="sm"
                             >
                                 <DeleteIcon className="icon-inline" />
-                            </button>
+                            </Button>
                         )}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
-                            <button
-                                type="button"
-                                className="ml-1 btn btn-sm btn-danger"
+                            <Button
+                                className="ml-1"
                                 onClick={this.nukeUser}
                                 disabled={this.state.loading}
                                 data-tooltip="Nuke user (click for more information)"
+                                variant="danger"
+                                size="sm"
                             >
                                 <RadioactiveIcon className="icon-inline" />
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </div>

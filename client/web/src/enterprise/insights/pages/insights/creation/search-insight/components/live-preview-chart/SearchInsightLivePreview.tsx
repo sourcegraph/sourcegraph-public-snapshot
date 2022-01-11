@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react'
 import type { LineChartContent } from 'sourcegraph'
 
 import { asError } from '@sourcegraph/common'
-import { useDebounce } from '@sourcegraph/wildcard/src'
+import { useDebounce } from '@sourcegraph/wildcard'
 
 import { LivePreviewContainer } from '../../../../../../components/creation-ui-kit/live-preview-container/LivePreviewContainer'
 import { getSanitizedRepositories } from '../../../../../../components/creation-ui-kit/sanitizers/repositories'

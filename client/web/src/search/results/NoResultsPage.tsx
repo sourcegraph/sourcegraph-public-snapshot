@@ -8,6 +8,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { Button } from '@sourcegraph/wildcard'
 
 import { SearchContextProps } from '..'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
@@ -139,14 +140,9 @@ const Container: React.FunctionComponent<ContainerProps> = ({
         <h3 className={styles.title}>
             <span className="flex-1">{title}</span>
             {sectionID && (
-                <button
-                    type="button"
-                    className="btn btn-icon"
-                    aria-label="Hide Section"
-                    onClick={() => onClose?.(sectionID)}
-                >
+                <Button className="btn-icon" aria-label="Hide Section" onClick={() => onClose?.(sectionID)}>
                     <CloseIcon className="icon-inline" />
-                </button>
+                </Button>
             )}
         </h3>
         <div className={styles.content}>{children}</div>
@@ -365,16 +361,16 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                     {hiddenSectionIDs && hiddenSectionIDs.length > 0 && (
                         <p>
                             Some help panels are hidden.{' '}
-                            <button
-                                type="button"
-                                className="btn btn-link p-0 border-0 align-baseline"
+                            <Button
+                                className="p-0 border-0 align-baseline"
                                 onClick={() => {
                                     telemetryService.log('NoResultsPanel', { action: 'showAll' })
                                     setHiddenSectionIds([])
                                 }}
+                                variant="link"
                             >
                                 Show all panels.
-                            </button>
+                            </Button>
                         </p>
                     )}
                 </div>

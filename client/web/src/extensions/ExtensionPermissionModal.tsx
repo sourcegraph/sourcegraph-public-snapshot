@@ -2,6 +2,7 @@ import { Dialog } from '@reach/dialog'
 import React from 'react'
 
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
+import { Button } from '@sourcegraph/wildcard'
 
 /**
  * A modal confirmation prompt to the user confirming whether to add an extension.
@@ -27,12 +28,12 @@ export const ExtensionPermissionModal: React.FunctionComponent<{
                 <li className="m-0">read and change your Sourcegraph settings</li>
             </ul>
             <div className="d-flex justify-content-end pt-5">
-                <button type="button" className="btn btn-outline-secondary mr-2" onClick={denyPermission}>
+                <Button className="mr-2" onClick={denyPermission} outline={true} variant="secondary">
                     Cancel
-                </button>
-                <button type="button" className="btn btn-primary" onClick={givePermission}>
+                </Button>
+                <Button onClick={givePermission} variant="primary">
                     Yes, add {name || extensionID}!
-                </button>
+                </Button>
             </div>
         </Dialog>
     )

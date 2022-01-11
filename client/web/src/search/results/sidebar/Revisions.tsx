@@ -5,7 +5,7 @@ import React from 'react'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { GitRefType } from '@sourcegraph/shared/src/graphql/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
 import { SyntaxHighlightedSearchQuery } from '../../../components/SyntaxHighlightedSearchQuery'
@@ -132,13 +132,9 @@ const RevisionList: React.FunctionComponent<RevisionListProps> = ({
                         {connection?.nodes.length} of {connection?.totalCount} {pluralNoun}
                     </small>
                     {hasNextPage ? (
-                        <button
-                            type="button"
-                            className={classNames('btn btn-link', styles.sidebarSectionButtonLink)}
-                            onClick={fetchMore}
-                        >
+                        <Button className={styles.sidebarSectionButtonLink} onClick={fetchMore} variant="link">
                             Show more
-                        </button>
+                        </Button>
                     ) : null}
                 </p>
             ) : null}

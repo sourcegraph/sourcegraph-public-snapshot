@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
@@ -7,7 +6,7 @@ import { of } from 'rxjs'
 import { isErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -77,24 +76,20 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
             <div className="row mb-5">
                 <div className="d-flex flex-column col-2 mr-2">
                     <h3>Filters</h3>
-                    <button
-                        type="button"
-                        className={classNames('btn text-left', {
-                            'btn-primary': monitorListFilter === 'all',
-                        })}
+                    <Button
+                        className="text-left"
                         onClick={() => setMonitorListFilter('all')}
+                        variant={monitorListFilter === 'all' ? 'primary' : undefined}
                     >
                         All
-                    </button>
-                    <button
-                        type="button"
-                        className={classNames('btn text-left', {
-                            'btn-primary': monitorListFilter === 'user',
-                        })}
+                    </Button>
+                    <Button
+                        className="text-left"
                         onClick={() => setMonitorListFilter('user')}
+                        variant={monitorListFilter === 'user' ? 'primary' : undefined}
                     >
                         Your code monitors
-                    </button>
+                    </Button>
                 </div>
                 <div className="d-flex flex-column w-100 col">
                     <CodeMonitorInfo />

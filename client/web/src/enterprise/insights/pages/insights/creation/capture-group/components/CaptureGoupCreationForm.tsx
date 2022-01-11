@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard/src'
+import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
