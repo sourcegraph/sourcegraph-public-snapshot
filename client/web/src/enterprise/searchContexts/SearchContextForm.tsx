@@ -17,7 +17,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ALLOW_NAVIGATION, AwayPrompt } from '@sourcegraph/web/src/components/AwayPrompt'
-import { Container, Button, RadioButton } from '@sourcegraph/wildcard'
+import { Container, Button, RadioButton, TextArea } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SearchContextProps } from '../../search'
@@ -333,8 +333,8 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                     <div className="mb-2">
                         Description <span className="text-muted">(optional)</span>
                     </div>
-                    <textarea
-                        className="form-control w-100"
+                    <TextArea
+                        className="w-100"
                         data-testid="search-context-description-input"
                         maxLength={MAX_DESCRIPTION_LENGTH}
                         value={description}

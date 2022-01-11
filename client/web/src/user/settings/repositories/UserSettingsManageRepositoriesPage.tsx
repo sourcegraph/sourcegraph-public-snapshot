@@ -8,7 +8,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ProductStatusBadge, Container, PageSelector, RadioButton } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Container, PageSelector, RadioButton, TextArea } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
 import {
@@ -869,8 +869,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 {publicRepoState.enabled && (
                                     <div className="form-group ml-4 mt-3">
                                         <p className="mb-2">Repositories to sync</p>
-                                        <textarea
-                                            className="form-control"
+                                        <TextArea
                                             rows={5}
                                             value={publicRepoState.repos}
                                             onChange={handlePublicReposChanged}

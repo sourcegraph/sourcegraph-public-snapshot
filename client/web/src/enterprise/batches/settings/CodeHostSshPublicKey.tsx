@@ -3,7 +3,7 @@ import { noop } from 'lodash'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import React, { useCallback, useState } from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, TextArea } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -55,9 +55,9 @@ export const CodeHostSshPublicKey: React.FunctionComponent<CodeHostSshPublicKeyP
                     </Button>
                 )}
             </div>
-            <textarea
+            <TextArea
                 id={LABEL_ID}
-                className="form-control text-monospace mb-3"
+                className="text-monospace mb-3"
                 rows={5}
                 spellCheck="false"
                 value={sshPublicKey}
