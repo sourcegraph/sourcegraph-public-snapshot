@@ -8,6 +8,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ISavedSearch } from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { buildSearchURLQueryFromQueryState } from '../../stores'
@@ -138,24 +139,26 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                 )}
             </div>
             <div className="btn-group btn-group-sm">
-                <button
-                    type="button"
+                <Button
                     onClick={() => setShowAllSearches(false)}
-                    className={classNames('btn btn-outline-secondary test-saved-search-panel-my-searches', {
+                    className={classNames('test-saved-search-panel-my-searches', {
                         active: !showAllSearches,
                     })}
+                    outline={true}
+                    variant="secondary"
                 >
                     My searches
-                </button>
-                <button
-                    type="button"
+                </Button>
+                <Button
                     onClick={() => setShowAllSearches(true)}
-                    className={classNames('btn btn-outline-secondary test-saved-search-panel-all-searches', {
+                    className={classNames('test-saved-search-panel-all-searches', {
                         active: showAllSearches,
                     })}
+                    outline={true}
+                    variant="secondary"
                 >
                     All searches
-                </button>
+                </Button>
             </div>
         </ActionButtonGroup>
     )

@@ -5,6 +5,10 @@ import (
 	"io"
 	"os"
 	"testing"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 )
 
 func TestRead(t *testing.T) {
@@ -51,18 +55,43 @@ func TestRead(t *testing.T) {
 	}
 
 	for name, test := range tests {
+		checker := authz.NewMockSubRepoPermissionChecker()
+		ctx = actor.WithActor(ctx, &actor.Actor{
+			UID: 1,
+		})
 		t.Run(name+"-ReadFile", func(t *testing.T) {
 			data, err := ReadFile(ctx, repo, commitID, test.file, test.maxBytes)
 			test.checkFn(t, err, data)
 		})
 		t.Run(name+"-GetFileReader", func(t *testing.T) {
-			rc, err := NewFileReader(ctx, repo, commitID, test.file)
-			if err != nil {
-				t.Fatal(err)
+			runNewFileReaderTest(ctx, t, repo, commitID, test.file, nil, test.checkFn)
+		})
+		t.Run(name+"-GetFileReader-with-sub-repo-permissions-noop", func(t *testing.T) {
+			checker.EnabledFunc.SetDefaultHook(func() bool {
+				return true
+			})
+			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+				if content.Path == test.file {
+					return authz.Read, nil
+				}
+				return authz.None, nil
+			})
+			runNewFileReaderTest(ctx, t, repo, commitID, test.file, checker, test.checkFn)
+		})
+		t.Run(name+"-GetFileReader-with-sub-repo-permissions-filters-file", func(t *testing.T) {
+			checker.EnabledFunc.SetDefaultHook(func() bool {
+				return true
+			})
+			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+				return authz.None, nil
+			})
+			rc, err := NewFileReader(ctx, repo, commitID, test.file, checker)
+			if err != os.ErrNotExist {
+				t.Fatalf("unexpected error: %s", err)
 			}
-			defer rc.Close()
-			data, err := io.ReadAll(rc)
-			test.checkFn(t, err, data)
+			if rc != nil {
+				t.Fatal("expected reader to be nil")
+			}
 		})
 	}
 
@@ -75,4 +104,16 @@ func TestRead(t *testing.T) {
 			t.Errorf("got %q, want %q", data, wantData)
 		}
 	})
+}
+
+func runNewFileReaderTest(ctx context.Context, t *testing.T, repo api.RepoName, commitID api.CommitID, file string,
+	checker authz.SubRepoPermissionChecker, checkFn func(*testing.T, error, []byte)) {
+	t.Helper()
+	rc, err := NewFileReader(ctx, repo, commitID, file, checker)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rc.Close()
+	data, err := io.ReadAll(rc)
+	checkFn(t, err, data)
 }

@@ -31,6 +31,7 @@ import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -243,14 +244,16 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             >
                                 <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
                             </Link>
-                            <button
-                                type="button"
+                            <Button
                                 id="repo-popover"
-                                className={classNames('btn btn-sm btn-outline-secondary', styles.repoChange)}
+                                className={styles.repoChange}
                                 aria-label="Change repository"
+                                outline={true}
+                                variant="secondary"
+                                size="sm"
                             >
                                 <ChevronDownIcon className="icon-inline" />
-                            </button>
+                            </Button>
                         </div>
                         <UncontrolledPopover
                             placement="bottom-start"

@@ -2064,6 +2064,10 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 	ctx, cancel1 := s.serverContext()
 	defer cancel1()
 
+	// ensure the background update doesn't hang forever
+	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
+	defer cancel2()
+
 	// This background process should use our internal actor
 	ctx = actor.WithInternalActor(ctx)
 
@@ -2372,7 +2376,10 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 		return false
 	}
 	// Revision not found, update before returning.
-	_ = s.doRepoUpdate(ctx, repo)
+	err := s.doRepoUpdate(ctx, repo)
+	if err != nil {
+		log15.Warn("failed to perform background repo update", "error", err, "repo", repo, "rev", rev)
+	}
 	return true
 }
 

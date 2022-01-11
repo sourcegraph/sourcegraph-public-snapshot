@@ -60,7 +60,6 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
 
     // We always have global subject in our settings cascade
     const globalSubject = subjects.find(isGlobalSubject)
-    const canGlobalSubjectBeEdited = globalSubject?.allowSiteSettingsEdits && globalSubject?.viewerCanAdminister
 
     const { ref, handleSubmit, formAPI } = useForm<DashboardCreationFields>({
         initialValues: initialValues ?? { ...DASHBOARD_INITIAL_VALUES, visibility: userSubjectID },
@@ -116,7 +115,6 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
     })
 
     return (
-        // eslint-disable-next-line react/forbid-elements
         <form noValidate={true} ref={ref} onSubmit={handleSubmit}>
             <FormInput
                 required={true}
@@ -180,7 +178,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                     className="mr-3 flex-grow-0"
                     labelTooltipText={getGlobalSubjectTooltipText(globalSubject)}
                     labelTooltipPosition="bottom"
-                    disabled={!canGlobalSubjectBeEdited}
+                    disabled={!globalSubject?.viewerCanAdminister}
                     onChange={visibility.input.onChange}
                 />
             </FormGroup>

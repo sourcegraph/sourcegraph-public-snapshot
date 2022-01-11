@@ -4,6 +4,7 @@ import React, { useState, useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/common'
+import { Button } from '@sourcegraph/wildcard'
 
 import { addExternalService } from '../../../components/externalServices/backend'
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
@@ -113,9 +114,9 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                         )}
                     </div>
                     <div className="d-flex justify-content-end">
-                        <button type="button" className="btn btn-outline-secondary mr-2" onClick={onDidCancel}>
+                        <Button className="mr-2" onClick={onDidCancel} outline={true} variant="secondary">
                             Cancel
-                        </button>
+                        </Button>
                         {didAckMachineUserHint ? (
                             <LoaderButton
                                 type="submit"
@@ -126,13 +127,12 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                                 alwaysShowLabel={true}
                             />
                         ) : (
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
+                            <Button
                                 onClick={() => setAckMachineUserHint(previousAckStatus => !previousAckStatus)}
+                                variant="secondary"
                             >
                                 I understand, continue
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </Form>

@@ -16,7 +16,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { ErrorMessage } from '../../components/alerts'
@@ -334,9 +334,9 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 <div>
                     <div className="alert alert-info">
                         Syntax-highlighting this file took too long. &nbsp;
-                        <button type="button" onClick={onExtendTimeoutClick} className="btn btn-sm btn-primary">
+                        <Button onClick={onExtendTimeoutClick} variant="primary" size="sm">
                             Try again
-                        </button>
+                        </Button>
                     </div>
                 </div>
             )}
