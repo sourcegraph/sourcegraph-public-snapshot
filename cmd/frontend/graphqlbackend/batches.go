@@ -487,6 +487,7 @@ type GitBranchChangesetDescriptionResolver interface {
 
 	HeadRepository() *RepositoryResolver
 	HeadRef() string
+	Fork() bool
 
 	Title() string
 	Body() string

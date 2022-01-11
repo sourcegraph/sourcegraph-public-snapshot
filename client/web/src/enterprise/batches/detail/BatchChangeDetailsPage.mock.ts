@@ -226,6 +226,7 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                 externalURL: {
                     url: 'http://test.test/123',
                 },
+                forkNamespace: null,
                 labels: [
                     {
                         __typename: 'ChangesetLabel',
@@ -253,6 +254,7 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                     type: ChangesetSpecType.BRANCH,
                     description: {
                         __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
                 },
@@ -269,6 +271,7 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                 },
                 externalID: null,
                 externalURL: null,
+                forkNamespace: null,
                 labels: [],
                 repository: {
                     id: 'repoid',
@@ -289,6 +292,7 @@ export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node']
                     type: ChangesetSpecType.BRANCH,
                     description: {
                         __typename: 'GitBranchChangesetDescription',
+                        baseRef: 'my-branch',
                         headRef: 'my-branch',
                     },
                 },

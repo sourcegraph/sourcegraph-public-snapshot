@@ -2,7 +2,6 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { Badge } from '@sourcegraph/wildcard'
 
 import { DiffStat } from '../../../components/diff/DiffStat'
 import {
@@ -15,6 +14,7 @@ import {
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
 import { BatchSpecWorkspaceListFields, Scalars } from '../../../graphql-operations'
+import { Branch } from '../Branch'
 
 import { useWorkspacesListConnection } from './backend'
 import styles from './WorkspacesList.module.scss'
@@ -75,7 +75,7 @@ const WorkspaceNode: React.FunctionComponent<WorkspaceNodeProps> = ({ node, sele
                 <strong className={classNames(styles.workspaceName, 'flex-grow-1')}>{node.repository.name}</strong>
                 {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
             </div>
-            <Badge variant="secondary">{node.branch.abbrevName}</Badge>
+            <Branch name={node.branch.abbrevName} />
         </Link>
     </li>
 )
