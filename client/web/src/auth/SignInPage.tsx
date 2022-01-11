@@ -5,6 +5,8 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useEffect, useState } from 'react'
 import { Link, Redirect } from 'react-router-dom'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
 import { HeroPage } from '../components/HeroPage'
@@ -71,9 +73,11 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                         // here because this list will not be updated during this component's lifetime.
                         /* eslint-disable react/no-array-index-key */
                         <div className="mb-2" key={index}>
-                            <a
+                            <Button
                                 href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
-                                className="btn btn-secondary btn-block"
+                                className="btn-block"
+                                variant="secondary"
+                                as="a"
                             >
                                 {provider.displayName === 'GitHub' && (
                                     <>
@@ -81,7 +85,7 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                                     </>
                                 )}
                                 Continue with {provider.displayName}
-                            </a>
+                            </Button>
                         </div>
                     ))}
                 </div>

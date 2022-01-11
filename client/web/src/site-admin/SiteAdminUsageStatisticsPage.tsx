@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs'
 
 import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 import { BarChart } from '../components/d3/BarChart'
@@ -247,14 +248,15 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                 <h2>Usage statistics</h2>
                 {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
 
-                <a
+                <Button
                     href="/site-admin/usage-statistics/archive"
-                    className="btn btn-secondary"
                     data-tooltip="Download usage stats archive"
                     download="true"
+                    variant="secondary"
+                    as="a"
                 >
                     <FileDownloadIcon className="icon-inline" /> Download usage stats archive
-                </a>
+                </Button>
 
                 {this.state.stats && (
                     <>
