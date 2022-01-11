@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/../../"
 
 function usage {
   cat <<EOF
@@ -10,6 +11,7 @@ Run go tests, optionally restricting which ones based on the only and exclude co
 
 EOF
 }
+
 
 function go_test() {
   local test_packages
