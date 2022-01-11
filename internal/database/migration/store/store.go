@@ -56,26 +56,30 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	ctx, endObservation := s.operations.ensureSchemaTable.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.Exec(ctx, sqlf.Sprintf(ensureSchemaTableQuery, quote(s.migrationsTable)))
+	queries := []*sqlf.Query{
+		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS %s()`, quote(s.migrationsTable)),
+		sqlf.Sprintf(`ALTER TABLE %s ADD COLUMN IF NOT EXISTS version bigint NOT NULL PRIMARY KEY`, quote(s.migrationsTable)),
+		sqlf.Sprintf(`ALTER TABLE %s ADD COLUMN IF NOT EXISTS dirty boolean NOT NULL`, quote(s.migrationsTable)),
+
+		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS migration_logs()`),
+		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS id SERIAL PRIMARY KEY`),
+		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS schema text NOT NULL`),
+		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS version integer NOT NULL`),
+		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS up bool NOT NULL`),
+		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS started_at timestamptz NOT NULL`),
+		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS finished_at timestamptz`),
+		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS success boolean`),
+		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS error_message text`),
+	}
+
+	for _, query := range queries {
+		if err := s.Exec(ctx, query); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
-
-const ensureSchemaTableQuery = `
-CREATE TABLE IF NOT EXISTS %s (
-	version bigint NOT NULL PRIMARY KEY,
-	dirty boolean NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS migration_logs (
-	id SERIAL PRIMARY KEY,
-	schema text NOT NULL,
-	version integer NOT NULL,
-	up bool NOT NULL,
-	started_at timestamptz NOT NULL,
-	finished_at timestamptz,
-	success boolean,
-	error_message text
-);
-`
 
 func (s *Store) Version(ctx context.Context) (version int, dirty bool, ok bool, err error) {
 	ctx, endObservation := s.operations.version.With(ctx, &err, observation.Args{})
