@@ -1,4 +1,4 @@
-import { SearchBasedInsightSeries } from '../../types/insight/search-insight'
+import { SearchBasedBackendFilters, SearchBasedInsightSeries } from '../../types/insight/search-insight'
 
 import {
     createLineChartContent,
@@ -6,6 +6,11 @@ import {
     InsightData,
     InsightDataSeriesData,
 } from './create-line-chart-content'
+
+const FILTERS: SearchBasedBackendFilters = {
+    includeRepoRegexp: '',
+    excludeRepoRegexp: '',
+}
 
 const MOCK_SERIES_DATA: InsightData['series'] = [
     {
@@ -160,7 +165,7 @@ const MOCK_INDEXED_SERIES_DATA: InsightDataSeriesData[] = [
 
 describe('createLineChartContentFromIndexedSeries', () => {
     it('should generate empty line chart data with no series data', () => {
-        expect(createLineChartContentFromIndexedSeries([], [])).toStrictEqual({
+        expect(createLineChartContentFromIndexedSeries([], [], FILTERS)).toStrictEqual({
             chart: 'line',
             data: [],
             series: [],
@@ -173,49 +178,49 @@ describe('createLineChartContentFromIndexedSeries', () => {
     })
 
     it('should generate char line content with series data within', () => {
-        expect(createLineChartContentFromIndexedSeries(MOCK_INDEXED_SERIES_DATA, MOCK_SERIES_DEFINITION)).toStrictEqual(
-            {
-                chart: 'line',
-                data: [
-                    {
-                        dateTime: 1635727674000,
-                        '001': 100,
-                        '002': 200,
-                    },
-                    {
-                        dateTime: 1633048428000,
-                        '001': 101,
-                        '002': 201,
-                    },
-                    {
-                        dateTime: 1630456428000,
-                        '001': 102,
-                        '002': null,
-                    },
-                    {
-                        dateTime: 1630542828000,
-                        '001': null,
-                        '002': 202,
-                    },
-                ],
-                series: [
-                    {
-                        dataKey: '001',
-                        name: '#1 line',
-                        stroke: 'blue',
-                    },
-                    {
-                        dataKey: '002',
-                        name: '#2 line',
-                        stroke: 'orange',
-                    },
-                ],
-                xAxis: {
-                    dataKey: 'dateTime',
-                    scale: 'time',
-                    type: 'number',
+        expect(
+            createLineChartContentFromIndexedSeries(MOCK_INDEXED_SERIES_DATA, MOCK_SERIES_DEFINITION, FILTERS)
+        ).toStrictEqual({
+            chart: 'line',
+            data: [
+                {
+                    dateTime: 1635727674000,
+                    '001': 100,
+                    '002': 200,
                 },
-            }
-        )
+                {
+                    dateTime: 1633048428000,
+                    '001': 101,
+                    '002': 201,
+                },
+                {
+                    dateTime: 1630456428000,
+                    '001': 102,
+                    '002': null,
+                },
+                {
+                    dateTime: 1630542828000,
+                    '001': null,
+                    '002': 202,
+                },
+            ],
+            series: [
+                {
+                    dataKey: '001',
+                    name: '#1 line',
+                    stroke: 'blue',
+                },
+                {
+                    dataKey: '002',
+                    name: '#2 line',
+                    stroke: 'orange',
+                },
+            ],
+            xAxis: {
+                dataKey: 'dateTime',
+                scale: 'time',
+                type: 'number',
+            },
+        })
     })
 })
