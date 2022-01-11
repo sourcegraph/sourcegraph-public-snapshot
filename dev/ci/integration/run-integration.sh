@@ -8,12 +8,16 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
 root_dir=$(pwd)
 set -ex
 
-if [ -z "$IMAGE" ]; then
-  echo "Must specify \$IMAGE."
-  exit 1
-fi
+echo "--- set up deploy-sourcegraph-docker"
+test_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)""
+clone_dir="$test_dir/deploy-sourcegraph-docker"
+rm -rf "$clone_dir"
+git clone --depth 1 \
+  https://github.com/sourcegraph/deploy-sourcegraph-docker.git \
+  "$clone_dir"
+compose_dir="$test_dir/deploy-sourcegraph-docker/docker-compose"
 
-URL="http://localhost:7080"
+cp "dev/ci/integration/docker-compose.integration.yaml" "$compose_dir"
 
 function docker_cleanup() {
   echo "--- docker cleanup"
@@ -38,12 +42,13 @@ function cleanup() {
     echo "^^^ +++"
   fi
 
+  pushd "$compose_dir"
   echo "--- dump server logs"
-  docker logs --timestamps "$CONTAINER" >"$root_dir/server.log" 2>&1
+  docker-compose logs >"$root_dir/server.log" 2>&1
 
-  echo "--- $CONTAINER cleanup"
-  docker container rm -f "$CONTAINER"
-  docker image rm -f "$IMAGE"
+  echo "--- stop project"
+  docker-compose down
+  popd
 
   docker_cleanup
 
@@ -56,10 +61,27 @@ function cleanup() {
 }
 trap cleanup EXIT
 
-echo "--- Running a daemonized $IMAGE as the test subject..."
-CONTAINER="sourcegraph"
-CLEAN="true" "${root_dir}"/dev/run-server-image.sh -d --name $CONTAINER
+pushd "$compose_dir"
+if [ -z "$DOCKER_COMPOSE_IMAGES" ]; then
+  # Expects newline-delimited list of image names to update, see pipeline generator for
+  # how this variable is generated.
+  echo "--- Updating images"
+  while IFS= read -r line; do
+    echo "$line"
+    grep -lr './' -e "index.docker.io/sourcegraph/$line" --include \*.yaml | xargs sed -i -E "s#index.docker.io/sourcegraph/$line:.*#us.gcr.io/sourcegraph-dev/$line:$VERSION#g"
+  done < <(printf '%s\n' "$DOCKER_COMPOSE_IMAGES")
+fi
 
+echo "--- Generating compose config"
+COMPOSE_FILES="-f docker-compose.yaml -f docker-compose.integration.yaml"
+docker-compose $COMPOSE_FILES config
+
+echo "--- Running Sourcegraph"
+docker-compose $COMPOSE_FILES up \
+  --detach --force-recreate --renew-anon-volumes --quiet-pull
+popd
+
+URL="http://localhost:7080"
 echo "--- Waiting for $URL to be up"
 set +e
 timeout 120s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
@@ -70,11 +92,12 @@ done"
 if [ $? -ne 0 ]; then
   echo "^^^ +++"
   echo "$URL was not accessible within 120s."
-  docker inspect "$CONTAINER"
+  docker top
   exit 1
 fi
 set -e
 echo "Waiting for $URL... done"
 
 # Run tests against instance
+echo "--- Running ${1} against $URL"
 "${1}" "${URL}"

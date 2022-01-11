@@ -1,0 +1,16 @@
+# Override configuration for docker-compose testing
+version: '2.4'
+services:
+  sourcegraph-frontend-0:
+    ports:
+      # Publish frontend for direct access by tests
+      - 0.0.0.0:7080:3080
+
+  caddy:
+    # Disable caddy
+    entrypoint: ["echo", "Caddy disabled"]
+    restart: "no"
+
+  zoekt-webserver-0:
+    # Gentler resource requirements
+    cpus: 4

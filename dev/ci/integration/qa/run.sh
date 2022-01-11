@@ -18,5 +18,4 @@ trap cleanup EXIT
 echo "--- Running QA tests"
 
 echo "--- test.sh"
-export IMAGE=${IMAGE:-"us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION"}
 ./dev/ci/integration/run-integration.sh "${root_dir}/dev/ci/integration/qa/test.sh"

@@ -423,10 +423,9 @@ func triggerUpdaterPipeline(pipeline *bk.Pipeline) {
 func codeIntelQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::brain: Code Intel QA",
-			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
-			bk.Env("CANDIDATE_VERSION", candidateTag),
-
+			bk.DependsOn(candidateImageStepKeys(images.DeploySourcegraphDockerImages)...),
+			bk.Env("VERSION", candidateTag),
+			bk.Env("DOCKER_IMAGES", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
@@ -440,9 +439,9 @@ func serverE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":chromium: Sourcegraph E2E",
 			bk.Agent("queue", "baremetal"),
-			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
-			bk.Env("CANDIDATE_VERSION", candidateTag),
+			bk.DependsOn(candidateImageStepKeys(images.DeploySourcegraphDockerImages)...),
+			bk.Env("VERSION", candidateTag),
+			bk.Env("DOCKER_IMAGES", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
 			bk.Env("DISPLAY", ":99"),
 			// TODO need doc
 			bk.Env("JEST_CIRCUS", "0"),
@@ -460,9 +459,9 @@ func serverQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::chromium: Sourcegraph QA",
 			bk.Agent("queue", "baremetal"),
-			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
-			bk.Env("CANDIDATE_VERSION", candidateTag),
+			bk.DependsOn(candidateImageStepKeys(images.DeploySourcegraphDockerImages)...),
+			bk.Env("VERSION", candidateTag),
+			bk.Env("DOCKER_IMAGES", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
 			bk.Env("DISPLAY", ":99"),
 			// TODO need doc
 			bk.Env("JEST_CIRCUS", "0"),
@@ -484,7 +483,8 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 			bk.Agent("queue", "baremetal"),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
-			bk.Env("CANDIDATE_VERSION", candidateTag),
+			bk.Env("VERSION", candidateTag),
+			bk.Env("DOCKER_IMAGES", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
 			bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
 			bk.Env("DISPLAY", ":99"),
 			bk.Env("LOG_STATUS_MESSAGES", "true"),
@@ -521,6 +521,13 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 // adding dependencies on a step.
 func candidateImageStepKey(app string) string {
 	return strings.ReplaceAll(app, ".", "-") + ":candidate"
+}
+
+func candidateImageStepKeys(apps []string) (keys []string) {
+	for _, app := range apps {
+		keys = append(keys, candidateImageStepKey(app))
+	}
+	return
 }
 
 // Build a candidate docker image that will re-tagged with the final

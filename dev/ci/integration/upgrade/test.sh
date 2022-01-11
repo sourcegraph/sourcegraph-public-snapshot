@@ -61,10 +61,10 @@ if [[ $MINIMUM_UPGRADEABLE_VERSION =~ $regex ]]; then
     -c 'chown -R postgres $PGDATA . && gosu postgres bash ./optimize.sh $PGDATA'
 fi
 
-# Upgrade to current candidate image. Capture logs for the attempted upgrade.
-echo "--- start candidate"
+# Upgrade to provided version. Capture logs for the attempted upgrade.
+echo "--- start $VERSION"
 CONTAINER="sourcegraph-new"
-IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION CLEAN="false" ./dev/run-server-image.sh -d --name $CONTAINER
+IMAGE=us.gcr.io/sourcegraph-dev/server:$VERSION CLEAN="false" ./dev/run-server-image.sh -d --name $CONTAINER
 sleep 15
 
 # Run tests
