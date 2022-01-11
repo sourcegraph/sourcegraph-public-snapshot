@@ -29,6 +29,8 @@ func (e ChangesetNotFoundError) NonRetryable() bool { return true }
 
 // A DraftChangesetSource can create draft changesets and undraft them.
 type DraftChangesetSource interface {
+	ChangesetSource
+
 	// CreateDraftChangeset will create the Changeset on the source. If it already
 	// exists, *Changeset will be populated and the return value will be
 	// true.
