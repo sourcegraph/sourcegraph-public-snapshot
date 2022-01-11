@@ -60,8 +60,36 @@ func TestRead(t *testing.T) {
 			UID: 1,
 		})
 		t.Run(name+"-ReadFile", func(t *testing.T) {
-			data, err := ReadFile(ctx, repo, commitID, test.file, test.maxBytes)
+			data, err := ReadFile(ctx, repo, commitID, test.file, test.maxBytes, nil)
 			test.checkFn(t, err, data)
+		})
+		t.Run(name+"-ReadFile-with-sub-repo-permissions-no-op", func(t *testing.T) {
+			checker.EnabledFunc.SetDefaultHook(func() bool {
+				return true
+			})
+			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+				if content.Path == test.file {
+					return authz.Read, nil
+				}
+				return authz.None, nil
+			})
+			data, err := ReadFile(ctx, repo, commitID, test.file, test.maxBytes, checker)
+			test.checkFn(t, err, data)
+		})
+		t.Run(name+"-ReadFile-with-sub-repo-permissions-filters-file", func(t *testing.T) {
+			checker.EnabledFunc.SetDefaultHook(func() bool {
+				return true
+			})
+			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+				return authz.None, nil
+			})
+			data, err := ReadFile(ctx, repo, commitID, test.file, test.maxBytes, checker)
+			if err != os.ErrNotExist {
+				t.Errorf("unexpected error reading file: %s", err)
+			}
+			if string(data) != "" {
+				t.Errorf("unexpected data: %s", data)
+			}
 		})
 		t.Run(name+"-GetFileReader", func(t *testing.T) {
 			runNewFileReaderTest(ctx, t, repo, commitID, test.file, nil, test.checkFn)
@@ -96,7 +124,7 @@ func TestRead(t *testing.T) {
 	}
 
 	t.Run("maxBytes", func(t *testing.T) {
-		data, err := ReadFile(ctx, repo, commitID, "file1", 3)
+		data, err := ReadFile(ctx, repo, commitID, "file1", 3, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
