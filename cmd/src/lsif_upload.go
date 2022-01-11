@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"flag"
@@ -53,6 +54,8 @@ Examples:
 
 // handleLSIFUpload is the handler for `src lsif upload`.
 func handleLSIFUpload(args []string) error {
+	ctx := context.Background()
+
 	err := parseAndValidateLSIFUploadFlags(args)
 	out := lsifUploadOutput()
 	if !lsifUploadFlags.json {
@@ -72,7 +75,7 @@ func handleLSIFUpload(args []string) error {
 		Flags: lsifUploadFlags.apiFlags,
 	})
 
-	uploadID, err := upload.UploadIndex(lsifUploadFlags.file, client, lsifUploadOptions(out))
+	uploadID, err := upload.UploadIndex(ctx, lsifUploadFlags.file, client, lsifUploadOptions(out))
 	if err != nil {
 		return handleLSIFUploadError(out, err)
 	}
