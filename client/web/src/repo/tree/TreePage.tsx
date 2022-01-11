@@ -34,7 +34,7 @@ import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservabl
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -291,13 +291,14 @@ export const TreePage: React.FunctionComponent<Props> = ({
     ) : (
         <div className="test-tree-page-no-recent-commits">
             <p className="mb-2">No commits in this tree in the past year.</p>
-            <button
-                type="button"
-                className="btn btn-secondary btn-sm test-tree-page-show-all-commits"
+            <Button
+                className="test-tree-page-show-all-commits"
                 onClick={onShowOlderCommitsClicked}
+                variant="secondary"
+                size="sm"
             >
                 Show all commits
-            </button>
+            </Button>
         </div>
     )
 
@@ -312,9 +313,9 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     <p className="mb-2">
                         {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
                     </p>
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={onShowOlderCommitsClicked}>
+                    <Button onClick={onShowOlderCommitsClicked} variant="secondary" size="sm">
                         Show all commits
-                    </button>
+                    </Button>
                 </>
             )}
         </div>

@@ -4,6 +4,7 @@ import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useState, useCallback } from 'react'
 
 import { ErrorLike } from '@sourcegraph/common'
+import { Button } from '@sourcegraph/wildcard'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { LoaderButton } from '../../../components/LoaderButton'
@@ -138,9 +139,9 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                             alwaysShowLabel={true}
                         />
                     ) : (
-                        <button type="button" className="btn btn-primary" onClick={connectAction}>
+                        <Button onClick={connectAction} variant="primary">
                             Connect
-                        </button>
+                        </Button>
                     )
                 ) : (
                     (isTokenUpdateRequired || !isUserOwner) &&
@@ -154,27 +155,26 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                             alwaysShowLabel={true}
                         />
                     ) : (
-                        <button
-                            type="button"
+                        <Button
                             className={`btn ${
                                 !isUserOwner ? 'btn-link p-0 shadow-none font-weight-normal' : 'btn-merged'
                             }`}
                             onClick={updateAction}
                         >
                             Update
-                        </button>
+                        </Button>
                     ))
                 )}
 
                 {/* always show remove button when the service exists */}
                 {service?.id && (
-                    <button
-                        type="button"
-                        className="btn btn-link text-danger font-weight-normal shadow-none px-0 ml-3"
+                    <Button
+                        className="text-danger font-weight-normal shadow-none px-0 ml-3"
                         onClick={toggleRemoveConnectionModal}
+                        variant="link"
                     >
                         Remove
-                    </button>
+                    </Button>
                 )}
             </div>
         </div>

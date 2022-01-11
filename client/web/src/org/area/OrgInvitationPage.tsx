@@ -8,7 +8,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
 import { refreshAuthenticatedUser, AuthenticatedUser } from '../../auth'
@@ -142,27 +142,28 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                     </small>
                                 </p>
                                 <div className="mt-3">
-                                    <button
+                                    <Button
                                         type="submit"
-                                        className="btn btn-primary mr-sm-2"
+                                        className="mr-sm-2"
                                         disabled={this.state.submissionOrError === 'loading'}
                                         onClick={this.onAcceptInvitation}
+                                        variant="primary"
                                     >
                                         Join {this.props.org.name}
-                                    </button>
+                                    </Button>
                                     <Link className="btn btn-link" to={orgURL(this.props.org.name)}>
                                         Go to {this.props.org.name}'s profile
                                     </Link>
                                 </div>
                                 <div>
-                                    <button
-                                        type="button"
-                                        className="btn btn-link btn-sm"
+                                    <Button
                                         disabled={this.state.submissionOrError === 'loading'}
                                         onClick={this.onDeclineInvitation}
+                                        variant="link"
+                                        size="sm"
                                     >
                                         Decline invitation
-                                    </button>
+                                    </Button>
                                 </div>
                                 {isErrorLike(this.state.submissionOrError) && (
                                     <ErrorAlert className="my-2" error={this.state.submissionOrError} />

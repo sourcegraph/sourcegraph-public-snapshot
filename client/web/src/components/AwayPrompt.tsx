@@ -3,6 +3,8 @@ import * as H from 'history'
 import React, { useEffect, useState, useRef } from 'react'
 import { useHistory } from 'react-router'
 
+import { Button } from '@sourcegraph/wildcard'
+
 type Fn = () => void
 interface Props {
     message: string
@@ -59,12 +61,12 @@ export const AwayPrompt: React.FunctionComponent<Props> = props => {
             <h3 className="text-dark mb-4">{header}</h3>
             <div className="form-group mb-4">{message}</div>
             <div className="d-flex justify-content-end">
-                <button type="button" className="btn btn-outline-secondary mr-2" onClick={() => closeModal(false)}>
+                <Button className="mr-2" onClick={() => closeModal(false)} outline={true} variant="secondary">
                     {button_cancel_text}
-                </button>
-                <button type="button" className="btn btn-primary" onClick={() => closeModal(true)}>
+                </Button>
+                <Button onClick={() => closeModal(true)} variant="primary">
                     {button_ok_text}
-                </button>
+                </Button>
             </div>
         </Dialog>
     ) : null

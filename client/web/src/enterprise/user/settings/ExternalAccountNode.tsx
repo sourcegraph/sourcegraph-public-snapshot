@@ -5,7 +5,7 @@ import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, Button } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -150,23 +150,18 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                     </div>
                     <div className="text-nowrap">
                         {this.props.node.accountData && (
-                            <button type="button" className="btn btn-secondary" onClick={this.toggleShowData}>
+                            <Button onClick={this.toggleShowData} variant="secondary">
                                 {this.state.showData ? 'Hide' : 'Show'} data
-                            </button>
+                            </Button>
                         )}{' '}
                         {this.props.node.refreshURL && (
                             <a className="btn btn-secondary" href={this.props.node.refreshURL}>
                                 Refresh
                             </a>
                         )}{' '}
-                        <button
-                            type="button"
-                            className="btn btn-danger"
-                            onClick={this.deleteExternalAccount}
-                            disabled={loading}
-                        >
+                        <Button onClick={this.deleteExternalAccount} disabled={loading} variant="danger">
                             Delete
-                        </button>
+                        </Button>
                         {isErrorLike(this.state.deletionOrError) && (
                             <ErrorAlert className="mt-2" error={this.state.deletionOrError} />
                         )}
