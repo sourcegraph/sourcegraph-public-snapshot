@@ -176,6 +176,7 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 			oldest = possibleOldest
 		}
 	}
+	opts.From = &oldest
 
 	if filters.IncludeRepoRegex != nil {
 		opts.IncludeRepoRegex = *filters.IncludeRepoRegex
