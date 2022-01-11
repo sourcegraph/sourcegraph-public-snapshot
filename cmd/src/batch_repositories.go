@@ -36,6 +36,19 @@ Examples:
 		apiFlags = api.NewFlags(flagSet)
 	)
 
+	var (
+		allowUnsupported bool
+		allowIgnored     bool
+	)
+	flagSet.BoolVar(
+		&allowUnsupported, "allow-unsupported", false,
+		"Allow unsupported code hosts.",
+	)
+	flagSet.BoolVar(
+		&allowIgnored, "force-override-ignore", false,
+		"Do not ignore repositories that have a .batchignore file.",
+	)
+
 	handler := func(args []string) error {
 		if err := flagSet.Parse(args); err != nil {
 			return err
@@ -44,7 +57,12 @@ Examples:
 		ctx := context.Background()
 		client := cfg.apiClient(apiFlags, flagSet.Output())
 
-		svc := service.New(&service.Opts{Client: client})
+		svc := service.New(&service.Opts{
+			Client:           client,
+			AllowUnsupported: allowUnsupported,
+			AllowIgnored:     allowIgnored,
+			AllowFiles:       true,
+		})
 
 		if err := svc.DetermineFeatureFlags(ctx); err != nil {
 			return err

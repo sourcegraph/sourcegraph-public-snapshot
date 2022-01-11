@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
+
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches/service"
 	"github.com/sourcegraph/src-cli/internal/batches/ui"
@@ -30,6 +31,19 @@ Examples:
 	apiFlags := api.NewFlags(flagSet)
 	fileFlag := flagSet.String("f", "", "The batch spec file to read.")
 
+	var (
+		allowUnsupported bool
+		allowIgnored     bool
+	)
+	flagSet.BoolVar(
+		&allowUnsupported, "allow-unsupported", false,
+		"Allow unsupported code hosts.",
+	)
+	flagSet.BoolVar(
+		&allowIgnored, "force-override-ignore", false,
+		"Do not ignore repositories that have a .batchignore file.",
+	)
+
 	handler := func(args []string) error {
 		ctx := context.Background()
 
@@ -44,7 +58,10 @@ Examples:
 		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
 		ui := &ui.TUI{Out: out}
 		svc := service.New(&service.Opts{
-			Client: cfg.apiClient(apiFlags, flagSet.Output()),
+			Client:           cfg.apiClient(apiFlags, flagSet.Output()),
+			AllowUnsupported: allowUnsupported,
+			AllowIgnored:     allowIgnored,
+			AllowFiles:       true,
 		})
 
 		if err := svc.DetermineFeatureFlags(ctx); err != nil {

@@ -19,6 +19,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.35.2
+
+### Fixed
+
+- `src batch validate` and `src batch repos` now accept `-allow-unsupported` and `-force-override-ignore` and don't fail on specs using `files` anymore.
+
 ## 3.35.1
 
 ### Changed
