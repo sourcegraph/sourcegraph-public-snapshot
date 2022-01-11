@@ -52,7 +52,11 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
             <figure>
                 {thumbnailElement}
                 <figcaption>
-                    <Button onClick={() => toggleDialog(true)} variant="link">
+                    <Button
+                        variant="link"
+                        className="font-weight-normal p-0 pt-2 w-100"
+                        onClick={() => toggleDialog(true)}
+                    >
                         {title}
                     </Button>
                 </figcaption>

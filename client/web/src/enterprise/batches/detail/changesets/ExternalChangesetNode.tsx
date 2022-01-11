@@ -5,13 +5,13 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import React, { useState, useCallback, useEffect } from 'react'
 
+import { Hoverifier } from '@sourcegraph/codeintellify'
+import { asError, isErrorLike } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
-import { Hoverifier } from '@sourcegraph/shared/src/codeintellify'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
 import { Button } from '@sourcegraph/wildcard'
@@ -223,7 +223,9 @@ export const ExternalChangesetNode: React.FunctionComponent<ExternalChangesetNod
 
 const SyncerError: React.FunctionComponent<{ syncerError: string }> = ({ syncerError }) => (
     <div className="alert alert-danger" role="alert">
-        <h4 className="alert-heading">Encountered error during last attempt to sync changeset data from code host</h4>
+        <h4 className={classNames(styles.alertHeading)}>
+            Encountered error during last attempt to sync changeset data from code host
+        </h4>
         <ErrorMessage error={syncerError} />
         <hr className="my-2" />
         <p className="mb-0">
@@ -241,7 +243,7 @@ const ChangesetError: React.FunctionComponent<{
 
     return (
         <div className="alert alert-danger" role="alert">
-            <h4 className="alert-heading">Failed to run operations on changeset</h4>
+            <h4 className={classNames(styles.alertHeading)}>Failed to run operations on changeset</h4>
             <ErrorMessage error={node.error} />
         </div>
     )

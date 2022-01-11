@@ -9,7 +9,7 @@ import {
     format as jsoncFormat,
 } from '@sqs/jsonc-parser'
 
-import { asError, createAggregateError, ErrorLike } from './errors'
+import { asError, createAggregateError, ErrorLike } from '@sourcegraph/common'
 
 /**
  * Parses the JSON input using an error-tolerant "JSONC" parser. If an error occurs, it is returned as a value

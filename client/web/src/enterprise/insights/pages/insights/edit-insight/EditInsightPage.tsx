@@ -2,9 +2,8 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
@@ -40,7 +39,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
     const { handleSubmit, handleCancel } = useEditPageHandlers({ originalInsight: insight })
 
     if (insight === undefined || subjects === undefined) {
-        return <LoadingSpinner />
+        return <LoadingSpinner inline={false} />
     }
 
     if (!insight) {

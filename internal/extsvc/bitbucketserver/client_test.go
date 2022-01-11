@@ -1166,31 +1166,8 @@ func TestAuth(t *testing.T) {
 				t.Errorf("unexpected Authenticator: have=%T want=%T", client.Auth, &SudoableOAuthClient{})
 			} else if have.Client.Client.Credentials.Token != "foo" {
 				t.Errorf("unexpected token: have=%q want=%q", have.Client.Client.Credentials.Token, "foo")
-			} else if diff := cmp.Diff(have.Client.Client.PrivateKey, key, cmp.Comparer(func(a, b *rsa.PrivateKey) bool {
-				// This is adapted from the useful PrivateKey.Equal() function
-				// in Go 1.15, which we can't rely on at present due to being
-				// much too new.
-				if a.PublicKey.E != b.PublicKey.E {
-					return false
-				}
-				if a.PublicKey.N.Cmp(b.PublicKey.N) != 0 {
-					return false
-				}
-				if a.D.Cmp(b.D) != 0 {
-					return false
-				}
-				if len(a.Primes) != len(b.Primes) {
-					return false
-				}
-				for i := range a.Primes {
-					if a.Primes[i].Cmp(b.Primes[i]) != 0 {
-						return false
-					}
-				}
-
-				return true
-			})); diff != "" {
-				t.Errorf("unexpected key:\n%s", diff)
+			} else if !key.Equal(have.Client.Client.PrivateKey) {
+				t.Errorf("unexpected key: have=%q want=%q", have.Client.Client.PrivateKey, key)
 			}
 		})
 	})

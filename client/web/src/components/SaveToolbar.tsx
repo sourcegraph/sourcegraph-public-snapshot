@@ -4,8 +4,7 @@ import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import styles from './SaveToolbar.module.scss'
 
@@ -86,7 +85,7 @@ export const SaveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveTo
                 {children}
                 {saving && (
                     <span className={classNames(styles.item, styles.message)}>
-                        <LoadingSpinner className="icon-inline" /> Saving...
+                        <LoadingSpinner /> Saving...
                     </span>
                 )}
             </div>

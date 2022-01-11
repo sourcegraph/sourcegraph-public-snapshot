@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 
 import { Button } from '@sourcegraph/wildcard'
 
-import { FeedbackPromptContent } from '../../nav/Feedback/FeedbackPrompt'
+import { FeedbackPromptContent } from '../../nav/Feedback'
 
 interface SourcegraphExtensionFeedbackProps {
     extensionID: string

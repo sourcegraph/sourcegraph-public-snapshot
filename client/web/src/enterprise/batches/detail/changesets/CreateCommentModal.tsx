@@ -2,9 +2,8 @@ import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Button } from '@sourcegraph/wildcard'
+import { asError, isErrorLike } from '@sourcegraph/common'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
@@ -83,7 +82,7 @@ export const CreateCommentModal: React.FunctionComponent<CreateCommentModalProps
                         Cancel
                     </Button>
                     <Button type="submit" disabled={isLoading === true || commentBody.length === 0} variant="primary">
-                        {isLoading === true && <LoadingSpinner className="icon-inline" />}
+                        {isLoading === true && <LoadingSpinner />}
                         Post comments
                     </Button>
                 </div>

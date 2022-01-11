@@ -3,11 +3,10 @@ import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ErrorLike, asError } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { ErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
-import { Container, PageHeader, Button } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
@@ -218,7 +217,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                 {/* external accounts not fetched yet */}
                 {!this.state.accounts.fetched && this.state.error && (
                     <div className="d-flex justify-content-center mt-4">
-                        <LoadingSpinner className="icon-inline" />
+                        <LoadingSpinner />
                     </div>
                 )}
 
@@ -305,7 +304,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                 </Button>
                                 {this.state.loading && (
                                     <div className="icon-inline">
-                                        <LoadingSpinner className="icon-inline" />
+                                        <LoadingSpinner />
                                     </div>
                                 )}
                             </Form>

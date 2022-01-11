@@ -4,12 +4,13 @@ import React from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { isErrorLike } from '@sourcegraph/common'
+
 import { IHighlightLineRange } from '../graphql/schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
 import { SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { isErrorLike } from '../util/errors'
 import {
     appendLineRangeQueryParameter,
     toPositionOrRangeQueryParameter,

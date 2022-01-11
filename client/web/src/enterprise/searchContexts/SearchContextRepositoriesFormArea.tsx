@@ -141,7 +141,7 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<SearchCo
                 actions={actions}
                 canEdit={false}
                 onChange={onChange}
-                height={400}
+                height={300}
                 isLightTheme={isLightTheme}
                 history={history}
                 telemetryService={telemetryService}

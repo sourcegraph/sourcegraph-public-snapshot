@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -27,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -448,9 +446,7 @@ func TestSearchResultsHydration(t *testing.T) {
 			Query:        p.ToParseTree(),
 			UserSettings: &schema.Settings{},
 		},
-		zoekt:    z,
-		reposMu:  &sync.Mutex{},
-		resolved: &searchrepos.Resolved{},
+		zoekt: z,
 	}
 	results, err := resolver.Results(ctx)
 	if err != nil {
@@ -805,9 +801,7 @@ func TestEvaluateAnd(t *testing.T) {
 					Query:        p.ToParseTree(),
 					UserSettings: &schema.Settings{},
 				},
-				zoekt:    z,
-				reposMu:  &sync.Mutex{},
-				resolved: &searchrepos.Resolved{},
+				zoekt: z,
 			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
@@ -878,10 +872,8 @@ func TestSearchContext(t *testing.T) {
 					Query:        p.ToParseTree(),
 					UserSettings: &schema.Settings{},
 				},
-				reposMu:  &sync.Mutex{},
-				resolved: &searchrepos.Resolved{},
-				zoekt:    mockZoekt,
-				db:       db,
+				zoekt: mockZoekt,
+				db:    db,
 			}
 
 			_, err = resolver.Results(context.Background())
@@ -969,6 +961,92 @@ func TestIsContextError(t *testing.T) {
 			if got := isContextError(ctx, c.err); got != c.want {
 				t.Fatalf("wanted %t, got %t", c.want, got)
 			}
+		})
+	}
+}
+
+func Test_searchResultsToRepoNodes(t *testing.T) {
+	cases := []struct {
+		matches []result.Match
+		res     string
+		err     string
+	}{{
+		matches: []result.Match{
+			&result.RepoMatch{Name: "repo_a"},
+		},
+		res: `"repo:^repo_a$"`,
+	}, {
+		matches: []result.Match{
+			&result.RepoMatch{Name: "repo_a", Rev: "main"},
+		},
+		res: `"repo:^repo_a$@main"`,
+	}, {
+		matches: []result.Match{
+			&result.FileMatch{},
+		},
+		err: "expected type",
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.res, func(t *testing.T) {
+			nodes, err := searchResultsToRepoNodes(tc.matches)
+			if err != nil {
+				require.Contains(t, err.Error(), tc.err)
+				return
+			}
+			require.Equal(t, tc.res, query.Q(nodes).String())
+		})
+	}
+}
+
+func Test_searchResultsToFileNodes(t *testing.T) {
+	cases := []struct {
+		matches []result.Match
+		res     string
+		err     string
+	}{{
+		matches: []result.Match{
+			&result.FileMatch{
+				File: result.File{
+					Repo: types.MinimalRepo{
+						Name: "repo_a",
+					},
+					Path: "my/file/path.txt",
+				},
+			},
+		},
+		res: `(and "repo:^repo_a$" "file:^my/file/path\\.txt$")`,
+	}, {
+		matches: []result.Match{
+			&result.FileMatch{
+				File: result.File{
+					Repo: types.MinimalRepo{
+						Name: "repo_a",
+					},
+					InputRev: func() *string { s := "main"; return &s }(),
+					Path:     "my/file/path1.txt",
+				},
+			},
+			&result.FileMatch{
+				File: result.File{
+					Repo: types.MinimalRepo{
+						Name: "repo_b",
+					},
+					Path: "my/file/path2.txt",
+				},
+			},
+		},
+		res: `(and "repo:^repo_a$@main" "file:^my/file/path1\\.txt$") (and "repo:^repo_b$" "file:^my/file/path2\\.txt$")`,
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.res, func(t *testing.T) {
+			nodes, err := searchResultsToFileNodes(tc.matches)
+			if err != nil {
+				require.Contains(t, err.Error(), tc.err)
+				return
+			}
+			require.Equal(t, tc.res, query.Q(nodes).String())
 		})
 	}
 }

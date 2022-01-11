@@ -2,12 +2,11 @@ import React, { useCallback, useMemo } from 'react'
 import { from } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Button } from '@sourcegraph/wildcard'
+import { asError, isErrorLike } from '@sourcegraph/common'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../../api/client/api/common'
 import { Link } from '../../components/Link'
-import { asError, isErrorLike } from '../../util/errors'
 import { useObservable } from '../../util/useObservable'
 
 import { ExtensionsDevelopmentToolsProps } from '.'
@@ -59,7 +58,7 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
                 )
             ) : (
                 <span className="card-body">
-                    <LoadingSpinner className="icon-inline" /> Loading extensions...
+                    <LoadingSpinner /> Loading extensions...
                 </span>
             )}
             <div className="card-body border-top">

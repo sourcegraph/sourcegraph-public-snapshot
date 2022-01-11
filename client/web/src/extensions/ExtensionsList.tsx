@@ -2,15 +2,14 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React, { useMemo } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { isErrorLike } from '@sourcegraph/common'
 import { isExtensionEnabled } from '@sourcegraph/shared/src/extensions/extension'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { mergeSettings, SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 
@@ -107,7 +106,7 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     const settingsFromLastFilterChange = useMemo(() => settingsCascade.final, [enablementFilter])
 
     if (!data || data === LOADING) {
-        return <LoadingSpinner className="icon-inline mt-2" />
+        return <LoadingSpinner className="mt-2" />
     }
 
     if (isErrorLike(data)) {

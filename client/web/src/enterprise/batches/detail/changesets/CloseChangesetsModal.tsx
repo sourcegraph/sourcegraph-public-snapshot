@@ -1,9 +1,8 @@
 import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Button } from '@sourcegraph/wildcard'
+import { asError, isErrorLike } from '@sourcegraph/common'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
@@ -58,7 +57,7 @@ export const CloseChangesetsModal: React.FunctionComponent<CloseChangesetsModalP
                     Cancel
                 </Button>
                 <Button onClick={onSubmit} disabled={isLoading === true} variant="primary">
-                    {isLoading === true && <LoadingSpinner className="icon-inline" />}
+                    {isLoading === true && <LoadingSpinner />}
                     Close
                 </Button>
             </div>

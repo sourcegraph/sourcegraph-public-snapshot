@@ -4,9 +4,8 @@ import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Button } from '@sourcegraph/wildcard'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
@@ -98,11 +97,7 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                         disabled={this.state.submitOrError === 'loading'}
                         variant="primary"
                     >
-                        {this.state.submitOrError === 'loading' ? (
-                            <LoadingSpinner className="icon-inline" />
-                        ) : (
-                            'Send reset password link'
-                        )}
+                        {this.state.submitOrError === 'loading' ? <LoadingSpinner /> : 'Send reset password link'}
                     </Button>
                 </Form>
                 <span className="form-text text-muted">
@@ -214,11 +209,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                         disabled={this.state.submitOrError === 'loading'}
                         variant="primary"
                     >
-                        {this.state.submitOrError === 'loading' ? (
-                            <LoadingSpinner className="icon-inline" />
-                        ) : (
-                            'Reset password'
-                        )}
+                        {this.state.submitOrError === 'loading' ? <LoadingSpinner /> : 'Reset password'}
                     </Button>
                 </Form>
             </>

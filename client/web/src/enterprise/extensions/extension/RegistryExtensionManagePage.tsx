@@ -8,11 +8,10 @@ import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -179,11 +178,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                                 </div>
                             )}
                         <Button type="submit" disabled={this.state.updateOrError === 'loading'} variant="primary">
-                            {this.state.updateOrError === 'loading' ? (
-                                <LoadingSpinner className="icon-inline" />
-                            ) : (
-                                'Update extension'
-                            )}
+                            {this.state.updateOrError === 'loading' ? <LoadingSpinner /> : 'Update extension'}
                         </Button>
                     </Form>
                     {isErrorLike(this.state.updateOrError) && <ErrorAlert error={this.state.updateOrError} />}

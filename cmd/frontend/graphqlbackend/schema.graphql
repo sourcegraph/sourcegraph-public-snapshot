@@ -218,9 +218,12 @@ type Mutation {
     """
     createPassword(newPassword: String!): EmptyResponse
     """
-    Sets the current user to accept the site's Terms of Service and Privacy Policy.
+    Sets the user to accept the site's Terms of Service and Privacy Policy.
+    If the ID is ommitted, the current user is assumed.
+
+    Only the user or site admins may perform this mutation.
     """
-    setTosAccepted: EmptyResponse!
+    setTosAccepted(userID: ID): EmptyResponse!
     """
     Creates an access token that grants the privileges of the specified user (referred to as the access token's
     "subject" user after token creation). The result is the access token value, which the caller is responsible
@@ -1295,10 +1298,6 @@ type Query {
     """
     clientConfiguration: ClientConfigurationDetails!
     """
-    Fetch search filter suggestions for autocompletion.
-    """
-    searchFilterSuggestions: SearchFilterSuggestions!
-    """
     Runs a search.
     """
     search(
@@ -1805,29 +1804,11 @@ type Search {
     """
     results: SearchResults!
     """
-    The suggestions.
-    """
-    suggestions(first: Int): [SearchSuggestion!]!
-        @deprecated(
-            reason: "Suggestions now done with streaming search. This field is deprecated and will be removed in a future release."
-        )
-
-    """
     A subset of results (excluding actual search results) which are heavily
     cached and thus quicker to query. Useful for e.g. querying sparkline
     data.
     """
     stats: SearchResultsStats!
-}
-
-"""
-Predefined suggestions for search filters when backfill.
-"""
-type SearchFilterSuggestions {
-    """
-    The suggestions for search filter "repo:".
-    """
-    repo: [String!]!
 }
 
 """
@@ -2039,11 +2020,6 @@ type Language {
     """
     name: String!
 }
-
-"""
-A search suggestion.
-"""
-union SearchSuggestion = Repository | File | Symbol | Language
 
 """
 A search-related alert message.

@@ -2,8 +2,8 @@ import classNames from 'classnames'
 import { of } from 'rxjs'
 import { Omit } from 'utility-types'
 
+import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/shared/src/codeintellify'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { querySelectorOrSelf } from '../../util/dom'

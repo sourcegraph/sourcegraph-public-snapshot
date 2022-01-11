@@ -9,8 +9,7 @@
     color: inherit;
 }
 
-.alert a:not(.btn),
-.alert-link {
+.alert a:not(.btn) {
     font-weight: 500;
 
     &:hover {

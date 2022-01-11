@@ -5,20 +5,17 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { containsLiteralOrPattern } from '@sourcegraph/shared/src/search/query/validate'
-import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button } from '@sourcegraph/wildcard'
 
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
+import { SearchContextProps } from '../..'
+import { buildSearchURLQueryFromQueryState } from '../../../stores'
 import { QueryChangeSource, QueryState } from '../../helpers'
 import { createQueryExampleFromString, updateQueryWithFilterAndExample } from '../../helpers/queryExample'
 import { SearchType } from '../StreamingSearchResults'
 
 import styles from './SearchSidebarSection.module.scss'
 
-export interface SearchTypeLinksProps
-    extends Omit<PatternTypeProps, 'setPatternType'>,
-        Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
+export interface SearchTypeLinksProps extends Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     query: string
     onNavbarQueryChange: (queryState: QueryState) => void
 }
@@ -35,17 +32,13 @@ interface SearchTypeLinkProps extends SearchTypeLinksProps {
 const SearchTypeLink: React.FunctionComponent<SearchTypeLinkProps> = ({
     type,
     query,
-    patternType,
-    caseSensitive,
     selectedSearchContextSpec,
     children,
 }) => {
-    const builtURLQuery = buildSearchURLQuery(
-        updateFilter(query, FilterType.type, type as string),
-        patternType,
-        caseSensitive,
-        selectedSearchContextSpec
-    )
+    const builtURLQuery = buildSearchURLQueryFromQueryState({
+        query: updateFilter(query, FilterType.type, type as string),
+        searchContextSpec: selectedSearchContextSpec,
+    })
 
     return (
         <Link to={{ pathname: '/search', search: builtURLQuery }} className={styles.sidebarSectionListItem}>

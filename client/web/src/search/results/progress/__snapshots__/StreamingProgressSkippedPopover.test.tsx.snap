@@ -314,7 +314,12 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           <span
             class="search-filter-keyword"
           >
-            timeout:
+            timeout
+          </span>
+          <span
+            class="search-filter-separator"
+          >
+            :
           </span>
           2m
         </span>
@@ -353,7 +358,12 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           <span
             class="search-filter-keyword"
           >
-            archived:
+            archived
+          </span>
+          <span
+            class="search-filter-separator"
+          >
+            :
           </span>
           yes
         </span>
@@ -375,7 +385,12 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           <span
             class="search-filter-keyword"
           >
-            archived:
+            archived
+          </span>
+          <span
+            class="search-filter-separator"
+          >
+            :
           </span>
           yes
         </span>

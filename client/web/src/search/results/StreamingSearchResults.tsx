@@ -3,6 +3,7 @@ import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
+import { asError } from '@sourcegraph/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -15,9 +16,8 @@ import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError } from '@sourcegraph/shared/src/util/errors'
 
-import { PatternTypeProps, SearchStreamingProps, ParsedSearchQueryProps, SearchContextProps } from '..'
+import { SearchStreamingProps, SearchContextProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
@@ -40,8 +40,6 @@ import { StreamingSearchResultsList } from './StreamingSearchResultsList'
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
         Pick<ActivationProps, 'activation'>,
-        ParsedSearchQueryProps,
-        Pick<PatternTypeProps, 'patternType'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         SettingsCascadeProps,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
@@ -68,8 +66,6 @@ export const LATEST_VERSION = 'V2'
 
 export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResultsProps> = props => {
     const {
-        parsedSearchQuery: query,
-        patternType,
         streamSearch,
         location,
         authenticatedUser,
@@ -81,6 +77,8 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
+    const patternType = useNavbarQueryState(state => state.searchPatternType)
+    const query = useNavbarQueryState(state => state.searchQueryFromURL)
 
     // Log view event on first load
     useEffect(
@@ -203,11 +201,12 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             submitSearch({
                 ...props,
                 caseSensitive,
+                patternType,
                 query: applyAdditionalFilters(query, additionalFilters),
                 source: 'excludedResults',
             })
         },
-        [query, telemetryService, caseSensitive, props]
+        [query, telemetryService, patternType, caseSensitive, props]
     )
     const [showSidebar, setShowSidebar] = useState(false)
 
@@ -234,8 +233,13 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
             <SearchSidebar
                 activation={props.activation}
+                showOnboardingTour={
+                    props.isSourcegraphDotCom &&
+                    !props.authenticatedUser &&
+                    props.featureFlags.get('getting-started-tour')
+                }
                 caseSensitive={caseSensitive}
-                patternType={props.patternType}
+                patternType={patternType}
                 settingsCascade={props.settingsCascade}
                 telemetryService={props.telemetryService}
                 selectedSearchContextSpec={props.selectedSearchContextSpec}
@@ -248,6 +252,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
             <SearchResultsInfoBar
                 {...props}
+                patternType={patternType}
                 caseSensitive={caseSensitive}
                 query={query}
                 enableCodeInsights={codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)}
@@ -270,8 +275,8 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
             <DidYouMean
                 telemetryService={props.telemetryService}
-                parsedSearchQuery={props.parsedSearchQuery}
-                patternType={props.patternType}
+                query={query}
+                patternType={patternType}
                 caseSensitive={caseSensitive}
                 selectedSearchContextSpec={props.selectedSearchContextSpec}
             />
@@ -280,6 +285,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 {showSavedSearchModal && (
                     <SavedSearchModal
                         {...props}
+                        patternType={patternType}
                         query={query}
                         authenticatedUser={authenticatedUser}
                         onDidCancel={onSaveQueryModalClose}

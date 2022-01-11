@@ -7,11 +7,11 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { PatternTypeProps } from '../search'
+import { SearchPatternTypeProps } from '../search'
 
 import styles from './SavedSearchModal.module.scss'
 
-interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
+interface Props extends SearchPatternTypeProps {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null

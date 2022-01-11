@@ -1,7 +1,7 @@
 import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { Button, AlertLink } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -48,7 +48,7 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
 
     return (
         <div
-            className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+            className="alert alert-info m-3 d-flex justify-content-between flex-shrink-0"
             data-testid="install-browser-extension-alert"
         >
             <div className="d-flex align-items-center">
@@ -57,29 +57,23 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
                         <>
                             Sourcegraph's code intelligence will follow you to your code host. Your site admin set up
                             the Sourcegraph native integration for {displayName}.{' '}
-                            <a
-                                className="alert-link"
-                                href="https://docs.sourcegraph.com/integration/browser_extension"
+                            <AlertLink
+                                to="https://docs.sourcegraph.com/integration/browser_extension"
                                 target="_blank"
                                 rel="noopener"
                             >
                                 Learn more
-                            </a>{' '}
+                            </AlertLink>{' '}
                             or{' '}
-                            <a className="alert-link" href={externalLink.url} target="_blank" rel="noopener">
+                            <AlertLink to={externalLink.url} target="_blank" rel="noopener">
                                 try it out
-                            </a>
+                            </AlertLink>
                         </>
                     ) : isChrome ? (
                         <>
-                            <a
-                                href={CHROME_EXTENSION_STORE_LINK}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="alert-link"
-                            >
+                            <AlertLink to={CHROME_EXTENSION_STORE_LINK} target="_blank" rel="noopener noreferrer">
                                 Install the Sourcegraph browser extension
-                            </a>{' '}
+                            </AlertLink>{' '}
                             to add code intelligence{' '}
                             {serviceKind === ExternalServiceKind.GITHUB ||
                             serviceKind === ExternalServiceKind.BITBUCKETSERVER ||
@@ -107,14 +101,13 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
                                 <>while browsing and reviewing code</>
                             )}{' '}
                             on {displayName}.{' '}
-                            <a
-                                href="/help/integration/browser_extension"
+                            <AlertLink
+                                to="/help/integration/browser_extension"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="alert-link"
                             >
                                 Learn more about Sourcegraph Chrome and Firefox extensions
-                            </a>
+                            </AlertLink>
                         </>
                     )}
                 </p>
@@ -139,19 +132,18 @@ export function isFirefoxCampaignActive(currentMs: number): boolean {
 }
 
 export const FirefoxAddonAlert: React.FunctionComponent<FirefoxAlertProps> = ({ onAlertDismissed, displayName }) => (
-    <div className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 percy-hide">
+    <div className="alert alert-info m-3 d-flex justify-content-between flex-shrink-0 percy-hide">
         <div>
             <p className="font-weight-medium my-0 mr-3">
                 Sourcegraph is back at{' '}
-                <a
-                    href="https://addons.mozilla.org/en-US/firefox/addon/sourcegraph-for-firefox"
+                <AlertLink
+                    to="https://addons.mozilla.org/en-US/firefox/addon/sourcegraph-for-firefox"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="alert-link"
                     onClick={onInstallLinkClick}
                 >
                     Firefox Add-ons
-                </a>{' '}
+                </AlertLink>{' '}
                 🎉️
             </p>
             <p className="mt-1 mb-0">

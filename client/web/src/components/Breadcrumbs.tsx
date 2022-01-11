@@ -5,8 +5,8 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Unsubscribable } from 'sourcegraph'
 
+import { isDefined } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import styles from './Breadcrumbs.module.scss'
 

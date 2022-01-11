@@ -4,12 +4,11 @@ import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, distinctUntilKeyChanged, map, mapTo, tap, withLatestFrom } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
 import { refreshAuthenticatedUser, AuthenticatedUser } from '../../auth'
@@ -83,11 +82,7 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                             responseType === OrganizationInvitationResponseType.ACCEPT
                                         )
                                     ),
-                                    concatMap(() => [
-                                        // Refresh current user's list of organizations.
-                                        refreshAuthenticatedUser(),
-                                        { submissionOrError: null },
-                                    ]),
+                                    concatMap(() => concat(refreshAuthenticatedUser(), [{ submissionOrError: null }])),
                                     catchError(error => [{ submissionOrError: asError(error) }])
                                 )
                             )
@@ -173,9 +168,7 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                 {isErrorLike(this.state.submissionOrError) && (
                                     <ErrorAlert className="my-2" error={this.state.submissionOrError} />
                                 )}
-                                {this.state.submissionOrError === 'loading' && (
-                                    <LoadingSpinner className="icon-inline" />
-                                )}
+                                {this.state.submissionOrError === 'loading' && <LoadingSpinner />}
                             </Form>
                         </ModalPage>
                     ) : (

@@ -2,11 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
-	"sync"
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -14,18 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
+	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
-	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-// This file contains the root resolver for search. It currently has a lot of
-// logic that spans out into all the other search_* files.
-var mockResolveRepositories func() (resolved searchrepos.Resolved, err error)
 
 type SearchArgs struct {
 	Version     string
@@ -49,7 +42,6 @@ type SearchArgs struct {
 
 type SearchImplementer interface {
 	Results(context.Context) (*SearchResultsResolver, error)
-	Suggestions(context.Context, *searchSuggestionsArgs) ([]SearchSuggestionResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
 
@@ -90,6 +82,15 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 	}
 	tr.LazyPrintf("parsing done")
 
+	if settings.ExperimentalFeatures != nil && getBoolPtr(settings.ExperimentalFeatures.SearchContextsQuery, false) {
+		// Replace each context in the query with its repository query if any.
+		plan, err = substituteSearchContexts(ctx, db, plan)
+		if err != nil {
+			return alertForQuery(args.Query, err).wrapSearchImplementer(db), nil
+		}
+		tr.LazyPrintf("context substitution done")
+	}
+
 	defaultLimit := defaultMaxSearchResults
 	if args.Stream != nil {
 		defaultLimit = defaultMaxSearchResultsStreaming
@@ -99,24 +100,24 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 		defaultLimit = defaultMaxSearchResults
 	}
 
+	inputs := &run.SearchInputs{
+		Plan:          plan,
+		Query:         plan.ToParseTree(),
+		OriginalQuery: args.Query,
+		UserSettings:  settings,
+		Features:      featureflag.FromContext(ctx),
+		PatternType:   searchType,
+		DefaultLimit:  defaultLimit,
+	}
+
+	tr.LazyPrintf("Parsed query: %s", inputs.Query)
+
 	return &searchResolver{
-		db: db,
-		SearchInputs: &run.SearchInputs{
-			Plan:          plan,
-			Query:         plan.ToParseTree(),
-			OriginalQuery: args.Query,
-			UserSettings:  settings,
-			Features:      featureflag.FromContext(ctx),
-			PatternType:   searchType,
-			DefaultLimit:  defaultLimit,
-		},
-
-		stream: args.Stream,
-
+		db:           db,
+		SearchInputs: inputs,
+		stream:       args.Stream,
 		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
-		reposMu:      &sync.Mutex{},
-		resolved:     &searchrepos.Resolved{},
 	}, nil
 }
 
@@ -176,6 +177,45 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 	return searchType
 }
 
+func substituteSearchContexts(ctx context.Context, db database.DB, plan query.Plan) (query.Plan, error) {
+	errs := new(multierror.Error)
+	dnf := query.Dnf(query.MapParameter(plan.ToParseTree(), func(field, value string, negated bool, a query.Annotation) query.Node {
+		p := query.Parameter{
+			Value:   value,
+			Field:   field,
+			Negated: negated,
+		}
+
+		if field != query.FieldContext {
+			return p
+		}
+
+		sc, err := searchcontexts.ResolveSearchContextSpec(ctx, db, value)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+			return p
+		}
+
+		if sc.Query == "" {
+			return p
+		}
+
+		contextQuery, err := query.Pipeline(query.Init(sc.Query, query.SearchTypeRegex))
+		if err != nil {
+			errs = multierror.Append(errs, err)
+			return p
+		}
+
+		return contextQuery.ToParseTree()[0]
+	}))
+
+	if err := errs.ErrorOrNil(); err != nil {
+		return nil, err
+	}
+
+	return query.ToPlan(dnf)
+}
+
 func getBoolPtr(b *bool, def bool) bool {
 	if b == nil {
 		return def
@@ -186,18 +226,10 @@ func getBoolPtr(b *bool, def bool) bool {
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
 	*run.SearchInputs
-	db                  database.DB
-	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
+	db database.DB
 
 	// stream if non-nil will send all search events we receive down it.
 	stream streaming.Sender
-
-	// Cached resolveRepositories results. We use a pointer to the mutex so that we
-	// can copy the resolver, while sharing the mutex. If we didn't use a pointer,
-	// the mutex would lead to unexpected behaviour.
-	reposMu  *sync.Mutex
-	resolved *searchrepos.Resolved
-	repoErr  error
 
 	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map
@@ -245,127 +277,4 @@ func decodedViewerFinalSettings(ctx context.Context, db database.DB) (_ *schema.
 	}
 
 	return cascade.finalTyped(ctx)
-}
-
-type resolveRepositoriesOpts struct {
-	effectiveRepoFieldValues []string
-
-	limit int // Maximum repositories to return
-}
-
-// resolveRepositories calls ResolveRepositories, caching the result for the common case
-// where opts.effectiveRepoFieldValues == nil.
-func (r *searchResolver) resolveRepositories(ctx context.Context, options search.RepoOptions) (resolved searchrepos.Resolved, err error) {
-	if mockResolveRepositories != nil {
-		return mockResolveRepositories()
-	}
-
-	// To send back proper search stats, we want to finish repository resolution
-	// even if we have already found enough results and the parent context was
-	// cancelled because we hit the limit.
-	ctx, cleanup := streaming.IgnoreContextCancellation(ctx, streaming.CanceledLimitHit)
-	defer cleanup()
-
-	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("options: %+v", options))
-	defer func() {
-		tr.SetError(err)
-		tr.LazyPrintf("%s", resolved.String())
-		tr.Finish()
-	}()
-
-	// TODO(tsenart): Remove old resolve repositories caching logic once we deprecate GraphQL suggestions
-	//  which are the last call sites of resolveRepositories (which does caching).
-	if options.CacheLookup {
-		// Cache if opts are empty, so that multiple calls to resolveRepositories only
-		// hit the database once.
-		r.reposMu.Lock()
-		defer r.reposMu.Unlock()
-		if r.resolved.RepoRevs != nil || r.resolved.MissingRepoRevs != nil || r.repoErr != nil {
-			tr.LazyPrintf("cached")
-			return *r.resolved, r.repoErr
-		}
-		defer func() {
-			r.resolved = &resolved
-			r.repoErr = err
-		}()
-	}
-
-	tr.LazyPrintf("resolveRepositories - start")
-	defer tr.LazyPrintf("resolveRepositories - done")
-
-	repositoryResolver := &searchrepos.Resolver{DB: r.db}
-
-	return repositoryResolver.Resolve(ctx, options)
-}
-
-func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]SearchSuggestionResolver, error) {
-	q, err := query.ToBasicQuery(r.Query)
-	if err != nil {
-		return nil, err
-	}
-	if !query.IsPatternAtom(q) {
-		// Not an atomic pattern, can't guarantee it will behave well.
-		return nil, nil
-	}
-	p := search.ToTextPatternInfo(q, r.protocol(), query.PatternToFile)
-
-	args := search.TextParameters{
-		PatternInfo:     p,
-		Query:           r.Query,
-		UseFullDeadline: r.Query.Timeout() != nil || r.Query.Count() != nil,
-		Zoekt:           r.zoekt,
-		SearcherURLs:    r.searcherURLs,
-	}
-
-	isEmpty := args.PatternInfo.Pattern == "" && args.PatternInfo.ExcludePattern == "" && len(args.PatternInfo.IncludePatterns) == 0
-	if isEmpty {
-		// Empty query isn't an error, but it has no results.
-		return nil, nil
-	}
-
-	// TODO(tsenart): Remove old resolve repositories caching logic once we deprecate GraphQL suggestions
-	//  which are the last call sites of resolveRepositories (which does caching).
-	repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
-	resolved, err := r.resolveRepositories(ctx, repoOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	if resolved.OverLimit {
-		// If we've exceeded the repo limit, then we may miss files from repos we care
-		// about, so don't bother searching filenames at all.
-		return nil, nil
-	}
-
-	args.Repos = resolved.RepoRevs
-
-	globalSearch := args.Mode == search.ZoektGlobalSearch
-	zoektArgs, err := zoektutil.NewIndexedSearchRequest(ctx, &args, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
-	if err != nil {
-		return nil, err
-	}
-	searcherArgs := &search.SearcherParameters{
-		SearcherURLs:    args.SearcherURLs,
-		PatternInfo:     args.PatternInfo,
-		UseFullDeadline: args.UseFullDeadline,
-	}
-	fileMatches, _, err := unindexed.SearchFilesInReposBatch(ctx, zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
-	if err != nil {
-		return nil, err
-	}
-
-	var suggestions []SearchSuggestionResolver
-	for i, fm := range fileMatches {
-		assumedScore := len(fileMatches) - i // Greater score is first, so we inverse the index.
-		fmr := &FileMatchResolver{
-			FileMatch:    *fm,
-			db:           r.db,
-			RepoResolver: NewRepositoryResolver(r.db, fm.Repo.ToRepo()),
-		}
-		suggestions = append(suggestions, gitTreeSuggestionResolver{
-			gitTreeEntry: fmr.File(),
-			score:        assumedScore,
-		})
-	}
-	return suggestions, nil
 }

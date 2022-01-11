@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"runtime"
 	"sort"
 	"testing"
@@ -459,9 +460,29 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 	}
 }
 
+func TestListFiles(t *testing.T) {
+	t.Parallel()
+
+	pattern := regexp.MustCompile("file")
+
+	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
+		return ListFiles(ctx, repo, "HEAD", pattern, checker)
+	})
+}
+
 func TestLsFiles(t *testing.T) {
 	t.Parallel()
 
+	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) ([]string, error) {
+		return LsFiles(ctx, checker, repo, "HEAD")
+	})
+}
+
+// runFileListingTest tests the specified function which must return a list of filenames and an error. The test first
+// tests the basic case (all paths returned), then the case with sub-repo permissions specified.
+func runFileListingTest(t *testing.T,
+	listingFunctionToTest func(context.Context, authz.SubRepoPermissionChecker, api.RepoName) ([]string, error)) {
+	t.Helper()
 	gitCommands := []string{
 		"touch file1",
 		"touch file2",
@@ -480,7 +501,7 @@ func TestLsFiles(t *testing.T) {
 		return false
 	})
 
-	files, err := LsFiles(ctx, checker, repo, "HEAD")
+	files, err := listingFunctionToTest(ctx, checker, repo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -504,7 +525,7 @@ func TestLsFiles(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{
 		UID: 1,
 	})
-	files, err = LsFiles(ctx, checker, repo, "HEAD")
+	files, err = listingFunctionToTest(ctx, checker, repo)
 	if err != nil {
 		t.Fatal(err)
 	}
