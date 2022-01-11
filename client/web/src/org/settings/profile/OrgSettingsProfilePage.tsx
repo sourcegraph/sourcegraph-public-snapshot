@@ -2,8 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ORG_DISPLAY_NAME_MAX_LENGTH } from '../..'
 import { ErrorAlert } from '../../../components/alerts'
@@ -98,10 +97,10 @@ export const OrgSettingsProfilePage: React.FunctionComponent<Props> = ({ org, on
                             maxLength={ORG_DISPLAY_NAME_MAX_LENGTH}
                         />
                     </div>
-                    <button type="submit" disabled={isLoading === true} className="btn btn-primary">
+                    <Button type="submit" disabled={isLoading === true} variant="primary">
                         Update
-                    </button>
-                    {isLoading === true && <LoadingSpinner className="icon-inline" />}
+                    </Button>
+                    {isLoading === true && <LoadingSpinner />}
                     {updated && (
                         <p className="mb-0">
                             <small>Updated!</small>

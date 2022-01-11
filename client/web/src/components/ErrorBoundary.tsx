@@ -4,6 +4,7 @@ import ReloadIcon from 'mdi-react/ReloadIcon'
 import React from 'react'
 
 import { asError } from '@sourcegraph/common'
+import { Button } from '@sourcegraph/wildcard'
 
 import { isWebpackChunkError } from '../sentry/shouldErrorBeReported'
 
@@ -83,9 +84,9 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                         subtitle={
                             <div className="container">
                                 <p>A new version of Sourcegraph is available.</p>
-                                <button type="button" className="btn btn-primary" onClick={this.onReloadClick}>
+                                <Button onClick={this.onReloadClick} variant="primary">
                                     Reload to update
-                                </button>
+                                </Button>
                             </div>
                         }
                     />

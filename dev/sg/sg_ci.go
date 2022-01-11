@@ -254,6 +254,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 `,
 			FlagSet: ciLogsFlagSet,
 			Exec: func(ctx context.Context, args []string) error {
+				// TODO trigger go tests
 				client, err := bk.NewClient(ctx, stdout.Out)
 				if err != nil {
 					return err

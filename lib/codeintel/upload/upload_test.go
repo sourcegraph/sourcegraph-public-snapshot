@@ -3,6 +3,7 @@ package upload
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -60,7 +61,7 @@ func TestUploadIndex(t *testing.T) {
 	_, _ = io.Copy(f, bytes.NewReader(expectedPayload))
 	_ = f.Close()
 
-	id, err := UploadIndex(f.Name(), http.DefaultClient, UploadOptions{
+	id, err := UploadIndex(context.Background(), f.Name(), http.DefaultClient, UploadOptions{
 		UploadRecordOptions: UploadRecordOptions{
 			Repo:    "foo/bar",
 			Commit:  "deadbeef",
@@ -123,7 +124,7 @@ func TestUploadIndexMultipart(t *testing.T) {
 	_, _ = io.Copy(f, bytes.NewReader(expectedPayload))
 	_ = f.Close()
 
-	id, err := UploadIndex(f.Name(), http.DefaultClient, UploadOptions{
+	id, err := UploadIndex(context.Background(), f.Name(), http.DefaultClient, UploadOptions{
 		UploadRecordOptions: UploadRecordOptions{
 			Repo:    "foo/bar",
 			Commit:  "deadbeef",

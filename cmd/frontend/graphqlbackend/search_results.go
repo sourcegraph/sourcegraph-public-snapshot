@@ -830,6 +830,42 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 			})
 		}
 	}
+
+	for _, job := range jobs {
+		switch j := job.(type) {
+		case *commit.CommitSearch:
+			if args.UseFullDeadline {
+				j.IsRequired = true
+				continue
+			}
+
+			if job.Name() == "Diff" {
+				j.IsRequired = (args.ResultTypes.Without(result.TypeDiff) == 0)
+			} else {
+				j.IsRequired = (args.ResultTypes.Without(result.TypeCommit) == 0)
+			}
+		case *symbol.RepoSubsetSymbolSearch:
+			if args.UseFullDeadline {
+				j.IsRequired = true
+				continue
+			}
+
+			j.IsRequired = (args.ResultTypes.Without(result.TypeSymbol) == 0)
+		case *symbol.RepoUniverseSymbolSearch:
+			j.IsRequired = true
+		case *run.RepoSearch:
+			j.IsRequired = true
+		case *unindexed.RepoSubsetTextSearch:
+			j.IsRequired = true
+		case *unindexed.RepoUniverseTextSearch:
+			j.IsRequired = true
+		case *unindexed.StructuralSearch:
+			j.IsRequired = true
+
+		default:
+			panic(fmt.Sprintf("unknown job type: %q", j))
+		}
+	}
 	return &args, jobs, nil
 }
 
@@ -1257,9 +1293,14 @@ func searchResultsToRepoNodes(matches []result.Match) ([]query.Node, error) {
 			return nil, errors.Errorf("expected type %T, but got %T", &result.RepoMatch{}, match)
 		}
 
+		repoFieldValue := "^" + regexp.QuoteMeta(string(repoMatch.Name)) + "$"
+		if repoMatch.Rev != "" {
+			repoFieldValue += "@" + repoMatch.Rev
+		}
+
 		nodes = append(nodes, query.Parameter{
 			Field: query.FieldRepo,
-			Value: "^" + regexp.QuoteMeta(string(repoMatch.Name)) + "$",
+			Value: repoFieldValue,
 		})
 	}
 
@@ -1276,6 +1317,11 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 			return nil, errors.Errorf("expected type %T, but got %T", &result.FileMatch{}, match)
 		}
 
+		repoFieldValue := "^" + regexp.QuoteMeta(string(fileMatch.Repo.Name)) + "$"
+		if fileMatch.InputRev != nil {
+			repoFieldValue += "@" + *fileMatch.InputRev
+		}
+
 		// We create AND nodes to match both the repo and the file at the same time so
 		// we don't get files of the same name from different repositories.
 		nodes = append(nodes, query.Operator{
@@ -1283,7 +1329,7 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 			Operands: []query.Node{
 				query.Parameter{
 					Field: query.FieldRepo,
-					Value: "^" + regexp.QuoteMeta(string(fileMatch.Repo.Name)) + "$",
+					Value: repoFieldValue,
 				},
 				query.Parameter{
 					Field: query.FieldFile,
@@ -1600,10 +1646,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	)
 
 	waitGroup := func(required bool) *sync.WaitGroup {
-		if args.UseFullDeadline {
-			// When a custom timeout is specified, all searches are required and get the full timeout.
-			return &requiredWg
-		}
 		if required {
 			return &requiredWg
 		}
@@ -1660,27 +1702,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		})
 	}
 
-	wgForJob := func(job run.Job) *sync.WaitGroup {
-		switch job.Name() {
-		case "Diff":
-			return waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
-		case "Commit":
-			return waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
-		case "RepoSubsetSymbol":
-			return waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
-		case "RepoUniverseSymbol":
-			return waitGroup(true)
-		case "Repo":
-			return waitGroup(true)
-		case "RepoSubsetText", "RepoUniverseText":
-			return waitGroup(true)
-		case "Structural":
-			return waitGroup(true)
-		default:
-			panic("unknown job name " + job.Name())
-		}
-	}
-
 	repos := &searchrepos.Resolver{
 		Opts: args.RepoOptions,
 		DB:   r.db,
@@ -1689,7 +1710,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	// Start all specific search jobs, if any.
 	for _, job := range jobs {
 		job := job
-		wg := wgForJob(job)
+		wg := waitGroup(job.Required())
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()

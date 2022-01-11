@@ -79,50 +79,6 @@ the following:
   determine if an instance goes down.
 - Database migrations are handled automatically on update when they are necessary.
 
-### Updating blue-green deployments
-
-**_Warning:_** The following instructions make use of the `Sourcegraph Server Gen` script. This script is in need of update to account for the addition of new databases since its implementation. Currently the script will not create a dump for the `codeintel-db` database. 
-
-Some users may wish to opt for running two separate Sourcegraph clusters running in a
-[blue-green](https://martinfowler.com/bliki/BlueGreenDeployment.html) deployment. Such a setup makes
-the update step more complex, but it can still be done with the `sourcegraph-server-gen snapshot`
-command:
-
-- **Preconditions:**
-  - Suppose cluster A is currently live, and cluster B is in standby.
-  - Clusters A and B should be running the same version of Sourcegraph.
-  - Ensure `sourcegraph-server-gen` is upgraded to version 3.0.1 (`sourcegraph-server-gen update`)
-- **Snapshot of A:** Configure `kubectl` to access cluster A and then run `sourcegraph-server-gen snapshot create`.
-- **Restore A's snapshot to B:**
-  - Configure `kubectl` to access B.
-  - Spin down `sourcegraph-frontend` replicas to 0. (**Note:** this is very important, because
-    otherwise `sourcegraph-frontend` may apply changes to the database that corrupt the snapshot
-    restoration.)
-
-    ```
-    kubectl scale --replicas=0 deployment/sourcegraph-frontend
-    ```
-
-  - `sourcegraph-server-gen snapshot restore` from the same directory where you ran the snapshot creation earlier.
-  - Spin up `sourcegraph-frontend` replicas to what it was before:
-
-    ```
-    kubectl scale --replicas=$N deployment/sourcegraph-frontend
-    ```
-- **Upgrade cluster B** to the new Sourcegraph version. Perform some quick checks to verify it is
-  functioning.
-- **Switch traffic over to B.** (B is now live.)
-- **Upgrade cluster A** to the new Sourcegraph version.
-- **Switch traffic back to A.** (A is now live again.)
-
-After the update, cluster A will be live, cluster B will be in standby, and both will be running the
-same new version of Sourcegraph. You may lose a few minutes of database updates while A is not live,
-but that is generally acceptable.
-
-To keep the database on B current, you may periodically wish to sync A's database over to B
-(`sourcegraph-server-gen snapshot create` on A, `sourcegraph-server-gen snapshot restore` on B). It
-is important that the versions of A and B are equivalent when this is done.
-
 ### Troubleshooting
 
 See the [troubleshooting page](troubleshoot.md).

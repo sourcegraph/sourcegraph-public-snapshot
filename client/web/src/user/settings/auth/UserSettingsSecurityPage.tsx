@@ -4,10 +4,9 @@ import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike, asError } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'
@@ -218,7 +217,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                 {/* external accounts not fetched yet */}
                 {!this.state.accounts.fetched && this.state.error && (
                     <div className="d-flex justify-content-center mt-4">
-                        <LoadingSpinner className="icon-inline" />
+                        <LoadingSpinner />
                     </div>
                 )}
 
@@ -295,16 +294,17 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         autoComplete="new-password"
                                     />
                                 </div>
-                                <button
-                                    className="btn btn-primary user-settings-password-page__button"
+                                <Button
+                                    className="user-settings-password-page__button"
                                     type="submit"
                                     disabled={this.state.loading}
+                                    variant="primary"
                                 >
                                     {this.shouldShowOldPasswordInput() ? 'Update password' : 'Set password'}
-                                </button>
+                                </Button>
                                 {this.state.loading && (
                                     <div className="icon-inline">
-                                        <LoadingSpinner className="icon-inline" />
+                                        <LoadingSpinner />
                                     </div>
                                 )}
                             </Form>

@@ -7,9 +7,10 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/notebooks"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -58,6 +59,258 @@ func (r *Resolver) NotebookByID(ctx context.Context, id graphql.ID) (graphqlback
 	return &notebookResolver{notebook, r.db}, nil
 }
 
+func convertLineRangeInput(inputLineRage *graphqlbackend.CreateFileBlockLineRangeInput) *notebooks.LineRange {
+	if inputLineRage == nil {
+		return nil
+	}
+	return &notebooks.LineRange{StartLine: inputLineRage.StartLine, EndLine: inputLineRage.EndLine}
+}
+
+func convertNotebookBlockInput(inputBlock graphqlbackend.CreateNotebookBlockInputArgs) (*notebooks.NotebookBlock, error) {
+	block := &notebooks.NotebookBlock{ID: inputBlock.ID}
+	switch inputBlock.Type {
+	case graphqlbackend.NotebookMarkdownBlockType:
+		if inputBlock.MarkdownInput == nil {
+			return nil, errors.Errorf("markdown block with id %s is missing input", inputBlock.ID)
+		}
+		block.Type = notebooks.NotebookMarkdownBlockType
+		block.MarkdownInput = &notebooks.NotebookMarkdownBlockInput{Text: *inputBlock.MarkdownInput}
+	case graphqlbackend.NotebookQueryBlockType:
+		if inputBlock.QueryInput == nil {
+			return nil, errors.Errorf("query block with id %s is missing input", inputBlock.ID)
+		}
+		block.Type = notebooks.NotebookQueryBlockType
+		block.QueryInput = &notebooks.NotebookQueryBlockInput{Text: *inputBlock.QueryInput}
+	case graphqlbackend.NotebookFileBlockType:
+		if inputBlock.FileInput == nil {
+			return nil, errors.Errorf("file block with id %s is missing input", inputBlock.ID)
+		}
+		block.Type = notebooks.NotebookFileBlockType
+		block.FileInput = &notebooks.NotebookFileBlockInput{
+			RepositoryName: inputBlock.FileInput.RepositoryName,
+			FilePath:       inputBlock.FileInput.FilePath,
+			Revision:       inputBlock.FileInput.Revision,
+			LineRange:      convertLineRangeInput(inputBlock.FileInput.LineRange),
+		}
+	}
+	return block, nil
+}
+
+func (r *Resolver) CreateNotebook(ctx context.Context, args graphqlbackend.CreateNotebookInputArgs) (graphqlbackend.NotebookResolver, error) {
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("notebooks cannot be created by unauthenticated users")
+	}
+
+	notebookInput := args.Notebook
+	blocks := make(notebooks.NotebookBlocks, 0, len(notebookInput.Blocks))
+	for _, inputBlock := range notebookInput.Blocks {
+		block, err := convertNotebookBlockInput(inputBlock)
+		if err != nil {
+			return nil, err
+		}
+		blocks = append(blocks, *block)
+	}
+
+	createdNotebook, err := notebooks.Notebooks(r.db).CreateNotebook(ctx, &notebooks.Notebook{
+		Title:         notebookInput.Title,
+		Public:        notebookInput.Public,
+		CreatorUserID: actor.UID,
+		Blocks:        blocks,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &notebookResolver{createdNotebook, r.db}, nil
+}
+
+func validateNotebookWritePermissionsForUser(notebook *notebooks.Notebook, userID int32) error {
+	if notebook.CreatorUserID != userID {
+		return errors.New("user does not have permissions to update the notebook")
+	}
+	return nil
+}
+
+func (r *Resolver) UpdateNotebook(ctx context.Context, args graphqlbackend.UpdateNotebookInputArgs) (graphqlbackend.NotebookResolver, error) {
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("notebooks cannot be created by unauthenticated users")
+	}
+
+	id, err := unmarshalNotebookID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	store := notebooks.Notebooks(r.db)
+	notebook, err := store.GetNotebook(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateNotebookWritePermissionsForUser(notebook, actor.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	notebookInput := args.Notebook
+	blocks := make(notebooks.NotebookBlocks, 0, len(notebookInput.Blocks))
+	for _, inputBlock := range notebookInput.Blocks {
+		block, err := convertNotebookBlockInput(inputBlock)
+		if err != nil {
+			return nil, err
+		}
+		blocks = append(blocks, *block)
+	}
+
+	notebook.Title = notebookInput.Title
+	notebook.Public = notebookInput.Public
+	notebook.Blocks = blocks
+
+	updatedNotebook, err := store.UpdateNotebook(ctx, notebook)
+	if err != nil {
+		return nil, err
+	}
+	return &notebookResolver{updatedNotebook, r.db}, nil
+}
+
+func (r *Resolver) DeleteNotebook(ctx context.Context, args graphqlbackend.DeleteNotebookArgs) (*graphqlbackend.EmptyResponse, error) {
+	actor := actor.FromContext(ctx)
+	if !actor.IsAuthenticated() {
+		return nil, errors.New("notebooks cannot be deleted by unauthenticated users")
+	}
+
+	id, err := unmarshalNotebookID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	store := notebooks.Notebooks(r.db)
+	notebook, err := store.GetNotebook(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateNotebookWritePermissionsForUser(notebook, actor.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = store.DeleteNotebook(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func marshalNotebookCursor(cursor int64) string {
+	return string(relay.MarshalID("NotebookCursor", cursor))
+}
+
+func unmarshalNotebookCursor(cursor *string) (int64, error) {
+	if cursor == nil {
+		return 0, nil
+	}
+	var after int64
+	err := relay.UnmarshalSpec(graphql.ID(*cursor), &after)
+	if err != nil {
+		return -1, err
+	}
+	return after, nil
+}
+
+func (r *Resolver) Notebooks(ctx context.Context, args graphqlbackend.ListNotebooksArgs) (graphqlbackend.NotebookConnectionResolver, error) {
+	orderBy := notebooks.NotebooksOrderByUpdatedAt
+	if args.OrderBy == graphqlbackend.NotebookOrderByCreatedAt {
+		orderBy = notebooks.NotebooksOrderByCreatedAt
+	}
+
+	// Request one extra to determine if there are more pages
+	newArgs := args
+	newArgs.First += 1
+
+	afterCursor, err := unmarshalNotebookCursor(newArgs.After)
+	if err != nil {
+		return nil, err
+	}
+
+	var userID int32
+	if args.CreatorUserID != nil {
+		userID, err = graphqlbackend.UnmarshalUserID(*args.CreatorUserID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	var query string
+	if args.Query != nil {
+		query = *args.Query
+	}
+
+	opts := notebooks.ListNotebooksOptions{
+		Query:             query,
+		CreatorUserID:     userID,
+		OrderBy:           orderBy,
+		OrderByDescending: args.Descending,
+	}
+	pageOpts := notebooks.ListNotebooksPageOptions{First: newArgs.First, After: afterCursor}
+
+	store := notebooks.Notebooks(r.db)
+	notebooks, err := store.ListNotebooks(ctx, pageOpts, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	count, err := store.CountNotebooks(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	hasNextPage := false
+	if len(notebooks) == int(args.First)+1 {
+		hasNextPage = true
+		notebooks = notebooks[:len(notebooks)-1]
+	}
+
+	return &notebookConnectionResolver{
+		afterCursor: afterCursor,
+		notebooks:   r.notebooksToResolvers(notebooks),
+		totalCount:  int32(count),
+		hasNextPage: hasNextPage,
+	}, nil
+}
+
+func (r *Resolver) notebooksToResolvers(notebooks []*notebooks.Notebook) []graphqlbackend.NotebookResolver {
+	notebookResolvers := make([]graphqlbackend.NotebookResolver, len(notebooks))
+	for idx, notebook := range notebooks {
+		notebookResolvers[idx] = &notebookResolver{notebook, r.db}
+	}
+	return notebookResolvers
+}
+
+type notebookConnectionResolver struct {
+	afterCursor int64
+	notebooks   []graphqlbackend.NotebookResolver
+	totalCount  int32
+	hasNextPage bool
+}
+
+func (n *notebookConnectionResolver) Nodes(ctx context.Context) []graphqlbackend.NotebookResolver {
+	return n.notebooks
+}
+
+func (n *notebookConnectionResolver) TotalCount(ctx context.Context) int32 {
+	return n.totalCount
+}
+
+func (n *notebookConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
+	if len(n.notebooks) == 0 || !n.hasNextPage {
+		return graphqlutil.HasNextPage(false)
+	}
+	// The after value (offset) for the next page is computed from the current after value + the number of retrieved notebooks
+	return graphqlutil.NextPageCursor(marshalNotebookCursor(n.afterCursor + int64(len(n.notebooks))))
+}
+
 type notebookResolver struct {
 	notebook *notebooks.Notebook
 	db       database.DB
@@ -99,14 +352,8 @@ func (r *notebookResolver) CreatedAt(ctx context.Context) graphqlbackend.DateTim
 }
 
 func (r *notebookResolver) ViewerCanManage(ctx context.Context) bool {
-	user, err := backend.CurrentUser(ctx, r.db)
-	if err != nil {
-		return false
-	}
-	if user == nil {
-		return false
-	}
-	return user.ID == r.notebook.CreatorUserID
+	actor := actor.FromContext(ctx)
+	return validateNotebookWritePermissionsForUser(r.notebook, actor.UID) == nil
 }
 
 type notebookBlockResolver struct {

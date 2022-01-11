@@ -1,7 +1,7 @@
 import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 
-import { AlertLink } from '@sourcegraph/wildcard'
+import { Button, AlertLink } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -48,7 +48,7 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
 
     return (
         <div
-            className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+            className="alert alert-info m-3 d-flex justify-content-between flex-shrink-0"
             data-testid="install-browser-extension-alert"
         >
             <div className="d-flex align-items-center">
@@ -112,14 +112,9 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
                     )}
                 </p>
             </div>
-            <button
-                type="button"
-                onClick={onAlertDismissed}
-                aria-label="Close alert"
-                className="btn btn-icon test-close-alert"
-            >
+            <Button onClick={onAlertDismissed} aria-label="Close alert" className="btn-icon test-close-alert">
                 <CloseIcon className="icon-inline" />
-            </button>
+            </Button>
         </div>
     )
 }
@@ -137,7 +132,7 @@ export function isFirefoxCampaignActive(currentMs: number): boolean {
 }
 
 export const FirefoxAddonAlert: React.FunctionComponent<FirefoxAlertProps> = ({ onAlertDismissed, displayName }) => (
-    <div className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 percy-hide">
+    <div className="alert alert-info m-3 d-flex justify-content-between flex-shrink-0 percy-hide">
         <div>
             <p className="font-weight-medium my-0 mr-3">
                 Sourcegraph is back at{' '}
@@ -164,14 +159,9 @@ export const FirefoxAddonAlert: React.FunctionComponent<FirefoxAlertProps> = ({ 
                 . The extension adds code intelligence to code views on {displayName} or any other connected code host.
             </p>
         </div>
-        <button
-            type="button"
-            onClick={onAlertDismissed}
-            aria-label="Close alert"
-            className="btn btn-icon test-close-alert"
-        >
+        <Button onClick={onAlertDismissed} aria-label="Close alert" className="btn-icon test-close-alert">
             <CloseIcon className="icon-inline" />
-        </button>
+        </Button>
     </div>
 )
 

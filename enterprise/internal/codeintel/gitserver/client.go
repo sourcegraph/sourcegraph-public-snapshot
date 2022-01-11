@@ -277,7 +277,7 @@ func (c *Client) DirectoryChildren(ctx context.Context, repositoryID int, commit
 		return nil, err
 	}
 
-	children, err := git.ListDirectoryChildren(ctx, repo, api.CommitID(commit), dirnames)
+	children, err := git.ListDirectoryChildren(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), dirnames)
 	if err == nil {
 		return children, err
 	}
@@ -342,7 +342,7 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 		return nil, err
 	}
 
-	matching, err := git.ListFiles(ctx, repo, api.CommitID(commit), pattern)
+	matching, err := git.ListFiles(ctx, repo, api.CommitID(commit), pattern, authz.DefaultSubRepoPermsChecker)
 	if err == nil {
 		return matching, nil
 	}

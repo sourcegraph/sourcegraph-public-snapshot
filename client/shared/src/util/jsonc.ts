@@ -1,5 +1,13 @@
-import { modify as jsoncModify, applyEdits, JSONPath, FormattingOptions } from '@sqs/jsonc-parser'
-import { parse, ParseError, ParseErrorCode, format as jsoncFormat } from '@sqs/jsonc-parser/lib/main'
+import {
+    modify as jsoncModify,
+    applyEdits,
+    JSONPath,
+    FormattingOptions,
+    parse,
+    ParseError,
+    ParseErrorCode,
+    format as jsoncFormat,
+} from '@sqs/jsonc-parser'
 
 import { asError, createAggregateError, ErrorLike } from '@sourcegraph/common'
 

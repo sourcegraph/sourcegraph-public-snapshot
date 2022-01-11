@@ -2,11 +2,11 @@ import * as H from 'history'
 import { editor } from 'monaco-editor'
 import React, { FunctionComponent, useCallback, useMemo, useState } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { SaveToolbarProps, SaveToolbarPropsGenerator } from '@sourcegraph/web/src/components/SaveToolbar'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -78,7 +78,7 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
             {updatingError && <ErrorAlert prefix="Error saving index configuration" error={updatingError} />}
 
             {loadingInferred || loadingRepository ? (
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             ) : (
                 <DynamicallyImportedMonacoSettingsEditor
                     value={configuration}

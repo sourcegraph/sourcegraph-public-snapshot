@@ -3,7 +3,7 @@
 exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (Chrome) 1`] = `
 <DocumentFragment>
   <div
-    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-3 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
@@ -47,7 +47,7 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (Chrome) 1`] = `
 exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (native integration) 1`] = `
 <DocumentFragment>
   <div
-    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-3 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
@@ -100,7 +100,7 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (native integration) 1`] =
 exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (non-Chrome) 1`] = `
 <DocumentFragment>
   <div
-    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-3 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
@@ -144,7 +144,7 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (non-Chrome) 1`] = `
 exports[`InstallBrowserExtensionAlert GITHUB (Chrome) 1`] = `
 <DocumentFragment>
   <div
-    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-3 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
@@ -188,7 +188,7 @@ exports[`InstallBrowserExtensionAlert GITHUB (Chrome) 1`] = `
 exports[`InstallBrowserExtensionAlert GITHUB (native integration) 1`] = `
 <DocumentFragment>
   <div
-    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-3 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
@@ -241,7 +241,7 @@ exports[`InstallBrowserExtensionAlert GITHUB (native integration) 1`] = `
 exports[`InstallBrowserExtensionAlert GITHUB (non-Chrome) 1`] = `
 <DocumentFragment>
   <div
-    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-3 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
@@ -285,7 +285,7 @@ exports[`InstallBrowserExtensionAlert GITHUB (non-Chrome) 1`] = `
 exports[`InstallBrowserExtensionAlert GITLAB (Chrome) 1`] = `
 <DocumentFragment>
   <div
-    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-3 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
@@ -329,7 +329,7 @@ exports[`InstallBrowserExtensionAlert GITLAB (Chrome) 1`] = `
 exports[`InstallBrowserExtensionAlert GITLAB (native integration) 1`] = `
 <DocumentFragment>
   <div
-    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-3 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
@@ -382,7 +382,7 @@ exports[`InstallBrowserExtensionAlert GITLAB (native integration) 1`] = `
 exports[`InstallBrowserExtensionAlert GITLAB (non-Chrome) 1`] = `
 <DocumentFragment>
   <div
-    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-3 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
@@ -426,7 +426,7 @@ exports[`InstallBrowserExtensionAlert GITLAB (non-Chrome) 1`] = `
 exports[`InstallBrowserExtensionAlert PHABRICATOR (Chrome) 1`] = `
 <DocumentFragment>
   <div
-    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-3 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
@@ -470,7 +470,7 @@ exports[`InstallBrowserExtensionAlert PHABRICATOR (Chrome) 1`] = `
 exports[`InstallBrowserExtensionAlert PHABRICATOR (native integration) 1`] = `
 <DocumentFragment>
   <div
-    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-3 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
@@ -523,7 +523,7 @@ exports[`InstallBrowserExtensionAlert PHABRICATOR (native integration) 1`] = `
 exports[`InstallBrowserExtensionAlert PHABRICATOR (non-Chrome) 1`] = `
 <DocumentFragment>
   <div
-    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-3 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div

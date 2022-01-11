@@ -84,7 +84,7 @@ func TestRead(t *testing.T) {
 				return authz.None, nil
 			})
 			data, err := ReadFile(ctx, repo, commitID, test.file, test.maxBytes, checker)
-			if err != nil {
+			if err != os.ErrNotExist {
 				t.Errorf("unexpected error reading file: %s", err)
 			}
 			if string(data) != "" {
@@ -114,11 +114,11 @@ func TestRead(t *testing.T) {
 				return authz.None, nil
 			})
 			rc, err := NewFileReader(ctx, repo, commitID, test.file, checker)
-			if err != nil {
-				t.Fatal(err)
+			if err != os.ErrNotExist {
+				t.Fatalf("unexpected error: %s", err)
 			}
 			if rc != nil {
-				t.Errorf("expected NewFileReader to return nil since the user does not have access to this file.")
+				t.Fatal("expected reader to be nil")
 			}
 		})
 	}

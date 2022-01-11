@@ -18,7 +18,7 @@ exports[`LoaderButton should render a loading spinner when loading prop is true 
     type="button"
   >
     <div
-      class="loading-spinner icon-inline"
+      class="loadingSpinner icon-inline"
     />
   </button>
 </DocumentFragment>

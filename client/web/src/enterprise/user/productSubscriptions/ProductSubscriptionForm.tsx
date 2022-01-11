@@ -8,11 +8,11 @@ import { catchError, startWith, switchMap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { StripeWrapper } from '../../dotcom/billing/StripeWrapper'
@@ -248,25 +248,25 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                             isLightTheme={isLightTheme}
                         />
                         <div className="form-group mt-3">
-                            <button
+                            <Button
                                 type="submit"
                                 disabled={disableForm || !accountID}
                                 className={classNames(
-                                    'btn btn-lg',
                                     disableForm || !accountID ? 'btn-secondary' : 'btn-success',
                                     'w-100 d-flex align-items-center justify-content-center'
                                 )}
+                                size="lg"
                             >
                                 {paymentToken === LOADING || submissionState === LOADING ? (
                                     <>
-                                        <LoadingSpinner className="icon-inline mr-2" /> Processing...
+                                        <LoadingSpinner className="mr-2" /> Processing...
                                     </>
                                 ) : paymentValidity !== PaymentValidity.NoPaymentRequired ? (
                                     primaryButtonText
                                 ) : (
                                     primaryButtonTextNoPaymentRequired
                                 )}
-                            </button>
+                            </Button>
                             {afterPrimaryButton}
                         </div>
                     </div>

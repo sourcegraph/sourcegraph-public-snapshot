@@ -375,6 +375,21 @@ export async function setUserSiteAdmin(gqlClient: GraphQLClient, userID: GQL.ID,
         .toPromise()
 }
 
+export async function setTosAccepted(gqlClient: GraphQLClient, userID: GQL.ID): Promise<void> {
+    await gqlClient
+        .mutateGraphQL(
+            gql`
+                mutation SetTosAccepted($userID: ID!) {
+                    setTosAccepted(userID: $userID) {
+                        alwaysNil
+                    }
+                }
+            `,
+            { userID }
+        )
+        .toPromise()
+}
+
 /**
  * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.

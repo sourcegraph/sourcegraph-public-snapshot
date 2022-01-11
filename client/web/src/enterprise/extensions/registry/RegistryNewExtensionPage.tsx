@@ -10,10 +10,10 @@ import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -204,22 +204,22 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                                     </code>
                                 </div>
                             )}
-                            <button
+                            <Button
                                 type="submit"
                                 disabled={
                                     isErrorLike(this.state.publishersOrError) ||
                                     this.state.publishersOrError === 'loading' ||
                                     this.state.creationOrError === 'loading'
                                 }
-                                className="btn btn-primary"
+                                variant="primary"
                             >
                                 {this.state.creationOrError === 'loading' ? (
-                                    <LoadingSpinner className="icon-inline" />
+                                    <LoadingSpinner />
                                 ) : (
                                     <AddIcon className="icon-inline" />
                                 )}{' '}
                                 Create extension
-                            </button>
+                            </Button>
                         </Form>
                         {isErrorLike(this.state.creationOrError) && (
                             <ErrorAlert className="mt-3" error={this.state.creationOrError} />

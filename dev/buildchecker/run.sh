@@ -9,5 +9,6 @@ echo "--- Running buildchecker"
 go run ./dev/buildchecker/ \
   -buildkite.token="$BUILDKITE_TOKEN" \
   -github.token="$GITHUB_TOKEN" \
-  -slack.token="$SLACK_TOKEN" \
-  -slack.webhook="$SLACK_WEBHOOK"
+  -slack.announce-webhook="$SLACK_ANNOUNCE_WEBHOOK" \
+  -slack.debug-webhook="$SLACK_DEBUG_WEBHOOK" \
+  -slack.token="$SLACK_TOKEN"

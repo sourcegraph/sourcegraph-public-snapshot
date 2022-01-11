@@ -7,13 +7,14 @@ import { useHistory, useLocation } from 'react-router'
 import { BehaviorSubject, from, Observable, combineLatest } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { isDefined } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
 import { ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { PanelViewData } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/shared/src/api/protocol'
-import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
@@ -23,8 +24,8 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { combineLatestOrDefault } from '@sourcegraph/shared/src/util/rxjs/combineLatestOrDefault'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button } from '@sourcegraph/wildcard'
 
 import { match } from '../../../../shared/src/api/client/types/textDocument'
 import { ExtensionCodeEditor } from '../../../../shared/src/api/extension/api/codeEditor'
@@ -290,16 +291,15 @@ export const Panel = React.memo<Props>(props => {
                             />
                         )}
                     </small>
-                    <button
-                        type="button"
+                    <Button
                         onClick={handlePanelClose}
-                        className={classNames('btn btn-icon ml-2', styles.dismissButton)}
+                        className={classNames('btn-icon ml-2', styles.dismissButton)}
                         title="Close panel"
                         data-tooltip="Close panel"
                         data-placement="left"
                     >
                         <CloseIcon className="icon-inline" />
-                    </button>
+                    </Button>
                 </div>
             </div>
             <TabPanels className={styles.tabs}>

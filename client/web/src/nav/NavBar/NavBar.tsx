@@ -6,6 +6,9 @@ import MenuIcon from 'mdi-react/MenuIcon'
 import React, { useEffect, useRef, useState } from 'react'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
+import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
+import { Button } from '@sourcegraph/wildcard'
+
 import navActionStyles from './NavAction.module.scss'
 import navBarStyles from './NavBar.module.scss'
 import navItemStyles from './NavItem.module.scss'
@@ -57,7 +60,7 @@ const useOutsideClickDetector = (
 export const NavBar = ({ children, logo }: NavBarProps): JSX.Element => (
     <nav aria-label="Main Menu" className={navBarStyles.navbar}>
         <h1 className={navBarStyles.logo}>
-            <RouterLink className="d-flex align-items-center" to="/search">
+            <RouterLink className="d-flex align-items-center" to={PageRoutes.Search}>
                 {logo}
             </RouterLink>
         </h1>
@@ -72,15 +75,10 @@ export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
 
     return (
         <div className={navBarStyles.menu} ref={menuReference}>
-            <button
-                className={classNames('btn', navBarStyles.menuButton)}
-                type="button"
-                onClick={() => setOpen(!open)}
-                aria-label="Sections Navigation"
-            >
+            <Button className={navBarStyles.menuButton} onClick={() => setOpen(!open)} aria-label="Sections Navigation">
                 <MenuIcon className="icon-inline" />
                 {!open ? <ChevronDownIcon className="icon-inline" /> : <ChevronUpIcon className="icon-inline" />}
-            </button>
+            </Button>
             <ul className={classNames(navBarStyles.list, { [navBarStyles.menuClose]: !open })}>{children}</ul>
         </div>
     )

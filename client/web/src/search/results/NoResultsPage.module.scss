@@ -51,6 +51,10 @@
 }
 
 .video-container {
+    figure {
+        width: 13rem;
+        margin-bottom: 1rem;
+    }
     figcaption {
         text-align: center;
     }
@@ -66,6 +70,7 @@
 
             > .video {
                 padding: 0 1rem;
+                margin: 0 0 1rem;
             }
         }
     }
