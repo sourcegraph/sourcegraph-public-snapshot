@@ -97,7 +97,7 @@ func (token *oauthBearerTokenWithJWT) Authenticate(r *http.Request) error {
 		return errors.Wrap(err, "sign JWT")
 	}
 
-	r.Header.Set("Authorization", "Bearer " + signedString)
+	r.Header.Set("Authorization", "Bearer "+signedString)
 	return nil
 }
 
