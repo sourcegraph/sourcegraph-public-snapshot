@@ -10,6 +10,5 @@ var Mocks MockStores
 //   consider passing in the generated db or stores from there.
 type MockStores struct {
 	AccessTokens     MockAccessTokens
-	Repos            MockRepos
 	ExternalServices MockExternalServices
 }

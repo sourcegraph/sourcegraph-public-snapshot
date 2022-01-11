@@ -469,7 +469,6 @@ const (
 	ObservableOwnerSearchCore      ObservableOwner = "search-core"
 	ObservableOwnerBatches         ObservableOwner = "batches"
 	ObservableOwnerCodeIntel       ObservableOwner = "code-intel"
-	ObservableOwnerDistribution    ObservableOwner = "distribution"
 	ObservableOwnerSecurity        ObservableOwner = "security"
 	ObservableOwnerWeb             ObservableOwner = "web"
 	ObservableOwnerCoreApplication ObservableOwner = "core application"
@@ -488,6 +487,8 @@ func (o ObservableOwner) toMarkdown() string {
 		slug = "code-intelligence"
 	case ObservableOwnerCodeInsights:
 		slug = "developer-insights/code-insights"
+	case ObservableOwnerDevOps:
+		slug = "cloud/devops"
 	case ObservableOwnerSearchCore:
 		slug = "search/core"
 	default:

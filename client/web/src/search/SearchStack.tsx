@@ -11,6 +11,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import { Button } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from '../components/SyntaxHighlightedSearchQuery'
 import { PageRoutes } from '../routes.constants'
@@ -64,23 +65,21 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
     return (
         <div className={classNames(styles.root, { [styles.open]: open })}>
             <div className={classNames(styles.header, 'd-flex align-items-center justify-content-between')}>
-                <button
-                    type="button"
+                <Button
                     aria-label={`${open ? 'Close' : 'Open'} search session`}
-                    className={classNames('btn btn-icon p-2')}
+                    className={classNames('btn-icon p-2')}
                     onClick={() => setOpen(open => !open)}
                 >
                     <SearchStackIcon className="icon-inline" />
                     <h4 className={classNames(styles.openVisible, 'pl-1')}>Search session</h4>
-                </button>
-                <button
-                    type="button"
+                </Button>
+                <Button
                     aria-label="Close search session"
-                    className={classNames('btn btn-icon pr-2', styles.closeButton, styles.openVisible)}
+                    className={classNames('btn-icon pr-2', styles.closeButton, styles.openVisible)}
                     onClick={() => setOpen(false)}
                 >
                     <CloseIcon className="icon-inline" />
-                </button>
+                </Button>
             </div>
             {open && (
                 <>
@@ -92,22 +91,26 @@ export const SearchStack: React.FunctionComponent<{ initialOpen?: boolean }> = (
                     {(canRestore || entries.length > 0) && (
                         <div className="p-2">
                             {canRestore && (
-                                <button
-                                    type="button"
-                                    className="w-100 btn btn-sm btn-outline-secondary mb-1"
+                                <Button
+                                    className="w-100 mb-1"
                                     onClick={restorePreviousSession}
+                                    outline={true}
+                                    variant="secondary"
+                                    size="sm"
                                 >
                                     Restore previous session
-                                </button>
+                                </Button>
                             )}
                             {entries.length > 0 && (
-                                <button
-                                    type="button"
-                                    className="w-100 btn btn-sm btn-outline-secondary"
+                                <Button
+                                    className="w-100"
                                     onClick={createNotebook}
+                                    outline={true}
+                                    variant="secondary"
+                                    size="sm"
                                 >
                                     Create Notebook
-                                </button>
+                                </Button>
                             )}
                         </div>
                     )}

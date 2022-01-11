@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React, { ReactElement } from 'react'
 
-import { Button } from '@sourcegraph/wildcard/src'
+import { Button } from '@sourcegraph/wildcard'
 
 import { DEFAULT_ACTIVE_COLOR } from '../../../form-color-input/FormColorInput'
 

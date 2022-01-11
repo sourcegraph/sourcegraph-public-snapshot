@@ -306,10 +306,6 @@ func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 // Metadata returns repo metadata used to decorate search results. The returned slice may be smaller than the
 // number of IDs given if a repo with the given ID does not exist.
 func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types.SearchedRepo, err error) {
-	if Mocks.Repos.Metadata != nil {
-		return Mocks.Repos.Metadata(ctx, ids...)
-	}
-
 	tr, ctx := trace.New(ctx, "repos.Metadata", "")
 	defer func() {
 		tr.SetError(err)
@@ -717,10 +713,6 @@ func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 		tr.Finish()
 	}()
 
-	if Mocks.Repos.List != nil {
-		return Mocks.Repos.List(ctx, opt)
-	}
-
 	// always having ID in ORDER BY helps Postgres create a more performant query plan
 	if len(opt.OrderBy) == 0 || (len(opt.OrderBy) == 1 && opt.OrderBy[0].Field != RepoListID) {
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
@@ -774,10 +766,6 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 
 // ListMinimalRepos returns a list of repositories names and ids.
 func (s *repoStore) ListMinimalRepos(ctx context.Context, opt ReposListOptions) (results []types.MinimalRepo, err error) {
-	if Mocks.Repos.ListMinimalRepos != nil {
-		return Mocks.Repos.ListMinimalRepos(ctx, opt)
-	}
-
 	return results, s.StreamMinimalRepos(ctx, opt, func(r *types.MinimalRepo) {
 		results = append(results, *r)
 	})

@@ -44,6 +44,7 @@ const defaultProps = (
     themePreference: ThemePreference.Light,
     onThemePreferenceChange: () => undefined,
     globbing: false,
+    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     platformContext: {} as any,
     keyboardShortcuts: [],
     selectedSearchContextSpec: '',

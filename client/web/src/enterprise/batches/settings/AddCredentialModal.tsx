@@ -4,7 +4,7 @@ import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
@@ -183,22 +183,24 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                                 <p className="form-text">{helpTexts[externalServiceKind]}</p>
                             </div>
                             <div className="d-flex justify-content-end">
-                                <button
-                                    type="button"
+                                <Button
                                     disabled={isLoading === true}
-                                    className="btn btn-outline-secondary mr-2"
+                                    className="mr-2"
                                     onClick={onCancel}
+                                    outline={true}
+                                    variant="secondary"
                                 >
                                     Cancel
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="submit"
                                     disabled={isLoading === true || credential.length === 0}
-                                    className="btn btn-primary test-add-credential-modal-submit"
+                                    className="test-add-credential-modal-submit"
+                                    variant="primary"
                                 >
                                     {isLoading === true && <LoadingSpinner />}
                                     {requiresSSH ? 'Next' : 'Add credential'}
-                                </button>
+                                </Button>
                             </div>
                         </Form>
                     </>
@@ -211,16 +213,16 @@ export const AddCredentialModal: React.FunctionComponent<AddCredentialModalProps
                         </p>
                         <CodeHostSshPublicKey externalServiceKind={externalServiceKind} sshPublicKey={sshPublicKey!} />
                         <div className="d-flex justify-content-end">
-                            <button type="button" className="btn btn-outline-secondary mr-2" onClick={afterCreate}>
+                            <Button className="mr-2" onClick={afterCreate} outline={true} variant="secondary">
                                 Close
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-primary test-add-credential-modal-submit"
+                            </Button>
+                            <Button
+                                className="test-add-credential-modal-submit"
                                 onClick={afterCreate}
+                                variant="primary"
                             >
                                 Add credential
-                            </button>
+                            </Button>
                         </div>
                     </>
                 )}
