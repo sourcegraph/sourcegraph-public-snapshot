@@ -5,3 +5,6 @@ plugins:
     out: .
     opt:
       - paths=source_relative
+  - name: ts
+    out: .
+    path: ./node_modules/.bin/protoc-gen-ts
