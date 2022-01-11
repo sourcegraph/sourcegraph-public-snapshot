@@ -56,12 +56,16 @@ function go_test() {
 EOF
   )
 
-  echo "$data" | curl \
-    --request POST \
-    --url https://analytics-api.buildkite.com/v1/uploads \
-    --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY\";" \
-    --header 'Content-Type: application/json' \
-    --data-binary @-
+  function upload_analytics() {
+    echo "$data" | curl \
+      --request POST \
+      --url https://analytics-api.buildkite.com/v1/uploads \
+      --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY\";" \
+      --header 'Content-Type: application/json' \
+      --data-binary @-
+  }
+
+  ./dev/ci/sentry-capture.sh upload_analytics
 }
 
 if [ "$1" == "-h" ]; then
@@ -81,11 +85,14 @@ if [ -n "$FILTER_ACTION" ]; then
 fi
 
 # Buildkite analytics
+
+# https://github.com/sourcegraph/sourcegraph/issues/28469
 # TODO is that the best way to handle this?
 go install github.com/jstemmer/go-junit-report@latest
 asdf reshim golang
 
 # TODO move to manifest
+# https://github.com/sourcegraph/sourcegraph/issues/28469
 BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY=$(gcloud secrets versions access latest --secret="BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY" --project="sourcegraph-ci" --quiet)
 
 # For searcher
