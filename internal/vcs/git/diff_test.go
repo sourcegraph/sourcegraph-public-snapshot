@@ -3,6 +3,8 @@ package git
 import (
 	"context"
 	"io"
+	"os"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -216,11 +218,11 @@ index 51a59ef1c..493090958 100644
 			return authz.Read, nil
 		})
 		hunks, err := DiffPath(ctx, "", "sourceCommit", "", fileName, checker)
-		if err != nil {
+		if !reflect.DeepEqual(err, os.ErrNotExist) {
 			t.Errorf("unexpected error: %s", err)
 		}
-		if len(hunks) != 0 {
-			t.Errorf("unexpected hunks returned: %d", len(hunks))
+		if hunks != nil {
+			t.Errorf("expected DiffPath to return no results, got %v", hunks)
 		}
 	})
 }

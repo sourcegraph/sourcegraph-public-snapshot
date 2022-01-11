@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -65,8 +66,10 @@ func Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error) {
 // DiffPath returns a position-ordered slice of changes (additions or deletions)
 // of the given path between the given source and target commits.
 func DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string, checker authz.SubRepoPermissionChecker) ([]*diff.Hunk, error) {
-	if hasAccess, err := authz.HasAccessToPath(ctx, checker, repo, path); err != nil || !hasAccess {
+	if hasAccess, err := authz.HasAccessToPath(ctx, checker, repo, path); err != nil {
 		return nil, err
+	} else if !hasAccess {
+		return nil, os.ErrNotExist
 	}
 	reader, err := execReader(ctx, repo, []string{"diff", sourceCommit, targetCommit, "--", path})
 	if err != nil {
