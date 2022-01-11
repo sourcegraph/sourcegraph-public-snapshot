@@ -169,7 +169,7 @@ func (s *Store) Up(ctx context.Context, definition definition.Definition) (err e
 	ctx, endObservation := s.operations.up.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if err := s.runMigrationQuery(ctx, true, definition.ID-1, definition.ID, definition.UpQuery); err != nil {
+	if err := s.runMigrationQuery(ctx, true, definition.ID-1, definition.ID, definition.ID, definition.UpQuery); err != nil {
 		return err
 	}
 
@@ -180,15 +180,15 @@ func (s *Store) Down(ctx context.Context, definition definition.Definition) (err
 	ctx, endObservation := s.operations.down.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	if err := s.runMigrationQuery(ctx, false, definition.ID, definition.ID-1, definition.DownQuery); err != nil {
+	if err := s.runMigrationQuery(ctx, false, definition.ID, definition.ID-1, definition.ID, definition.DownQuery); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *Store) runMigrationQuery(ctx context.Context, up bool, expectedCurrentVersion, version int, query *sqlf.Query) (err error) {
-	logID, err := s.setVersion(ctx, up, expectedCurrentVersion, version)
+func (s *Store) runMigrationQuery(ctx context.Context, up bool, expectedCurrentVersion, targetVersion, sourceVersion int, query *sqlf.Query) (err error) {
+	logID, err := s.setVersion(ctx, up, expectedCurrentVersion, targetVersion, sourceVersion)
 	if err != nil {
 		return err
 	}
@@ -215,7 +215,7 @@ func (s *Store) runMigrationQuery(ctx context.Context, up bool, expectedCurrentV
 	return nil
 }
 
-func (s *Store) setVersion(ctx context.Context, up bool, expectedCurrentVersion, version int) (_ int, err error) {
+func (s *Store) setVersion(ctx context.Context, up bool, expectedCurrentVersion, targetVersion, sourceVersion int) (_ int, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return 0, err
@@ -241,14 +241,14 @@ func (s *Store) setVersion(ctx context.Context, up bool, expectedCurrentVersion,
 		}
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s (version, dirty) VALUES (%s, true)`, quote(s.migrationsTable), version)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO %s (version, dirty) VALUES (%s, true)`, quote(s.migrationsTable), targetVersion)); err != nil {
 		return 0, err
 	}
 
 	id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
 		`INSERT INTO migration_logs (schema, version, up, started_at) VALUES (%s, %s, %s, NOW()) RETURNING id`,
 		s.migrationsTable,
-		version,
+		sourceVersion,
 		up,
 	)))
 	if err != nil {
