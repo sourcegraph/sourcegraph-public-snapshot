@@ -28,7 +28,7 @@ function go_test() {
     -covermode=atomic \
     -race \
     -v \
-    $test_packages |\
+    $test_packages | \
     tee "$tmpfile"
 
   local xml
