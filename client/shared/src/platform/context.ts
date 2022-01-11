@@ -3,11 +3,11 @@ import { isObject } from 'lodash'
 import { NextObserver, Observable, Subscribable, Subscription } from 'rxjs'
 import { InputBoxOptions } from 'sourcegraph'
 
+import { DiffPart } from '@sourcegraph/codeintellify'
 import { ErrorLike } from '@sourcegraph/common'
 
 import { SettingsEdit } from '../api/client/services/settings'
 import { ExecutableExtension } from '../api/extension/activation'
-import { DiffPart } from '../codeintellify/tokenPosition'
 import { Scalars } from '../graphql-operations'
 import { GraphQLClient, GraphQLResult } from '../graphql/graphql'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'

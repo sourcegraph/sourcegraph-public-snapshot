@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React, { useCallback, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, Button } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../../../components/Sidebar'
 
@@ -28,13 +28,12 @@ const SampleTabHeader: React.FunctionComponent<SampleTabHeaderProps> = ({ sample
         [setSelectedSample, sample]
     )
     return (
-        <button
-            type="button"
+        <Button
             onClick={onClick}
-            className={classNames('btn text-left sidebar__link--inactive d-flex w-100', active && 'btn-primary')}
+            className={classNames('text-left sidebar__link--inactive d-flex w-100', active && 'btn-primary')}
         >
             {sample.name}
-        </button>
+        </Button>
     )
 }
 

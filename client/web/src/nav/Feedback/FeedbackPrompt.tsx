@@ -55,6 +55,8 @@ interface ContentProps {
     routeMatch?: string
     /** Text to be prepended to user input on submission. */
     textPrefix?: string
+    /** Boolean for displaying the Join Research link */
+    productResearchEnabled?: boolean
 }
 
 const LOCAL_STORAGE_KEY_RATING = 'feedbackPromptRating'
@@ -63,6 +65,7 @@ const LOCAL_STORAGE_KEY_TEXT = 'feedbackPromptText'
 export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
     closePrompt,
     routeMatch,
+    productResearchEnabled,
     textPrefix = '',
 }) => {
     const [rating, setRating] = useLocalStorage<number | undefined>(LOCAL_STORAGE_KEY_RATING, undefined)
@@ -116,7 +119,7 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                     <h3>We‘ve received your feedback!</h3>
                     <p className="d-inline">
                         Thank you for your help.
-                        {window.context.productResearchPageEnabled && (
+                        {productResearchEnabled && (
                             <>
                                 {' '}
                                 Want to help keep making Sourcegraph better?{' '}
@@ -196,7 +199,7 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, routes })
                 <span>Feedback</span>
             </DropdownToggle>
             <DropdownMenu right={true} className={styles.menu}>
-                <FeedbackPromptContent closePrompt={forceClose} routeMatch={match} />
+                <FeedbackPromptContent productResearchEnabled={true} closePrompt={forceClose} routeMatch={match} />
             </DropdownMenu>
         </ButtonDropdown>
     )

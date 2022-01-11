@@ -1,7 +1,7 @@
 import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 
-import { AlertLink } from '@sourcegraph/wildcard'
+import { Button, AlertLink } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -112,14 +112,9 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
                     )}
                 </p>
             </div>
-            <button
-                type="button"
-                onClick={onAlertDismissed}
-                aria-label="Close alert"
-                className="btn btn-icon test-close-alert"
-            >
+            <Button onClick={onAlertDismissed} aria-label="Close alert" className="btn-icon test-close-alert">
                 <CloseIcon className="icon-inline" />
-            </button>
+            </Button>
         </div>
     )
 }
@@ -164,14 +159,9 @@ export const FirefoxAddonAlert: React.FunctionComponent<FirefoxAlertProps> = ({ 
                 . The extension adds code intelligence to code views on {displayName} or any other connected code host.
             </p>
         </div>
-        <button
-            type="button"
-            onClick={onAlertDismissed}
-            aria-label="Close alert"
-            className="btn btn-icon test-close-alert"
-        >
+        <Button onClick={onAlertDismissed} aria-label="Close alert" className="btn-icon test-close-alert">
             <CloseIcon className="icon-inline" />
-        </button>
+        </Button>
     </div>
 )
 

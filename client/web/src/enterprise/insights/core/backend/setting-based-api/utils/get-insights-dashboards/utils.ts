@@ -1,5 +1,5 @@
+import { isDefined } from '@sourcegraph/common'
 import { SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { Settings } from '../../../../../../../schema/settings.schema'
 import {

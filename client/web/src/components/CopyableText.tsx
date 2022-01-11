@@ -3,6 +3,8 @@ import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import * as React from 'react'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import styles from './CopyableText.module.scss'
 
 interface Props {
@@ -45,14 +47,9 @@ export class CopyableText extends React.PureComponent<Props, State> {
                         onClick={this.onClickInput}
                     />
                     <div className="input-group-append">
-                        <button
-                            type="button"
-                            className="btn btn-secondary"
-                            onClick={this.onClickButton}
-                            disabled={this.state.copied}
-                        >
+                        <Button onClick={this.onClickButton} disabled={this.state.copied} variant="secondary">
                             <ContentCopyIcon className="icon-inline" /> {this.state.copied ? 'Copied' : 'Copy'}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>

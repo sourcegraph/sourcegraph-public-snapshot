@@ -318,16 +318,26 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 func FilterActorPaths(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, paths []string) ([]string, error) {
 	filtered := make([]string, 0, len(paths))
 	for _, p := range paths {
-		perms, err := ActorPermissions(ctx, checker, a, RepoContent{
-			Repo: repo,
-			Path: p,
-		})
+		include, err := FilterActorPath(ctx, checker, a, repo, p)
 		if err != nil {
 			return nil, errors.Wrap(err, "checking sub-repo permissions")
 		}
-		if perms.Include(Read) {
+		if include {
 			filtered = append(filtered, p)
 		}
 	}
 	return filtered, nil
+}
+
+// FilterActorPath will filter the given path for the given actor
+// returning true if the path is allowed to read.
+func FilterActorPath(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, path string) (bool, error) {
+	perms, err := ActorPermissions(ctx, checker, a, RepoContent{
+		Repo: repo,
+		Path: path,
+	})
+	if err != nil {
+		return false, errors.Wrap(err, "checking sub-repo permissions")
+	}
+	return perms.Include(Read), nil
 }

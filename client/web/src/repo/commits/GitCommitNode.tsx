@@ -7,7 +7,7 @@ import React, { useState, useCallback } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { TooltipController } from '@sourcegraph/wildcard'
+import { Button, TooltipController } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { GitCommitFields } from '../../graphql-operations'
@@ -95,13 +95,14 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                 {node.subject}
             </Link>
             {node.body && !hideExpandCommitMessageBody && !expandCommitMessageBody && (
-                <button
-                    type="button"
-                    className={classNames('btn btn-secondary btn-sm', styles.messageToggle)}
+                <Button
+                    className={styles.messageToggle}
                     onClick={toggleShowCommitMessageBody}
+                    variant="secondary"
+                    size="sm"
                 >
                     <DotsHorizontalIcon className="icon-inline" />
-                </button>
+                </Button>
             )}
             {compact && (
                 <small className={classNames('text-muted', styles.messageTimestamp)}>
@@ -137,14 +138,13 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                 <span className={styles.shaAndParentsLabel}>Commit:</span>
                 <code className={styles.shaAndParentsSha}>
                     {node.oid}{' '}
-                    <button
-                        type="button"
-                        className={classNames('btn btn-icon', styles.shaAndParentsCopy)}
+                    <Button
+                        className={classNames('btn-icon', styles.shaAndParentsCopy)}
                         onClick={() => copyToClipboard(node.oid)}
                         data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
                     >
                         <ContentCopyIcon className="icon-inline" />
-                    </button>
+                    </Button>
                 </code>
             </div>
             <div className="align-items-center d-flex">
@@ -161,14 +161,13 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                                 <Link className={styles.shaAndParentsParent} to={parent.url}>
                                     <code>{parent.oid}</code>
                                 </Link>
-                                <button
-                                    type="button"
-                                    className={classNames('btn btn-icon', styles.shaAndParentsCopy)}
+                                <Button
+                                    className={classNames('btn-icon', styles.shaAndParentsCopy)}
                                     onClick={() => copyToClipboard(parent.oid)}
                                     data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
                                 >
                                     <ContentCopyIcon className="icon-inline" />
-                                </button>
+                                </Button>
                             </div>
                         ))}
                     </>
@@ -227,16 +226,15 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                                             >
                                                 <strong>{oidElement}</strong>
                                             </Link>
-                                            <button
-                                                type="button"
-                                                className="btn btn-secondary"
+                                            <Button
                                                 onClick={() => copyToClipboard(node.oid)}
                                                 data-tooltip={
                                                     flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'
                                                 }
+                                                variant="secondary"
                                             >
                                                 <ContentCopyIcon className="icon-inline small" />
-                                            </button>
+                                            </Button>
                                         </div>
                                         {node.tree && (
                                             <Link

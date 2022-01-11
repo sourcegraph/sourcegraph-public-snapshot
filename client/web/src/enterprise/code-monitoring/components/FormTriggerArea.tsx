@@ -11,6 +11,7 @@ import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/s
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
+import { Button } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../../graphql-operations'
 
@@ -299,26 +300,26 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         </div>
                     </div>
                     <div>
-                        <button
+                        <Button
                             data-testid="submit-trigger"
-                            className="btn btn-secondary mr-1 test-submit-trigger"
+                            className="mr-1 test-submit-trigger"
                             onClick={completeForm}
                             type="submit"
                             disabled={queryState.kind !== 'VALID'}
+                            variant="secondary"
                         >
                             Continue
-                        </button>
-                        <button type="button" className="btn btn-outline-secondary" onClick={cancelForm}>
+                        </Button>
+                        <Button onClick={cancelForm} outline={true} variant="secondary">
                             Cancel
-                        </button>
+                        </Button>
                     </div>
                 </div>
             )}
             {!showQueryForm && (
-                <button
-                    type="button"
+                <Button
                     data-testid="trigger-button"
-                    className={classNames('btn card test-trigger-button', cardBtnClassName)}
+                    className={classNames('card test-trigger-button', cardBtnClassName)}
                     aria-label="Edit trigger: When there are new search results"
                     onClick={toggleQueryForm}
                 >
@@ -347,7 +348,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                         </div>
                         {triggerCompleted && <div className="btn-link">Edit</div>}
                     </div>
-                </button>
+                </Button>
             )}
             <small className="text-muted">
                 {' '}

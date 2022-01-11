@@ -8,6 +8,7 @@ import { catchError, mergeMap, tap } from 'rxjs/operators'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { Button } from '@sourcegraph/wildcard'
 
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
 import { ErrorAlert } from '../components/alerts'
@@ -116,14 +117,9 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                         ) : (
                             <p>The user must authenticate using a configured authentication provider.</p>
                         )}
-                        <button
-                            type="button"
-                            className="btn btn-primary mt-2"
-                            onClick={this.dismissAlert}
-                            autoFocus={true}
-                        >
+                        <Button className="mt-2" onClick={this.dismissAlert} autoFocus={true} variant="primary">
                             Create another user
-                        </button>
+                        </Button>
                     </div>
                 ) : (
                     <Form onSubmit={this.onSubmit} className="site-admin-create-user-page__form">
@@ -158,11 +154,11 @@ export class SiteAdminCreateUserPage extends React.Component<RouteComponentProps
                         {this.state.errorDescription && (
                             <ErrorAlert className="my-2" error={this.state.errorDescription} />
                         )}
-                        <button className="btn btn-primary" disabled={this.state.loading} type="submit">
+                        <Button disabled={this.state.loading} type="submit" variant="primary">
                             {window.context.resetPasswordEnabled
                                 ? 'Create account & generate password reset link'
                                 : 'Create account'}
-                        </button>
+                        </Button>
                     </Form>
                 )}
             </div>
