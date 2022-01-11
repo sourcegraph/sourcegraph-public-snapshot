@@ -2942,7 +2942,7 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_b
 
 <p class="subtitle">P90 failed sentinel search duration by query over 5m</p>
 
-- The 90th percentile search duration for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+- The 90th percentile search duration of _unsuccessful_ sentinel queries (by error or timeout), broken down by query. Useful for debugging how the performance of failed requests affect UX.
 
 This panel has no related alerts.
 
@@ -2953,28 +2953,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102340`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status=~`(timeout|error|partial_timeout)`}[5m])) by (le, source))`
-
-</details>
-
-<br />
-
-#### frontend: p90_sentinel_stream_latency_by_query_5m
-
-<p class="subtitle">P90 sentinel stream latency by query over 5m</p>
-
-- The 90th percentile search latency for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102341` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[5m])) by (le, source))`
+Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[5m])) by (le, source))`
 
 </details>
 
@@ -2984,7 +2963,7 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_b
 
 <p class="subtitle">Unsuccessful status rate per 5m</p>
 
-- The rate of unsuccessful sentinel query, broken down by failure type
+- The rate of unsuccessful sentinel queries, broken down by failure type.
 
 This panel has no related alerts.
 
