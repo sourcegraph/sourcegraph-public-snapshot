@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -1984,4 +1984,133 @@ func assertDeletedRepoCount(ctx context.Context, t *testing.T, store *repos.Stor
 	if rowCount != want {
 		t.Fatalf("Expected %d rows, got %d", want, rowCount)
 	}
+}
+
+func testSyncReposWithLastErrors(s *repos.Store) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx := context.Background()
+
+		repoName := api.RepoName("github.com/foo/bar")
+		syncer, dbRepos := setupSyncErroredTest(ctx, s, t, extsvc.KindGitHub,
+			&database.RepoNotFoundErr{Name: repoName}, repoName)
+		if len(dbRepos) != 1 {
+			t.Fatalf("should've inserted exactly 1 repo in the db for testing, got %d instead", len(dbRepos))
+		}
+
+		// Run the syncer, which should find the repo with non-empty last_error and delete it
+		err := syncer.SyncReposWithLastErrors(ctx, rate.NewLimiter(200, 1))
+		if err != nil {
+			t.Fatalf("unexpected error running SyncReposWithLastErrors: %s", err)
+		}
+
+		diff := <-syncer.Synced
+
+		deleted := types.Repos{&types.Repo{ID: dbRepos[0].ID}}
+		if d := cmp.Diff(repos.Diff{Deleted: deleted}, diff); d != "" {
+			t.Fatalf("Deleted mismatch (-want +got):\n%s", d)
+		}
+
+		assertDeletedRepoCount(ctx, t, s, 1)
+		// Try to fetch the repo to verify that it was deleted by the syncer
+		myRepo, err := s.RepoStore.GetByName(ctx, repoName)
+		if err == nil {
+			t.Fatalf("repo should've been deleted. expected a repo not found error")
+		}
+		if !errors.Is(err, &database.RepoNotFoundErr{Name: repoName}) {
+			t.Fatalf("expected a RepoNotFound error, got %s", err)
+		}
+		if myRepo != nil {
+			t.Fatalf("repo should've been deleted: %v", myRepo)
+		}
+	}
+}
+
+func testSyncReposWithLastErrorsHitsRateLimiter(s *repos.Store) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx := context.Background()
+		repoNames := []api.RepoName{
+			"github.com/asdf/jkl",
+			"github.com/foo/bar",
+		}
+		syncer, _ := setupSyncErroredTest(ctx, s, t, extsvc.KindGitLab, &database.RepoNotFoundErr{Name: "gitlab.com/asdf/jkl"}, repoNames...)
+
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
+		// Run the syncer, which should return an error due to hitting the rate limit
+		err := syncer.SyncReposWithLastErrors(ctx, rate.NewLimiter(1, 1))
+		if err == nil {
+			t.Fatal("SyncReposWithLastErrors should've returned an error due to hitting rate limit")
+		}
+		if !strings.Contains(err.Error(), "error waiting for rate limiter: rate: Wait(n=1) would exceed context deadline") {
+			t.Fatalf("expected an error from rate limiting, got %s instead", err)
+		}
+	}
+}
+
+func setupSyncErroredTest(ctx context.Context, s *repos.Store, t *testing.T,
+	serviceType string, externalSvcError error, repoNames ...api.RepoName) (*repos.Syncer, types.Repos) {
+	t.Helper()
+	now := time.Now()
+	dbRepos := types.Repos{}
+	service := types.ExternalService{
+		Kind:         extsvc.KindGitHub,
+		DisplayName:  "Github - Test",
+		Config:       `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		CreatedAt:    now,
+		UpdatedAt:    now,
+		CloudDefault: true,
+	}
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+
+	err := s.ExternalServiceStore.Create(ctx, confGet, &service)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, repoName := range repoNames {
+		dbRepo := (&types.Repo{
+			Name:        repoName,
+			Description: "",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          fmt.Sprintf("external-%s", repoName), // TODO: make this something else?
+				ServiceID:   "https://github.com/",
+				ServiceType: serviceType,
+			},
+		}).With(typestest.Opt.RepoSources(service.URN()))
+		// Insert the repo into our database
+		if err := s.RepoStore.Create(ctx, dbRepo); err != nil {
+			t.Fatal(err)
+		}
+		// Create an entry in gitserver_repos for this repo which indicates there's been an issue fetching the repo
+		if err := s.GitserverReposStore.Upsert(ctx, &types.GitserverRepo{
+			RepoID:      dbRepo.ID,
+			ShardID:     "test",
+			CloneStatus: types.CloneStatusCloned,
+			LastError:   "error fetching repo: Not found",
+		}); err != nil {
+			t.Fatal(err)
+		}
+		// Validate that the repo exists and we can fetch it
+		_, err := s.RepoStore.GetByName(ctx, dbRepo.Name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		dbRepos = append(dbRepos, dbRepo)
+	}
+
+	syncer := &repos.Syncer{
+		Now:    time.Now,
+		Store:  s,
+		Synced: make(chan repos.Diff, 1),
+		Sourcer: repos.NewFakeSourcer(
+			nil,
+			repos.NewFakeSource(&service,
+				externalSvcError,
+				dbRepos...),
+		),
+	}
+	return syncer, dbRepos
 }

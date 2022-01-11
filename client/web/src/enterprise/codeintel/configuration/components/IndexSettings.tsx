@@ -2,10 +2,13 @@ import React, { FunctionComponent } from 'react'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 
+import { RadioButtons } from '../../../../components/RadioButtons'
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../../graphql-operations'
 import { nullPolicy } from '../hooks/types'
 
 import { DurationSelect } from './DurationSelect'
+// This uses the same styles as the RetentionSettings component to style radio buttons
+import styles from './RetentionSettings.module.scss'
 
 export interface IndexingSettingsProps {
     policy: CodeIntelligenceConfigurationPolicyFields
@@ -30,40 +33,56 @@ export const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({
         setPolicy(policy => ({ ...(policy || nullPolicy), ...updates }))
     }
 
+    const radioButtons = [
+        {
+            id: 'disable-indexing',
+            label: 'Disable for this policy',
+        },
+        {
+            id: 'enable-indexing',
+            label: 'Enable for this policy, for commits with a maximum age',
+        },
+    ]
+
+    const onChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+        const indexingEnabled = event.target.value === 'enable-indexing'
+        updatePolicy({ indexingEnabled })
+    }
+
     return (
         <div className="form-group">
             <h3>Auto-indexing</h3>
-            <div className="form-group">
-                <Toggle
-                    id="indexing-enabled"
-                    title="Enabled"
-                    value={policy.indexingEnabled}
-                    onToggle={indexingEnabled => updatePolicy({ indexingEnabled })}
+            <div className="mb-4 form-group">
+                <RadioButtons
+                    nodes={radioButtons}
+                    name="toggle-indexing"
+                    onChange={onChange}
+                    selected={policy.indexingEnabled ? 'enable-indexing' : 'disable-indexing'}
+                    className={styles.radioButtons}
                 />
-                <label htmlFor="indexing-enabled" className="ml-2">
-                    Enabled / disabled
+
+                {!allowGlobalPolicies &&
+                    repo === undefined &&
+                    (policy.repositoryPatterns || []).length === 0 &&
+                    policy.indexingEnabled && (
+                        <div className="alert alert-danger">
+                            This Sourcegraph instance has disabled global policies for auto-indexing. Create a more
+                            constrained policy targeting an explicit set of repositories to enable this policy.
+                        </div>
+                    )}
+
+                <label className="ml-4" htmlFor="index-commit-max-age">
+                    Commit max age
                 </label>
-            </div>
-
-            {!allowGlobalPolicies &&
-                repo === undefined &&
-                (policy.repositoryPatterns || []).length === 0 &&
-                policy.indexingEnabled && (
-                    <div className="alert alert-danger">
-                        This Sourcegraph instance has disabled global policies for auto-indexing. Create a more
-                        constrained policy targeting an explicit set of repositories to enable this policy.
-                    </div>
-                )}
-
-            <div className="mb-4">
-                <label htmlFor="index-commit-max-age">Commit max age</label>
                 <DurationSelect
                     id="index-commit-max-age"
                     value={policy.indexCommitMaxAgeHours ? `${policy.indexCommitMaxAgeHours}` : null}
                     onChange={indexCommitMaxAgeHours => updatePolicy({ indexCommitMaxAgeHours })}
                     disabled={!policy.indexingEnabled}
+                    className="ml-4"
                 />
             </div>
+
             {policy.type === GitObjectType.GIT_TREE && (
                 <div className="form-group">
                     <Toggle

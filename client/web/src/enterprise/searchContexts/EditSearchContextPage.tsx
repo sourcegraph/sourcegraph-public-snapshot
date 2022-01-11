@@ -4,9 +4,7 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
-import { asError } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
+import { asError, isErrorLike } from '@sourcegraph/common'
 import {
     Scalars,
     SearchContextEditInput,
@@ -18,7 +16,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
@@ -32,6 +30,7 @@ export interface EditSearchContextPageProps
         TelemetryProps,
         Pick<SearchContextProps, 'updateSearchContext' | 'fetchSearchContextBySpec' | 'deleteSearchContext'> {
     authenticatedUser: AuthenticatedUser
+    isSourcegraphDotCom: boolean
 }
 
 export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSearchContextPageProps> = props => {
@@ -92,7 +91,7 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSea
                     />
                     {searchContextOrError === LOADING && (
                         <div className="d-flex justify-content-center">
-                            <LoadingSpinner />
+                            <LoadingSpinner inline={false} />
                         </div>
                     )}
                     {searchContextOrError && searchContextOrError !== LOADING && !isErrorLike(searchContextOrError) && (

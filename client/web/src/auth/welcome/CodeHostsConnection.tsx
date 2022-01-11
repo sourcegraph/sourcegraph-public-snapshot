@@ -38,7 +38,7 @@ export const CodeHostsConnection: React.FunctionComponent<CodeHostsConnection> =
     if (loading || !externalServices) {
         return (
             <div className="d-flex justify-content-center">
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
             </div>
         )
     }

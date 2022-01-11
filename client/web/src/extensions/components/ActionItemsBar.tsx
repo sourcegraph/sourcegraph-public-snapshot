@@ -13,7 +13,6 @@ import { distinctUntilChanged, map } from 'rxjs/operators'
 import { focusable, FocusableElement } from 'tabbable'
 import { Key } from 'ts-key-enum'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ActionItem } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContainer'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
@@ -24,6 +23,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LocalStorageSubject } from '@sourcegraph/shared/src/util/LocalStorageSubject'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -333,7 +333,7 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
                         buttonLinkRef={toggleReference}
                     >
                         {!haveExtensionsLoaded ? (
-                            <LoadingSpinner className="icon-inline" />
+                            <LoadingSpinner />
                         ) : isOpen ? (
                             <ChevronDoubleUpIcon data-testid="action-items-toggle-open" className="icon-inline" />
                         ) : (

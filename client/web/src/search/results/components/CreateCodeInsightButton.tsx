@@ -2,11 +2,11 @@ import React from 'react'
 
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 
-import { PatternTypeProps } from '../..'
+import { SearchPatternTypeProps } from '../..'
 import { AuthenticatedUser } from '../../../auth'
 import { CodeInsightsIcon } from '../../../insights/Icons'
 
-interface CreateCodeInsightButtonProps extends Pick<PatternTypeProps, 'patternType'> {
+interface CreateCodeInsightButtonProps extends SearchPatternTypeProps {
     /** Search query string. */
     query?: string
 

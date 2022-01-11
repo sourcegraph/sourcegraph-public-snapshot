@@ -9,7 +9,14 @@
  * everything that should be in here is already in here.
  */
 
-export { useNavbarQueryState, setQueryStateFromURL, setQueryStateFromSettings } from './navbarSearchQueryState'
+export {
+    useNavbarQueryState,
+    setQueryStateFromURL,
+    setQueryStateFromSettings,
+    setSearchPatternType,
+    setSearchCaseSensitivity,
+    buildSearchURLQueryFromQueryState,
+} from './navbarSearchQueryState'
 export { useThemeState } from './themeState'
 export {
     useExperimentalFeatures,

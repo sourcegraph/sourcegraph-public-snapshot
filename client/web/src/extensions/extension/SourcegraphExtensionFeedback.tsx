@@ -1,7 +1,7 @@
 import Dialog from '@reach/dialog'
 import React, { useState } from 'react'
 
-import { FeedbackPromptContent } from '../../nav/Feedback/FeedbackPrompt'
+import { FeedbackPromptContent } from '../../nav/Feedback'
 
 interface SourcegraphExtensionFeedbackProps {
     extensionID: string

@@ -68,6 +68,7 @@ const authUser: AuthenticatedUser = {
     tags: [],
     viewerCanAdminister: true,
     databaseID: 0,
+    tosAccepted: true,
 }
 
 const repositories: ISearchContextRepositoryRevisions[] = [
@@ -99,6 +100,7 @@ const fetchCommunitySearchContext = (): Observable<ISearchContext> =>
         public: true,
         autoDefined: false,
         description: 'Repositories on Sourcegraph',
+        query: '',
         repositories,
         updatedAt: subDays(new Date(), 1).toISOString(),
         viewerCanManage: true,

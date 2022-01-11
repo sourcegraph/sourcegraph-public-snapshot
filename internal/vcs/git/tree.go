@@ -115,18 +115,7 @@ func LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo a
 	if len(files) > 0 && files[len(files)-1] == "" {
 		files = files[:len(files)-1]
 	}
-
-	// 🚨 SECURITY: All git methods that deal with file or path access need to have
-	// sub-repo permissions applied
-	if !checker.Enabled() {
-		return files, nil
-	}
-	a := actor.FromContext(ctx)
-	filtered, err := authz.FilterActorPaths(ctx, checker, a, repo, files)
-	if err != nil {
-		return nil, errors.Wrap(err, "filtering paths")
-	}
-	return filtered, nil
+	return filterPaths(ctx, repo, checker, files)
 }
 
 // lStat returns a FileInfo describing the named file at commit. If the file is a symbolic link, the
@@ -351,7 +340,7 @@ func lsTreeUncached(ctx context.Context, repo api.RepoName, commit api.CommitID,
 
 // ListFiles returns a list of root-relative file paths matching the given
 // pattern in a particular commit of a repository.
-func ListFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp) (_ []string, err error) {
+func ListFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp, checker authz.SubRepoPermissionChecker) (_ []string, err error) {
 	cmd := gitserver.DefaultClient.Command("git", "ls-tree", "--name-only", "-r", string(commit), "--")
 	cmd.Repo = repo
 
@@ -367,7 +356,21 @@ func ListFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, patt
 		}
 	}
 
-	return matching, nil
+	return filterPaths(ctx, repo, checker, matching)
+}
+
+// 🚨 SECURITY: All git methods that deal with file or path access need to have
+// sub-repo permissions applied
+func filterPaths(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker, paths []string) ([]string, error) {
+	if !checker.Enabled() {
+		return paths, nil
+	}
+	a := actor.FromContext(ctx)
+	filtered, err := authz.FilterActorPaths(ctx, checker, a, repo, paths)
+	if err != nil {
+		return nil, errors.Wrap(err, "filtering paths")
+	}
+	return filtered, nil
 }
 
 // ListDirectoryChildren fetches the list of children under the given directory

@@ -2,8 +2,8 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { Collapsible } from './Collapsible'
 import { LogOutput } from './LogOutput'
@@ -33,7 +33,7 @@ export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> 
             )}
 
             <div>
-                {logEntry.exitCode === null && <LoadingSpinner className="icon-inline mr-1" />}
+                {logEntry.exitCode === null && <LoadingSpinner className="mr-1" />}
                 {logEntry.exitCode !== null && (
                     <>
                         {logEntry.exitCode === 0 ? (
