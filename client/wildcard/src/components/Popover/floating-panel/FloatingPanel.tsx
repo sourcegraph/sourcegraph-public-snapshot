@@ -3,6 +3,7 @@ import React, { forwardRef, useLayoutEffect, useRef, useState, PropsWithChildren
 import { createPortal } from 'react-dom'
 import { useCallbackRef, useMergeRefs } from 'use-callback-ref'
 
+import { ForwardReferenceComponent } from '../../../types';
 import { createTether, Flipping, Overlapping, Position, Tether } from '../tether'
 
 import styles from './FloatingPanel.module.scss'
@@ -27,8 +28,9 @@ export interface FloatingPanelProps extends Omit<Tether, 'target' | 'element' | 
  * React component that wraps up tether positioning logic and provide narrowed down
  * interface of setting to setup floating panel component.
  */
-export const FloatingPanel = forwardRef<HTMLDivElement, PropsWithChildren<FloatingPanelProps>>((props, reference) => {
+export const FloatingPanel = forwardRef((props, reference) => {
     const {
+        as: Component = 'div',
         target,
         tail,
         position = Position.bottomLeft,
@@ -41,6 +43,7 @@ export const FloatingPanel = forwardRef<HTMLDivElement, PropsWithChildren<Floati
         constraintPadding,
         constraint,
         className = '',
+        ...otherProps
     } = props
 
     const containerReference = useRef(document.createElement('div'))
@@ -98,15 +101,16 @@ export const FloatingPanel = forwardRef<HTMLDivElement, PropsWithChildren<Floati
 
     return createPortal(
         <>
-            <div
+            <Component
+                {...otherProps}
                 ref={useMergeRefs([tooltipReferenceCallback, reference])}
                 className={classNames(styles.floatingPanel, 'dropdown-menu', className)}
             >
                 {props.children}
-            </div>
+            </Component>
 
             {tail && <div className={styles.tail} ref={setTooltipTailElement} />}
         </>,
         containerReference.current
     )
-})
+}) as ForwardReferenceComponent<'div', PropsWithChildren<FloatingPanelProps>>

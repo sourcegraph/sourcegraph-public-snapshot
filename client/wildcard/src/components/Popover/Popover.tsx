@@ -70,9 +70,9 @@ const Popover: React.FunctionComponent<PopoverProps> = props => {
         event => {
             if (!isControlled) {
                 setInternalOpen(event.isOpen)
+            } else {
+                onOpenChange(event)
             }
-
-            onOpenChange(event)
         },
         [isControlled, onOpenChange]
     )
@@ -112,36 +112,42 @@ const PopoverTrigger = forwardRef((props, reference) => {
 
 interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' | 'marker'> {
     open?: boolean
+    targetElement?: HTMLElement | null
 }
 
-const PopoverContent: React.FunctionComponent<PopoverContentProps> = props => {
-    const { open, children, ...otherProps } = props
-    const { isOpen, targetElement, anchor, setOpen } = useContext(PopoverContext)
+const PopoverContent = forwardRef(
+    (props, reference) => {
+        const { as: Component = 'div', open, targetElement: propertyTargetElement, children, ...otherProps } = props
+        const { isOpen, targetElement: contextTargetElement, anchor, setOpen } = useContext(PopoverContext)
 
-    const reference = useRef<HTMLDivElement>(null)
+        const targetElement = propertyTargetElement ?? contextTargetElement
+        const localReference = useRef<HTMLDivElement>(null)
+        const mergeReference = useMergeRefs([localReference, reference])
 
-    // Catch any outside click of popover element
-    useOnClickOutside(reference, event => {
-        if (targetElement?.contains(event.target as Node)) {
-            return
+        // Catch any outside click of popover element
+        useOnClickOutside(mergeReference, event => {
+            if (targetElement?.contains(event.target as Node)) {
+                return
+            }
+
+            setOpen({ isOpen: false, reason: PopoverOpenEventReason.ClickOutside })
+        })
+
+        // Close popover on escape
+        useKeyboard({ detectKeys: ['Escape'] }, () => setOpen({ isOpen: false, reason: PopoverOpenEventReason.Esc }))
+
+        if (!isOpen && !open) {
+            return null
         }
 
-        setOpen({ isOpen: false, reason: PopoverOpenEventReason.ClickOutside })
-    })
-
-    // Close popover on escape
-    useKeyboard({ detectKeys: ['Escape'] }, () => setOpen({ isOpen: false, reason: PopoverOpenEventReason.Esc }))
-
-    if (!isOpen && !open) {
-        return null
+        return (
+            <FloatingPanel {...otherProps} as={Component} ref={reference} target={anchor?.current ?? targetElement}>
+                {/*<FocusLock autoFocus={true} returnFocus={true}>{children}</FocusLock>*/}
+                {children}
+            </FloatingPanel>
+        )
     }
-
-    return (
-        <FloatingPanel {...otherProps} ref={reference} target={anchor?.current ?? targetElement}>
-            <FocusLock returnFocus={true}>{children}</FocusLock>
-        </FloatingPanel>
-    )
-}
+) as ForwardReferenceComponent<'div', PopoverContentProps>
 
 const Root = Popover
 const Trigger = PopoverTrigger
