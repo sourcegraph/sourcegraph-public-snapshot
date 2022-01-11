@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"runtime"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -606,5 +607,69 @@ func TestCleanDirectoriesForLsTree(t *testing.T) {
 
 	if diff := cmp.Diff(expected, actual); diff != "" {
 		t.Errorf("unexpected ls-tree args (-want +got):\n%s", diff)
+	}
+}
+
+func TestListDirectoryChildren(t *testing.T) {
+	gitCommands := []string{
+		"mkdir -p dir{1..3}/sub{1..3}",
+		"touch dir1/sub1/file",
+		"touch dir1/sub2/file",
+		"touch dir2/sub1/file",
+		"touch dir2/sub2/file",
+		"touch dir3/sub1/file",
+		"touch dir3/sub3/file",
+		"git add .",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+
+	repo := MakeGitRepository(t, gitCommands...)
+
+	ctx := context.Background()
+
+	checker := authz.NewMockSubRepoPermissionChecker()
+	// Start disabled
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return false
+	})
+
+	dirnames := []string{"dir1/", "dir2/", "dir3/"}
+	children, err := ListDirectoryChildren(ctx, checker, repo, "HEAD", dirnames)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := map[string][]string{
+		"dir1/": {"dir1/sub1", "dir1/sub2"},
+		"dir2/": {"dir2/sub1", "dir2/sub2"},
+		"dir3/": {"dir3/sub1", "dir3/sub3"},
+	}
+	if diff := cmp.Diff(expected, children); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// With filtering
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		if strings.Contains(content.Path, "dir1/") {
+			return authz.Read, nil
+		}
+		return authz.None, nil
+	})
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 1,
+	})
+	children, err = ListDirectoryChildren(ctx, checker, repo, "HEAD", dirnames)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected = map[string][]string{
+		"dir1/": {"dir1/sub1", "dir1/sub2"},
+		"dir2/": nil,
+		"dir3/": nil,
+	}
+	if diff := cmp.Diff(expected, children); diff != "" {
+		t.Fatal(diff)
 	}
 }
