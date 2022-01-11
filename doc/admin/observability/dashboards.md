@@ -2896,9 +2896,9 @@ Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*
 
 <br />
 
-#### frontend: p90_successful_sentinel_duration_by_query_5m
+#### frontend: 90th_percentile_successful_sentinel_duration_by_query_5m
 
-<p class="subtitle">P90 successful sentinel search duration by query over 5m</p>
+<p class="subtitle">90th percentile sentinel search duration by query over 5m</p>
 
 - The 90th percentile search duration for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
@@ -2917,9 +2917,9 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bu
 
 <br />
 
-#### frontend: p90_sentinel_stream_latency_by_query_5m
+#### frontend: 90th_percentile_stream_latency_by_query_5m
 
-<p class="subtitle">P90 sentinel stream latency by query over 5m</p>
+<p class="subtitle">90th percentile stream latency by query over 5m</p>
 
 - The 90th percentile search latency for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
@@ -2938,9 +2938,9 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_b
 
 <br />
 
-#### frontend: p90_failed_duration_by_query_5m
+#### frontend: 90th_percentile_duration_by_query_5m
 
-<p class="subtitle">P90 failed sentinel search duration by query over 5m</p>
+<p class="subtitle">90th percentile sentinel search duration by query over 5m</p>
 
 - The 90th percentile search duration of _unsuccessful_ sentinel queries (by error or timeout), broken down by query. Useful for debugging how the performance of failed requests affect UX.
 

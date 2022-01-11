@@ -690,8 +690,8 @@ func Frontend() *monitoring.Container {
 					},
 					{
 						{
-							Name:        "p90_successful_sentinel_duration_by_query_5m",
-							Description: "p90 successful sentinel search duration by query over 5m",
+							Name:        "90th_percentile_successful_sentinel_duration_by_query_5m",
+							Description: "90th percentile sentinel search duration by query over 5m",
 							Query:       `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[5m])) by (le, source))`,
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
@@ -706,8 +706,8 @@ func Frontend() *monitoring.Container {
 							`,
 						},
 						{
-							Name:        "p90_sentinel_stream_latency_by_query_5m",
-							Description: "p90 sentinel stream latency by query over 5m",
+							Name:        "90th_percentile_stream_latency_by_query_5m",
+							Description: "90th percentile stream latency by query over 5m",
 							Query:       `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[5m])) by (le, source))`,
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
@@ -724,8 +724,8 @@ func Frontend() *monitoring.Container {
 					},
 					{
 						{
-							Name:        "p90_failed_duration_by_query_5m",
-							Description: "p90 failed sentinel search duration by query over 5m",
+							Name:        "90th_percentile_duration_by_query_5m",
+							Description: "90th percentile sentinel search duration by query over 5m",
 							Query:       "histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[5m])) by (le, source))",
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{source}}").Unit(monitoring.Seconds).With(
