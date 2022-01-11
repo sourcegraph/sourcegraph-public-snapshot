@@ -81,7 +81,7 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 {
   "url": "https://github.com",
   "githubAppInstallationID": "21994992",
-  "repos": []
+  "repositoryQuery": ["affiliated"]
 }
 `
 			assert.Equal(t, wantConfig, svc.Config)
@@ -106,7 +106,7 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 					Config: `
 {
   "url": "https://github.com",
-  "repos": []
+  "repositoryQuery": ["affiliated"]
 }
 `,
 				},
@@ -123,7 +123,9 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 			wantConfig := `
 {
   "url": "https://github.com",
-  "repos": [],
+  "repositoryQuery": [
+    "affiliated"
+  ],
   "githubAppInstallationID": "21994992"
 }
 `
