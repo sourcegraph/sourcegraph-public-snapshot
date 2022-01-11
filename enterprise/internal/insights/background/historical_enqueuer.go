@@ -390,7 +390,7 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 			plan := h.frameFilter.FilterFrames(ctx, frames, id)
 			if len(frames) != len(plan.Executions) {
 				h.statistics[seriesID].Compressed += 1
-				log15.Info("compressed frames", "repo_id", id, "series_id", series.SeriesID, "plan", plan)
+				log15.Debug("compressed frames", "repo_id", id, "series_id", series.SeriesID, "plan", plan)
 			} else {
 				h.statistics[seriesID].Uncompressed += 1
 			}
