@@ -1,0 +1,10 @@
+# Configuration file for https://buf.build/, which we use for Protobuf code generation.
+version: v1
+lint:
+  use:
+    - DEFAULT
+  except:
+    - PACKAGE_VERSION_SUFFIX
+breaking:
+  use:
+    - FILE

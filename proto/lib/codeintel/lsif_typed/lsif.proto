@@ -1,0 +1,162 @@
+// Protobuf schema for the new "LSIF typed" format. See RFC 519 for more details:
+// https://docs.google.com/document/d/1bfAZm4K2KUHCMoZiO4qFV7yZmK7wyYxI8MsEL-I6IJg/edit#heading=h.trqab8y0kufp
+
+// Install the `buf` command-line tool to re-generate the code for this file.
+// The commands to re-generate the code on macOS:
+//   brew tap bufbuild/buf && brew install buf
+//   go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+//   buf generate
+// See https://buf.build/ for more details.
+
+syntax = "proto3";
+
+package lib.codeintel.lsif_typed;
+
+option go_package = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed/";
+
+// Index represents an LSIF index. An index can be consumed in a streaming
+// fashion by consuming one value at a time. In Java, use `parseDelimetedFrom` to
+// consume the index in a streaming fashion. For other languages like Go, you
+// need to write custom logic that decodes one LSIF `Value` at a time.
+message Index {
+    // Metadata about this index.
+    Metadata metadata = 1;
+    // Documents that belong to this index or the packages that are defined by this index.
+    repeated Document document = 2;
+    // Packages that are either referenced from this index or the packages that are defined by this index.
+    repeated Package package = 3;
+    // Symbols that are defined outside of this index but are referenced from inside this index.
+    repeated Symbol external_symbols = 4;
+}
+
+message Metadata {
+  enum PositionEncoding {
+      POSITION_ENCODING_UNSPECIFIED = 0;
+      POSITION_ENCODING_UTF8 = 1;
+      POSITION_ENCODING_UTF16 = 2;
+  }
+  ToolInfo tool_info = 1;
+  // URI-encoded absolute path to the root directory of this index. All
+  // documents in this index must appear in a subdirectory of this root
+  // directory.
+  string project_root = 2;
+  PositionEncoding position_encoding = 3;
+}
+
+message ToolInfo {
+    string name = 1;
+    string version = 2;
+}
+
+// Document defines information about a particular source file.
+message Document {
+  // Relative path to the `Index.project_root` directory.
+  string relative_path = 1;
+  // Symbol occurrences that appear in this file.
+  repeated Occurrence occurrences = 2;
+  // Symbols that are defined within this document.
+  repeated Symbol symbols = 3;
+}
+
+// Package defines a publishable artifact such as an npm package, Docker
+// container, JVM dependency, or a Cargo crate.
+message Package {
+  // The unique identifier of this package that can be referenced from
+  // `Symbol.package_uri`.  This URI is not intended to be displayed to humans,
+  // but it's recommended to use a human-readable format to aid with debugging.
+  string uri = 1;
+  // Name of this package, for example "@types/react" or "com.google.guava:guava".
+  string name = 2;
+  // Version of this package, for example "0.1.0" or "2.1.5".
+  string version = 3;
+  // Package manager, for example "npm", "maven" or "cargo".
+  string manager = 4;
+}
+
+
+// Symbol defines a symbol, such as a function or an interface.
+message Symbol {
+  enum Unique {
+      UNIQUE_UNSPECIFIED = 0;
+      UNIQUE_DOCUMENT = 1;
+      UNIQUE_GLOBAL = 2;
+  }
+  // The identifier of this symbol, which can be referenced from
+  // Occurence. An empty uri means this symbol can be ignored.
+  string uri = 1;
+  // Determines whether this symbol is local to a single document or if can be
+  // referenced from multiple documents.
+  // Document symbols (`Document.symbols`) can be either local or global.
+  // External symbols (`Index.external_symbols`) must be global.
+  Unique unique = 2;
+  // (optional, but strongly recommended) The markdown-formatted documentation
+  // for this symbol. This field is repeated to allow different kinds of
+  // documentation.  For example, it's nice to include both the signature of a
+  // method (parameters and return type) along with the accompanying docstring.
+  repeated string documentation = 3;
+  // (optional) Links to the original package that defines this symbol to
+  // enable navigation across different LSIF indexes (whether they come from
+  // different projects or git repositories). This field must be non-empty for
+  // toplevel symbols (`Value.value`).
+  string package_uri = 4;
+  // (optional) Symbols that should be included together with this symbol when
+  // resolving "find references".  For example, the symbol of a TypeScript or
+  // Java method that implements an interface method should list the interface
+  // method here.
+  repeated string reference_symbols = 5;
+  // (optional) Symbols that are "implemented" by this symbol. For example,
+  // the symbol of a TypeScript or Java class that implements an interface
+  // should list the interface here.
+  repeated string implementation_symbols = 6;
+}
+
+// Occurrence associates a source position with a symbol and/or highlighting information.
+message Occurrence {
+  enum Role {
+    ROLE_UNSPECIFIED = 0;
+    ROLE_DEFINITION = 1;
+    ROLE_REFERENCE = 2;
+  }
+  enum Highlight {
+      HIGHLIGHT_UNSPECIFIED = 0;
+      HIGHLIGHT_STRING_LITERAL = 1;
+      HIGHLIGHT_NUMERIC_LITERAL = 2;
+      HIGHLIGHT_IDENTIFIER = 3;
+      HIGHLIGHT_METHOD_IDENTIFIER = 4;
+      HIGHLIGHT_TYPE_IDENTIFIER = 5;
+      HIGHLIGHT_TERM_IDENTIFIER = 6;
+      HIGHLIGHT_LOCAL_IDENTIFIER = 7;
+      HIGHLIGHT_SHADED_IDENTIFIER = 8;
+      HIGHLIGHT_PACKAGE_IDENTIFIER = 9;
+  }
+  // The source position of this occurrence. Must be exactly three or four elements:
+  //
+  // - Four elements: [startLine, startCharacter, endLine, endCharacter]
+  // - Three elements: [startLine, startCharacter, endCharacter] (endLine == startLine)
+  //
+  // Line numbers and characters are always 0-based. Make sure to increment the
+  // line/character values before displaying them in an editor-like UI because
+  // editors conventionally use 1-based numbers.
+  //
+  // Ranges appear frequently in real-world LSIF payloads, the `repeated int32`
+  // encoding was chosen over the LSP `Range(start:Position,end:Position)`
+  // encoding for performance reasons.  Benchmarks reveal that this change alone
+  // reduces the total payload size by ~2x in both compressed JSON or Protobuf
+  // encoding. This encoding is admittedly more embarrassing to work with in
+  // some programming languages but we hope the increased performance
+  // improvements make up for it.
+  repeated int32 range = 1;
+  // (optional) References the `Symbol.uri` field. Can be empty if this is only a
+  // highlighting occurrence.
+  string symbol_uri = 2;
+  // (optional) Is the symbol_uri defined or referenced at this occurrence?
+  Role symbol_role = 3;
+  // (optional) Markdown-formatted documentation for this specific range.  If
+  // empty, the `Symbol.documentation` field is used instead. One example
+  // where this field might be useful is when the symbol represents a generic
+  // function (with abstract type parameters such as `List<T>`) and at this
+  // occurrence we know the exact values (such as `List<String>`).
+  repeated string symbol_documentation = 4;
+  // (optional) What syntax highlighting class should be used for this range?
+  Highlight highlight = 5;
+}
