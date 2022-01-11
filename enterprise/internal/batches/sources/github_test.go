@@ -572,7 +572,7 @@ func TestGithubSource_GetUserFork(t *testing.T) {
 			},
 		} {
 			t.Run(name, func(t *testing.T) {
-				fork, err := githubGetUserFork(ctx, tc.targetRepo, tc.client)
+				fork, err := githubGetUserFork(ctx, tc.targetRepo, tc.client, nil)
 				assert.Nil(t, fork)
 				assert.NotNil(t, err)
 			})
@@ -580,32 +580,59 @@ func TestGithubSource_GetUserFork(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		want := &github.Repository{
-			NameWithOwner: "user/bar",
-		}
-		client := &mockGithubClientFork{fork: want}
+		org := "org"
+		remoteRepo := &github.Repository{NameWithOwner: "user/bar"}
 
-		targetRepo := &types.Repo{
-			Metadata: &github.Repository{
-				NameWithOwner: "foo/bar",
+		for name, tc := range map[string]struct {
+			targetRepo *types.Repo
+			namespace  *string
+			client     githubClientFork
+		}{
+			"no namespace": {
+				targetRepo: &types.Repo{
+					Metadata: &github.Repository{
+						NameWithOwner: "foo/bar",
+					},
+				},
+				namespace: nil,
+				client:    &mockGithubClientFork{fork: remoteRepo},
 			},
+			"with namespace": {
+				targetRepo: &types.Repo{
+					Metadata: &github.Repository{
+						NameWithOwner: "foo/bar",
+					},
+				},
+				namespace: &org,
+				client: &mockGithubClientFork{
+					fork:    remoteRepo,
+					wantOrg: &org,
+				},
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				fork, err := githubGetUserFork(ctx, tc.targetRepo, tc.client, tc.namespace)
+				assert.Nil(t, err)
+				assert.NotNil(t, fork)
+				assert.NotEqual(t, fork, tc.targetRepo)
+				assert.Equal(t, remoteRepo, fork.Metadata)
+			})
 		}
-
-		fork, err := githubGetUserFork(ctx, targetRepo, client)
-		assert.Nil(t, err)
-		assert.NotNil(t, fork)
-		assert.NotEqual(t, fork, targetRepo)
-		assert.Equal(t, want, fork.Metadata)
 	})
 }
 
 type mockGithubClientFork struct {
-	fork *github.Repository
-	err  error
+	wantOrg *string
+	fork    *github.Repository
+	err     error
 }
 
 var _ githubClientFork = &mockGithubClientFork{}
 
-func (mock *mockGithubClientFork) Fork(context.Context, string, string, *string) (*github.Repository, error) {
+func (mock *mockGithubClientFork) Fork(ctx context.Context, owner, repo string, org *string) (*github.Repository, error) {
+	if (mock.wantOrg == nil && org != nil) || (mock.wantOrg != nil && org == nil) || (mock.wantOrg != nil && org != nil && *mock.wantOrg != *org) {
+		return nil, errors.Newf("unexpected organisation: have=%v want=%v", org, mock.wantOrg)
+	}
+
 	return mock.fork, mock.err
 }
