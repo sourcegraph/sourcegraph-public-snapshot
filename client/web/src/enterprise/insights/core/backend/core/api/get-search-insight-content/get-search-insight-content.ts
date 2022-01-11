@@ -148,21 +148,23 @@ export async function getInsightContent(inputs: GetInsightContentInput): Promise
             dataKey: series.name,
             name: series.name,
             stroke: series.stroke,
-            linkURLs: dates.map(date => {
-                // Link to diff search that explains what new cases were added between two data points
-                const url = new URL('/search', window.location.origin)
-                // Use formatISO instead of toISOString(), because toISOString() always outputs UTC.
-                // They mark the same point in time, but using the user's timezone makes the date string
-                // easier to read (else the date component may be off by one day)
-                const after = formatISO(sub(date, step))
-                const before = formatISO(date)
-                const repoFilter = `repo:^(${repos.map(escapeRegExp).join('|')})$`
-                const diffQuery = `${repoFilter} type:diff after:${after} before:${before} ${series.query}`
+            linkURLs: Object.fromEntries(
+                dates.map(date => {
+                    // Link to diff search that explains what new cases were added between two data points
+                    const url = new URL('/search', window.location.origin)
+                    // Use formatISO instead of toISOString(), because toISOString() always outputs UTC.
+                    // They mark the same point in time, but using the user's timezone makes the date string
+                    // easier to read (else the date component may be off by one day)
+                    const after = formatISO(sub(date, step))
+                    const before = formatISO(date)
+                    const repoFilter = `repo:^(${repos.map(escapeRegExp).join('|')})$`
+                    const diffQuery = `${repoFilter} type:diff after:${after} before:${before} ${series.query}`
 
-                url.searchParams.set('q', diffQuery)
+                    url.searchParams.set('q', diffQuery)
 
-                return url.href
-            }),
+                    return [date, url.href]
+                })
+            ),
         })),
         xAxis: {
             dataKey: 'date' as const,
