@@ -78,7 +78,10 @@
     &:disabled {
         color: var(--list-group-disabled-color);
         pointer-events: none;
-        background-color: var(--white);
+
+        :global(.theme-light) & {
+            background-color: var(--list-group-disabled-bg);
+        }
     }
 
     // Include both here for `<a>`s and `<button>`s
