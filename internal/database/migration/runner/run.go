@@ -123,6 +123,10 @@ func (r *Runner) runSchemaUp(ctx context.Context, options Options, schemaContext
 func (r *Runner) runSchemaDown(ctx context.Context, options Options, schemaContext schemaContext) error {
 	log15.Info("Downgrading schema", "schema", schemaContext.schema.Name)
 
+	if options.TargetMigration == 0 {
+		options.TargetMigration = schemaContext.schemaVersion.version - 1
+	}
+
 	definitions, err := schemaContext.schema.Definitions.DownTo(schemaContext.schemaVersion.version, options.TargetMigration)
 	if err != nil {
 		return err
