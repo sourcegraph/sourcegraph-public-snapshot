@@ -369,6 +369,12 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 		c.ExternalServiceType = extsvc.TypeGitHub
 		c.ExternalBranch = git.EnsureRefPrefix(pr.HeadRefName)
 		c.ExternalUpdatedAt = pr.UpdatedAt
+
+		if pr.BaseRepository.ID != pr.HeadRepository.ID {
+			c.ExternalForkNamespace = pr.HeadRepository.Owner.Login
+		} else {
+			c.ExternalForkNamespace = ""
+		}
 	case *bitbucketserver.PullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
