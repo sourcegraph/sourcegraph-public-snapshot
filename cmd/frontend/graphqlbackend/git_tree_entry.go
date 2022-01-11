@@ -84,7 +84,8 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 			r.commit.repoResolver.RepoName(),
 			api.CommitID(r.commit.OID()),
 			r.Path(),
-			0, authz.DefaultSubRepoPermsChecker,
+			0,
+			authz.DefaultSubRepoPermsChecker,
 		)
 	})
 
