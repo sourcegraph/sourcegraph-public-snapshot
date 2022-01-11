@@ -37,7 +37,8 @@ function go_test() {
   local quoted_xml
   quoted_xml="$(echo "$xml" | jq -R -s '.')"
 
-  local data=$(
+  local data
+  data=$(
     cat <<EOF
 {
   "format": "junit",
