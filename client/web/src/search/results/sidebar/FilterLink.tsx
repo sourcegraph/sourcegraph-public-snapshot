@@ -7,6 +7,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { Button } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from '../../../components/SyntaxHighlightedSearchQuery'
 import { Settings } from '../../../schema/settings.schema'
@@ -31,12 +32,12 @@ export const FilterLink: React.FunctionComponent<FilterLinkProps> = ({
     labelConverter = label => (label === value ? <SyntaxHighlightedSearchQuery query={label} /> : label),
     onFilterChosen,
 }) => (
-    <button
-        type="button"
-        className={classNames('btn btn-link', styles.sidebarSectionListItem)}
+    <Button
+        className={styles.sidebarSectionListItem}
         onClick={() => onFilterChosen(value)}
         data-testid="filter-link"
         value={value}
+        variant="link"
     >
         <span className="flex-grow-1">{labelConverter(label)}</span>
         {count && (
@@ -48,7 +49,7 @@ export const FilterLink: React.FunctionComponent<FilterLinkProps> = ({
                 {limitHit ? '+' : ''}
             </span>
         )}
-    </button>
+    </Button>
 )
 
 export const getRepoFilterLinks = (

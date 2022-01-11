@@ -25,6 +25,7 @@ jobs:
           - client/wildcard
           - client/common
           - client/codeintellify
+          - client/template-parser
     steps:
       # Setup
       - name: Checkout

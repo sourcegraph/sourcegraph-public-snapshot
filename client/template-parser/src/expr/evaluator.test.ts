@@ -1,4 +1,4 @@
-import { Context } from '../context'
+import { Context } from '../types'
 
 import { parse, parseTemplate } from './evaluator'
 

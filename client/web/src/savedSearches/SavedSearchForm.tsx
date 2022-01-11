@@ -5,7 +5,7 @@ import { Omit } from 'utility-types'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { Container, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Container, PageHeader, ProductStatusBadge, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
@@ -192,13 +192,14 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                         </div>
                     )}
                 </Container>
-                <button
+                <Button
                     type="submit"
                     disabled={props.loading}
-                    className={classNames(styles.submitButton, 'btn btn-primary test-saved-search-form-submit-button')}
+                    className={classNames(styles.submitButton, 'test-saved-search-form-submit-button')}
+                    variant="primary"
                 >
                     {props.submitLabel}
-                </button>
+                </Button>
 
                 {props.error && !props.loading && <ErrorAlert className="mb-3" error={props.error} />}
 

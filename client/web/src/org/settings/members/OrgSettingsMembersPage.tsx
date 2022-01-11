@@ -9,7 +9,7 @@ import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, ta
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { queryGraphQL } from '../../../backend/graphql'
@@ -126,14 +126,15 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                     </div>
                     <div className="site-admin-detail-list__actions">
                         {this.props.authenticatedUser && this.props.org.viewerCanAdminister && (
-                            <button
-                                type="button"
-                                className="btn btn-secondary btn-sm site-admin-detail-list__action test-remove-org-member"
+                            <Button
+                                className="site-admin-detail-list__action test-remove-org-member"
                                 onClick={this.remove}
                                 disabled={loading}
+                                variant="secondary"
+                                size="sm"
                             >
                                 {this.isSelf ? 'Leave organization' : 'Remove from organization'}
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </div>
