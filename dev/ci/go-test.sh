@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/../../"
 
 function usage {
   cat <<EOF
@@ -11,7 +10,6 @@ Run go tests, optionally restricting which ones based on the only and exclude co
 
 EOF
 }
-
 
 function go_test() {
   local test_packages
@@ -57,16 +55,12 @@ function go_test() {
 EOF
   )
 
-  function upload_analytics() {
-    echo "$data" | curl \
-      --request POST \
-      --url https://analytics-api.buildkite.com/v1/uploads \
-      --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY\";" \
-      --header 'Content-Type: application/json' \
-      --data-binary @-
-  }
-
-  ./dev/ci/sentry-capture.sh upload_analytics
+  echo "$data" | curl \
+    --request POST \
+    --url https://analytics-api.buildkite.com/v1/uploads \
+    --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY\";" \
+    --header 'Content-Type: application/json' \
+    --data-binary @-
 }
 
 if [ "$1" == "-h" ]; then
