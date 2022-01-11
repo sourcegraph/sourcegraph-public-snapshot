@@ -2,12 +2,13 @@ import classNames from 'classnames'
 import React, { FunctionComponent, useState, useEffect, useCallback, useRef } from 'react'
 import { useLocation, useHistory } from 'react-router'
 
+import { ErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
+import { PageRoutes } from '@sourcegraph/web/src/routes.constants'
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
@@ -134,14 +135,14 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
             <div className={classNames(signInSignUpCommonStyles.signinSignupPage, styles.postSignupPage)}>
                 <PageTitle title="Welcome" />
                 <HeroPage
-                    lessPadding={true}
+                    lessPadding={false}
                     className="text-left"
                     body={
                         <div className={classNames('pb-1', styles.container)}>
                             {hasErrors && (
                                 <div className="alert alert-danger mb-4" role="alert">
                                     Sorry, something went wrong. Try refreshing the page or{' '}
-                                    <Link to="/search">skip to code search</Link>.
+                                    <Link to={PageRoutes.Search}>skip to code search</Link>.
                                 </div>
                             )}
                             <h2>Get started with Sourcegraph</h2>

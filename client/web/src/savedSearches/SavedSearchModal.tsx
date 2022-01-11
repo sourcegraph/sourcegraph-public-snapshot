@@ -4,13 +4,14 @@ import * as H from 'history'
 import * as React from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { PatternTypeProps } from '../search'
+import { SearchPatternTypeProps } from '../search'
 
 import styles from './SavedSearchModal.module.scss'
 
-interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
+interface Props extends SearchPatternTypeProps {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
@@ -89,13 +90,14 @@ export class SavedSearchModal extends React.Component<Props, State> {
                                     </select>
                                 )}
                         </div>
-                        <button
+                        <Button
                             type="submit"
                             disabled={this.state.saveLocation === UserOrOrg.Org && !this.state.organization}
-                            className={classNames(styles.button, 'btn btn-primary test-saved-search-modal-save-button')}
+                            className={classNames(styles.button, 'test-saved-search-modal-save-button')}
+                            variant="primary"
                         >
                             Save query
-                        </button>
+                        </Button>
                     </Form>
                 </Dialog>
             )

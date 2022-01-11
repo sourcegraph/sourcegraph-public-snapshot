@@ -3,7 +3,7 @@ import * as React from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import sinon from 'sinon'
 
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/common'
 
 import { FORM_ERROR } from '../../../../../../components/form/hooks/useForm'
 import {

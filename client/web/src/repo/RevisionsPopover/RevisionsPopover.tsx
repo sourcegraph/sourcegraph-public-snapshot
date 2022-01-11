@@ -5,6 +5,7 @@ import React, { useCallback, useEffect } from 'react'
 
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
+import { Button } from '@sourcegraph/wildcard'
 
 import { GitCommitAncestorFields, GitRefFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -90,14 +91,13 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                         </Tab>
                     ))}
                 </TabList>
-                <button
+                <Button
                     onClick={props.togglePopover}
-                    type="button"
-                    className={classNames('btn btn-icon', styles.tabsClose)}
+                    className={classNames('btn-icon', styles.tabsClose)}
                     aria-label="Close"
                 >
                     <CloseIcon className="icon-inline" />
-                </button>
+                </Button>
             </div>
             <TabPanels>
                 {TABS.map(tab => (

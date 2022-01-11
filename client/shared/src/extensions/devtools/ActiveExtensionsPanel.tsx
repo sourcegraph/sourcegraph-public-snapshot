@@ -2,11 +2,11 @@ import React, { useCallback, useMemo } from 'react'
 import { from } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { asError, isErrorLike } from '@sourcegraph/common'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../../api/client/api/common'
 import { Link } from '../../components/Link'
-import { asError, isErrorLike } from '../../util/errors'
 import { useObservable } from '../../util/useObservable'
 
 import { ExtensionsDevelopmentToolsProps } from '.'
@@ -58,7 +58,7 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
                 )
             ) : (
                 <span className="card-body">
-                    <LoadingSpinner className="icon-inline" /> Loading extensions...
+                    <LoadingSpinner /> Loading extensions...
                 </span>
             )}
             <div className="card-body border-top">
@@ -70,20 +70,12 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
                             <Link to={sideloadedExtensionURL}>{sideloadedExtensionURL}</Link>
                         </p>
                         <div>
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-primary mr-1"
-                                onClick={setSideloadedExtensionURL}
-                            >
+                            <Button className="mr-1" onClick={setSideloadedExtensionURL} variant="primary" size="sm">
                                 Change
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-danger"
-                                onClick={clearSideloadedExtensionURL}
-                            >
+                            </Button>
+                            <Button onClick={clearSideloadedExtensionURL} variant="danger" size="sm">
                                 Clear
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 ) : (
@@ -92,13 +84,9 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
                             <span>No sideloaded extension</span>
                         </p>
                         <div>
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-primary"
-                                onClick={setSideloadedExtensionURL}
-                            >
+                            <Button onClick={setSideloadedExtensionURL} variant="primary" size="sm">
                                 Load extension
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 )}

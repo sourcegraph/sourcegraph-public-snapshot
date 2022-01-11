@@ -149,7 +149,7 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 				return
 			}
 
-			user, err := database.Users(db).GetByID(r.Context(), actor.UID)
+			user, err := db.Users().GetByID(r.Context(), actor.UID)
 			if err != nil {
 				log15.Error("Error retrieving SAML-authenticated user from database.", "error", err)
 				http.Error(w, "Failed to retrieve user: "+err.Error(), http.StatusInternalServerError)

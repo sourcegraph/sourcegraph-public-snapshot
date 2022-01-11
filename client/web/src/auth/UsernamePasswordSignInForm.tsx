@@ -4,8 +4,8 @@ import React, { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { asError } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/common'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
@@ -135,9 +135,9 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                         'mb-0': noThirdPartyProviders,
                     })}
                 >
-                    <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
-                        {loading ? <LoadingSpinner className="icon-inline" /> : 'Sign in'}
-                    </button>
+                    <Button className="btn-block" type="submit" disabled={loading} variant="primary">
+                        {loading ? <LoadingSpinner /> : 'Sign in'}
+                    </Button>
                 </div>
             </Form>
         </>

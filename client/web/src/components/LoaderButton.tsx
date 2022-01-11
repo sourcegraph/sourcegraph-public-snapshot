@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 interface Props extends React.DetailedHTMLProps<React.ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement> {
     loading: boolean
@@ -23,7 +23,7 @@ export const LoaderButton: React.FunctionComponent<Partial<Props>> = ({
     >
         {loading ? (
             <>
-                <LoadingSpinner className="icon-inline" />
+                <LoadingSpinner />
                 {alwaysShowLabel && <span className="ml-1">{label}</span>}
             </>
         ) : (

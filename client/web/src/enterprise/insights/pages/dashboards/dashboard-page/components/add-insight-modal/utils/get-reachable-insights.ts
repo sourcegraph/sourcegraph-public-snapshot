@@ -1,6 +1,5 @@
+import { isErrorLike, isDefined } from '@sourcegraph/common'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { Settings } from '../../../../../../../../schema/settings.schema'
 import { ReachableInsight } from '../../../../../../core/backend/code-insights-backend-types'

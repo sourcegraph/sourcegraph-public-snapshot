@@ -3,8 +3,9 @@ import RefreshIcon from 'mdi-react/RefreshIcon'
 import React, { PropsWithChildren, ReactElement, ReactNode } from 'react'
 import { ChartContent } from 'sourcegraph'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Button } from '@sourcegraph/wildcard'
 
 import { LineChartLayoutOrientation, LineChartSettingsContext, ChartViewContentLayout } from '../../../../../views'
 import * as View from '../../../../../views'
@@ -45,9 +46,9 @@ export function LivePreviewContainer(props: PropsWithChildren<LivePreviewContain
         <aside className={classNames(styles.livePreview, className)}>
             <div className="d-flex align-items-center mb-1">
                 Live preview
-                <button type="button" disabled={disabled} className="btn btn-icon ml-1" onClick={onUpdateClick}>
+                <Button disabled={disabled} className="btn-icon ml-1" onClick={onUpdateClick}>
                     <RefreshIcon size="1rem" />
-                </button>
+                </Button>
             </div>
 
             <View.Root className={classNames(chartContentClassName, 'flex-grow-1')}>

@@ -7,10 +7,11 @@ import { merge, of, Observable } from 'rxjs'
 import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
@@ -89,13 +90,14 @@ const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscription
                     </div>
                     <div>
                         <Form onSubmit={onSubmit}>
-                            <button
+                            <Button
                                 type="submit"
-                                className="btn btn-sm btn-secondary"
                                 disabled={createdSubscription === 'saving'}
+                                variant="secondary"
+                                size="sm"
                             >
                                 <AddIcon className="icon-inline" /> Create new subscription
-                            </button>
+                            </Button>
                         </Form>
                     </div>
                 </div>

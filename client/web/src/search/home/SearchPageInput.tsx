@@ -10,12 +10,17 @@ import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/s
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { PatternTypeProps, ParsedSearchQueryProps, SearchContextInputProps, CaseSensitivityProps } from '..'
+import { ParsedSearchQueryProps, SearchContextInputProps, CaseSensitivityProps, SearchPatternTypeProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
-import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
+import {
+    useExperimentalFeatures,
+    useNavbarQueryState,
+    setSearchCaseSensitivity,
+    setSearchPatternType,
+} from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { canSubmitSearch, submitSearch, SubmitSearchParameters } from '../helpers'
 import { SearchBox } from '../input/SearchBox'
@@ -29,7 +34,6 @@ interface Props
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
-        PatternTypeProps,
         KeyboardShortcutsProps,
         TelemetryProps,
         ParsedSearchQueryProps,
@@ -49,9 +53,11 @@ interface Props
     autoFocus?: boolean
 }
 
-const queryStateSelector = (state: NavbarQueryState): CaseSensitivityProps => ({
+const queryStateSelector = (
+    state: NavbarQueryState
+): Pick<CaseSensitivityProps, 'caseSensitive'> & SearchPatternTypeProps => ({
     caseSensitive: state.searchCaseSensitivity,
-    setCaseSensitivity: state.setSearchCaseSensitivity,
+    patternType: state.searchPatternType,
 })
 
 export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) => {
@@ -59,7 +65,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     const [userQueryState, setUserQueryState] = useState({
         query: props.queryPrefix ? props.queryPrefix : '',
     })
-    const { caseSensitive, setCaseSensitivity } = useNavbarQueryState(queryStateSelector, shallow)
+    const { caseSensitive, patternType } = useNavbarQueryState(queryStateSelector, shallow)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const showSearchContextManagement = useExperimentalFeatures(
         features => features.showSearchContextManagement ?? false
@@ -100,7 +106,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     source: 'home',
                     query,
                     history: props.history,
-                    patternType: props.patternType,
+                    patternType,
                     caseSensitive,
                     activation: props.activation,
                     selectedSearchContextSpec: props.selectedSearchContextSpec,
@@ -110,7 +116,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
         },
         [
             props.history,
-            props.patternType,
+            patternType,
             caseSensitive,
             props.activation,
             props.selectedSearchContextSpec,
@@ -140,7 +146,9 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         showSearchContext={showSearchContext}
                         showSearchContextManagement={showSearchContextManagement}
                         caseSensitive={caseSensitive}
-                        setCaseSensitivity={setCaseSensitivity}
+                        patternType={patternType}
+                        setPatternType={setSearchPatternType}
+                        setCaseSensitivity={setSearchCaseSensitivity}
                         submitSearchOnToggle={submitSearchOnChange}
                         queryState={userQueryState}
                         onChange={setUserQueryState}

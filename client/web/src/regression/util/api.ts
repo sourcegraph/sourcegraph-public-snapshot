@@ -5,6 +5,7 @@
 import { zip, timer, concat, throwError, defer, Observable } from 'rxjs'
 import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
 
+import { isErrorLike, createAggregateError } from '@sourcegraph/common'
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
@@ -19,7 +20,6 @@ import {
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { Config } from '@sourcegraph/shared/src/testing/config'
-import { isErrorLike, createAggregateError } from '@sourcegraph/shared/src/util/errors'
 
 import { GraphQLClient } from './GraphQlClient'
 import { ResourceDestructor } from './TestResourceManager'
@@ -371,6 +371,21 @@ export async function setUserSiteAdmin(gqlClient: GraphQLClient, userID: GQL.ID,
                 }
             `,
             { userID, siteAdmin }
+        )
+        .toPromise()
+}
+
+export async function setTosAccepted(gqlClient: GraphQLClient, userID: GQL.ID): Promise<void> {
+    await gqlClient
+        .mutateGraphQL(
+            gql`
+                mutation SetTosAccepted($userID: ID!) {
+                    setTosAccepted(userID: $userID) {
+                        alwaysNil
+                    }
+                }
+            `,
+            { userID }
         )
         .toPromise()
 }

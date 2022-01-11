@@ -65,8 +65,9 @@ func (s *Server) gitServiceHandler() *gitservice.Handler {
 			start := time.Now()
 			metricServiceRunning.WithLabelValues(svc).Inc()
 			return func(err error) {
+				errLabel := strconv.FormatBool(err != nil)
 				metricServiceRunning.WithLabelValues(svc).Dec()
-				metricServiceDuration.WithLabelValues(svc).Observe(time.Since(start).Seconds())
+				metricServiceDuration.WithLabelValues(svc, errLabel).Observe(time.Since(start).Seconds())
 
 				if err != nil {
 					log15.Error("gitservice.ServeHTTP", "svc", svc, "repo", repo, "protocol", protocol, "duration", time.Since(start), "error", err.Error())
@@ -82,8 +83,9 @@ var (
 	metricServiceDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_gitserver_gitservice_duration_seconds",
 		Help:    "A histogram of latencies for the git service (upload-pack for internal clones) endpoint.",
-		Buckets: prometheus.ExponentialBuckets(.1, 5, 5), // 100ms -> 62s
-	}, []string{"type"})
+		Buckets: prometheus.ExponentialBuckets(.1, 4, 9),
+		// [0.1 0.4 1.6 6.4 25.6 102.4 409.6 1638.4 6553.6]
+	}, []string{"type", "error"})
 
 	metricServiceRunning = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "src_gitserver_gitservice_running",

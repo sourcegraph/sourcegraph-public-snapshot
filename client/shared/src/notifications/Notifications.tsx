@@ -3,10 +3,11 @@ import * as React from 'react'
 import { from, merge, Subscription } from 'rxjs'
 import { delay, map, mergeMap, switchMap, takeWhile } from 'rxjs/operators'
 
+import { asError } from '@sourcegraph/common'
+
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { NotificationType } from '../api/extension/extensionHostApi'
 import { ExtensionsControllerProps } from '../extensions/controller'
-import { asError } from '../util/errors'
 
 import { Notification } from './notification'
 import { NotificationItem, NotificationClassNameProps } from './NotificationItem'

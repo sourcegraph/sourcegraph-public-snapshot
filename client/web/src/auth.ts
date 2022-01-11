@@ -48,6 +48,7 @@ export function refreshAuthenticatedUser(): Observable<never> {
                 }
                 viewerCanAdminister
                 tags
+                tosAccepted
             }
         }
     `).pipe(

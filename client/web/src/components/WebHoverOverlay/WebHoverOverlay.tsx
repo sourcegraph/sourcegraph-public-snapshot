@@ -3,10 +3,10 @@ import React, { useCallback, useEffect } from 'react'
 import { fromEvent } from 'rxjs'
 import { finalize, tap } from 'rxjs/operators'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { HoverThresholdProps } from '../../repo/RepoContainer'

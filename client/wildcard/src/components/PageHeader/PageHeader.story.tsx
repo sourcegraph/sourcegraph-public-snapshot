@@ -6,8 +6,9 @@ import React from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { FeedbackBadge } from '@sourcegraph/web/src/components/FeedbackBadge'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
+
+import { FeedbackBadge } from '../Feedback'
 
 import { PageHeader } from './PageHeader'
 

@@ -82,7 +82,12 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                     <span
                       class="search-filter-keyword"
                     >
-                      r:
+                      r
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
                     </span>
                     sourcegraph
                   </span>
@@ -199,7 +204,12 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                     <span
                       class="search-filter-keyword"
                     >
-                      r:
+                      r
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
                     </span>
                     sourcegraph
                   </span>
@@ -316,7 +326,12 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                     <span
                       class="search-filter-keyword"
                     >
-                      r:
+                      r
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
                     </span>
                     sourcegraph
                   </span>
@@ -423,7 +438,12 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
                     <span
                       class="search-filter-keyword"
                     >
-                      r:
+                      r
+                    </span>
+                    <span
+                      class="search-filter-separator"
+                    >
+                      :
                     </span>
                     sourcegraph
                   </span>
