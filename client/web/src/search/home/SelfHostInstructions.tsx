@@ -61,7 +61,7 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
 
             <div className={styles.column}>
                 <div>
-                    <strong>Quickstart:</strong> launch Sourcegraph at http://localhost:3370
+                    <strong>Quickstart:</strong> launch Sourcegraph at http://localhost:7080
                 </div>
                 <MarketingBlock wrapperClassName={styles.codeWrapper} contentClassName={styles.codeContent}>
                     <Button
