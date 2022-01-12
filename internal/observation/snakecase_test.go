@@ -31,6 +31,7 @@ var cases = []struct {
 	{"CodeInsights.HistoricalEnqueuer", "code_insights.historical_enqueuer"},
 	{"codeintel.autoindex-enqueuer", "codeintel.autoindex_enqueuer"},
 	{"diskcache.Cached Fetch", "diskcache.cached_fetch"},
+	{"uploadIDsWithReferences", "upload_ids_with_references"},
 }
 
 func TestToSnakeCase(t *testing.T) {

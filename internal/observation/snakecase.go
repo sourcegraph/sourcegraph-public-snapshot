@@ -41,7 +41,8 @@ func toSnakeCase(s string) string {
 		if i < len(s)-1 {
 			next := s[i+1]
 			if next >= 'a' && next <= 'z' {
-				if last != '.' && last != '_' && last != '-' {
+				if (last != '.' && last != '_' && last != '-') &&
+					(last != 'I' || cur != 'D' || next != 's') { // special case "...IDs..."
 					dist.WriteByte('_')
 				}
 				dist.WriteByte(cur + 32)
