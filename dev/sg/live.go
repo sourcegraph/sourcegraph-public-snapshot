@@ -74,7 +74,7 @@ func printDeployedVersion(e environment) error {
 	}
 
 	buildDate := elems[1]
-	buildSha := elems[2]
+	buildSha := elems[2][0:7]
 
 	pending = stdout.Out.Pending(output.Line("", output.StylePending, "Running 'git fetch' to update list of commits..."))
 	_, err = run.GitCmd("fetch", "-q")
@@ -110,6 +110,7 @@ func printDeployedVersion(e environment) error {
 
 		var emoji = "  "
 		var style = output.StylePending
+
 		if sha[0:len(buildSha)] == buildSha {
 			emoji = "🚀"
 			style = output.StyleLogo
