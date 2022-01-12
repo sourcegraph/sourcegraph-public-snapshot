@@ -162,7 +162,7 @@ export async function getInsightContent(inputs: GetInsightContentInput): Promise
 
                     url.searchParams.set('q', diffQuery)
 
-                    return [date, url.href]
+                    return [date.getTime(), url.href]
                 })
             ),
         })),
