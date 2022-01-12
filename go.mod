@@ -46,7 +46,6 @@ require (
 	github.com/felixge/fgprof v0.9.2
 	github.com/felixge/httpsnoop v1.0.2
 	github.com/fsnotify/fsnotify v1.5.1
-	github.com/garyburd/redigo v1.6.3
 	github.com/gen2brain/beeep v0.0.0-20210529141713-5586760f0cc1
 	github.com/getsentry/raven-go v0.2.0
 	github.com/ghodss/yaml v1.0.0
