@@ -142,8 +142,8 @@ export const SidebarAuthCheck: React.FunctionComponent<SidebarAuthCheckProps> = 
                                 onClick={() => setHasAccount(true)}
                             >
                                 <span className={classNames('my-3', styles.text)}>
-                                    ERROR: Unable to verify your Access Token for {instanceHostname}. Please try with a
-                                    new Access Token and add CORS if you are currently on VS Code Web.
+                                    ERROR: Unable to verify your Access Token for {instanceHostname}. Please try again
+                                    with a new Access Token.
                                 </span>
                             </a>
                             <input

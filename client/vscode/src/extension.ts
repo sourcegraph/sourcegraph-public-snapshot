@@ -71,6 +71,15 @@ export function activate(context: vscode.ExtensionContext): void {
                 // Close all search tabs!
             }
         }
+        // Reload VS Code with new settings
+        if (event.affectsConfiguration('sourcegraph.url') || event.affectsConfiguration('sourcegraph.accessToken')) {
+            vscode.commands.executeCommand('workbench.action.reloadWindow').then(
+                () => {},
+                error => {
+                    console.error(error)
+                }
+            )
+        }
     })
 
     // Register file-system related functionality.
@@ -92,39 +101,6 @@ export function activate(context: vscode.ExtensionContext): void {
     files.didFocus(vscode.window.activeTextEditor?.document.uri).then(
         () => {},
         () => {}
-    )
-
-    // Open remote Sourcegraph file from remote file tree
-    context.subscriptions.push(
-        vscode.commands.registerCommand('extension.openFile', async uri => {
-            if (typeof uri === 'string') {
-                await openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri))
-            } else {
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                log.error(`extension.openRemoteFile(${uri}) argument is not a string`)
-            }
-        })
-    )
-
-    // Open local file or remote Sourcegraph file in browser
-    context.subscriptions.push(
-        vscode.commands.registerCommand('sourcegraph.openInBrowser', async () => {
-            await inBrowserActions('open')
-        })
-    )
-
-    // Copy Sourcegraph link to file
-    context.subscriptions.push(
-        vscode.commands.registerCommand('sourcegraph.copyFileLink', async () => {
-            await inBrowserActions('copy')
-        })
-    )
-
-    // Search Selected on Sourcegraph
-    context.subscriptions.push(
-        vscode.commands.registerCommand('sourcegraph.searchOnSourcegraph', async () => {
-            await searchSelection()
-        })
     )
 
     const sourcegraphSettings = initializeSourcegraphSettings(context.subscriptions)
@@ -192,43 +168,13 @@ export function activate(context: vscode.ExtensionContext): void {
                 webviewPanel.onDidDispose(() => {
                     sourcegraphVSCodeSearchWebviewAPI[releaseProxy]()
                     currentActiveWebviewPanel = undefined
+                    vscode.commands.executeCommand('workbench.action.closeSidebar').then(
+                        () => {},
+                        error => {
+                            console.error(error)
+                        }
+                    )
                 })
-            }
-        })
-    )
-
-    // Search Selected Text in Sourcegraph VSCE
-    context.subscriptions.push(
-        vscode.commands.registerCommand('sourcegraph.searchInSourcegraph', async () => {
-            const editor = vscode.window.activeTextEditor
-            if (!editor) {
-                throw new Error('No active editor')
-            }
-            const selectedQuery = editor.document.getText(editor.selection)
-            if (selectedQuery && currentActiveWebviewPanel) {
-                currentActiveWebviewPanel.reveal()
-
-                await searchSidebarMediator.submitActiveWebviewSearch({ query: selectedQuery })
-            }
-
-            if (selectedQuery && !currentActiveWebviewPanel) {
-                sourcegraphSettings.refreshSettings()
-
-                const { sourcegraphVSCodeSearchWebviewAPI, webviewPanel } = await initializeSearchPanelWebview({
-                    extensionUri: context.extensionUri,
-                    sourcegraphVSCodeExtensionAPI,
-                    initializedPanelIDs,
-                })
-
-                currentActiveWebviewPanel = webviewPanel
-
-                searchSidebarMediator.addSearchWebviewPanel(webviewPanel, sourcegraphVSCodeSearchWebviewAPI)
-
-                webviewPanel.onDidDispose(() => {
-                    sourcegraphVSCodeSearchWebviewAPI[releaseProxy]()
-                    currentActiveWebviewPanel = undefined
-                })
-                await searchSidebarMediator.submitActiveWebviewSearch({ query: selectedQuery })
             }
         })
     )
@@ -251,20 +197,30 @@ export function activate(context: vscode.ExtensionContext): void {
                         sourcegraphVSCodeExtensionAPI,
                         webviewView,
                     })
+                    // Bring search panel back if it was previously closed on sidebar visibility change
+                    webviewView.onDidChangeVisibility(() => {
+                        if (webviewView.visible) {
+                            vscode.commands.executeCommand('sourcegraph.search').then(
+                                () => {},
+                                error => {
+                                    console.error(error)
+                                }
+                            )
+                        }
+                    })
                     webviewView.onDidDispose(() => {
                         sourcegraphVSCodeSearchSidebarAPI[releaseProxy]()
+                        vscode.commands.executeCommand('workbench.action.closeSidebar').then(
+                            () => {},
+                            error => {
+                                console.error(error)
+                            }
+                        )
                     })
                 },
             },
             { webviewOptions: { retainContextWhenHidden: true } }
         )
-    )
-    // Bring search panel into view.
-    vscode.commands.executeCommand('sourcegraph.search').then(
-        () => {},
-        error => {
-            console.error(error)
-        }
     )
 
     context.subscriptions.push(
@@ -341,5 +297,76 @@ export function activate(context: vscode.ExtensionContext): void {
                 },
             }
         )
+    )
+
+    // Commands
+
+    // Open remote Sourcegraph file from remote file tree
+    context.subscriptions.push(
+        vscode.commands.registerCommand('extension.openFile', async uri => {
+            if (typeof uri === 'string') {
+                await openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri))
+            } else {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                log.error(`extension.openRemoteFile(${uri}) argument is not a string`)
+            }
+        })
+    )
+
+    // Open local file or remote Sourcegraph file in browser
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.openInBrowser', async () => {
+            await inBrowserActions('open')
+        })
+    )
+
+    // Copy Sourcegraph link to file
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.copyFileLink', async () => {
+            await inBrowserActions('copy')
+        })
+    )
+
+    // Search Selected on Sourcegraph
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.searchOnSourcegraph', async () => {
+            await searchSelection()
+        })
+    )
+
+    // Search Selected Text in Sourcegraph VSCE
+    context.subscriptions.push(
+        vscode.commands.registerCommand('sourcegraph.searchInSourcegraph', async () => {
+            const editor = vscode.window.activeTextEditor
+            if (!editor) {
+                throw new Error('No active editor')
+            }
+            const selectedQuery = editor.document.getText(editor.selection)
+            if (selectedQuery && currentActiveWebviewPanel) {
+                currentActiveWebviewPanel.reveal()
+
+                await searchSidebarMediator.submitActiveWebviewSearch({ query: selectedQuery })
+            }
+
+            if (selectedQuery && !currentActiveWebviewPanel) {
+                sourcegraphSettings.refreshSettings()
+
+                const { sourcegraphVSCodeSearchWebviewAPI, webviewPanel } = await initializeSearchPanelWebview({
+                    extensionUri: context.extensionUri,
+                    sourcegraphVSCodeExtensionAPI,
+                    initializedPanelIDs,
+                })
+
+                currentActiveWebviewPanel = webviewPanel
+
+                searchSidebarMediator.addSearchWebviewPanel(webviewPanel, sourcegraphVSCodeSearchWebviewAPI)
+
+                webviewPanel.onDidDispose(() => {
+                    sourcegraphVSCodeSearchWebviewAPI[releaseProxy]()
+                    currentActiveWebviewPanel = undefined
+                })
+                await searchSidebarMediator.submitActiveWebviewSearch({ query: selectedQuery })
+            }
+        })
     )
 }

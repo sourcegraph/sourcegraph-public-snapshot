@@ -45,6 +45,13 @@ export function createSearchSidebarMediator(disposables: vscode.Disposable[]): S
                     console.error(error)
                 }
             )
+        } else {
+            vscode.commands.executeCommand('sourcegraph.search').then(
+                () => {},
+                error => {
+                    console.error(error)
+                }
+            )
         }
     })
 

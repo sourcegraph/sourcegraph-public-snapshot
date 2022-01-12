@@ -26,7 +26,8 @@
     "onCommand:sourcegraph.searchInSourcegraph",
     "onCommand:extension.openFile",
     "onView:sourcegraph.extensionHost",
-    "onView:sourcegraph.searchSidebar"
+    "onView:sourcegraph.searchSidebar",
+    "onWebviewPanel:sourcegraphSearch"
   ],
   "main": "./dist/node/extension.js",
   "browser": "./dist/webworker/extension.js",
@@ -81,12 +82,14 @@
         },
         {
           "id": "sourcegraph.files",
-          "name": "Files"
+          "name": "Files",
+          "visibility": "collapsed"
         },
         {
           "type": "webview",
           "id": "sourcegraph.extensionHost",
-          "name": "Sourcegraph Extensions"
+          "name": "Sourcegraph Extensions",
+          "visibility": "hidden"
         }
       ]
     },
@@ -142,11 +145,13 @@
         },
         {
           "command": "sourcegraph.searchOnSourcegraph",
-          "group": "sourcegraph"
+          "group": "sourcegraph",
+          "when": "editorHasSelection"
         },
         {
           "command": "sourcegraph.searchInSourcegraph",
-          "group": "sourcegraph"
+          "group": "sourcegraph",
+          "when": "editorHasSelection"
         }
       ]
     }

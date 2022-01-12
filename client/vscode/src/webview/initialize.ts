@@ -28,10 +28,10 @@ export async function initializeSearchPanelWebview({
     sourcegraphVSCodeSearchWebviewAPI: Comlink.Remote<SourcegraphVSCodeSearchWebviewAPI>
     webviewPanel: vscode.WebviewPanel
 }> {
-    const panel = vscode.window.createWebviewPanel('sourcegraphSearch', 'Sourcegraph Search', vscode.ViewColumn.One, {
+    const panel = vscode.window.createWebviewPanel('sourcegraphSearch', 'Sourcegraph', vscode.ViewColumn.One, {
         enableScripts: true,
         retainContextWhenHidden: true, // TODO document. For UX
-        // localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist', 'webview')],
+        localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist', 'webview')],
     })
 
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webview')
@@ -58,6 +58,8 @@ export async function initializeSearchPanelWebview({
 
     // Specific scripts to run using nonce
     const nonce = getNonce()
+
+    panel.iconPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webview', 'logo.svg')
 
     // Apply Content-Security-Policy
     // panel.webview.cspSource comes from the webview object

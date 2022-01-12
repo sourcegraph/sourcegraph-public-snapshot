@@ -100,6 +100,8 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                     .catch(() => {
                         // TODO error handling
                     })
+            } else {
+                setActiveSearchPanel(false)
             }
         }
     }, [activeQueryState, sourcegraphVSCodeExtensionAPI, useQueryState])
@@ -201,22 +203,22 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
         setValidating(false)
     }
 
-    const onSubmitCorsUrl: React.FormEventHandler<HTMLFormElement> = event => {
-        event?.preventDefault()
-        setValidating(true)
-        ;(async () => {
-            const newUri = (event.currentTarget.elements.namedItem('corsuri') as HTMLInputElement).value
+    // const onSubmitCorsUrl: React.FormEventHandler<HTMLFormElement> = event => {
+    //     event?.preventDefault()
+    //     setValidating(true)
+    //     ;(async () => {
+    //         const newUri = (event.currentTarget.elements.namedItem('corsuri') as HTMLInputElement).value
 
-            if (corsUri !== newUri) {
-                await sourcegraphVSCodeExtensionAPI.updateCorsUri(newUri)
-                // Updating below states  would call useEffect to validate the updated token
-                setCorsUri(newUri)
-            }
-        })().catch(error => {
-            console.error(error)
-        })
-        setValidating(false)
-    }
+    //         if (corsUri !== newUri) {
+    //             await sourcegraphVSCodeExtensionAPI.updateCorsUri(newUri)
+    //             // Updating below states  would call useEffect to validate the updated token
+    //             setCorsUri(newUri)
+    //         }
+    //     })().catch(error => {
+    //         console.error(error)
+    //     })
+    //     setValidating(false)
+    // }
 
     // There's no ACTIVE search panel
 
@@ -244,19 +246,18 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                     />
                 )}
                 {/* If User is not on VS Code Desktop and do not have Cors set up */}
-                {!validating && !onDesktop && corsUri === '' && (
-                    <Form onSubmit={onSubmitCorsUrl}>
+                {!validating && !onDesktop && !hasAccessToken && (
+                    <Form onSubmit={onSubmitAccessToken}>
                         <p className="btn btn-sm btn-danger w-100 border-0 font-weight-normal">
                             <span className={classNames('my-3', styles.text)}>
-                                IMPORTANT: You must add Cors and have a Sourcegraph account for Sourcegraph to work on
-                                VS Code Web
+                                IMPORTANT: You must add an access token for Sourcegraph to work on VS Code Web
                             </span>
                         </p>
                         <input
                             className="input form-control my-3"
                             type="text"
-                            name="corsuri"
-                            placeholder="ex https://cors-anywhere.herokuapp.com/"
+                            name="token"
+                            placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
                         />
                         <button
                             type="submit"
@@ -265,7 +266,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                                 styles.button
                             )}
                         >
-                            <span className={classNames('my-0', styles.text)}>Add Cors</span>
+                            <span className={classNames('my-0', styles.text)}>Add Access Token</span>
                         </button>
                     </Form>
                 )}
