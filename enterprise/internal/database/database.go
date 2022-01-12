@@ -29,7 +29,7 @@ type enterpriseDB struct {
 }
 
 func (edb *enterpriseDB) CodeMonitors() CodeMonitorStore {
-	return &codeMonitorStore{Store: basestore.NewWithHandle(edb.Handle())}
+	return &codeMonitorStore{Store: basestore.NewWithHandle(edb.Handle()), now: time.Now}
 }
 
 func (edb *enterpriseDB) Perms() PermsStore {
