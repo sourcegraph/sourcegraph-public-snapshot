@@ -5,7 +5,7 @@ import { MouseEvent, MouseEventHandler, PointerEventHandler } from 'react'
 interface UseChartEventHandlersProps {
     onPointerMove: (point: Point) => void
     onPointerLeave: () => void
-    onClick: () => void
+    onClick: MouseEventHandler<SVGSVGElement>
 }
 
 interface ChartHandlers {

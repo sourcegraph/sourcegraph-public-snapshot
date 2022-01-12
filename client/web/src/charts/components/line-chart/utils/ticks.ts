@@ -29,6 +29,8 @@ export const formatXTick = timeFormat('%d %b')
  */
 export const formatXLabel = timeFormat('%d %B %A')
 
+const MINIMUM_NUMBER_OF_TICKS = 2
+
 interface GetScaleTicksInput {
     scale: AnyD3Scale
     space: number
@@ -37,7 +39,7 @@ interface GetScaleTicksInput {
 
 export function getXScaleTicks(input: GetScaleTicksInput): number[] {
     const { scale, space, pixelsPerTick = 80 } = input
-    const maxTicks = Math.max(Math.floor(space / pixelsPerTick), 2)
+    const maxTicks = Math.max(Math.floor(space / pixelsPerTick), MINIMUM_NUMBER_OF_TICKS)
 
     return getTicks(scale, maxTicks) as number[]
 }
@@ -61,7 +63,7 @@ export function getYScaleTicks(input: GetScaleTicksInput): number[] {
     }
 
     // Calculate desirable number of ticks
-    const numberTicks = Math.max(2, Math.floor(space / pixelsPerTick))
+    const numberTicks = Math.max(MINIMUM_NUMBER_OF_TICKS, Math.floor(space / pixelsPerTick))
 
     let filteredTicks = ticks
 

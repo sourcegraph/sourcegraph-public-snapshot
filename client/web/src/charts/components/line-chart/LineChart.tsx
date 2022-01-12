@@ -4,6 +4,7 @@ import { scaleTime, scaleLinear } from '@visx/scale'
 import { LinePath } from '@visx/shape'
 import { voronoi } from '@visx/voronoi'
 import classNames from 'classnames'
+import { noop } from 'lodash'
 import React, { ReactElement, useMemo, useRef, useState } from 'react'
 
 import { AxisBottom, AxisLeft } from './components/axis/Axis'
@@ -47,7 +48,7 @@ export interface LineChartContentProps<D extends object> {
  * voronoi area distribution.
  */
 export function LineChart<D extends object>(props: LineChartContentProps<D>): ReactElement | null {
-    const { width: outerWidth, height: outerHeight, data, series, xAxisKey } = props
+    const { width: outerWidth, height: outerHeight, data, series, xAxisKey, onDatumClick = noop } = props
 
     const [activePoint, setActivePoint] = useState<Point & { element?: Element }>()
     const yAxisReference = useRef<SVGGElement>(null)
@@ -124,7 +125,12 @@ export function LineChart<D extends object>(props: LineChartContentProps<D>): Re
             }
         },
         onPointerLeave: () => setActivePoint(undefined),
-        onClick: () => activePoint?.linkUrl && window.open(activePoint.linkUrl),
+        onClick: event => {
+            if (activePoint?.linkUrl) {
+                onDatumClick(event)
+                window.open(activePoint.linkUrl)
+            }
+        },
     })
 
     return (
@@ -179,6 +185,7 @@ export function LineChart<D extends object>(props: LineChartContentProps<D>): Re
                         active={activePoint?.id === point.id}
                         color={point.color}
                         linkURL={point.linkUrl}
+                        onClick={onDatumClick}
                         onFocus={event => setActivePoint({ ...point, element: event.target })}
                         onBlur={() => setActivePoint(undefined)}
                     />

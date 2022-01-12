@@ -1,9 +1,10 @@
 import React, { ReactElement, useEffect, useMemo, useState } from 'react'
 
-import { isDefined } from '@sourcegraph/shared/src/util/types'
+import { isDefined } from '@sourcegraph/common'
 
 import { LineChartSeries, Point } from '../../types'
 import { isValidNumber } from '../../utils/data-guards'
+import { formatYTick } from '../../utils/ticks'
 import { FloatingPanel, Target } from '../floating-panel/FloatingPanel'
 
 import styles from './Tooltip.module.scss'
@@ -121,7 +122,7 @@ export function TooltipContent<Datum extends object>(props: TooltipContentProps<
             <ul className={styles.tooltipList}>
                 {lines.leftRemaining > 0 && <li className={styles.item}>... and {lines.leftRemaining} more</li>}
                 {lines.window.map(line => {
-                    const value = line.value
+                    const value = formatYTick(line.value)
                     const datumKey = activePoint.seriesKey
                     const backgroundColor = datumKey === line.dataKey ? 'var(--secondary-2)' : ''
 

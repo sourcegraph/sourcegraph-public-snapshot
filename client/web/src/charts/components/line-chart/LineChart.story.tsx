@@ -1,12 +1,11 @@
 import { Meta } from '@storybook/react'
-import { ParentSize } from '@visx/responsive'
 import React from 'react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { LineChartSeries } from './types'
 
-import { LineChart, LegendList } from '.'
+import { LineChart, LegendList, ParentSize } from '.'
 
 export default {
     title: 'web/charts/line',

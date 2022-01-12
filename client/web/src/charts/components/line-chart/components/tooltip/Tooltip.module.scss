@@ -22,9 +22,10 @@
 .item {
     display: flex;
     align-items: baseline;
-    padding: 0.25rem;
+    padding: 0.125rem 0.25rem;
     border-radius: 0.25rem;
     font-weight: normal;
+    font-size: 0.75rem;
 }
 
 .legend-text {

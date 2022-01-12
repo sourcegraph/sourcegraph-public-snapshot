@@ -1,9 +1,7 @@
 import { GlyphDot } from '@visx/glyph'
-import React, { FocusEventHandler } from 'react'
+import React, { FocusEventHandler, MouseEventHandler } from 'react'
 
 import { MaybeLink } from '../../../../views/components/view/content/chart-view-content/charts/MaybeLink'
-
-const stopPropagation = (event: React.MouseEvent): void => event.stopPropagation()
 
 interface PointGlyphProps {
     top: number
@@ -11,20 +9,20 @@ interface PointGlyphProps {
     color: string
     active: boolean
     linkURL?: string
+    onClick: MouseEventHandler<Element>
     onFocus: FocusEventHandler<Element>
     onBlur: FocusEventHandler<Element>
 }
 
 export const PointGlyph: React.FunctionComponent<PointGlyphProps> = props => {
-    const { top, left, color, active, linkURL, onFocus, onBlur } = props
+    const { top, left, color, active, linkURL, onFocus, onBlur, onClick } = props
 
     return (
         <MaybeLink
             to={linkURL}
             target="_blank"
             rel="noopener"
-            onPointerUp={stopPropagation}
-            onClick={stopPropagation}
+            onClick={onClick}
             onFocus={onFocus}
             onBlur={onBlur}
             role={linkURL ? 'link' : 'graphics-dataunit'}
