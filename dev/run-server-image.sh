@@ -27,9 +27,14 @@ case "$CLEAN" in
     ;;
 esac
 
-if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
+function clean_data() {
   echo "--- Deleting $DATA"
   rm -rf "$DATA"
+}
+
+if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
+  clean_data
+  trap clean_data EXIT
 fi
 
 echo "--- Starting server ${IMAGE}"
