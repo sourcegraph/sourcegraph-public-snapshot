@@ -2,25 +2,43 @@
 
 Learn how to manage [Code Insights](../../code_insights/index.md) on private Sourcegraph instances with the API. If you haven't used the API before, learn more about [the GraphQL API and how to use it](index.md).
 
+This page is meant as a guide for common use cases. You can find all of GraphQL documentation in the [API Console](./index.md#api-console).
+
 ## Prerequisites
 
-* TODO-JOEL: what do we want to put here? Maybe a release number? A note about the environment flag that disables settings? That they have insights turned on to begin with?
+The Code Insights GraphQL API is available on Sourcegraph versions 3.35.1+.
 
-### General
+Note: If Code Insights setting storage is enabled, (`ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE:true`) any changes made via the API will be periodically overwritten by insights stored in settings. This is an unlikely scenario.
 
-This API is considered experimental and there may be significant changes in the future. TODO-JOEL: is this the right thing to say here? We've talked about the API being experimental, and it seems worth calling it out in some way.
+## General
 
-### Permissions and visibility overview
+This API is considered to be in beta. There may be significant changes in the future as we figure out the best way to support more chart types and data sources!
 
-TODO-JOEL: Thinking about permissions and what might be useful to document here.. insights themselves don't really have permissions. By default the user who created the insight will have permission, but there's no way to share that with other users without first creating a dashboard. Would it be useful to call out how to create a dashboard and add/remove insights from it, just for sharing purposes? Or is this not a compelling use case via the API?
+## Permissions and visibility
 
-## Creating a Code Insight
+Note: there are no separate read/write permissions at this time, so if a user has permission to view an insight they can also edit and delete it.
 
-To create a Code Insight that will generate series data on the backend, use the mutation below.
+When a user creates a Code Insight, that user will automatically be granted permission to view that insight. Besides this one case of insight-level permissions, all permissions exist on [dashboards](../../code_insights/explanations/viewing_code_insights.md#insights-dashboards). This means that in order for another user to view an insight via the API, that insight must first be attached to a dashboard with either organization or global permissions.
 
-Important: leave `dataSeries.repositoryScope.repositories` empty to specify that the query should be run across all repositories. Otherwise, no series data will be generated and saved on the backend.
+See [Managing Dashboards](#managing-dashboards) below for more information.
 
-TODO: What did we end up doing about the `lineColor`? I thought we had decided to go with hex values, but our frontend still uses the variables. Should the example be a hex value? Does it matter?
+## Just-in-time vs persisted insights
+
+Some insights generate and persist time series data, while others calculate their time series data just-in-time on page load. Currently, any insight that is run over all repositories will be persisted, while insights run over a specific set of repositories will be genearted just-in-time.
+
+Common use cases for managing persisted insights with the API:
+
+- Genearating and exporting time series data
+
+Common use cases for managing just-in-time insights with the API:
+
+- Generating just-in-time insights to be viewed in the Sourcegraph web app
+
+## Creating a persisted insight
+
+To create a Code Insight that will generate and persist time series data, use the mutation below.
+
+Important: leave `dataSeries.repositoryScope.repositories` empty to specify that the query should be run across all repositories. Otherwise, no time series data will be persisted.
 
 ```gql
 mutation CreateLineChartSearchInsight($input: LineChartSearchInsightInput!) {
@@ -44,7 +62,7 @@ Example variables:
       "query": "lang:javascript",
       "options": {
         "label": "javascript",
-        "lineColor": "var(--oc-grape-7)"
+        "lineColor": "#6495ED"
       },
       "repositoryScope": {
         "repositories": []
@@ -60,7 +78,7 @@ Example variables:
       "query": "lang:typescript",
       "options": {
         "label": "typescript",
-        "lineColor": "var(--oc-red-7)"
+        "lineColor": "#DE3163"
       },
       "repositoryScope": {
         "repositories": []
@@ -76,14 +94,49 @@ Example variables:
 }
 ```
 
-## Read a single Code Insight
+## Creating a just-in-time insight
 
-Use the query below to read a Code Insight by `id`. `filters` are optional, and only useful if you want to filter the results down to specific repositories.
+There are two chart options for just-in-time insights: Line charts and pie charts.
+
+To create a line chart insight that will calculate its time series data just-in-time, use the `CreateLineChartSearchInsight` mutation above and fill in `dataSeries.repositoryScope.repositories` with a set of repositories.
+
+Pie chart insights show language usage across the specified repositories. Because this type of chart has not yet been generalized to other use cases, the `query` field in the input is not used. To create one, use the mutation below.
+
+```gql
+mutation CreatePieChartSearchInsight($input: PieChartSearchInsightInput!) {
+  createPieChartSearchInsight(input: $input) {
+    view {
+      id
+    }
+  }
+}
+```
+
+Example variables:
+
+```json
+{
+  "input": {
+    "query": "",
+    "repositoryScope": {
+      "repositories": ["sourcegraph/sourcegraph"]
+    },
+    "presentationOptions": {
+      "title": "Language usage for Sourcegraph",
+      "otherThreshold": .3
+    }
+  }
+}
+```
+
+## Reading a single Code Insight
+
+Use the query below to read a Code Insight by `id`. `filters` are optional, and if provided will filter the aggregated time series to specific repositories.
 
 Notes on the return object:
 
 - The `dataSeries`, `dataSeriesDefinitions` and `seriesPresentation` arrays each store different information about the same series. The `seriesId` field on each can be used to match them up.
-- `dataSeries.status` is useful to guage the progress of the series point generation. More information can be found in the API docs (TODO link)
+- `dataSeries.status` is useful to guage the progress of the series point generation. More information can be found in the [API Console Documentation](./index.md#api-console)
 
 ```gql
 query InsightViews($id: ID, $filters: InsightViewFiltersInput) {
@@ -134,7 +187,7 @@ query InsightViews($id: ID, $filters: InsightViewFiltersInput) {
 Example variables:
 
 ```json
-{ "id": "insight-id-1",
+{ "id": "aW5zaWdodF92aWV3OiIyMkVIR2pXOTFkSzNOanpmM2hyWnU3WDJwMlgi",
   "filters": {
     "includeRepoRegex": "sourcegraph/sourcegraph",
     "excludeRepoRegex": "sourcegraph/handbook"
@@ -142,9 +195,9 @@ Example variables:
 }
 ```
 
-## List of Code Insights
+## List Code Insights
 
-The query below will list all of the Code Insights that you can see based on permissions. The query and return object is the same as for reading a single Code Insight. All input parameters are optional, and can be used for cursor-based pagination and repository filtering.
+The query below will list all of the Code Insights that you can see based on [permissions](#permissions-and-visibility). The query and return object is the same as for reading a single Code Insight. All input parameters are optional, and can be used for cursor-based pagination and repository filtering.
 
 ```gql
 query InsightViews($first: int, $after: String, $filters: InsightViewFiltersInput) {
@@ -169,8 +222,7 @@ Example variables:
 }
 ```
 
-
-## Update a Code Insight
+## Updating a Code Insight
 
 Below is a GraphQL mutation that updates an existing Code Insight. The format is almost identical to the creation mutation, except that it now takes an `id`. The input object must be complete as it will completely overwrite the existing Code Insight.
 
@@ -196,7 +248,7 @@ This is an example of updating the Code Insight from the creation mutation examp
 
 ```json
 {
-  "id": "insight-id-1",
+  "id": "aW5zaWdodF92aWV3OiIyMkVIR2pXOTFkSzNOanpmM2hyWnU3WDJwMlgi",
   "input": {
     "options": {
       "title": "Javascript weekly"
@@ -206,7 +258,7 @@ This is an example of updating the Code Insight from the creation mutation examp
       "query": "lang:javascript",
       "options": {
         "label": "javascript",
-        "lineColor": "var(--oc-grape-7)"
+        "lineColor": "#6495ED"
       },
       "repositoryScope": {
         "repositories": []
@@ -222,9 +274,9 @@ This is an example of updating the Code Insight from the creation mutation examp
 }
 ```
 
-## Delete a Code Insight
+## Deleting a Code Insight
 
-Below is a GraphQL query that deletes a Code Insight by ID.
+Below is a GraphQL mutation that deletes a Code Insight by ID.
 
 ```gql
 mutation DeleteInsightView($id: ID!) {
@@ -238,4 +290,66 @@ Example variables:
 
 ```json
 { "id": "insight-id-1" }
+```
+
+## Managing dashboards
+
+### Creating a dashboard
+
+Below is a GraphQL mutation that creates a dashboard with global permissions, meaning all users can view this dashboard and all of its insights.
+
+```gql
+mutation CreateInsightsDashboard($input: CreateInsightsDashboardInput!) {
+  createInsightsDashboard(input: $input) {
+    dashboard { 
+      id
+    }
+  }
+}
+```
+
+Example variables:
+
+```json
+{ 
+  "input": {
+    "title": "Global insights dashboard",
+    "grants": {
+      "users": [],
+      "organizations": [],
+      "global": true
+    }
+  }
+```
+
+### Adding and removing Code Insights from a dashboard
+
+Use the following mutations to add and remove insights from dashboards:
+
+```gql
+mutation AddInsightViewToDashboard($input: AddInsightViewToDashboardInput!) {
+  addInsightViewToDashboard(input: $input) {
+    dashboard { 
+      id
+    }
+  }
+}
+```
+
+```gql
+mutation RemoveInsightViewFromDashboard($input: RemoveInsightViewToDashboardInput!) {
+  removeInsightViewFromDashboard(input: $input) {
+    dashboard { 
+      id
+    }
+  }
+}
+```
+
+```json
+{ 
+  "input": {
+    "insightViewId": "aW5zaWdodF92aWV3OiIyMkVIR2pXOTFkSzNOanpmM2hyWnU3WDJwMlgi",
+    "dashboardId": "ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjoxNDV9"
+  }
 ```
