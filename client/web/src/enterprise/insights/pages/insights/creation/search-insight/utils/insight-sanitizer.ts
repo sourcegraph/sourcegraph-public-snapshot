@@ -38,6 +38,7 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
             series: getSanitizedSeries(rawInsight.series),
             visibility: rawInsight.visibility,
             step: { [rawInsight.step]: +rawInsight.stepValue },
+            filters: { includeRepoRegexp: '', excludeRepoRegexp: '' },
         }
     }
 

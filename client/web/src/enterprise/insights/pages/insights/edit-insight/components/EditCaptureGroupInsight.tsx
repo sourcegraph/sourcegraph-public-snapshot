@@ -30,8 +30,8 @@ export const EditCaptureGroupInsight: React.FunctionComponent<EditCaptureGroupIn
     const handleSubmit = (values: CaptureGroupFormFields): SubmissionErrors | Promise<SubmissionErrors> | void => {
         const sanitizedInsight = getSanitizedCaptureGroupInsight(values)
 
-        // Preserve backend insight filters since these filters don't represent in form fields
-        // in case if editing hasn't change type of search insight.
+        // Preserve backend insight filters since these filters aren't represented
+        // in the editing form
         return onSubmit({ ...sanitizedInsight, filters: insight.filters })
     }
 

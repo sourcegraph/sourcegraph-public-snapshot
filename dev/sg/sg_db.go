@@ -200,9 +200,9 @@ func dbResetPGExec(ctx context.Context, args []string) error {
 	}
 
 	options := runner.Options{
-		Up:            true,
-		NumMigrations: 0,
-		SchemaNames:   schemaNames,
+		Up:              true,
+		TargetMigration: 0,
+		SchemaNames:     schemaNames,
 	}
 
 	return connections.RunnerFromDSNs(dsnMap, "sg", storeFactory).Run(ctx, options)

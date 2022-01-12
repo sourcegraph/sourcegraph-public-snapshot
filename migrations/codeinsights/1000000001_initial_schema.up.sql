@@ -1,3 +1,7 @@
+-- +++
+-- parent: 1000000000
+-- +++
+
 BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS timescaledb;

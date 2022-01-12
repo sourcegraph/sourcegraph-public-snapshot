@@ -28,6 +28,7 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
     viewType: InsightType.SearchBased,
     id: 'searchInsights.insight.mock_backend_insight_id',
     step: { weeks: 2 },
+    filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
 }
 
 const mockInsightAPI = ({

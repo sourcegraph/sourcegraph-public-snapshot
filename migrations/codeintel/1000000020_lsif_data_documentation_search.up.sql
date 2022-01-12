@@ -1,3 +1,7 @@
+-- +++
+-- parent: 1000000019
+-- +++
+
 BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm;

@@ -1,3 +1,7 @@
+-- +++
+-- parent: 1528395863
+-- +++
+
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS temporary_settings (
