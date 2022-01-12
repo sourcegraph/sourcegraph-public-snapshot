@@ -311,7 +311,7 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 			}
 		}
 
-		// permenant mark
+		// permanent mark
 		marks[id]++
 		order = append(order, id)
 		return nil
