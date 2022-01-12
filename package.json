@@ -24,6 +24,8 @@
     "test": "jest --testPathIgnorePatterns end-to-end regression integration storybook",
     "test-integration:base": "TS_NODE_PROJECT=client/web/src/integration/tsconfig.json mocha --parallel=$CI --retries=1 --jobs=2",
     "test-integration": "yarn test-integration:base \"./client/web/src/integration/**/*.test.ts\"",
+    "test-smoke:base": "TS_NODE_PROJECT=client/web/src/smoke/tsconfig.json mocha --parallel=$CI --retries=1 --jobs=2",
+    "test-smoke": "SOURCEGRAPH_BASE_URL=https://sourcegraph.com yarn test-smoke:base \"./client/web/src/smoke/**/*.test.ts\"",
     "test-browser-integration": "yarn --cwd client/browser run test-integration",
     "cover-integration:base": "nyc --hook-require=false yarn test-integration:base",
     "cover-integration": "nyc --hook-require=false yarn test-integration",
