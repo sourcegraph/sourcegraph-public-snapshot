@@ -166,7 +166,7 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 			log.String("commit", string(args.Commit)),
 			log.String("path", args.Path),
 			log.Bool("exactPath", args.ExactPath),
-			log.String("toolName", args.ToolName),
+			log.String("indexer", args.ToolName),
 		},
 	})
 	defer endObservation()

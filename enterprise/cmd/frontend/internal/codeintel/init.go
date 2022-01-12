@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -26,6 +27,10 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 		Tracer:     observationContext.Tracer,
 		Registerer: observationContext.Registerer,
 		Sentry:     services.hub,
+		HoneyDataset: &honey.Dataset{
+			Name:       "codeintel-graphql",
+			SampleRate: 4,
+		},
 	}
 
 	resolver, err := newResolver(ctx, db, resolverObservationContext, services)
