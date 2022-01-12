@@ -1,3 +1,7 @@
+-- +++
+-- parent: 1528395940
+-- +++
+
 BEGIN;
 
 DELETE FROM cm_monitors WHERE namespace_user_id IS NULL;

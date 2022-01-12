@@ -37,7 +37,7 @@ func Up(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 	var (
 		upFlagSet          = flag.NewFlagSet(fmt.Sprintf("%s up", commandName), flag.ExitOnError)
 		upDatabaseNameFlag = upFlagSet.String("db", "all", `The target database instance. Supply "all" (the default) to migrate all databases.`)
-		upNFlag            = upFlagSet.Int("n", 0, "How many migrations to apply. Zero (the default) applies all migrations.")
+		upTargetFlag       = upFlagSet.Int("target", 0, "Apply all migrations up to this target. Zero (the default) applies all migrations.")
 	)
 
 	execUp := func(ctx context.Context, args []string) error {
@@ -46,7 +46,7 @@ func Up(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 			return flag.ErrHelp
 		}
 
-		if *upDatabaseNameFlag == "all" && *upNFlag != 0 {
+		if *upDatabaseNameFlag == "all" && *upTargetFlag != 0 {
 			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: supply -db to migrate a specific database"))
 			return flag.ErrHelp
 		}
@@ -59,15 +59,15 @@ func Up(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 		}
 
 		return run(ctx, runner.Options{
-			Up:            true,
-			NumMigrations: *upNFlag,
-			SchemaNames:   databaseNames,
+			Up:              true,
+			TargetMigration: *upTargetFlag,
+			SchemaNames:     databaseNames,
 		})
 	}
 
 	return &ffcli.Command{
 		Name:       "up",
-		ShortUsage: fmt.Sprintf("%s up [-db=all] [-n=0]", commandName),
+		ShortUsage: fmt.Sprintf("%s up [-db=all] [-target=0]", commandName),
 		ShortHelp:  "Run up migrations",
 		FlagSet:    upFlagSet,
 		Exec:       execUp,
@@ -79,7 +79,7 @@ func Down(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 	var (
 		downFlagSet          = flag.NewFlagSet(fmt.Sprintf("%s down", commandName), flag.ExitOnError)
 		downDatabaseNameFlag = downFlagSet.String("db", "", "The target database instance.")
-		downNFlag            = downFlagSet.Int("n", 1, "How many migrations to apply.")
+		downTargetFlag       = downFlagSet.Int("target", 0, "Reset all migrations defined after this target. Zero (the default) reverts the latest migration.")
 	)
 
 	execDown := func(ctx context.Context, args []string) error {
@@ -93,21 +93,16 @@ func Down(commandName string, run RunFunc, out *output.Output) *ffcli.Command {
 			return flag.ErrHelp
 		}
 
-		if *downNFlag == 0 {
-			out.WriteLine(output.Linef("", output.StyleWarning, "ERROR: invalid number of migrations"))
-			return flag.ErrHelp
-		}
-
 		return run(ctx, runner.Options{
-			Up:            false,
-			NumMigrations: *downNFlag,
-			SchemaNames:   []string{*downDatabaseNameFlag},
+			Up:              false,
+			TargetMigration: *downTargetFlag,
+			SchemaNames:     []string{*downDatabaseNameFlag},
 		})
 	}
 
 	return &ffcli.Command{
 		Name:       "down",
-		ShortUsage: fmt.Sprintf("%s down -db=... [-n=1]", commandName),
+		ShortUsage: fmt.Sprintf("%s down -db=... [-target=0]", commandName),
 		ShortHelp:  "Run down migrations",
 		FlagSet:    downFlagSet,
 		Exec:       execDown,

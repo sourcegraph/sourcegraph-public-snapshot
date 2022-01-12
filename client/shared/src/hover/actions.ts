@@ -19,11 +19,11 @@ import {
 import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
+import { Context } from '@sourcegraph/template-parser'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { FlatExtensionHostAPI } from '../api/contract'
-import { Context } from '../api/extension/api/context/context'
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { ContributableMenu, TextDocumentPositionParameters } from '../api/protocol'
 import { syncRemoteSubscription } from '../api/util'

@@ -1,6 +1,8 @@
 import Dialog from '@reach/dialog'
 import React from 'react'
 
+import { Button } from '@sourcegraph/wildcard'
+
 export interface ReplaceSpecModalProps {
     libraryItemName: string
     onCancel: () => void
@@ -23,12 +25,12 @@ export const ReplaceSpecModal: React.FunctionComponent<ReplaceSpecModalProps> = 
             <strong>{libraryItemName}</strong>?
         </p>
         <div className="d-flex justify-content-end">
-            <button type="button" className="btn btn-outline-secondary mr-2" onClick={onCancel}>
+            <Button className="mr-2" onClick={onCancel} outline={true} variant="secondary">
                 Cancel
-            </button>
-            <button type="button" onClick={onConfirm} className="btn btn-primary">
+            </Button>
+            <Button onClick={onConfirm} variant="primary">
                 Confirm
-            </button>
+            </Button>
         </div>
     </Dialog>
 )

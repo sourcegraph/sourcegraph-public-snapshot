@@ -4,7 +4,7 @@ import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import styles from './SaveToolbar.module.scss'
 
@@ -62,34 +62,26 @@ export const SaveToolbar: React.FunctionComponent<React.PropsWithChildren<SaveTo
                 </div>
             )}
             <div className={styles.actions}>
-                <button
-                    type="button"
+                <Button
                     disabled={disabled}
                     title={saveDiscardTitle || 'Save changes'}
-                    className={classNames(
-                        'btn btn-sm btn-success test-save-toolbar-save',
-                        styles.item,
-                        styles.btn,
-                        styles.btnFirst
-                    )}
+                    className={classNames('test-save-toolbar-save', styles.item, styles.btn, styles.btnFirst)}
                     onClick={onSave}
+                    variant="success"
+                    size="sm"
                 >
                     <CheckIcon className="icon-inline" style={{ marginRight: '0.1em' }} /> Save changes
-                </button>
-                <button
-                    type="button"
+                </Button>
+                <Button
                     disabled={disabled}
                     title={saveDiscardTitle || 'Discard changes'}
-                    className={classNames(
-                        'btn btn-sm btn-secondary test-save-toolbar-discard',
-                        styles.item,
-                        styles.btn,
-                        styles.btnLast
-                    )}
+                    className={classNames('test-save-toolbar-discard', styles.item, styles.btn, styles.btnLast)}
                     onClick={onDiscard}
+                    variant="secondary"
+                    size="sm"
                 >
                     <CloseIcon className="icon-inline" /> Discard
-                </button>
+                </Button>
                 {children}
                 {saving && (
                     <span className={classNames(styles.item, styles.message)}>

@@ -8,7 +8,7 @@ import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
@@ -177,14 +177,15 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 <div className={adminConfigurationStyles.actionGroups}>
                     <div className={adminConfigurationStyles.actions}>
                         {settingsActions.map(({ id, label }) => (
-                            <button
-                                type="button"
+                            <Button
                                 key={id}
-                                className={classNames('btn btn-secondary btn-sm', adminConfigurationStyles.action)}
+                                className={adminConfigurationStyles.action}
                                 onClick={() => this.runAction(id)}
+                                variant="secondary"
+                                size="sm"
                             >
                                 {label}
-                            </button>
+                            </Button>
                         ))}
                     </div>
                 </div>

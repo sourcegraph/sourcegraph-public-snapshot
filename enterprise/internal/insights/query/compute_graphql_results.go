@@ -9,10 +9,17 @@ import (
 
 type ComputeResult interface {
 	RepoName() string
+	RepoID() string
 	Revhash() string
 	FilePath() string
 	MatchValues() []string
 	Counts() map[string]int
+}
+
+type GroupedResultsByRepository struct {
+	RepoID      string
+	RepoName    string
+	MatchValues []string
 }
 
 type GroupedResults struct {
@@ -48,6 +55,18 @@ func GroupByCaptureMatch(results []ComputeResult) []GroupedResults {
 	return grouped
 }
 
+func GroupByRepository(results []ComputeResult) map[string][]ComputeResult {
+	if len(results) < 1 {
+		return nil
+	}
+	// map repository ID -> list of matches
+	groupedbyRepo := make(map[string][]ComputeResult)
+	for _, result := range results {
+		groupedbyRepo[result.RepoID()] = append(groupedbyRepo[result.RepoID()], result)
+	}
+	return groupedbyRepo
+}
+
 func decodeComputeResult(result json.RawMessage) (ComputeResult, error) {
 	typeName := struct {
 		TypeName string `json:"__typeName"`
@@ -57,7 +76,7 @@ func decodeComputeResult(result json.RawMessage) (ComputeResult, error) {
 	}
 	switch typeName.TypeName {
 	case "ComputeMatchContext":
-		var v computeMatchContext
+		var v ComputeMatchContext
 		if err := json.Unmarshal(result, &v); err != nil {
 			return nil, err
 		}
@@ -70,16 +89,21 @@ func decodeComputeResult(result json.RawMessage) (ComputeResult, error) {
 	}
 }
 
-type computeMatchContext struct {
+type ComputeMatchContext struct {
 	Commit     string
 	Repository struct {
 		Name string
+		Id   string
 	}
 	Path    string
-	Matches []computeMatch
+	Matches []ComputeMatch
 }
 
-func (c computeMatchContext) Counts() map[string]int {
+func (c ComputeMatchContext) RepoID() string {
+	return c.Repository.Id
+}
+
+func (c ComputeMatchContext) Counts() map[string]int {
 	distinct := make(map[string]int)
 	for _, value := range c.MatchValues() {
 		distinct[value] = distinct[value] + 1
@@ -87,19 +111,19 @@ func (c computeMatchContext) Counts() map[string]int {
 	return distinct
 }
 
-func (c computeMatchContext) RepoName() string {
+func (c ComputeMatchContext) RepoName() string {
 	return c.Repository.Name
 }
 
-func (c computeMatchContext) Revhash() string {
+func (c ComputeMatchContext) Revhash() string {
 	return c.Commit
 }
 
-func (c computeMatchContext) FilePath() string {
+func (c ComputeMatchContext) FilePath() string {
 	return c.Path
 }
 
-func (c computeMatchContext) MatchValues() []string {
+func (c ComputeMatchContext) MatchValues() []string {
 	var results []string
 	for _, match := range c.Matches {
 		for _, entry := range match.Environment {
@@ -109,12 +133,12 @@ func (c computeMatchContext) MatchValues() []string {
 	return results
 }
 
-type computeMatch struct {
+type ComputeMatch struct {
 	Value       string
-	Environment []computeEnvironmentEntry
+	Environment []ComputeEnvironmentEntry
 }
 
-type computeEnvironmentEntry struct {
+type ComputeEnvironmentEntry struct {
 	Variable string
 	Value    string
 }

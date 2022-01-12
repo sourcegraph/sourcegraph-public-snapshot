@@ -2,7 +2,7 @@ import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
@@ -47,18 +47,19 @@ export const ReenqueueChangesetsModal: React.FunctionComponent<ReenqueueChangese
             <p className="mb-4">Are you sure you want to re-enqueue all the selected changesets?</p>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             <div className="d-flex justify-content-end">
-                <button
-                    type="button"
+                <Button
                     disabled={isLoading === true}
-                    className="btn btn-outline-secondary mr-2"
+                    className="mr-2"
                     onClick={onCancel}
+                    outline={true}
+                    variant="secondary"
                 >
                     Cancel
-                </button>
-                <button type="button" onClick={onSubmit} disabled={isLoading === true} className="btn btn-primary">
+                </Button>
+                <Button onClick={onSubmit} disabled={isLoading === true} variant="primary">
                     {isLoading === true && <LoadingSpinner />}
                     Re-enqueue
-                </button>
+                </Button>
             </div>
         </Dialog>
     )

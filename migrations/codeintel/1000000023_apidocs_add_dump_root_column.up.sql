@@ -1,3 +1,7 @@
+-- +++
+-- parent: 1000000022
+-- +++
+
 BEGIN;
 
 ALTER TABLE lsif_data_documentation_search_public ADD COLUMN dump_root TEXT NOT NULL DEFAULT '';

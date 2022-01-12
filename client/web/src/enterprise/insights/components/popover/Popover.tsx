@@ -3,8 +3,9 @@ import classNames from 'classnames'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import FocusLock from 'react-focus-lock'
 
+import { useOnClickOutside } from '@sourcegraph/shared/src/util/useOnClickOutside'
+
 import { useKeyboard } from './hooks/use-keyboard'
-import { useOnClickOutside } from './hooks/use-outside-click'
 
 interface PopoverProps extends React.HTMLAttributes<HTMLDivElement> {
     target: React.RefObject<HTMLElement>

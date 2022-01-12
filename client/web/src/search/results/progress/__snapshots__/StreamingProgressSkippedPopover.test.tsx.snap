@@ -6,7 +6,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     class="pt-2 w-100 streamingSkippedItem streamingSkippedItemWarn"
   >
     <button
-      class="button p-2 w-100 bg-transparent border-0 btn btn-outline-danger"
+      class="btn btn-outline-danger button p-2 w-100 bg-transparent border-0"
       type="button"
     >
       <h4
@@ -62,7 +62,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     class="pt-2 w-100 streamingSkippedItem streamingSkippedItemWarn"
   >
     <button
-      class="button p-2 w-100 bg-transparent border-0 btn btn-outline-danger"
+      class="btn btn-outline-danger button p-2 w-100 bg-transparent border-0"
       type="button"
     >
       <h4
@@ -118,7 +118,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     class="pt-2 w-100 streamingSkippedItem"
   >
     <button
-      class="button p-2 w-100 bg-transparent border-0 btn btn-outline-primary"
+      class="btn btn-outline-primary button p-2 w-100 bg-transparent border-0"
       type="button"
     >
       <h4
@@ -174,7 +174,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     class="pt-2 w-100 streamingSkippedItem"
   >
     <button
-      class="button p-2 w-100 bg-transparent border-0 btn btn-outline-primary"
+      class="btn btn-outline-primary button p-2 w-100 bg-transparent border-0"
       type="button"
     >
       <h4
@@ -230,7 +230,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     class="pt-2 w-100 streamingSkippedItem"
   >
     <button
-      class="button p-2 w-100 bg-transparent border-0 btn btn-outline-primary"
+      class="btn btn-outline-primary button p-2 w-100 bg-transparent border-0"
       type="button"
     >
       <h4
@@ -398,7 +398,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       </label>
     </div>
     <button
-      class="mt-2 btn btn-primary disabled"
+      class="btn btn-primary mt-2"
       data-testid="skipped-popover-form-submit-btn"
       disabled=""
       type="submit"

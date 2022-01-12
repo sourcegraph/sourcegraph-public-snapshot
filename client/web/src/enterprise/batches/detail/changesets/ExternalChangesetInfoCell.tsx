@@ -2,9 +2,9 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { Badge } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, ChangesetState } from '../../../../graphql-operations'
+import { BranchMerge } from '../../Branch'
 
 import { ChangesetLabel } from './ChangesetLabel'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
@@ -53,11 +53,11 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
                         {node.repository.name}
                     </Link>{' '}
                     {hasHeadReference(node) && (
-                        <div className="d-block d-sm-inline-block">
-                            <Badge variant="secondary" className="text-monospace">
-                                {headReference(node)}
-                            </Badge>
-                        </div>
+                        <BranchMerge
+                            baseRef={node.currentSpec.description.baseRef}
+                            forkNamespace={node.forkNamespace}
+                            headRef={node.currentSpec.description.headRef}
+                        />
                     )}
                 </span>
                 {![
@@ -80,13 +80,6 @@ function isImporting(node: ExternalChangesetFields): boolean {
 
 function importingFailed(node: ExternalChangesetFields): boolean {
     return node.state === ChangesetState.FAILED && !hasHeadReference(node)
-}
-
-function headReference(node: ExternalChangesetFields): string | undefined {
-    if (hasHeadReference(node)) {
-        return node.currentSpec.description.headRef
-    }
-    return undefined
 }
 
 function hasHeadReference(

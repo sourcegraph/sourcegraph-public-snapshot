@@ -16,8 +16,9 @@ import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Button } from '@sourcegraph/wildcard'
 
-import { SearchStreamingProps, SearchContextProps } from '..'
+import { SearchStreamingProps, ParsedSearchQueryProps, SearchContextProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
@@ -40,6 +41,7 @@ import { StreamingSearchResultsList } from './StreamingSearchResultsList'
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
         Pick<ActivationProps, 'activation'>,
+        ParsedSearchQueryProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         SettingsCascadeProps,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
@@ -66,6 +68,7 @@ export const LATEST_VERSION = 'V2'
 
 export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResultsProps> = props => {
     const {
+        parsedSearchQuery: query,
         streamSearch,
         location,
         authenticatedUser,
@@ -78,7 +81,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
     const patternType = useNavbarQueryState(state => state.searchPatternType)
-    const query = useNavbarQueryState(state => state.searchQueryFromURL)
 
     // Log view event on first load
     useEffect(
@@ -275,7 +277,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
             <DidYouMean
                 telemetryService={props.telemetryService}
-                query={query}
+                parsedSearchQuery={props.parsedSearchQuery}
                 patternType={patternType}
                 caseSensitive={caseSensitive}
                 selectedSearchContextSpec={props.selectedSearchContextSpec}
@@ -314,13 +316,14 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                                 searches and more.
                             </div>
                         </div>
-                        <Link
-                            className="btn btn-primary"
+                        <Button
                             to={`/sign-up?src=SearchCTA&returnTo=${encodeURIComponent('/user/settings/repositories')}`}
                             onClick={onSignUpClick}
+                            variant="primary"
+                            as={Link}
                         >
                             Create a free account
-                        </Link>
+                        </Button>
                     </div>
                 )}
 

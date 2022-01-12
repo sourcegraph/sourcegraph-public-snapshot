@@ -1,35 +1,57 @@
 {{define "seo"}}
   <meta property="og:locale" content="en_EN">
-  <meta content="{{ .Content.Doc.Title }} - Sourcegraph docs" property="og:title">
-  {{ with .Content.Doc.Meta.Type }}
-  <meta content="{{ . }}" property="og:type">
+
+  <!-- Always set a title -->
+  {{ if .Content }}
+  <meta content="{{ .Content.Doc.Title  }} - Sourcegraph docs" property="og:title">
   {{ else }}
-  <meta content="website" property="og:type">
+    {{ if .ContentVersionNotFoundError }}
+    <meta content="Version not found - Sourcegraph docs" property="og:title">
+    {{ else if .ContentPageNotFoundError }}
+    <meta content="Page not found - Sourcegraph docs" property="og:title">
+    {{ else }}
+    <meta content="Unexpected error - Sourcegraph docs" property="og:title">
+    {{ end }}
   {{ end }}
-  {{ with .Content.Doc.Meta.Description }}
-  <meta content="{{ . }}" property="og:description">
+
+  <!-- Only set all this other SEO nice stuff if there's any content -->
+  {{ if .Content }}
+    {{ with .Content.Doc.Meta.Type }}
+    <meta content="{{ . }}" property="og:type">
+    {{ else }}
+    <meta content="website" property="og:type">
+    {{ end }}
+
+    {{ with .Content.Doc.Meta.Description }}
+    <meta content="{{ . }}" property="og:description">
+    {{ end }}
+
+    {{ with .Content.Doc.Meta.Category }}
+    <meta content="{{ . }}" property="article:section">
+    {{ end }}
+
+    {{ if and .Content.Path hasRootURL }}
+        {{ with .Content.Path }}
+        <link rel="canonical" href="{{ . | absURL}}" itemprop="url" />
+        <meta name="url" content="{{ . | absURL}}" />
+        <meta name="twitter:url" content="{{ .| absURL}}" />
+        <meta property="og:url" content="{{ . | absURL}}" />
+        {{ end }}
+    {{ end }}
+
+    {{ if .Content.Doc.Meta.Tags }}
+        {{ range $i, $tag:= .Content.Doc.Meta.Tags }}
+        <meta content="{{ $tag }}" property="article:tag">
+        {{ end }}
+    {{ end }}
+
+    {{ with .Content.Doc.Meta.ImageURL }}
+    <meta itemprop="image" content="{{ . }}" />
+    <meta property="og:image" content="{{ . }}" />
+    <meta name="twitter:image" content="{{ . }}" />
+    {{ end }}
   {{ end }}
-  {{ with .Content.Doc.Meta.Category }}
-  <meta content="{{ . }}" property="article:section">
-  {{ end }}
-  {{ if and .Content.Path hasRootURL }}
-  {{ with .Content.Path }}
-  <link rel="canonical" href="{{ . | absURL}}" itemprop="url" />
-  <meta name="url" content="{{ . | absURL}}" />
-  <meta name="twitter:url" content="{{ .| absURL}}" />
-  <meta property="og:url" content="{{ . | absURL}}" />
-  {{ end }}
-  {{ end }}
-  {{ if .Content.Doc.Meta.Tags }}
-  {{ range $i, $tag:= .Content.Doc.Meta.Tags }}
-  <meta content="{{ $tag }}" property="article:tag">
-  {{ end }}
-  {{ end }}
-  {{ with .Content.Doc.Meta.ImageURL }}
-  <meta itemprop="image" content="{{ . }}" />
-  <meta property="og:image" content="{{ . }}" />
-  <meta name="twitter:image" content="{{ . }}" />
-{{ end }}
+
 {{end}}
 {{define "title"}}
 	{{with .Content}}{{.Doc.Title}}{{else}}Error{{end}}

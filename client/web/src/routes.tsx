@@ -10,7 +10,10 @@ import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
 import type { ExtensionAlertProps } from './repo/RepoContainer'
 import { PageRoutes } from './routes.constants'
-import { getExperimentalFeatures, useExperimentalFeatures, useNavbarQueryState } from './stores'
+import { ParsedSearchQueryProps } from './search'
+import { CreateNotebookPage } from './search/notebook/CreateNotebookPage'
+import { SearchNotebooksListPage } from './search/notebook/listPage/SearchNotebooksListPage'
+import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
@@ -32,6 +35,7 @@ const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
         Omit<LayoutProps, 'match'>,
+        ParsedSearchQueryProps,
         ThemeProps,
         ThemePreferenceProps,
         BreadcrumbsProps,
@@ -77,12 +81,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: PageRoutes.Search,
-        render: props =>
-            useNavbarQueryState.getState().searchQueryFromURL ? (
-                <StreamingSearchResults {...props} />
-            ) : (
-                <SearchPage {...props} />
-            ),
+        render: props => (props.parsedSearchQuery ? <StreamingSearchResults {...props} /> : <SearchPage {...props} />),
         exact: true,
     },
     {
@@ -97,9 +96,34 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: PageRoutes.SearchNotebook,
+        render: () => <Redirect to={PageRoutes.Notebooks} />,
+        exact: true,
+    },
+    {
+        path: PageRoutes.NotebookCreate,
+        render: props =>
+            useExperimentalFeatures.getState().showSearchNotebook ? (
+                <CreateNotebookPage {...props} />
+            ) : (
+                <Redirect to={PageRoutes.Search} />
+            ),
+        exact: true,
+    },
+    {
+        path: PageRoutes.Notebook,
         render: props =>
             useExperimentalFeatures.getState().showSearchNotebook ? (
                 <SearchNotebookPage {...props} />
+            ) : (
+                <Redirect to={PageRoutes.Search} />
+            ),
+        exact: true,
+    },
+    {
+        path: PageRoutes.Notebooks,
+        render: props =>
+            useExperimentalFeatures.getState().showSearchNotebook ? (
+                <SearchNotebooksListPage {...props} />
             ) : (
                 <Redirect to={PageRoutes.Search} />
             ),

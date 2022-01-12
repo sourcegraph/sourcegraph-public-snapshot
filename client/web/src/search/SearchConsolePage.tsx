@@ -10,7 +10,7 @@ import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button } from '@sourcegraph/wildcard'
 
 import { MonacoEditor } from '../components/MonacoEditor'
 import { PageTitle } from '../components/PageTitle'
@@ -143,9 +143,9 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                 <div className="flex-1 p-1">
                     <div className="mb-1 d-flex align-items-center justify-content-between">
                         <div />
-                        <button className="btn btn-lg btn-primary" type="button" onClick={triggerSearch}>
+                        <Button onClick={triggerSearch} variant="primary" size="lg">
                             Search &nbsp; {props.isMacPlatform ? <kbd>⌘</kbd> : <kbd>Ctrl</kbd>}+<kbd>⏎</kbd>
-                        </button>
+                        </Button>
                     </div>
                     <MonacoEditor
                         {...props}

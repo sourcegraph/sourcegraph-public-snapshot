@@ -128,7 +128,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const minimalNavLinks = routeMatch === '/cncf'
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
-    const isSearchNotebookPage = routeMatch?.startsWith('/search/notebook')
+    const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
     // Update patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
@@ -208,6 +208,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         ...breadcrumbProps,
         onExtensionAlertDismissed,
         isMacPlatform,
+        parsedSearchQuery: query,
     }
 
     return (
@@ -222,13 +223,14 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <GlobalNavbar
                     {...props}
                     {...themeProps}
+                    parsedSearchQuery={query}
                     authRequired={!!authRequired}
                     showSearchBox={
                         isSearchRelatedPage &&
                         !isSearchHomepage &&
                         !isCommunitySearchContextPage &&
                         !isSearchConsolePage &&
-                        !isSearchNotebookPage
+                        !isSearchNotebooksPage
                     }
                     variant={
                         isSearchHomepage

@@ -17,6 +17,7 @@ query Run($query: String!) {
     ... on ComputeMatchContext {
       repository {
         name
+        id
       }
       commit
       path

@@ -3,6 +3,8 @@ import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
 import React, { useState, useCallback } from 'react'
 import { Collapse } from 'reactstrap'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import { Scalars } from '../../../../graphql-operations'
 import { insertNameIntoLibraryItem } from '../yaml-util'
 
@@ -58,9 +60,8 @@ export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, o
             <div className="d-flex flex-column">
                 <div className="d-flex align-items-center justify-space-between flex-0">
                     <h5 className="flex-grow-1">Library</h5>
-                    <button
-                        className="btn flex-0"
-                        type="button"
+                    <Button
+                        className="flex-0"
                         onClick={() => setCollapsed(!collapsed)}
                         aria-label={collapsed ? 'Expand' : 'Collapse'}
                     >
@@ -69,7 +70,7 @@ export const LibraryPane: React.FunctionComponent<LibraryPaneProps> = ({ name, o
                         ) : (
                             <ChevronDoubleLeftIcon className="icon-inline mr-1" />
                         )}
-                    </button>
+                    </Button>
                 </div>
 
                 {/* TODO: This should slide vertically but not on our version of reactstrap. */}

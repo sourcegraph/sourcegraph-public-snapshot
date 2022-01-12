@@ -1,0 +1,23 @@
+.notebook-node {
+    &:first-child {
+        border-top: 1px solid var(--border-color-2);
+    }
+    border-bottom: 1px solid var(--border-color-2);
+}
+
+.left {
+    /* Enables responsive ellipsis text truncation */
+    min-width: 0;
+}
+
+.description {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.right {
+    font-size: 0.75rem;
+    margin-left: 1rem;
+    flex-shrink: 0;
+}

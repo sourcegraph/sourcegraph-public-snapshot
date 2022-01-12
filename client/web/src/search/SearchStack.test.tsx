@@ -107,7 +107,7 @@ describe('Search Stack', () => {
             userEvent.click(screen.getByRole('button', { name: 'Open search session' }))
             userEvent.click(screen.getByRole('button', { name: 'Create Notebook' }))
 
-            expect(result.history.location.pathname).toMatchInlineSnapshot('"/search/notebook"')
+            expect(result.history.location.pathname).toMatchInlineSnapshot('"/notebooks/new"')
             expect(result.history.location.hash).toMatchInlineSnapshot(
                 '"#query:TODO,file:http%3A%2F%2Flocalhost%2Ftest%40master%2F-%2Fblob%2Fpath%2Fto%2Ffile"'
             )

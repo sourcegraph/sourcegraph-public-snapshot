@@ -4,7 +4,6 @@ import * as H from 'history'
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
 import React, { useCallback, useState } from 'react'
-import { Button } from 'reactstrap'
 
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -14,6 +13,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useMatchMedia } from '@sourcegraph/shared/src/util/useMatchMedia'
+import { Button } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { OnboardingTour } from '../onboarding-tour/OnboardingTour'
@@ -66,17 +66,16 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
 
     if (!isVisible) {
         return (
-            <button
-                type="button"
+            <Button
                 className={classNames(
-                    'position-absolute btn btn-icon border-top border-bottom border-right mt-4',
+                    'position-absolute btn-icon border-top border-bottom border-right mt-4',
                     styles.toggle
                 )}
                 onClick={() => handleSidebarToggle(true)}
                 data-tooltip="Show sidebar"
             >
                 <ChevronDoubleRightIcon className="icon-inline" />
-            </button>
+            </Button>
         )
     }
 

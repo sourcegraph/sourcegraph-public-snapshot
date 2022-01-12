@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -46,6 +47,7 @@ func TestDiagnostics(t *testing.T) {
 		"s1/main.go",
 		uploads,
 		newOperations(&observation.TestContext),
+		authz.NewMockSubRepoPermissionChecker(),
 	)
 	adjustedDiagnostics, totalCount, err := resolver.Diagnostics(context.Background(), 5)
 	if err != nil {

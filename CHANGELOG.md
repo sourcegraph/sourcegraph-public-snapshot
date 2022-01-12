@@ -26,6 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Issue preventing searches from completing when certain patterns contain `@`. [#29489](https://github.com/sourcegraph/sourcegraph/pull/29489)
+- The grafana dashboard for "successful search request duration" reports the time for streaming search which is used by the browser. Previously it reported the GraphQL time which the browser no longer uses. [#29625](https://github.com/sourcegraph/sourcegraph/pull/29625)
 
 ### Removed
 
