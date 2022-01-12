@@ -3,9 +3,7 @@
 
 IMAGE=${IMAGE:-sourcegraph/server:${TAG:-insiders}}
 URL=${URL:-"http://localhost:7080"}
-
-# In CI, provide a directory unique to this job
-DATA="/tmp/sourcegraph-${BUILDKITE_JOB_ID:-"server"}"
+DATA=${DATA:-"/tmp/sourcegraph-data"}
 
 echo "--- Checking for existing Sourcegraph instance at $URL"
 if curl --output /dev/null --silent --head --fail "$URL"; then
@@ -28,14 +26,9 @@ case "$CLEAN" in
     ;;
 esac
 
-function clean_data() {
+if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
   echo "--- Deleting $DATA"
   rm -rf "$DATA"
-}
-
-if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
-  clean_data
-  trap clean_data EXIT
 fi
 
 echo "--- Starting server ${IMAGE}"
