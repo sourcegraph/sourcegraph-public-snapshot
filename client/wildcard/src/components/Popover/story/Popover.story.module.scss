@@ -51,11 +51,9 @@
 }
 
 .floating {
-    background-color: #0b70db;
-    padding: 0.25rem;
-    border-radius: 0.24rem;
     max-width: 12rem;
-    color: var(--color-bg-1);
+    padding: 0.5rem;
+    margin: 0;
 
     &-with-scroll {
         max-height: 8rem;

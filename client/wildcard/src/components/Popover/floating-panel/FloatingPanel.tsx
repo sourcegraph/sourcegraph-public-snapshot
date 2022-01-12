@@ -3,7 +3,7 @@ import React, { forwardRef, useLayoutEffect, useRef, useState, PropsWithChildren
 import { createPortal } from 'react-dom'
 import { useCallbackRef, useMergeRefs } from 'use-callback-ref'
 
-import { ForwardReferenceComponent } from '../../../types';
+import { ForwardReferenceComponent } from '../../../types'
 import { createTether, Flipping, Overlapping, Position, Tether } from '../tether'
 
 import styles from './FloatingPanel.module.scss'
@@ -104,7 +104,7 @@ export const FloatingPanel = forwardRef((props, reference) => {
             <Component
                 {...otherProps}
                 ref={useMergeRefs([tooltipReferenceCallback, reference])}
-                className={classNames(styles.floatingPanel, 'dropdown-menu', className)}
+                className={classNames(styles.floatingPanel, className)}
             >
                 {props.children}
             </Component>

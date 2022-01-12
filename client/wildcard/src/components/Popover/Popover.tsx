@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { noop } from 'lodash'
 import React, {
     createContext,
@@ -112,42 +113,45 @@ const PopoverTrigger = forwardRef((props, reference) => {
 
 interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' | 'marker'> {
     open?: boolean
-    targetElement?: HTMLElement | null
+    focusLocked?: boolean
 }
 
-const PopoverContent = forwardRef(
-    (props, reference) => {
-        const { as: Component = 'div', open, targetElement: propertyTargetElement, children, ...otherProps } = props
-        const { isOpen, targetElement: contextTargetElement, anchor, setOpen } = useContext(PopoverContext)
+const PopoverContent = forwardRef((props, reference) => {
+    const { open, children, focusLocked = true, as: Component = 'div', ...otherProps } = props
 
-        const targetElement = propertyTargetElement ?? contextTargetElement
-        const localReference = useRef<HTMLDivElement>(null)
-        const mergeReference = useMergeRefs([localReference, reference])
+    const { isOpen, targetElement, anchor, setOpen } = useContext(PopoverContext)
 
-        // Catch any outside click of popover element
-        useOnClickOutside(mergeReference, event => {
-            if (targetElement?.contains(event.target as Node)) {
-                return
-            }
+    const localReference = useRef<HTMLDivElement>(null)
+    const mergeReference = useMergeRefs([localReference, reference])
 
-            setOpen({ isOpen: false, reason: PopoverOpenEventReason.ClickOutside })
-        })
-
-        // Close popover on escape
-        useKeyboard({ detectKeys: ['Escape'] }, () => setOpen({ isOpen: false, reason: PopoverOpenEventReason.Esc }))
-
-        if (!isOpen && !open) {
-            return null
+    // Catch any outside click of popover element
+    useOnClickOutside(mergeReference, event => {
+        if (targetElement?.contains(event.target as Node)) {
+            return
         }
 
-        return (
-            <FloatingPanel {...otherProps} as={Component} ref={reference} target={anchor?.current ?? targetElement}>
-                {/*<FocusLock autoFocus={true} returnFocus={true}>{children}</FocusLock>*/}
-                {children}
-            </FloatingPanel>
-        )
+        setOpen({ isOpen: false, reason: PopoverOpenEventReason.ClickOutside })
+    })
+
+    // Close popover on escape
+    useKeyboard({ detectKeys: ['Escape'] }, () => setOpen({ isOpen: false, reason: PopoverOpenEventReason.Esc }))
+
+    if (!isOpen && !open) {
+        return null
     }
-) as ForwardReferenceComponent<'div', PopoverContentProps>
+
+    return (
+        <FloatingPanel
+            {...otherProps}
+            as={Component}
+            ref={mergeReference}
+            target={anchor?.current ?? targetElement}
+            className={classNames('dropdown-menu', otherProps.className)}
+        >
+            {focusLocked ? <FocusLock returnFocus={true}>{children}</FocusLock> : children}
+        </FloatingPanel>
+    )
+}) as ForwardReferenceComponent<'div', PopoverContentProps>
 
 const Root = Popover
 const Trigger = PopoverTrigger
