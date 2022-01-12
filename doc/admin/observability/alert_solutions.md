@@ -941,7 +941,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-mean-successful-sentinel-duration-1h30m).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-mean-successful-sentinel-duration-1h30m).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -957,19 +957,19 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ## frontend: mean_sentinel_stream_latency_1h30m
 
-<p class="subtitle">mean sentinel stream latency over 1h30m</p>
+<p class="subtitle">mean successful sentinel stream latency over 1h30m</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 2s+ mean sentinel stream latency over 1h30m for 15m0s
-- <span class="badge badge-critical">critical</span> frontend: 3s+ mean sentinel stream latency over 1h30m for 30m0s
+- <span class="badge badge-warning">warning</span> frontend: 2s+ mean successful sentinel stream latency over 1h30m for 15m0s
+- <span class="badge badge-critical">critical</span> frontend: 3s+ mean successful sentinel stream latency over 1h30m for 30m0s
 
 **Possible solutions**
 
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-mean-sentinel-stream-latency-1h30m).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-mean-sentinel-stream-latency-1h30m).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -997,7 +997,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-90th-percentile-successful-sentinel-duration-1h30m).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-90th-percentile-successful-sentinel-duration-1h30m).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1013,19 +1013,19 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ## frontend: 90th_percentile_sentinel_stream_latency_1h30m
 
-<p class="subtitle">90th percentile sentinel stream latency over 1h30m</p>
+<p class="subtitle">90th percentile successful sentinel stream latency over 1h30m</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 4s+ 90th percentile sentinel stream latency over 1h30m for 15m0s
-- <span class="badge badge-critical">critical</span> frontend: 6s+ 90th percentile sentinel stream latency over 1h30m for 30m0s
+- <span class="badge badge-warning">warning</span> frontend: 4s+ 90th percentile successful sentinel stream latency over 1h30m for 15m0s
+- <span class="badge badge-critical">critical</span> frontend: 6s+ 90th percentile successful sentinel stream latency over 1h30m for 30m0s
 
 **Possible solutions**
 
 - Look at the breakdown by query to determine if a specific query type is being affected
 - Check for high CPU usage on zoekt-webserver
 - Check Honeycomb for unusual activity
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-90th-percentile-sentinel-stream-latency-1h30m).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-90th-percentile-sentinel-stream-latency-1h30m).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json

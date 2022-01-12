@@ -2782,6 +2782,8 @@ Query: `sum by(app) (up{app=~".*(frontend|sourcegraph-frontend)"}) / count by (a
 
 <p class="subtitle">Mean successful sentinel search duration over 1h30m</p>
 
+Mean search duration for all successful sentinel queries
+
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-successful-sentinel-duration-1h30m) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102300` on your Sourcegraph instance.
@@ -2799,7 +2801,9 @@ Query: `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*"
 
 #### frontend: mean_sentinel_stream_latency_1h30m
 
-<p class="subtitle">Mean sentinel stream latency over 1h30m</p>
+<p class="subtitle">Mean successful sentinel stream latency over 1h30m</p>
+
+Mean time to first result for all successful streaming sentinel queries
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-sentinel-stream-latency-1h30m) for 2 alerts related to this panel.
 
@@ -2820,6 +2824,8 @@ Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*
 
 <p class="subtitle">90th percentile successful sentinel search duration over 1h30m</p>
 
+90th percentile search duration for all successful sentinel queries
+
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-successful-sentinel-duration-1h30m) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102310` on your Sourcegraph instance.
@@ -2837,7 +2843,9 @@ Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_respo
 
 #### frontend: 90th_percentile_sentinel_stream_latency_1h30m
 
-<p class="subtitle">90th percentile sentinel stream latency over 1h30m</p>
+<p class="subtitle">90th percentile successful sentinel stream latency over 1h30m</p>
+
+90th percentile time to first result for all successful streaming sentinel queries
 
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-sentinel-stream-latency-1h30m) for 2 alerts related to this panel.
 
@@ -2858,7 +2866,7 @@ Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_strea
 
 <p class="subtitle">Mean successful sentinel search duration by query over 1h30m</p>
 
-- The mean search duration for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+Mean search duration for successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
 This panel has no related alerts.
 
@@ -2877,9 +2885,9 @@ Query: `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*"
 
 #### frontend: mean_sentinel_stream_latency_by_query_1h30m
 
-<p class="subtitle">Mean sentinel stream latency by query over 1h30m</p>
+<p class="subtitle">Mean successful sentinel stream latency by query over 1h30m</p>
 
-- The mean streaming search latency for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+Mean time to first result for successful streaming sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
 This panel has no related alerts.
 
@@ -2898,9 +2906,9 @@ Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*
 
 #### frontend: 90th_percentile_successful_sentinel_duration_by_query_1h30m
 
-<p class="subtitle">90th percentile sentinel search duration by query over 1h30m</p>
+<p class="subtitle">90th percentile successful sentinel search duration by query over 1h30m</p>
 
-- The 90th percentile search duration for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+90th percentile search duration for successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
 This panel has no related alerts.
 
@@ -2917,11 +2925,11 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bu
 
 <br />
 
-#### frontend: 90th_percentile_stream_latency_by_query_1h30m
+#### frontend: 90th_percentile_successful_stream_latency_by_query_1h30m
 
-<p class="subtitle">90th percentile stream latency by query over 1h30m</p>
+<p class="subtitle">90th percentile successful sentinel stream latency by query over 1h30m</p>
 
-- The 90th percentile search latency for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+90th percentile time to first result for successful streaming sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
 This panel has no related alerts.
 
@@ -2938,11 +2946,11 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_b
 
 <br />
 
-#### frontend: 90th_percentile_duration_by_query_1h30m
+#### frontend: 90th_percentile_unsuccessful_duration_by_query_1h30m
 
 <p class="subtitle">90th percentile unsuccessful sentinel search duration by query over 1h30m</p>
 
-- The 90th percentile search duration of _unsuccessful_ sentinel queries (by error or timeout), broken down by query. Useful for debugging how the performance of failed requests affect UX.
+90th percentile search duration of _unsuccessful_ sentinel queries (by error or timeout), broken down by query. Useful for debugging how the performance of failed requests affect UX.
 
 This panel has no related alerts.
 
@@ -2961,9 +2969,9 @@ Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bu
 
 #### frontend: 75th_percentile_successful_sentinel_duration_by_query_1h30m
 
-<p class="subtitle">75th percentile sentinel search duration by query over 1h30m</p>
+<p class="subtitle">75th percentile successful sentinel search duration by query over 1h30m</p>
 
-- The 75th percentile search duration for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+75th percentile search duration of successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
 This panel has no related alerts.
 
@@ -2980,11 +2988,11 @@ Query: `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bu
 
 <br />
 
-#### frontend: 75th_percentile_stream_latency_by_query_1h30m
+#### frontend: 75th_percentile_successful_stream_latency_by_query_1h30m
 
-<p class="subtitle">75th percentile stream latency by query over 1h30m</p>
+<p class="subtitle">75th percentile successful sentinel stream latency by query over 1h30m</p>
 
-- The 75th percentile search latency for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+75th percentile time to first result for successful streaming sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
 This panel has no related alerts.
 
@@ -3001,11 +3009,11 @@ Query: `histogram_quantile(0.75, sum(rate(src_search_streaming_latency_seconds_b
 
 <br />
 
-#### frontend: 75th_percentile_duration_by_query_1h30m
+#### frontend: 75th_percentile_unsuccessful_duration_by_query_1h30m
 
 <p class="subtitle">75th percentile unsuccessful sentinel search duration by query over 1h30m</p>
 
-- The 75th percentile search duration of _unsuccessful_ sentinel queries (by error or timeout), broken down by query. Useful for debugging how the performance of failed requests affect UX.
+75th percentile search duration of _unsuccessful_ sentinel queries (by error or timeout), broken down by query. Useful for debugging how the performance of failed requests affect UX.
 
 This panel has no related alerts.
 
@@ -3026,7 +3034,7 @@ Query: `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bu
 
 <p class="subtitle">Unsuccessful status rate per 1h30m</p>
 
-- The rate of unsuccessful sentinel queries, broken down by failure type.
+The rate of unsuccessful sentinel queries, broken down by failure type.
 
 This panel has no related alerts.
 
