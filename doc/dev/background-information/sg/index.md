@@ -28,6 +28,8 @@
 [`sg`](https://github.com/sourcegraph/sourcegraph/tree/main/dev/sg) is the CLI tool that Sourcegraph developers can use to develop Sourcegraph.
 Learn more about the tool's overall vision in [`sg` Vision](./vision.md), and how to use it in the [usage section](#usage).
 
+> NOTE: Have feedback or ideas? Feel free to [open a discussion](https://github.com/sourcegraph/sourcegraph/discussions/categories/developer-experience)! Sourcegraph teammates can also leave a message in [#dev-experience](https://sourcegraph.slack.com/archives/C01N83PS4TU).
+
 ## Quickstart
 
 1. Run the following to download and install `sg`:
@@ -99,6 +101,8 @@ go build -o ~/my/path/sg ./dev/sg
 Then make sure that `~/my/path` is in your `$PATH`.
 
 ## Usage
+
+See [configuration](#configuration) to learn more about configuring `sg` behaviour.
 
 ### `sg start` - Start dev environments
 
@@ -262,7 +266,7 @@ sg secret reset buildkite
 
 ```
 
-### `sg check` - Run checks against local code 
+### `sg check` - Run checks against local code
 
 ```bash
 # Run all possible checks 
@@ -302,16 +306,16 @@ sg db add-user -name=foo
 
 ## Configuration
 
-`sg` is configured through the [`sg.config.yaml` file in the root of the `sourcegraph/sourcegraph` repository](https://github.com/sourcegraph/sourcegraph/blob/main/sg.config.yaml). Take a look at that file to see which commands are run in which environment, how these commands set setup, what environment variables they use, and more.
+Default `sg` behaviour is configured through the [`sg.config.yaml` file in the root of the `sourcegraph/sourcegraph` repository](https://github.com/sourcegraph/sourcegraph/blob/main/sg.config.yaml). Take a look at that file to see which commands are run in which environment, how these commands set setup, what environment variables they use, and more.
 
-To modify your configuration locally, you can overwrite chunks of configuration by creating a `sg.config.overwrite.yaml` file in the root of the repository. It's `.gitignore`d so you won't accidentally commit those changes.
+**To modify your configuration locally, you can overwrite chunks of configuration by creating a `sg.config.overwrite.yaml` file in the root of the repository.** It's `.gitignore`d so you won't accidentally commit those changes.
 
 If an `sg.config.overwrite.yaml` file exists, its contents will be merged with the content of `sg.config.yaml`, overwriting where there are conflicts. This is useful for running custom command sets or adding environment variables
 specific to your work.
 
 You can run `sg run debug-env` to see the environment variables passed `sg`'s child processes.
 
-### Examples
+### Configuration examples
 
 #### Changing database configuration
 
@@ -390,3 +394,11 @@ go run . -config ../../sg.config.yaml start
 ```
 
 The `-config` can be anything you want, of course.
+
+Have questions or need help? Feel free to [open a discussion](https://github.com/sourcegraph/sourcegraph/discussions/categories/developer-experience)! Sourcegraph teammates can also leave a message in [#dev-experience](https://sourcegraph.slack.com/archives/C01N83PS4TU).
+
+> NOTE: For Sourcegraph teammates, we have a weekly [`sg` hack hour](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#sg-hack-hour) you can hop in to if you're interested in contributing!
+
+### Development tips
+
+- Due to [#29222](https://github.com/sourcegraph/sourcegraph/issues/29222), you might need to set `CONFIGURATION_MODE: 'empty'` if you encounter errors where `sg` tries to connect to `frontend`.
