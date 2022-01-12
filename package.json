@@ -327,6 +327,8 @@
   },
   "dependencies": {
     "@apollo/client": "3.4.7",
+    "@floating-ui/dom": "^0.1.8",
+    "@floating-ui/react-dom": "^0.3.4",
     "@reach/accordion": "^0.10.2",
     "@reach/combobox": "^0.15.2",
     "@reach/dialog": "^0.11.2",
