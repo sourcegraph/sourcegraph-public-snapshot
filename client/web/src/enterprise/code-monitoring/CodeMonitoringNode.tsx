@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import * as H from 'history'
 import React, { useState, useCallback, useMemo } from 'react'
 import { Observable, concat, of } from 'rxjs'
@@ -111,12 +110,14 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                             disabled={toggleMonitorOrError === LOADING}
                         />
                     </div>
-                    <Link
+                    <Button
                         to={`${location.pathname}/${node.id}`}
-                        className={classNames('btn btn-link', styles.editButton)}
+                        className={styles.editButton}
+                        variant="link"
+                        as={Link}
                     >
                         Edit
-                    </Link>
+                    </Button>
                 </div>
             </div>
             {isErrorLike(toggleMonitorOrError) && (

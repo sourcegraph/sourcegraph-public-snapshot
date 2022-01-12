@@ -1,5 +1,6 @@
 .bin/
 *.bundle.*
+lib/codeintel/lsif_typed
 client/phabricator/scripts/loader.js
 client/browser/build
 **/package.json

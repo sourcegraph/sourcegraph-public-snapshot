@@ -250,8 +250,10 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 		// Notify sentry if the status code indicates our system had an error (e.g. 5xx).
 		if m.Code >= 500 {
 			if requestErrorCause == nil {
-				// This creates loads of events on which we do not have the stack trace and that are barely usable.
-				// requestErrorCause = errors.WithStack(&httpErr{status: m.Code, method: r.Method, path: r.URL.Path})
+				// Always wrapping error without a true cause creates loads of events on which we
+				// do not have the stack trace and that are barely usable. Once we find a better
+				// way to handle such cases, we should bring back the deleted lines from
+				// https://github.com/sourcegraph/sourcegraph/pull/29312.
 				return
 			}
 
@@ -271,17 +273,6 @@ func HTTPMiddleware(next http.Handler, siteConfig conftypes.SiteConfigQuerier) h
 		}
 	}))
 }
-
-// Associated with the above comment aobut the load of events.
-// type httpErr struct {
-// 	status int
-// 	method string
-// 	path   string
-// }
-//
-// func (e *httpErr) Error() string {
-// 	return fmt.Sprintf("HTTP status %d, %s %s", e.status, e.method, e.path)
-// }
 
 func Route(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {

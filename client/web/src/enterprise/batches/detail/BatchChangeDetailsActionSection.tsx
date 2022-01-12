@@ -66,17 +66,20 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<BatchChang
     return (
         <div className="d-flex">
             {showEditButton && (
-                <Link to={`${location.pathname}/edit`} className="mr-2 btn btn-secondary">
+                <Button to={`${location.pathname}/edit`} className="mr-2" variant="secondary" as={Link}>
                     <PencilIcon className="icon-inline" /> Edit
-                </Link>
+                </Button>
             )}
-            <Link
+            <Button
                 to={`${location.pathname}/close`}
-                className="btn btn-outline-danger test-batches-close-btn"
+                className="test-batches-close-btn"
                 data-tooltip="View a preview of all changes that will happen when you close this batch change."
+                variant="danger"
+                outline={true}
+                as={Link}
             >
                 <DeleteIcon className="icon-inline" /> Close
-            </Link>
+            </Button>
         </div>
     )
 }

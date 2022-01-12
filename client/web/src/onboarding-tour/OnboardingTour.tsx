@@ -176,9 +176,15 @@ export const OnboardingTourContent: React.FunctionComponent<OnboardingTourConten
                     features on your private code.
                 </p>
                 <div className="d-flex flex-column">
-                    <Link className="btn btn-primary align-self-start mb-2" to="/sign-up" onClick={onSignUp}>
+                    <Button
+                        className="align-self-start mb-2"
+                        to="/sign-up"
+                        onClick={onSignUp}
+                        variant="primary"
+                        as={Link}
+                    >
                         Sign up for Cloud
-                    </Link>
+                    </Button>
                     <a
                         className="btn btn-link shadow-none align-self-start pl-0 mb-2"
                         href="https://docs.sourcegraph.com/admin/install?utm_campaign=inproduct-tour&utm_medium=direct_traffic&utm_source=inproduct-tour&utm_term=null&utm_content=complete"

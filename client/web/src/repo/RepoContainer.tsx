@@ -234,16 +234,20 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 element: (
                     <>
                         <div className="d-inline-flex btn-group">
-                            <Link
+                            <Button
                                 to={
                                     resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
                                         ? resolvedRevisionOrError.rootTreeURL
                                         : repoOrError.url
                                 }
-                                className="btn btn-sm btn-outline-secondary text-nowrap test-repo-header-repo-link"
+                                className="text-nowrap test-repo-header-repo-link"
+                                variant="secondary"
+                                outline={true}
+                                size="sm"
+                                as={Link}
                             >
                                 <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
-                            </Link>
+                            </Button>
                             <Button
                                 id="repo-popover"
                                 className={styles.repoChange}

@@ -268,9 +268,9 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                     {!location.pathname.endsWith('preview') &&
                         batchSpec.applyURL &&
                         batchSpec.state === BatchSpecState.COMPLETED && (
-                            <Link to="preview" className="btn btn-primary">
+                            <Button to="preview" variant="primary" as={Link}>
                                 Preview
-                            </Link>
+                            </Button>
                         )}
                     {batchSpec.viewerCanRetry && batchSpec.state !== BatchSpecState.COMPLETED && (
                         // TODO: Add a second button to allow retrying an entire batch spec,
@@ -293,14 +293,16 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                     {!location.pathname.endsWith('preview') &&
                         batchSpec.applyURL &&
                         batchSpec.state === BatchSpecState.FAILED && (
-                            <Link
-                                className="btn btn-outline-warning"
+                            <Button
                                 to="preview"
                                 data-tooltip="Execution didn't finish successfully in all workspaces. The batch spec might have less changeset specs than expected."
+                                variant="warning"
+                                outline={true}
+                                as={Link}
                             >
                                 <AlertCircleIcon className="icon-inline mb-0 mr-2 text-warning" />
                                 Preview
-                            </Link>
+                            </Button>
                         )}
                 </div>
                 {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}

@@ -134,9 +134,9 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
         <div className="site-admin-product-subscription-page">
             <PageTitle title="Product subscription" />
             <div className="mb-2">
-                <Link to="/site-admin/dotcom/product/subscriptions" className="btn btn-link btn-sm">
+                <Button to="/site-admin/dotcom/product/subscriptions" variant="link" size="sm" as={Link}>
                     <ArrowLeftIcon className="icon-inline" /> All subscriptions
-                </Link>
+                </Button>
             </div>
             {productSubscription === LOADING ? (
                 <LoadingSpinner />

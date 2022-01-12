@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { Button } from '@sourcegraph/wildcard'
 
 import { ProductSubscriptionLabel } from '../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 
@@ -14,9 +15,9 @@ export const ProductSubscriptionBilling: React.FunctionComponent<{
                 <th className="text-nowrap align-middle">Plan</th>
                 <td className="w-100 d-flex align-items-center justify-content-between">
                     <ProductSubscriptionLabel productSubscription={productSubscription} planField="name" />
-                    <Link to={`${productSubscription.url}/edit`} className="btn btn-secondary btn-sm">
+                    <Button to={`${productSubscription.url}/edit`} variant="secondary" size="sm" as={Link}>
                         Change plan or add/remove users
-                    </Link>
+                    </Button>
                 </td>
             </tr>
         </tbody>

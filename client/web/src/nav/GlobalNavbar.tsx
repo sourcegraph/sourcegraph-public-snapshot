@@ -20,7 +20,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { ProductStatusBadge } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -36,6 +36,7 @@ import {
     KEYBOARD_SHORTCUT_SWITCH_THEME,
 } from '../keyboardShortcuts/keyboardShortcuts'
 import { LayoutRouteProps } from '../routes'
+import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
 import { Settings } from '../schema/settings.schema'
 import { ParsedSearchQueryProps, isSearchContextSpecAvailable, SearchContextInputProps } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
@@ -46,7 +47,7 @@ import { showDotComMarketing } from '../util/features'
 
 import { FeedbackPrompt } from './Feedback'
 import styles from './GlobalNavbar.module.scss'
-import { NavDropdown } from './NavBar/NavDropdown'
+import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
 
@@ -138,6 +139,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext)
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring)
+    const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -185,6 +187,22 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         />
     )
 
+    const searchNavBarItems = useMemo(() => {
+        const items: (NavDropdownItem | false)[] = [
+            searchContextsEnabled &&
+                !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
+            !!showSearchNotebook && {
+                path: PageRoutes.Notebooks,
+                content: (
+                    <>
+                        Notebooks <ProductStatusBadge className="ml-1" status="beta" />
+                    </>
+                ),
+            },
+        ]
+        return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
+    }, [searchContextsEnabled, showSearchNotebook, showSearchContext])
+
     return (
         <>
             <NavBar
@@ -201,16 +219,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     <NavDropdown
                         toggleItem={{ path: '/search', icon: MagnifyIcon, content: 'Code Search' }}
                         mobileHomeItem={{ content: 'Search home' }}
-                        items={[
-                            {
-                                path: '/contexts',
-                                content: (
-                                    <>
-                                        Contexts <ProductStatusBadge className="ml-1" status="new" />
-                                    </>
-                                ),
-                            },
-                        ]}
+                        items={searchNavBarItems}
                     />
                     {enableCodeMonitoring && (
                         <NavItem icon={CodeMonitoringLogo}>
@@ -291,12 +300,19 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         <>
                             <NavAction>
                                 <div>
-                                    <Link className="btn btn-sm btn-outline-secondary mr-1" to="/sign-in">
+                                    <Button
+                                        className="mr-1"
+                                        to="/sign-in"
+                                        variant="secondary"
+                                        outline={true}
+                                        size="sm"
+                                        as={Link}
+                                    >
                                         Log in
-                                    </Link>
-                                    <Link className={classNames('btn btn-sm', styles.signUp)} to="/sign-up">
+                                    </Button>
+                                    <Button className={styles.signUp} to="/sign-up" size="sm" as={Link}>
                                         Sign up
-                                    </Link>
+                                    </Button>
                                 </div>
                             </NavAction>
                         </>

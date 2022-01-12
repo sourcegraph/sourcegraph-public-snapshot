@@ -28,7 +28,7 @@ export const SearchNotebookAddBlockButtons: React.FunctionComponent<SearchNotebo
         <div className={styles.addBlockButtons}>
             <Button
                 className={styles.addBlockButton}
-                onClick={() => onAddBlock(index, { type: 'query', input: '// Enter search query' })}
+                onClick={() => onAddBlock(index, { type: 'query', input: '' })}
                 data-testid="add-query-button"
                 outline={true}
                 variant="secondary"
