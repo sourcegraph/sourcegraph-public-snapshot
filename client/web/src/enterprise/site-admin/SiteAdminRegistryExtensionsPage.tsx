@@ -95,13 +95,15 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                     </div>
                     <div className="d-flex align-items-center">
                         {this.props.node.viewerCanAdminister && (
-                            <Link
+                            <Button
                                 to={`${this.props.node.url}/-/manage`}
-                                className="btn btn-secondary btn-sm"
                                 title="Manage extension"
+                                variant="secondary"
+                                size="sm"
+                                as={Link}
                             >
                                 Manage
-                            </Link>
+                            </Button>
                         )}
                         {!this.props.node.isLocal && this.props.node.remoteURL && this.props.node.registryName && (
                             <a
@@ -186,12 +188,12 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">Registry extensions</h2>
                     <div>
-                        <Link className="btn btn-link mr-sm-2" to="/extensions">
+                        <Button className="mr-sm-2" to="/extensions" variant="link" as={Link}>
                             View extensions
-                        </Link>
-                        <Link className="btn btn-primary" to="/extensions/registry/new">
+                        </Button>
+                        <Button to="/extensions/registry/new" variant="primary" as={Link}>
                             <AddIcon className="icon-inline" /> Publish new extension
-                        </Link>
+                        </Button>
                     </div>
                 </div>
                 <p>

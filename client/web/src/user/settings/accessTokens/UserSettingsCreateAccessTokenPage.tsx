@@ -199,12 +199,14 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<Props> =
                         {creationOrError === 'loading' ? <LoadingSpinner /> : <AddIcon className="icon-inline" />}{' '}
                         Generate token
                     </Button>
-                    <Link
-                        className="btn btn-secondary ml-2 test-create-access-token-cancel"
+                    <Button
+                        className="ml-2 test-create-access-token-cancel"
                         to={match.url.replace(/\/new$/, '')}
+                        variant="secondary"
+                        as={Link}
                     >
                         Cancel
-                    </Link>
+                    </Button>
                 </div>
             </Form>
 

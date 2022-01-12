@@ -146,12 +146,14 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                             </>
                         )}
                         {!window.context.sourcegraphDotComMode && (
-                                <Link
-                                    className="btn btn-sm btn-secondary"
+                                <Button
                                     to={`${userURL(this.props.node.username)}/settings`}
+                                    variant="secondary"
+                                    size="sm"
+                                    as={Link}
                                 >
                                     <SettingsIcon className="icon-inline" /> Settings
-                                </Link>
+                                </Button>
                             ) &&
                             ' '}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
@@ -415,9 +417,9 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">Users</h2>
                     <div>
-                        <Link to="/site-admin/users/new" className="btn btn-primary">
+                        <Button to="/site-admin/users/new" variant="primary" as={Link}>
                             <AddIcon className="icon-inline" /> Create user account
-                        </Link>
+                        </Button>
                     </div>
                 </div>
                 <FilteredConnection<GQL.IUser, Omit<UserNodeProps, 'node'>>

@@ -188,14 +188,18 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
 
     const viewFilesCommitElement = node.tree && (
         <div className="d-flex justify-content-between">
-            <Link
-                className="btn btn-sm btn-outline-secondary align-center d-inline-flex"
+            <Button
+                className="align-center d-inline-flex"
                 to={node.tree.canonicalURL}
                 data-tooltip="Browse files in the repository at this point in history"
+                variant="secondary"
+                outline={true}
+                size="sm"
+                as={Link}
             >
                 <FileDocumentIcon className="icon-inline mr-1" />
                 Browse files at @{node.abbreviatedOID}
-            </Link>
+            </Button>
             {diffModeSelector()}
         </div>
     )
@@ -219,13 +223,14 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                                 {!showSHAAndParentsRow && (
                                     <div>
                                         <div className="btn-group btn-group-sm mr-2" role="group">
-                                            <Link
-                                                className="btn btn-secondary"
+                                            <Button
                                                 to={node.canonicalURL}
                                                 data-tooltip="View this commit"
+                                                variant="secondary"
+                                                as={Link}
                                             >
                                                 <strong>{oidElement}</strong>
-                                            </Link>
+                                            </Button>
                                             <Button
                                                 onClick={() => copyToClipboard(node.oid)}
                                                 data-tooltip={
@@ -237,13 +242,15 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                                             </Button>
                                         </div>
                                         {node.tree && (
-                                            <Link
-                                                className="btn btn-sm btn-secondary"
+                                            <Button
                                                 to={node.tree.canonicalURL}
                                                 data-tooltip="View files at this commit"
+                                                variant="secondary"
+                                                size="sm"
+                                                as={Link}
                                             >
                                                 <FileDocumentIcon className="icon-inline mr-1" />
-                                            </Link>
+                                            </Button>
                                         )}
                                     </div>
                                 )}

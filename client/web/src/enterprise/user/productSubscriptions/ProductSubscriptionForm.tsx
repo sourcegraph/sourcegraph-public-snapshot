@@ -103,7 +103,6 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
     afterPrimaryButton,
     isLightTheme,
     stripe,
-    history,
 }) => {
     if (!stripe) {
         throw new Error('billing service is not available')
@@ -221,16 +220,19 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                         />
                         {!accountID && (
                             <div className="form-group mt-3">
-                                <Link
+                                <Button
                                     to={`/sign-up?returnTo=${encodeURIComponent(
                                         `/subscriptions/new${productSubscriptionInputForLocationHash(
                                             productSubscriptionInput
                                         )}`
                                     )}`}
-                                    className="btn btn-lg btn-primary w-100 center"
+                                    className="w-100 center"
+                                    variant="primary"
+                                    size="lg"
+                                    as={Link}
                                 >
                                     Create account or sign in to continue
-                                </Link>
+                                </Button>
                                 <small className="form-text text-muted">
                                     A user account on Sourcegraph.com is required to create a subscription so you can
                                     view the license key and invoice.
