@@ -14,6 +14,8 @@ if [ -z "$IMAGE" ]; then
 fi
 
 URL="http://localhost:7080"
+IDENTIFIER=${BUILDKITE_JOB_ID:-$(openssl rand -hex 12)}
+CONTAINER="sourcegraph-$IDENTIFIER"
 
 function docker_cleanup() {
   echo "--- docker cleanup"
@@ -57,8 +59,7 @@ function cleanup() {
 trap cleanup EXIT
 
 echo "--- Running a daemonized $IMAGE as the test subject..."
-CONTAINER="sourcegraph"
-CLEAN="true" "${root_dir}"/dev/run-server-image.sh -d --name $CONTAINER
+CLEAN="true" "${root_dir}"/dev/run-server-image.sh -d --name "$CONTAINER"
 
 echo "--- Waiting for $URL to be up"
 set +e

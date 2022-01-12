@@ -7,6 +7,7 @@ root_dir=$(pwd)
 set -ex
 
 URL="${1:-"http://localhost:7080"}"
+IDENTIFIER=${BUILDKITE_JOB_ID:-$(openssl rand -hex 12)}
 
 docker_logs() {
   echo "--- dump server logs"
@@ -17,8 +18,8 @@ trap docker_logs EXIT
 
 # Run and initialize an old Sourcegraph release
 echo "--- start sourcegraph $MINIMUM_UPGRADEABLE_VERSION"
-CONTAINER="sourcegraph-old"
-IMAGE=sourcegraph/server:$MINIMUM_UPGRADEABLE_VERSION CLEAN="true" ./dev/run-server-image.sh -d --name $CONTAINER
+CONTAINER="sourcegraph-old-$IDENTIFIER"
+IMAGE=sourcegraph/server:$MINIMUM_UPGRADEABLE_VERSION CLEAN="true" ./dev/run-server-image.sh -d --name "$CONTAINER"
 sleep 15
 pushd internal/cmd/init-sg
 go build
@@ -63,8 +64,8 @@ fi
 
 # Upgrade to current candidate image. Capture logs for the attempted upgrade.
 echo "--- start candidate"
-CONTAINER="sourcegraph-new"
-IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION CLEAN="false" ./dev/run-server-image.sh -d --name $CONTAINER
+CONTAINER="sourcegraph-new-$IDENTIFIER"
+IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION CLEAN="false" ./dev/run-server-image.sh -d --name "$CONTAINER"
 sleep 15
 
 # Run tests
