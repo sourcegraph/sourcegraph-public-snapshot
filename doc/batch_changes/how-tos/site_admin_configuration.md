@@ -30,7 +30,14 @@
     </aside>
   </li>
   <li>
-    (Optional) <a href="../../../admin/config/batch_changes#rollout-windows">Control the rate at which Batch Changes will publish changesets on code hosts</a>.
+    Configure any desired optional features, such as:
+    <ul>
+      <li>
+        <a href="../../../admin/config/batch_changes#rollout-windows">Rollout windows</a>, which control the rate at which Batch Changes will publish changesets on code hosts.
+      </li>
+      <li>
+        <a href="../../../admin/config/batch_changes#forks">Forks</a>, which push branches created by Batch Changes onto forks of the upstream repository instead than the repository itself.
+    </ul>
   </li>
 </ol>
 
@@ -38,4 +45,3 @@
 #### Disable Batch Changes
 - [Disable Batch Changes](../explanations/permissions_in_batch_changes.md#disabling-batch-changes).
 - [Disable Batch Changes for non-site-admin users](../explanations/permissions_in_batch_changes.md#disabling-batch-changes-for-non-site-admin-users).
-

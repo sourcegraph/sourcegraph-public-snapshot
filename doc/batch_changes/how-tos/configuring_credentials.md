@@ -83,6 +83,8 @@ Global credentials are usable by all users of the Sourcegraph instance who have 
 
 Sourcegraph also uses the global service account to [track existing changesets](./tracking_existing_changesets.md) and keep changesets up to date. If no global service account token is set, we can currently fall back to the [token configured for the code host connection](#code-host-connection-tokens). However, this fallback will be deprecated in the future, so for this reason we highly recommend setting up a global service account.
 
+If [forks are enabled](../../admin/config/batch_changes.md#forks), then note that repositories will also be forked into the service account.
+
 ### Adding a token
 
 Adding a global service account token is done through the Batch Changes section of the site admin area:
