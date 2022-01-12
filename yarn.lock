@@ -1701,6 +1701,26 @@
   dependencies:
     "@figspec/components" "^1.0.0"
 
+"@floating-ui/core@^0.3.0":
+  version "0.3.1"
+  resolved "https://registry.npmjs.org/@floating-ui/core/-/core-0.3.1.tgz#3dde0ad0724d4b730567c92f49f0950910e18871"
+  integrity sha512-ensKY7Ub59u16qsVIFEo2hwTCqZ/r9oZZFh51ivcLGHfUwTn8l1Xzng8RJUe91H/UP8PeqeBronAGx0qmzwk2g==
+
+"@floating-ui/dom@^0.1.8":
+  version "0.1.10"
+  resolved "https://registry.npmjs.org/@floating-ui/dom/-/dom-0.1.10.tgz#ce304136a52c71ef157826d2ebf52d68fa2deed5"
+  integrity sha512-4kAVoogvQm2N0XE0G6APQJuCNuErjOfPW8Ux7DFxh8+AfugWflwVJ5LDlHOwrwut7z/30NUvdtHzQ3zSip4EzQ==
+  dependencies:
+    "@floating-ui/core" "^0.3.0"
+
+"@floating-ui/react-dom@^0.3.4":
+  version "0.3.4"
+  resolved "https://registry.npmjs.org/@floating-ui/react-dom/-/react-dom-0.3.4.tgz#7dc7c09a4f645308521bcf2a58c45b4e9aa846d4"
+  integrity sha512-/rnS+pXHLQC+q/koZD8f2O1utyJJCAzOvhxDfKBUUiEzVZmZE0ryzmpIcvs+3zUudpv8xP7cmWWSRi7Y1DsSdg==
+  dependencies:
+    "@floating-ui/dom" "^0.1.8"
+    use-isomorphic-layout-effect "^1.1.1"
+
 "@gql2ts/from-query@^1.9.0":
   version "1.9.0"
   resolved "https://registry.npmjs.org/@gql2ts/from-query/-/from-query-1.9.0.tgz#ae92a4fa3df005df57eb835b371d7964644b9beb"
@@ -23323,10 +23343,10 @@ use-deep-compare-effect@^1.6.1:
     "@types/react" "^17.0.0"
     dequal "^2.0.2"
 
-use-isomorphic-layout-effect@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.npmjs.org/use-isomorphic-layout-effect/-/use-isomorphic-layout-effect-1.0.0.tgz#f56b4ed633e1c21cd9fc76fe249002a1c28989fb"
-  integrity sha512-JMwJ7Vd86NwAt1jH7q+OIozZSIxA4ND0fx6AsOe2q1H8ooBUp5aN6DvVCqZiIaYU6JaMRJGyR0FO7EBCIsb/Rg==
+use-isomorphic-layout-effect@^1.0.0, use-isomorphic-layout-effect@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.npmjs.org/use-isomorphic-layout-effect/-/use-isomorphic-layout-effect-1.1.1.tgz#7bb6589170cd2987a152042f9084f9effb75c225"
+  integrity sha512-L7Evj8FGcwo/wpbv/qvSfrkHFtOpCzvM5yl2KVyDJoylVuSvzphiiasmjgQPttIGBAy2WKiBNR98q8w7PiNgKQ==
 
 use-latest@^1.0.0:
   version "1.1.0"
