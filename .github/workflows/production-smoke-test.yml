@@ -17,4 +17,4 @@ jobs:
       run: yarn --ignore-engines --ignore-scripts
 
     - name: Run smoke test
-      run: yarn test-smoke
+      run: HEADLESS=true yarn test-smoke
