@@ -23,7 +23,7 @@ func Frontend() *monitoring.Container {
 						{
 							Name:        "99th_percentile_search_request_duration",
 							Description: "99th percentile successful search request duration over 5m",
-							Query:       `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",request_name!="CodeIntelSearch"}[5m])))`,
+							Query:       `histogram_quantile(0.99, sum by (le)(rate(src_search_streaming_latency_seconds_bucket{source="browser"}[5m])))`,
 
 							Warning: monitoring.Alert().GreaterOrEqual(20, nil),
 							Panel:   monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
@@ -38,7 +38,7 @@ func Frontend() *monitoring.Container {
 						{
 							Name:        "90th_percentile_search_request_duration",
 							Description: "90th percentile successful search request duration over 5m",
-							Query:       `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",request_name!="CodeIntelSearch"}[5m])))`,
+							Query:       `histogram_quantile(0.90, sum by (le)(rate(src_search_streaming_latency_seconds_bucket{source="browser"}[5m])))`,
 
 							Warning: monitoring.Alert().GreaterOrEqual(15, nil),
 							Panel:   monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
@@ -218,7 +218,7 @@ func Frontend() *monitoring.Container {
 				},
 			},
 			{
-				Title:  "Search API usage at a glance",
+				Title:  "Search GraphQL API usage at a glance",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
