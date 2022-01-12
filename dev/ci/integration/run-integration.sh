@@ -8,6 +8,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
 root_dir=$(pwd)
 set -ex
 
+PROJECT="${BUILDKITE_JOB_ID:-'sourcegraph-integration'}"
+
 echo "--- set up deploy-sourcegraph-docker"
 test_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)""
 clone_dir="$test_dir/deploy-sourcegraph-docker"
@@ -46,10 +48,10 @@ function cleanup() {
 
   pushd "$compose_dir"
   echo "--- dump server logs"
-  docker-compose logs >"$root_dir/server.log" 2>&1
+  docker-compose --project "$PROJECT" logs >"$root_dir/server.log" 2>&1
 
   echo "--- stop project"
-  docker-compose down
+  docker-compose --project "$PROJECT" down
   popd
 
   docker_cleanup
@@ -92,7 +94,7 @@ yq eval '.services.sourcegraph-frontend-0.ports = [ "0.0.0.0:7080:3080" ]' --inp
 docker-compose config
 
 echo "--- Running Sourcegraph"
-docker-compose up --detach --force-recreate --renew-anon-volumes --quiet-pull
+docker-compose up --project "$PROJECT" --detach --force-recreate --renew-anon-volumes --quiet-pull
 popd
 
 URL="http://localhost:7080"
