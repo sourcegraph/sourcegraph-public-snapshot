@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/cockroachdb/errors"
 )
 
@@ -82,7 +80,6 @@ func decodeComputeResult(result json.RawMessage) (ComputeResult, error) {
 		if err := json.Unmarshal(result, &v); err != nil {
 			return nil, err
 		}
-		log15.Info("decodeComputeResult", "v", v)
 		return &v, nil
 	case "ComputeText":
 		return nil, errors.Errorf("cannot decode search result: unsupported TypeName: %s", string(result))
