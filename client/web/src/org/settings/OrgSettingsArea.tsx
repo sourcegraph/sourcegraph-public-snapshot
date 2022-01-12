@@ -102,7 +102,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={true}
                                 render={routeComponentProps => (
-                                    <OrgSettingsProfilePage {...routeComponentProps} {...props} key="hardcoded-key" />
+                                    <OrgSettingsProfilePage {...routeComponentProps} {...props} />
                                 )}
                             />
                             <Route
@@ -110,7 +110,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={true}
                                 render={routeComponentProps => (
-                                    <OrgSettingsMembersPage {...routeComponentProps} {...props} key="hardcoded-key" />
+                                    <OrgSettingsMembersPage {...routeComponentProps} {...props} />
                                 )}
                             />
                             {showOrgCode && [
@@ -120,7 +120,6 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                     exact={true}
                                     render={routeComponentProps => (
                                         <OrgAddCodeHostsPageContainer
-                                            key="hardcoded-key"
                                             {...routeComponentProps}
                                             owner={{
                                                 id: props.org.id,
@@ -160,7 +159,6 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                         <UserSettingsManageRepositoriesPage
                                             {...routeComponentProps}
                                             {...props}
-                                            key="hardcoded-key"
                                             owner={{
                                                 id: props.org.id,
                                                 type: 'org',
