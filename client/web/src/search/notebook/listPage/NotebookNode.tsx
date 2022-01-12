@@ -8,6 +8,7 @@ import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Badge } from '@sourcegraph/wildcard'
 
 import { NotebookFields } from '../../../graphql-operations'
+import { PageRoutes } from '../../../routes.constants'
 
 import styles from './NotebookNode.module.scss'
 
@@ -21,7 +22,7 @@ export const NotebookNode: React.FunctionComponent<NotebookNodeProps> = ({ node 
     <div className={classNames('py-3 d-flex align-items-center', styles.notebookNode)}>
         <div className={classNames('flex-grow-1', styles.left)}>
             <div>
-                <Link to={`/notebooks/${node.id}`}>
+                <Link to={PageRoutes.Notebook.replace(':id', node.id)}>
                     <strong>{node.title}</strong>
                 </Link>
                 {!node.public && (

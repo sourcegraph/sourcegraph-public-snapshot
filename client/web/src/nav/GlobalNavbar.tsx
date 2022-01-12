@@ -189,7 +189,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
 
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
-            searchContextsEnabled && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
+            searchContextsEnabled &&
+                !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
             !!showSearchNotebook && {
                 path: PageRoutes.Notebooks,
                 content: (
@@ -200,7 +201,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [searchContextsEnabled, showSearchNotebook])
+    }, [searchContextsEnabled, showSearchNotebook, showSearchContext])
 
     return (
         <>

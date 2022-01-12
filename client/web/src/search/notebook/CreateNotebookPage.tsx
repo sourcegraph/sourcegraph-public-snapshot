@@ -9,6 +9,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
 import { CreateNotebookBlockInput } from '../../graphql-operations'
+import { PageRoutes } from '../../routes.constants'
 
 import { createNotebook } from './backend'
 import { blockToGQLInput, deserializeBlockInput } from './serialize'
@@ -39,7 +40,7 @@ export const CreateNotebookPage: React.FunctionComponent = () => {
     )
 
     if (notebookOrError && !isErrorLike(notebookOrError) && notebookOrError !== LOADING) {
-        return <Redirect to={`/notebooks/${notebookOrError.id}`} />
+        return <Redirect to={PageRoutes.Notebook.replace(':id', notebookOrError.id)} />
     }
 
     return (

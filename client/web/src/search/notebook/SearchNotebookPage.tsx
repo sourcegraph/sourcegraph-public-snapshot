@@ -4,7 +4,7 @@ import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
-import { catchError, delay, startWith, switchMap } from 'rxjs/operators'
+import { catchError, debounceTime, delay, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -87,6 +87,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
         useCallback(
             (update: Observable<NotebookInput>) =>
                 update.pipe(
+                    debounceTime(400),
                     switchMap(notebook =>
                         updateNotebook({ id: notebookId, notebook }).pipe(delay(400), startWith(LOADING))
                     ),

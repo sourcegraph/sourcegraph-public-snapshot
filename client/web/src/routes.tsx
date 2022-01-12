@@ -95,7 +95,12 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
-        path: PageRoutes.CreateNotebook,
+        path: PageRoutes.SearchNotebook,
+        render: () => <Redirect to={PageRoutes.Notebooks} />,
+        exact: true,
+    },
+    {
+        path: PageRoutes.NotebookCreate,
         render: props =>
             useExperimentalFeatures.getState().showSearchNotebook ? (
                 <CreateNotebookPage {...props} />

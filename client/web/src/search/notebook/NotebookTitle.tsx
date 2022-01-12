@@ -19,7 +19,13 @@ export const NotebookTitle: React.FunctionComponent<NotebookTitleProps> = ({
 }) => {
     const [isEditing, setIsEditing] = useState(false)
     const [title, setTitle] = useState(initialTitle)
+    const [titleBeforeEdit, setTitleBeforeEdit] = useState(initialTitle)
     const inputReference = useRef<HTMLInputElement>(null)
+
+    const editTitle = (): void => {
+        setTitleBeforeEdit(title)
+        setIsEditing(true)
+    }
 
     const updateTitle = (): void => {
         setIsEditing(false)
@@ -27,7 +33,10 @@ export const NotebookTitle: React.FunctionComponent<NotebookTitleProps> = ({
     }
 
     const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
-        if (event.key === 'Escape' || event.key === 'Enter') {
+        if (event.key === 'Escape') {
+            setTitle(titleBeforeEdit)
+            setIsEditing(false)
+        } else if (event.key === 'Enter') {
             updateTitle()
         }
     }
@@ -46,18 +55,11 @@ export const NotebookTitle: React.FunctionComponent<NotebookTitleProps> = ({
     }
 
     if (!isEditing) {
-        const onButtonKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>): void => {
-            if (event.key === 'Enter') {
-                setIsEditing(true)
-            }
-        }
-
         return (
             <button
                 type="button"
                 className={styles.titleButton}
-                onClick={() => setIsEditing(true)}
-                onKeyDown={onButtonKeyDown}
+                onClick={editTitle}
                 data-testid="notebook-title-button"
             >
                 <span>{title}</span>

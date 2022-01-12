@@ -13,6 +13,7 @@ import { PageHeader } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../../auth'
 import { FilteredConnectionFilter } from '../../../components/FilteredConnection'
 import { NotebooksOrderBy } from '../../../graphql-operations'
+import { PageRoutes } from '../../../routes.constants'
 import { fetchNotebooks as _fetchNotebooks } from '../backend'
 
 import { SearchNotebooksList } from './SearchNotebooksList'
@@ -141,7 +142,7 @@ export const SearchNotebooksListPage: React.FunctionComponent<SearchNotebooksLis
                     path={[{ icon: MagnifyIcon, to: '/search' }, { text: 'Notebooks' }]}
                     actions={
                         authenticatedUser && (
-                            <Link to="/notebooks/new" className="btn btn-primary">
+                            <Link to={PageRoutes.NotebookCreate} className="btn btn-primary">
                                 <PlusIcon className="icon-inline" />
                                 Create notebook
                             </Link>
