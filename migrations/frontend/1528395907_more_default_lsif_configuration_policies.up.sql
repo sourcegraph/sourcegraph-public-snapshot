@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395906
--- +++
-
 BEGIN;
 
 INSERT INTO lsif_configuration_policies

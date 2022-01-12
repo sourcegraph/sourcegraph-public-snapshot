@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395836
--- +++
-
 BEGIN;
 
 -- Previously, we conflated unmigrated user and site credentials with

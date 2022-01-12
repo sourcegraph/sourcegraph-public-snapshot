@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395868
--- +++
-
 BEGIN;
 
 CREATE TABLE lsif_configuration_policies (

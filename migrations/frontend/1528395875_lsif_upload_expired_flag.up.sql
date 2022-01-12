@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395874
--- +++
-
 BEGIN;
 
 -- Drop dependent views

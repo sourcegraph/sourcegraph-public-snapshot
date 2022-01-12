@@ -14,31 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 )
 
-const upMigrationFileTemplate = `-- +++
--- parent: %d
--- +++
-
-BEGIN;
-
--- Perform migration here.
---
--- See /migrations/README.md. Highlights:
---  * Make migrations idempotent (use IF EXISTS)
---  * Make migrations backwards-compatible (old readers/writers must continue to work)
---  * Wrap your changes in a transaction. Note that CREATE INDEX CONCURRENTLY is an exception
---    and cannot be performed in a transaction. For such migrations, ensure that only one
---    statement is defined per migration to prevent query transactions from starting implicitly.
-
-COMMIT;
-`
-
-const downMigrationFileTemplate = `BEGIN;
-
--- Undo the changes made in the up migration
-
-COMMIT;
-`
-
 // RunAdd creates a new up/down migration file pair for the given database and
 // returns the names of the new files. If there was an error, the filesystem should remain
 // unmodified.
@@ -64,12 +39,7 @@ func RunAdd(database db.Database, migrationName string) (up, down string, _ erro
 		return "", "", err
 	}
 
-	contents := map[string]string{
-		upPath:   fmt.Sprintf(upMigrationFileTemplate, lastMigrationIndex),
-		downPath: downMigrationFileTemplate,
-	}
-
-	if err := writeMigrationFiles(contents); err != nil {
+	if err := writeMigrationFiles(upPath, downPath); err != nil {
 		return "", "", err
 	}
 
@@ -131,19 +101,31 @@ func ParseLastMigrationIndex(names []string) (int, bool) {
 	return indices[len(indices)-1], true
 }
 
+const migrationFileTemplate = `BEGIN;
+
+-- Insert migration here. See README.md. Highlights:
+--  * Always use IF EXISTS. eg: DROP TABLE IF EXISTS global_dep_private;
+--  * All migrations must be backward-compatible. Old versions of Sourcegraph
+--    need to be able to read/write post migration.
+--  * Historically we advised against transactions since we thought the
+--    migrate library handled it. However, it does not! /facepalm
+
+COMMIT;
+`
+
 // writeMigrationFiles writes the contents of migrationFileTemplate to the given filepaths.
-func writeMigrationFiles(contents map[string]string) (err error) {
+func writeMigrationFiles(paths ...string) (err error) {
 	defer func() {
 		if err != nil {
-			for path := range contents {
+			for _, path := range paths {
 				// undo any changes to the fs on error
 				_ = os.Remove(path)
 			}
 		}
 	}()
 
-	for path, contents := range contents {
-		if err := os.WriteFile(path, []byte(contents), os.FileMode(0644)); err != nil {
+	for _, path := range paths {
+		if err := os.WriteFile(path, []byte(migrationFileTemplate), os.FileMode(0644)); err != nil {
 			return err
 		}
 	}

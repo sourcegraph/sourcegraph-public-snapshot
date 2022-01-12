@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395859
--- +++
-
 BEGIN;
 
 -- This removes the row-level security policy (if present), and disables RLS on

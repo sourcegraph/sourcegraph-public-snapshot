@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395939
--- +++
-
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS executor_heartbeats (
