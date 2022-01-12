@@ -52,6 +52,11 @@ export interface PanelViewWithComponent extends PanelViewData {
      * The location provider whose results to render in the panel view.
      */
     locationProvider?: Observable<MaybeLoadingResult<Location[]>>
+    /**
+     * Maximum number of results to show from locationProvider. If not set,
+     * MAXIMUM_LOCATION_RESULTS will be used.
+     */
+    maxLocationResults?: number
 
     /**
      * The React element to render in the panel view.
