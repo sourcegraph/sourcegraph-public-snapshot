@@ -47,9 +47,9 @@ func (ctags Ctags) Close() {
 }
 
 func TestIndex(t *testing.T) {
-	// repo := "github.com/gorilla/mux"
+	repo := "github.com/gorilla/mux"
 	// repo := "github.com/hashicorp/raft"
-	repo := "github.com/crossplane/crossplane"
+	// repo := "github.com/crossplane/crossplane"
 	// repo := "github.com/kubernetes/kubernetes"
 
 	git, err := NewSubprocessGit(repo)
@@ -89,7 +89,7 @@ func TestIndex(t *testing.T) {
 	}
 	INSTANTS.Print()
 
-	blobs, err := Search(db, head)
+	blobs, err := Search(db, head, nil)
 	if err != nil {
 		t.Fatalf("🚨 PathsAtCommit: %s", err)
 	}

@@ -110,7 +110,10 @@ func main() {
 
 	var searchFunc types.SearchFunc
 	if config.useRockskip {
-		searchFunc = api.MakeRockskipSearchFunc(api.NewOperations(observationContext), config.ctags)
+		searchFunc, err = api.MakeRockskipSearchFunc(api.NewOperations(observationContext), config.ctags)
+		if err != nil {
+			log.Fatalf("Failed to create rockskip search function: %s", err)
+		}
 	} else {
 		gitserverClient := gitserver.NewClient(observationContext)
 		repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, 15, config.maxTotalPathsLength, observationContext)

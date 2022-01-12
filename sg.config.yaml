@@ -787,6 +787,8 @@ commandsets:
       - jaeger
       - grafana
       - prometheus
+    env:
+      USE_ROCKSKIP: true
 
   enterprise-codeinsights:
     requiresDevPrivate: true

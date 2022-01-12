@@ -5,10 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"os"
-	"strings"
 	"sync"
-
-	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/go-ctags"
 
@@ -22,27 +19,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfig) types.SearchFunc {
+func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfig) (types.SearchFunc, error) {
 	var repoToMutexMutex = sync.Mutex{}
 	var repoToMutex = map[string]*sync.Mutex{}
 
 	parser := mustCreateCtagsParser(ctagsConfig)
 
+	db, err := rockskip.NewPostgresDB(mustInitializeCodeIntelDB())
+	if err != nil {
+		return nil, errors.Wrap(err, "rockskip.NewPostgresDB")
+	}
+
 	return func(ctx context.Context, args types.SearchArgs) (results *[]result.Symbol, err error) {
-		_, _, endObservation := operations.search.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
-			otlog.String("repo", string(args.Repo)),
-			otlog.String("commitID", string(args.CommitID)),
-			otlog.String("query", args.Query),
-			otlog.Bool("isRegExp", args.IsRegExp),
-			otlog.Bool("isCaseSensitive", args.IsCaseSensitive),
-			otlog.Int("numIncludePatterns", len(args.IncludePatterns)),
-			otlog.String("includePatterns", strings.Join(args.IncludePatterns, ":")),
-			otlog.String("excludePattern", args.ExcludePattern),
-			otlog.Int("first", args.First),
-		}})
-		defer func() {
-			endObservation(1, observation.Args{})
-		}()
+		// _, _, endObservation := operations.search.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		// 	otlog.String("repo", string(args.Repo)),
+		// 	otlog.String("commitID", string(args.CommitID)),
+		// 	otlog.String("query", args.Query),
+		// 	otlog.Bool("isRegExp", args.IsRegExp),
+		// 	otlog.Bool("isCaseSensitive", args.IsCaseSensitive),
+		// 	otlog.Int("numIncludePatterns", len(args.IncludePatterns)),
+		// 	otlog.String("includePatterns", strings.Join(args.IncludePatterns, ":")),
+		// 	otlog.String("excludePattern", args.ExcludePattern),
+		// 	otlog.Int("first", args.First),
+		// }})
+		// defer func() {
+		// 	endObservation(1, observation.Args{})
+		// }()
 
 		repoToMutexMutex.Lock()
 		mutex, ok := repoToMutex[string(args.Repo)]
@@ -54,14 +56,9 @@ func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfi
 		repoToMutexMutex.Unlock()
 		defer mutex.Unlock()
 
-		git, err := NewGitserver()
+		git, err := NewGitserver(string(args.Repo))
 		if err != nil {
-			return nil, errors.Wrap(err, "rockskip.NewPostgresDB")
-		}
-
-		db, err := rockskip.NewPostgresDB(mustInitializeCodeIntelDB())
-		if err != nil {
-			return nil, errors.Wrap(err, "rockskip.NewPostgresDB")
+			return nil, errors.Wrap(err, "rockskip.NewGitserver")
 		}
 
 		var parse rockskip.ParseSymbolsFunc = func(path string, bytes []byte) (symbols []string, err error) {
@@ -83,7 +80,11 @@ func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfi
 			return nil, errors.Wrap(err, "rockskip.Index")
 		}
 
-		blobs, err := rockskip.Search(db, string(args.CommitID))
+		var query *string
+		if args.Query != "" {
+			query = &args.Query
+		}
+		blobs, err := rockskip.Search(db, string(args.CommitID), query)
 		if err != nil {
 			return nil, errors.Wrap(err, "rockskip.Search")
 		}
@@ -94,7 +95,7 @@ func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfi
 				res = append(res, result.Symbol{
 					Name:        symbol,
 					Path:        blob.Path,
-					Line:        0,
+					Line:        1,
 					Kind:        "",
 					Language:    "",
 					Parent:      "",
@@ -107,7 +108,7 @@ func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfi
 		}
 
 		return &res, err
-	}
+	}, nil
 }
 
 func mustInitializeCodeIntelDB() *sql.DB {
@@ -151,6 +152,10 @@ func mustCreateCtagsParser(ctagsConfig types.CtagsConfig) ctags.Parser {
 	return parser
 }
 
-func NewGitserver() (rockskip.Git, error) {
-	return nil, nil
+func NewGitserver(repo string) (rockskip.Git, error) {
+	git, err := rockskip.NewSubprocessGit(repo)
+	if err != nil {
+		return nil, err
+	}
+	return git, nil
 }
