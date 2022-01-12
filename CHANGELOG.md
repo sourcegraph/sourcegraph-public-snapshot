@@ -17,6 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Search contexts can now be defined with a restricted search query as an alternative to a specific list of repositories and revisions. This feature is _beta_ and may change in the following releases. Allowed filters: `repo`, `rev`, `file`, `lang`, `case`, `fork`, `visibility`. `OR`, `AND` expressions are also allowed. To enable this feature to all users, set `experimentalFeatures.searchContextsQuery` to true in global settings. You'll then see a "Create context" button from the search results page and a "Query" input field in the search contexts form. If you want revisions specified in these query based search contexts to be indexed, set `experimentalFeatures.search.index.query.contexts` to true in site configuration. [#29327](https://github.com/sourcegraph/sourcegraph/pull/29327)
 - More explicit Terms of Service and Privacy Policy consent has been added to Sourcegraph Server. [#28716](https://github.com/sourcegraph/sourcegraph/issues/28716)
+- Batch changes will be created on forks of the upstream repository if the new `batchChanges.enforceForks` site setting is enabled. [#17879](https://github.com/sourcegraph/sourcegraph/issues/17879)
 
 ### Changed
 
