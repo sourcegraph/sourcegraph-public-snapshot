@@ -1,3 +1,7 @@
+-- +++
+-- parent: 1528395881
+-- +++
+
 BEGIN;
 
 ALTER TABLE lsif_configuration_policies ADD COLUMN protected boolean DEFAULT false;
