@@ -1,5 +1,9 @@
 name: Production smoke test
-on: push
+on:
+  workflow_dispatch:
+  schedule:
+  # Every hour
+  - cron: '0 * * * *'
 
 jobs:
   update:
@@ -17,4 +21,4 @@ jobs:
       run: yarn --ignore-engines
 
     - name: Run smoke test
-      run: HEADLESS=true yarn test-smoke
+      run: yarn test-smoke

@@ -34,3 +34,9 @@
 
 - Handle cloud first
 - Support other instance through Docker image
+
+**Still to do:**
+
+- Add more smoke tests
+- Build docker image
+- Setup cron
