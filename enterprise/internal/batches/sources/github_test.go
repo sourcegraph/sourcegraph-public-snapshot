@@ -9,6 +9,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+	"github.com/stretchr/testify/assert"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -21,6 +22,14 @@ import (
 )
 
 func TestGithubSource_CreateChangeset(t *testing.T) {
+	// Repository used: sourcegraph/automation-testing
+	//
+	// The requests here cannot be easily rerun with `-update` since you can only
+	// open a pull request once. To update, push a new branch to
+	// automation-testing, and put the branch names into the `success` case
+	// below.
+	//
+	// You can update just this test with `-update GithubSource_CreateChangeset`.
 	repo := &types.Repo{
 		Metadata: &github.Repository{
 			ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
@@ -39,7 +48,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 			cs: &Changeset{
 				Title:      "This is a test PR",
 				Body:       "This is the description of the test PR",
-				HeadRef:    "refs/heads/test-pr-6",
+				HeadRef:    "refs/heads/test-pr-10",
 				BaseRef:    "refs/heads/master",
 				RemoteRepo: repo,
 				TargetRepo: repo,
@@ -122,6 +131,13 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 }
 
 func TestGithubSource_CloseChangeset(t *testing.T) {
+	// Repository used: sourcegraph/automation-testing
+	//
+	// This test can be run with `-update` provided:
+	//
+	// 1. https://github.com/sourcegraph/automation-testing/pull/468 is open.
+	//
+	// You can update just this test with `-update GithubSource_CloseChangeset`.
 	testCases := []struct {
 		name string
 		cs   *Changeset
@@ -132,7 +148,7 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 			cs: &Changeset{
 				Changeset: &btypes.Changeset{
 					Metadata: &github.PullRequest{
-						ID: "MDExOlB1bGxSZXF1ZXN0MzQ5NTIzMzE0",
+						ID: "PR_kwDODS5xec4waMkR",
 					},
 				},
 			},
@@ -189,6 +205,14 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 }
 
 func TestGithubSource_ReopenChangeset(t *testing.T) {
+	// Repository used: sourcegraph/automation-testing
+	//
+	// This test can be run with `-update` provided:
+	//
+	// 1. https://github.com/sourcegraph/automation-testing/pull/353 is closed,
+	//    but _not_ merged.
+	//
+	// You can update just this test with `-update GithubSource_ReopenChangeset`.
 	testCases := []struct {
 		name string
 		cs   *Changeset
@@ -312,6 +336,13 @@ func TestGithubSource_CreateComment(t *testing.T) {
 }
 
 func TestGithubSource_UpdateChangeset(t *testing.T) {
+	// Repository used: sourcegraph/automation-testing
+	//
+	// This test can be run with `-update` provided:
+	//
+	// 1. https://github.com/sourcegraph/automation-testing/pull/358 is open.
+	//
+	// You can update just this test with `-update GithubSource_UpdateChangeset`.
 	testCases := []struct {
 		name string
 		cs   *Changeset
@@ -501,4 +532,107 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestGithubSource_GetUserFork(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("failures", func(t *testing.T) {
+		for name, tc := range map[string]struct {
+			targetRepo *types.Repo
+			client     githubClientFork
+		}{
+			"nil metadata": {
+				targetRepo: &types.Repo{
+					Metadata: nil,
+				},
+				client: nil,
+			},
+			"invalid metadata": {
+				targetRepo: &types.Repo{
+					Metadata: []string{},
+				},
+				client: nil,
+			},
+			"invalid NameWithOwner": {
+				targetRepo: &types.Repo{
+					Metadata: &github.Repository{
+						NameWithOwner: "foo",
+					},
+				},
+				client: nil,
+			},
+			"client error": {
+				targetRepo: &types.Repo{
+					Metadata: &github.Repository{
+						NameWithOwner: "foo/bar",
+					},
+				},
+				client: &mockGithubClientFork{err: errors.New("hello!")},
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				fork, err := githubGetUserFork(ctx, tc.targetRepo, tc.client, nil)
+				assert.Nil(t, fork)
+				assert.NotNil(t, err)
+			})
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		org := "org"
+		remoteRepo := &github.Repository{NameWithOwner: "user/bar"}
+
+		for name, tc := range map[string]struct {
+			targetRepo *types.Repo
+			namespace  *string
+			client     githubClientFork
+		}{
+			"no namespace": {
+				targetRepo: &types.Repo{
+					Metadata: &github.Repository{
+						NameWithOwner: "foo/bar",
+					},
+				},
+				namespace: nil,
+				client:    &mockGithubClientFork{fork: remoteRepo},
+			},
+			"with namespace": {
+				targetRepo: &types.Repo{
+					Metadata: &github.Repository{
+						NameWithOwner: "foo/bar",
+					},
+				},
+				namespace: &org,
+				client: &mockGithubClientFork{
+					fork:    remoteRepo,
+					wantOrg: &org,
+				},
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				fork, err := githubGetUserFork(ctx, tc.targetRepo, tc.client, tc.namespace)
+				assert.Nil(t, err)
+				assert.NotNil(t, fork)
+				assert.NotEqual(t, fork, tc.targetRepo)
+				assert.Equal(t, remoteRepo, fork.Metadata)
+			})
+		}
+	})
+}
+
+type mockGithubClientFork struct {
+	wantOrg *string
+	fork    *github.Repository
+	err     error
+}
+
+var _ githubClientFork = &mockGithubClientFork{}
+
+func (mock *mockGithubClientFork) Fork(ctx context.Context, owner, repo string, org *string) (*github.Repository, error) {
+	if (mock.wantOrg == nil && org != nil) || (mock.wantOrg != nil && org == nil) || (mock.wantOrg != nil && org != nil && *mock.wantOrg != *org) {
+		return nil, errors.Newf("unexpected organisation: have=%v want=%v", org, mock.wantOrg)
+	}
+
+	return mock.fork, mock.err
 }

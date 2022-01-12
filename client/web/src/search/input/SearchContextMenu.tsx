@@ -337,13 +337,16 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                 </Button>
                 <span className="flex-grow-1" />
                 {showSearchContextManagement && (
-                    <Link
+                    <Button
                         to="/contexts"
-                        className={classNames('btn btn-link btn-sm', styles.footerButton)}
+                        className={styles.footerButton}
                         onClick={() => closeMenu()}
+                        variant="link"
+                        size="sm"
+                        as={Link}
                     >
                         Manage contexts
-                    </Link>
+                    </Button>
                 )}
             </div>
         </div>

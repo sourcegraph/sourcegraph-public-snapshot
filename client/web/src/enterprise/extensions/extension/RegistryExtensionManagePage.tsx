@@ -185,12 +185,14 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                     <div className={classNames('card mt-5', styles.otherActions)}>
                         <div className="card-header">Other actions</div>
                         <div className="card-body">
-                            <Link
+                            <Button
                                 to={`${this.props.extension.registryExtension.url}/-/releases/new`}
-                                className="btn btn-success mr-2"
+                                className="mr-2"
+                                variant="success"
+                                as={Link}
                             >
                                 Publish new release
-                            </Link>
+                            </Button>
                             <RegistryExtensionDeleteButton
                                 extension={this.props.extension.registryExtension}
                                 onDidUpdate={this.onDidDelete}

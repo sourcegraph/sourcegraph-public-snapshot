@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -84,6 +85,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 			api.CommitID(r.commit.OID()),
 			r.Path(),
 			0,
+			authz.DefaultSubRepoPermsChecker,
 		)
 	})
 

@@ -4,6 +4,7 @@ import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Button } from '@sourcegraph/wildcard'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
@@ -86,10 +87,10 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                         <li>Identify use of deprecated libraries</li>
                     </ul>
                     {isSignedIn ? (
-                        <Link to="/code-monitoring/new" className={classNames('btn btn-primary', styles.createButton)}>
+                        <Button to="/code-monitoring/new" className={styles.createButton} variant="primary" as={Link}>
                             <PlusIcon className="icon-inline mr-2" />
                             Create a code monitor
-                        </Link>
+                        </Button>
                     ) : (
                         <CodeMonitorSignUpLink
                             className={styles.createButton}

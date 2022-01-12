@@ -61,13 +61,16 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
             </div>
             <div className="text-muted">{copyText}</div>
 
-            <Link
-                className={classNames('btn btn-primary btn-sm', styles.searchContextCtaPromptButton)}
+            <Button
+                className={styles.searchContextCtaPromptButton}
                 to={linkTo}
                 onClick={onClick}
+                variant="primary"
+                size="sm"
+                as={Link}
             >
                 {buttonText}
-            </Link>
+            </Button>
             <Button
                 className={classNames('border-0 ml-2', styles.searchContextCtaPromptButton)}
                 onClick={onDismissClick}

@@ -95,9 +95,9 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                             </SidebarNavItem>
                         ) : (
                             <div className={styles.newOrgBtnWrapper}>
-                                <Link to="/organizations/new" className="btn btn-outline-secondary btn-sm">
+                                <Button to="/organizations/new" variant="secondary" outline={true} size="sm" as={Link}>
                                     <AddIcon className="icon-inline" /> New organization
-                                </Link>
+                                </Button>
                             </div>
                         ))}
                 </SidebarGroup>

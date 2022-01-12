@@ -241,7 +241,7 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 		return nil, err
 	}
 
-	out, err := git.ReadFile(ctx, repo, api.CommitID(commit), file, 0)
+	out, err := git.ReadFile(ctx, repo, api.CommitID(commit), file, 0, authz.DefaultSubRepoPermsChecker)
 	if err == nil {
 		return out, nil
 	}

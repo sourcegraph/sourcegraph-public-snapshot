@@ -9,7 +9,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
@@ -96,10 +96,10 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     userHasCodeMonitors !== 'loading' &&
                     !isErrorLike(userHasCodeMonitors) &&
                     authenticatedUser && (
-                        <Link to="/code-monitoring/new" className="btn btn-primary">
+                        <Button to="/code-monitoring/new" variant="primary" as={Link}>
                             <PlusIcon className="icon-inline" />
                             Create
-                        </Link>
+                        </Button>
                     )
                 }
                 description={

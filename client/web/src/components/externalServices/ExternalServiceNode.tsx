@@ -60,13 +60,16 @@ export const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodePro
                     {node.displayName}
                 </div>
                 <div>
-                    <Link
-                        className="btn btn-secondary btn-sm test-edit-external-service-button"
+                    <Button
+                        className="test-edit-external-service-button"
                         to={`${routingPrefix}/external-services/${node.id}`}
                         data-tooltip="External service settings"
+                        variant="secondary"
+                        size="sm"
+                        as={Link}
                     >
                         <SettingsIcon className="icon-inline" /> Edit
-                    </Link>{' '}
+                    </Button>{' '}
                     <Button
                         className="test-delete-external-service-button"
                         onClick={onDelete}
