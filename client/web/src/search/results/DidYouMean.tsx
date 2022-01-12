@@ -9,7 +9,7 @@ import { createLiteral, Pattern, Token } from '@sourcegraph/shared/src/search/qu
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { CaseSensitivityProps, ParsedSearchQueryProps, SearchPatternTypeProps, SearchContextProps } from '..'
+import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '..'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 
 import styles from './DidYouMean.module.scss'
@@ -116,23 +116,21 @@ function getQuerySuggestions(query: string, patternType: SearchPatternType): Sug
 }
 
 interface DidYouMeanProps
-    extends ParsedSearchQueryProps,
-        SearchPatternTypeProps,
+    extends SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
-        TelemetryProps {}
+        TelemetryProps {
+    query: string
+}
 
 export const DidYouMean: React.FunctionComponent<DidYouMeanProps> = ({
     telemetryService,
-    parsedSearchQuery,
+    query,
     patternType,
     caseSensitive,
     selectedSearchContextSpec,
 }) => {
-    const suggestions = useMemo(() => getQuerySuggestions(parsedSearchQuery, patternType), [
-        parsedSearchQuery,
-        patternType,
-    ])
+    const suggestions = useMemo(() => getQuerySuggestions(query, patternType), [query, patternType])
 
     useEffect(() => {
         if (suggestions.length > 0) {
