@@ -1,4 +1,5 @@
-// Protobuf schema for the new "LSIF typed" format. See RFC 519 for more details:
+// Protobuf schema for the new "LSIF typed" format. See RFC 519 for more
+// details:
 // https://docs.google.com/document/d/1bfAZm4K2KUHCMoZiO4qFV7yZmK7wyYxI8MsEL-I6IJg/edit#heading=h.trqab8y0kufp
 
 syntax = "proto3";
@@ -8,25 +9,28 @@ package lib.codeintel.lsif_typed;
 option go_package = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif_typed/";
 
 // Index represents an LSIF index. An index can be consumed in a streaming
-// fashion by consuming one value at a time. In Java, use `parseDelimetedFrom` to
-// consume the index in a streaming fashion. For other languages like Go, you
+// fashion by consuming one value at a time. In Java, use `parseDelimetedFrom`
+// to consume the index in a streaming fashion. For other languages like Go, you
 // need to write custom logic that decodes one LSIF `Value` at a time.
 message Index {
-    // Metadata about this index.
-    Metadata metadata = 1;
-    // Documents that belong to this index or the packages that are defined by this index.
-    repeated Document document = 2;
-    // Packages that are either referenced from this index or the packages that are defined by this index.
-    repeated Package package = 3;
-    // Symbols that are defined outside of this index but are referenced from inside this index.
-    repeated Symbol external_symbols = 4;
+  // Metadata about this index.
+  Metadata metadata = 1;
+  // Documents that belong to this index or the packages that are defined by
+  // this index.
+  repeated Document document = 2;
+  // Packages that are either referenced from this index or the packages that
+  // are defined by this index.
+  repeated Package package = 3;
+  // Symbols that are defined outside of this index but are referenced from
+  // inside this index.
+  repeated Symbol external_symbols = 4;
 }
 
 message Metadata {
   enum PositionEncoding {
-      POSITION_ENCODING_UNSPECIFIED = 0;
-      POSITION_ENCODING_UTF8 = 1;
-      POSITION_ENCODING_UTF16 = 2;
+    POSITION_ENCODING_UNSPECIFIED = 0;
+    POSITION_ENCODING_UTF8 = 1;
+    POSITION_ENCODING_UTF16 = 2;
   }
   ToolInfo tool_info = 1;
   // URI-encoded absolute path to the root directory of this index. All
@@ -37,8 +41,8 @@ message Metadata {
 }
 
 message ToolInfo {
-    string name = 1;
-    string version = 2;
+  string name = 1;
+  string version = 2;
 }
 
 // Document defines information about a particular source file.
@@ -58,7 +62,8 @@ message Package {
   // `Symbol.package_uri`.  This URI is not intended to be displayed to humans,
   // but it's recommended to use a human-readable format to aid with debugging.
   string uri = 1;
-  // Name of this package, for example "@types/react" or "com.google.guava:guava".
+  // Name of this package, for example "@types/react" or
+  // "com.google.guava:guava".
   string name = 2;
   // Version of this package, for example "0.1.0" or "2.1.5".
   string version = 3;
@@ -66,13 +71,12 @@ message Package {
   string manager = 4;
 }
 
-
 // Symbol defines a symbol, such as a function or an interface.
 message Symbol {
   enum Unique {
-      UNIQUE_UNSPECIFIED = 0;
-      UNIQUE_DOCUMENT = 1;
-      UNIQUE_GLOBAL = 2;
+    UNIQUE_UNSPECIFIED = 0;
+    UNIQUE_DOCUMENT = 1;
+    UNIQUE_GLOBAL = 2;
   }
   // The identifier of this symbol, which can be referenced from
   // Occurence. An empty uri means this symbol can be ignored.
@@ -103,7 +107,8 @@ message Symbol {
   repeated string implementation_symbols = 6;
 }
 
-// Occurrence associates a source position with a symbol and/or highlighting information.
+// Occurrence associates a source position with a symbol and/or highlighting
+// information.
 message Occurrence {
   enum Role {
     ROLE_UNSPECIFIED = 0;
@@ -111,21 +116,23 @@ message Occurrence {
     ROLE_REFERENCE = 2;
   }
   enum Highlight {
-      HIGHLIGHT_UNSPECIFIED = 0;
-      HIGHLIGHT_STRING_LITERAL = 1;
-      HIGHLIGHT_NUMERIC_LITERAL = 2;
-      HIGHLIGHT_IDENTIFIER = 3;
-      HIGHLIGHT_METHOD_IDENTIFIER = 4;
-      HIGHLIGHT_TYPE_IDENTIFIER = 5;
-      HIGHLIGHT_TERM_IDENTIFIER = 6;
-      HIGHLIGHT_LOCAL_IDENTIFIER = 7;
-      HIGHLIGHT_SHADED_IDENTIFIER = 8;
-      HIGHLIGHT_PACKAGE_IDENTIFIER = 9;
+    HIGHLIGHT_UNSPECIFIED = 0;
+    HIGHLIGHT_STRING_LITERAL = 1;
+    HIGHLIGHT_NUMERIC_LITERAL = 2;
+    HIGHLIGHT_IDENTIFIER = 3;
+    HIGHLIGHT_METHOD_IDENTIFIER = 4;
+    HIGHLIGHT_TYPE_IDENTIFIER = 5;
+    HIGHLIGHT_TERM_IDENTIFIER = 6;
+    HIGHLIGHT_LOCAL_IDENTIFIER = 7;
+    HIGHLIGHT_SHADED_IDENTIFIER = 8;
+    HIGHLIGHT_PACKAGE_IDENTIFIER = 9;
   }
-  // The source position of this occurrence. Must be exactly three or four elements:
+  // The source position of this occurrence. Must be exactly three or four
+  // elements:
   //
   // - Four elements: [startLine, startCharacter, endLine, endCharacter]
-  // - Three elements: [startLine, startCharacter, endCharacter] (endLine == startLine)
+  // - Three elements: [startLine, startCharacter, endCharacter] (endLine ==
+  // startLine)
   //
   // Line numbers and characters are always 0-based. Make sure to increment the
   // line/character values before displaying them in an editor-like UI because
@@ -139,8 +146,8 @@ message Occurrence {
   // some programming languages but we hope the increased performance
   // improvements make up for it.
   repeated int32 range = 1;
-  // (optional) References the `Symbol.uri` field. Can be empty if this is only a
-  // highlighting occurrence.
+  // (optional) References the `Symbol.uri` field. Can be empty if this is only
+  // a highlighting occurrence.
   string symbol_uri = 2;
   // (optional) Is the symbol_uri defined or referenced at this occurrence?
   Role symbol_role = 3;
