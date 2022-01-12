@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395911
--- +++
-
 BEGIN;
 
 -- Create the OOB migration according to doc/dev/background-information/oobmigrations.md

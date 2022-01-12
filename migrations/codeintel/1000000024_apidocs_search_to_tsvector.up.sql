@@ -1,7 +1,3 @@
--- +++
--- parent: 1000000023
--- +++
-
 BEGIN;
 
 -- We're completely changing the API docs search table schema, so we'll reindex everything

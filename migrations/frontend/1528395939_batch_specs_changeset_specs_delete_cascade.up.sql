@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395938
--- +++
-
 BEGIN;
 
 ALTER TABLE changeset_specs

@@ -13,11 +13,6 @@ type Definition struct {
 	UpQuery      *sqlf.Query
 	DownFilename string
 	DownQuery    *sqlf.Query
-	Metadata     Metadata
-}
-
-type Metadata struct {
-	Parent int `yaml:"parent"`
 }
 
 type Definitions struct {

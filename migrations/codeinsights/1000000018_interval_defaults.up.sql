@@ -1,7 +1,3 @@
--- +++
--- parent: 1000000017
--- +++
-
 BEGIN;
 
 UPDATE insight_series

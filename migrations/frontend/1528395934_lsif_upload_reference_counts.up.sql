@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395933
--- +++
-
 BEGIN;
 
 ALTER TABLE lsif_uploads ADD COLUMN reference_count int;

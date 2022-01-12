@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395835
--- +++
-
 BEGIN;
 
 -- Note that we have to regenerate the reconciler_changesets view, as the SELECT

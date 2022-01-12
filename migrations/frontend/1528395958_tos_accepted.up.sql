@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395957
--- +++
-
 BEGIN;
 
 ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS tos_accepted BOOLEAN NOT NULL DEFAULT FALSE;

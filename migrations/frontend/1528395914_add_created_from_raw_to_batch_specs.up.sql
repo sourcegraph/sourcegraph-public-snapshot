@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395913
--- +++
-
 BEGIN;
 
 ALTER TABLE batch_specs
