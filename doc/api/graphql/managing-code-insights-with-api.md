@@ -211,14 +211,12 @@ query InsightViews($first: int, $after: String, $filters: InsightViewFiltersInpu
 }
 ```
 
-TODO: I don't think `hasNextPage` works right now. Should we leave it out?
-
 Example variables:
 
 ```json
 {
   "first": 10,
-  "after": "endCursor-value",
+  "after": "aW5zaWdodF92aWV3OiIyM1l3WHpmSkVhY2Juc0RvWVE5N0FtRU9Wbkki",
 }
 ```
 
