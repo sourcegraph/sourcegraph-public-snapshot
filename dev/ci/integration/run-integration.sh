@@ -81,7 +81,13 @@ yq eval 'del(.services.caddy)' --inplace docker-compose.yaml
 yq eval 'del(.services.prometheus)' --inplace docker-compose.yaml
 yq eval 'del(.services.grafana)' --inplace docker-compose.yaml
 yq eval 'del(.services.jaeger)' --inplace docker-compose.yaml
+yq eval 'del(.services.cadvisor)' --inplace docker-compose.yaml
+# Soften up all services
 yq eval '.services.*.cpus = 1' --inplace docker-compose.yaml
+# pgsql really struggles, so beef it up
+yq eval '.services.pgsql.cpus = 3' --inplace docker-compose.yaml
+yq eval '.services.pgsql.healthcheck.retries = 20' --inplace docker-compose.yaml
+# Export frontend for tests
 yq eval '.services.sourcegraph-frontend-0.ports = [ "0.0.0.0:7080:3080" ]' --inplace docker-compose.yaml
 docker-compose config
 
