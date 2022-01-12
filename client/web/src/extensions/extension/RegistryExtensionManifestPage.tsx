@@ -25,9 +25,14 @@ export const ExtensionNoManifestAlert: React.FunctionComponent<{
         {extension.registryExtension?.viewerCanAdminister && (
             <>
                 <br />
-                <Link className="mt-3 btn btn-primary" to={`${extension.registryExtension.url}/-/releases/new`}>
+                <Button
+                    className="mt-3"
+                    to={`${extension.registryExtension.url}/-/releases/new`}
+                    variant="primary"
+                    as={Link}
+                >
                     Publish first release of extension
-                </Link>
+                </Button>
             </>
         )}
     </div>
@@ -84,12 +89,13 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                             </Button>
                         )}{' '}
                         {this.props.extension.registryExtension?.viewerCanAdminister && (
-                            <Link
-                                className="btn btn-primary"
+                            <Button
                                 to={`${this.props.extension.registryExtension.url}/-/releases/new`}
+                                variant="primary"
+                                as={Link}
                             >
                                 Publish new release
-                            </Link>
+                            </Button>
                         )}
                     </div>
                 </div>

@@ -131,13 +131,15 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                     <div className={styles.headerActions}>
                         {/* We only have a 'view' component for GitBlobs, but not for `VirtualFile`s. */}
                         {node.mostRelevantFile.__typename === 'GitBlob' && (
-                            <Link
+                            <Button
                                 to={node.mostRelevantFile.url}
-                                className="btn btn-sm btn-link"
                                 data-tooltip="View file at revision"
+                                variant="link"
+                                size="sm"
+                                as={Link}
                             >
                                 View
-                            </Link>
+                            </Button>
                         )}
                     </div>
                 </div>
