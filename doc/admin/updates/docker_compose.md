@@ -14,6 +14,8 @@ Each section comprehensively describes the steps needed to upgrade, and any manu
 
 **Due to issues related to Code Insights on the 3.35.0 release, users are advised to upgrade to 3.35.1 as soon as possible.**
 
+There is a [known issue](../../code_insights/how-tos/Troubleshooting.md#oob-migration-has-made-progress-but-is-stuck-before-reaching-100) with the Code Insights out-of-band settings migration not reaching 100% complete when encountering deleted users or organizations.
+
 ## 3.34 -> 3.35.1
 
 **Due to issues related to Code Insights on the 3.35.0 release, users are advised to upgrade directly to 3.35.1.**

@@ -27,7 +27,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100000`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",request_name!="CodeIntelSearch"}[5m])))`
+Query: `histogram_quantile(0.99, sum by (le)(rate(src_search_streaming_latency_seconds_bucket{source="browser"}[5m])))`
 
 </details>
 
@@ -46,7 +46,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100001`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",request_name!="CodeIntelSearch"}[5m])))`
+Query: `histogram_quantile(0.90, sum by (le)(rate(src_search_streaming_latency_seconds_bucket{source="browser"}[5m])))`
 
 </details>
 
@@ -284,7 +284,7 @@ Query: `sum by (alert_type)(increase(src_graphql_search_response{status="alert",
 
 <br />
 
-### Frontend: Search API usage at a glance
+### Frontend: Search GraphQL API usage at a glance
 
 #### frontend: 99th_percentile_search_api_request_duration
 
@@ -2106,7 +2106,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-observabi
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101520` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2125,7 +2125,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-observabi
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101521` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2564,7 +2564,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101900` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2583,7 +2583,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-container
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101901` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2602,7 +2602,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-container
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101902` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2645,7 +2645,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-provision
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102000` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2664,7 +2664,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-provision
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102001` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2683,7 +2683,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-provision
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102010` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2702,7 +2702,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-provision
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102011` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2725,7 +2725,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-go-gorout
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102100` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2744,7 +2744,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-go-gc-dur
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102101` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2765,7 +2765,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-pods-avai
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102200` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6027,7 +6027,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#redis-redis-store-
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100000` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6050,7 +6050,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#redis-redis-cache-
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100100` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6071,7 +6071,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100200` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6090,7 +6090,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100201` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6109,7 +6109,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100210` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6128,7 +6128,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100211` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6149,7 +6149,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100300` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6168,7 +6168,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100301` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6187,7 +6187,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100310` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6206,7 +6206,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100311` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6227,7 +6227,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#redis-pods-availab
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100400` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -6248,7 +6248,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#redis-pods-availab
 
 To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100500` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -12891,6 +12891,176 @@ Query: `max by (instance) (index_vacuum_running{instance=~`${instance:regex}`})`
 
 <br />
 
+### Zoekt Index Server: Network I/O pod metrics (only available on Kubernetes)
+
+#### zoekt-indexserver: network_sent_bytes_aggregate
+
+<p class="subtitle">Transmission rate over 5m (aggregate)</p>
+
+The rate of bytes sent over the network across all Zoekt pods
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100400` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(container_network_transmit_bytes_total{container_label_io_kubernetes_pod_name=~`.*indexed-search.*`}[5m]))`
+
+</details>
+
+<br />
+
+#### zoekt-indexserver: network_received_packets_per_instance
+
+<p class="subtitle">Transmission rate over 5m (per instance)</p>
+
+The amount of bytes sent over the network by individual Zoekt pods
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100401` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_bytes_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))`
+
+</details>
+
+<br />
+
+#### zoekt-indexserver: network_received_bytes_aggregate
+
+<p class="subtitle">Receive rate over 5m (aggregate)</p>
+
+The amount of bytes received from the network across Zoekt pods
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100410` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(container_network_receive_bytes_total{container_label_io_kubernetes_pod_name=~`.*indexed-search.*`}[5m]))`
+
+</details>
+
+<br />
+
+#### zoekt-indexserver: network_received_bytes_per_instance
+
+<p class="subtitle">Receive rate over 5m (per instance)</p>
+
+The amount of bytes received from the network by individual Zoekt pods
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100411` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_bytes_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))`
+
+</details>
+
+<br />
+
+#### zoekt-indexserver: network_transmitted_packets_dropped_by_instance
+
+<p class="subtitle">Transmit packet drop rate over 5m (by instance)</p>
+
+An increase in dropped packets could be a leading indicator of network saturation.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100420` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_packets_dropped_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))`
+
+</details>
+
+<br />
+
+#### zoekt-indexserver: network_transmitted_packets_errors_per_instance
+
+<p class="subtitle">Errors encountered while transmitting over 5m (per instance)</p>
+
+An increase in transmission errors could indicate a networking issue
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100421` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_errors_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))`
+
+</details>
+
+<br />
+
+#### zoekt-indexserver: network_received_packets_dropped_by_instance
+
+<p class="subtitle">Receive packet drop rate over 5m (by instance)</p>
+
+An increase in dropped packets could be a leading indicator of network saturation.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100422` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_packets_dropped_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))`
+
+</details>
+
+<br />
+
+#### zoekt-indexserver: network_transmitted_packets_errors_by_instance
+
+<p class="subtitle">Errors encountered while receiving over 5m (per instance)</p>
+
+An increase in errors while receiving could indicate a networking issue.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100423` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_errors_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))`
+
+</details>
+
+<br />
+
 ### Zoekt Index Server: Container monitoring (not available on server)
 
 #### zoekt-indexserver: container_missing
@@ -12909,7 +13079,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100400` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100500` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12928,7 +13098,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^zoekt-indexserver.
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100401` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100501` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12947,7 +13117,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-indexserver.
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100402` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100502` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12969,7 +13139,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100403` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100503` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
@@ -12990,7 +13160,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^zoekt-indexserver.*"
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100500` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100600` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13009,7 +13179,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100501` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100601` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13028,7 +13198,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^z
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100510` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100610` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13047,7 +13217,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^zoek
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100511` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100611` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13068,7 +13238,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^z
 
 Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-pods-available-percentage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100600` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100700` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13296,7 +13466,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometh
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100000` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13317,7 +13487,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometh
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100001` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13338,7 +13508,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-alertma
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100100` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13357,7 +13527,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-alertma
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100101` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13380,7 +13550,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometh
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100200` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13401,7 +13571,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-alertma
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100201` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13420,7 +13590,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometh
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100210` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13439,7 +13609,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometh
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100211` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13458,7 +13628,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-prometh
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100212` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13489,7 +13659,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100300` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13508,7 +13678,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-contain
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100301` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13527,7 +13697,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-contain
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100302` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13570,7 +13740,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-provisi
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100400` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13589,7 +13759,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-provisi
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100401` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13608,7 +13778,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-provisi
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100410` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13627,7 +13797,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-provisi
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100411` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13648,7 +13818,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#prometheus-pods-av
 
 To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100500` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/cloud/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>

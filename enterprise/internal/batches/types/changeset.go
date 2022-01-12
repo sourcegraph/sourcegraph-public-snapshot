@@ -249,16 +249,18 @@ type Changeset struct {
 	ExternalID          string
 	ExternalServiceType string
 	// ExternalBranch should always be prefixed with refs/heads/. Call git.EnsureRefPrefix before setting this value.
-	ExternalBranch      string
-	ExternalDeletedAt   time.Time
-	ExternalUpdatedAt   time.Time
-	ExternalState       ChangesetExternalState
-	ExternalReviewState ChangesetReviewState
-	ExternalCheckState  ChangesetCheckState
-	DiffStatAdded       *int32
-	DiffStatChanged     *int32
-	DiffStatDeleted     *int32
-	SyncState           ChangesetSyncState
+	ExternalBranch string
+	// ExternalForkNamespace is only set if the changeset is opened on a fork.
+	ExternalForkNamespace string
+	ExternalDeletedAt     time.Time
+	ExternalUpdatedAt     time.Time
+	ExternalState         ChangesetExternalState
+	ExternalReviewState   ChangesetReviewState
+	ExternalCheckState    ChangesetCheckState
+	DiffStatAdded         *int32
+	DiffStatChanged       *int32
+	DiffStatDeleted       *int32
+	SyncState             ChangesetSyncState
 
 	// The batch change that "owns" this changeset: it can create/close
 	// it on code host. If this is 0, it is imported/tracked by a batch change.
@@ -367,18 +369,31 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 		c.ExternalServiceType = extsvc.TypeGitHub
 		c.ExternalBranch = git.EnsureRefPrefix(pr.HeadRefName)
 		c.ExternalUpdatedAt = pr.UpdatedAt
+
+		if pr.BaseRepository.ID != pr.HeadRepository.ID {
+			c.ExternalForkNamespace = pr.HeadRepository.Owner.Login
+		} else {
+			c.ExternalForkNamespace = ""
+		}
 	case *bitbucketserver.PullRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
 		c.ExternalServiceType = extsvc.TypeBitbucketServer
 		c.ExternalBranch = git.EnsureRefPrefix(pr.FromRef.ID)
 		c.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
+
+		if pr.FromRef.Repository.ID != pr.ToRef.Repository.ID {
+			c.ExternalForkNamespace = pr.FromRef.Repository.Project.Key
+		} else {
+			c.ExternalForkNamespace = ""
+		}
 	case *gitlab.MergeRequest:
 		c.Metadata = pr
 		c.ExternalID = strconv.FormatInt(int64(pr.IID), 10)
 		c.ExternalServiceType = extsvc.TypeGitLab
 		c.ExternalBranch = git.EnsureRefPrefix(pr.SourceBranch)
 		c.ExternalUpdatedAt = pr.UpdatedAt.Time
+		c.ExternalForkNamespace = pr.SourceProjectNamespace
 	default:
 		return errors.New("unknown changeset type")
 	}

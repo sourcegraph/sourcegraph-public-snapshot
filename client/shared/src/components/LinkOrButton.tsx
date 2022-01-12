@@ -4,7 +4,7 @@ import { noop } from 'lodash'
 import React, { useCallback, AnchorHTMLAttributes } from 'react'
 import { Key } from 'ts-key-enum'
 
-import { isDefined } from '../util/types'
+import { isDefined } from '@sourcegraph/common'
 
 import { Link } from './Link'
 

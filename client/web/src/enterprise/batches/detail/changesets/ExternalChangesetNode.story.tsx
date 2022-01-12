@@ -48,6 +48,7 @@ add('All states', () => {
                                     externalURL: {
                                         url: 'http://test.test/pr/123',
                                     },
+                                    forkNamespace: index % 2 === 0 ? 'user' : null,
                                     diffStat: {
                                         __typename: 'DiffStat',
                                         added: 10,
@@ -73,6 +74,7 @@ add('All states', () => {
                                         type: ChangesetSpecType.BRANCH,
                                         description: {
                                             __typename: 'GitBranchChangesetDescription',
+                                            baseRef: 'my-branch',
                                             headRef: 'my-branch',
                                         },
                                     },
@@ -122,6 +124,7 @@ add('Unpublished', () => {
                         createdAt: now.toISOString(),
                         externalID: null,
                         externalURL: null,
+                        forkNamespace: null,
                         diffStat: {
                             __typename: 'DiffStat',
                             added: 10,
@@ -147,6 +150,7 @@ add('Unpublished', () => {
                             type: ChangesetSpecType.BRANCH,
                             description: {
                                 __typename: 'GitBranchChangesetDescription',
+                                baseRef: 'my-branch',
                                 headRef: 'my-branch',
                             },
                         },
@@ -195,6 +199,7 @@ add('Importing', () => {
                         createdAt: now.toISOString(),
                         externalID: '12345',
                         externalURL: null,
+                        forkNamespace: null,
                         diffStat: null,
                         labels: [
                             {
@@ -256,6 +261,7 @@ add('Importing failed', () => {
                         createdAt: now.toISOString(),
                         externalID: '99999',
                         externalURL: null,
+                        forkNamespace: null,
                         diffStat: null,
                         labels: [
                             {
@@ -307,6 +313,7 @@ add('Sync failed', () => {
                         createdAt: now.toISOString(),
                         externalID: '99999',
                         externalURL: null,
+                        forkNamespace: null,
                         diffStat: null,
                         labels: [
                             {

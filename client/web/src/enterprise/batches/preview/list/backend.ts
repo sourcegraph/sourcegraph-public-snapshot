@@ -74,6 +74,7 @@ const changesetSpecFieldsFragment = gql`
         }
         baseRef
         headRef
+        fork
         diffStat {
             ...DiffStatFields
         }

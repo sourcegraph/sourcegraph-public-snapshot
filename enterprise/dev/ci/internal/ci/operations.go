@@ -20,6 +20,7 @@ var goAthensProxyURL = "http://athens-athens-proxy"
 type CoreTestOperationsOptions struct {
 	// for clientChromaticTests
 	ChromaticShouldAutoAccept bool
+	MinimumUpgradeableVersion string
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -70,6 +71,16 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 				addGoBuild, // ~0.5m
 			)
 		}
+	}
+
+	if runAll || changedFiles.AffectsDatabaseSchema() {
+		// If there are schema changes, ensure the tests of the last minor release continue
+		// to succeed when the new version of the schema is applied. This ensures that the
+		// schema can be rolled forward pre-upgrade without negatively affecting the running
+		// instance (which was working fine prior to the upgrade).
+		ops.Append(
+			addGoTestsBackcompat(opts.MinimumUpgradeableVersion),
+		)
 	}
 
 	if runAll || changedFiles.AffectsGraphQL() {
@@ -257,31 +268,54 @@ func addBrandedTests(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-// This is a bandage solution to speed up the go tests by running the slowest ones
-// concurrently. As a results, the PR time affecting only Go code is divided by two.
-var slowGoTestPackages = []string{
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore",   // 224s
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore", // 122s
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                   // 82+162s
-	"github.com/sourcegraph/sourcegraph/internal/database",                              // 253s
-	"github.com/sourcegraph/sourcegraph/internal/repos",                                 // 106s
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches",                    // 52 + 60
-	"github.com/sourcegraph/sourcegraph/cmd/frontend",                                   // 100s
-}
-
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":go: Test",
-		bk.Env("GOPROXY", goAthensProxyURL),
-		bk.Cmd("./dev/ci/go-test.sh exclude "+strings.Join(slowGoTestPackages, " ")),
-		bk.Cmd("dev/ci/codecov.sh -c -F go"))
+	buildGoTests(func(description, testSuffix string) {
+		pipeline.AddStep(
+			fmt.Sprintf(":go: Test (%s)", description),
+			bk.Env("GOPROXY", goAthensProxyURL),
+			bk.Cmd("./dev/ci/go-test.sh "+testSuffix),
+			bk.Cmd("./dev/ci/codecov.sh -c -F go"),
+		)
+	})
+}
+
+// Adds the Go backcompat test step.
+func addGoTestsBackcompat(minimumUpgradeableVersion string) func(pipeline *bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		buildGoTests(func(description, testSuffix string) {
+			pipeline.AddStep(
+				// TODO - set minimum upgradeable version
+				fmt.Sprintf(":go::postgres: Backcompat test (%s)", description),
+				bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
+				bk.Env("GOPROXY", goAthensProxyURL),
+				bk.Cmd("./dev/ci/go-backcompat/test.sh "+testSuffix),
+			)
+		})
+	}
+}
+
+// buildGoTests invokes the given function once for each subset of tests that should
+// be run as part of complete coverage. The description will be the specific test path
+// broken out to be run independently (or "all"), and the testSuffix will be the string
+// to pass to go test to filter test packaes (e.g., "only <pkg>" or "exclude <pkgs...>").
+func buildGoTests(f func(description, testSuffix string)) {
+	// This is a bandage solution to speed up the go tests by running the slowest ones
+	// concurrently. As a results, the PR time affecting only Go code is divided by two.
+	slowGoTestPackages := []string{
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore",   // 224s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore", // 122s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                   // 82+162s
+		"github.com/sourcegraph/sourcegraph/internal/database",                              // 253s
+		"github.com/sourcegraph/sourcegraph/internal/repos",                                 // 106s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/batches",                    // 52 + 60
+		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                   // 100s
+	}
+
+	f("all", "exclude "+strings.Join(slowGoTestPackages, " "))
 
 	for _, slowPkg := range slowGoTestPackages {
-		// Trim the package name for readability
-		name := strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", "")
-		pipeline.AddStep(":go: Test ("+name+")",
-			bk.Cmd("./dev/ci/go-test.sh only "+slowPkg),
-			bk.Cmd("dev/ci/codecov.sh -c -F go"))
+		f(strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", ""), "only "+slowPkg)
 	}
 }
 
@@ -309,7 +343,7 @@ func backendIntegrationTests(candidateImageTag string) operations.Operation {
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("IMAGE",
 				images.DevRegistryImage("server", candidateImageTag)),
-			bk.Cmd("./dev/ci/backend-integration.sh"),
+			bk.Cmd("dev/ci/integration/backend/run.sh"),
 			bk.ArtifactPaths("./*.log"))
 	}
 }
@@ -392,12 +426,11 @@ func codeIntelQA(candidateTag string) operations.Operation {
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
-
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-			bk.Cmd("dev/ci/test/code-intel/test.sh"),
+			bk.Cmd("dev/ci/integration/code-intel/run.sh"),
 			bk.ArtifactPaths("./*.log"))
 	}
 }
@@ -417,7 +450,7 @@ func serverE2E(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("./dev/ci/test/e2e/test.sh"),
+			bk.Cmd("dev/ci/integration/e2e/run.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -439,7 +472,7 @@ func serverQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("./dev/ci/test/qa/test.sh"),
+			bk.Cmd("dev/ci/integration/qa/run.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -460,7 +493,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("./dev/ci/test/upgrade/test.sh"),
+			bk.Cmd("dev/ci/integration/upgrade/run.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -478,7 +511,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 // 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 // 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 // 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-// 			bk.Cmd("./dev/ci/test/cluster/cluster-test.sh"),
+// 			bk.Cmd("./dev/ci/integration/cluster/run.sh"),
 // 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 // 	}
 // }

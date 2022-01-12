@@ -3,6 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { Modal } from 'reactstrap'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { Button } from '@sourcegraph/wildcard'
 
 import { KeyboardShortcutsProps } from './keyboardShortcuts'
 
@@ -38,15 +39,9 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<Props> = ({
             <Modal isOpen={isOpen} toggle={toggleIsOpen} centered={true} autoFocus={true} keyboard={true} fade={false}>
                 <div className="modal-header">
                     <h4 className="modal-title">Keyboard shortcuts</h4>
-                    <button
-                        type="button"
-                        className="btn btn-icon"
-                        data-dismiss="modal"
-                        aria-label="Close"
-                        onClick={toggleIsOpen}
-                    >
+                    <Button className="btn-icon" data-dismiss="modal" aria-label="Close" onClick={toggleIsOpen}>
                         <span aria-hidden="true">&times;</span>
-                    </button>
+                    </Button>
                 </div>
                 <div className="modal-body modal-body--full">
                     <ul className="list-group list-group-flush">

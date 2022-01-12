@@ -47,6 +47,7 @@ Yarn,@slimsag/react-shortcuts,1.2.1,MIT,https://github.com/shopify/quilt/package
 Yarn,@sourcegraph/branded,1.0.0,Apache 2.0,Unknown,Approved
 Yarn,@sourcegraph/browser,1.0.0,Apache 2.0,Unknown,Approved
 Yarn,@sourcegraph/build-config,0.0.1,Apache 2.0,Unknown,Approved
+Yarn,@sourcegraph/common,0.0.1,Apache 2.0,Unknown,Approved
 Yarn,@sourcegraph/eslint-plugin-sourcegraph,1.0.0,Apache 2.0,Unknown,Approved
 Yarn,@sourcegraph/eslint-plugin-wildcard,1.0.0,Apache 2.0,Unknown,Approved
 Yarn,@sourcegraph/extension-api-classes,1.1.0,MIT,Unknown,Approved
@@ -215,7 +216,7 @@ Yarn,d3-path,1.0.9,New BSD,https://d3js.org/d3-path/,Approved
 Yarn,d3-random,2.2.2,New BSD,https://d3js.org/d3-random/,Approved
 Yarn,d3-scale,2.2.2,New BSD,https://d3js.org/d3-scale/,Approved
 Yarn,d3-scale,3.3.0,New BSD,https://d3js.org/d3-scale/,Approved
-Yarn,d3-selection,1.4.1,New BSD,https://d3js.org/d3-selection/,Approved
+Yarn,d3-selection,1.4.2,New BSD,https://d3js.org/d3-selection/,Approved
 Yarn,d3-shape,1.3.7,New BSD,https://d3js.org/d3-shape/,Approved
 Yarn,d3-shape,2.1.0,New BSD,https://d3js.org/d3-shape/,Approved
 Yarn,d3-time,1.1.0,New BSD,https://d3js.org/d3-time/,Approved
@@ -367,6 +368,7 @@ Go,github.com/google/go-cmp,v0.5.6,New BSD,"",Approved
 Go,github.com/google/go-github,v17.0.0,New BSD,"",Approved
 Go,github.com/google/go-github/v28,v28.1.1,New BSD,"",Approved
 Go,github.com/google/go-github/v31,v31.0.0,New BSD,"",Approved
+Go,github.com/google/go-github/v41,v41.0.0,New BSD,"",Approved
 Go,github.com/google/go-querystring,v1.1.0,New BSD,"",Approved
 Go,github.com/google/gofuzz,v1.2.0,Apache 2.0,"",Approved
 Go,github.com/google/pprof,v0.0.0-20211204230040-2007db6d4f53,Apache 2.0,"",Approved
@@ -493,7 +495,7 @@ Go,github.com/sourcegraph/jsonx,v0.0.0-20200629203448-1a936bd500cf,MIT,"",Approv
 Go,github.com/sourcegraph/oauth2,v0.0.0-20210825125341-77c1d99ece3c,New BSD,"",Approved
 Go,github.com/sourcegraph/syntaxhighlight,v0.0.0-20170531221838-bd320f5d308e,New BSD,"",Approved
 Go,github.com/sourcegraph/yaml,v1.0.1-0.20200714132230-56936252f152,MIT,"",Approved
-Go,github.com/sourcegraph/zoekt,v0.0.0-20211208200749-d86fb30b50ba,Apache 2.0,"",Approved
+Go,github.com/sourcegraph/zoekt,v0.0.0-20211216165656-323fabe7e852,Apache 2.0,"",Approved
 Go,github.com/src-d/gcfg,v1.4.0,New BSD,"",Approved
 Go,github.com/stretchr/testify,v1.7.0,MIT,"",Approved
 Go,github.com/stripe/stripe-go,v70.15.0,MIT,"",Approved
@@ -643,7 +645,7 @@ Yarn,mitt,2.1.0,MIT,https://github.com/developit/mitt,Approved
 Yarn,mkdirp,0.5.5,MIT,http://substack.net,Approved
 Yarn,monaco-editor,0.24.0,MIT,Unknown,Approved
 Yarn,monaco-yaml,3.2.1,MIT,https://monaco-yaml.js.org/,Approved
-Yarn,nanoid,3.1.23,MIT,Unknown,Approved
+Yarn,nanoid,3.1.30,MIT,Unknown,Approved
 Yarn,neo-async,2.6.2,MIT,https://github.com/suguru03/neo-async,Approved
 Yarn,nice-ticks,1.0.1,ISC,https://github.com/cenfun/nice-ticks#readme,Approved
 Yarn,node-releases,2.0.0,MIT,Unknown,Approved
@@ -731,6 +733,7 @@ Yarn,react-resizable,3.0.4,MIT,https://github.com/react-grid-layout/react-resiza
 Yarn,react-resize-detector,2.3.0,MIT,https://github.com/maslianok/react-resize-detector,Approved
 Yarn,react-router,5.2.0,MIT,Unknown,Approved
 Yarn,react-router-dom,5.2.0,MIT,Unknown,Approved
+Yarn,react-scroll-manager,1.0.3,ISC,https://github.com/trevorr/react-scroll-manager#readme,Approved
 Yarn,react-smooth,1.0.5,MIT,https://github.com/recharts/react-smooth#readme,Approved
 Yarn,react-sticky-box,0.9.3,ISC,http://danielberndt.net/,Approved
 Yarn,react-stripe-elements,6.1.2,MIT,https://www.stripe.com,Approved

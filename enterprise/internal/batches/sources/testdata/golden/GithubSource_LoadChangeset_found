@@ -14,6 +14,18 @@
    "Login": "lguychard",
    "URL": "https://github.com/lguychard"
   },
+  "BaseRepository": {
+   "ID": "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+   "Owner": {
+    "Login": "sourcegraph"
+   }
+  },
+  "HeadRepository": {
+   "ID": "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+   "Owner": {
+    "Login": "sourcegraph"
+   }
+  },
   "Participants": [
    {
     "AvatarURL": "https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
@@ -78,7 +90,7 @@
       "Login": "unknwon",
       "URL": "https://github.com/unknwon"
      },
-     "AuthorAssociation": "CONTRIBUTOR",
+     "AuthorAssociation": "MEMBER",
      "Body": "Thanks for the fix! The chaining logic looks brilliant to me (as a non-FE dev).",
      "State": "APPROVED",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287537086",

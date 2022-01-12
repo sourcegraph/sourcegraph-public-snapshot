@@ -4,11 +4,9 @@ import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
-import { PatternTypeProps, CaseSensitivityProps } from '../..'
-
 import styles from './Toggles.module.scss'
 
-export interface ToggleProps extends PatternTypeProps, CaseSensitivityProps {
+export interface ToggleProps {
     /** Title of the toggle.  */
     title: string
     /** Icon to display.  */

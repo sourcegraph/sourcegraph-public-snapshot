@@ -1,12 +1,16 @@
 import { noop } from 'lodash'
+import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { Observable } from 'rxjs'
+import { startWith, switchMap, tap } from 'rxjs/operators'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -21,7 +25,7 @@ import { SearchNotebookMarkdownBlock } from './SearchNotebookMarkdownBlock'
 import { SearchNotebookQueryBlock } from './SearchNotebookQueryBlock'
 import { isMonacoEditorDescendant } from './useBlockSelection'
 
-import { Block, BlockDirection, BlockInput, Notebook } from '.'
+import { Block, BlockDirection, BlockInit, BlockInput, Notebook } from '.'
 
 export interface SearchNotebookProps
     extends SearchStreamingProps,
@@ -34,9 +38,11 @@ export interface SearchNotebookProps
     isMacPlatform: boolean
     isReadOnly?: boolean
     onSerializeBlocks: (blocks: Block[]) => void
-    blocks: BlockInput[]
+    blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
 }
+
+const LOADING = 'LOADING' as const
 
 export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     onSerializeBlocks,
@@ -82,6 +88,20 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
             )
         },
         [notebook, props.telemetryService, updateBlocks]
+    )
+
+    const [runAllBlocks, runningAllBlocks] = useEventObservable(
+        useCallback(
+            (click: Observable<React.MouseEvent>) =>
+                click.pipe(
+                    switchMap(() => notebook.runAllBlocks().pipe(startWith(LOADING))),
+                    tap(() => {
+                        updateBlocks()
+                        props.telemetryService.log('SearchNotebookRunAllBlocks')
+                    })
+                ),
+            [notebook, props.telemetryService, updateBlocks]
+        )
     )
 
     const onBlockInputChange = useCallback(
@@ -277,6 +297,17 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
 
     return (
         <div className={styles.searchNotebook}>
+            <div className="pb-1">
+                <button
+                    className="btn btn-primary mr-2 btn-sm"
+                    type="button"
+                    onClick={runAllBlocks}
+                    disabled={blocks.length === 0 || runningAllBlocks === LOADING}
+                >
+                    <PlayCircleOutlineIcon className="icon-inline mr-1" />
+                    <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
+                </button>
+            </div>
             {blocks.map((block, blockIndex) => (
                 <div key={block.id}>
                     {!isReadOnly ? (

@@ -101,7 +101,6 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Developing a worker](background-information/workers.md)
 - [Developing an out-of-band migration](background-information/oobmigrations.md)
 - [Developing a background routine](background-information/backgroundroutine.md)
-- [High-performance SQL](background-information/sql.md)
 - [Code host connections on local dev environment](background-information/code-host.md)
 
 ### [Languages](background-information/languages/index.md)
@@ -114,6 +113,14 @@ Clarification and discussion about key concepts, architecture, and development s
 #### [Extended guides](background-information/languages/extended_guide/index.md)
 
 - [Terraform Extended Guide](background-information/languages/extended_guide/terraform.md)
+
+
+### [SQL](background-information/sql/index.md)
+
+- [Migrations](background-information/sql/migrations.md)
+- High-performance guides
+  - [Batch operations](background-information/sql/batch_operations.md)
+  - [Materialized cache](background-information/sql/materialized_cache.md)
 
 ### Testing
 

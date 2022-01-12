@@ -344,7 +344,7 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 			sentryErr  = op.applyErrorFilter(err, EmitForSentry)
 		)
 		op.emitErrorLogs(logErr, logFields)
-		op.emitHoneyEvent(honeyErr, snakecaseOpName, event, logFields, elapsedMs)
+		op.emitHoneyEvent(honeyErr, snakecaseOpName, event, finishArgs.LogFields, elapsedMs) // op. and args.LogFields already added at start
 		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
 		op.finishTrace(traceErr, tr, logFields)
 		op.emitSentryError(sentryErr, logFields)

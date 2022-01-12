@@ -198,10 +198,13 @@ func TestCreatePullRequest(t *testing.T) {
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
-	// The requests here cannot be easily rerun with `-update` since you can
-	// only open a pull request once.
-	// In order to update specific tests, comment out the other ones and then
-	// run with -update.
+	//
+	// The requests here cannot be easily rerun with `-update` since you can only
+	// open a pull request once. To update, push two new branches to
+	// automation-testing, and put their branch names into the `success` and
+	// `draft-pr` cases below.
+	//
+	// You can update just this test with `-update CreatePullRequest`.
 	for i, tc := range []struct {
 		name  string
 		ctx   context.Context
@@ -213,7 +216,7 @@ func TestCreatePullRequest(t *testing.T) {
 			input: &CreatePullRequestInput{
 				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
 				BaseRefName:  "master",
-				HeadRefName:  "test-pr-3",
+				HeadRefName:  "test-pr-8",
 				Title:        "This is a test PR, feel free to ignore",
 				Body:         "I'm opening this PR to test something. Please ignore.",
 			},
@@ -244,7 +247,7 @@ func TestCreatePullRequest(t *testing.T) {
 			input: &CreatePullRequestInput{
 				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
 				BaseRefName:  "master",
-				HeadRefName:  "test-pr-4",
+				HeadRefName:  "test-pr-9",
 				Title:        "This is a test PR, feel free to ignore",
 				Body:         "I'm opening this PR to test something. Please ignore.",
 				Draft:        true,
@@ -284,10 +287,15 @@ func TestClosePullRequest(t *testing.T) {
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
-	// The requests here cannot be easily rerun with `-update` since you can
-	// only close a pull request once.
-	// In order to update specific tests, comment out the other ones and then
-	// run with -update.
+	//
+	// The requests here can be rerun with `-update` provided you have two PRs
+	// set up properly:
+	//
+	// 1. https://github.com/sourcegraph/automation-testing/pull/44 must be open.
+	// 2. https://github.com/sourcegraph/automation-testing/pull/29 must be
+	//    closed, but _not_ merged.
+	//
+	// You can update just this test with `-update ClosePullRequest`.
 	for i, tc := range []struct {
 		name string
 		ctx  context.Context
@@ -339,10 +347,16 @@ func TestReopenPullRequest(t *testing.T) {
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
-	// The requests here cannot be easily rerun with `-update` since you can
-	// only reopen a pull request once.
-	// In order to update specific tests, comment out the other ones and then
-	// run with -update.
+	//
+	// The requests here can be rerun with `-update` provided you have two PRs
+	// set up properly:
+	//
+	// 1. https://github.com/sourcegraph/automation-testing/pull/355 must be
+	//    open.
+	// 2. https://github.com/sourcegraph/automation-testing/pull/356 must be
+	//    closed, but _not_ merged.
+	//
+	// You can update just this test with `-update ReopenPullRequest`.
 	for i, tc := range []struct {
 		name string
 		ctx  context.Context
@@ -384,8 +398,16 @@ func TestMarkPullRequestReadyForReview(t *testing.T) {
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
-	// The requests here cannot be easily rerun with `-update` since you can
-	// only get the success response if the changeset is in draft mode.
+	//
+	// The requests here can be rerun with `-update` provided you have two PRs
+	// set up properly:
+	//
+	// 1. https://github.com/sourcegraph/automation-testing/pull/467 must be
+	//    open as a draft.
+	// 2. https://github.com/sourcegraph/automation-testing/pull/466 must be
+	//    open and ready for review.
+	//
+	// You can update just this test with `-update MarkPullRequestReadyForReview`.
 	for i, tc := range []struct {
 		name string
 		ctx  context.Context
@@ -393,13 +415,13 @@ func TestMarkPullRequestReadyForReview(t *testing.T) {
 	}{
 		{
 			name: "success",
-			// https://github.com/sourcegraph/automation-testing/pull/361
-			pr: &PullRequest{ID: "MDExOlB1bGxSZXF1ZXN0NTA0NDczNDU1"},
+			// https://github.com/sourcegraph/automation-testing/pull/467
+			pr: &PullRequest{ID: "PR_kwDODS5xec4waL43"},
 		},
 		{
 			name: "already ready for review",
-			// https://github.com/sourcegraph/automation-testing/pull/362
-			pr: &PullRequest{ID: "MDExOlB1bGxSZXF1ZXN0NTA2MDg0ODU2"},
+			// https://github.com/sourcegraph/automation-testing/pull/466
+			pr: &PullRequest{ID: "PR_kwDODS5xec4waL4w"},
 		},
 	} {
 		tc := tc
@@ -443,8 +465,8 @@ func TestMergePullRequest(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pr := &PullRequest{
-			// https://github.com/sourcegraph/automation-testing/pull/424
-			ID: "MDExOlB1bGxSZXF1ZXN0NTc3Nzc3NzEy",
+			// https://github.com/sourcegraph/automation-testing/pull/465
+			ID: "PR_kwDODS5xec4waLb5",
 		}
 
 		err := cli.MergePullRequest(context.Background(), pr, true)

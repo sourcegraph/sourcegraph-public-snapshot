@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -47,7 +49,7 @@ func replace(ctx context.Context, content []byte, matchPattern MatchPattern, rep
 func (c *Replace) Run(ctx context.Context, r result.Match) (Result, error) {
 	switch m := r.(type) {
 	case *result.FileMatch:
-		content, err := git.ReadFile(ctx, m.Repo.Name, m.CommitID, m.Path, 0)
+		content, err := git.ReadFile(ctx, m.Repo.Name, m.CommitID, m.Path, 0, authz.DefaultSubRepoPermsChecker)
 		if err != nil {
 			return nil, err
 		}

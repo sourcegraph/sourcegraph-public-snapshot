@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 
-import { Container } from '@sourcegraph/wildcard'
+import { Container, Button } from '@sourcegraph/wildcard'
 
 import { useExternalServices } from '../../../auth/useExternalServices'
 import { ListExternalServiceFields } from '../../../graphql-operations'
@@ -41,9 +41,9 @@ export const OrgUserNeedsCodeHost: React.FunctionComponent<OrgUserNeedsCodeHost>
                     Connect with {missingString} to start searching across the {orgDisplayName} organization's private
                     repositories on Sourcegraph.
                 </p>
-                <Link className="btn btn-primary" to={`/users/${user.username}/settings/code-hosts`}>
+                <Button to={`/users/${user.username}/settings/code-hosts`} variant="primary" as={Link}>
                     Connect with {missingString}
-                </Link>
+                </Button>
             </Container>
         )
     }
