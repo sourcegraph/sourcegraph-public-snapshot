@@ -1,3 +1,7 @@
+-- +++
+-- parent: 1000000017
+-- +++
+
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS lsif_data_documentation_mappings (

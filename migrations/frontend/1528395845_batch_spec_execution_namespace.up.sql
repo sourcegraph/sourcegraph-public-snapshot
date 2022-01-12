@@ -1,3 +1,7 @@
+-- +++
+-- parent: 1528395844
+-- +++
+
 BEGIN;
 
 ALTER TABLE IF EXISTS batch_spec_executions ADD COLUMN IF NOT EXISTS namespace_user_id integer REFERENCES users(id) DEFERRABLE;
