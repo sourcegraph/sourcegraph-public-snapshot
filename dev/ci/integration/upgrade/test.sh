@@ -8,12 +8,18 @@ set -ex
 
 URL="${1:-"http://localhost:7080"}"
 
-docker_logs() {
+# In CI, provide a directory unique to this job
+export DATA="/tmp/sourcegraph-data-${BUILDKITE_JOB_ID:-$(openssl rand -hex 12)}"
+
+cleanup() {
   echo "--- dump server logs"
   docker logs --timestamps "$CONTAINER" >"$root_dir/$CONTAINER.log" 2>&1
+
+  echo "--- Deleting $DATA"
+  rm -rf "$DATA"
 }
 
-trap docker_logs EXIT
+trap cleanup EXIT
 
 # Run and initialize an old Sourcegraph release
 echo "--- start sourcegraph $MINIMUM_UPGRADEABLE_VERSION"
