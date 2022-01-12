@@ -14,7 +14,7 @@ jobs:
       with: { node-version: '${{ steps.nvmrc.outputs.NODE_VERSION }}' }
 
     - name: Install dependencies
-      run: yarn --ignore-engines --ignore-scripts
+      run: yarn --ignore-engines
 
     - name: Run smoke test
       run: HEADLESS=true yarn test-smoke
