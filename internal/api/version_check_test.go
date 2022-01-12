@@ -20,6 +20,12 @@ func TestCheckSourcegraphVersion(t *testing.T) {
 			expected:       true,
 		},
 		{
+			currentVersion: "3.12.6-rc.3",
+			constraint:     ">= 3.10.6-0",
+			minDate:        "2020-01-19",
+			expected:       true,
+		},
+		{
 			currentVersion: "3.12.6",
 			constraint:     ">= 3.13",
 			minDate:        "2020-01-19",
@@ -43,6 +49,7 @@ func TestCheckSourcegraphVersion(t *testing.T) {
 			minDate:        "2020-01-19",
 			expected:       true,
 		},
+		// 7-character abbreviated hash
 		{
 			currentVersion: "54959_2020-01-29_9258595",
 			minDate:        "2020-01-19",
@@ -57,6 +64,32 @@ func TestCheckSourcegraphVersion(t *testing.T) {
 		},
 		{
 			currentVersion: "54959_2020-01-29_9258595",
+			minDate:        "2020-01-29",
+			constraint:     ">= 0.0",
+			expected:       true,
+		},
+		// 12-character abbreviated hash
+		{
+			currentVersion: "54959_2020-01-29_925859585436",
+			minDate:        "2020-01-19",
+			constraint:     ">= 999.13",
+			expected:       true,
+		},
+		{
+			currentVersion: "54959_2020-01-29_925859585436",
+			minDate:        "2020-01-30",
+			constraint:     ">= 999.13",
+			expected:       false,
+		},
+		{
+			currentVersion: "54959_2020-01-29_925859585436",
+			minDate:        "2020-01-29",
+			constraint:     ">= 0.0",
+			expected:       true,
+		},
+		// Full 40-character hash, just for fun
+		{
+			currentVersion: "54959_2020-01-29_7db7d396346284fd0f8f79f130f38b16fb1d3d70",
 			minDate:        "2020-01-29",
 			constraint:     ">= 0.0",
 			expected:       true,
