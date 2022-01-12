@@ -343,11 +343,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.3 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.1.0 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
-	github.com/census-instrumentation/opencensus-proto v0.3.0 // indirect
-	github.com/cncf/udpa/go v0.0.0-20220112060539-c52dc94e7fbe // indirect
-	github.com/cncf/xds/go v0.0.0-20220112060520-0fa49ea1db0c // indirect
-	github.com/envoyproxy/go-control-plane v0.10.1 // indirect
-	github.com/envoyproxy/protoc-gen-validate v0.6.2 // indirect
 	github.com/go-errors/errors v1.4.1 // indirect
 	github.com/go-kit/log v0.2.0 // indirect
 	github.com/go-logr/logr v1.2.2 // indirect
@@ -397,10 +392,10 @@ replace (
 replace (
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
-	// Pending: https://github.com/shurcooL/httpgzip/pull/9
-	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df
 	// Pending: Renamed to github.com/google/gnostic. Transitive deps still use the old name (kubernetes/kubernetes).
 	github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.5
+	// Pending: https://github.com/shurcooL/httpgzip/pull/9
+	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df
 )
 
 // Status unclear replace directives
