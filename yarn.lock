@@ -12863,6 +12863,11 @@ google-p12-pem@^2.0.0:
   dependencies:
     node-forge "^0.9.0"
 
+google-protobuf@3.17.3:
+  version "3.17.3"
+  resolved "https://registry.npmjs.org/google-protobuf/-/google-protobuf-3.17.3.tgz#f87595073545a77946c8f0b67c302c5f7646d700"
+  integrity sha512-OVPzcSWIAJ+d5yiHyeaLrdufQtrvaBrF4JQg+z8ynTkbO3uFcujqXszTumqg1cGsAsjkWnI+M5B1xZ19yR4Wyg==
+
 googleapis-common@^3.2.0:
   version "3.2.0"
   resolved "https://registry.npmjs.org/googleapis-common/-/googleapis-common-3.2.0.tgz#80e706405065a0fe897b6d15bb2824f8a18e1776"
@@ -19146,6 +19151,11 @@ property-information@^5.0.0, property-information@^5.3.0:
   integrity sha512-YUHSPk+A30YPv+0Qf8i9Mbfe/C0hdPXk1s1jPVToV8pk8BQtpw10ct89Eo7OWkutrwqvT0eicAxlOg3dOAu8JA==
   dependencies:
     xtend "^4.0.0"
+
+protoc-gen-ts@0.8.1:
+  version "0.8.1"
+  resolved "https://registry.npmjs.org/protoc-gen-ts/-/protoc-gen-ts-0.8.1.tgz#9d4d5ac9ad884151bf28be66b906a08d4f50645d"
+  integrity sha512-T1Gqw8ekPeSmB6vAhpBKT77Fu0gRThwz3QqQ+dhohz/I554a6YhsoF/nKy4Qo1C8Ukoag3RVcYeXz4IBC4643Q==
 
 proxy-addr@~2.0.5:
   version "2.0.6"

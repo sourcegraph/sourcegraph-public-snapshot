@@ -8,7 +8,7 @@ import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { TooltipController } from '@sourcegraph/wildcard'
+import { Button, TooltipController } from '@sourcegraph/wildcard'
 
 interface Props {
     fullQuery: string
@@ -46,16 +46,15 @@ export const CopyQueryButton: React.FunctionComponent<Props> = (props: Props) =>
     const copyFullQueryTooltip = `Copy full query\n${props.isMacPlatform ? '⌘' : 'Ctrl'}+⇧+C`
     return (
         <>
-            <button
-                type="button"
-                className={classNames('btn btn-icon btn-link-sm', props.className)}
+            <Button
+                className={classNames('btn-icon btn-link-sm', props.className)}
                 data-tooltip={copied ? 'Copied!' : copyFullQueryTooltip}
                 aria-label={copied ? 'Copied!' : copyFullQueryTooltip}
                 aria-live="polite"
                 onClick={nextClick}
             >
                 <ClipboardOutlineIcon size={16} className="icon-inline" />
-            </button>
+            </Button>
             {props.keyboardShortcutForFullCopy.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={copyFullQuery} allowDefault={false} ignoreInput={true} />
             ))}

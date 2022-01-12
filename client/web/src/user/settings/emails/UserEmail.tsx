@@ -2,7 +2,7 @@ import React, { useState, FunctionComponent } from 'react'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { Badge } from '@sourcegraph/wildcard'
+import { Button, Badge } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import {
@@ -153,37 +153,32 @@ export const UserEmail: FunctionComponent<Props> = ({
                     {!verified && verificationPending && (
                         <span>
                             <span className={styles.dot}>&bull;&nbsp;</span>
-                            <button
-                                type="button"
-                                className="btn btn-link p-0"
+                            <Button
+                                className="p-0"
                                 onClick={() => resendEmailVerification(email)}
                                 disabled={isLoading}
+                                variant="link"
                             >
                                 Resend verification email
-                            </button>
+                            </Button>
                         </span>
                     )}
                 </div>
                 <div className="d-flex align-items-center">
                     {viewerCanManuallyVerify && (
-                        <button
-                            type="button"
-                            className="btn btn-link p-0"
+                        <Button
+                            className="p-0"
                             onClick={() => updateEmailVerification(!verified)}
                             disabled={isLoading}
+                            variant="link"
                         >
                             {verified ? 'Mark as unverified' : 'Mark as verified'}
-                        </button>
+                        </Button>
                     )}{' '}
                     {!isPrimary && (
-                        <button
-                            type="button"
-                            className="btn btn-link text-danger p-0"
-                            onClick={removeEmail}
-                            disabled={isLoading}
-                        >
+                        <Button className="text-danger p-0" onClick={removeEmail} disabled={isLoading} variant="link">
                             Remove
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>

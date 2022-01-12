@@ -177,6 +177,21 @@ require (
 )
 
 require (
+	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
+	github.com/bufbuild/buf v0.56.0
+	github.com/gofrs/flock v0.8.1 // indirect
+	github.com/gofrs/uuid v4.0.0+incompatible // indirect
+	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/jhump/protoreflect v1.9.1-0.20210817181203-db1a327a393e // indirect
+	github.com/klauspost/pgzip v1.2.5 // indirect
+	github.com/pkg/profile v1.6.0 // indirect
+	github.com/spf13/cobra v1.2.1 // indirect
+	github.com/twitchtv/twirp v8.1.0+incompatible // indirect
+	go.uber.org/multierr v1.7.0 // indirect
+	go.uber.org/zap v1.19.0 // indirect
+)
+
+require (
 	cloud.google.com/go v0.98.0 // indirect
 	github.com/Microsoft/go-winio v0.5.1 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20211112122917-428f8eabeeb3 // indirect

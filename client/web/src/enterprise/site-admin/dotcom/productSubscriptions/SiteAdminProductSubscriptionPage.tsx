@@ -11,7 +11,7 @@ import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { useEventObservable, useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
 import { ErrorAlert } from '../../../../components/alerts'
@@ -146,14 +146,9 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                 <>
                     <h2>Product subscription {productSubscription.name}</h2>
                     <div className="mb-3">
-                        <button
-                            type="button"
-                            className="btn btn-danger"
-                            onClick={nextArchival}
-                            disabled={archival === LOADING}
-                        >
+                        <Button onClick={nextArchival} disabled={archival === LOADING} variant="danger">
                             Archive
-                        </button>
+                        </Button>
                         {isErrorLike(archival) && <ErrorAlert className="mt-2" error={archival} />}
                     </div>
                     <div className="card mt-3">
@@ -208,13 +203,13 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<Props> = 
                         <div className="card-header d-flex align-items-center justify-content-between">
                             Licenses
                             {showGenerate ? (
-                                <button type="button" className="btn btn-secondary" onClick={toggleShowGenerate}>
+                                <Button onClick={toggleShowGenerate} variant="secondary">
                                     Dismiss new license form
-                                </button>
+                                </Button>
                             ) : (
-                                <button type="button" className="btn btn-primary btn-sm" onClick={toggleShowGenerate}>
+                                <Button onClick={toggleShowGenerate} variant="primary" size="sm">
                                     <AddIcon className="icon-inline" /> Generate new license manually
-                                </button>
+                                </Button>
                             )}
                         </div>
                         {showGenerate && (
