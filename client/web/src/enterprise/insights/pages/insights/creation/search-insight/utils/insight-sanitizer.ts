@@ -3,12 +3,11 @@ import { camelCase } from 'lodash'
 import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit/sanitizers/repositories'
 import { InsightExecutionType, InsightType, InsightTypePrefix, SearchBasedInsight } from '../../../../../core/types'
 import { SearchBasedInsightSeries } from '../../../../../core/types/insight/search-insight'
-import { EDIT_SERIES_PREFIX } from '../components/search-insight-creation-content/hooks/use-editable-series'
 import { CreateInsightFormFields, EditableDataSeries } from '../types'
 
 export function getSanitizedLine(line: EditableDataSeries): SearchBasedInsightSeries {
     return {
-        id: line.id?.startsWith(EDIT_SERIES_PREFIX) ? null : line.id,
+        id: line.id,
         name: line.name.trim(),
         stroke: line.stroke,
         // Query field is a reg exp field for code insight query setting
