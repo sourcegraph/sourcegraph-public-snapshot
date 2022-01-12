@@ -31,7 +31,7 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
-const NullComponent: React.FunctionComponent = () => <LoadingSpinner className="m-2" />
+const WaitingComponent: React.FunctionComponent = () => <LoadingSpinner className="m-2" />
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
     location: H.Location
@@ -170,7 +170,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                     )}
                                 />,
                             ]}
-                            <Route component={loading ? NullComponent : NotFoundPage} />
+                            <Route component={loading ? WaitingComponent : NotFoundPage} />
                         </Switch>
                     </React.Suspense>
                 </ErrorBoundary>
