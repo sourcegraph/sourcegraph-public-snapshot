@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395884
--- +++
-
 BEGIN;
 
 DROP VIEW lsif_dumps_with_repository_name;

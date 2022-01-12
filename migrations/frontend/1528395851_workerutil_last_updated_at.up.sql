@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395850
--- +++
-
 BEGIN;
 
 ALTER TABLE batch_spec_executions ADD COLUMN last_heartbeat_at timestamp with time zone;

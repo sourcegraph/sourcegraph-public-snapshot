@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395955
--- +++
-
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS org_stats

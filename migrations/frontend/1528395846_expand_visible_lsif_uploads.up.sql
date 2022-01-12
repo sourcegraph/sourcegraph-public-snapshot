@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395845
--- +++
-
 BEGIN;
 
 ALTER TABLE lsif_uploads_visible_at_tip ADD COLUMN branch_or_tag_name text NOT NULL DEFAULT '';

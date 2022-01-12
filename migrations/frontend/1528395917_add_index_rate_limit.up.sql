@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395916
--- +++
-
 BEGIN;
 
 -- Create table to rate limit indexing scans of a repository
