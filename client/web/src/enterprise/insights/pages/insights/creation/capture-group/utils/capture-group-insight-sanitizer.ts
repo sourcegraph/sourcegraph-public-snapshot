@@ -16,6 +16,7 @@ export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields):
         id: '',
         visibility: '',
         step: { [values.step]: +values.stepValue },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
     }
 }
 

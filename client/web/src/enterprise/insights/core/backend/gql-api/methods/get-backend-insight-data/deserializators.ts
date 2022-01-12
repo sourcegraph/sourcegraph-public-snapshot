@@ -14,7 +14,7 @@ export const createBackendInsightData = (insight: BackendInsight, response: Insi
         id: insight.id,
         view: {
             title: insight.title,
-            content: [createLineChartContentFromIndexedSeries(rawSeries, series)],
+            content: [createLineChartContentFromIndexedSeries(rawSeries, series, insight.filters)],
             isFetchingHistoricalData: response.dataSeries.some(
                 ({ status: { pendingJobs, backfillQueuedAt } }) => pendingJobs > 0 || backfillQueuedAt === null
             ),

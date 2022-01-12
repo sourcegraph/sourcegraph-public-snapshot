@@ -1,7 +1,9 @@
+import { formatISO } from 'date-fns'
+import escapeRegExp from 'lodash/escapeRegExp'
 import { LineChartContent } from 'sourcegraph'
 
 import { InsightDataSeries } from '../../../../../graphql-operations'
-import { SearchBasedInsightSeries } from '../../types/insight/search-insight'
+import { SearchBasedBackendFilters, SearchBasedInsightSeries } from '../../types/insight/search-insight'
 
 interface SeriesDataset {
     dateTime: number
@@ -69,7 +71,8 @@ export type InsightDataSeriesData = Pick<InsightDataSeries, 'seriesId' | 'label'
  */
 export function createLineChartContentFromIndexedSeries(
     series: InsightDataSeriesData[],
-    seriesDefinition: SearchBasedInsightSeries[] = []
+    seriesDefinition: SearchBasedInsightSeries[] = [],
+    filters: SearchBasedBackendFilters
 ): LineChartContent<SeriesDataset, 'dateTime'> {
     const definitionMap = Object.fromEntries<SearchBasedInsightSeries>(
         seriesDefinition.map(definition => [definition.id ?? '', definition])
@@ -82,6 +85,39 @@ export function createLineChartContentFromIndexedSeries(
             name: definitionMap[line.seriesId]?.name ?? line.label,
             dataKey: line.seriesId,
             stroke: definitionMap[line.seriesId]?.stroke,
+            linkURLs: Object.fromEntries(
+                [...line.points]
+                    .sort((a, b) => Date.parse(a.dateTime) - Date.parse(b.dateTime))
+                    .map((point, index, points) => {
+                        const previousPoint = points[index - 1]
+                        const date = Date.parse(point.dateTime)
+
+                        // Link to diff search that explains what new cases were added between two data points
+                        const url = new URL('/search', window.location.origin)
+
+                        // Use formatISO instead of toISOString(), because toISOString() always outputs UTC.
+                        // They mark the same point in time, but using the user's timezone makes the date string
+                        // easier to read (else the date component may be off by one day)
+                        const after = previousPoint ? formatISO(Date.parse(previousPoint.dateTime)) : ''
+                        const before = formatISO(date)
+
+                        const includeRepoFilter = filters.includeRepoRegexp
+                            ? `repo:${escapeRegExp(filters.includeRepoRegexp)}`
+                            : ''
+
+                        const excludeRepoFilter = filters.excludeRepoRegexp ? `-repo:${filters.excludeRepoRegexp}` : ''
+
+                        const repoFilter = `${includeRepoFilter} ${excludeRepoFilter}`
+                        const afterFilter = after ? `after:${after}` : ''
+                        const beforeFilter = `before:${before}`
+                        const dateFilters = `${afterFilter} ${beforeFilter}`
+                        const diffQuery = `${repoFilter} type:diff ${dateFilters} ${definitionMap[line.seriesId].query}`
+
+                        url.searchParams.set('q', diffQuery)
+
+                        return [date, url.href]
+                    })
+            ),
         })),
         xAxis: {
             dataKey: 'dateTime',

@@ -74,7 +74,7 @@ export function GlyphContent<Datum extends object>(props: GlyphContentProps<Datu
     const hovered = hoveredDatum?.index === currentDatumIndex && hoveredDatum.key === line.dataKey
     const focused = focusedDatum?.index === currentDatumIndex && focusedDatum.key === line.dataKey
 
-    const linkURL = line.linkURLs?.[currentDatumIndex]
+    const linkURL = line.linkURLs?.[+datum.x] ?? line.linkURLs?.[currentDatumIndex]
 
     const currentDatum = {
         key: line.dataKey.toString(),
