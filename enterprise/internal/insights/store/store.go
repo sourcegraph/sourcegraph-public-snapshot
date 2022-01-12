@@ -173,10 +173,10 @@ SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.metadata, 
 	JOIN repo_names rn ON sp.repo_name_id = rn.id
 	WHERE %s
 	GROUP BY sp.series_id, interval_time, sp.repo_name_id, capture
-	ORDER BY sp.series_id, interval_time, sp.repo_name_id, capture DESC
+	ORDER BY sp.series_id, interval_time, sp.repo_name_id
 ) sub
 GROUP BY sub.series_id, sub.interval_time, sub.metadata, sub.capture
-ORDER BY sub.series_id, sub.interval_time, sub.capture DESC
+ORDER BY sub.series_id, sub.interval_time DESC
 `
 
 // Note that the series_points table may contain duplicate points, or points recorded at irregular
