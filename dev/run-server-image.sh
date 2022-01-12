@@ -3,7 +3,8 @@
 
 IMAGE=${IMAGE:-sourcegraph/server:${TAG:-insiders}}
 URL=${URL:-"http://localhost:7080"}
-DATA=/tmp/sourcegraph
+IDENTIFIER=${BUILDKITE_JOB_ID:-$(openssl rand -hex 12)}
+DATA="/tmp/sourcegraph-$IDENTIFIER"
 
 echo "--- Checking for existing Sourcegraph instance at $URL"
 if curl --output /dev/null --silent --head --fail "$URL"; then
