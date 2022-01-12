@@ -1,8 +1,10 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -11,9 +13,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	rockskip "github.com/sourcegraph/sourcegraph/enterprise/cmd/rockskip"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -56,11 +60,6 @@ func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfi
 		repoToMutexMutex.Unlock()
 		defer mutex.Unlock()
 
-		git, err := NewGitserver(string(args.Repo))
-		if err != nil {
-			return nil, errors.Wrap(err, "rockskip.NewGitserver")
-		}
-
 		var parse rockskip.ParseSymbolsFunc = func(path string, bytes []byte) (symbols []string, err error) {
 			entries, err := parser.Parse(path, bytes)
 			if err != nil {
@@ -75,7 +74,7 @@ func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfi
 			return symbols, nil
 		}
 
-		err = rockskip.Index(git, db, parse, string(args.CommitID))
+		err = rockskip.Index(NewGitserver(string(args.Repo)), db, parse, string(args.CommitID))
 		if err != nil {
 			return nil, errors.Wrap(err, "rockskip.Index")
 		}
@@ -152,10 +151,38 @@ func mustCreateCtagsParser(ctagsConfig types.CtagsConfig) ctags.Parser {
 	return parser
 }
 
-func NewGitserver(repo string) (rockskip.Git, error) {
-	git, err := rockskip.NewSubprocessGit(repo)
+type Gitserver struct {
+	repo string
+}
+
+func NewGitserver(repo string) rockskip.Git {
+	return Gitserver{
+		repo: repo,
+	}
+}
+
+func (g Gitserver) LogReverse(commit string, n int) ([]rockskip.LogEntry, error) {
+	command := gitserver.DefaultClient.Command("git", rockskip.LogReverseArgs(n, commit)...)
+	command.Repo = api.RepoName(g.repo)
+	stdout, err := command.Output(context.Background())
 	if err != nil {
 		return nil, err
 	}
-	return git, nil
+	return rockskip.ParseLogReverse(bytes.NewReader(stdout))
+}
+
+func (g Gitserver) RevList(commit string) ([]string, error) {
+	command := gitserver.DefaultClient.Command("git", rockskip.RevListArgs(commit)...)
+	command.Repo = api.RepoName(g.repo)
+	stdout, err := command.Output(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return rockskip.ParseRevList(bytes.NewReader(stdout))
+}
+
+func (g Gitserver) CatFile(commit string, path string) ([]byte, error) {
+	command := gitserver.DefaultClient.Command("git", "cat-file", "blob", fmt.Sprintf("%s:%s", commit, path))
+	command.Repo = api.RepoName(g.repo)
+	return command.Output(context.Background())
 }
