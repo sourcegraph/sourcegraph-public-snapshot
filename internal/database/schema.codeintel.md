@@ -735,3 +735,21 @@ Associates result set identifiers with the (document path, range identifier) pai
 **dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
 
 **idx**: The unique result chunk index within the associated dump. Every result set identifier present should hash to this index (modulo lsif_data_metadata.num_result_chunks).
+
+# Table "public.migration_logs"
+```
+            Column             |           Type           | Collation | Nullable |                  Default                   
+-------------------------------+--------------------------+-----------+----------+--------------------------------------------
+ id                            | integer                  |           | not null | nextval('migration_logs_id_seq'::regclass)
+ migration_logs_schema_version | integer                  |           | not null | 
+ schema                        | text                     |           | not null | 
+ version                       | integer                  |           | not null | 
+ up                            | boolean                  |           | not null | 
+ started_at                    | timestamp with time zone |           | not null | 
+ finished_at                   | timestamp with time zone |           |          | 
+ success                       | boolean                  |           |          | 
+ error_message                 | text                     |           |          | 
+Indexes:
+    "migration_logs_pkey" PRIMARY KEY, btree (id)
+
+```
