@@ -3,7 +3,7 @@
 
 IMAGE=${IMAGE:-sourcegraph/server:${TAG:-insiders}}
 URL=${URL:-"http://localhost:7080"}
-IDENTIFIER=${BUILDKITE_JOB_ID:-$(openssl rand -hex 12)}
+IDENTIFIER="${BUILDKITE_JOB_ID:-$(openssl rand -hex 12)}"
 DATA="/tmp/sourcegraph-$IDENTIFIER"
 
 echo "--- Checking for existing Sourcegraph instance at $URL"
@@ -29,7 +29,7 @@ esac
 
 if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
   echo "--- Deleting $DATA"
-  rm -rf $DATA
+  rm -rf "$DATA"
 fi
 
 echo "--- Starting server ${IMAGE}"
@@ -38,6 +38,6 @@ docker run "$@" \
   --rm \
   -e SRC_LOG_LEVEL=dbug \
   -e DEBUG=t \
-  --volume $DATA/config:/etc/sourcegraph \
-  --volume $DATA/data:/var/opt/sourcegraph \
+  --volume "$DATA/config:/etc/sourcegraph" \
+  --volume "$DATA/data:/var/opt/sourcegraph" \
   "$IMAGE"
