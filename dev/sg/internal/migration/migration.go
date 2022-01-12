@@ -22,7 +22,7 @@ BEGIN;
 
 -- Perform migration here.
 --
--- See README.md. Highlights:
+-- See /migrations/README.md. Highlights:
 --  * Make migrations idempotent (use IF EXISTS)
 --  * Make migrations backwards-compatible (old readers/writers must continue to work)
 --  * Wrap your changes in a transaction. Note that CREATE INDEX CONCURRENTLY is an exception

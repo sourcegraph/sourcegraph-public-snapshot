@@ -284,26 +284,44 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 		return nil, err
 	}
 
+	// Use depth-first-search to topologically sort the migration definition sets as a
+	// graph. At this point we know we have a single root; this means that the given set
+	// of definitions either (a) form a connected acyclic graph, or (b) form a disconnected
+	// set of graphs containing at least one cycle (by construction). In either case, we'll
+	// return an error indicating that a cycle exists and that the set of definitions are
+	// not well-formed.
+	//
+	// See the following Wikipedia article for additional intuition and description of the
+	// `marks` array to detect cycles.
+	// https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search
+
+	type MarkType uint
+	const (
+		MarkTypeUnvisited MarkType = iota
+		MarkTypeVisiting
+		MarkTypeVisited
+	)
+
 	var (
 		order    = make([]int, 0, len(migrationDefinitions))
-		marks    = make(map[int]int, len(migrationDefinitions))
+		marks    = make(map[int]MarkType, len(migrationDefinitions))
 		children = children(migrationDefinitions)
 
 		dfs func(id int) error
 	)
 
 	dfs = func(id int) error {
-		switch marks[id] {
-		case 1:
+		if marks[id] == MarkTypeVisiting {
 			// currently processing
 			return ErrCycle
-		case 2:
+		}
+		if marks[id] == MarkTypeVisited {
 			// already visited
 			return nil
 		}
 
-		// temporary mark
-		marks[id]++
+		marks[id] = MarkTypeVisiting
+		defer func() { marks[id] = MarkTypeVisited }()
 
 		for _, child := range children[id] {
 			if err := dfs(child); err != nil {
@@ -311,8 +329,7 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 			}
 		}
 
-		// permanent mark
-		marks[id]++
+		// Add self _after_ adding all children recursively
 		order = append(order, id)
 		return nil
 	}
