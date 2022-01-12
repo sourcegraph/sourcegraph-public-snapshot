@@ -48,10 +48,10 @@ function cleanup() {
 
   pushd "$compose_dir"
   echo "--- dump server logs"
-  docker-compose --project "$PROJECT" logs >"$root_dir/server.log" 2>&1
+  docker-compose --project-name "$PROJECT" logs >"$root_dir/server.log" 2>&1
 
   echo "--- stop project"
-  docker-compose --project "$PROJECT" down
+  docker-compose --project-name "$PROJECT" down
   popd
 
   docker_cleanup
@@ -94,7 +94,7 @@ yq eval '.services.sourcegraph-frontend-0.ports = [ "0.0.0.0:7080:3080" ]' --inp
 docker-compose config
 
 echo "--- Running Sourcegraph"
-docker-compose up --project "$PROJECT" --detach --force-recreate --renew-anon-volumes --quiet-pull
+docker-compose --project-name "$PROJECT" up --detach --force-recreate --renew-anon-volumes --quiet-pull
 popd
 
 URL="http://localhost:7080"
