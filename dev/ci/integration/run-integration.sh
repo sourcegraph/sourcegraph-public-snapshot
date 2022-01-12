@@ -28,6 +28,7 @@ function docker_cleanup() {
     docker rmi -f $(docker images -q)
   fi
   docker volume prune -f
+  docker network prune -f
 }
 
 # Do a pre-run cleanup
