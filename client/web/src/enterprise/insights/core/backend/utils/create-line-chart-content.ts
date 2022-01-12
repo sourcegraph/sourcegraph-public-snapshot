@@ -91,8 +91,10 @@ export function createLineChartContentFromIndexedSeries(
                     .map((point, index, points) => {
                         const previousPoint = points[index - 1]
                         const date = Date.parse(point.dateTime)
+
                         // Link to diff search that explains what new cases were added between two data points
                         const url = new URL('/search', window.location.origin)
+
                         // Use formatISO instead of toISOString(), because toISOString() always outputs UTC.
                         // They mark the same point in time, but using the user's timezone makes the date string
                         // easier to read (else the date component may be off by one day)

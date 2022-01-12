@@ -142,6 +142,7 @@ add('Line chart with 0 to 1 data', () => (
                     dataKey: 'a',
                     name: 'A metric',
                     stroke: 'var(--red)',
+                    linkURLs: ['#A:1st_data_point', 'https://example.com'],
                 },
             ],
             xAxis: {
