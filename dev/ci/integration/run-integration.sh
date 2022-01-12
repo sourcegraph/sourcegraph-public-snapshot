@@ -17,6 +17,9 @@ git clone --depth 1 \
   "$clone_dir"
 compose_dir="$test_dir/deploy-sourcegraph-docker/docker-compose"
 
+# Magic number for connection pool: https://github.com/docker/compose/issues/6638#issuecomment-576743595
+export COMPOSE_PARALLEL_LIMIT=1000
+
 function docker_cleanup() {
   echo "--- docker cleanup"
   if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
