@@ -1,3 +1,5 @@
+import fetch from 'jest-fetch-mock'
+
 import { SearchBasedBackendFilters, SearchBasedInsightSeries } from '../../types/insight/search-insight'
 
 import {
@@ -164,6 +166,28 @@ const MOCK_INDEXED_SERIES_DATA: InsightDataSeriesData[] = [
 ]
 
 describe('createLineChartContentFromIndexedSeries', () => {
+    const { location } = window
+
+    beforeAll(() => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        delete window.location
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        window.location = new URL('https://sourcegraph.test')
+    })
+
+    beforeEach(() => {
+        fetch.enableMocks()
+        fetch.mockClear()
+    })
+
+    afterAll(() => {
+        fetch.disableMocks()
+
+        window.location = location
+    })
+
     it('should generate empty line chart data with no series data', () => {
         expect(createLineChartContentFromIndexedSeries([], [], FILTERS)).toStrictEqual({
             chart: 'line',
@@ -209,11 +233,27 @@ describe('createLineChartContentFromIndexedSeries', () => {
                     dataKey: '001',
                     name: '#1 line',
                     stroke: 'blue',
+                    linkURLs: {
+                        '1630456428000':
+                            'https://sourcegraph.test/search?q=++type%3Adiff++before%3A2021-09-01T00%3A33%3A48Z+series+1+query',
+                        '1633048428000':
+                            'https://sourcegraph.test/search?q=++type%3Adiff+after%3A2021-09-01T00%3A33%3A48Z+before%3A2021-10-01T00%3A33%3A48Z+series+1+query',
+                        '1635727674000':
+                            'https://sourcegraph.test/search?q=++type%3Adiff+after%3A2021-10-01T00%3A33%3A48Z+before%3A2021-11-01T00%3A47%3A54Z+series+1+query',
+                    },
                 },
                 {
                     dataKey: '002',
                     name: '#2 line',
                     stroke: 'orange',
+                    linkURLs: {
+                        '1630542828000':
+                            'https://sourcegraph.test/search?q=++type%3Adiff++before%3A2021-09-02T00%3A33%3A48Z+series+2+query',
+                        '1633048428000':
+                            'https://sourcegraph.test/search?q=++type%3Adiff+after%3A2021-09-02T00%3A33%3A48Z+before%3A2021-10-01T00%3A33%3A48Z+series+2+query',
+                        '1635727674000':
+                            'https://sourcegraph.test/search?q=++type%3Adiff+after%3A2021-10-01T00%3A33%3A48Z+before%3A2021-11-01T00%3A47%3A54Z+series+2+query',
+                    },
                 },
             ],
             xAxis: {
