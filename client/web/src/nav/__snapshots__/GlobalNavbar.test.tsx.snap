@@ -117,13 +117,7 @@ exports[`GlobalNavbar default 1`] = `
                 role="menuitem"
                 to="/contexts"
               >
-                Contexts 
-                <span
-                  class="badge info productStatusBadge ml-1"
-                  status="new"
-                >
-                  new
-                </span>
+                Contexts
               </a>
             </div>
           </div>
@@ -170,13 +164,7 @@ exports[`GlobalNavbar default 1`] = `
               <span
                 class="text"
               >
-                Contexts 
-                <span
-                  class="badge info productStatusBadge ml-1"
-                  status="new"
-                >
-                  new
-                </span>
+                Contexts
               </span>
             </span>
           </a>
@@ -392,13 +380,7 @@ exports[`GlobalNavbar low-profile 1`] = `
                 role="menuitem"
                 to="/contexts"
               >
-                Contexts 
-                <span
-                  class="badge info productStatusBadge ml-1"
-                  status="new"
-                >
-                  new
-                </span>
+                Contexts
               </a>
             </div>
           </div>
@@ -445,13 +427,7 @@ exports[`GlobalNavbar low-profile 1`] = `
               <span
                 class="text"
               >
-                Contexts 
-                <span
-                  class="badge info productStatusBadge ml-1"
-                  status="new"
-                >
-                  new
-                </span>
+                Contexts
               </span>
             </span>
           </a>

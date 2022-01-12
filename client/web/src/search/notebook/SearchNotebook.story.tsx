@@ -11,17 +11,18 @@ import { RepositoryFields } from '../../graphql-operations'
 
 import { SearchNotebook } from './SearchNotebook'
 
-import { BlockInput } from '.'
+import { BlockInit } from '.'
 
 const { add } = storiesOf('web/search/notebook/SearchNotebook', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
 ))
 
-const blocks: BlockInput[] = [
-    { type: 'md', input: '# Markdown' },
-    { type: 'query', input: 'Query' },
-    { type: 'md', input: '# Markdown 1' },
+const blocks: BlockInit[] = [
+    { id: '1', type: 'md', input: '# Markdown' },
+    { id: '2', type: 'query', input: 'Query' },
+    { id: '3', type: 'md', input: '# Markdown 1' },
     {
+        id: '4',
         type: 'file',
         input: {
             repositoryName: 'github.com/sourcegraph/sourcegraph',

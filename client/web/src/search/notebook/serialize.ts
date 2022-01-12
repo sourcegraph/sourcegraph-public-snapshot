@@ -1,9 +1,10 @@
-import { IHighlightLineRange } from '@sourcegraph/shared/src/graphql/schema'
+import { IHighlightLineRange, NotebookBlock } from '@sourcegraph/shared/src/graphql/schema'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
+import { CreateNotebookBlockInput, NotebookBlockType } from '../../graphql-operations'
 import { parseBrowserRepoURL } from '../../util/url'
 
-import { Block, BlockInput, FileBlockInput } from '.'
+import { Block, BlockInit, BlockInput, FileBlockInput } from '.'
 
 export function serializeBlocks(blocks: BlockInput[], sourcegraphURL: string): string {
     return blocks
@@ -94,4 +95,30 @@ export function parseLineRange(value: string): IHighlightLineRange | null {
     const startLine = parseInt(matches[1], 10) - 1
     const endLine = matches[2] ? parseInt(matches[2].slice(1), 10) : startLine + 1
     return { startLine, endLine }
+}
+
+export function blockToGQLInput(block: BlockInit): CreateNotebookBlockInput {
+    switch (block.type) {
+        case 'md':
+            return { id: block.id, type: NotebookBlockType.MARKDOWN, markdownInput: block.input }
+        case 'query':
+            return { id: block.id, type: NotebookBlockType.QUERY, queryInput: block.input }
+        case 'file':
+            return { id: block.id, type: NotebookBlockType.FILE, fileInput: block.input }
+    }
+}
+
+export function GQLBlockToGQLInput(block: NotebookBlock): CreateNotebookBlockInput {
+    switch (block.__typename) {
+        case 'MarkdownBlock':
+            return { id: block.id, type: NotebookBlockType.MARKDOWN, markdownInput: block.markdownInput }
+        case 'QueryBlock':
+            return { id: block.id, type: NotebookBlockType.QUERY, queryInput: block.queryInput }
+        case 'FileBlock':
+            return {
+                id: block.id,
+                type: NotebookBlockType.FILE,
+                fileInput: block.fileInput,
+            }
+    }
 }

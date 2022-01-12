@@ -60,7 +60,7 @@ describe('GlobalNavbar', () => {
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
     beforeEach(() => {
         useNavbarQueryState.setState({ searchCaseSensitivity: false })
-        useExperimentalFeatures.setState({ codeMonitoring: false })
+        useExperimentalFeatures.setState({ codeMonitoring: false, showSearchContext: true })
     })
 
     test('default', () => {
