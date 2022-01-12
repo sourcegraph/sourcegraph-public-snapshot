@@ -17,9 +17,9 @@ func TestRunnerRun(t *testing.T) {
 		store := testStoreWithVersion(10000, false)
 
 		if err := testRunner(store).Run(ctx, Options{
-			Up:            true,
-			NumMigrations: 2,
-			SchemaNames:   []string{"well-formed"},
+			Up:              true,
+			TargetMigration: 10000 + 2,
+			SchemaNames:     []string{"well-formed"},
 		}); err != nil {
 			t.Fatalf("unexpected error running upgrade: %s", err)
 		}
@@ -32,9 +32,9 @@ func TestRunnerRun(t *testing.T) {
 		store := testStoreWithVersion(10003, false)
 
 		if err := testRunner(store).Run(ctx, Options{
-			Up:            false,
-			NumMigrations: 2,
-			SchemaNames:   []string{"well-formed"},
+			Up:              false,
+			TargetMigration: 10003 - 2,
+			SchemaNames:     []string{"well-formed"},
 		}); err != nil {
 			t.Fatalf("unexpected error running downgrade: %s", err)
 		}
@@ -48,9 +48,9 @@ func TestRunnerRun(t *testing.T) {
 		store.UpFunc.PushReturn(fmt.Errorf("uh-oh"))
 
 		if err := testRunner(store).Run(ctx, Options{
-			Up:            true,
-			NumMigrations: 1,
-			SchemaNames:   []string{"query-error"},
+			Up:              true,
+			TargetMigration: 10000 + 1,
+			SchemaNames:     []string{"query-error"},
 		}); err == nil || !strings.Contains(err.Error(), "uh-oh") {
 			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "uh-oh", err)
 		}
@@ -64,9 +64,9 @@ func TestRunnerRun(t *testing.T) {
 		store.DownFunc.PushReturn(fmt.Errorf("uh-oh"))
 
 		if err := testRunner(store).Run(ctx, Options{
-			Up:            false,
-			NumMigrations: 1,
-			SchemaNames:   []string{"query-error"},
+			Up:              false,
+			TargetMigration: 10001 - 1,
+			SchemaNames:     []string{"query-error"},
 		}); err == nil || !strings.Contains(err.Error(), "uh-oh") {
 			t.Fatalf("unexpected error running downgrade. want=%q have=%q", "uh-oh", err)
 		}
@@ -77,9 +77,9 @@ func TestRunnerRun(t *testing.T) {
 
 	t.Run("unknown schema", func(t *testing.T) {
 		if err := testRunner(testStoreWithVersion(10000, false)).Run(ctx, Options{
-			Up:            true,
-			NumMigrations: 1,
-			SchemaNames:   []string{"unknown"},
+			Up:              true,
+			TargetMigration: 10000 + 1,
+			SchemaNames:     []string{"unknown"},
 		}); err == nil || !strings.Contains(err.Error(), "unknown schema") {
 			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "unknown schema", err)
 		}
@@ -89,9 +89,9 @@ func TestRunnerRun(t *testing.T) {
 		store := testStoreWithVersion(10000, true)
 
 		if err := testRunner(store).Run(ctx, Options{
-			Up:            true,
-			NumMigrations: 1,
-			SchemaNames:   []string{"well-formed"},
+			Up:              true,
+			TargetMigration: 10000 + 1,
+			SchemaNames:     []string{"well-formed"},
 		}); err == nil || !strings.Contains(err.Error(), "dirty database") {
 			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "dirty database", err)
 		}
@@ -102,9 +102,9 @@ func TestRunnerRun(t *testing.T) {
 		store.VersionFunc.SetDefaultReturn(10001, true, true, nil)
 
 		if err := testRunner(store).Run(ctx, Options{
-			Up:            true,
-			NumMigrations: 0,
-			SchemaNames:   []string{"well-formed"},
+			Up:              true,
+			TargetMigration: 10002 + 0,
+			SchemaNames:     []string{"well-formed"},
 		}); err == nil || !strings.Contains(err.Error(), "dirty database") {
 			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "dirty database", err)
 		}
@@ -116,9 +116,9 @@ func TestRunnerRun(t *testing.T) {
 		store.TryLockFunc.SetDefaultReturn(false, func(err error) error { return err }, nil)
 
 		if err := testRunner(store).Run(ctx, Options{
-			Up:            true,
-			NumMigrations: 1,
-			SchemaNames:   []string{"well-formed"},
+			Up:              true,
+			TargetMigration: 10000 + 1,
+			SchemaNames:     []string{"well-formed"},
 		}); err == nil || !strings.Contains(err.Error(), "contention") {
 			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "contention", err)
 		}
@@ -129,9 +129,9 @@ func TestRunnerRun(t *testing.T) {
 		store.VersionFunc.PushReturn(10001, false, true, nil)
 
 		if err := testRunner(store).Run(ctx, Options{
-			Up:            true,
-			NumMigrations: 1,
-			SchemaNames:   []string{"well-formed"},
+			Up:              true,
+			TargetMigration: 10002 + 1,
+			SchemaNames:     []string{"well-formed"},
 		}); err == nil || !strings.Contains(err.Error(), "contention") {
 			t.Fatalf("unexpected error running upgrade. want=%q have=%q", "contention", err)
 		}

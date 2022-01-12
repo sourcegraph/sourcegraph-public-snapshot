@@ -9,9 +9,9 @@ import (
 )
 
 type Options struct {
-	Up            bool
-	NumMigrations int
-	SchemaNames   []string
+	Up              bool
+	TargetMigration int
+	SchemaNames     []string
 
 	// Parallel controls whether we run schema migrations concurrently or not. By default,
 	// we run schema migrations sequentially. This is to ensure that in testing, where the
@@ -45,7 +45,7 @@ func (r *Runner) runSchema(ctx context.Context, options Options, schemaContext s
 	// Determine if we are upgrading to the latest schema. There are some properties around
 	// contention which we want to accept on normal "upgrade to latest" behavior, but want to
 	// alert on when a user is downgrading or upgrading to a specific version.
-	upgradingToLatest := options.Up && options.NumMigrations == 0
+	upgradingToLatest := options.Up && options.TargetMigration == 0
 
 	if !upgradingToLatest {
 		// If the database is dirty, then either the last attempted migration had failed,
@@ -104,7 +104,7 @@ func (r *Runner) runSchema(ctx context.Context, options Options, schemaContext s
 func (r *Runner) runSchemaUp(ctx context.Context, options Options, schemaContext schemaContext) (err error) {
 	log15.Info("Upgrading schema", "schema", schemaContext.schema.Name)
 
-	definitions, err := schemaContext.schema.Definitions.UpFrom(schemaContext.schemaVersion.version, options.NumMigrations)
+	definitions, err := schemaContext.schema.Definitions.UpTo(schemaContext.schemaVersion.version, options.TargetMigration)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,11 @@ func (r *Runner) runSchemaUp(ctx context.Context, options Options, schemaContext
 func (r *Runner) runSchemaDown(ctx context.Context, options Options, schemaContext schemaContext) error {
 	log15.Info("Downgrading schema", "schema", schemaContext.schema.Name)
 
-	definitions, err := schemaContext.schema.Definitions.DownFrom(schemaContext.schemaVersion.version, options.NumMigrations)
+	if options.TargetMigration == 0 {
+		options.TargetMigration = schemaContext.schemaVersion.version - 1
+	}
+
+	definitions, err := schemaContext.schema.Definitions.DownTo(schemaContext.schemaVersion.version, options.TargetMigration)
 	if err != nil {
 		return err
 	}
