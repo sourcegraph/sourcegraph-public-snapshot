@@ -198,7 +198,7 @@ describe('Search', () => {
 
             // File autocomplete from repo search bar
             await driver.page.waitForSelector('#monaco-query-input')
-            await driver.page.click('#monaco-query-input')
+            await driver.page.focus('#monaco-query-input')
             await driver.page.keyboard.type('jwtmi')
             await driver.page.waitForSelector('#monaco-query-input .suggest-widget.visible')
             await driver.findElementWithText('jwtmiddleware.go', {
@@ -296,7 +296,7 @@ describe('Search', () => {
             await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
         })
 
-        test('Clicking toggle turns off structural saerch and reverts to default pattern type', async () => {
+        test('Clicking toggle turns off structural search and reverts to default pattern type', async () => {
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=structural')

@@ -12,16 +12,12 @@ import type { ExtensionAlertProps } from './repo/RepoContainer'
 import { PageRoutes } from './routes.constants'
 import { CreateNotebookPage } from './search/notebook/CreateNotebookPage'
 import { SearchNotebooksListPage } from './search/notebook/listPage/SearchNotebooksListPage'
-import { getExperimentalFeatures, useExperimentalFeatures, useNavbarQueryState } from './stores'
+import { SearchPageWrapper } from './search/SearchPageWrapper'
+import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
 
-const SearchPage = lazyComponent(() => import('./search/home/SearchPage'), 'SearchPage')
-const StreamingSearchResults = lazyComponent(
-    () => import('./search/results/StreamingSearchResults'),
-    'StreamingSearchResults'
-)
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
@@ -79,12 +75,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: PageRoutes.Search,
-        render: props =>
-            useNavbarQueryState.getState().searchQueryFromURL ? (
-                <StreamingSearchResults {...props} />
-            ) : (
-                <SearchPage {...props} />
-            ),
+        render: props => <SearchPageWrapper {...props} />,
         exact: true,
     },
     {
