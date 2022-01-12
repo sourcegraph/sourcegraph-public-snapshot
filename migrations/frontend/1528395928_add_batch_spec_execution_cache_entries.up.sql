@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395927
--- +++
-
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS batch_spec_execution_cache_entries (

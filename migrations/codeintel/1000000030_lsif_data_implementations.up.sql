@@ -1,7 +1,3 @@
--- +++
--- parent: 1000000029
--- +++
-
 BEGIN;
 
 CREATE TABLE lsif_data_implementations (

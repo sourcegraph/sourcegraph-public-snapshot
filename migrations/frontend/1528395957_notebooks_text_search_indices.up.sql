@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395956
--- +++
-
 BEGIN;
 
 -- We add a generated column that will contain a tsvector representation of strings contained in the blocks array (extracted with the jsonb_to_tsvector expression).

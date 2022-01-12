@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395962
--- +++
-
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS insights_settings_migration_jobs

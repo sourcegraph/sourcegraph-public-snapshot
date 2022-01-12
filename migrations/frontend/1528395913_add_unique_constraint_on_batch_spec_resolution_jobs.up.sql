@@ -1,7 +1,3 @@
--- +++
--- parent: 1528395912
--- +++
-
 BEGIN;
 
 ALTER TABLE IF EXISTS batch_spec_resolution_jobs
