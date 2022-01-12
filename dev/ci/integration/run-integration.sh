@@ -94,7 +94,9 @@ yq eval '.services.sourcegraph-frontend-0.ports = [ "0.0.0.0:7080:3080" ]' --inp
 docker-compose config
 
 echo "--- Running Sourcegraph"
-docker-compose --project-name "$PROJECT" up --detach --force-recreate --renew-anon-volumes --quiet-pull
+docker-compose --project-name "$PROJECT" up --detach \
+  --force-recreate --renew-anon-volumes --quiet-pull \
+  --timeout "120"
 popd
 
 URL="http://localhost:7080"
@@ -108,7 +110,7 @@ done"
 if [ $? -ne 0 ]; then
   echo "^^^ +++"
   echo "$URL was not accessible within 120s."
-  docker top
+  docker-compose --project-name "$PROJECT" top
   exit 1
 fi
 set -e
