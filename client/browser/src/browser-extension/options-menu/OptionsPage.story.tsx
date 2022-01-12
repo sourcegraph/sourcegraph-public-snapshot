@@ -69,7 +69,6 @@ UrlValidationError.storyName = 'URL validation error'
 
 export const AskingForPermission: Story = () => (
     <OptionsPageWrapper
-        currentHost="github.com"
         permissionAlert={{ name: 'GitHub', icon: GithubIcon }}
         requestPermissionsHandler={requestPermissionsHandler}
     />
@@ -78,19 +77,11 @@ export const AskingForPermission: Story = () => (
 AskingForPermission.storyName = 'Asking for permission'
 
 export const OnPrivateRepository: Story = () => (
-    <OptionsPageWrapper
-        currentHost="github.com"
-        showPrivateRepositoryAlert={true}
-        requestPermissionsHandler={requestPermissionsHandler}
-    />
+    <OptionsPageWrapper showPrivateRepositoryAlert={true} requestPermissionsHandler={requestPermissionsHandler} />
 )
 
 OnPrivateRepository.storyName = 'On private repository'
 
 export const OnSourcegraphCloud: Story = () => (
-    <OptionsPageWrapper
-        currentHost="sourcegraph.com"
-        requestPermissionsHandler={requestPermissionsHandler}
-        showSourcegraphCloudAlert={true}
-    />
+    <OptionsPageWrapper requestPermissionsHandler={requestPermissionsHandler} showSourcegraphCloudAlert={true} />
 )
