@@ -52,6 +52,8 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	}, nil
 }
 
+const currentMigrationLogSchemaVersion = 1
+
 func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	ctx, endObservation := s.operations.ensureSchemaTable.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -61,6 +63,7 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 		sqlf.Sprintf(`ALTER TABLE %s ADD COLUMN IF NOT EXISTS dirty boolean NOT NULL`, quote(s.migrationsTable)),
 
 		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS migration_logs(id SERIAL PRIMARY KEY)`),
+		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS migration_logs_schema_version integer NOT NULL`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS schema text NOT NULL`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS version integer NOT NULL`),
 		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS up bool NOT NULL`),
@@ -261,7 +264,17 @@ func (s *Store) setVersion(ctx context.Context, up bool, expectedCurrentVersion,
 	}
 
 	id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
-		`INSERT INTO migration_logs (schema, version, up, started_at) VALUES (%s, %s, %s, NOW()) RETURNING id`,
+		`
+			INSERT INTO migration_logs (
+				migration_logs_schema_version,
+				schema,
+				version,
+				up,
+				started_at
+			) VALUES (%s, %s, %s, %s, NOW())
+			RETURNING id
+		`,
+		currentMigrationLogSchemaVersion,
 		s.migrationsTable,
 		sourceVersion,
 		up,
