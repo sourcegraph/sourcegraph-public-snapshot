@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- Certain Batch Changes features that previously would not work on prerelease versions of Sourcegraph will now work as expected again.
+
 ### Removed
 
 ## 3.35.2
