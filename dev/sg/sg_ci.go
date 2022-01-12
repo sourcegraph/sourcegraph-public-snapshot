@@ -396,6 +396,7 @@ func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
 		stdout.Out.Writef("Finished:\t%s (elapsed: %s)", build.FinishedAt, build.FinishedAt.Sub(build.StartedAt.Time))
 	}
 
+	// Check build state
 	// Valid states: running, scheduled, passed, failed, blocked, canceled, canceling, skipped, not_run, waiting
 	// https://buildkite.com/docs/apis/rest-api/builds
 	var style output.Style
@@ -427,11 +428,12 @@ func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
 		if job.State == nil || job.Name == nil {
 			continue
 		}
+		// Check job state.
 		switch *job.State {
 		case "passed":
 			style = output.StyleSuccess
 			elapsed = job.FinishedAt.Sub(job.StartedAt.Time)
-		case "waiting", "blocked", "scheduled":
+		case "waiting", "blocked", "scheduled", "assigned":
 			style = output.StyleSuggestion
 		case "skipped", "not_run":
 			style = output.StyleReset
