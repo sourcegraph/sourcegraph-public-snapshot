@@ -157,14 +157,14 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 		{
 			name:    "1 error",
 			kind:    extsvc.KindGitHub,
-			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": ""}`,
-			wantErr: "1 error occurred:\n\t* token: String length must be greater than or equal to 1\n\n",
+			config:  `{"repositoryQuery": ["none"], "token": "fake"}`,
+			wantErr: "1 error occurred:\n\t* url is required\n\n",
 		},
 		{
 			name:    "2 errors",
 			kind:    extsvc.KindGitHub,
-			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "", "x": 123}`,
-			wantErr: "2 errors occurred:\n\t* Additional property x is not allowed\n\t* token: String length must be greater than or equal to 1\n\n",
+			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": ""}`,
+			wantErr: "2 errors occurred:\n\t* token: String length must be greater than or equal to 1\n\t* at least one of token or githubAppInstallationID must be set\n\n",
 		},
 		{
 			name:   "no conflicting rate limit",

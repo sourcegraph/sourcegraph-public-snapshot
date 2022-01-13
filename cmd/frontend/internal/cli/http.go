@@ -34,7 +34,16 @@ import (
 
 // newExternalHTTPHandler creates and returns the HTTP handler that serves the app and API pages to
 // external clients.
-func newExternalHTTPHandler(db database.DB, schema *graphql.Schema, gitHubWebhook webhooks.Registerer, gitLabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newExecutorProxyHandler enterprise.NewExecutorProxyHandler, rateLimitWatcher graphqlbackend.LimitWatcher) (http.Handler, error) {
+func newExternalHTTPHandler(
+	db database.DB,
+	schema *graphql.Schema,
+	gitHubWebhook webhooks.Registerer,
+	gitLabWebhook, bitbucketServerWebhook http.Handler,
+	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
+	newExecutorProxyHandler enterprise.NewExecutorProxyHandler,
+	newGitHubAppCloudSetupHandler enterprise.NewGitHubAppCloudSetupHandler,
+	rateLimitWatcher graphqlbackend.LimitWatcher,
+) (http.Handler, error) {
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
 	authMiddlewares := auth.AuthMiddleware()
@@ -60,8 +69,10 @@ func newExternalHTTPHandler(db database.DB, schema *graphql.Schema, gitHubWebhoo
 	// 🚨 SECURITY: This handler implements its own token auth inside enterprise
 	executorProxyHandler := newExecutorProxyHandler()
 
+	githubAppCloudSetupHandler := newGitHubAppCloudSetupHandler()
+
 	// App handler (HTML pages), the call order of middleware is LIFO.
-	appHandler := app.NewHandler(db)
+	appHandler := app.NewHandler(db, githubAppCloudSetupHandler)
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		appHandler = hooks.PostAuthMiddleware(appHandler)
