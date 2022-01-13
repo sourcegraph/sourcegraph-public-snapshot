@@ -476,7 +476,7 @@ func CreateTables(db Queryable) error {
 			path    TEXT          NOT NULL,
 			added   VARCHAR(40)[] NOT NULL,
 			deleted VARCHAR(40)[] NOT NULL,
-			symbols TEXT[]		  NOT NULL
+			symbols TEXT[]        NOT NULL
 		)`)
 	if err != nil {
 		return fmt.Errorf("creating rockskip_blobs: %s", err)
