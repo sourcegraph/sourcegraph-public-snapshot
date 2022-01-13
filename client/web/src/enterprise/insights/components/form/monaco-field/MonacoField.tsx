@@ -22,7 +22,7 @@ const MonacoFieldContext = createContext<Context>({ renderedWithinFocusContainer
 
 const MONACO_CONTAINER_MARK = { renderedWithinFocusContainer: true }
 
-export const MonacoContainer = forwardRef((props, reference) => {
+const MonacoFocusContainer = forwardRef((props, reference) => {
     const { as: Component = 'div', className, children, ...otherProps } = props
 
     return (
@@ -54,14 +54,14 @@ const MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
     },
 }
 
-export interface MonacoFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur'> {
+interface MonacoFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur'> {
     value: string
     patternType?: SearchPatternType
     onBlur?: () => void
     onChange?: (value: string) => void
 }
 
-export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props, reference) => {
+const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props, reference) => {
     const {
         value,
         className,
@@ -109,3 +109,16 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
         />
     )
 })
+
+const Root = MonacoFocusContainer
+const Field = MonacoField
+
+export {
+    MonacoFocusContainer,
+    MonacoField,
+    //
+    Root,
+    Field
+}
+
+export type { MonacoFieldProps }
