@@ -76,7 +76,7 @@ func ParseNPMPackageFromPackageSyntax(pkg string) (*NPMPackage, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &dep.NPMPackage, nil
+	return &dep.Package, nil
 }
 
 type NPMPackageSerializationHelper struct {
@@ -126,6 +126,11 @@ func (pkg NPMPackage) MatchesDependencyString(depPackageSyntax string) bool {
 	return strings.HasPrefix(depPackageSyntax, pkg.PackageSyntax()+"@")
 }
 
+// Format a package using (@scope/)?name syntax.
+//
+// This is largely for "lower-level" code interacting with the NPM API.
+//
+// In most cases, you want to use NPMDependency's PackageManagerSyntax() instead.
 func (pkg NPMPackage) PackageSyntax() string {
 	if pkg.scope != "" {
 		return fmt.Sprintf("@%s/%s", pkg.scope, pkg.name)
@@ -140,7 +145,7 @@ func (pkg NPMPackage) PackageSyntax() string {
 //
 // Reference:  https://docs.npmjs.com/cli/v8/commands/npm-install
 type NPMDependency struct {
-	NPMPackage
+	Package NPMPackage
 
 	// The version or tag (such as "latest") for a dependency.
 	//
@@ -183,7 +188,7 @@ func ParseNPMDependency(dependency string) (*NPMDependency, error) {
 // PackageManagerSyntax returns the dependency in NPM/Yarn syntax. The returned
 // string can (for example) be passed to `npm install`.
 func (d NPMDependency) PackageManagerSyntax() string {
-	return fmt.Sprintf("%s@%s", d.NPMPackage.PackageSyntax(), d.Version)
+	return fmt.Sprintf("%s@%s", d.Package.PackageSyntax(), d.Version)
 }
 
 func (d NPMDependency) GitTagFromVersion() string {
@@ -195,7 +200,7 @@ func (d NPMDependency) GitTagFromVersion() string {
 // slice.
 func SortNPMDependencies(dependencies []NPMDependency) {
 	sort.Slice(dependencies, func(i, j int) bool {
-		iPkg, jPkg := dependencies[i].NPMPackage, dependencies[j].NPMPackage
+		iPkg, jPkg := dependencies[i].Package, dependencies[j].Package
 		if iPkg == jPkg {
 			return versionGreaterThan(dependencies[i].Version, dependencies[j].Version)
 		}

@@ -24,7 +24,7 @@ import (
 
 var (
 	placeholderNPMDependency = reposource.NPMDependency{
-		NPMPackage: func() reposource.NPMPackage {
+		Package: func() reposource.NPMPackage {
 			pkg, err := reposource.NewNPMPackage("sourcegraph", "placeholder")
 			if err != nil {
 				panic(fmt.Sprintf("expected placeholder package to parse but got %v", err))
@@ -199,8 +199,8 @@ func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 		}
 		if *repoPackage == *parsedDbPackage {
 			matchingDependencies = append(matchingDependencies, reposource.NPMDependency{
-				NPMPackage: *parsedDbPackage,
-				Version:    dbDep.Version,
+				Package: *parsedDbPackage,
+				Version: dbDep.Version,
 			})
 		}
 	}

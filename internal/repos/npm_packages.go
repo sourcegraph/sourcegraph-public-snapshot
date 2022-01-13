@@ -85,12 +85,12 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 				log15.Error("failed to parse npm package name retrieved from database", "package", dbDep.Package)
 				continue
 			}
-			npmDependency := reposource.NPMDependency{NPMPackage: *parsedDbPackage, Version: dbDep.Version}
+			npmDependency := reposource.NPMDependency{Package: *parsedDbPackage, Version: dbDep.Version}
 			if err = npm.Exists(ctx, s.config, npmDependency); err != nil {
 				log15.Warn("failed to resolve npm dependency", "package", npmDependency.PackageManagerSyntax(), "message", err)
 				continue
 			}
-			repo := s.makeRepo(npmDependency.NPMPackage)
+			repo := s.makeRepo(npmDependency.Package)
 			totalDBResolved++
 			results <- SourceResult{Source: s, Repo: repo}
 		}
@@ -150,7 +150,7 @@ func npmPackages(connection schema.NPMPackagesConnection) ([]reposource.NPMPacka
 	npmPackages := []reposource.NPMPackage{}
 	isAdded := make(map[reposource.NPMPackage]bool)
 	for _, dep := range dependencies {
-		npmPackage := dep.NPMPackage
+		npmPackage := dep.Package
 		if !isAdded[npmPackage] {
 			npmPackages = append(npmPackages, npmPackage)
 		}
