@@ -423,6 +423,72 @@ type SelectorFromOptionsArgs struct {
 	Multi bool
 }
 
+// SelectorFromIntervalsVariable generates a Grafana template variable
+// using pre-defined values from the given durations.
+//
+// The variable can be used for dynamically changing intervals
+// in Grafana queries, such as sampling durations.
+func SelectorFromIntervalsVariable(args SelectorFromIntervalArgs) sdk.TemplateVar {
+	intervals := []time.Duration{
+		// default intervals from https://grafana.com/docs/grafana/v7.2/variables/variable-types/add-interval-variable/
+		1 * time.Minute,
+		10 * time.Minute,
+		30 * time.Minute,
+		1 * time.Hour,
+		6 * time.Hour,
+		12 * time.Hour,
+		24 * time.Hour,
+		7 * (24 * time.Hour),
+		14 * (24 * time.Hour),
+		30 * (24 * time.Hour),
+	}
+
+	if len(args.Intervals) > 0 {
+		intervals = args.Intervals
+	}
+
+	var stringIntervals []string
+	for _, interval := range intervals {
+		stringIntervals = append(stringIntervals, interval.Round(time.Second).String())
+	}
+
+	variable := sdk.TemplateVar{
+		// mirroring https://github.com/grafana-tools/sdk/blob/966b3088eec93adf7b4608cc73789c72022b33b2/testdata/empty-dashboard-with-templating-4.0.json#L80-L95
+		Type:       "interval",
+		Datasource: StringPtr("Prometheus"),
+
+		Name:  args.Name,
+		Label: args.Label,
+		Query: strings.Join(stringIntervals, ","),
+
+		Sort: 3,
+		Refresh: sdk.BoolInt{
+			Flag:  true,
+			Value: Int64Ptr(2), // Refresh on time range change
+		},
+	}
+
+	if args.Default > 0*time.Second {
+		d := args.Default.Round(time.Second).String()
+		variable.Current = sdk.Current{Text: &sdk.StringSliceString{Value: []string{d}, Valid: true}, Value: d}
+	}
+
+	return variable
+}
+
+// SelectorFromIntervalArgs is the set of options used to generate a SelectorFromIntervalsVariable.
+type SelectorFromIntervalArgs struct {
+	// Name is the name of the variable to substitute the value for, e.g. "alert_level"
+	// to replace "$alert_level" in queries
+	Name string
+	// Label is a human-readable name for the variable, e.g. "Alert level"
+	Label string
+	// Intervals are the predefined time interval values for the variable.
+	Intervals []time.Duration
+	// Default, if specified, specifies the pre-selected time interval value for the variable.
+	Default time.Duration
+}
+
 // Group describes a group of observable information about a container.
 //
 // These correspond to collapsible sections in a Grafana dashboard.
