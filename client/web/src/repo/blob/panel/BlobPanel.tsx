@@ -5,18 +5,20 @@ import { map, mapTo, switchMap, tap } from 'rxjs/operators'
 
 import { BuiltinPanelView, useBuiltinPanelViews } from '@sourcegraph/branded/src/components/panel/Panel'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { isErrorLike } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { ReferenceParameters, TextDocumentPositionParameters } from '@sourcegraph/shared/src/api/protocol'
 import { Activation, ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 
-interface Props extends AbsoluteRepoFile, ModeSpec, ExtensionsControllerProps, ActivationProps {
+interface Props extends AbsoluteRepoFile, ModeSpec, SettingsCascadeProps, ExtensionsControllerProps, ActivationProps {
     location: H.Location
     history: H.History
     repoID: Scalars['ID']
@@ -54,6 +56,7 @@ export function useBlobPanelViews({
     repoID,
     location,
     history,
+    settingsCascade,
 }: Props): void {
     const subscriptions = useMemo(() => new Subscription(), [])
 
@@ -76,6 +79,8 @@ export function useBlobPanelViews({
         )
     )
 
+    const maxReferences = maxReferencesFromSettings(settingsCascade)
+
     // Creates source for definition and reference panels
     const createLocationProvider = useCallback(
         <P extends TextDocumentPositionParameters>(
@@ -97,6 +102,7 @@ export function useBlobPanelViews({
                         selector: null,
                         priority,
 
+                        maxLocationResults: id === 'references' || id === 'def' ? maxReferences : undefined,
                         // This disable directive is necessary because TypeScript is not yet smart
                         // enough to know that (typeof params & typeof extraParams) is P.
                         //
@@ -114,7 +120,7 @@ export function useBlobPanelViews({
                     }
                 })
             ),
-        [activeCodeEditorPositions]
+        [activeCodeEditorPositions, maxReferences]
     )
 
     // Source for history panel
@@ -195,4 +201,11 @@ export function useBlobPanelViews({
     )
 
     useEffect(() => () => subscriptions.unsubscribe(), [subscriptions])
+}
+
+function maxReferencesFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): number | undefined {
+    if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
+        return settingsCascade.final['codeIntelligence.maxPanelResults'] as number
+    }
+    return undefined
 }
