@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -115,6 +117,10 @@ func (r *workHandler) handleComputeSearch(ctx context.Context, job *Job) (err er
 }
 
 func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
+	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
+	// repository on Sourcegraph - results will be filtered when users query for insight data based on the
+	// repositories they can see.
+	ctx = actor.WithInternalActor(ctx)
 	defer func() {
 		if err != nil {
 			log15.Error("insights.queryrunner.workHandler", "error", err)
@@ -138,12 +144,7 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	if !series.JustInTime && series.GeneratedFromCaptureGroups {
 		return r.handleComputeSearch(ctx, job)
 	}
-	//
-	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
-	// repository on Sourcegraph - so we must be careful to only record insightful information that
-	// is OK to expose to every user on Sourcegraph (e.g. total result counts are fine, exposing
-	// that a repository exists may or may not be fine, exposing individual results is definitely
-	// not, etc.)
+
 	var results *query.GqlSearchResponse
 	results, err = query.Search(ctx, job.SearchQuery)
 	if err != nil {
@@ -196,16 +197,6 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	if timedout := len(results.Data.Search.Results.Timedout); timedout > 0 {
 		log15.Error("insights query issue", "timedout_repos", timedout, "query", job.SearchQuery)
 	}
-
-	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
-	// repository on Sourcegraph - so we must be careful to only record insightful information that
-	// is OK to expose to every user on Sourcegraph (e.g. total result counts are fine, exposing
-	// that a repository exists may just barely be fine, exposing individual results is definitely
-	// not, etc.) OR record only data that we later restrict to only users who have access to those
-	// repositories.
-
-	// Figure out how many matches we got for every unique repository returned in the search
-	// results.
 	matchesPerRepo := make(map[string]int, len(results.Data.Search.Results.Results)*4)
 	repoNames := make(map[string]string, len(matchesPerRepo))
 	for _, result := range results.Data.Search.Results.Results {
