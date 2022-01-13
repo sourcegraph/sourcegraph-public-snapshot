@@ -135,8 +135,11 @@ Use the query below to read a Code Insight by `id`. `filters` are optional, and 
 
 Notes on the return object:
 
-- The `dataSeries`, `dataSeriesDefinitions` and `seriesPresentation` arrays each store different information about the same series. The `seriesId` field on each can be used to match them up.
 - `dataSeries.status` is useful to guage the progress of the series point generation. More information can be found in the [API Console Documentation](./index.md#api-console)
+- The `dataSeries`, `dataSeriesDefinitions` and `seriesPresentation` arrays each store different information about the same series. The `seriesId` field on each can be used to match them up.
+  - `dataSeries` contains the calculated time series data
+  - `dataSeriesDefinitions` contains the definition for the series, such as the query and time interval
+  - `seriesPresentation` contains presentation options such as the title and line color
 
 ```gql
 query InsightViews($id: ID, $filters: InsightViewFiltersInput) {
@@ -178,6 +181,10 @@ query InsightViews($id: ID, $filters: InsightViewFiltersInput) {
           label,
           color
         }
+      },
+      ... on PieChartInsightViewPresentation {
+        title,
+        otherThreshold
       }
     }
   }
@@ -343,6 +350,8 @@ mutation RemoveInsightViewFromDashboard($input: RemoveInsightViewToDashboardInpu
   }
 }
 ```
+
+Example variables:
 
 ```json
 { 
