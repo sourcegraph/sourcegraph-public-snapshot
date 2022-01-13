@@ -2778,11 +2778,13 @@ Query: `sum by(app) (up{app=~".*(frontend|sourcegraph-frontend)"}) / count by (a
 
 ### Frontend: Sentinel queries (only on sourcegraph.com)
 
-#### frontend: mean_successful_sentinel_duration_5m
+#### frontend: mean_successful_sentinel_duration_1h30m
 
-<p class="subtitle">Mean successful sentinel search duration over 5m</p>
+<p class="subtitle">Mean successful sentinel search duration over 1h30m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-successful-sentinel-duration-5m) for 2 alerts related to this panel.
+Mean search duration for all successful sentinel queries
+
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-successful-sentinel-duration-1h30m) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102300` on your Sourcegraph instance.
 
@@ -2791,17 +2793,19 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102300`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[5m])) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[5m]))`
+Query: `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[1h30m])) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[1h30m]))`
 
 </details>
 
 <br />
 
-#### frontend: mean_sentinel_stream_latency_5m
+#### frontend: mean_sentinel_stream_latency_1h30m
 
-<p class="subtitle">Mean sentinel stream latency over 5m</p>
+<p class="subtitle">Mean successful sentinel stream latency over 1h30m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-sentinel-stream-latency-5m) for 2 alerts related to this panel.
+Mean time to first result for all successful streaming sentinel queries
+
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-mean-sentinel-stream-latency-1h30m) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102301` on your Sourcegraph instance.
 
@@ -2810,17 +2814,19 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102301`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[5m])) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[5m]))`
+Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[1h30m])) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[1h30m]))`
 
 </details>
 
 <br />
 
-#### frontend: 90th_percentile_successful_sentinel_duration_5m
+#### frontend: 90th_percentile_successful_sentinel_duration_1h30m
 
-<p class="subtitle">90th percentile successful sentinel search duration over 5m</p>
+<p class="subtitle">90th percentile successful sentinel search duration over 1h30m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-successful-sentinel-duration-5m) for 2 alerts related to this panel.
+90th percentile search duration for all successful sentinel queries
+
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-successful-sentinel-duration-1h30m) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102310` on your Sourcegraph instance.
 
@@ -2829,17 +2835,19 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102310`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[5m]), "source", "$1", "source", "searchblitz_(.*)")))`
+Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[1h30m]), "source", "$1", "source", "searchblitz_(.*)")))`
 
 </details>
 
 <br />
 
-#### frontend: 90th_percentile_sentinel_stream_latency_5m
+#### frontend: 90th_percentile_sentinel_stream_latency_1h30m
 
-<p class="subtitle">90th percentile sentinel stream latency over 5m</p>
+<p class="subtitle">90th percentile successful sentinel stream latency over 1h30m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-sentinel-stream-latency-5m) for 2 alerts related to this panel.
+90th percentile time to first result for all successful streaming sentinel queries
+
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-90th-percentile-sentinel-stream-latency-1h30m) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102311` on your Sourcegraph instance.
 
@@ -2848,17 +2856,17 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102311`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[5m]), "source", "$1", "source", "searchblitz_(.*)")))`
+Query: `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[1h30m]), "source", "$1", "source", "searchblitz_(.*)")))`
 
 </details>
 
 <br />
 
-#### frontend: mean_successful_sentinel_duration_by_query_5m
+#### frontend: mean_successful_sentinel_duration_by_query_1h30m
 
-<p class="subtitle">Mean successful sentinel search duration by query over 5m</p>
+<p class="subtitle">Mean successful sentinel search duration by query over 1h30m</p>
 
-- The mean search duration for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+Mean search duration for successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
 This panel has no related alerts.
 
@@ -2869,17 +2877,17 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102320`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[5m])) by (source) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[5m])) by (source)`
+Query: `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[1h30m])) by (source) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[1h30m])) by (source)`
 
 </details>
 
 <br />
 
-#### frontend: mean_sentinel_stream_latency_by_query_5m
+#### frontend: mean_sentinel_stream_latency_by_query_1h30m
 
-<p class="subtitle">Mean sentinel stream latency by query over 5m</p>
+<p class="subtitle">Mean successful sentinel stream latency by query over 1h30m</p>
 
-- The mean streaming search latency for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+Mean time to first result for successful streaming sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
 This panel has no related alerts.
 
@@ -2890,17 +2898,17 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102321`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[5m])) by (source) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[5m])) by (source)`
+Query: `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[1h30m])) by (source) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[1h30m])) by (source)`
 
 </details>
 
 <br />
 
-#### frontend: unsuccessful_status_rate_5m
+#### frontend: 90th_percentile_successful_sentinel_duration_by_query_1h30m
 
-<p class="subtitle">Unsuccessful status rate per 5m</p>
+<p class="subtitle">90th percentile successful sentinel search duration by query over 1h30m</p>
 
-- The rate of unsuccessful sentinel query, broken down by failure type
+90th percentile search duration for successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
 
 This panel has no related alerts.
 
@@ -2911,7 +2919,133 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102330`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="success"}[5m])) by (status)`
+Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[1h30m])) by (le, source))`
+
+</details>
+
+<br />
+
+#### frontend: 90th_percentile_successful_stream_latency_by_query_1h30m
+
+<p class="subtitle">90th percentile successful sentinel stream latency by query over 1h30m</p>
+
+90th percentile time to first result for successful streaming sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102331` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[1h30m])) by (le, source))`
+
+</details>
+
+<br />
+
+#### frontend: 90th_percentile_unsuccessful_duration_by_query_1h30m
+
+<p class="subtitle">90th percentile unsuccessful sentinel search duration by query over 1h30m</p>
+
+90th percentile search duration of _unsuccessful_ sentinel queries (by error or timeout), broken down by query. Useful for debugging how the performance of failed requests affect UX.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102340` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[1h30m])) by (le, source))`
+
+</details>
+
+<br />
+
+#### frontend: 75th_percentile_successful_sentinel_duration_by_query_1h30m
+
+<p class="subtitle">75th percentile successful sentinel search duration by query over 1h30m</p>
+
+75th percentile search duration of successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102350` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[1h30m])) by (le, source))`
+
+</details>
+
+<br />
+
+#### frontend: 75th_percentile_successful_stream_latency_by_query_1h30m
+
+<p class="subtitle">75th percentile successful sentinel stream latency by query over 1h30m</p>
+
+75th percentile time to first result for successful streaming sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102351` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[1h30m])) by (le, source))`
+
+</details>
+
+<br />
+
+#### frontend: 75th_percentile_unsuccessful_duration_by_query_1h30m
+
+<p class="subtitle">75th percentile unsuccessful sentinel search duration by query over 1h30m</p>
+
+75th percentile search duration of _unsuccessful_ sentinel queries (by error or timeout), broken down by query. Useful for debugging how the performance of failed requests affect UX.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102360` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[1h30m])) by (le, source))`
+
+</details>
+
+<br />
+
+#### frontend: unsuccessful_status_rate_1h30m
+
+<p class="subtitle">Unsuccessful status rate per 1h30m</p>
+
+The rate of unsuccessful sentinel queries, broken down by failure type.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102370` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="success"}[1h30m])) by (status)`
 
 </details>
 
