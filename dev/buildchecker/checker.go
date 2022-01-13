@@ -20,7 +20,7 @@ type CommitInfo struct {
 	Commit string
 	Author string
 
-	AuthorSlackUser string
+	AuthorSlackID string
 }
 
 type CheckResults struct {
@@ -78,7 +78,7 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.Teamma
 	// over Slack.
 	for i, info := range results.FailedCommits {
 		teammate, err := teammates.ResolveByCommitAuthor(ctx, "sourcegraph", "sourcegraph", info.Commit)
-		results.FailedCommits[i].AuthorSlackUser = teammate.SlackID
+		results.FailedCommits[i].AuthorSlackID = teammate.SlackID
 		if err != nil {
 			// If we can't resolve the user, do not interrupt the process.
 			fmt.Println(fmt.Errorf("slackUserResolve: %w", err))
