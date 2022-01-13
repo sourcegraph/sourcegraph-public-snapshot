@@ -24,6 +24,10 @@ module.exports = {
                 message: 'Use the <Button /> component from @sourcegraph/wildcard instead.',
               },
               {
+                element: 'select',
+                message: 'Use the <Select /> component from @sourcegraph/wildcard instead.',
+              },
+              {
                 element: 'textarea',
                 message: 'Use the <TextArea /> component from @sourcegraph/wildcard instead.',
               },
