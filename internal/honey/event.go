@@ -30,6 +30,11 @@ type Event interface {
 
 type eventWrapper struct {
 	event *libhoney.Event
+	// contains a map of keys whose values have been slice wrapped aka
+	// added more than once already. If theres no entry in sliceWrapped
+	// but there is in event for a key, then the to-be-added value is
+	// sliceWrapped before insertion and true inserted into sliceWrapped for that key
+	sliceWrapped map[string]bool
 }
 
 var _ Event = eventWrapper{}
@@ -39,12 +44,21 @@ func (w eventWrapper) Dataset() string {
 }
 
 func (w eventWrapper) AddField(name string, val interface{}) {
-	w.event.AddField(name, val)
+	data, ok := w.Fields()[name]
+	if !ok {
+		data = val
+	} else if ok && !w.sliceWrapped[name] {
+		data = sliceWrapper{data, val}
+		w.sliceWrapped[name] = true
+	} else {
+		data = append(data.(sliceWrapper), val)
+	}
+	w.event.AddField(name, data)
 }
 
 func (w eventWrapper) AddLogFields(fields []log.Field) {
 	for _, field := range fields {
-		w.event.AddField(field.Key(), field.Value())
+		w.AddField(field.Key(), field.Value())
 	}
 }
 
@@ -73,7 +87,10 @@ func NewEvent(dataset string) Event {
 	}
 	ev := libhoney.NewEvent()
 	ev.Dataset = dataset + suffix
-	return eventWrapper{event: ev}
+	return eventWrapper{
+		event:        ev,
+		sliceWrapped: map[string]bool{},
+	}
 }
 
 // NewEventWithFields creates an event for logging to the given dataset. The given
