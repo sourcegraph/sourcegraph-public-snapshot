@@ -1,7 +1,17 @@
-.field {
-    min-height: 34px;
-    height: auto;
+.container {
+    display: flex;
+    min-width: 0;
     position: relative;
+    padding: 0.375rem 0.75rem !important;
+    background-image: none !important;
+
+    .monaco-field {
+        background-position: right 0.75rem top 0.175rem !important;
+    }
+}
+
+.focus-container {
+    height: auto;
 
     &:focus-within,
     &:focus {
@@ -32,6 +42,14 @@
             box-shadow: 0 0 0 2px var(--danger-3);
         }
     }
+}
+
+.monaco-field {
+    position: relative;
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    height: auto;
 
     :global(.scroll-decoration) {
         display: none;
@@ -44,6 +62,8 @@
         z-index: 1;
         color: var(--text-muted);
         width: 100%;
+        top: 50%;
+        transform: translateY(-50%);
         overflow: hidden;
         text-overflow: ellipsis;
         background-color: transparent;
@@ -54,5 +74,11 @@
         &::before {
             display: block;
         }
+    }
+
+    &--without-field-styles {
+        padding: 0;
+        border: none;
+        box-shadow: none;
     }
 }
