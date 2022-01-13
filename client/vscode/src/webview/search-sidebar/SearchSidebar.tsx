@@ -1,6 +1,4 @@
-import classNames from 'classnames'
 import React, { useEffect, useMemo, useState } from 'react'
-import { Form } from 'reactstrap'
 import create, { UseStore } from 'zustand'
 
 import { SearchSidebar as BrandedSearchSidebar } from '@sourcegraph/branded/src/search/results/sidebar/SearchSidebar'
@@ -106,12 +104,12 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
         }
     }, [activeQueryState, sourcegraphVSCodeExtensionAPI, useQueryState])
 
+    const [validating, setValidating] = useState(true)
     // Check if User is currently on VS Code Desktop or VS Code Web
     const [onDesktop, setOnDesktop] = useState<boolean | undefined>(undefined)
-    const [hasAccessToken, setHasAccessToken] = useState<boolean | undefined>(undefined)
     const [corsUri, setCorsUri] = useState<string | undefined>(undefined)
-    const [validating, setValidating] = useState(true)
     const [hasAccount, setHasAccount] = useState(false)
+    const [hasAccessToken, setHasAccessToken] = useState<boolean | undefined>(undefined)
     const [validAccessToken, setValidAccessToken] = useState<boolean>(false)
     const [localRecentSearches, setLocalRecentSearches] = useState<LocalRecentSeachProps[] | undefined>(undefined)
     const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
@@ -152,7 +150,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                 })
         }
         // Validate Token
-        if (!validAccessToken) {
+        if (hasAccount && hasAccessToken && !validAccessToken) {
             ;(async () => {
                 const currentUser = await platformContext
                     .requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>({
@@ -161,8 +159,8 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                         mightContainPrivateInfo: true,
                     })
                     .toPromise()
+                // If user is detected, set valid access token to true
                 if (currentUser.data) {
-                    // If user is detected, set valid access token to true
                     setAuthenticatedUser(currentUser.data.currentUser)
                     setValidAccessToken(true)
                 } else {
@@ -203,73 +201,33 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
         setValidating(false)
     }
 
-    // const onSubmitCorsUrl: React.FormEventHandler<HTMLFormElement> = event => {
-    //     event?.preventDefault()
-    //     setValidating(true)
-    //     ;(async () => {
-    //         const newUri = (event.currentTarget.elements.namedItem('corsuri') as HTMLInputElement).value
-
-    //         if (corsUri !== newUri) {
-    //             await sourcegraphVSCodeExtensionAPI.updateCorsUri(newUri)
-    //             // Updating below states  would call useEffect to validate the updated token
-    //             setCorsUri(newUri)
-    //         }
-    //     })().catch(error => {
-    //         console.error(error)
-    //     })
-    //     setValidating(false)
-    // }
-
     // There's no ACTIVE search panel
 
     // We need to add API to query all open search panels
 
     // If no open, show button + CTA to open search panel (links to sign up etc.)
-    if (!activeSearchPanel && !validAccessToken) {
+    if (
+        !validating &&
+        onDesktop !== undefined &&
+        hasAccessToken !== undefined &&
+        !activeSearchPanel &&
+        !validAccessToken
+    ) {
         return (
             <>
-                {!validating && onDesktop !== undefined && (
-                    <OpenSearchPanelCta
-                        className={styles.sidebarContainer}
-                        sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
-                        onDesktop={onDesktop}
-                    />
-                )}
-                {!validating && hasAccessToken !== undefined && (
-                    <SidebarAuthCheck
-                        className={styles.sidebarContainer}
-                        sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
-                        hasAccessToken={hasAccessToken}
-                        telemetryService={platformContext.telemetryService}
-                        onSubmitAccessToken={onSubmitAccessToken}
-                        validAccessToken={validAccessToken}
-                    />
-                )}
-                {/* If User is not on VS Code Desktop and do not have Cors set up */}
-                {!validating && !onDesktop && !hasAccessToken && (
-                    <Form onSubmit={onSubmitAccessToken}>
-                        <p className="btn btn-sm btn-danger w-100 border-0 font-weight-normal">
-                            <span className={classNames('my-3', styles.text)}>
-                                IMPORTANT: You must add an access token for Sourcegraph to work on VS Code Web
-                            </span>
-                        </p>
-                        <input
-                            className="input form-control my-3"
-                            type="text"
-                            name="token"
-                            placeholder="ex 6dfc880b320dff712d9f6cfcac5cbd13ebfad1d8"
-                        />
-                        <button
-                            type="submit"
-                            className={classNames(
-                                'btn btn-sm btn-link w-100 border-0 font-weight-normal',
-                                styles.button
-                            )}
-                        >
-                            <span className={classNames('my-0', styles.text)}>Add Access Token</span>
-                        </button>
-                    </Form>
-                )}
+                <OpenSearchPanelCta
+                    className={styles.sidebarContainer}
+                    sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                    onDesktop={onDesktop}
+                />
+                <SidebarAuthCheck
+                    className={styles.sidebarContainer}
+                    sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                    hasAccessToken={hasAccessToken}
+                    telemetryService={platformContext.telemetryService}
+                    onSubmitAccessToken={onSubmitAccessToken}
+                    validAccessToken={validAccessToken}
+                />
                 {validating && <LoadingSpinner />}
             </>
         )

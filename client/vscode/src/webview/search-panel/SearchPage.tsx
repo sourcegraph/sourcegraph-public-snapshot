@@ -42,6 +42,8 @@ import { useQueryState } from '.'
 interface SearchPageProps extends WebviewPageProps {}
 
 export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, sourcegraphVSCodeExtensionAPI }) => {
+    const [loading, setLoading] = useState(false)
+    // Search Query States
     const searchActions = useQueryState(({ actions }) => actions)
     const queryState = useQueryState(({ state }) => state.queryState)
     const queryToRun = useQueryState(({ state }) => state.queryToRun)
@@ -49,11 +51,14 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
     const patternType = useQueryState(({ state }) => state.patternType)
     const selectedSearchContextSpec = useQueryState(({ state }) => state.selectedSearchContextSpec)
     const [fullQuery, setFullQuery] = useState<string | undefined>(undefined)
+    // User Settings
+    const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
     const instanceHostname = useMemo(() => sourcegraphVSCodeExtensionAPI.getInstanceHostname(), [
         sourcegraphVSCodeExtensionAPI,
     ])
     const [hasAccessToken, setHasAccessToken] = useState<boolean | undefined>(undefined)
     const [validAccessToken, setValidAccessToken] = useState<boolean>(false)
+    // Local History
     const [lastSelectedSearchContext, setLastSelectedSearchContext] = useState<string | undefined>(undefined)
     const [localRecentSearches, setLocalRecentSearches] = useState<LocalRecentSeachProps[] | undefined>(undefined)
     // File Tree
@@ -62,7 +67,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
     const [entries, setEntries] = useState<Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url' | 'path'>[] | undefined>(
         undefined
     )
-    const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
+
     const sourcegraphSettings =
         useObservable(
             useMemo(() => wrapRemoteObservable(sourcegraphVSCodeExtensionAPI.getSettings()), [
@@ -72,19 +77,15 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
 
     const globbing = useMemo(() => globbingEnabledFromSettings(sourcegraphSettings), [sourcegraphSettings])
 
-    const [loading, setLoading] = useState(false)
-
+    // Submit search query
     const onSubmit = useCallback(
         (event?: React.FormEvent): void => {
             event?.preventDefault()
+            // close file tree when a new search has been performed
             setOpenRepoFileTree(false)
             searchActions.submitQuery()
-            sourcegraphVSCodeExtensionAPI
-                .displayFileTree(false)
-                .then(() => {})
-                .catch(() => {})
         },
-        [searchActions, sourcegraphVSCodeExtensionAPI]
+        [searchActions]
     )
 
     const fetchSuggestions = useCallback(
@@ -124,6 +125,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
             .catch(error => console.log(error))
     }
 
+    // Get files to generate file tree for repo page
     const getFiles = (variables: TreeEntriesVariables): void => {
         setFileVariables(variables)
         setOpenRepoFileTree(true)

@@ -56,6 +56,8 @@ export const SearchResults = React.memo<SearchResultsProps>(
     }) => {
         const executedQuery = useQueryState(({ state }) => state.queryToRun.query)
         const searchResults = useQueryState(({ state }) => state.searchResults)
+        const patternType = useQueryState(({ state }) => state.patternType)
+        const caseSensitive = useQueryState(({ state }) => state.caseSensitive)
         const searchActions = useQueryState(({ actions }) => actions)
         const [openSavedSearchCreateForm, setOpenSavedSearchCreateForm] = useState<boolean>(false)
         const [savedSearchFields, setSavedSearchFields] = useState<Omit<SavedQueryFields, 'id'> | undefined>(undefined)
@@ -217,7 +219,9 @@ export const SearchResults = React.memo<SearchResultsProps>(
         const onShareResultsClick = (): void => {
             ;(async () => {
                 const host = await instanceHostname
-                const finalUri = host + '/search?q=' + encodeURIComponent(fullQuery)
+                const finalUri = `${host}/search?q=${encodeURIComponent(
+                    executedQuery
+                )}&patternType=${patternType}&case=${caseSensitive}?utm_campaign=vscode-extension&utm_medium=direct_traffic&utm_source=vscode-extension&utm_content=save-search`
                 return sourcegraphVSCodeExtensionAPI.copyLink(finalUri)
             })().catch(error => {
                 console.log(error)

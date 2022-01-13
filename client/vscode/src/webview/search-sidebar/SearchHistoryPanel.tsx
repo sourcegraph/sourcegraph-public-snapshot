@@ -78,7 +78,7 @@ export const SearchHistoryPanel: React.FunctionComponent<SearchHistoryProps> = (
                 <h5 className="flex-grow-1">Recent History</h5>
                 <PlusIcon className="icon-inline mr-1" />
             </button>
-
+            {/* Display results from cloud for registered users and results from local Storage for non registered users */}
             {authenticatedUser && processedResults ? (
                 <div className={classNames('p-1', styles.sidebarSectionList)}>
                     {processedResults?.map((search, index) => (
@@ -111,7 +111,7 @@ export const SearchHistoryPanel: React.FunctionComponent<SearchHistoryProps> = (
                                         to="/"
                                         onClick={() =>
                                             sourcegraphVSCodeExtensionAPI.setActiveWebviewQueryState({
-                                                query: search.lastFullQuery,
+                                                query: search.lastQuery,
                                             })
                                         }
                                     >
