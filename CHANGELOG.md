@@ -18,12 +18,14 @@ All notable changes to Sourcegraph are documented in this file.
 - Search contexts can now be defined with a restricted search query as an alternative to a specific list of repositories and revisions. This feature is _beta_ and may change in the following releases. Allowed filters: `repo`, `rev`, `file`, `lang`, `case`, `fork`, `visibility`. `OR`, `AND` expressions are also allowed. To enable this feature to all users, set `experimentalFeatures.searchContextsQuery` to true in global settings. You'll then see a "Create context" button from the search results page and a "Query" input field in the search contexts form. If you want revisions specified in these query based search contexts to be indexed, set `experimentalFeatures.search.index.query.contexts` to true in site configuration. [#29327](https://github.com/sourcegraph/sourcegraph/pull/29327)
 - More explicit Terms of Service and Privacy Policy consent has been added to Sourcegraph Server. [#28716](https://github.com/sourcegraph/sourcegraph/issues/28716)
 - Batch changes will be created on forks of the upstream repository if the new `batchChanges.enforceForks` site setting is enabled. [#17879](https://github.com/sourcegraph/sourcegraph/issues/17879)
+- Symbolic links are now searchable. Previously it was possible to navigate to symbolic links in the repository tree view, however the symbolic links were ignored during searches. [#29567](https://github.com/sourcegraph/sourcegraph/pull/29567), [#237](https://github.com/sourcegraph/zoekt/pull/237)
 - Maximum number of references/definitions shown in panel can be adjusted in settings with `codeIntelligence.maxPanelResults`. If not set, a hardcoded limit of 500 was used. [#29629](https://github.com/sourcegraph/sourcegraph/29629)
 
 ### Changed
 
 - Sourcegraph's API (streaming search, GraphQL, etc.) may now be used from any domain when using an access token for authentication, or with no authentication in the case of Sourcegraph.com. [#28775](https://github.com/sourcegraph/sourcegraph/pull/28775)
 - The endpoint `/search/stream` will be retired in favor of `/.api/search/stream`. This requires no action unless you have developed custom code against `/search/stream`. We will support both endpoints for a short period of time before removing `/search/stream`. Please refer to the [documentation](https://docs.sourcegraph.com/api/stream_api) for more information.
+- When displaying the content of symbolic links in the repository tree view, we will show the relative path to the link's target instead of the target's content. This behavior is consistent with how we display symbolic links in search results. [#29687](https://github.com/sourcegraph/sourcegraph/pull/29687)
 
 ### Fixed
 

@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"io/fs"
 	"net/url"
 	"os"
 	"sync"
@@ -232,7 +233,7 @@ func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 		}
 		return nil, err
 	}
-	if !stat.Mode().IsRegular() {
+	if mode := stat.Mode(); !(mode.IsRegular() || mode.Type()&fs.ModeSymlink != 0) {
 		return nil, errors.Errorf("not a blob: %q", args.Path)
 	}
 	return NewGitTreeEntryResolver(r.db, r, stat), nil
