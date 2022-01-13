@@ -155,9 +155,9 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                             </Button>
                         )}{' '}
                         {this.props.node.refreshURL && (
-                            <a className="btn btn-secondary" href={this.props.node.refreshURL}>
+                            <Button href={this.props.node.refreshURL} variant="secondary" as="a">
                                 Refresh
-                            </a>
+                            </Button>
                         )}{' '}
                         <Button onClick={this.deleteExternalAccount} disabled={loading} variant="danger">
                             Delete

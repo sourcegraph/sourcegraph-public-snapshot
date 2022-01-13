@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
+import { Button } from '@sourcegraph/wildcard'
+
 import styles from './CtaBanner.module.scss'
 
 interface Props {
@@ -33,16 +35,18 @@ export const CtaBanner: React.FunctionComponent<Props> = ({
         <div>
             <HeadingX>{title}</HeadingX>
             <p className={bodyTextClassName}>{bodyText}</p>
-            <a
+            <Button
                 href={href}
                 // eslint-disable-next-line react/jsx-no-target-blank
                 target="_blank"
                 rel="noreferrer"
                 onClick={onClick}
-                className={classNames('btn btn-primary', { 'ga-cta-install-now': googleAnalytics })}
+                className={classNames({ 'ga-cta-install-now': googleAnalytics })}
+                variant="primary"
+                as="a"
             >
                 {linkText}
-            </a>
+            </Button>
         </div>
     </div>
 )
