@@ -9,7 +9,9 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
@@ -55,7 +57,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		t.Cleanup(func() {
 			runCommitLog = oldRunCommitLog
 		})
-		runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*gitdomain.Commit, error) {
+		runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*wrappedCommit, error) {
 			// Track the value of NoEnsureRevision we pass to gitserver
 			noEnsureRevision = opt.NoEnsureRevision
 			return oldRunCommitLog(ctx, cmd, opt)
@@ -294,7 +296,7 @@ func TestRepository_Commits(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commits, err := Commits(ctx, test.repo, CommitsOptions{Range: string(test.id)})
+		commits, err := Commits(ctx, test.repo, CommitsOptions{Range: string(test.id)}, nil)
 		if err != nil {
 			t.Errorf("%s: Commits: %s", label, err)
 			continue
@@ -314,23 +316,77 @@ func TestRepository_Commits(t *testing.T) {
 			t.Errorf("%s: got %d commits, want %d", label, len(commits), len(test.wantCommits))
 		}
 
-		for i := 0; i < len(commits) || i < len(test.wantCommits); i++ {
-			var gotC, wantC *gitdomain.Commit
-			if i < len(commits) {
-				gotC = commits[i]
-			}
-			if i < len(test.wantCommits) {
-				wantC = test.wantCommits[i]
-			}
-			if !CommitsEqual(gotC, wantC) {
-				t.Errorf("%s: got commit %d == %+v, want %+v", label, i, gotC, wantC)
-			}
-		}
+		checkCommits(t, label, commits, test.wantCommits)
 
 		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-		if _, err := Commits(ctx, test.repo, CommitsOptions{Range: string(NonExistentCommitID)}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if _, err := Commits(ctx, test.repo, CommitsOptions{Range: string(NonExistentCommitID)}, nil); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 		}
+	}
+}
+
+func TestCommits_SubRepoPerms(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 1,
+	})
+	checker := authz.NewMockSubRepoPermissionChecker()
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		if content.Path == "file2" || content.Path == "file3" {
+			return authz.None, nil
+		}
+		return authz.Read, nil
+	})
+	gitCommands := []string{
+		"touch file1",
+		"git add file1",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"touch file2",
+		"git add file2",
+		"touch file2.2",
+		"git add file2.2",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
+		"touch file3",
+		"git add file3",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:07Z",
+	}
+
+	tests := map[string]struct {
+		repo        api.RepoName
+		opt         CommitsOptions
+		wantCommits []*gitdomain.Commit
+		wantTotal   uint
+	}{
+		"if no read perms on file should filter out commit": {
+			repo:      MakeGitRepository(t, gitCommands...),
+			wantTotal: 1,
+			wantCommits: []*gitdomain.Commit{
+				{
+					ID:        "d38233a79e037d2ab8170b0d0bc0aa438473e6da",
+					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Message:   "commit1",
+				},
+			},
+		},
+	}
+
+	for label, test := range tests {
+		commits, err := Commits(ctx, test.repo, test.opt, checker)
+		if err != nil {
+			t.Errorf("%s: Commits(): %s", label, err)
+			return
+		}
+
+		if len(commits) != len(test.wantCommits) {
+			t.Errorf("%s: got %d commits, want %d", label, len(commits), len(test.wantCommits))
+		}
+
+		checkCommits(t, label, commits, test.wantCommits)
 	}
 }
 
@@ -402,7 +458,7 @@ func TestRepository_Commits_options(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commits, err := Commits(ctx, test.repo, test.opt)
+		commits, err := Commits(ctx, test.repo, test.opt, nil)
 		if err != nil {
 			t.Errorf("%s: Commits(): %s", label, err)
 			continue
@@ -422,18 +478,7 @@ func TestRepository_Commits_options(t *testing.T) {
 			t.Errorf("%s: got %d commits, want %d", label, len(commits), len(test.wantCommits))
 		}
 
-		for i := 0; i < len(commits) || i < len(test.wantCommits); i++ {
-			var gotC, wantC *gitdomain.Commit
-			if i < len(commits) {
-				gotC = commits[i]
-			}
-			if i < len(test.wantCommits) {
-				wantC = test.wantCommits[i]
-			}
-			if !CommitsEqual(gotC, wantC) {
-				t.Errorf("%s: got commit %d == %+v, want %+v", label, i, gotC, wantC)
-			}
-		}
+		checkCommits(t, label, commits, test.wantCommits)
 	}
 }
 
@@ -485,7 +530,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commits, err := Commits(ctx, test.repo, test.opt)
+		commits, err := Commits(ctx, test.repo, test.opt, nil)
 		if err != nil {
 			t.Errorf("%s: Commits(): %s", label, err)
 			continue
@@ -504,18 +549,22 @@ func TestRepository_Commits_options_path(t *testing.T) {
 		if len(commits) != len(test.wantCommits) {
 			t.Errorf("%s: got %d commits, want %d", label, len(commits), len(test.wantCommits))
 		}
+		checkCommits(t, label, commits, test.wantCommits)
+	}
+}
 
-		for i := 0; i < len(commits) || i < len(test.wantCommits); i++ {
-			var gotC, wantC *gitdomain.Commit
-			if i < len(commits) {
-				gotC = commits[i]
-			}
-			if i < len(test.wantCommits) {
-				wantC = test.wantCommits[i]
-			}
-			if !CommitsEqual(gotC, wantC) {
-				t.Errorf("%s: got commit %d == %+v, want %+v", label, i, gotC, wantC)
-			}
+func checkCommits(t *testing.T, label string, commits, wantCommits []*gitdomain.Commit) {
+	t.Helper()
+	for i := 0; i < len(commits) || i < len(wantCommits); i++ {
+		var gotC, wantC *gitdomain.Commit
+		if i < len(commits) {
+			gotC = commits[i]
+		}
+		if i < len(wantCommits) {
+			wantC = wantCommits[i]
+		}
+		if !CommitsEqual(gotC, wantC) {
+			t.Errorf("%s: got commit %d == %+v, want %+v", label, i, gotC, wantC)
 		}
 	}
 }
