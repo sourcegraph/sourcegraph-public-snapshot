@@ -24,26 +24,37 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
+type fileType int
+
+const (
+	typeFile fileType = iota
+	typeSymlink
+)
+
 func TestSearch(t *testing.T) {
 	// Create byte buffer of binary file
 	miltonPNG := bytes.Repeat([]byte{0x00}, 32*1024)
 
-	files := map[string]string{
-		"README.md": `# Hello World
+	files := map[string]struct {
+		body string
+		typ  fileType
+	}{
+		"README.md": {`# Hello World
 
-Hello world example in go`,
-		"file++.plus": `filename contains regex metachars`,
-		"main.go": `package main
+Hello world example in go`, typeFile},
+		"file++.plus": {`filename contains regex metachars`, typeFile},
+		"main.go": {`package main
 
 import "fmt"
 
 func main() {
 	fmt.Println("Hello world")
 }
-`,
-		"abc.txt":    "w",
-		"milton.png": string(miltonPNG),
-		"ignore.me":  `func hello() string {return "world"}`,
+`, typeFile},
+		"abc.txt":    {"w", typeFile},
+		"milton.png": {string(miltonPNG), typeFile},
+		"ignore.me":  {`func hello() string {return "world"}`, typeFile},
+		"symlink":    {"abc.txt", typeSymlink},
 	}
 
 	cases := []struct {
@@ -193,6 +204,7 @@ file++.plus:1:filename contains regex metachars
 abc.txt
 file++.plus
 milton.png
+symlink
 `},
 
 		{protocol.PatternInfo{Pattern: "World", IsCaseSensitive: true, IsNegated: true}, `
@@ -200,6 +212,7 @@ abc.txt
 file++.plus
 main.go
 milton.png
+symlink
 `},
 
 		{protocol.PatternInfo{Pattern: "fmt", IsNegated: true}, `
@@ -207,6 +220,17 @@ README.md
 abc.txt
 file++.plus
 milton.png
+symlink
+`},
+		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: true}, `
+abc.txt
+symlink:1:abc.txt
+`},
+		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: false, PatternMatchesContent: true}, `
+symlink:1:abc.txt
+`},
+		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: false}, `
+abc.txt
 `},
 	}
 
@@ -235,7 +259,6 @@ milton.png
 				fetchTimeout = time.Until(deadline) / 2
 			}
 
-			test.arg.PatternMatchesContent = true
 			req := protocol.Request{
 				Repo:         "foo",
 				URL:          "u",
@@ -443,20 +466,37 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 	return matches, err
 }
 
-func newStore(files map[string]string) (*store.Store, func(), error) {
+func newStore(files map[string]struct {
+	body string
+	typ  fileType
+}) (*store.Store, func(), error) {
 	buf := new(bytes.Buffer)
 	w := tar.NewWriter(buf)
-	for name, body := range files {
-		hdr := &tar.Header{
-			Name: name,
-			Mode: 0600,
-			Size: int64(len(body)),
-		}
-		if err := w.WriteHeader(hdr); err != nil {
-			return nil, nil, err
-		}
-		if _, err := w.Write([]byte(body)); err != nil {
-			return nil, nil, err
+	for name, file := range files {
+		var hdr *tar.Header
+		switch file.typ {
+		case typeFile:
+			hdr = &tar.Header{
+				Name: name,
+				Mode: 0600,
+				Size: int64(len(file.body)),
+			}
+			if err := w.WriteHeader(hdr); err != nil {
+				return nil, nil, err
+			}
+			if _, err := w.Write([]byte(file.body)); err != nil {
+				return nil, nil, err
+			}
+		case typeSymlink:
+			hdr = &tar.Header{
+				Typeflag: tar.TypeSymlink,
+				Name:     name,
+				Mode:     int64(os.ModePerm | os.ModeSymlink),
+				Linkname: file.body,
+			}
+			if err := w.WriteHeader(hdr); err != nil {
+				return nil, nil, err
+			}
 		}
 	}
 	// git-archive usually includes a pax header we should ignore.
