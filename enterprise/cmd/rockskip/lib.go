@@ -89,7 +89,7 @@ func NewTaskLog() TaskLog {
 	return TaskLog{
 		currentName:  "<start>",
 		currentStart: time.Now(),
-		nameToTask:   map[string]*Task{"<start>": &Task{Duration: 0, Count: 0}},
+		nameToTask:   map[string]*Task{"<start>": {Duration: 0, Count: 0}},
 	}
 }
 
@@ -109,7 +109,7 @@ func (t *TaskLog) Start(name string) {
 func (t *TaskLog) Reset() {
 	t.currentName = "<start>"
 	t.currentStart = time.Now()
-	t.nameToTask = map[string]*Task{"<start>": &Task{Duration: 0, Count: 0}}
+	t.nameToTask = map[string]*Task{"<start>": {Duration: 0, Count: 0}}
 }
 
 func (t TaskLog) Print() {
