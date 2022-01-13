@@ -58,7 +58,7 @@ func initSourcegraph() {
 	log.Println("Running initializer")
 
 	needsSiteInit, resp, err := gqltestutil.NeedsSiteInit(*baseURL)
-	if resp != "" {
+	if resp != "" && os.Getenv("BUILDKITE") == "true" {
 		log.Println("server response: ", resp)
 	}
 	if err != nil {

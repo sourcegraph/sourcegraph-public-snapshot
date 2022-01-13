@@ -54,7 +54,7 @@ func TestMain(m *testing.M) {
 	}
 
 	needsSiteInit, resp, err := gqltestutil.NeedsSiteInit(*baseURL)
-	if resp != "" {
+	if resp != "" && os.Getenv("BUILDKITE") == "true" {
 		log.Println("server response: ", resp)
 	}
 	if err != nil {
