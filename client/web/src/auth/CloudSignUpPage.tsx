@@ -3,13 +3,17 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
+import { useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
+import { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
+import { USER_AREA_USER_PROFILE } from '../user/area/UserArea'
+import { UserAvatar } from '../user/UserAvatar'
 
 import styles from './CloudSignUpPage.module.scss'
 import { ExternalsAuth } from './ExternalsAuth'
@@ -65,6 +69,13 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
     const sourceIsValid = source && Object.keys(SourceToTitleMap).includes(source)
     const defaultTitle = isSignupOptimised ? SourceToTitleMap.OptimisedContext : SourceToTitleMap.Context // Use Context as default
     const title = sourceIsValid ? SourceToTitleMap[source as CloudSignUpSource] : defaultTitle
+
+    const invitedBy = queryWithUseEmailToggled.get('invitedBy')
+    const { data } = useQuery<UserAreaUserProfileResult, UserAreaUserProfileVariables>(USER_AREA_USER_PROFILE, {
+        variables: { username: invitedBy || '', siteAdmin: false },
+        skip: !invitedBy,
+    })
+    const invitedByUser = data?.user
 
     const logEvent = (type: AuthProvider['serviceType']): void => {
         const eventType = type === 'builtin' ? 'form' : type
@@ -151,14 +162,42 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                     </div>
                 </div>
 
-                <div className={styles.limitWidth}>
-                    <h2 className={styles.pageHeading}>{title}</h2>
-                </div>
+                {!invitedBy && (
+                    <div className={styles.limitWidth}>
+                        <h2 className={classNames('d-flex', 'align-items-center', styles.pageHeading)}>{title}</h2>
+                    </div>
+                )}
             </header>
 
             <div className={classNames(styles.contents, styles.limitWidth)}>
                 <div className={styles.contentsLeft}>
-                    With a Sourcegraph account, you can also:
+                    {invitedByUser ? (
+                        <>
+                            <h2
+                                className={classNames(
+                                    'd-flex',
+                                    'align-items-center',
+                                    invitedByUser ? styles.pageHeadingInvitedBy : styles.pageHeading
+                                )}
+                            >
+                                {invitedByUser ? (
+                                    <>
+                                        <UserAvatar
+                                            className={classNames('icon-inline', 'mr-3', styles.avatar)}
+                                            user={invitedByUser}
+                                        />
+                                        <strong className="mr-1">{invitedBy}</strong> has invited you to join
+                                        Sourcegraph
+                                    </>
+                                ) : (
+                                    title
+                                )}
+                            </h2>
+                            With a Sourcegraph account, you can:
+                        </>
+                    ) : (
+                        'With a Sourcegraph account, you can also:'
+                    )}
                     <ul className={styles.featureList}>
                         <li>
                             <div className="d-flex align-items-center">
@@ -179,7 +218,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                     />
                 </div>
 
-                <div className={styles.signUpWrapper}>
+                <div className={invitedBy ? styles.signUpWrapperInvitedBy : styles.signUpWrapper}>
                     <h2>Create a free account</h2>
                     {isSignupOptimised ? renderSignupOptimized() : renderAuthMethod()}
 
