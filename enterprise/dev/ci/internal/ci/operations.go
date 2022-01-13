@@ -184,7 +184,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 }
 
 func clientIntegrationTests(pipeline *bk.Pipeline) {
-	chunkSize := 3
+	chunkSize := 2
 	prepStepKey := "puppeteer:prep"
 	skipGitCloneStep := bk.Plugin("uber-workflow/run-without-clone", "")
 
