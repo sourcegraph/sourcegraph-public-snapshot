@@ -9,15 +9,13 @@ import { useField } from '../../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../../components/form/hooks/useForm'
 import { MonacoField } from '../../../../../../components/form/monaco-field/MonacoField'
 import { createRequiredValidator } from '../../../../../../components/form/validators'
-import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
+import { EditableDataSeries } from '../../types'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
 
 const requiredNameField = createRequiredValidator('Name is a required field for data series.')
 const validQuery = createRequiredValidator('Query is a required field for data series.')
 
 interface FormSeriesInputProps {
-    id: string | null
-
     /** Series index. */
     index: number
 
@@ -33,36 +31,34 @@ interface FormSeriesInputProps {
      * Show all validation error of all fields within the form.
      */
     showValidationErrorsOnMount?: boolean
-    /** Name of series. */
-    name?: string
-    /** Query value of series. */
-    query?: string
-    /** Color value for line chart. (series) */
-    stroke?: string
+
+    series: EditableDataSeries
+
     /** Enable autofocus behavior of first input of form. */
     autofocus?: boolean
+
     /** Enable cancel button. */
     cancel?: boolean
+
     /** Custom class name for root element of form series. */
     className?: string
-    /** On submit handler of series form. */
-    onSubmit?: (series: SearchBasedInsightSeries) => void
-    /** On cancel handler. */
+
+    /** Whenever a user clicks submit (done) button of the series form. */
+    onSubmit?: (series: EditableDataSeries) => void
+
+    /** Whenever a user clicks cancel button of the series form. */
     onCancel?: () => void
-    /** Change handler in order to listen last values of series form. */
-    onChange?: (formValues: SearchBasedInsightSeries, valid: boolean) => void
+
+    /** Whenever a user types new values in any field of the series form. */
+    onChange?: (formValues: EditableDataSeries, valid: boolean) => void
 }
 
-/** Displays form series input (three field - name field, query field and color picker). */
 export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = props => {
     const {
-        id,
         index,
+        series,
         isSearchQueryDisabled,
         showValidationErrorsOnMount = false,
-        name,
-        query,
-        stroke: color,
         className,
         cancel = false,
         autofocus = true,
@@ -71,6 +67,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         onChange = noop,
     } = props
 
+    const { name, query, stroke: color } = series
     const hasNameControlledValue = !!name
     const hasQueryControlledValue = !!query
 
@@ -83,7 +80,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         },
         onSubmit: values =>
             onSubmit({
-                id,
+                ...series,
                 name: values.seriesName,
                 query: values.seriesQuery,
                 stroke: values.seriesColor,
@@ -93,7 +90,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
 
             onChange(
                 {
-                    id,
+                    ...series,
                     name: values.seriesName,
                     query: values.seriesQuery,
                     stroke: values.seriesColor,
@@ -139,31 +136,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                 required={true}
                 as={MonacoField}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
-                description={
-                    <span>
-                        {!isSearchQueryDisabled ? (
-                            <>
-                                Do not include the <code>context:</code> or <code>repo:</code> filter; if needed,{' '}
-                                <code>repo:</code> will be added automatically.
-                                <br />
-                                Tip: include <code>archived:no</code> and <code>fork:no</code> if you don't want results
-                                from archived or forked repos.
-                            </>
-                        ) : (
-                            <>
-                                We don't yet allow editing queries for insights over all repos. To change the query,
-                                make a new insight. This is a known{' '}
-                                <a
-                                    href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    beta limitation
-                                </a>
-                            </>
-                        )}
-                    </span>
-                }
+                description={<QueryFieldDescription isSearchQueryDisabled={isSearchQueryDisabled} />}
                 valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.validState === 'VALID'}
                 error={queryField.meta.touched && queryField.meta.error}
                 className="mt-4"
@@ -197,3 +170,29 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         </div>
     )
 }
+
+const QueryFieldDescription: React.FunctionComponent<{ isSearchQueryDisabled: boolean }> = props => (
+    <span>
+        {!props.isSearchQueryDisabled ? (
+            <>
+                Do not include the <code>context:</code> or <code>repo:</code> filter; if needed, <code>repo:</code>{' '}
+                will be added automatically.
+                <br />
+                Tip: include <code>archived:no</code> and <code>fork:no</code> if you don't want results from archived
+                or forked repos.
+            </>
+        ) : (
+            <>
+                We don't yet allow editing queries for insights over all repos. To change the query, make a new insight.
+                This is a known{' '}
+                <a
+                    href="https://docs.sourcegraph.com/code_insights/explanations/current_limitations_of_code_insights"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    beta limitation
+                </a>
+            </>
+        )}
+    </span>
+)
