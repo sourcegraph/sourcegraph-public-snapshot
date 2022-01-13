@@ -360,7 +360,7 @@ describe('Code insight edit insight page', () => {
         )
 
         // Wait until all floating UI (like combobox suggestion panel) is rendered in a right position)
-        await delay(100)
+        await delay(1500)
         await percySnapshotWithVariants(driver.page, 'Code insights edit page with search-based insight creation UI')
 
         // Gather all filled inputs within a creation UI form.
