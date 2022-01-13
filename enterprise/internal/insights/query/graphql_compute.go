@@ -75,13 +75,10 @@ func ComputeSearch(ctx context.Context, query string) (results []ComputeResult, 
 	req.Header.Set("Content-Type", "application/json")
 	if span != nil {
 		carrier := opentracing.HTTPHeadersCarrier(req.Header)
-		err := span.Tracer().Inject(
+		span.Tracer().Inject(
 			span.Context(),
 			opentracing.HTTPHeaders,
 			carrier)
-		if err != nil {
-			// do nothing
-		}
 	}
 
 	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
