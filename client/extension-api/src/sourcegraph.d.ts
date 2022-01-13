@@ -808,7 +808,7 @@ declare module 'sourcegraph' {
          * The link URLs for each data point.
          * A link URL should take the user to more details about the specific data point.
          */
-        linkURLs?: string[]
+        linkURLs?: Record<string | number, string> | string[]
 
         /** The CSS color of the line. */
         stroke?: string

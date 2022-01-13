@@ -17,11 +17,11 @@ func TestParseTag(t *testing.T) {
 	}{
 		{
 			"base",
-			"12345_2021-01-02_abcdefg",
+			"12345_2021-01-02_abcdefghijkl",
 			&SgImageTag{
 				buildNum:  12345,
 				date:      "2021-01-02",
-				shortSHA1: "abcdefg",
+				shortSHA1: "abcdefghijkl",
 			},
 			false,
 		},
@@ -57,13 +57,13 @@ func Test_findLatestTag(t *testing.T) {
 	}{
 		{
 			"base",
-			[]string{"v3.25.2", "12345_2022-01-01_asbcefg"},
-			"12345_2022-01-01_asbcefg",
+			[]string{"v3.25.2", "12345_2022-01-01_abcdefghijkl"},
+			"12345_2022-01-01_abcdefghijkl",
 		},
 		{
 			"higher_build_first",
-			[]string{"99981_2022-01-15_999999a", "99982_2022-01-29_999999b"},
-			"99982_2022-01-29_999999b",
+			[]string{"99981_2022-01-15_999999a", "99982_2022-01-29_abcdefghijkl"},
+			"99982_2022-01-29_abcdefghijkl",
 		},
 	}
 	for _, tt := range tests {
