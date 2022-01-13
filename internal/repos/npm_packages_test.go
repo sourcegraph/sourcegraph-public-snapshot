@@ -142,7 +142,7 @@ func TestListRepos(t *testing.T) {
 	for _, dep := range dependencies {
 		dep, err := reposource.ParseNPMDependency(dep)
 		require.Nil(t, err)
-		expectedRepoURLs = append(expectedRepoURLs, string(dep.RepoName()))
+		expectedRepoURLs = append(expectedRepoURLs, string(dep.Package.RepoName()))
 	}
 	sort.Strings(expectedRepoURLs)
 	// Compare after uniquing after addressing [FIXME: deduplicate-listed-repos].
@@ -157,7 +157,7 @@ func insertDependencies(t *testing.T, ctx context.Context, s *dbstore.Store, dep
 		rows, err :=
 			s.Store.Query(ctx, sqlf.Sprintf(
 				`INSERT INTO lsif_dependency_repos (scheme, name, version) VALUES (%s, %s, %s)`,
-				dbstore.NPMPackagesScheme, dep.NPMPackage.PackageSyntax(), dep.Version))
+				dbstore.NPMPackagesScheme, dep.Package.PackageSyntax(), dep.Version))
 		require.Nil(t, err)
 		for rows.Next() {
 		}
