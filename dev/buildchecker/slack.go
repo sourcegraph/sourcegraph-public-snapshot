@@ -25,13 +25,13 @@ The authors of the following failed commits who are Sourcegraph teammates have b
 
 	for _, commit := range failedCommits {
 		var mention string
-		if commit.SlackUserID != "" {
-			mention = slackMention(commit.SlackUserID)
+		if commit.AuthorSlackID != "" {
+			mention = slackMention(commit.AuthorSlackID)
 		} else {
-			mention = ":warning: Cannot find Slack user :warning:"
+			mention = commit.Author
 		}
-		message += fmt.Sprintf("\n- <https://github.com/sourcegraph/sourcegraph/commit/%s|%s> - %s - %s",
-			commit.Commit, commit.Commit, commit.Author, mention)
+		message += fmt.Sprintf("\n- <https://github.com/sourcegraph/sourcegraph/commit/%s|%.7s>: %s",
+			commit.Commit, commit.Commit, mention)
 	}
 	message += `
 
