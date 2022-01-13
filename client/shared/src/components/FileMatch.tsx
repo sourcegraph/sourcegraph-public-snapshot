@@ -14,7 +14,7 @@ import { pluralize } from '../util/strings'
 import { FetchFileParameters } from './CodeExcerpt'
 import { FileMatchChildren } from './FileMatchChildren'
 import { LineRanking } from './ranking/LineRanking'
-import { MatchGroup, MatchItem } from './ranking/PerFileResultRanking'
+import { MatchGroup, MatchItem, PerFileResultRanking } from './ranking/PerFileResultRanking'
 import { ZoektRanking } from './ranking/ZoektRanking'
 import { RepoFileLink } from './RepoFileLink'
 import { RepoIcon } from './RepoIcon'
@@ -65,16 +65,21 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
 
 const sumHighlightRanges = (count: number, item: MatchItem): number => count + item.highlightRanges.length
 
-const ByZoektRanking = 'by-zoekt-ranking'
+const BY_ZOEKT_RANKING = 'by-zoekt-ranking'
+const BY_LINE_RANKING = 'by-line-number'
 const DEFAULT_CONTEXT = 1
 
 export const FileMatch: React.FunctionComponent<Props> = props => {
     const result = props.result
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
-    const isZoektRanking: boolean =
+    let ranking: PerFileResultRanking = new ZoektRanking()
+    if (
         !isErrorLike(props.settingsCascade.final) &&
-        props.settingsCascade?.final?.experimentalFeatures?.clientSearchResultRanking === ByZoektRanking
+        props.settingsCascade?.final?.experimentalFeatures?.clientSearchResultRanking == BY_LINE_RANKING
+    ) {
+        ranking = new LineRanking()
+    }
     const renderTitle = (): JSX.Element => (
         <>
             <RepoIcon repoName={result.repository} className="icon-inline text-muted" />
@@ -144,8 +149,6 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
         ) : undefined
 
     let containerProps: ResultContainerProps
-
-    const ranking = useMemo(() => (isZoektRanking ? new ZoektRanking() : new LineRanking()), [isZoektRanking])
 
     const expandedMatchGroups = useMemo(() => ranking.expandedResults(items, context), [items, context, ranking])
     const collapsedMatchGroups = useMemo(() => ranking.collapsedResults(items, context), [items, context, ranking])
