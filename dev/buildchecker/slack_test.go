@@ -15,9 +15,9 @@ func TestSlackSummary(t *testing.T) {
 
 	t.Run("locked", func(t *testing.T) {
 		s := slackSummary(true, []CommitInfo{
-			{Commit: "a", Author: "bob", SlackUserID: "123"},
-			{Commit: "b", Author: "alice", SlackUserID: "124"},
-			{Commit: "c", Author: "no_github", SlackUserID: ""},
+			{Commit: "a", Author: "bob", AuthorSlackUser: "123"},
+			{Commit: "b", Author: "alice", AuthorSlackUser: "124"},
+			{Commit: "c", Author: "no_github", AuthorSlackUser: ""},
 		})
 		t.Log(s)
 		assert.Contains(t, s, "locked")

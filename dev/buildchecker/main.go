@@ -12,6 +12,8 @@ import (
 	"github.com/google/go-github/v41/github"
 	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/sourcegraph/dev/internal/team"
 )
 
 func main() {
@@ -74,7 +76,7 @@ func main() {
 	results, err := CheckBuilds(
 		ctx,
 		NewBranchLocker(ghc, "sourcegraph", "sourcegraph", branch),
-		NewGithubSlackUserResolver(ghc, slc, "sourcegraph", "sourcegraph"),
+		team.NewTeammateResolver(ghc, slc),
 		builds,
 		opts,
 	)
