@@ -73,6 +73,7 @@ const FormInput = forwardRef((props, reference) => {
                     })}
                     {...otherProps}
                     ref={mergedReference}
+                    autoFocus={autoFocus}
                 />
 
                 {inputSymbol}
