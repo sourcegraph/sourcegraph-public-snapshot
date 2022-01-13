@@ -74,10 +74,10 @@ const (
 
 const NULL = "0000000000000000000000000000000000000000"
 
-type Instants struct {
-	name       string
-	start      time.Time
-	nameToTask map[string]*Task
+type TaskLog struct {
+	currentName  string
+	currentStart time.Time
+	nameToTask   map[string]*Task
 }
 
 type Task struct {
@@ -85,35 +85,35 @@ type Task struct {
 	Count    int
 }
 
-func NewInstants() Instants {
-	return Instants{
-		name:       "<start>",
-		start:      time.Now(),
-		nameToTask: map[string]*Task{"<start>": &Task{Duration: 0, Count: 0}},
+func NewTaskLog() TaskLog {
+	return TaskLog{
+		currentName:  "<start>",
+		currentStart: time.Now(),
+		nameToTask:   map[string]*Task{"<start>": &Task{Duration: 0, Count: 0}},
 	}
 }
 
-func (instants *Instants) Start(name string) {
+func (t *TaskLog) Start(name string) {
 	now := time.Now()
 
-	if _, ok := instants.nameToTask[instants.name]; !ok {
-		instants.nameToTask[instants.name] = &Task{Duration: 0, Count: 0}
+	if _, ok := t.nameToTask[t.currentName]; !ok {
+		t.nameToTask[t.currentName] = &Task{Duration: 0, Count: 0}
 	}
-	instants.nameToTask[instants.name].Duration += now.Sub(instants.start)
-	instants.nameToTask[instants.name].Count += 1
+	t.nameToTask[t.currentName].Duration += now.Sub(t.currentStart)
+	t.nameToTask[t.currentName].Count += 1
 
-	instants.name = name
-	instants.start = now
+	t.currentName = name
+	t.currentStart = now
 }
 
-func (instants *Instants) Reset() {
-	instants.name = "<start>"
-	instants.start = time.Now()
-	instants.nameToTask = map[string]*Task{"<start>": &Task{Duration: 0, Count: 0}}
+func (t *TaskLog) Reset() {
+	t.currentName = "<start>"
+	t.currentStart = time.Now()
+	t.nameToTask = map[string]*Task{"<start>": &Task{Duration: 0, Count: 0}}
 }
 
-func (instants Instants) Print() {
-	instants.Start(instants.name)
+func (t TaskLog) Print() {
+	t.Start(t.currentName)
 
 	ms := func(d time.Duration) string {
 		return fmt.Sprintf("%dms", int(d.Seconds()*1000))
@@ -121,7 +121,7 @@ func (instants Instants) Print() {
 
 	var total time.Duration = 0
 	totalCount := 0
-	for _, task := range instants.nameToTask {
+	for _, task := range t.nameToTask {
 		total += task.Duration
 		totalCount += task.Count
 	}
@@ -133,7 +133,7 @@ func (instants Instants) Print() {
 	}
 
 	var kvs []kv
-	for k, v := range instants.nameToTask {
+	for k, v := range t.nameToTask {
 		kvs = append(kvs, kv{k, v})
 	}
 
@@ -146,22 +146,22 @@ func (instants Instants) Print() {
 	}
 }
 
-var INSTANTS = NewInstants()
+var TASKLOG = NewTaskLog()
 
 func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 	tipCommit := NULL
 	tipHeight := 0
 	missingCount := 0
-	INSTANTS.Start("RevList")
+	TASKLOG.Start("RevList")
 	revs, err := git.RevList(givenCommit)
-	INSTANTS.Start("idle")
+	TASKLOG.Start("idle")
 	if err != nil {
 		return errors.Wrap(err, "RevList")
 	}
 	for _, commit := range revs {
-		INSTANTS.Start("GetCommit")
+		TASKLOG.Start("GetCommit")
 		_, height, present, err := db.GetCommit(commit)
-		INSTANTS.Start("idle")
+		TASKLOG.Start("idle")
 		if err != nil {
 			return errors.Wrap(err, "GetCommit")
 		} else if present {
@@ -174,9 +174,9 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 
 	pathToBlobIdCache := map[string]int{}
 
-	INSTANTS.Start("LogReverse")
+	TASKLOG.Start("LogReverse")
 	entries, err := git.LogReverse(givenCommit, missingCount)
-	INSTANTS.Start("idle")
+	TASKLOG.Start("idle")
 	if err != nil {
 		return errors.Wrap(err, "LogReverse")
 	}
@@ -197,15 +197,15 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 			return fmt.Errorf("ruler(%d) = %d is out of range of len(hops) = %d", tipHeight+1, r, len(hops))
 		}
 
-		INSTANTS.Start("AppendHop (added)")
+		TASKLOG.Start("AppendHop (added)")
 		err = db.AppendHop(hops[0:r], AddedAD, entry.Commit)
-		INSTANTS.Start("idle")
+		TASKLOG.Start("idle")
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (added)")
 		}
-		INSTANTS.Start("AppendHop (deleted)")
+		TASKLOG.Start("AppendHop (deleted)")
 		err = db.AppendHop(hops[0:r], DeletedAD, entry.Commit)
-		INSTANTS.Start("idle")
+		TASKLOG.Start("idle")
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (deleted)")
 		}
@@ -218,9 +218,9 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 				if id, ok = pathToBlobIdCache[pathStatus.Path]; !ok {
 					found := false
 					for _, hop := range hops {
-						INSTANTS.Start("GetBlob")
+						TASKLOG.Start("GetBlob")
 						id, found, err = db.GetBlob(hop, pathStatus.Path)
-						INSTANTS.Start("idle")
+						TASKLOG.Start("idle")
 						if err != nil {
 							return errors.Wrap(err, "GetBlob")
 						}
@@ -233,21 +233,21 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 					}
 				}
 
-				INSTANTS.Start("UpdateBlobHops")
+				TASKLOG.Start("UpdateBlobHops")
 				db.UpdateBlobHops(id, DeletedAD, entry.Commit)
-				INSTANTS.Start("idle")
+				TASKLOG.Start("idle")
 			}
 
 			if pathStatus.Status == AddedAMD || pathStatus.Status == ModifiedAMD {
-				INSTANTS.Start("CatFile")
+				TASKLOG.Start("CatFile")
 				contents, err := git.CatFile(entry.Commit, pathStatus.Path)
-				INSTANTS.Start("idle")
+				TASKLOG.Start("idle")
 				if err != nil {
 					return errors.Wrap(err, "CatFile")
 				}
-				INSTANTS.Start("parse")
+				TASKLOG.Start("parse")
 				symbols, err := parse(pathStatus.Path, contents)
-				INSTANTS.Start("idle")
+				TASKLOG.Start("idle")
 				if err != nil {
 					return err
 				}
@@ -258,9 +258,9 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 					Deleted: []string{},
 					Symbols: symbols,
 				}
-				INSTANTS.Start("InsertBlob")
+				TASKLOG.Start("InsertBlob")
 				id, err := db.InsertBlob(blob)
-				INSTANTS.Start("idle")
+				TASKLOG.Start("idle")
 				if err != nil {
 					return errors.Wrap(err, "InsertBlob")
 				}
@@ -268,9 +268,9 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 			}
 		}
 
-		INSTANTS.Start("DeleteRedundant")
+		TASKLOG.Start("DeleteRedundant")
 		err = db.DeleteRedundant(entry.Commit)
-		INSTANTS.Start("idle")
+		TASKLOG.Start("idle")
 		if err != nil {
 			return errors.Wrap(err, "DeleteRedundant")
 		}
@@ -281,9 +281,9 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 		if tipCommit == hops[r] {
 			fmt.Println(tipCommit, r, hops, tipHeight)
 		}
-		INSTANTS.Start("InsertCommit")
+		TASKLOG.Start("InsertCommit")
 		db.InsertCommit(tipCommit, tipHeight, hops[r])
-		INSTANTS.Start("idle")
+		TASKLOG.Start("idle")
 	}
 
 	return nil
@@ -294,9 +294,9 @@ func getHops(db DB, commit string) ([]string, error) {
 	spine := []string{current}
 
 	for {
-		INSTANTS.Start("GetCommit")
+		TASKLOG.Start("GetCommit")
 		ancestor, _, present, err := db.GetCommit(current)
-		INSTANTS.Start("idle")
+		TASKLOG.Start("idle")
 		if err != nil {
 			return nil, errors.Wrap(err, "GetCommit")
 		} else if !present {

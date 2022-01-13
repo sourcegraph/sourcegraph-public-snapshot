@@ -82,12 +82,12 @@ func TestIndex(t *testing.T) {
 	}
 	head := strings.TrimSpace(string(output))
 
-	INSTANTS.Reset()
+	TASKLOG.Reset()
 	err = Index(git, db, parser.Parse, head)
 	if err != nil {
 		t.Fatalf("🚨 Index: %s", err)
 	}
-	INSTANTS.Print()
+	TASKLOG.Print()
 
 	blobs, err := Search(db, head, nil)
 	if err != nil {
