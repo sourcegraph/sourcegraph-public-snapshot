@@ -31,6 +31,8 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
+const LoadingComponent: React.FunctionComponent = () => <LoadingSpinner className="m-2" />
+
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
     location: H.Location
     authenticatedUser: AuthenticatedUser
@@ -41,16 +43,19 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
  * an organization's settings.
  */
 export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
-    // we can ignore the loading and error states in this case
+    // we can ignore the error states in this case
     // if there is an error, we will not show the code host connections and repository screens
     // same for until the feature flag value is loaded (which in practice should be fast)
-    const { data } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(GET_ORG_FEATURE_FLAG_VALUE, {
-        variables: { orgID: props.org.id, flagName: ORG_CODE_FEATURE_FLAG_NAME },
-        // Cache this data but always re-request it in the background when we revisit
-        // this page to pick up newer changes.
-        fetchPolicy: 'cache-and-network',
-        skip: !props.authenticatedUser || !props.org.id,
-    })
+    const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
+        GET_ORG_FEATURE_FLAG_VALUE,
+        {
+            variables: { orgID: props.org.id, flagName: ORG_CODE_FEATURE_FLAG_NAME },
+            // Cache this data but always re-request it in the background when we revisit
+            // this page to pick up newer changes.
+            fetchPolicy: 'cache-and-network',
+            skip: !props.authenticatedUser || !props.org.id,
+        }
+    )
 
     if (!props.authenticatedUser) {
         return null
@@ -108,66 +113,64 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                     <OrgSettingsMembersPage {...routeComponentProps} {...props} />
                                 )}
                             />
-                            {showOrgCode && (
-                                <>
-                                    <Route
-                                        path={`${props.match.path}/code-hosts`}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        exact={true}
-                                        render={routeComponentProps => (
-                                            <OrgAddCodeHostsPageContainer
-                                                {...routeComponentProps}
-                                                owner={{
-                                                    id: props.org.id,
-                                                    type: 'org',
-                                                    name: props.org.displayName || props.org.name,
-                                                }}
-                                                context={window.context}
-                                                routingPrefix={`${props.org.url}/settings`}
-                                                telemetryService={props.telemetryService}
-                                                onUserExternalServicesOrRepositoriesUpdate={() => {}}
-                                            />
-                                        )}
-                                    />
-                                    <Route
-                                        path={`${props.match.path}/repositories`}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        exact={true}
-                                        render={routeComponentProps => (
-                                            <SettingsRepositoriesPage
-                                                {...routeComponentProps}
-                                                {...props}
-                                                owner={{
-                                                    id: props.org.id,
-                                                    type: 'org',
-                                                    name: props.org.displayName || props.org.name,
-                                                }}
-                                                routingPrefix={`${props.org.url}/settings`}
-                                                onUserExternalServicesOrRepositoriesUpdate={() => {}} // TODO...
-                                            />
-                                        )}
-                                    />
-                                    <Route
-                                        path={`${props.match.path}/repositories/manage`}
-                                        key="hardcoded-key"
-                                        exact={true}
-                                        render={routeComponentProps => (
-                                            <UserSettingsManageRepositoriesPage
-                                                {...routeComponentProps}
-                                                {...props}
-                                                owner={{
-                                                    id: props.org.id,
-                                                    type: 'org',
-                                                    name: props.org.displayName || props.org.name,
-                                                }}
-                                                routingPrefix={`${props.org.url}/settings`}
-                                                onSyncedPublicRepositoriesUpdate={() => {}}
-                                            />
-                                        )}
-                                    />
-                                </>
-                            )}
-                            <Route component={NotFoundPage} />
+                            {showOrgCode && [
+                                <Route
+                                    path={`${props.match.path}/code-hosts`}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    exact={true}
+                                    render={routeComponentProps => (
+                                        <OrgAddCodeHostsPageContainer
+                                            {...routeComponentProps}
+                                            owner={{
+                                                id: props.org.id,
+                                                type: 'org',
+                                                name: props.org.displayName || props.org.name,
+                                            }}
+                                            context={window.context}
+                                            routingPrefix={`${props.org.url}/settings`}
+                                            telemetryService={props.telemetryService}
+                                            onUserExternalServicesOrRepositoriesUpdate={() => {}}
+                                        />
+                                    )}
+                                />,
+                                <Route
+                                    path={`${props.match.path}/repositories`}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    exact={true}
+                                    render={routeComponentProps => (
+                                        <SettingsRepositoriesPage
+                                            {...routeComponentProps}
+                                            {...props}
+                                            owner={{
+                                                id: props.org.id,
+                                                type: 'org',
+                                                name: props.org.displayName || props.org.name,
+                                            }}
+                                            routingPrefix={`${props.org.url}/settings`}
+                                            onUserExternalServicesOrRepositoriesUpdate={() => {}} // TODO...
+                                        />
+                                    )}
+                                />,
+                                <Route
+                                    path={`${props.match.path}/repositories/manage`}
+                                    key="hardcoded-key"
+                                    exact={true}
+                                    render={routeComponentProps => (
+                                        <UserSettingsManageRepositoriesPage
+                                            {...routeComponentProps}
+                                            {...props}
+                                            owner={{
+                                                id: props.org.id,
+                                                type: 'org',
+                                                name: props.org.displayName || props.org.name,
+                                            }}
+                                            routingPrefix={`${props.org.url}/settings`}
+                                            onSyncedPublicRepositoriesUpdate={() => {}}
+                                        />
+                                    )}
+                                />,
+                            ]}
+                            <Route component={loading ? LoadingComponent : NotFoundPage} />
                         </Switch>
                     </React.Suspense>
                 </ErrorBoundary>
