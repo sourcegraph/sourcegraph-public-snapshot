@@ -19,12 +19,12 @@ import (
 //
 //go:generate ../../mockgen.sh github.com/sourcegraph/sourcegraph/dev/internal/team -i TeammateResolver -o mock.go
 type TeammateResolver interface {
-	// ResolveByCommitAuthor retrieves the Teammate associated with the given commit
-	ResolveByCommitAuthor(ctx context.Context, org, repo, commit string) (*Teammate, error)
-	// ResolveByGitHubHandle retrieves the Teammate associated with the given GitHub handle
-	ResolveByGitHubHandle(ctx context.Context, handle string) (*Teammate, error)
 	// ResolveByName tries to resolve a teammate by name
 	ResolveByName(ctx context.Context, name string) (*Teammate, error)
+	// ResolveByGitHubHandle retrieves the Teammate associated with the given GitHub handle
+	ResolveByGitHubHandle(ctx context.Context, handle string) (*Teammate, error)
+	// ResolveByCommitAuthor retrieves the Teammate associated with the given commit
+	ResolveByCommitAuthor(ctx context.Context, org, repo, commit string) (*Teammate, error)
 }
 
 const teamDataURL = "https://raw.githubusercontent.com/sourcegraph/handbook/main/data/team.yml"
@@ -32,12 +32,13 @@ const teamDataURL = "https://raw.githubusercontent.com/sourcegraph/handbook/main
 type Teammate struct {
 	// Key is the key for this teammate in team.yml
 	Key string `yaml:"-"`
+	// HandbookLink is generated from name
+	HandbookLink string `yaml:"-"`
 
-	// Some data is not available in handbook data, we populate it once in getTeamData
+	// Slack data is not available in handbook data, we populate it once in getTeamData
 	SlackID       string         `yaml:"-"`
 	SlackNickname string         `yaml:"-"`
 	SlackTimezone *time.Location `yaml:"-"`
-	HandbookLink  string         `yaml:"-"`
 
 	// Handbook team data fields
 	Name        string `yaml:"name"`
@@ -57,6 +58,10 @@ type teammateResolver struct {
 	cachedTeamOnce sync.Once
 }
 
+// NewTeammateResolver instantiates a TeammateResolver for querying teammate data.
+//
+// The GitHub client and Slack client are optional, but enable certain functions and
+// extended teammate data.
 func NewTeammateResolver(ghClient *github.Client, slackClient *slack.Client) TeammateResolver {
 	return &teammateResolver{
 		github: ghClient,
@@ -65,6 +70,10 @@ func NewTeammateResolver(ghClient *github.Client, slackClient *slack.Client) Tea
 }
 
 func (r *teammateResolver) ResolveByCommitAuthor(ctx context.Context, org, repo, commit string) (*Teammate, error) {
+	if r.github == nil {
+		return nil, fmt.Errorf("GitHub integration disabled")
+	}
+
 	resp, _, err := r.github.Repositories.GetCommit(ctx, org, repo, commit, nil)
 	if err != nil {
 		return nil, fmt.Errorf("GetCommit: %w", err)
@@ -155,19 +164,21 @@ func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammat
 		}
 
 		// Populate Slack details
-		slackUsers, err := r.slack.GetUsers()
-		if err != nil {
-			onceErr = fmt.Errorf("slack.GetUsers: %w", err)
-			return
-		}
-		for _, user := range slackUsers {
-			if teammate, exists := emails[user.Profile.Email]; exists {
-				teammate.SlackID = user.ID
-				teammate.SlackNickname = user.Name
-				teammate.SlackTimezone, err = time.LoadLocation(user.TZ)
-				if err != nil {
-					onceErr = fmt.Errorf("teammate %q: time.LoadLocation: %w", teammate.Key, err)
-					return
+		if r.slack != nil {
+			slackUsers, err := r.slack.GetUsers()
+			if err != nil {
+				onceErr = fmt.Errorf("slack.GetUsers: %w", err)
+				return
+			}
+			for _, user := range slackUsers {
+				if teammate, exists := emails[user.Profile.Email]; exists {
+					teammate.SlackID = user.ID
+					teammate.SlackNickname = user.Name
+					teammate.SlackTimezone, err = time.LoadLocation(user.TZ)
+					if err != nil {
+						onceErr = fmt.Errorf("teammate %q: time.LoadLocation: %w", teammate.Key, err)
+						return
+					}
 				}
 			}
 		}
