@@ -164,17 +164,12 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 		subRepoPermsPermissionsDuration.WithLabelValues(strconv.FormatBool(err != nil)).Observe(took)
 	}()
 
-	// Always default to not providing any permissions
-	perms = None
-
 	if s.permissionsGetter == nil {
-		err = errors.New("PermissionsGetter is nil")
-		return
+		return None, errors.New("PermissionsGetter is nil")
 	}
 
 	if userID == 0 {
-		err = &ErrUnauthenticated{}
-		return
+		return None, &ErrUnauthenticated{}
 	}
 
 	// An empty path is equivalent to repo permissions so we can assume it has
@@ -204,7 +199,7 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 	// preference to exclusion.
 	for _, rule := range rules.excludes {
 		if rule.Match(toMatch) {
-			return
+			return None, nil
 		}
 	}
 	for _, rule := range rules.includes {
