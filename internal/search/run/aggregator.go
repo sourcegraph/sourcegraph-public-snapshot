@@ -16,11 +16,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func NewAggregator(db dbutil.DB, stream streaming.Sender) *Aggregator {
+func NewAggregator(db dbutil.DB, stream streaming.Sender, filterFunc EventTransformer) *Aggregator {
 	return &Aggregator{
-		db:           db,
-		parentStream: stream,
-		errors:       &multierror.Error{},
+		db:               db,
+		eventTransformer: filterFunc,
+		parentStream:     stream,
+		errors:           &multierror.Error{},
 	}
 }
 
@@ -28,12 +29,25 @@ type Aggregator struct {
 	parentStream streaming.Sender
 	db           dbutil.DB
 
+	// eventTransformer can be applied to transform each SearchEvent before it gets
+	// propagated.
+	//
+	// It is currently used to provide sub-repo perms filtering.
+	//
+	// SearchEvent is still propagated even in an error case - eventTransformer
+	// should make sure the appropriate transformations are made before returning an
+	// error.
+	eventTransformer EventTransformer
+
 	mu         sync.Mutex
 	results    []result.Match
 	stats      streaming.Stats
 	errors     *multierror.Error
 	matchCount int
 }
+
+// EventTransformer is a function that is expected to transform search events
+type EventTransformer func(event streaming.SearchEvent) (streaming.SearchEvent, error)
 
 // Get finalises aggregation over the stream and returns the aggregated
 // result. It should only be called once each do* function is finished
@@ -49,6 +63,14 @@ func (a *Aggregator) Get() ([]result.Match, streaming.Stats, int, *multierror.Er
 //
 // It currently also applies sub-repo permissions filtering (see inline docs).
 func (a *Aggregator) Send(event streaming.SearchEvent) {
+	if a.eventTransformer != nil {
+		var err error
+		event, err = a.eventTransformer(event)
+		if err != nil {
+			a.Error(err)
+		}
+	}
+
 	if a.parentStream != nil {
 		a.parentStream.Send(event)
 	}

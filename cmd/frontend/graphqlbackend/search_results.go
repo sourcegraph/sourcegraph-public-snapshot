@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
@@ -1661,7 +1662,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		ctx, stream, cancelOnLimit = streaming.WithLimit(ctx, stream, limit)
 		defer cancelOnLimit()
 	}
-	agg := run.NewAggregator(r.db, stream)
+	agg := run.NewAggregator(r.db, stream, subRepoFilterFunc(ctx, authz.DefaultSubRepoPermsChecker))
 
 	// This ensures we properly cleanup in the case of an early return. In
 	// particular we want to cancel global searches before returning early.
@@ -1735,6 +1736,48 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	timer.Stop()
 
 	return r.toSearchResults(ctx, agg)
+}
+
+// subRepoFilterFunc returns a filtering function that applies sub-repo permissions
+// to search events. It is possible that a nil function is returned.
+func subRepoFilterFunc(ctx context.Context, checker authz.SubRepoPermissionChecker) run.EventTransformer {
+	if checker == nil || !checker.Enabled() {
+		return nil
+	}
+
+	a := actor.FromContext(ctx)
+	return func(e streaming.SearchEvent) (streaming.SearchEvent, error) {
+		errs := &multierror.Error{}
+		filtered := streaming.SearchEvent{
+			Results: e.Results[:0],
+			Stats:   e.Stats,
+		}
+		for _, r := range e.Results {
+			key := r.Key()
+			content := authz.RepoContent{
+				Repo: key.Repo,
+				Path: key.Path,
+			}
+			perms, err := authz.ActorPermissions(ctx, checker, a, content)
+			if err != nil {
+				errs = multierror.Append(errs, err)
+				continue
+			}
+			if perms.Include(authz.Read) {
+				filtered.Results = append(filtered.Results, r)
+			}
+		}
+		// We don't want to spam our logs or return sensitive authz related errors to the
+		// user so we'll return generic error and log an error summary.
+		if errs.Len() == 0 {
+			return filtered, nil
+		}
+		//errs.ErrorFormat = func(errors []error) string {
+		//	return fmt.Sprintf("sub-repo permissions. %d errors. Example: %s", errs.Len(), errors[0].Error())
+		//}
+		log15.Error("Checking sub-repo permissions", "count", errs.Len(), "sample", errs.Errors[0].Error())
+		return filtered, errors.New("subRepoFilterFunc")
+	}
 }
 
 // toSearchResults converts an Aggregator to SearchResults.

@@ -298,7 +298,6 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 	if !s.Enabled() {
 		return Read, nil
 	}
-
 	if a.IsInternal() {
 		return Read, nil
 	}
