@@ -217,7 +217,7 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	}
 
 	toCreate, toDelete, err := splitActionIDs(ctx, args, actionIDs)
-	if len(toDelete) == len(actionIDs) {
+	if len(toDelete) == len(actionIDs) && len(toCreate) == 0 {
 		return nil, errors.Errorf("you tried to delete all actions, but every monitor must be connected to at least 1 action")
 	}
 
