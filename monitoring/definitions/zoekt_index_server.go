@@ -22,13 +22,13 @@ func ZoektIndexServer() *monitoring.Container {
 		Title:                    "Zoekt Index Server",
 		Description:              "Indexes repositories and populates the search index.",
 		NoSourcegraphDebugServer: true,
-		Variables: []monitoring.ContainerVariable{
-			{
+		Variables: []sdk.TemplateVar{
+			monitoring.SelectorFromQueryVariable(monitoring.SelectorFromQueryArgs{
 				Label: "Instance",
 				Name:  "instance",
 				Query: "label_values(index_num_assigned, instance)",
 				Multi: true,
-			},
+			}),
 		},
 		Groups: []monitoring.Group{
 			{

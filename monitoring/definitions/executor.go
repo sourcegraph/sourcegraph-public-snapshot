@@ -1,6 +1,7 @@
 package definitions
 
 import (
+	"github.com/grafana-tools/sdk"
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
@@ -15,17 +16,19 @@ func Executor() *monitoring.Container {
 		Name:        "executor",
 		Title:       "Executor",
 		Description: `Executes jobs in an isolated environment.`,
-		Variables: []monitoring.ContainerVariable{
-			{
+		Variables: []sdk.TemplateVar{
+			monitoring.SelectorFromOptionsVariable(monitoring.SelectorFromOptionsArgs{
 				Label:   "Queue name",
 				Name:    "queue",
 				Options: []string{"batches", "codeintel"},
-			},
-			{
+				Multi:   true,
+			}),
+			monitoring.SelectorFromQueryVariable(monitoring.SelectorFromQueryArgs{
 				Label: "Compute instance",
 				Name:  "instance",
 				Query: "label_values(node_exporter_build_info{job=\"sourcegraph-code-intel-indexer-nodes\"}, instance)",
-			},
+				Multi: true,
+			}),
 		},
 		Groups: []monitoring.Group{
 			shared.CodeIntelligence.NewExecutorQueueGroup(queueContainerName),

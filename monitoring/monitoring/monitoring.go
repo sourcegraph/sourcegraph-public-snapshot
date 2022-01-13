@@ -29,7 +29,7 @@ type Container struct {
 
 	// Variables define the variables that can be to applied to the dashboard for this
 	// container, such as instances or shards.
-	Variables []ContainerVariable
+	Variables []sdk.TemplateVar
 
 	// Groups of observable information about the container.
 	Groups []Group
@@ -52,11 +52,13 @@ func (c *Container) validate() error {
 	if c.Description != withPeriod(c.Description) || c.Description != upperFirst(c.Description) {
 		return errors.Errorf("Description must be sentence starting with an uppercase letter and ending with period; found \"%s\"", c.Description)
 	}
+
 	for i, v := range c.Variables {
-		if err := v.validate(); err != nil {
-			return errors.Errorf("Variable %d %q: %v", i, c.Name, err)
+		if err := validateTemplateVariable(v); err != nil {
+			return errors.Errorf("template variable %d (%q): %w", i, v.Name, err)
 		}
 	}
+
 	for i, g := range c.Groups {
 		if err := g.validate(); err != nil {
 			return errors.Errorf("Group %d %q: %v", i, g.Title, err)
@@ -78,15 +80,14 @@ func (c *Container) renderDashboard() *sdk.Board {
 	board.SharedCrosshair = true
 	board.Editable = false
 	board.AddTags("builtin")
-	alertLevelVariable := ContainerVariable{
+	alertLevelVariable := SelectorFromOptionsVariable(SelectorFromOptionsArgs{
 		Label:   "Alert level",
 		Name:    "alert_level",
 		Options: []string{"critical", "warning"},
-	}
-	board.Templating.List = []sdk.TemplateVar{alertLevelVariable.toGrafanaTemplateVar()}
-	for _, variable := range c.Variables {
-		board.Templating.List = append(board.Templating.List, variable.toGrafanaTemplateVar())
-	}
+		Multi:   true,
+	})
+	board.Templating.List = []sdk.TemplateVar{alertLevelVariable}
+	board.Templating.List = append(board.Templating.List, c.Variables...)
 	board.Annotations.List = []sdk.Annotation{{
 		Name:       "Alert events",
 		Datasource: StringPtr("Prometheus"),
@@ -331,84 +332,95 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 	}, nil
 }
 
-// ContainerVariable describes a template variable that can be applied container dashboard
-// for filtering purposes.
-type ContainerVariable struct {
+// SelectorFromQueryVariable generates a Grafana template variable
+// with values that are dynamically generated from the given query.
+//
+// The variable can be used for filtering purposes in dashboards.
+func SelectorFromQueryVariable(args SelectorFromQueryArgs) sdk.TemplateVar {
+	variable := sdk.TemplateVar{
+		Type:       "query",
+		Datasource: StringPtr("Prometheus"),
+
+		Name:  args.Name,
+		Label: args.Label,
+		Multi: args.Multi,
+		Query: args.Query,
+
+		Sort: 3,
+		Refresh: sdk.BoolInt{
+			Flag:  true,
+			Value: Int64Ptr(2), // Refresh on time range change
+		},
+	}
+
+	if args.Multi {
+		variable.Multi = true
+		variable.IncludeAll = true
+		variable.Current = sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"}
+	}
+
+	return variable
+}
+
+// SelectorFromQueryArgs is the set of options used to generate a SelectorFromQueryVariable.
+type SelectorFromQueryArgs struct {
 	// Name is the name of the variable to substitute the value for, e.g. "alert_level"
 	// to replace "$alert_level" in queries
 	Name string
 	// Label is a human-readable name for the variable, e.g. "Alert level"
 	Label string
-
-	// Query is the query to generate the possible values. Cannot be used in conjunction
-	// with Options
+	// Query is the Prometheus query that is used to generate the possible values
 	Query string
-	// Options are the pre-defined possible values for this variable. Cannot be used in
-	// conjunction with Query
-	Options []string
-
-	// Multi indicates whether or not to allow multi-selection for this variable filter
+	// Multi indicates whether to allow multiple selections for this variable filter
 	Multi bool
 }
 
-func (c *ContainerVariable) validate() error {
-	if c.Name == "" {
-		return errors.New("ContainerVariable.Name is required")
-	}
-	if c.Label == "" {
-		return errors.New("ContainerVariable.Label is required")
-	}
-	if c.Query == "" && len(c.Options) == 0 {
-		return errors.New("ContainerVariable.Query and ContainerVariable.Options cannot both be set")
-	}
-	return nil
-}
-
-// toGrafanaTemplateVar generates the Grafana template variable configuration for this
-// container variable.
-func (c *ContainerVariable) toGrafanaTemplateVar() sdk.TemplateVar {
+// SelectorFromOptionsVariable generates a Grafana template variable
+// with pre-defined values from the given options slice.
+//
+// The variable can be used for filtering purposes in dashboards.
+func SelectorFromOptionsVariable(args SelectorFromOptionsArgs) sdk.TemplateVar {
 	variable := sdk.TemplateVar{
-		Name:  c.Name,
-		Label: c.Label,
-		Multi: c.Multi,
-
+		Type:       "custom",
 		Datasource: StringPtr("Prometheus"),
-		IncludeAll: true,
 
-		AllValue: ".*",
-		// Apply the AllValue to a template variable by default
-		Current: sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"},
-	}
+		Name:  args.Name,
+		Label: args.Label,
+		Multi: args.Multi,
+		Query: strings.Join(args.Options, ","),
 
-	switch {
-	case c.Query != "":
-		variable.Type = "query"
-		variable.Query = c.Query
-		variable.Refresh = sdk.BoolInt{
+		Sort: 3,
+		Refresh: sdk.BoolInt{
 			Flag:  true,
 			Value: Int64Ptr(2), // Refresh on time range change
-		}
-		variable.Sort = 3
+		},
+	}
 
-		// Rely on Grafana to create a union of only the values
-		// generated by the specified query. Otherwise, the '.*'
-		// wildcard can pull in unintended metrics.
-		//
-		// See https://grafana.com/docs/grafana/latest/variables/formatting-multi-value-variables/#multi-value-variables-with-a-prometheus-or-influxdb-data-source
-		// for more information.
-		variable.AllValue = ""
+	for _, o := range args.Options {
+		variable.Options = append(variable.Options, sdk.Option{Text: o, Value: o})
+	}
 
-	case len(c.Options) > 0:
-		variable.Type = "custom"
-		variable.Query = strings.Join(c.Options, ",")
-		// Add the AllValue as a default
-		variable.Options = []sdk.Option{{Text: "all", Value: "$__all", Selected: true}}
-		for _, option := range c.Options {
-			variable.Options = append(variable.Options, sdk.Option{Text: option, Value: option})
-		}
+	if args.Multi {
+		variable.Multi = args.Multi
+		variable.IncludeAll = true
+		variable.Current = sdk.Current{Text: &sdk.StringSliceString{Value: []string{"all"}, Valid: true}, Value: "$__all"}
+		variable.Options = append([]sdk.Option{{Text: "all", Value: "$__all", Selected: true}}, variable.Options...)
 	}
 
 	return variable
+}
+
+// SelectorFromOptionsArgs is the set of options used to generate a SelectorFromOptionsVariable.
+type SelectorFromOptionsArgs struct {
+	// Name is the name of the variable to substitute the value for, e.g. "alert_level"
+	// to replace "$alert_level" in queries
+	Name string
+	// Label is a human-readable name for the variable, e.g. "Alert level"
+	Label string
+	// Options are the pre-defined possible values for this variable.
+	Options []string
+	// Multi indicates whether to allow multiple selections for this variable filter
+	Multi bool
 }
 
 // Group describes a group of observable information about a container.
@@ -457,6 +469,18 @@ func (r Row) validate() error {
 			return errors.Errorf("Observable %d %q: %v", i, o.Name, err)
 		}
 	}
+	return nil
+}
+
+func validateTemplateVariable(v sdk.TemplateVar) error {
+	if v.Name == "" {
+		return errors.New("name must be non-empty")
+	}
+
+	if v.Label == "" {
+		return errors.New("label must be non-empty")
+	}
+
 	return nil
 }
 
