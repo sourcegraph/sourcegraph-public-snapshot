@@ -43,8 +43,8 @@ func Init(
 		return nil
 	}
 
-	appConfig := conf.SiteConfig().Dotcom.GithubAppCloud
-	if appConfig.AppID == "" {
+	dotcomConfig := conf.SiteConfig().Dotcom
+	if dotcomConfig == nil || dotcomConfig.GithubAppCloud == nil || dotcomConfig.GithubAppCloud.AppID == "" {
 		enterpriseServices.NewGitHubAppCloudSetupHandler = func() http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotFound)
@@ -54,12 +54,12 @@ func Init(
 		return nil
 	}
 
-	privateKey, err := base64.StdEncoding.DecodeString(appConfig.PrivateKey)
+	privateKey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
 	if err != nil {
 		return errors.Wrap(err, "decode private key")
 	}
 
-	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appConfig.AppID, privateKey)
+	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(dotcomConfig.GithubAppCloud.AppID, privateKey)
 	if err != nil {
 		return errors.Wrap(err, "new authenticator with GitHub App")
 	}
