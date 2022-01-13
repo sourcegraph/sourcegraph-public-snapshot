@@ -2,10 +2,15 @@ package store
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -146,6 +151,102 @@ func TestIngoreSizeMax(t *testing.T) {
 			t.Errorf("case %s got %v want %v", test.name, got, want)
 		}
 	}
+}
+
+func TestSymlink(t *testing.T) {
+	dir := t.TempDir()
+	if err := createSymlinkRepo(dir); err != nil {
+		t.Fatal(err)
+	}
+	tarReader, err := tarArchive(filepath.Join(dir, "repo"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	targetZip := filepath.Join(dir, "archive.zip")
+	f, err := os.Create(targetZip)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zw := zip.NewWriter(f)
+
+	if err := copySearchable(tarReader, zw, []string{}, func(hdr *tar.Header) bool {
+		return false
+	}); err != nil {
+		t.Fatal(err)
+	}
+	zw.Close()
+
+	zr, err := zip.OpenReader(targetZip)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer zr.Close()
+
+	cmpContent := func(f *zip.File, want string) {
+		link, err := f.Open()
+		if err != nil {
+			t.Fatal(err)
+		}
+		b := bytes.Buffer{}
+		io.Copy(&b, link)
+		if got := strings.TrimRight(b.String(), "\n"); got != want {
+			t.Fatalf("wanted \"%s\", got \"%s\"\n", want, got)
+		}
+	}
+
+	for _, f := range zr.File {
+		switch f.Name {
+		case "asymlink":
+			if f.Mode() != os.ModeSymlink {
+				t.Fatalf("wanted %d, got %d", os.ModeSymlink, f.Mode())
+			}
+			cmpContent(f, "afile")
+		case "afile":
+			cmpContent(f, "acontent")
+		default:
+			t.Fatal("unreachable")
+		}
+	}
+}
+
+func createSymlinkRepo(dir string) error {
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+	script := `mkdir repo
+cd repo
+git init
+git config user.email "you@example.com"
+git config user.name "Your Name"
+echo acontent > afile
+ln -s afile asymlink
+git add .
+git commit -am amsg
+`
+	cmd := exec.Command("/bin/sh", "-euxc", script)
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("execution error: %v, output %s", err, out)
+	}
+	return nil
+}
+
+func tarArchive(dir string) (*tar.Reader, error) {
+	args := []string{
+		"archive",
+		"--worktree-attributes",
+		"--format=tar",
+		"master",
+		"--",
+	}
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	b := bytes.Buffer{}
+	cmd.Stdout = &b
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+	return tar.NewReader(&b), nil
 }
 
 func tmpStore(t *testing.T) (*Store, func()) {
