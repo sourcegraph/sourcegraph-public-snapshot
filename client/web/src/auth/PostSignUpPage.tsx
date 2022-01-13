@@ -4,7 +4,6 @@ import { useLocation, useHistory } from 'react-router'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
@@ -123,14 +122,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
 
     return (
         <>
-            <LinkOrSpan to={getReturnTo(location)} className={styles.logoLink}>
-                <BrandLogo
-                    className={classNames('ml-3 mt-3', styles.logo)}
-                    isLightTheme={true}
-                    variant="symbol"
-                    onClick={event => finishWelcomeFlow(event, { eventName: 'BrandLogo_Clicked' })}
-                />
-            </LinkOrSpan>
+            <BrandLogo className={classNames('ml-3 mt-3', styles.logo)} isLightTheme={true} variant="symbol" />
 
             <div className={classNames(signInSignUpCommonStyles.signinSignupPage, styles.postSignupPage)}>
                 <PageTitle title="Welcome" />
