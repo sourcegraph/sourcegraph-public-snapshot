@@ -146,7 +146,7 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
 
     const inviteURL = `${window.context.externalURL}?invitedBy=${user.username}`
     return (
-        <div className='m5-5 d-flex'>
+        <div className="m5-5 d-flex">
             <div className={classNames(className, 'mx-2')}>
                 <div className={styles.titleDescription}>
                     <h3>Introduce your friends to Sourcegraph</h3>
@@ -160,11 +160,7 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
                             <h4 className="m-0">Invite by sending a link</h4>
                         </div>
                     </header>
-                    <CopyableText
-                        className="mb-3 ml-3 mr-3 flex-1"
-                        text={inviteURL}
-                        size={inviteURL.length}
-                    />
+                    <CopyableText className="mb-3 ml-3 mr-3 flex-1" text={inviteURL} size={inviteURL.length} />
                 </div>
             </div>
             <div className={classNames(className, 'mx-2')}>
@@ -234,8 +230,8 @@ export const StartSearching: React.FunctionComponent<StartSearching> = ({
                         <Link to={PageRoutes.Search} onClick={trackBannerClick}>
                             continue to Sourcegraph now
                         </Link>{' '}
-                        while cloning continues in the background. Note that you can only search repos that have finished
-                        cloning. Check status at any time in{' '}
+                        while cloning continues in the background. Note that you can only search repos that have
+                        finished cloning. Check status at any time in{' '}
                         <Link to="user/settings/repositories" onClick={trackBannerClick}>
                             Settings → Repositories
                         </Link>

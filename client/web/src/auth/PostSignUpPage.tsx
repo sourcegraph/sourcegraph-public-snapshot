@@ -138,7 +138,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                     lessPadding={false}
                     className="text-left"
                     body={
-                        <div className='pb-1 d-flex flex-column align-items-center w-100'>
+                        <div className="pb-1 d-flex flex-column align-items-center w-100">
                             <div className={styles.container}>
                                 {hasErrors && (
                                     <div className="alert alert-danger mb-4" role="alert">
@@ -151,7 +151,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                     Three quick steps to add your repositories and get searching with Sourcegraph
                                 </p>
                             </div>
-                            <div className='mt-4 pb-3 d-flex flex-column align-items-center'>
+                            <div className="mt-4 pb-3 d-flex flex-column align-items-center">
                                 <Steps initialStep={1}>
                                     <StepList numeric={true} className={styles.container}>
                                         <Step borderColor="purple">Connect with code hosts</Step>
@@ -172,7 +172,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                                     context={context}
                                                     refetch={refetchExternalServices}
                                                 />
-                                        </div>
+                                            </div>
                                         </StepPanel>
                                         <StepPanel>
                                             <div className={classNames('mt-5', styles.container)}>
