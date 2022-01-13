@@ -339,6 +339,7 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 func backendIntegrationTests(candidateTag string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":chains: Backend integration tests",
+			bk.Agent("queue", "baremetal"),
 			bk.DependsOn(candidateImageStepKeys(images.DeploySourcegraphDockerImages)...),
 			bk.Env("VERSION", candidateTag),
 			bk.Env("DOCKER_IMAGES", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
@@ -422,6 +423,7 @@ func triggerUpdaterPipeline(pipeline *bk.Pipeline) {
 func codeIntelQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::brain: Code Intel QA",
+			bk.Agent("queue", "baremetal"),
 			bk.DependsOn(candidateImageStepKeys(images.DeploySourcegraphDockerImages)...),
 			bk.Env("VERSION", candidateTag),
 			bk.Env("DOCKER_IMAGES", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
