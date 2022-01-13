@@ -6,7 +6,7 @@ import { Observable } from 'rxjs'
 import { startWith, switchMap, tap } from 'rxjs/operators'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

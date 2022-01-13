@@ -4,9 +4,9 @@ import * as sourcegraph from 'sourcegraph'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { ErrorLike } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
+import { GraphQLResult } from '@sourcegraph/http-client'
 
 import { ConfiguredExtension } from '../extensions/extension'
-import { GraphQLResult } from '../graphql/graphql'
 import { SettingsCascade } from '../settings/settings'
 import { DeepReplace } from '../util/types'
 

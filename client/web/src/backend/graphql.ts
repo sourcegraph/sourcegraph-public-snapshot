@@ -1,8 +1,8 @@
 import { memoize } from 'lodash'
 import { Observable } from 'rxjs'
 
-import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
 const getHeaders = (): { [header: string]: string } => ({
     ...window?.context?.xhrHeaders,

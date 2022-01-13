@@ -15,6 +15,7 @@
     { "path": "../branded" },
     { "path": "../../schema" },
     { "path": "../storybook" },
+    { "path": "../http-client" },
     { "path": "../codeintellify" },
     { "path": "../common" },
   ],
