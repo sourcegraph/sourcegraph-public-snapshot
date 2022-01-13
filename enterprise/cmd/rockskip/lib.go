@@ -267,9 +267,6 @@ func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, givenCommit string) erro
 		tipCommit = entry.Commit
 		tipHeight += 1
 
-		if tipCommit == hops[r] {
-			fmt.Println(tipCommit, r, hops, tipHeight)
-		}
 		TASKLOG.Start("InsertCommit")
 		InsertCommit(db, tipCommit, tipHeight, hops[r])
 		TASKLOG.Start("idle")
