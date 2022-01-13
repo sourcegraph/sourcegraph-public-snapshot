@@ -299,8 +299,8 @@
       "minimum": 0,
       "default": 0
     },
-    "codeIntelligence.maxReferences": {
-      "description": "Maximum number of references shown in the references panel.",
+    "codeIntelligence.maxPanelResults": {
+      "description": "Maximum number of references/definitions (or other code intelligence results provided by extensions) shown in the panel. If not set a default value will be used to ensure best performance.",
       "type": "integer"
     },
     "search.contextLines": {

@@ -102,7 +102,7 @@ export function useBlobPanelViews({
                         selector: null,
                         priority,
 
-                        maxLocationResults: id === 'references' ? maxReferences : undefined,
+                        maxLocationResults: id === 'references' || id === 'def' ? maxReferences : undefined,
                         // This disable directive is necessary because TypeScript is not yet smart
                         // enough to know that (typeof params & typeof extraParams) is P.
                         //
@@ -205,7 +205,7 @@ export function useBlobPanelViews({
 
 function maxReferencesFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): number | undefined {
     if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
-        return settingsCascade.final['codeIntelligence.maxReferences'] as number
+        return settingsCascade.final['codeIntelligence.maxPanelResults'] as number
     }
     return undefined
 }
