@@ -11,7 +11,7 @@ import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { RepositoryFields } from '../../graphql-operations'
@@ -104,9 +104,9 @@ export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
                 {blameHunks !== LOADING && !isErrorLike(blameHunks) && blameHunks.length > 0 && (
                     <span className="float-right text-muted">
                         by <PersonLink person={blameHunks[0].author.person} />{' '}
-                        <RouterLink to={blameHunks[0].commit.url}>
+                        <Link to={blameHunks[0].commit.url}>
                             <Timestamp date={blameHunks[0].author.date} />
-                        </RouterLink>
+                        </Link>
                     </span>
                 )}
             </div>

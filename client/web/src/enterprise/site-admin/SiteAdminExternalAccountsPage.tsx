@@ -1,12 +1,13 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -59,14 +60,13 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
                 <PageTitle title="External accounts" />
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">External user accounts</h2>
-                    <RouterLink to="/site-admin/auth/providers" className="btn btn-secondary">
+                    <Button to="/site-admin/auth/providers" variant="secondary" as={Link}>
                         View auth providers
-                    </RouterLink>
+                    </Button>
                 </div>
                 <p>
-                    An external account (on an{' '}
-                    <RouterLink to="/site-admin/auth/providers">authentication provider</RouterLink>) is linked to a
-                    Sourcegraph user when it's used to sign into Sourcegraph.
+                    An external account (on an <Link to="/site-admin/auth/providers">authentication provider</Link>) is
+                    linked to a Sourcegraph user when it's used to sign into Sourcegraph.
                 </p>
                 <FilteredConnection<ExternalAccountFields, Omit<ExternalAccountNodeProps, 'node'>>
                     className="list-group list-group-flush mt-3"

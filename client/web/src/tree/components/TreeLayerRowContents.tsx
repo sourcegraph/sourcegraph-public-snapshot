@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React, { HTMLAttributes } from 'react'
 
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 import type { LinkProps } from '@sourcegraph/wildcard/src/components/Link'
 
 import styles from './TreeLayerRowContents.module.scss'
@@ -31,7 +31,7 @@ export const TreeLayerRowContentsLink: React.FunctionComponent<TreeLayerRowConte
     isNew,
     ...rest
 }) => (
-    <RouterLink className={classNames(styles.treeRowContents, className, isNew && styles.isNew)} {...rest}>
+    <Link className={classNames(styles.treeRowContents, className, isNew && styles.isNew)} {...rest}>
         {children}
-    </RouterLink>
+    </Link>
 )

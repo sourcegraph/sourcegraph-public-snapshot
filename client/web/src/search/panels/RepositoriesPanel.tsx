@@ -6,7 +6,7 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -100,9 +100,9 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
             {repoFilterValues?.map((repoFilterValue, index) => (
                 <dd key={`${repoFilterValue}-${index}`} className="text-monospace text-break">
                     <small>
-                        <RouterLink to={`/search?q=repo:${repoFilterValue}`} onClick={logRepoClicked}>
+                        <Link to={`/search?q=repo:${repoFilterValue}`} onClick={logRepoClicked}>
                             <SyntaxHighlightedSearchQuery query={`repo:${repoFilterValue}`} />
-                        </RouterLink>
+                        </Link>
                     </small>
                 </dd>
             ))}

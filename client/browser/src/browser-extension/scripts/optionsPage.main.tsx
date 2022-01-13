@@ -11,6 +11,7 @@ import { asError } from '@sourcegraph/common'
 import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
 
 import { fetchSite } from '../../shared/backend/server'
 import { isExtension } from '../../shared/context'
@@ -50,6 +51,8 @@ const IS_EXTENSION = true
  * A list of protocols where we should *not* show the permissions notification.
  */
 const PERMISSIONS_PROTOCOL_BLOCKLIST = new Set(['chrome:', 'about:', 'safari-web-extension:'])
+
+setLinkComponent(AnchorLink)
 
 const isOptionFlagKey = (key: string): key is OptionFlagKey =>
     !!optionFlagDefinitions.find(definition => definition.key === key)

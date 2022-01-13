@@ -509,6 +509,9 @@ func (e *externalServiceStore) validateGitHubConnection(ctx context.Context, id 
 		err = multierror.Append(err, validate(c))
 	}
 
+	if c.Token == "" && c.GithubAppInstallationID == "" {
+		err = multierror.Append(err, errors.New("at least one of token or githubAppInstallationID must be set"))
+	}
 	if c.Repos == nil && c.RepositoryQuery == nil && c.Orgs == nil {
 		err = multierror.Append(err, errors.New("at least one of repositoryQuery, repos or orgs must be set"))
 	}

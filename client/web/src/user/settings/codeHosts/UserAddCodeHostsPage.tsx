@@ -4,7 +4,7 @@ import { asError, ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { keyExistsIn } from '@sourcegraph/shared/src/util/types'
 import { SelfHostedCta } from '@sourcegraph/web/src/components/SelfHostedCta'
-import { Container, PageHeader, LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { queryExternalServices } from '../../../components/externalServices/backend'
@@ -164,13 +164,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 <h4 className="align-middle mb-1">Connected with {services.join(', ')}</h4>
                 <p className="align-middle mb-0">
                     Next,{' '}
-                    <RouterLink
+                    <Link
                         className="font-weight-normal"
                         to={`${routingPrefix}/repositories/manage`}
                         onClick={logAddRepositoriesClicked('banner')}
                     >
                         add repositories
-                    </RouterLink>{' '}
+                    </Link>{' '}
                     to search with Sourcegraph.
                 </p>
             </div>
@@ -242,13 +242,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             <p className="align-middle mb-0">
                 <span className="align-middle">Please try</span>{' '}
                 {owner.type === 'org' ? (
-                    <button
-                        type="button"
-                        className="btn btn-link font-weight-normal shadow-none p-0 border-0"
+                    <Button
+                        className="font-weight-normal shadow-none p-0 border-0"
                         onClick={toggleUpdateModal}
+                        variant="link"
                     >
                         updating the code host connection
-                    </button>
+                    </Button>
                 ) : (
                     <span className="align-middle">reconnecting the code host connection</span>
                 )}{' '}
@@ -290,12 +290,12 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 description={
                     <span className="text-muted">
                         Connect with {owner.name ? owner.name + "'s" : 'your'} code hosts. Then,{' '}
-                        <RouterLink
+                        <Link
                             to={`${routingPrefix}/repositories/manage`}
                             onClick={logAddRepositoriesClicked('description')}
                         >
                             add repositories
-                        </RouterLink>{' '}
+                        </Link>{' '}
                         to search with Sourcegraph.
                     </span>
                 }

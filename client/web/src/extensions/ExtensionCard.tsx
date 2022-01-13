@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import WarningIcon from 'mdi-react/WarningIcon'
 import React, { useState, useCallback, useMemo, memo } from 'react'
+import { Link } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { ConfiguredRegistryExtension, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
@@ -15,7 +16,6 @@ import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/s
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
 import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
-import { RouterLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 
@@ -103,8 +103,8 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
         if (error.message.startsWith('invalid settings') && settingsURL) {
             errorMessage = (
                 <>
-                    Could not enable / disable {name}. Edit your <RouterLink to={settingsURL}>user settings</RouterLink>{' '}
-                    to fix this error. <br />
+                    Could not enable / disable {name}. Edit your <Link to={settingsURL}>user settings</Link> to fix this
+                    error. <br />
                     <br /> ({error.message})
                 </>
             )
@@ -215,7 +215,7 @@ export const ExtensionCard = memo<Props>(function ExtensionCard({
                 <div className={classNames('w-100 flex-grow-1', styles.detailsSection)}>
                     <div className="mb-2">
                         <h3 className="mb-0 mr-1 text-truncate flex-1">
-                            <RouterLink to={`/extensions/${extension.id}`}>{name}</RouterLink>
+                            <Link to={`/extensions/${extension.id}`}>{name}</Link>
                         </h3>
                         <span>
                             by {publisher}

@@ -1,7 +1,6 @@
 import classNames from 'classnames'
 import * as React from 'react'
-
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from 'react-router-dom'
 
 import styles from './HeroPage.module.scss'
 
@@ -30,9 +29,9 @@ export const HeroPage: React.FunctionComponent<HeroPageProps> = props => (
         {props.icon && (
             <div className={classNames(styles.icon, props.iconClassName)}>
                 {props.iconLinkTo ? (
-                    <RouterLink to={props.iconLinkTo}>
+                    <Link to={props.iconLinkTo}>
                         <props.icon />
-                    </RouterLink>
+                    </Link>
                 ) : (
                     <props.icon />
                 )}

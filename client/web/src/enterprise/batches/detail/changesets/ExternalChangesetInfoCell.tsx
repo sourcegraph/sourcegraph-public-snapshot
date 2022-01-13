@@ -1,9 +1,10 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { RouterLink, Badge } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, ChangesetState } from '../../../../graphql-operations'
+import { BranchMerge } from '../../Branch'
 
 import { ChangesetLabel } from './ChangesetLabel'
 import { ChangesetLastSynced } from './ChangesetLastSynced'
@@ -48,15 +49,15 @@ export const ExternalChangesetInfoCell: React.FunctionComponent<ExternalChangese
             </div>
             <div>
                 <span className="mr-2 d-block">
-                    <RouterLink to={node.repository.url} target="_blank" rel="noopener noreferrer">
+                    <Link to={node.repository.url} target="_blank" rel="noopener noreferrer">
                         {node.repository.name}
-                    </RouterLink>{' '}
+                    </Link>{' '}
                     {hasHeadReference(node) && (
-                        <div className="d-block d-sm-inline-block">
-                            <Badge variant="secondary" className="text-monospace">
-                                {headReference(node)}
-                            </Badge>
-                        </div>
+                        <BranchMerge
+                            baseRef={node.currentSpec.description.baseRef}
+                            forkNamespace={node.forkNamespace}
+                            headRef={node.currentSpec.description.headRef}
+                        />
                     )}
                 </span>
                 {![
@@ -79,13 +80,6 @@ function isImporting(node: ExternalChangesetFields): boolean {
 
 function importingFailed(node: ExternalChangesetFields): boolean {
     return node.state === ChangesetState.FAILED && !hasHeadReference(node)
-}
-
-function headReference(node: ExternalChangesetFields): string | undefined {
-    if (hasHeadReference(node)) {
-        return node.currentSpec.description.headRef
-    }
-    return undefined
 }
 
 function hasHeadReference(

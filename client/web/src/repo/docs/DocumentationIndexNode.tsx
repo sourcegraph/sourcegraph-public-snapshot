@@ -5,9 +5,10 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CircleMediumIcon from 'mdi-react/CircleMediumIcon'
 import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
@@ -169,10 +170,9 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
                         />
                     )}
                     {styleAsExpandable && (
-                        <button
-                            type="button"
+                        <Button
                             className={classNames(
-                                'd-flex flex-shrink-0 mr-1 btn btn-icon',
+                                'd-flex flex-shrink-0 mr-1 btn-icon',
                                 styles.documentationIndexNodeExpandButton
                             )}
                             aria-label={expanded ? 'Collapse section' : 'Expand section'}
@@ -184,12 +184,12 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
                                 <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                             )}
                             {node.detail.value === '' && <strong id={'index-' + hash}>{node.label.value}</strong>}
-                        </button>
+                        </Button>
                     )}
                     {node.detail.value !== '' && (
-                        <RouterLink id={'index-' + hash} to={thisPage} onClick={scrollToFast} className="pr-3">
+                        <Link id={'index-' + hash} to={thisPage} onClick={scrollToFast} className="pr-3">
                             {node.label.value}
-                        </RouterLink>
+                        </Link>
                     )}
                 </span>
                 {expanded && (

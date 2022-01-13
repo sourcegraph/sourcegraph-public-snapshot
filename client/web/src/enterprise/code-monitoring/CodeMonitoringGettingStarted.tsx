@@ -3,7 +3,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link, Button } from '@sourcegraph/wildcard'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
@@ -86,13 +86,10 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                         <li>Identify use of deprecated libraries</li>
                     </ul>
                     {isSignedIn ? (
-                        <RouterLink
-                            to="/code-monitoring/new"
-                            className={classNames('btn btn-primary', styles.createButton)}
-                        >
+                        <Button to="/code-monitoring/new" className={styles.createButton} variant="primary" as={Link}>
                             <PlusIcon className="icon-inline mr-2" />
                             Create a code monitor
-                        </RouterLink>
+                        </Button>
                     ) : (
                         <CodeMonitorSignUpLink
                             className={styles.createButton}
@@ -112,7 +109,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                                 <div className="card-body p-3 d-flex flex-column">
                                     <h3>{monitor.title}</h3>
                                     <p className="text-muted flex-grow-1">{monitor.description}</p>
-                                    <RouterLink to={createCodeMonitorUrl(monitor)}>Create copy of monitor</RouterLink>
+                                    <Link to={createCodeMonitorUrl(monitor)}>Create copy of monitor</Link>
                                 </div>
                             </div>
                         </div>

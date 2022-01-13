@@ -5,7 +5,7 @@ import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useEffect, useState } from 'react'
 import { Redirect } from 'react-router-dom'
 
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
@@ -73,9 +73,11 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                         // here because this list will not be updated during this component's lifetime.
                         /* eslint-disable react/no-array-index-key */
                         <div className="mb-2" key={index}>
-                            <a
+                            <Button
                                 href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
-                                className="btn btn-secondary btn-block"
+                                className="btn-block"
+                                variant="secondary"
+                                as="a"
                             >
                                 {provider.displayName === 'GitHub' && (
                                     <>
@@ -83,13 +85,13 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                                     </>
                                 )}
                                 Continue with {provider.displayName}
-                            </a>
+                            </Button>
                         </div>
                     ))}
                 </div>
                 {props.context.allowSignup ? (
                     <p>
-                        New to Sourcegraph? <RouterLink to={`/sign-up${location.search}`}>Sign up</RouterLink>
+                        New to Sourcegraph? <Link to={`/sign-up${location.search}`}>Sign up</Link>
                     </p>
                 ) : (
                     <p className="text-muted">Need an account? Contact your site admin</p>

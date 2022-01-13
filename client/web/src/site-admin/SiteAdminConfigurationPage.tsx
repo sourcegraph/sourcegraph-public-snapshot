@@ -4,13 +4,14 @@ import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { ErrorAlert } from '../components/alerts'
@@ -357,9 +358,9 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 <div key="remote-dirty" className={classNames('alert alert-warning', styles.alert, styles.alertFlex)}>
                     Server restart is required for the configuration to take effect.
                     {(this.state.site === undefined || this.state.site?.canReloadSite) && (
-                        <button type="button" className="btn btn-primary btn-sm" onClick={this.reloadSite}>
+                        <Button onClick={this.reloadSite} variant="primary" size="sm">
                             Restart server
-                        </button>
+                        </Button>
                     )}
                 </div>
             )
@@ -431,7 +432,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 <h2>Site configuration</h2>
                 <p>
                     View and edit the Sourcegraph site configuration. See{' '}
-                    <RouterLink to="/help/admin/config/site_config">documentation</RouterLink> for more information.
+                    <Link to="/help/admin/config/site_config">documentation</Link> for more information.
                 </p>
                 <div>{alerts}</div>
                 {this.state.loading && <LoadingSpinner />}
@@ -453,8 +454,8 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         <p className="form-text text-muted">
                             <small>
                                 Use Ctrl+Space for completion, and hover over JSON properties for documentation. For
-                                more information, see the{' '}
-                                <RouterLink to="/help/admin/config/site_config">documentation</RouterLink>.
+                                more information, see the <Link to="/help/admin/config/site_config">documentation</Link>
+                                .
                             </small>
                         </p>
                     </div>

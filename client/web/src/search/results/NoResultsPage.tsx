@@ -7,7 +7,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { SearchContextProps } from '..'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
@@ -109,12 +109,12 @@ const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
     if (runnable) {
         const builtURLQuery = buildSearchURLQuery(query, patternType, false, 'global')
         return (
-            <RouterLink onClick={onRun} to={{ pathname: '/search', search: builtURLQuery }}>
+            <Link onClick={onRun} to={{ pathname: '/search', search: builtURLQuery }}>
                 <div className={styles.searchInputExample}>
                     {example}
                     <span className="ml-2 text-nowrap">Run Search</span>
                 </div>
-            </RouterLink>
+            </Link>
         )
     }
     return <div className={styles.searchInputExample}>{example}</div>
@@ -139,14 +139,9 @@ const Container: React.FunctionComponent<ContainerProps> = ({
         <h3 className={styles.title}>
             <span className="flex-1">{title}</span>
             {sectionID && (
-                <button
-                    type="button"
-                    className="btn btn-icon"
-                    aria-label="Hide Section"
-                    onClick={() => onClose?.(sectionID)}
-                >
+                <Button className="btn-icon" aria-label="Hide Section" onClick={() => onClose?.(sectionID)}>
                     <CloseIcon className="icon-inline" />
-                </button>
+                </Button>
             )}
         </h3>
         <div className={styles.content}>{children}</div>
@@ -306,12 +301,12 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                             />
                             <p>
                                 <small>
-                                    <RouterLink
+                                    <Link
                                         target="blank"
                                         to="https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet#searching-an-organizations-repository"
                                     >
                                         Learn more <ExternalLinkIcon className="icon-inline" />
-                                    </RouterLink>
+                                    </Link>
                                 </small>
                             </p>
 
@@ -344,37 +339,37 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                             Sourcegraph.
                         </p>
                         <p>
-                            <RouterLink
+                            <Link
                                 onClick={() => telemetryService.log('NoResultsMore', { link: 'Learn site' })}
                                 target="blank"
                                 to="https://learn.sourcegraph.com/"
                             >
                                 Sourcegraph Learn <ExternalLinkIcon className="icon-inline" />
-                            </RouterLink>
+                            </Link>
                             <br />
-                            <RouterLink
+                            <Link
                                 onClick={() => telemetryService.log('NoResultsMore', { link: 'Cheat sheet' })}
                                 target="blank"
                                 to="https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet"
                             >
                                 Sourcegraph cheat sheet <ExternalLinkIcon className="icon-inline" />
-                            </RouterLink>
+                            </Link>
                         </p>
                     </Container>
 
                     {hiddenSectionIDs && hiddenSectionIDs.length > 0 && (
                         <p>
                             Some help panels are hidden.{' '}
-                            <button
-                                type="button"
-                                className="btn btn-link p-0 border-0 align-baseline"
+                            <Button
+                                className="p-0 border-0 align-baseline"
                                 onClick={() => {
                                     telemetryService.log('NoResultsPanel', { action: 'showAll' })
                                     setHiddenSectionIds([])
                                 }}
+                                variant="link"
                             >
                                 Show all panels.
-                            </button>
+                            </Button>
                         </p>
                     )}
                 </div>

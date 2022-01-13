@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { RouterLink, Badge } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { DiffStat } from '../../../components/diff/DiffStat'
 import {
@@ -14,6 +14,7 @@ import {
     SummaryContainer,
 } from '../../../components/FilteredConnection/ui'
 import { BatchSpecWorkspaceListFields, Scalars } from '../../../graphql-operations'
+import { Branch } from '../Branch'
 
 import { useWorkspacesListConnection } from './backend'
 import styles from './WorkspacesList.module.scss'
@@ -62,7 +63,7 @@ interface WorkspaceNodeProps {
 
 const WorkspaceNode: React.FunctionComponent<WorkspaceNodeProps> = ({ node, selectedNode }) => (
     <li className={classNames('list-group-item', node.id === selectedNode && styles.workspaceSelected)}>
-        <RouterLink to={`?workspace=${node.id}`}>
+        <Link to={`?workspace=${node.id}`}>
             <div className={classNames(styles.workspaceRepo, 'd-flex justify-content-between mb-1')}>
                 <span>
                     <WorkspaceStateIcon
@@ -74,7 +75,7 @@ const WorkspaceNode: React.FunctionComponent<WorkspaceNodeProps> = ({ node, sele
                 <strong className={classNames(styles.workspaceName, 'flex-grow-1')}>{node.repository.name}</strong>
                 {node.diffStat && <DiffStat {...node.diffStat} expandedCounts={true} />}
             </div>
-            <Badge variant="secondary">{node.branch.abbrevName}</Badge>
-        </RouterLink>
+            <Branch name={node.branch.abbrevName} />
+        </Link>
     </li>
 )

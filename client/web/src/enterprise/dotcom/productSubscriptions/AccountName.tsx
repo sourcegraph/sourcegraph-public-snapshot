@@ -1,7 +1,7 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { RouterLink } from '@sourcegraph/wildcard'
 
 import { userURL } from '../../../user'
 
@@ -14,7 +14,7 @@ export const AccountName: React.FunctionComponent<{
 }> = ({ account, link }) =>
     account ? (
         <>
-            <RouterLink to={link || userURL(account.username)}>{account.username}</RouterLink>{' '}
+            <Link to={link || userURL(account.username)}>{account.username}</Link>{' '}
             {account.displayName && `(${account.displayName})`}
         </>
     ) : (

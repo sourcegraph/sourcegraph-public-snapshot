@@ -3,7 +3,7 @@ import * as H from 'history'
 import React from 'react'
 
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { RouterLink, Badge } from '@sourcegraph/wildcard'
+import { Badge, Link } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { SearchContextFields } from '../../graphql-operations'
@@ -22,9 +22,9 @@ export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> 
     <div className={classNames('py-3 d-flex align-items-center', styles.searchContextNode)}>
         <div className={classNames('flex-grow-1', styles.left)}>
             <div>
-                <RouterLink to={`/contexts/${node.spec}`}>
+                <Link to={`/contexts/${node.spec}`}>
                     <strong>{node.spec}</strong>
-                </RouterLink>
+                </Link>
                 {!node.public && (
                     <Badge variant="secondary" pill={true} className="ml-1" as="div">
                         Private

@@ -7,6 +7,8 @@ import (
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/dev/internal/team"
 )
 
 type mockBranchLocker struct {
@@ -26,7 +28,8 @@ func (m *mockBranchLocker) Lock(context.Context, []CommitInfo, string) (func() e
 func TestCheckBuilds(t *testing.T) {
 	// Simple end-to-end tests of the buildchecker entrypoint with mostly fixed parameters
 	ctx := context.Background()
-	slackUser := NewMockSlackUserResolver("commit", nil)
+	slackUser := team.NewMockTeammateResolver()
+	slackUser.ResolveByCommitAuthorFunc.SetDefaultReturn(&team.Teammate{SlackID: "bobheadxi"}, nil)
 	testOptions := CheckOptions{
 		FailuresThreshold: 2,
 		BuildTimeout:      time.Hour,

@@ -1,8 +1,6 @@
 import classNames from 'classnames'
 import React from 'react'
-
-import { RouterLink } from '@sourcegraph/wildcard'
-import type { LinkProps } from '@sourcegraph/wildcard/src/components/Link'
+import { Link, LinkProps } from 'react-router-dom'
 
 import { GitReferenceNode, GitReferenceNodeProps } from '../../../GitReference'
 
@@ -18,7 +16,7 @@ export const ConnectionPopoverNodeLink: React.FunctionComponent<ConnectionPopove
     active,
     ...rest
 }) => (
-    <RouterLink
+    <Link
         className={classNames(
             styles.connectionPopoverNodeLink,
             active && styles.connectionPopoverNodeLinkActive,
@@ -27,7 +25,7 @@ export const ConnectionPopoverNodeLink: React.FunctionComponent<ConnectionPopove
         {...rest}
     >
         {children}
-    </RouterLink>
+    </Link>
 )
 
 type ConnectionPopoverGitReferenceNodeProps = GitReferenceNodeProps & {

@@ -5,7 +5,7 @@ import React, { useCallback, useContext, useState } from 'react'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { BatchSpecFields } from '../../../graphql-operations'
@@ -86,7 +86,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<CreateUpdateB
                     {batchChange ? (
                         <>
                             This operation will update the existing batch change{' '}
-                            <RouterLink to={batchChange.url}>{batchChange.name}</RouterLink>.
+                            <Link to={batchChange.url}>{batchChange.name}</Link>.
                         </>
                     ) : (
                         'Review the proposed changesets below.'

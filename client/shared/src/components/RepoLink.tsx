@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { displayRepoName, splitPath } from './RepoFileLink'
 
@@ -38,8 +38,8 @@ export const RepoLink: React.FunctionComponent<Props> = ({
         return children
     }
     return (
-        <RouterLink className={className || ''} to={to} onClick={onClick}>
+        <Link className={className || ''} to={to} onClick={onClick}>
             {children}
-        </RouterLink>
+        </Link>
     )
 }

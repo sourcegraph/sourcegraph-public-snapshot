@@ -4,7 +4,7 @@ import React, { FunctionComponent, useEffect } from 'react'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
-import { RouterLink, PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import { CodeIntelConfigurationPageHeader } from '../components/CodeIntelConfigurationPageHeader'
@@ -40,9 +40,9 @@ export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<CodeIn
                         <>
                             Provide explicit index job configuration to customize how this repository is indexed. See
                             the{' '}
-                            <RouterLink to="https://docs.sourcegraph.com/code_intelligence/references/auto_indexing_configuration">
+                            <Link to="https://docs.sourcegraph.com/code_intelligence/references/auto_indexing_configuration">
                                 reference guide
-                            </RouterLink>{' '}
+                            </Link>{' '}
                             for more information.
                         </>
                     }

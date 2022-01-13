@@ -5,14 +5,14 @@ import React, { useMemo, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import styles from './NavDropdown.module.scss'
 import navItemStyles from './NavItem.module.scss'
 
 import { NavItem, NavLink } from '.'
 
-interface NavDropdownItem {
+export interface NavDropdownItem {
     content: React.ReactNode | string
     path: string
 }
@@ -115,16 +115,16 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                     <DropdownMenu modifiers={DROPDOWN_MODIFIERS}>
                         <>
                             {/* This link does not have a role="menuitem" set, because it breaks the keyboard navigation for the dropdown when hidden. */}
-                            <RouterLink
+                            <Link
                                 key={toggleItem.path}
                                 to={toggleItem.path}
                                 className={classNames('dropdown-item', styles.showOnTouchScreen)}
                                 onClick={closeDropdown}
                             >
                                 {mobileHomeItem.content}
-                            </RouterLink>
+                            </Link>
                             {items.map(item => (
-                                <RouterLink
+                                <Link
                                     key={item.path}
                                     to={item.path}
                                     className={classNames('dropdown-item', styles.link)}
@@ -132,7 +132,7 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                                     role="menuitem"
                                 >
                                     {item.content}
-                                </RouterLink>
+                                </Link>
                             ))}
                         </>
                     </DropdownMenu>

@@ -34,7 +34,7 @@ import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservabl
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { encodeURIPathComponent, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader, LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, Link } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
@@ -291,13 +291,14 @@ export const TreePage: React.FunctionComponent<Props> = ({
     ) : (
         <div className="test-tree-page-no-recent-commits">
             <p className="mb-2">No commits in this tree in the past year.</p>
-            <button
-                type="button"
-                className="btn btn-secondary btn-sm test-tree-page-show-all-commits"
+            <Button
+                className="test-tree-page-show-all-commits"
                 onClick={onShowOlderCommitsClicked}
+                variant="secondary"
+                size="sm"
             >
                 Show all commits
-            </button>
+            </Button>
         </div>
     )
 
@@ -312,9 +313,9 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     <p className="mb-2">
                         {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
                     </p>
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={onShowOlderCommitsClicked}>
+                    <Button onClick={onShowOlderCommitsClicked} variant="secondary" size="sm">
                         Show all commits
-                    </button>
+                    </Button>
                 </>
             )}
         </div>
@@ -348,33 +349,40 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                     {repo.description && <p>{repo.description}</p>}
                                     <div className="btn-group">
                                         {enableAPIDocs && (
-                                            <RouterLink
-                                                className="btn btn-outline-secondary"
+                                            <Button
                                                 to={`${treeOrError.url}/-/docs`}
+                                                variant="secondary"
+                                                outline={true}
+                                                as={Link}
                                             >
                                                 <BookOpenBlankVariantIcon className="icon-inline" /> API docs
-                                            </RouterLink>
+                                            </Button>
                                         )}
-                                        <RouterLink
-                                            className="btn btn-outline-secondary"
+                                        <Button
                                             to={`${treeOrError.url}/-/commits`}
+                                            variant="secondary"
+                                            outline={true}
+                                            as={Link}
                                         >
                                             <SourceCommitIcon className="icon-inline" /> Commits
-                                        </RouterLink>
-                                        <RouterLink
-                                            className="btn btn-outline-secondary"
+                                        </Button>
+                                        <Button
                                             to={`/${encodeURIPathComponent(repo.name)}/-/branches`}
+                                            variant="secondary"
+                                            outline={true}
+                                            as={Link}
                                         >
                                             <SourceBranchIcon className="icon-inline" /> Branches
-                                        </RouterLink>
-                                        <RouterLink
-                                            className="btn btn-outline-secondary"
+                                        </Button>
+                                        <Button
                                             to={`/${encodeURIPathComponent(repo.name)}/-/tags`}
+                                            variant="secondary"
+                                            outline={true}
+                                            as={Link}
                                         >
                                             <TagIcon className="icon-inline" /> Tags
-                                        </RouterLink>
-                                        <RouterLink
-                                            className="btn btn-outline-secondary"
+                                        </Button>
+                                        <Button
                                             to={
                                                 revision
                                                     ? `/${encodeURIPathComponent(
@@ -382,31 +390,40 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                       )}/-/compare/...${encodeURIComponent(revision)}`
                                                     : `/${encodeURIPathComponent(repo.name)}/-/compare`
                                             }
+                                            variant="secondary"
+                                            outline={true}
+                                            as={Link}
                                         >
                                             <HistoryIcon className="icon-inline" /> Compare
-                                        </RouterLink>
-                                        <RouterLink
-                                            className="btn btn-outline-secondary"
+                                        </Button>
+                                        <Button
                                             to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
+                                            variant="secondary"
+                                            outline={true}
+                                            as={Link}
                                         >
                                             <AccountIcon className="icon-inline" /> Contributors
-                                        </RouterLink>
+                                        </Button>
                                         {codeIntelligenceEnabled && (
-                                            <RouterLink
-                                                className="btn btn-outline-secondary"
+                                            <Button
                                                 to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
+                                                variant="secondary"
+                                                outline={true}
+                                                as={Link}
                                             >
                                                 <BrainIcon className="icon-inline" /> Code Intelligence
-                                            </RouterLink>
+                                            </Button>
                                         )}
                                         {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
                                         {repo.viewerCanAdminister && (
-                                            <RouterLink
-                                                className="btn btn-outline-secondary"
+                                            <Button
                                                 to={`/${encodeURIPathComponent(repo.name)}/-/settings`}
+                                                variant="secondary"
+                                                outline={true}
+                                                as={Link}
                                             >
                                                 <SettingsIcon className="icon-inline" /> Settings
-                                            </RouterLink>
+                                            </Button>
                                         )}
                                     </div>
                                 </>

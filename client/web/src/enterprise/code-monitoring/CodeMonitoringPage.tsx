@@ -8,7 +8,7 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { RouterLink, PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
+import { PageHeader, LoadingSpinner, Link, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
@@ -95,10 +95,10 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                     userHasCodeMonitors !== 'loading' &&
                     !isErrorLike(userHasCodeMonitors) &&
                     authenticatedUser && (
-                        <RouterLink to="/code-monitoring/new" className="btn btn-primary">
+                        <Button to="/code-monitoring/new" variant="primary" as={Link}>
                             <PlusIcon className="icon-inline" />
                             Create
-                        </RouterLink>
+                        </Button>
                     )
                 }
                 description={

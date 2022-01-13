@@ -4,7 +4,7 @@ import React, { ReactElement, useCallback } from 'react'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { containsLiteralOrPattern } from '@sourcegraph/shared/src/search/query/validate'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { SearchContextProps } from '../..'
 import { buildSearchURLQueryFromQueryState } from '../../../stores'
@@ -40,9 +40,9 @@ const SearchTypeLink: React.FunctionComponent<SearchTypeLinkProps> = ({
     })
 
     return (
-        <RouterLink to={{ pathname: '/search', search: builtURLQuery }} className={styles.sidebarSectionListItem}>
+        <Link to={{ pathname: '/search', search: builtURLQuery }} className={styles.sidebarSectionListItem}>
             {children}
-        </RouterLink>
+        </Link>
     )
 }
 
@@ -56,14 +56,14 @@ interface SearchTypeButtonProps {
  * triggering a search. This allows users to adjust the query.
  */
 const SearchTypeButton: React.FunctionComponent<SearchTypeButtonProps> = ({ children, onClick }) => (
-    <button
-        className={classNames(styles.sidebarSectionListItem, styles.sidebarSectionButtonLink, 'btn btn-link flex-1')}
-        type="button"
+    <Button
+        className={classNames(styles.sidebarSectionListItem, styles.sidebarSectionButtonLink, 'flex-1')}
         value={children}
         onClick={onClick}
+        variant="link"
     >
         {children}
-    </button>
+    </Button>
 )
 
 /**

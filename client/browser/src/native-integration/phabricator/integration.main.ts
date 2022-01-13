@@ -1,5 +1,7 @@
 import '@sourcegraph/shared/src/polyfills'
 
+import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
+
 import { getPhabricatorCSS, getSourcegraphURLFromConduit } from '../../shared/code-hosts/phabricator/backend'
 import { injectCodeIntelligence } from '../../shared/code-hosts/shared/inject'
 import { injectExtensionMarker } from '../../shared/code-hosts/sourcegraph/inject'
@@ -11,6 +13,8 @@ import { metaClickOverride } from './util'
 window.SOURCEGRAPH_PHABRICATOR_EXTENSION = true
 
 const IS_EXTENSION = false
+
+setLinkComponent(AnchorLink)
 
 interface AppendHeadStylesOptions {
     id: string

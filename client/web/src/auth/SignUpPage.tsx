@@ -4,7 +4,7 @@ import { Redirect, useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
@@ -106,7 +106,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
                         {context.sourcegraphDotComMode && <p className="pt-1 pb-2">Start searching public code now</p>}
                         <SignUpForm featureFlags={featureFlags} context={context} onSignUp={handleSignUp} />
                         <p className="mt-3">
-                            Already have an account? <RouterLink to={`/sign-in${location.search}`}>Sign in</RouterLink>
+                            Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>
                         </p>
                     </div>
                 }

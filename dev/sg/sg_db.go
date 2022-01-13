@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 	"github.com/jackc/pgx/v4"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
@@ -200,9 +200,9 @@ func dbResetPGExec(ctx context.Context, args []string) error {
 	}
 
 	options := runner.Options{
-		Up:            true,
-		NumMigrations: 0,
-		SchemaNames:   schemaNames,
+		Up:              true,
+		TargetMigration: 0,
+		SchemaNames:     schemaNames,
 	}
 
 	return connections.RunnerFromDSNs(dsnMap, "sg", storeFactory).Run(ctx, options)

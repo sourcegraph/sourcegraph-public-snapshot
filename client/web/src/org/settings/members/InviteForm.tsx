@@ -9,7 +9,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -123,11 +123,12 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                     />
                     <div className="d-block d-md-inline">
                         {viewerCanAddUserToOrganization && (
-                            <button
+                            <Button
                                 type="submit"
                                 disabled={loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'}
-                                className="btn btn-primary mr-2"
+                                className="mr-2"
                                 data-tooltip="Add immediately without sending invitation (site admins only)"
+                                variant="primary"
                             >
                                 {loading === 'addUserToOrganization' ? (
                                     <LoadingSpinner />
@@ -135,16 +136,13 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                                     <AddIcon className="icon-inline" />
                                 )}{' '}
                                 Add member
-                            </button>
+                            </Button>
                         )}
                         {(emailInvitesEnabled || !viewerCanAddUserToOrganization) && (
-                            <button
+                            <Button
                                 type={viewerCanAddUserToOrganization ? 'button' : 'submit'}
                                 disabled={loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'}
-                                className={classNames(
-                                    'btn',
-                                    viewerCanAddUserToOrganization ? 'btn-secondary' : 'btn-primary'
-                                )}
+                                className={viewerCanAddUserToOrganization ? 'btn-secondary' : 'btn-primary'}
                                 data-tooltip={
                                     emailInvitesEnabled
                                         ? 'Send invitation email with link to join this organization'
@@ -162,7 +160,7 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                                         ? 'Send invitation to join'
                                         : 'Send invitation'
                                     : 'Generate invitation link'}
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </Form>
@@ -170,9 +168,8 @@ export const InviteForm: React.FunctionComponent<Props> = ({
             {authenticatedUser?.siteAdmin && !emailInvitesEnabled && (
                 <DismissibleAlert className="alert-info" partialStorageKey="org-invite-email-config">
                     <p className=" mb-0">
-                        Set <code>email.smtp</code> in{' '}
-                        <RouterLink to="/site-admin/configuration">site configuration</RouterLink> to send email
-                        notifications about invitations.
+                        Set <code>email.smtp</code> in <Link to="/site-admin/configuration">site configuration</Link> to
+                        send email notifications about invitations.
                     </p>
                 </DismissibleAlert>
             )}
@@ -276,8 +273,8 @@ const InvitedNotification: React.FunctionComponent<InvitedNotificationProps> = (
             )}
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
-        <button type="button" className="btn btn-icon" title="Dismiss" onClick={onDismiss}>
+        <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
             <CloseIcon className="icon-inline" />
-        </button>
+        </Button>
     </div>
 )

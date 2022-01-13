@@ -10,6 +10,9 @@ import (
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -157,13 +160,28 @@ func (r *queryResolver) monikerLocations(ctx context.Context, uploads []store.Du
 // commit.
 func (r *queryResolver) adjustLocations(ctx context.Context, locations []lsifstore.Location) ([]AdjustedLocation, error) {
 	adjustedLocations := make([]AdjustedLocation, 0, len(locations))
+
+	checkerEnabled := r.checker != nil && r.checker.Enabled()
+	var a *actor.Actor
+	if checkerEnabled {
+		a = actor.FromContext(ctx)
+	}
 	for _, location := range locations {
 		adjustedLocation, err := r.adjustLocation(ctx, r.uploadCache[location.DumpID], location)
 		if err != nil {
 			return nil, err
 		}
 
-		adjustedLocations = append(adjustedLocations, adjustedLocation)
+		if !checkerEnabled {
+			adjustedLocations = append(adjustedLocations, adjustedLocation)
+		} else {
+			repo := api.RepoName(adjustedLocation.Dump.RepositoryName)
+			if include, err := authz.FilterActorPath(ctx, r.checker, a, repo, adjustedLocation.Path); err != nil {
+				return nil, err
+			} else if include {
+				adjustedLocations = append(adjustedLocations, adjustedLocation)
+			}
+		}
 	}
 
 	return adjustedLocations, nil

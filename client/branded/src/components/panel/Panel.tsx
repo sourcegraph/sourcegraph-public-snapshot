@@ -25,6 +25,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { combineLatestOrDefault } from '@sourcegraph/shared/src/util/rxjs/combineLatestOrDefault'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button } from '@sourcegraph/wildcard'
 
 import { match } from '../../../../shared/src/api/client/types/textDocument'
 import { ExtensionCodeEditor } from '../../../../shared/src/api/extension/api/codeEditor'
@@ -51,6 +52,11 @@ export interface PanelViewWithComponent extends PanelViewData {
      * The location provider whose results to render in the panel view.
      */
     locationProvider?: Observable<MaybeLoadingResult<Location[]>>
+    /**
+     * Maximum number of results to show from locationProvider. If not set,
+     * MAXIMUM_LOCATION_RESULTS will be used.
+     */
+    maxLocationResults?: number
 
     /**
      * The React element to render in the panel view.
@@ -290,16 +296,15 @@ export const Panel = React.memo<Props>(props => {
                             />
                         )}
                     </small>
-                    <button
-                        type="button"
+                    <Button
                         onClick={handlePanelClose}
-                        className={classNames('btn btn-icon ml-2', styles.dismissButton)}
+                        className={classNames('btn-icon ml-2', styles.dismissButton)}
                         title="Close panel"
                         data-tooltip="Close panel"
                         data-placement="left"
                     >
                         <CloseIcon className="icon-inline" />
-                    </button>
+                    </Button>
                 </div>
             </div>
             <TabPanels className={styles.tabs}>

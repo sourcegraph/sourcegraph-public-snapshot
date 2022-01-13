@@ -2,7 +2,7 @@ import Dialog from '@reach/dialog'
 import React, { useState, useCallback } from 'react'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { Form } from '../../../../../branded/src/components/Form'
 import { updateExternalService } from '../../../components/externalServices/backend'
@@ -88,14 +88,14 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                     <div className="form-group mb-4">
                         <div className="alert alert-info" role="alert">
                             Updating the access token may affect which repositories can be synced with Sourcegraph.{' '}
-                            <RouterLink
+                            <Link
                                 to="https://docs.sourcegraph.com/cloud/access_tokens_on_cloud"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="font-weight-normal"
                             >
                                 Learn more
-                            </RouterLink>
+                            </Link>
                             .
                         </div>
                         {didAckMachineUserHint ? (
@@ -121,9 +121,9 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                         )}
                     </div>
                     <div className="d-flex justify-content-end">
-                        <button type="button" className="btn btn-outline-secondary mr-2" onClick={onDidCancel}>
+                        <Button className="mr-2" onClick={onDidCancel} outline={true} variant="secondary">
                             Cancel
-                        </button>
+                        </Button>
 
                         {didAckMachineUserHint ? (
                             <LoaderButton
@@ -135,13 +135,12 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                                 alwaysShowLabel={true}
                             />
                         ) : (
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
+                            <Button
                                 onClick={() => setAckMachineUserHint(previousAckStatus => !previousAckStatus)}
+                                variant="secondary"
                             >
                                 I understand, continue
-                            </button>
+                            </Button>
                         )}
                     </div>
                 </Form>

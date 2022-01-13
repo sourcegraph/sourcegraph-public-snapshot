@@ -20,6 +20,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -1264,6 +1265,22 @@ func TestClient_GetVersion(t *testing.T) {
 	if want := "7.11.2"; have != want {
 		t.Fatalf("wrong version. want=%s, have=%s", want, have)
 	}
+}
+
+func TestClient_CreateFork(t *testing.T) {
+	ctx := context.Background()
+
+	fixture := "CreateFork"
+	cli, save := NewTestClient(t, fixture, *update)
+	defer save()
+
+	have, err := cli.Fork(ctx, "SGDEMO", "go", CreateForkInput{})
+	assert.Nil(t, err)
+	assert.NotNil(t, have)
+	assert.Equal(t, "go", have.Slug)
+	assert.NotEqual(t, "SGDEMO", have.Project.Key)
+
+	checkGolden(t, fixture, have)
 }
 
 func TestMain(m *testing.M) {

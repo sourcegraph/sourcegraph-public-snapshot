@@ -54,14 +54,36 @@ func TestReadDefinitions(t *testing.T) {
 		}
 	})
 
-	t.Run("missing upgrade query", func(t *testing.T) { testReadDefinitionsError(t, "missing-upgrade-query") })
-	t.Run("missing downgrade query", func(t *testing.T) { testReadDefinitionsError(t, "missing-downgrade-query") })
-	t.Run("duplicate upgrade query", func(t *testing.T) { testReadDefinitionsError(t, "duplicate-upgrade-query") })
-	t.Run("duplicate downgrade query", func(t *testing.T) { testReadDefinitionsError(t, "duplicate-downgrade-query") })
-	t.Run("gap in sequence", func(t *testing.T) { testReadDefinitionsError(t, "gap-in-sequence") })
+	t.Run("missing upgrade query", func(t *testing.T) {
+		testReadDefinitionsError(t, "missing-upgrade-query", "not found")
+	})
+
+	t.Run("missing downgrade query", func(t *testing.T) {
+		testReadDefinitionsError(t, "missing-downgrade-query", "not found")
+	})
+
+	t.Run("duplicate upgrade query", func(t *testing.T) {
+		testReadDefinitionsError(t, "duplicate-upgrade-query", "duplicate upgrade query")
+	})
+
+	t.Run("duplicate downgrade query", func(t *testing.T) {
+		testReadDefinitionsError(t, "duplicate-downgrade-query", "duplicate downgrade query")
+	})
+
+	t.Run("gap in sequence", func(t *testing.T) {
+		testReadDefinitionsError(t, "gap-in-sequence", "migration identifiers jump")
+	})
+
+	t.Run("root-with-parent", func(t *testing.T) {
+		testReadDefinitionsError(t, "root-with-parent", "no roots")
+	})
+
+	t.Run("unexpected-parent", func(t *testing.T) {
+		testReadDefinitionsError(t, "unexpected-parent", "cycle")
+	})
 }
 
-func testReadDefinitionsError(t *testing.T, name string) {
+func testReadDefinitionsError(t *testing.T, name, expectedError string) {
 	t.Helper()
 
 	fs, err := fs.Sub(testdata.Content, name)
@@ -69,7 +91,7 @@ func testReadDefinitionsError(t *testing.T, name string) {
 		t.Fatalf("unexpected error fetching schema %q: %s", name, err)
 	}
 
-	if _, err := ReadDefinitions(fs); err == nil {
-		t.Fatalf("expected error")
+	if _, err := ReadDefinitions(fs); err == nil || !strings.Contains(err.Error(), expectedError) {
+		t.Fatalf("unexpected error. want=%q got=%q", expectedError, err)
 	}
 }

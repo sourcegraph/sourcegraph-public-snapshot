@@ -1,7 +1,7 @@
 import { parseISO } from 'date-fns'
 import React from 'react'
 
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 import { Timestamp } from '../../../components/time/Timestamp'
@@ -29,7 +29,7 @@ export const SupersedingBatchSpecAlert: React.FunctionComponent<SupersedingBatch
         >
             <div className="d-flex align-items-center">
                 <div className="flex-grow-1">
-                    A <RouterLink to={applyURL}>modified batch spec</RouterLink> is ready but not applied since{' '}
+                    A <Link to={applyURL}>modified batch spec</Link> is ready but not applied since{' '}
                     <Timestamp date={createdAt} noAbout={true} />.
                 </div>
             </div>

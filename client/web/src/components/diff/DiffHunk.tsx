@@ -2,6 +2,7 @@
 import classNames from 'classnames'
 import * as React from 'react'
 import { useLocation } from 'react-router'
+import { Link } from 'react-router-dom'
 
 import { isDefined } from '@sourcegraph/common'
 import {
@@ -12,7 +13,6 @@ import {
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { property } from '@sourcegraph/shared/src/util/types'
-import { RouterLink } from '@sourcegraph/wildcard'
 
 import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
 
@@ -95,9 +95,9 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                                         data-hunk-num=" "
                                     >
                                         {persistLines && (
-                                            <RouterLink className={styles.numLine} to={{ hash: oldAnchor }}>
+                                            <Link className={styles.numLine} to={{ hash: oldAnchor }}>
                                                 {oldLine - 1}
-                                            </RouterLink>
+                                            </Link>
                                         )}
                                     </td>
                                 ) : (
@@ -113,9 +113,9 @@ export const DiffHunk: React.FunctionComponent<DiffHunkProps> = ({
                                         data-hunk-num=" "
                                     >
                                         {persistLines && (
-                                            <RouterLink className={styles.numLine} to={{ hash: newAnchor }}>
+                                            <Link className={styles.numLine} to={{ hash: newAnchor }}>
                                                 {newLine - 1}
-                                            </RouterLink>
+                                            </Link>
                                         )}
                                     </td>
                                 ) : (

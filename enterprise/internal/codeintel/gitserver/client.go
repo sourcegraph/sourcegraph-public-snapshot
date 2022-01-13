@@ -241,7 +241,7 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 		return nil, err
 	}
 
-	out, err := git.ReadFile(ctx, repo, api.CommitID(commit), file, 0)
+	out, err := git.ReadFile(ctx, repo, api.CommitID(commit), file, 0, authz.DefaultSubRepoPermsChecker)
 	if err == nil {
 		return out, nil
 	}
@@ -277,7 +277,7 @@ func (c *Client) DirectoryChildren(ctx context.Context, repositoryID int, commit
 		return nil, err
 	}
 
-	children, err := git.ListDirectoryChildren(ctx, repo, api.CommitID(commit), dirnames)
+	children, err := git.ListDirectoryChildren(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit), dirnames)
 	if err == nil {
 		return children, err
 	}

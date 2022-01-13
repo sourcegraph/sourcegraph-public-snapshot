@@ -3,7 +3,7 @@ import { from } from 'rxjs'
 import { catchError, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, AnchorLink } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../../api/client/api/common'
 import { useObservable } from '../../util/useObservable'
@@ -66,23 +66,15 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
                     <div>
                         <p>
                             <span>Load from: </span>
-                            <AnchorLink to={sideloadedExtensionURL}>{sideloadedExtensionURL}</AnchorLink>
+                            <Link to={sideloadedExtensionURL}>{sideloadedExtensionURL}</Link>
                         </p>
                         <div>
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-primary mr-1"
-                                onClick={setSideloadedExtensionURL}
-                            >
+                            <Button className="mr-1" onClick={setSideloadedExtensionURL} variant="primary" size="sm">
                                 Change
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-danger"
-                                onClick={clearSideloadedExtensionURL}
-                            >
+                            </Button>
+                            <Button onClick={clearSideloadedExtensionURL} variant="danger" size="sm">
                                 Clear
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 ) : (
@@ -91,13 +83,9 @@ export const ActiveExtensionsPanel: React.FunctionComponent<ExtensionsDevelopmen
                             <span>No sideloaded extension</span>
                         </p>
                         <div>
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-primary"
-                                onClick={setSideloadedExtensionURL}
-                            >
+                            <Button onClick={setSideloadedExtensionURL} variant="primary" size="sm">
                                 Load extension
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 )}

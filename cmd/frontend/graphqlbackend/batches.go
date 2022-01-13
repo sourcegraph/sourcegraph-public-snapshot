@@ -487,6 +487,7 @@ type GitBranchChangesetDescriptionResolver interface {
 
 	HeadRepository() *RepositoryResolver
 	HeadRef() string
+	Fork() bool
 
 	Title() string
 	Body() string
@@ -699,6 +700,7 @@ type ExternalChangesetResolver interface {
 	Body(context.Context) (*string, error)
 	Author() (*PersonResolver, error)
 	ExternalURL() (*externallink.Resolver, error)
+	ForkNamespace() *string
 	// ReviewState returns a value of type *btypes.ChangesetReviewState.
 	ReviewState(context.Context) *string
 	// CheckState returns a value of type *btypes.ChangesetCheckState.

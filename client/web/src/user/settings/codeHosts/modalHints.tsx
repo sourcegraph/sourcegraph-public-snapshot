@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -9,13 +9,9 @@ import styles from './modalHints.module.scss'
 const MachineUserRecommendation = (
     <p>
         We recommend setting up a machine user to provide restricted access to repositories.{' '}
-        <RouterLink
-            to="https://docs.sourcegraph.com/cloud/access_tokens_on_cloud"
-            target="_blank"
-            rel="noopener noreferrer"
-        >
+        <Link to="https://docs.sourcegraph.com/cloud/access_tokens_on_cloud" target="_blank" rel="noopener noreferrer">
             Learn more
-        </RouterLink>
+        </Link>
         .
     </p>
 )
@@ -44,13 +40,13 @@ export const getMachineUserFragment = (serviceName: string): React.ReactFragment
         <div className="px-2 py-1">
             <h4>
                 We recommend setting up a machine user on {serviceName} to provide restricted access to repositories.{' '}
-                <RouterLink
+                <Link
                     to="https://docs.sourcegraph.com/cloud/access_tokens_on_cloud"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
                     Learn more
-                </RouterLink>
+                </Link>
                 .
             </h4>
 

@@ -17,7 +17,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Badge, Container, PageHeader, LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
+import { Badge, Container, PageHeader, LoadingSpinner, Link, Button } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { SearchContextProps } from '../../search'
@@ -67,9 +67,7 @@ const SearchContextRepositories: React.FunctionComponent<{ repositories: ISearch
                 className={classNames(styles.searchContextPageRepoRevsRow, 'd-flex')}
             >
                 <div className={classNames(styles.searchContextPageRepoRevsRowRepo, 'w-50')}>
-                    <RouterLink to={`/${repositoryRevisions.repository.name}`}>
-                        {repositoryRevisions.repository.name}
-                    </RouterLink>
+                    <Link to={`/${repositoryRevisions.repository.name}`}>{repositoryRevisions.repository.name}</Link>
                 </div>
                 <div className="w-50">
                     {repositoryRevisions.revisions.map(revision => (
@@ -77,9 +75,7 @@ const SearchContextRepositories: React.FunctionComponent<{ repositories: ISearch
                             key={`${repositoryRevisions.repository.name}-${revision}`}
                             className={styles.searchContextPageRepoRevsRowRev}
                         >
-                            <RouterLink to={`/${repositoryRevisions.repository.name}@${revision}`}>
-                                {revision}
-                            </RouterLink>
+                            <Link to={`/${repositoryRevisions.repository.name}@${revision}`}>{revision}</Link>
                         </div>
                     ))}
                 </div>
@@ -192,13 +188,14 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                 ]}
                                 actions={
                                     searchContextOrError.viewerCanManage && (
-                                        <RouterLink
+                                        <Button
                                             to={`/contexts/${searchContextOrError.spec}/edit`}
-                                            className="btn btn-secondary"
                                             data-testid="edit-search-context-link"
+                                            variant="secondary"
+                                            as={Link}
                                         >
                                             Edit
-                                        </RouterLink>
+                                        </Button>
                                     )
                                 }
                             />
@@ -221,7 +218,7 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                     <SearchContextRepositories repositories={searchContextOrError.repositories} />
                                 )}
                                 {searchContextOrError.query.length > 0 && (
-                                    <RouterLink
+                                    <Link
                                         to={`/search?${buildSearchURLQuery(
                                             searchContextOrError.query,
                                             SearchPatternType.regexp,
@@ -231,7 +228,7 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                         rel="noopener noreferrer"
                                     >
                                         <SyntaxHighlightedSearchQuery query={searchContextOrError.query} />
-                                    </RouterLink>
+                                    </Link>
                                 )}
                             </Container>
                         </>

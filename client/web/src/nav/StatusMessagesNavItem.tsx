@@ -17,7 +17,7 @@ import {
     CloudSyncIconRefresh,
     CloudCheckIconRefresh,
 } from '@sourcegraph/shared/src/components/icons'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
@@ -143,9 +143,9 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProp
             {props.entryType === 'not-active' ? (
                 <div className={classNames('status-messages-nav-item__entry-card border-0', styles.cardInactive)}>
                     <p className={classNames('text-muted', styles.message)}>{props.message}</p>
-                    <RouterLink className="text-primary" to={props.linkTo} onClick={onLinkClick}>
+                    <Link className="text-primary" to={props.linkTo} onClick={onLinkClick}>
                         {props.linkText}
-                    </RouterLink>
+                    </Link>
                 </div>
             ) : (
                 <div
@@ -162,9 +162,9 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProp
                             <br />
                         </>
                     )}
-                    <RouterLink className="text-primary" to={props.linkTo} onClick={onLinkClick}>
+                    <Link className="text-primary" to={props.linkTo} onClick={onLinkClick}>
                         {props.linkText}
-                    </RouterLink>
+                    </Link>
                 </div>
             )}
             {props.progressHint && <small className="text-muted">{props.progressHint}</small>}

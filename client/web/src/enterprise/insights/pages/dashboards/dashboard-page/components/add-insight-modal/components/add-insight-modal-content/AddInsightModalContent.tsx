@@ -1,8 +1,9 @@
 import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 import React from 'react'
+import { Link } from 'react-router-dom'
 
-import { RouterLink, Button } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
@@ -57,7 +58,7 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                 description={
                     <span className="">
                         Don't see an insight? Check the insight's visibility settings or{' '}
-                        <RouterLink to="/insights/create">create a new insight</RouterLink>
+                        <Link to="/insights/create">create a new insight</Link>
                     </span>
                 }
                 placeholder="Search insights..."

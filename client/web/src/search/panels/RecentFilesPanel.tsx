@@ -5,7 +5,7 @@ import { Observable } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { EventLogResult } from '../backend'
@@ -84,9 +84,9 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
                 {processedResults?.map((recentFile, index) => (
                     <dd key={index} className="text-monospace">
                         <small>
-                            <RouterLink to={recentFile.url} onClick={logFileClicked} data-testid="recent-files-item">
+                            <Link to={recentFile.url} onClick={logFileClicked} data-testid="recent-files-item">
                                 {recentFile.repoName} › {recentFile.filePath}
-                            </RouterLink>
+                            </Link>
                         </small>
                     </dd>
                 ))}

@@ -3,6 +3,7 @@ import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
@@ -10,7 +11,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
@@ -176,24 +177,22 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                                     </code>
                                 </div>
                             )}
-                        <button
-                            type="submit"
-                            disabled={this.state.updateOrError === 'loading'}
-                            className="btn btn-primary"
-                        >
+                        <Button type="submit" disabled={this.state.updateOrError === 'loading'} variant="primary">
                             {this.state.updateOrError === 'loading' ? <LoadingSpinner /> : 'Update extension'}
-                        </button>
+                        </Button>
                     </Form>
                     {isErrorLike(this.state.updateOrError) && <ErrorAlert error={this.state.updateOrError} />}
                     <div className={classNames('card mt-5', styles.otherActions)}>
                         <div className="card-header">Other actions</div>
                         <div className="card-body">
-                            <RouterLink
+                            <Button
                                 to={`${this.props.extension.registryExtension.url}/-/releases/new`}
-                                className="btn btn-success mr-2"
+                                className="mr-2"
+                                variant="success"
+                                as={Link}
                             >
                                 Publish new release
-                            </RouterLink>
+                            </Button>
                             <RegistryExtensionDeleteButton
                                 extension={this.props.extension.registryExtension}
                                 onDidUpdate={this.onDidDelete}

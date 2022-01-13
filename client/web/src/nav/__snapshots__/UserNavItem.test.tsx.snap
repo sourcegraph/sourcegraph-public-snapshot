@@ -58,19 +58,19 @@ exports[`UserNavItem simple 1`] = `
         tabindex="-1"
       />
       <a
-        class="anchorLink dropdown-item"
+        class="dropdown-item"
         href="/"
       >
         Settings
       </a>
       <a
-        class="anchorLink dropdown-item"
+        class="dropdown-item"
         href="/users/alice/settings/repositories"
       >
         Your repositories
       </a>
       <a
-        class="anchorLink dropdown-item"
+        class="dropdown-item"
         href="/users/alice/searches"
       >
         Saved searches
@@ -122,13 +122,13 @@ exports[`UserNavItem simple 1`] = `
         Your organizations
       </h6>
       <a
-        class="anchorLink dropdown-item"
+        class="dropdown-item"
         href="/organizations/acme/settings"
       >
         Acme Corp
       </a>
       <a
-        class="anchorLink dropdown-item"
+        class="dropdown-item"
         href="/organizations/beta/settings"
       >
         Beta Inc
@@ -138,13 +138,13 @@ exports[`UserNavItem simple 1`] = `
         tabindex="-1"
       />
       <a
-        class="anchorLink dropdown-item"
+        class="dropdown-item"
         href="/site-admin"
       >
         Site admin
       </a>
       <a
-        class="anchorLink dropdown-item"
+        class="dropdown-item"
         href="/help"
         rel="noopener"
         target="_blank"

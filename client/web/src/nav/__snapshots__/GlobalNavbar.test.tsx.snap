@@ -107,23 +107,17 @@ exports[`GlobalNavbar default 1`] = `
               tabindex="-1"
             >
               <a
-                class="anchorLink dropdown-item showOnTouchScreen"
-                href="/search"
+                class="dropdown-item showOnTouchScreen"
+                to="/search"
               >
                 Search home
               </a>
               <a
-                class="anchorLink dropdown-item link"
-                href="/contexts"
+                class="dropdown-item link"
                 role="menuitem"
+                to="/contexts"
               >
-                Contexts 
-                <span
-                  class="badge info productStatusBadge ml-1"
-                  status="new"
-                >
-                  new
-                </span>
+                Contexts
               </a>
             </div>
           </div>
@@ -170,13 +164,7 @@ exports[`GlobalNavbar default 1`] = `
               <span
                 class="text"
               >
-                Contexts 
-                <span
-                  class="badge info productStatusBadge ml-1"
-                  status="new"
-                >
-                  new
-                </span>
+                Contexts
               </span>
             </span>
           </a>
@@ -219,8 +207,8 @@ exports[`GlobalNavbar default 1`] = `
         class="action"
       >
         <a
-          class="anchorLink link"
-          href="https://about.sourcegraph.com"
+          class="link"
+          to="https://about.sourcegraph.com"
         >
           About 
           <span
@@ -235,14 +223,14 @@ exports[`GlobalNavbar default 1`] = `
       >
         <div>
           <a
-            class="anchorLink btn btn-sm btn-outline-secondary mr-1"
-            href="/sign-in"
+            class="btn btn-outline-secondary btn-sm mr-1"
+            to="/sign-in"
           >
             Log in
           </a>
           <a
-            class="anchorLink btn btn-sm signUp"
-            href="/sign-up"
+            class="btn btn-sm signUp"
+            to="/sign-up"
           >
             Sign up
           </a>
@@ -381,23 +369,17 @@ exports[`GlobalNavbar low-profile 1`] = `
               tabindex="-1"
             >
               <a
-                class="anchorLink dropdown-item showOnTouchScreen"
-                href="/search"
+                class="dropdown-item showOnTouchScreen"
+                to="/search"
               >
                 Search home
               </a>
               <a
-                class="anchorLink dropdown-item link"
-                href="/contexts"
+                class="dropdown-item link"
                 role="menuitem"
+                to="/contexts"
               >
-                Contexts 
-                <span
-                  class="badge info productStatusBadge ml-1"
-                  status="new"
-                >
-                  new
-                </span>
+                Contexts
               </a>
             </div>
           </div>
@@ -444,13 +426,7 @@ exports[`GlobalNavbar low-profile 1`] = `
               <span
                 class="text"
               >
-                Contexts 
-                <span
-                  class="badge info productStatusBadge ml-1"
-                  status="new"
-                >
-                  new
-                </span>
+                Contexts
               </span>
             </span>
           </a>
@@ -493,8 +469,8 @@ exports[`GlobalNavbar low-profile 1`] = `
         class="action"
       >
         <a
-          class="anchorLink link"
-          href="https://about.sourcegraph.com"
+          class="link"
+          to="https://about.sourcegraph.com"
         >
           About 
           <span
@@ -509,14 +485,14 @@ exports[`GlobalNavbar low-profile 1`] = `
       >
         <div>
           <a
-            class="anchorLink btn btn-sm btn-outline-secondary mr-1"
-            href="/sign-in"
+            class="btn btn-outline-secondary btn-sm mr-1"
+            to="/sign-in"
           >
             Log in
           </a>
           <a
-            class="anchorLink btn btn-sm signUp"
-            href="/sign-up"
+            class="btn btn-sm signUp"
+            to="/sign-up"
           >
             Sign up
           </a>

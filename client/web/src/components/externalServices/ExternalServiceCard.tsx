@@ -4,7 +4,7 @@ import AccountIcon from 'mdi-react/AccountIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React from 'react'
 
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
 
@@ -52,7 +52,7 @@ export const ExternalServiceCard: React.FunctionComponent<ExternalServiceCardPro
                             {' '}
                             by
                             <AccountIcon className="icon-inline" />
-                            <RouterLink to={namespace.url}>{namespace.namespaceName}</RouterLink>
+                            <Link to={namespace.url}>{namespace.namespaceName}</Link>
                         </small>
                     )}
                 </h3>
@@ -62,13 +62,13 @@ export const ExternalServiceCard: React.FunctionComponent<ExternalServiceCardPro
         </div>
     )
     return to ? (
-        <RouterLink
+        <Link
             className="d-block text-left text-body text-decoration-none"
             to={to}
             data-test-external-service-card-link={kind}
         >
             {children}
-        </RouterLink>
+        </Link>
     ) : (
         children
     )

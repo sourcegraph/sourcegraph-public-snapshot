@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { eventLogger } from '../tracking/eventLogger'
@@ -19,9 +19,9 @@ export const NeedsRepositoryConfigurationAlert: React.FunctionComponent<{ classN
         partialStorageKey="needsRepositoryConfiguration"
         className={classNames('alert-success d-flex align-items-center', className)}
     >
-        <RouterLink className="site-alert__link" to="/site-admin/external-services" onClick={onClickCTA}>
+        <Link className="site-alert__link" to="/site-admin/external-services" onClick={onClickCTA}>
             <span className="underline">Connect a code host</span>
-        </RouterLink>
+        </Link>
         &nbsp;to connect repositories to Sourcegraph.
     </DismissibleAlert>
 )

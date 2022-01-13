@@ -18,7 +18,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/web/src/components/SyntaxHighlightedSearchQuery'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
@@ -140,17 +140,18 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                                         <SyntaxHighlightedSearchQuery query={`${contextQuery} ${example.query}`} />
                                     </small>
                                     <div className="d-flex">
-                                        <button
-                                            className={classNames('btn btn-secondary btn-sm', styles.searchButton)}
-                                            type="button"
+                                        <Button
+                                            className={styles.searchButton}
                                             aria-label="Search"
                                             onClick={onSubmitExample(
                                                 `${contextQuery} ${example.query}`,
                                                 example.patternType
                                             )}
+                                            variant="secondary"
+                                            size="sm"
                                         >
                                             Search
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                             </div>
@@ -213,47 +214,32 @@ const RepoLink: React.FunctionComponent<{ repo: string }> = ({ repo }) => (
     <li className={classNames('list-unstyled mb-3', styles.repoItem)} key={repo}>
         {repo.startsWith('github.com') && (
             <>
-                <RouterLink
-                    to={`https://${repo}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={RepoLinkClicked(repo)}
-                >
+                <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <GithubIcon className={classNames('icon-inline', styles.repoListIcon)} />
-                </RouterLink>
-                <RouterLink to={`/${repo}`} className="text-monospace search-filter-keyword">
+                </Link>
+                <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
-                </RouterLink>
+                </Link>
             </>
         )}
         {repo.startsWith('gitlab.com') && (
             <>
-                <RouterLink
-                    to={`https://${repo}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={RepoLinkClicked(repo)}
-                >
+                <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <GitlabIcon className={classNames('icon-inline', styles.repoListIcon)} />
-                </RouterLink>
-                <RouterLink to={`/${repo}`} className="text-monospace search-filter-keyword">
+                </Link>
+                <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
-                </RouterLink>
+                </Link>
             </>
         )}
         {repo.startsWith('bitbucket.com') && (
             <>
-                <RouterLink
-                    to={`https://${repo}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={RepoLinkClicked(repo)}
-                >
+                <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <BitbucketIcon className={classNames('icon-inline', styles.repoListIcon)} />
-                </RouterLink>
-                <RouterLink to={`/${repo}`} className="text-monospace search-filter-keyword">
+                </Link>
+                <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
-                </RouterLink>
+                </Link>
             </>
         )}
     </li>

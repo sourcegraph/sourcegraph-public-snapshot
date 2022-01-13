@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { RouterLink, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Button, ProductStatusBadge, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 
@@ -60,23 +60,25 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
             </div>
             <div className="text-muted">{copyText}</div>
 
-            <RouterLink
-                className={classNames('btn btn-primary btn-sm', styles.searchContextCtaPromptButton)}
+            <Button
+                className={styles.searchContextCtaPromptButton}
                 to={linkTo}
                 onClick={onClick}
+                variant="primary"
+                size="sm"
+                as={Link}
             >
                 {buttonText}
-            </RouterLink>
-            <button
-                type="button"
-                className={classNames(
-                    'btn btn-outline-secondary btn-sm border-0 ml-2',
-                    styles.searchContextCtaPromptButton
-                )}
+            </Button>
+            <Button
+                className={classNames('border-0 ml-2', styles.searchContextCtaPromptButton)}
                 onClick={onDismissClick}
+                outline={true}
+                variant="secondary"
+                size="sm"
             >
                 Don't show this again
-            </button>
+            </Button>
         </div>
     )
 }

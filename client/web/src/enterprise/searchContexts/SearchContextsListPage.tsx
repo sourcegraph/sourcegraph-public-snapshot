@@ -5,7 +5,7 @@ import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useState } from 'react'
 
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { RouterLink, PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SearchContextProps } from '../../search'
@@ -75,10 +75,10 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                         },
                     ]}
                     actions={
-                        <RouterLink to="/contexts/new" className="btn btn-primary">
+                        <Button to="/contexts/new" variant="primary" as={Link}>
                             <PlusIcon className="icon-inline" />
                             Create search context
-                        </RouterLink>
+                        </Button>
                     }
                     description={
                         <span className="text-muted">

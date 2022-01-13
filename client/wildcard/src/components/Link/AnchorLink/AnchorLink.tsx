@@ -2,21 +2,20 @@ import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 
+import type { LinkProps } from '../Link'
+
 import styles from './AnchorLink.module.scss'
 
-export type LinkProps = {
+export type AnchorLinkProps = LinkProps & {
     to: string | H.LocationDescriptor<any>
     ref?: React.Ref<HTMLAnchorElement>
     as?: LinkComponent
-} & Pick<
-    React.AnchorHTMLAttributes<HTMLAnchorElement>,
-    Exclude<keyof React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href'>
->
+}
 
 export type LinkComponent = React.FunctionComponent<LinkProps>
 
-export const AnchorLink: React.FunctionComponent<LinkProps> = React.forwardRef(
-    ({ to, as: Component, children, className, ...rest }: LinkProps, reference) => {
+export const AnchorLink: React.FunctionComponent<AnchorLinkProps> = React.forwardRef(
+    ({ to, as: Component, children, className, ...rest }: AnchorLinkProps, reference) => {
         if (!Component) {
             return (
                 <a

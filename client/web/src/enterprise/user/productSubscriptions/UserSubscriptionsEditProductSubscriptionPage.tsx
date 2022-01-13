@@ -2,6 +2,7 @@ import * as H from 'history'
 import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import React, { useEffect, useMemo, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { Observable, throwError } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
@@ -10,7 +11,7 @@ import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useEventObservable, useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button } from '@sourcegraph/wildcard'
 
 import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -104,9 +105,9 @@ export const UserSubscriptionsEditProductSubscriptionPage: React.FunctionCompone
                 <ErrorAlert className="my-2" error={productSubscription} />
             ) : (
                 <>
-                    <RouterLink to={productSubscription.url} className="btn btn-link btn-sm mb-3">
+                    <Button to={productSubscription.url} className="mb-3" variant="link" size="sm" as={Link}>
                         <ArrowLeftIcon className="icon-inline" /> Subscription
-                    </RouterLink>
+                    </Button>
                     <h2>Upgrade or change subscription {productSubscription.name}</h2>
                     <ProductSubscriptionForm
                         accountID={user.id}

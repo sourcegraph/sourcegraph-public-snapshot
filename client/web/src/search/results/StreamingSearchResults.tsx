@@ -15,7 +15,7 @@ import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link, Button } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps, SearchContextProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -314,13 +314,14 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                                 searches and more.
                             </div>
                         </div>
-                        <RouterLink
-                            className="btn btn-primary"
+                        <Button
                             to={`/sign-up?src=SearchCTA&returnTo=${encodeURIComponent('/user/settings/repositories')}`}
                             onClick={onSignUpClick}
+                            variant="primary"
+                            as={Link}
                         >
                             Create a free account
-                        </RouterLink>
+                        </Button>
                     </div>
                 )}
 

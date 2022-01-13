@@ -19,8 +19,8 @@ The migration path for each database instance is the same and is described below
 Up migrations will happen automatically in development on service startup. In production environments, they are run by the [`migrator`](../cmd/migrator) instance. You can run migrations manually during development via `sg`:
 
 - `sg migration up` runs all migrations to the latest version
-- `sg migration up -db=frontend -n=3` runs three _up_ migrations (relative to the current database version) on the frontend database
-- `sg migration down -db=codeintel -n=1` runs one _down_ migration (relative to the current database version) on the codeintel database
+- `sg migration up -db=frontend -target=<version>` runs up migrations (relative to the current database version) on the frontend database until it hits the target version
+- `sg migration down -db=codeintel` runs one _down_ migration (relative to the current database version) on the codeintel database
 
 ## Adding a migration
 

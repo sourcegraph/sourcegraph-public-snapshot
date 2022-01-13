@@ -49,22 +49,6 @@ func Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path stri
 		return nil, err
 	}
 
-	if fi.Mode()&os.ModeSymlink != 0 {
-		// Deref symlink.
-		b, err := readFileBytes(ctx, repo, commit, path, 0)
-		if err != nil {
-			return nil, err
-		}
-		// Resolve relative links from the directory path is in
-		symlink := filepath.Join(filepath.Dir(path), string(b))
-		fi2, err := lStat(ctx, repo, commit, symlink)
-		if err != nil {
-			return nil, err
-		}
-		fi2.(*util.FileInfo).Name_ = fi.Name()
-		return fi2, nil
-	}
-
 	return fi, nil
 }
 
@@ -376,7 +360,13 @@ func filterPaths(ctx context.Context, repo api.RepoName, checker authz.SubRepoPe
 // ListDirectoryChildren fetches the list of children under the given directory
 // names. The result is a map keyed by the directory names with the list of files
 // under each.
-func ListDirectoryChildren(ctx context.Context, repo api.RepoName, commit api.CommitID, dirnames []string) (map[string][]string, error) {
+func ListDirectoryChildren(
+	ctx context.Context,
+	checker authz.SubRepoPermissionChecker,
+	repo api.RepoName,
+	commit api.CommitID,
+	dirnames []string,
+) (map[string][]string, error) {
 	args := []string{"ls-tree", "--name-only", string(commit), "--"}
 	args = append(args, cleanDirectoriesForLsTree(dirnames)...)
 	cmd := gitserver.DefaultClient.Command("git", args...)
@@ -387,7 +377,14 @@ func ListDirectoryChildren(ctx context.Context, repo api.RepoName, commit api.Co
 		return nil, err
 	}
 
-	return parseDirectoryChildren(dirnames, strings.Split(string(out), "\n")), nil
+	paths := strings.Split(string(out), "\n")
+	if checker != nil && checker.Enabled() {
+		paths, err = authz.FilterActorPaths(ctx, checker, actor.FromContext(ctx), repo, paths)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return parseDirectoryChildren(dirnames, paths), nil
 }
 
 // cleanDirectoriesForLsTree sanitizes the input dirnames to a git ls-tree command. There are a

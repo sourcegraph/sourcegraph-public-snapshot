@@ -1,7 +1,7 @@
 import React from 'react'
-import { NavLink, RouteComponentProps } from 'react-router-dom'
+import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 
-import { RouterLink, PageHeader } from '@sourcegraph/wildcard'
+import { PageHeader, Button } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
@@ -90,12 +90,14 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                         {org.viewerPendingInvitation?.respondURL && (
                             <div className="pb-1">
                                 <small className="mr-2">Join organization:</small>
-                                <RouterLink
+                                <Button
                                     to={org.viewerPendingInvitation.respondURL}
-                                    className="btn btn-success btn-sm"
+                                    variant="success"
+                                    size="sm"
+                                    as={Link}
                                 >
                                     View invitation
-                                </RouterLink>
+                                </Button>
                             </div>
                         )}
                     </div>

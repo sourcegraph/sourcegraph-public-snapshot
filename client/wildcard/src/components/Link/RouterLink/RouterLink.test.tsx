@@ -1,4 +1,3 @@
-import { render } from '@testing-library/react'
 import React from 'react'
 import sinon from 'sinon'
 
@@ -17,7 +16,7 @@ describe('RouterLink', () => {
         const environmentStub = sinon.stub(process.env, 'NODE_ENV').value('development')
 
         try {
-            render(<RouterLink to="/docs">Link to docs</RouterLink>)
+            renderWithRouter(<RouterLink to="/docs">Link to docs</RouterLink>)
         } catch (error) {
             if (isErrorLike(error)) {
                 expect(error.message).toBe('Please use the `AnchorLink` component outside of `react-router`')

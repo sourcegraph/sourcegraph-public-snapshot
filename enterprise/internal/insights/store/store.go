@@ -87,6 +87,7 @@ type SeriesPoint struct {
 	Time     time.Time
 	Value    float64
 	Metadata []byte
+	Capture  *string
 }
 
 func (s *SeriesPoint) String() string {
@@ -146,6 +147,7 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 			&point.Time,
 			&point.Value,
 			&point.Metadata,
+			&point.Capture,
 		)
 		if err != nil {
 			return err
@@ -162,18 +164,18 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 // and then SUM the result for each repository, giving us our final total number.
 const fullVectorSeriesAggregation = `
 -- source: enterprise/internal/insights/store/store.go:SeriesPoints
-SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.metadata FROM (
-	SELECT sp.repo_name_id, sp.series_id, sp.time AS interval_time, MAX(value) as value, null as metadata
+SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.metadata, sub.capture FROM (
+	SELECT sp.repo_name_id, sp.series_id, sp.time AS interval_time, MAX(value) as value, null as metadata, capture
 	FROM (  select * from series_points
 			union
 			select * from series_points_snapshots
 	) AS sp
 	JOIN repo_names rn ON sp.repo_name_id = rn.id
 	WHERE %s
-	GROUP BY sp.series_id, interval_time, sp.repo_name_id
-	ORDER BY sp.series_id, interval_time, sp.repo_name_id DESC
+	GROUP BY sp.series_id, interval_time, sp.repo_name_id, capture
+	ORDER BY sp.series_id, interval_time, sp.repo_name_id
 ) sub
-GROUP BY sub.series_id, sub.interval_time, sub.metadata
+GROUP BY sub.series_id, sub.interval_time, sub.metadata, sub.capture
 ORDER BY sub.series_id, sub.interval_time DESC
 `
 
@@ -415,6 +417,7 @@ func (s *Store) RecordSeriesPoint(ctx context.Context, v RecordSeriesPointArgs) 
 		v.RepoID,           // repo_id
 		repoNameID,         // repo_name_id
 		repoNameID,         // original_repo_name_id
+		v.Point.Capture,
 	)
 	// Insert the actual data point.
 	return txStore.Exec(ctx, q)
@@ -472,8 +475,8 @@ INSERT INTO %s (
 	metadata_id,
 	repo_id,
 	repo_name_id,
-	original_repo_name_id)
-VALUES (%s, %s, %s, %s, %s, %s, %s);
+	original_repo_name_id, capture)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
 `
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {

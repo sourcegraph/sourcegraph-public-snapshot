@@ -9,7 +9,7 @@ import React from 'react'
 
 import { BulkOperationState, BulkOperationType } from '@sourcegraph/shared/src/graphql-operations'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { RouterLink, Badge, AlertLink } from '@sourcegraph/wildcard'
+import { Badge, AlertLink, Link } from '@sourcegraph/wildcard'
 
 import { ErrorMessage } from '../../../../components/alerts'
 import { Collapsible } from '../../../../components/Collapsible'
@@ -73,8 +73,7 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
             <div className="flex-grow-1 ml-3">
                 <h4>{OPERATION_TITLES[node.type]}</h4>
                 <p className="mb-0">
-                    <RouterLink to={node.initiator.url}>{node.initiator.username}</RouterLink>{' '}
-                    <Timestamp date={node.createdAt} />
+                    <Link to={node.initiator.url}>{node.initiator.username}</Link> <Timestamp date={node.createdAt} />
                 </p>
             </div>
             {node.state === BulkOperationState.PROCESSING && (

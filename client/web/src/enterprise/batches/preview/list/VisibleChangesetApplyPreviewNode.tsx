@@ -11,11 +11,12 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
-import { RouterLink, Badge } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetState, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
+import { Branch, BranchMerge } from '../../Branch'
 import { Description } from '../../Description'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
 import { ExternalChangesetTitle } from '../../detail/changesets/ExternalChangesetTitle'
@@ -66,9 +67,8 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
 
     return (
         <>
-            <button
-                type="button"
-                className="btn btn-icon test-batches-expand-preview d-none d-sm-block mx-1"
+            <Button
+                className="btn-icon test-batches-expand-preview d-none d-sm-block mx-1"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
@@ -77,7 +77,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                 ) : (
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
-            </button>
+            </Button>
             {selectable ? (
                 <SelectBox node={node} selectable={selectable} />
             ) : (
@@ -161,14 +161,15 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                 <ApplyDiffStat spec={node} />
             </div>
             {/* The button for expanding the information used on xs devices. */}
-            <button
-                type="button"
+            <Button
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
                 className={classNames(
                     styles.visibleChangesetApplyPreviewNodeShowDetails,
-                    'btn btn-outline-secondary d-block d-sm-none test-batches-expand-preview'
+                    'd-block d-sm-none test-batches-expand-preview'
                 )}
+                outline={true}
+                variant="secondary"
             >
                 {isExpanded ? (
                     <ChevronDownIcon className="icon-inline" aria-label="Close section" />
@@ -176,7 +177,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<VisibleCh
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
-            </button>
+            </Button>
             {isExpanded && (
                 <>
                     <div
@@ -497,9 +498,9 @@ const RepoLink: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFiel
         name = spec.targets.changeset.repository.name
     }
     return (
-        <RouterLink to={to} target="_blank" rel="noopener noreferrer" className="d-block d-sm-inline">
+        <Link to={to} target="_blank" rel="noopener noreferrer" className="d-block d-sm-inline">
             {name}
-        </RouterLink>
+        </Link>
     )
 }
 
@@ -515,12 +516,17 @@ const References: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFi
             {spec.delta.baseRefChanged &&
                 spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate' &&
                 spec.targets.changeset.currentSpec?.description.__typename === 'GitBranchChangesetDescription' && (
-                    <Badge variant="danger" className="mr-2" as="del">
-                        {spec.targets.changeset.currentSpec?.description.baseRef}
-                    </Badge>
+                    <Branch
+                        className="mr-2"
+                        deleted={true}
+                        name={spec.targets.changeset.currentSpec?.description.baseRef}
+                    />
                 )}
-            <Badge variant="primary">{spec.targets.changesetSpec.description.baseRef}</Badge> &larr;{' '}
-            <Badge variant="primary">{spec.targets.changesetSpec.description.headRef}</Badge>
+            <BranchMerge
+                baseRef={spec.targets.changesetSpec.description.baseRef}
+                forkNamespace={spec.targets.changesetSpec.description.fork ? '' : null}
+                headRef={spec.targets.changesetSpec.description.headRef}
+            />
         </div>
     )
 }

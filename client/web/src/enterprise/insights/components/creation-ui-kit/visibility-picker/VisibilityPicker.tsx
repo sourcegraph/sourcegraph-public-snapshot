@@ -1,7 +1,7 @@
 import React, { ChangeEvent } from 'react'
+import { Link } from 'react-router-dom'
 
 import { SettingsSiteSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
-import { RouterLink } from '@sourcegraph/wildcard'
 
 import {
     isGlobalSubject,
@@ -36,6 +36,8 @@ export interface VisibilityPickerProps {
 
 /**
  * Shared component for visibility field for creation UI pages.
+ *
+ * @deprecated - it's used only for setting based API which is deprecated.
  */
 export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = props => {
     const { value, subjects, onChange, labelClassName } = props
@@ -57,7 +59,7 @@ export const VisibilityPicker: React.FunctionComponent<VisibilityPickerProps> = 
             subtitle={
                 <span>
                     This insight will be always displayed in the{' '}
-                    <RouterLink to="/insights/dashboards/all">‘All Insights’ dashboard</RouterLink> by default
+                    <Link to="/insights/dashboards/all">‘All Insights’ dashboard</Link> by default
                 </span>
             }
             className="mb-0 mt-4"

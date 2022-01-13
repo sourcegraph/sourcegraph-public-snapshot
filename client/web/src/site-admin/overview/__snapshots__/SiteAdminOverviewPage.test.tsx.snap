@@ -94,7 +94,7 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
           </span>
           <button
             aria-label="Collapse section"
-            class="d-flex btn btn-icon expandBtn stretched-link"
+            class="btn d-flex btn-icon expandBtn stretched-link"
             type="button"
           >
             <svg
@@ -314,7 +314,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
           </div>
           <button
             aria-label="Collapse section"
-            class="d-flex btn btn-icon expandBtn stretched-link"
+            class="btn d-flex btn-icon expandBtn stretched-link"
             type="button"
           >
             <svg

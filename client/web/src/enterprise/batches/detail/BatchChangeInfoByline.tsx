@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../components/time/Timestamp'
 import { BatchChangeFields } from '../../../graphql-operations'
@@ -18,21 +18,13 @@ export const BatchChangeInfoByline: React.FunctionComponent<Props> = ({
 }) => (
     <>
         Created <Timestamp date={createdAt} /> by{' '}
-        {creator ? <RouterLink to={creator.url}>{creator.username}</RouterLink> : 'a deleted user'}
+        {creator ? <Link to={creator.url}>{creator.username}</Link> : 'a deleted user'}
         {lastAppliedAt !== null && lastAppliedAt !== createdAt && (
             <>
                 <span className="mx-2">|</span>
                 Updated <Timestamp date={lastAppliedAt} />
                 {lastApplier?.username !== creator?.username && (
-                    <>
-                        {' '}
-                        by{' '}
-                        {lastApplier ? (
-                            <RouterLink to={lastApplier.url}>{lastApplier.username}</RouterLink>
-                        ) : (
-                            'a deleted user'
-                        )}
-                    </>
+                    <> by {lastApplier ? <Link to={lastApplier.url}>{lastApplier.username}</Link> : 'a deleted user'}</>
                 )}
             </>
         )}

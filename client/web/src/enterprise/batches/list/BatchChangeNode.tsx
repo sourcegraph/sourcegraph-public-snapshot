@@ -3,7 +3,7 @@ import React from 'react'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-import { RouterLink, Badge } from '@sourcegraph/wildcard'
+import { Badge, Link } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../components/time/Timestamp'
 import { BatchChangeState, ListBatchChange } from '../../../graphql-operations'
@@ -62,21 +62,21 @@ export const BatchChangeNode: React.FunctionComponent<BatchChangeNodeProps> = ({
                 <h3 className={classNames(styles.batchChangeNodeTitle, 'm-0 d-md-inline-block d-block')}>
                     {displayNamespace && (
                         <div className="d-md-inline-block d-block">
-                            <RouterLink
+                            <Link
                                 className="text-muted test-batches-namespace-link"
                                 to={`${node.namespace.url}/batch-changes`}
                             >
                                 {node.namespace.namespaceName}
-                            </RouterLink>
+                            </Link>
                             <span className="text-muted d-inline-block mx-1">/</span>
                         </div>
                     )}
-                    <RouterLink
+                    <Link
                         className="test-batches-link mr-2"
                         to={`${node.url}${node.state === BatchChangeState.DRAFT ? '/edit' : ''}`}
                     >
                         {node.name}
-                    </RouterLink>
+                    </Link>
                 </h3>
                 <small className="text-muted d-sm-block">
                     created <Timestamp date={node.createdAt} now={now} />

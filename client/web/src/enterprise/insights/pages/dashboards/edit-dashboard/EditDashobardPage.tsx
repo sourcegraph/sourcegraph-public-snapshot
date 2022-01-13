@@ -2,10 +2,11 @@ import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router'
+import { Link } from 'react-router-dom'
 
 import { asError } from '@sourcegraph/common'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { RouterLink, Badge, Button, Container, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { Badge, Button, Container, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
@@ -68,10 +69,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                         <Badge variant="secondary" as="code">
                             {dashboardId}
                         </Badge>{' '}
-                        in your{' '}
-                        <RouterLink to={`/users/${authenticatedUser?.username}/settings`}>
-                            user or org settings
-                        </RouterLink>
+                        in your <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
                     </span>
                 }
             />

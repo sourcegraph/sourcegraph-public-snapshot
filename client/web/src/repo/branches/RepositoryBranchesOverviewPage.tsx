@@ -10,7 +10,7 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
-import { LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorAlert } from '../../components/alerts'
@@ -145,13 +145,13 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                                         <GitReferenceNode key={index} node={gitReference} />
                                     ))}
                                     {this.state.dataOrError.hasMoreActiveBranches && (
-                                        <RouterLink
+                                        <Link
                                             className="list-group-item list-group-item-action py-2 d-flex"
                                             to={`/${this.props.repo.name}/-/branches/all`}
                                         >
                                             View more branches
                                             <ChevronRightIcon className="icon-inline" />
-                                        </RouterLink>
+                                        </Link>
                                     )}
                                 </div>
                             </div>

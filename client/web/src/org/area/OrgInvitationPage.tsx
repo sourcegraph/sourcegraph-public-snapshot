@@ -8,7 +8,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
+import { Button, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
 import { refreshAuthenticatedUser, AuthenticatedUser } from '../../auth'
@@ -82,11 +82,7 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                             responseType === OrganizationInvitationResponseType.ACCEPT
                                         )
                                     ),
-                                    concatMap(() => [
-                                        // Refresh current user's list of organizations.
-                                        refreshAuthenticatedUser(),
-                                        { submissionOrError: null },
-                                    ]),
+                                    concatMap(() => concat(refreshAuthenticatedUser(), [{ submissionOrError: null }])),
                                     catchError(error => [{ submissionOrError: asError(error) }])
                                 )
                             )
@@ -132,43 +128,42 @@ export const OrgInvitationPage = withAuthenticatedUser(
                             <Form className="text-center">
                                 <h3 className="my-0 font-weight-normal">
                                     You've been invited to the{' '}
-                                    <RouterLink to={orgURL(this.props.org.name)}>
+                                    <Link to={orgURL(this.props.org.name)}>
                                         <strong>{this.props.org.name}</strong>
-                                    </RouterLink>{' '}
+                                    </Link>{' '}
                                     organization.
                                 </h3>
                                 <p>
                                     <small className="text-muted">
                                         Invited by{' '}
-                                        <RouterLink
-                                            to={userURL(this.props.org.viewerPendingInvitation.sender.username)}
-                                        >
+                                        <Link to={userURL(this.props.org.viewerPendingInvitation.sender.username)}>
                                             {this.props.org.viewerPendingInvitation.sender.username}
-                                        </RouterLink>
+                                        </Link>
                                     </small>
                                 </p>
                                 <div className="mt-3">
-                                    <button
+                                    <Button
                                         type="submit"
-                                        className="btn btn-primary mr-sm-2"
+                                        className="mr-sm-2"
                                         disabled={this.state.submissionOrError === 'loading'}
                                         onClick={this.onAcceptInvitation}
+                                        variant="primary"
                                     >
                                         Join {this.props.org.name}
-                                    </button>
-                                    <RouterLink className="btn btn-link" to={orgURL(this.props.org.name)}>
+                                    </Button>
+                                    <Button to={orgURL(this.props.org.name)} variant="link" as={Link}>
                                         Go to {this.props.org.name}'s profile
-                                    </RouterLink>
+                                    </Button>
                                 </div>
                                 <div>
-                                    <button
-                                        type="button"
-                                        className="btn btn-link btn-sm"
+                                    <Button
                                         disabled={this.state.submissionOrError === 'loading'}
                                         onClick={this.onDeclineInvitation}
+                                        variant="link"
+                                        size="sm"
                                     >
                                         Decline invitation
-                                    </button>
+                                    </Button>
                                 </div>
                                 {isErrorLike(this.state.submissionOrError) && (
                                     <ErrorAlert className="my-2" error={this.state.submissionOrError} />

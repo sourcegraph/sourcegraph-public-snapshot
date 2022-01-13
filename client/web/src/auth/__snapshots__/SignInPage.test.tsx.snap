@@ -14,7 +14,6 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
         class="icon bg-transparent"
       >
         <a
-          class="anchorLink"
           href="/search"
         >
           <svg
@@ -87,7 +86,6 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
                   class="form-text text-muted"
                 >
                   <a
-                    class="anchorLink"
                     href="/password-reset"
                   >
                     Forgot password?
@@ -248,7 +246,6 @@ exports[`SignInPage renders sign in page (server) 1`] = `
                   class="form-text text-muted"
                 >
                   <a
-                    class="anchorLink"
                     href="/password-reset"
                   >
                     Forgot password?

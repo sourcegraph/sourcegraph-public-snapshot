@@ -1,5 +1,7 @@
 import '@sourcegraph/shared/src/polyfills'
 
+import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
+
 import { injectCodeIntelligence } from '../shared/code-hosts/shared/inject'
 import {
     EXTENSION_MARKER_ID,
@@ -9,6 +11,8 @@ import {
 import { getAssetsURL } from '../shared/util/context'
 
 const IS_EXTENSION = false
+
+setLinkComponent(AnchorLink)
 
 interface InsertStyleSheetOptions {
     id: string

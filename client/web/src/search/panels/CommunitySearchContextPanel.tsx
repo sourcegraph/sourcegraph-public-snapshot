@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React, { useCallback } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
@@ -30,9 +30,9 @@ export const CommunitySearchContextsPanel: React.FunctionComponent<Props> = ({ c
                 >
                     <img className={classNames('mr-4', styles.icon)} src={communitySearchContext.homepageIcon} alt="" />
                     <div className="d-flex flex-column">
-                        <RouterLink to={communitySearchContext.url} onClick={logContextClicked} className="mb-1">
+                        <Link to={communitySearchContext.url} onClick={logContextClicked} className="mb-1">
                             {communitySearchContext.title}
-                        </RouterLink>
+                        </Link>
                     </div>
                 </div>
             ))}

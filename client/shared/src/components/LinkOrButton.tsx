@@ -5,7 +5,7 @@ import React, { useCallback, AnchorHTMLAttributes } from 'react'
 import { Key } from 'ts-key-enum'
 
 import { isDefined } from '@sourcegraph/common'
-import { RouterLink, AnchorLink } from '@sourcegraph/wildcard'
+import { Link, AnchorLink } from '@sourcegraph/wildcard'
 
 const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>
     event.key === Key.Enter && !event.ctrlKey && !event.shiftKey && !event.metaKey && !event.altKey
@@ -132,15 +132,8 @@ export const ButtonLink: React.FunctionComponent<ButtonLinkProps> = ({
     }
 
     return (
-        <RouterLink
-            {...commonProps}
-            to={to}
-            target={target}
-            rel={rel}
-            ref={buttonLinkReference}
-            data-content={dataContent}
-        >
+        <Link {...commonProps} to={to} target={target} rel={rel} ref={buttonLinkReference} data-content={dataContent}>
             {children}
-        </RouterLink>
+        </Link>
     )
 }

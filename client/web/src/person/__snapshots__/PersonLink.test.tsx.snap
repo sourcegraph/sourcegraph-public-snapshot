@@ -16,7 +16,7 @@ exports[`PersonLink with user account 1`] = `
   <a
     class="anchorLink a b"
     data-tooltip="Alice Smith <alice@example.com>"
-    href="/u"
+    href="u"
   >
     alice
   </a>

@@ -6,7 +6,7 @@ import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { RouterLink, Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -42,7 +42,7 @@ export const UserEventNode: React.FunctionComponent<UserEventNodeProps> = ({ nod
                 From: {node.source}{' '}
                 {node.url && (
                     <span>
-                        (<RouterLink to={node.url}>{node.url}</RouterLink>)
+                        (<Link to={node.url}>{node.url}</Link>)
                     </span>
                 )}
             </small>

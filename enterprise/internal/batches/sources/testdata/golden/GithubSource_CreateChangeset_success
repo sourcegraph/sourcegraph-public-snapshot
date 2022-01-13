@@ -1,29 +1,36 @@
 {
-  "ID": "MDExOlB1bGxSZXF1ZXN0NTA0NDU4Njg1",
+  "ID": "PR_kwDODS5xec4waMkR",
   "Title": "This is a test PR",
   "Body": "This is the description of the test PR",
   "State": "OPEN",
-  "URL": "https://github.com/sourcegraph/automation-testing/pull/358",
-  "HeadRefOid": "05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
-  "BaseRefOid": "6274d04b734de9f057bb5f196a5046a9e86ba992",
-  "HeadRefName": "test-pr-6",
+  "URL": "https://github.com/sourcegraph/automation-testing/pull/468",
+  "HeadRefOid": "a5955a89096304d07531f7467b269b1bcf2727c7",
+  "BaseRefOid": "36f6827a9ac62710ca5fb3df18000b9e7eb9b6ea",
+  "HeadRefName": "test-pr-10",
   "BaseRefName": "master",
-  "Number": 358,
+  "Number": 468,
   "Author": {
-   "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
-   "Login": "eseliger",
-   "URL": "https://github.com/eseliger"
+   "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
+   "Login": "LawnGnome",
+   "URL": "https://github.com/LawnGnome"
+  },
+  "BaseRepository": {
+   "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Owner": {
+    "Login": "sourcegraph"
+   }
+  },
+  "HeadRepository": {
+   "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Owner": {
+    "Login": "sourcegraph"
+   }
   },
   "Participants": [
    {
-    "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
-    "Login": "eseliger",
-    "URL": "https://github.com/eseliger"
-   },
-   {
-    "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
-    "Login": "mrnugget",
-    "URL": "https://github.com/mrnugget"
+    "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
+    "Login": "LawnGnome",
+    "URL": "https://github.com/LawnGnome"
    }
   ],
   "Labels": {
@@ -34,22 +41,22 @@
     "Type": "PullRequestCommit",
     "Item": {
      "Commit": {
-      "OID": "05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
-      "Message": "Add foobar.md file",
-      "MessageHeadline": "Add foobar.md file",
-      "URL": "https://github.com/sourcegraph/automation-testing/commit/05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
+      "OID": "a5955a89096304d07531f7467b269b1bcf2727c7",
+      "Message": "Test branch.",
+      "MessageHeadline": "Test branch.",
+      "URL": "https://github.com/sourcegraph/automation-testing/commit/a5955a89096304d07531f7467b269b1bcf2727c7",
       "Committer": {
-       "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-       "Email": "mrnugget@gmail.com",
-       "Name": "Thorsten Ball",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
+       "Email": "adam@adamharvey.name",
+       "Name": "Adam Harvey",
        "User": {
-        "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
-        "Login": "mrnugget",
-        "URL": "https://github.com/mrnugget"
+        "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
+        "Login": "LawnGnome",
+        "URL": "https://github.com/LawnGnome"
        }
       },
-      "CommittedDate": "2019-11-12T12:57:33Z",
-      "PushedDate": "2019-11-12T13:00:07Z"
+      "CommittedDate": "2021-12-30T22:56:31Z",
+      "PushedDate": "2021-12-30T22:56:38Z"
      }
     }
    }
@@ -58,11 +65,11 @@
    "Nodes": [
     {
      "Commit": {
-      "OID": "05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
+      "OID": "a5955a89096304d07531f7467b269b1bcf2727c7",
       "CheckSuites": {
        "Nodes": [
         {
-         "ID": "MDEwOkNoZWNrU3VpdGUzMDY5MDkzMzM=",
+         "ID": "CS_kwDODS5xec8AAAABHeqoTA",
          "Status": "QUEUED",
          "Conclusion": "",
          "ReceivedAt": "0001-01-01T00:00:00Z",
@@ -71,7 +78,16 @@
          }
         },
         {
-         "ID": "MDEwOkNoZWNrU3VpdGUzMDY5MDkzMzY=",
+         "ID": "CS_kwDODS5xec8AAAABHeqoUA",
+         "Status": "QUEUED",
+         "Conclusion": "",
+         "ReceivedAt": "0001-01-01T00:00:00Z",
+         "CheckRuns": {
+          "Nodes": []
+         }
+        },
+        {
+         "ID": "CS_kwDODS5xec8AAAABHeqoVA",
          "Status": "QUEUED",
          "Conclusion": "",
          "ReceivedAt": "0001-01-01T00:00:00Z",
@@ -85,12 +101,12 @@
        "State": "",
        "Contexts": null
       },
-      "CommittedDate": "2019-11-12T12:57:33Z"
+      "CommittedDate": "2021-12-30T22:56:31Z"
      }
     }
    ]
   },
   "IsDraft": false,
-  "CreatedAt": "2020-10-15T23:47:12Z",
-  "UpdatedAt": "2020-10-15T23:47:12Z"
+  "CreatedAt": "2021-12-30T22:57:42Z",
+  "UpdatedAt": "2021-12-30T22:57:42Z"
  }

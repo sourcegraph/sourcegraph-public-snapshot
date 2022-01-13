@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { appendSubtreeQueryParameter } from '../util/url'
 
@@ -47,11 +47,11 @@ export const RepoFileLink: React.FunctionComponent<Props> = ({
     const [fileBase, fileName] = splitPath(filePath)
     return (
         <div className={className}>
-            <RouterLink to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</RouterLink> ›{' '}
-            <RouterLink to={appendSubtreeQueryParameter(fileURL)}>
+            <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link> ›{' '}
+            <Link to={appendSubtreeQueryParameter(fileURL)}>
                 {fileBase ? `${fileBase}/` : null}
                 <strong>{fileName}</strong>
-            </RouterLink>
+            </Link>
         </div>
     )
 }

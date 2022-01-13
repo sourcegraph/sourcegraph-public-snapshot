@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RouterLink, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Link } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
@@ -90,7 +90,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
             {signUpForm}
             <div className={classNames('d-flex justify-content-center', styles.helperText)}>
                 <span className="mr-1">Have an account?</span>
-                <RouterLink to={`/sign-in${location.search}`}>Log in</RouterLink>
+                <Link to={`/sign-in${location.search}`}>Log in</Link>
             </div>
 
             <OrDivider className="mt-4 mb-4 text-lowercase" />
@@ -115,10 +115,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
             />
 
             <div className="mb-4">
-                Or,{' '}
-                <RouterLink to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}>
-                    continue with email
-                </RouterLink>
+                Or, <Link to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}>continue with email</Link>
             </div>
         </>
     )
@@ -126,13 +123,13 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
     const renderEmailAuthForm = (): JSX.Element => (
         <>
             <small className="d-block mt-3">
-                <RouterLink
+                <Link
                     className="d-flex align-items-center"
                     to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
                 >
                     <ChevronLeftIcon className={classNames('icon-inline', styles.backIcon)} />
                     Go back
-                </RouterLink>
+                </Link>
             </small>
 
             {signUpForm}
@@ -203,8 +200,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                             <hr className={styles.separator} />
 
                             <div>
-                                Already have an account?{' '}
-                                <RouterLink to={`/sign-in${location.search}`}>Log in</RouterLink>
+                                Already have an account? <Link to={`/sign-in${location.search}`}>Log in</Link>
                             </div>
                         </>
                     )}

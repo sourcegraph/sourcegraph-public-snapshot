@@ -3,13 +3,12 @@ import * as H from 'history'
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import FileTreeIcon from 'mdi-react/FileTreeIcon'
 import React, { useCallback, useMemo } from 'react'
-import { Button } from 'reactstrap'
 
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
@@ -75,9 +74,9 @@ const SubpagesList: React.FunctionComponent<Props> = ({ ...props }) => {
                 })
                 return (
                     <div key={pathID}>
-                        <RouterLink id={'index-' + pathID} to={url} className="text-nowrap">
+                        <Link id={'index-' + pathID} to={url} className="text-nowrap">
                             {pathID.slice('/'.length)}&#47;
-                        </RouterLink>
+                        </Link>
                     </div>
                 )
             })}
@@ -91,9 +90,9 @@ const SubpagesList: React.FunctionComponent<Props> = ({ ...props }) => {
                         })
                         return (
                             <div key={pathID}>
-                                <RouterLink id={'index-' + pathID} to={url} className="text-nowrap">
+                                <Link id={'index-' + pathID} to={url} className="text-nowrap">
                                     {pathID.slice('/'.length)}&#47;
-                                </RouterLink>
+                                </Link>
                             </div>
                         )
                     })}
@@ -141,14 +140,14 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
 
     if (!toggleSidebar) {
         return (
-            <button
-                type="button"
-                className="position-absolute btn btn-icon btn-link border-right border-bottom rounded-0 repo-revision-container__toggle"
+            <Button
+                className="position-absolute btn-icon border-right border-bottom rounded-0 repo-revision-container__toggle"
                 onClick={handleSidebarToggle}
                 data-tooltip="Show sidebar"
+                variant="link"
             >
                 <FileTreeIcon className="icon-inline" />
-            </button>
+            </Button>
         )
     }
 

@@ -9,7 +9,7 @@ import {
     FilteredConnectionFilter,
     FilteredConnectionFilterValue,
 } from '@sourcegraph/web/src/components/FilteredConnection'
-import { RouterLink, Badge } from '@sourcegraph/wildcard'
+import { Badge, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import {
@@ -166,9 +166,9 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                     {autoDefinedSearchContexts?.map(context => (
                         <div key={context.spec} className="card p-3">
                             <div>
-                                <RouterLink to={`/contexts/${context.spec}`}>
+                                <Link to={`/contexts/${context.spec}`}>
                                     <strong>{context.spec}</strong>
-                                </RouterLink>
+                                </Link>
                                 <Badge
                                     variant="secondary"
                                     pill={true}

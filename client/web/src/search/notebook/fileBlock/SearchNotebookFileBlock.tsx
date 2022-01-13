@@ -14,7 +14,7 @@ import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '..'
 import blockStyles from '../SearchNotebookBlock.module.scss'
@@ -258,9 +258,9 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
                     <div className={styles.header} data-testid="file-block-header">
                         <FileDocumentIcon className="icon-inline mr-2" />
                         {areInputsValid ? (
-                            <RouterLink className={styles.headerFileLink} to={fileURL}>
+                            <Link className={styles.headerFileLink} to={fileURL}>
                                 {getFileHeader(input)}
-                            </RouterLink>
+                            </Link>
                         ) : (
                             <span>{getFileHeader(input)}</span>
                         )}

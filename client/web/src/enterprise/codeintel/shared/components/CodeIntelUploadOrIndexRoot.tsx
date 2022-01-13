@@ -1,6 +1,6 @@
 import React, { FunctionComponent } from 'react'
 
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { LsifIndexFields, LsifUploadFields } from '../../../../graphql-operations'
 
@@ -10,9 +10,9 @@ export interface CodeIntelUploadOrIndexRootProps {
 
 export const CodeIntelUploadOrIndexRoot: FunctionComponent<CodeIntelUploadOrIndexRootProps> = ({ node }) =>
     node.projectRoot ? (
-        <RouterLink to={node.projectRoot.url}>
+        <Link to={node.projectRoot.url}>
             <strong>{node.projectRoot.path || '/'}</strong>
-        </RouterLink>
+        </Link>
     ) : (
         <span>{node.inputRoot || '/'}</span>
     )

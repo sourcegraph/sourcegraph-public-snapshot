@@ -3,11 +3,12 @@ import EyeIcon from 'mdi-react/EyeIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -24,9 +25,14 @@ export const ExtensionNoManifestAlert: React.FunctionComponent<{
         {extension.registryExtension?.viewerCanAdminister && (
             <>
                 <br />
-                <RouterLink className="mt-3 btn btn-primary" to={`${extension.registryExtension.url}/-/releases/new`}>
+                <Button
+                    className="mt-3"
+                    to={`${extension.registryExtension.url}/-/releases/new`}
+                    variant="primary"
+                    as={Link}
+                >
                     Publish first release of extension
-                </RouterLink>
+                </Button>
             </>
         )}
     </div>
@@ -77,18 +83,19 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                     </div>
                     <div>
                         {this.props.extension.manifest && (
-                            <button type="button" className="btn btn-secondary" onClick={this.onViewModeButtonClick}>
+                            <Button onClick={this.onViewModeButtonClick} variant="secondary">
                                 <EyeIcon className="icon-inline" /> Use{' '}
                                 {this.state.viewMode === ViewMode.Plain ? ViewMode.Rich : ViewMode.Plain} viewer
-                            </button>
+                            </Button>
                         )}{' '}
                         {this.props.extension.registryExtension?.viewerCanAdminister && (
-                            <RouterLink
-                                className="btn btn-primary"
+                            <Button
                                 to={`${this.props.extension.registryExtension.url}/-/releases/new`}
+                                variant="primary"
+                                as={Link}
                             >
                                 Publish new release
-                            </RouterLink>
+                            </Button>
                         )}
                     </div>
                 </div>

@@ -1,8 +1,9 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge, LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
@@ -52,10 +53,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
                         <Badge variant="secondary" as="code">
                             {insightID}
                         </Badge>{' '}
-                        in your{' '}
-                        <RouterLink to={`/users/${authenticatedUser?.username}/settings`}>
-                            user or org settings
-                        </RouterLink>
+                        in your <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
                     </span>
                 }
             />

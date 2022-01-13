@@ -1,6 +1,6 @@
 import { Remote } from 'comlink'
-import { Observable } from 'rxjs'
-import { catchError, map, startWith } from 'rxjs/operators'
+import { forkJoin, Observable, of } from 'rxjs'
+import { catchError, map, mapTo, startWith } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { asError } from '@sourcegraph/common'
@@ -53,6 +53,8 @@ export type BlockInput =
     | Pick<MarkdownBlock, 'type' | 'input'>
     | Pick<QueryBlock, 'type' | 'input'>
 
+export type BlockInit = Omit<FileBlock, 'output'> | Omit<MarkdownBlock, 'output'> | Omit<QueryBlock, 'output'>
+
 export type BlockDirection = 'up' | 'down'
 
 export interface BlockProps {
@@ -73,12 +75,14 @@ export interface BlockDependencies {
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
+const DONE = 'DONE' as const
+
 export class Notebook {
     private blocks: Map<string, Block>
     private blockOrder: string[]
 
-    constructor(initializerBlocks: BlockInput[], private dependencies: BlockDependencies) {
-        const blocks = initializerBlocks.map(block => ({ ...block, id: uuid.v4(), output: null }))
+    constructor(initializerBlocks: BlockInit[], private dependencies: BlockDependencies) {
+        const blocks = initializerBlocks.map(block => ({ ...block, output: null }))
 
         this.blocks = new Map(blocks.map(block => [block.id, block]))
         this.blockOrder = blocks.map(block => block.id)
@@ -164,6 +168,30 @@ export class Notebook {
                 })
                 break
         }
+    }
+
+    public runAllBlocks(): Observable<typeof DONE[]> {
+        const observables: Observable<typeof DONE>[] = []
+        // Iterate over block ids and run each block. We do not iterate over values
+        // because `runBlockById` method assigns a new value for the id so we have
+        // to fetch the block value separately.
+        for (const blockId of this.blocks.keys()) {
+            this.runBlockById(blockId)
+
+            const block = this.getBlockById(blockId)
+            if (!block?.output) {
+                continue
+            }
+            // Identical if/else if branches to make the TS compiler happy
+            if (block.type === 'query') {
+                observables.push(block.output.pipe(mapTo(DONE)))
+            } else if (block.type === 'file') {
+                observables.push(block.output.pipe(mapTo(DONE)))
+            }
+        }
+        // We store output observables and join them into a single observable,
+        // to let the caller know when all async outputs have finished.
+        return observables.length > 0 ? forkJoin(observables) : of([DONE])
     }
 
     public deleteBlockById(id: string): void {

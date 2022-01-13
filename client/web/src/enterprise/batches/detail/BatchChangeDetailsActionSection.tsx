@@ -6,7 +6,7 @@ import React, { useCallback, useState } from 'react'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { Scalars } from '../../../graphql-operations'
@@ -49,32 +49,36 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<BatchChang
     }, [batchChangeID, deleteBatchChange, history, batchChangeNamespaceURL])
     if (batchChangeClosed) {
         return (
-            <button
-                type="button"
-                className="btn btn-outline-danger test-batches-delete-btn"
+            <Button
+                className="test-batches-delete-btn"
                 onClick={onDeleteBatchChange}
                 data-tooltip="Deleting this batch change is a final action."
                 disabled={isDeleting === true}
+                outline={true}
+                variant="danger"
             >
                 {isErrorLike(isDeleting) && <InformationIcon className="icon-inline" data-tooltip={isDeleting} />}
                 <DeleteIcon className="icon-inline" /> Delete
-            </button>
+            </Button>
         )
     }
     return (
         <div className="d-flex">
             {showEditButton && (
-                <RouterLink to={`${location.pathname}/edit`} className="mr-2 btn btn-secondary">
+                <Button to={`${location.pathname}/edit`} className="mr-2" variant="secondary" as={Link}>
                     <PencilIcon className="icon-inline" /> Edit
-                </RouterLink>
+                </Button>
             )}
-            <RouterLink
+            <Button
                 to={`${location.pathname}/close`}
-                className="btn btn-outline-danger test-batches-close-btn"
+                className="test-batches-close-btn"
                 data-tooltip="View a preview of all changes that will happen when you close this batch change."
+                variant="danger"
+                outline={true}
+                as={Link}
             >
                 <DeleteIcon className="icon-inline" /> Close
-            </RouterLink>
+            </Button>
         </div>
     )
 }

@@ -1,10 +1,11 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
-import { RouterLink, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
@@ -116,7 +117,7 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                         <label htmlFor="password">Password</label>
                         {context.resetPasswordEnabled && (
                             <small className="form-text text-muted">
-                                <RouterLink to="/password-reset">Forgot password?</RouterLink>
+                                <Link to="/password-reset">Forgot password?</Link>
                             </small>
                         )}
                     </div>
@@ -134,9 +135,9 @@ export const UsernamePasswordSignInForm: React.FunctionComponent<Props> = ({
                         'mb-0': noThirdPartyProviders,
                     })}
                 >
-                    <button className="btn btn-primary btn-block" type="submit" disabled={loading}>
+                    <Button className="btn-block" type="submit" disabled={loading} variant="primary">
                         {loading ? <LoadingSpinner /> : 'Sign in'}
-                    </button>
+                    </Button>
                 </div>
             </Form>
         </>

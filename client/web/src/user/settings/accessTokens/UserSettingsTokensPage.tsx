@@ -1,12 +1,13 @@
 import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { RouterLink, Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Button } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
@@ -81,9 +82,9 @@ export const UserSettingsTokensPage: React.FunctionComponent<Props> = ({
                 path={[{ text: 'Access tokens' }]}
                 description="Access tokens may be used to access the Sourcegraph API."
                 actions={
-                    <RouterLink className="btn btn-primary" to={`${match.url}/new`}>
+                    <Button to={`${match.url}/new`} variant="primary" as={Link}>
                         <AddIcon className="icon-inline" /> Generate new token
-                    </RouterLink>
+                    </Button>
                 }
                 className="mb-3"
             />

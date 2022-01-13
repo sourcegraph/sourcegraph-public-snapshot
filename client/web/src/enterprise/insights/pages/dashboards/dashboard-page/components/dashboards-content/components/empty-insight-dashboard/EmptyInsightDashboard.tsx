@@ -1,8 +1,9 @@
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
+import { Link } from 'react-router-dom'
 
-import { RouterLink, Button } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import { InsightDashboard } from '../../../../../../../core/types'
 import { SupportedInsightSubject } from '../../../../../../../core/types/subjects'
@@ -34,16 +35,13 @@ export const EmptyInsightDashboard: React.FunctionComponent<EmptyInsightDashboar
  */
 export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: InsightDashboard }> = props => (
     <section className={styles.emptySection}>
-        <RouterLink
-            to={`/insights/create?dashboardId=${props.dashboard.id}`}
-            className={classNames(styles.itemCard, 'card')}
-        >
+        <Link to={`/insights/create?dashboardId=${props.dashboard.id}`} className={classNames(styles.itemCard, 'card')}>
             <PlusIcon size="2rem" />
             <span>Create new insight</span>
-        </RouterLink>
+        </Link>
         <span className="d-flex justify-content-center mt-3">
             <span>
-                or, add existing insights from <RouterLink to="/insights/dashboards/all">All Insights</RouterLink>
+                or, add existing insights from <Link to="/insights/dashboards/all">All Insights</Link>
             </span>
         </span>
     </section>
@@ -76,7 +74,7 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<EmptyInsightDa
                 </div>
             </Button>
             <span className="d-flex justify-content-center mt-3">
-                <RouterLink to={`/insights/create?dashboardId=${dashboard.id}`}>or, create new insight</RouterLink>
+                <Link to={`/insights/create?dashboardId=${dashboard.id}`}>or, create new insight</Link>
             </span>
         </section>
     )

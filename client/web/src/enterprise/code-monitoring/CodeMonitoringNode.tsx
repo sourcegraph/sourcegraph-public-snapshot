@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import * as H from 'history'
 import React, { useState, useCallback, useMemo } from 'react'
 import { Observable, concat, of } from 'rxjs'
@@ -7,7 +6,7 @@ import { switchMap, catchError, startWith, takeUntil, tap, delay, mergeMap } fro
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
 
@@ -86,20 +85,16 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
             <div className="d-flex justify-content-between align-items-center">
                 <div className="d-flex flex-column">
                     <div className="font-weight-bold">
-                        <RouterLink to={`${location.pathname}/${node.id}`}>{node.description}</RouterLink>
+                        <Link to={`${location.pathname}/${node.id}`}>{node.description}</Link>
                     </div>
                     {/** TODO: Generate this text based on the type of action when new actions are added. */}
                     {node.actions.nodes.length > 0 && (
                         <div className="d-flex text-muted">
                             New search result → Sends email notifications{' '}
                             {showCodeMonitoringTestEmailButton && isSiteAdminUser && hasEnabledAction && node.enabled && (
-                                <button
-                                    type="button"
-                                    className="btn btn-link p-0 border-0 ml-2"
-                                    onClick={sendEmailRequest}
-                                >
+                                <Button className="p-0 border-0 ml-2" onClick={sendEmailRequest} variant="link">
                                     Send test email
-                                </button>
+                                </Button>
                             )}
                         </div>
                     )}
@@ -114,12 +109,14 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                             disabled={toggleMonitorOrError === LOADING}
                         />
                     </div>
-                    <RouterLink
+                    <Button
                         to={`${location.pathname}/${node.id}`}
-                        className={classNames('btn btn-link', styles.editButton)}
+                        className={styles.editButton}
+                        variant="link"
+                        as={Link}
                     >
                         Edit
-                    </RouterLink>
+                    </Button>
                 </div>
             </div>
             {isErrorLike(toggleMonitorOrError) && (

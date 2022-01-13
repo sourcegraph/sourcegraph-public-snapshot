@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { ViewerBatchChangesCodeHostsFields } from '../../../graphql-operations'
@@ -34,9 +34,9 @@ export const MissingCredentialsAlert: React.FunctionComponent<MissingCredentials
             </ul>
             <p className="mb-0">
                 Credentials are required to publish changesets on code hosts. Configure them in your{' '}
-                <RouterLink to={`${authenticatedUser.url}/settings/batch-changes`} target="_blank" rel="noopener">
+                <Link to={`${authenticatedUser.url}/settings/batch-changes`} target="_blank" rel="noopener">
                     batch changes user settings
-                </RouterLink>{' '}
+                </Link>{' '}
                 to apply this spec.
             </p>
         </div>

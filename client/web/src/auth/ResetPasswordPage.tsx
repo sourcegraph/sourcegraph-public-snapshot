@@ -5,7 +5,7 @@ import { RouteComponentProps } from 'react-router-dom'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { RouterLink, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, Link, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
@@ -54,7 +54,7 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                         <p className="text-left mb-0">Check your email for a link to reset your password.</p>
                     </div>
                     <span className="form-text text-muted">
-                        <RouterLink to="/sign-in">Return to sign in</RouterLink>
+                        <Link to="/sign-in">Return to sign in</Link>
                     </span>
                 </>
             )
@@ -91,16 +91,17 @@ class ResetPasswordInitForm extends React.PureComponent<ResetPasswordInitFormPro
                             disabled={this.state.submitOrError === 'loading'}
                         />
                     </div>
-                    <button
-                        className="btn btn-primary btn-block mt-4"
+                    <Button
+                        className="btn-block mt-4"
                         type="submit"
                         disabled={this.state.submitOrError === 'loading'}
+                        variant="primary"
                     >
                         {this.state.submitOrError === 'loading' ? <LoadingSpinner /> : 'Send reset password link'}
-                    </button>
+                    </Button>
                 </Form>
                 <span className="form-text text-muted">
-                    <RouterLink to="/sign-in">Return to sign in</RouterLink>
+                    <Link to="/sign-in">Return to sign in</Link>
                 </span>
             </>
         )
@@ -170,8 +171,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
         if (this.state.submitOrError === null) {
             return (
                 <div className="alert alert-success">
-                    Your password was reset. <RouterLink to="/sign-in">Sign in with your new password</RouterLink> to
-                    continue.
+                    Your password was reset. <Link to="/sign-in">Sign in with your new password</Link> to continue.
                 </div>
             )
         }
@@ -203,13 +203,14 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                             disabled={this.state.submitOrError === 'loading'}
                         />
                     </div>
-                    <button
-                        className="btn btn-primary btn-block mt-4"
+                    <Button
+                        className="btn-block mt-4"
                         type="submit"
                         disabled={this.state.submitOrError === 'loading'}
+                        variant="primary"
                     >
                         {this.state.submitOrError === 'loading' ? <LoadingSpinner /> : 'Reset password'}
-                    </button>
+                    </Button>
                 </Form>
             </>
         )

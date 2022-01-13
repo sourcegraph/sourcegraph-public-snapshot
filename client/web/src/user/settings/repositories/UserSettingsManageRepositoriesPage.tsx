@@ -7,7 +7,7 @@ import { Subscription } from 'rxjs'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { RouterLink, ProductStatusBadge, Container, PageSelector, RadioButton } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Container, PageSelector, RadioButton, TextArea, Link, Button } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
 import {
@@ -185,9 +185,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [otherPublicRepoError, setOtherPublicRepoError] = useState<undefined | ErrorLike>()
 
     const ExternalServiceProblemHint = (
-        <RouterLink className="font-weight-normal" to={`${routingPrefix}/code-hosts`}>
+        <Link className="font-weight-normal" to={`${routingPrefix}/code-hosts`}>
             Check code host connections
-        </RouterLink>
+        </Link>
     )
 
     const toggleTextArea = useCallback(
@@ -776,14 +776,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             </h2>
             <p className="text-muted">
                 Choose repositories to sync with Sourcegraph.
-                <RouterLink
+                <Link
                     to="https://docs.sourcegraph.com/code_search/how-to/adding_repositories_to_cloud"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
                     {' '}
                     Learn more about who can see code on Sourcegraph
-                </RouterLink>
+                </Link>
                 .
             </p>
             <Container>
@@ -795,26 +795,26 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             <p className="text-muted">
                                 Repositories{' '}
                                 {isOrgOwner ? 'that can be synced through' : 'you own or collaborate on from your'}{' '}
-                                <RouterLink to={`${routingPrefix}/code-hosts`}>connected code hosts</RouterLink>
+                                <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>
                             </p>
 
                             {!ALLOW_PRIVATE_CODE && hasCodeHosts && (
                                 <div className="alert alert-primary">
                                     Coming soon: search private repositories with Sourcegraph Cloud.{' '}
-                                    <RouterLink
+                                    <Link
                                         to="https://share.hsforms.com/1copeCYh-R8uVYGCpq3s4nw1n7ku"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                     >
                                         Get updated when this feature launches
-                                    </RouterLink>
+                                    </Link>
                                 </div>
                             )}
                             {codeHosts.loaded && codeHosts.hosts.length === 0 && (
                                 <div className="alert alert-warning mb-2">
-                                    <RouterLink className="font-weight-normal" to={`${routingPrefix}/code-hosts`}>
+                                    <Link className="font-weight-normal" to={`${routingPrefix}/code-hosts`}>
                                         Connect with a code host
-                                    </RouterLink>{' '}
+                                    </Link>{' '}
                                     to add
                                     {owner.name ? ` ${owner.name}'s` : ' your own'} repositories to Sourcegraph.
                                 </div>
@@ -868,8 +868,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 {publicRepoState.enabled && (
                                     <div className="form-group ml-4 mt-3">
                                         <p className="mb-2">Repositories to sync</p>
-                                        <textarea
-                                            className="form-control"
+                                        <TextArea
                                             rows={5}
                                             value={publicRepoState.repos}
                                             onChange={handlePublicReposChanged}
@@ -901,12 +900,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     disabled={fetchingRepos === 'loading' || !didRepoSelectionChange()}
                 />
 
-                <RouterLink
-                    className="btn btn-secondary test-goto-add-external-service-page"
+                <Button
+                    className="test-goto-add-external-service-page"
                     to={`${routingPrefix}/repositories`}
+                    variant="secondary"
+                    as={Link}
                 >
                     Cancel
-                </RouterLink>
+                </Button>
             </Form>
         </UserSettingReposContainer>
     )

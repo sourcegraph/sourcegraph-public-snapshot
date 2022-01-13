@@ -3,11 +3,12 @@ import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import React, { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 import { PageTitle } from '../components/PageTitle'
@@ -88,7 +89,7 @@ export const SiteAdminUpdatesPage: React.FunctionComponent<Props> = ({ telemetry
                 <br />
                 <small>
                     <strong>Automatic update checking:</strong> {autoUpdateCheckingEnabled ? 'on' : 'off'}.{' '}
-                    <RouterLink to="/site-admin/configuration">Configure</RouterLink> <code>update.channel</code> to{' '}
+                    <Link to="/site-admin/configuration">Configure</Link> <code>update.channel</code> to{' '}
                     {autoUpdateCheckingEnabled ? 'disable' : 'enable'}.
                 </small>
             </p>

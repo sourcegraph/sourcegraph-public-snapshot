@@ -184,7 +184,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 }
 
 func clientIntegrationTests(pipeline *bk.Pipeline) {
-	chunkSize := 3
+	chunkSize := 2
 	prepStepKey := "puppeteer:prep"
 	skipGitCloneStep := bk.Plugin("uber-workflow/run-without-clone", "")
 
@@ -426,7 +426,6 @@ func codeIntelQA(candidateTag string) operations.Operation {
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
-
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),

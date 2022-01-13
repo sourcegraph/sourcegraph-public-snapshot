@@ -7,7 +7,7 @@ import { Observable } from 'rxjs'
 import { ISavedSearch } from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { buildSearchURLQueryFromQueryState } from '../../stores'
@@ -54,14 +54,16 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                 Use saved searches to alert you to uses of a favorite API, or changes to code you need to monitor.
             </small>
             {authenticatedUser && (
-                <RouterLink
+                <Button
                     to={`/users/${authenticatedUser.username}/searches/add`}
                     onClick={logEvent('SavedSearchesPanelCreateButtonClicked', { source: 'empty view' })}
-                    className="btn btn-secondary mt-2 align-self-center"
+                    className="mt-2 align-self-center"
+                    variant="secondary"
+                    as={Link}
                 >
                     <PlusIcon className="icon-inline" />
                     Create a saved search
-                </RouterLink>
+                </Button>
             )}
         </EmptyPanelContainer>
     )
@@ -80,29 +82,29 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                         <dd key={search.id} className="text-monospace test-saved-search-entry">
                             <div className="d-flex justify-content-between">
                                 <small>
-                                    <RouterLink
+                                    <Link
                                         to={'/search?' + buildSearchURLQueryFromQueryState({ query: search.query })}
                                         className=" p-0"
                                         onClick={logEvent('SavedSearchesPanelSearchClicked')}
                                     >
                                         {search.description}
-                                    </RouterLink>
+                                    </Link>
                                 </small>
                                 {authenticatedUser &&
                                     (search.namespace.__typename === 'User' ? (
-                                        <RouterLink
+                                        <Link
                                             to={`/users/${search.namespace.namespaceName}/searches/${search.id}`}
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
                                         >
                                             <PencilOutlineIcon className="icon-inline" />
-                                        </RouterLink>
+                                        </Link>
                                     ) : (
-                                        <RouterLink
+                                        <Link
                                             to={`/organizations/${search.namespace.namespaceName}/searches/${search.id}`}
                                             onClick={logEvent('SavedSearchesPanelEditClicked')}
                                         >
                                             <PencilOutlineIcon className="icon-inline" />
-                                        </RouterLink>
+                                        </Link>
                                     ))}
                             </div>
                         </dd>
@@ -111,13 +113,13 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
             {authenticatedUser && (
                 <FooterPanel className="p-1">
                     <small>
-                        <RouterLink
+                        <Link
                             to={`/users/${authenticatedUser.username}/searches`}
                             className=" text-left"
                             onClick={logEvent('SavedSearchesPanelViewAllClicked')}
                         >
                             View saved searches
-                        </RouterLink>
+                        </Link>
                     </small>
                 </FooterPanel>
             )}
@@ -128,34 +130,39 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
         <ActionButtonGroup>
             <div className="btn-group btn-group-sm">
                 {authenticatedUser && (
-                    <RouterLink
+                    <Button
                         to={`/users/${authenticatedUser.username}/searches/add`}
-                        className="btn btn-outline-secondary mr-2"
+                        className="mr-2"
                         onClick={logEvent('SavedSearchesPanelCreateButtonClicked', { source: 'toolbar' })}
+                        variant="secondary"
+                        outline={true}
+                        as={Link}
                     >
                         +
-                    </RouterLink>
+                    </Button>
                 )}
             </div>
             <div className="btn-group btn-group-sm">
-                <button
-                    type="button"
+                <Button
                     onClick={() => setShowAllSearches(false)}
-                    className={classNames('btn btn-outline-secondary test-saved-search-panel-my-searches', {
+                    className={classNames('test-saved-search-panel-my-searches', {
                         active: !showAllSearches,
                     })}
+                    outline={true}
+                    variant="secondary"
                 >
                     My searches
-                </button>
-                <button
-                    type="button"
+                </Button>
+                <Button
                     onClick={() => setShowAllSearches(true)}
-                    className={classNames('btn btn-outline-secondary test-saved-search-panel-all-searches', {
+                    className={classNames('test-saved-search-panel-all-searches', {
                         active: showAllSearches,
                     })}
+                    outline={true}
+                    variant="secondary"
                 >
                     All searches
-                </button>
+                </Button>
             </div>
         </ActionButtonGroup>
     )

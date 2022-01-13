@@ -30,7 +30,7 @@ import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -233,24 +233,30 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 element: (
                     <>
                         <div className="d-inline-flex btn-group">
-                            <RouterLink
+                            <Button
                                 to={
                                     resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
                                         ? resolvedRevisionOrError.rootTreeURL
                                         : repoOrError.url
                                 }
-                                className="btn btn-sm btn-outline-secondary text-nowrap test-repo-header-repo-link"
+                                className="text-nowrap test-repo-header-repo-link"
+                                variant="secondary"
+                                outline={true}
+                                size="sm"
+                                as={Link}
                             >
                                 <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
-                            </RouterLink>
-                            <button
-                                type="button"
+                            </Button>
+                            <Button
                                 id="repo-popover"
-                                className={classNames('btn btn-sm btn-outline-secondary', styles.repoChange)}
+                                className={styles.repoChange}
                                 aria-label="Change repository"
+                                outline={true}
+                                variant="secondary"
+                                size="sm"
                             >
                                 <ChevronDownIcon className="icon-inline" />
-                            </button>
+                            </Button>
                         </div>
                         <UncontrolledPopover
                             placement="bottom-start"

@@ -15,6 +15,9 @@ fi
 
 URL="http://localhost:7080"
 
+# In CI, provide a directory unique to this job
+export DATA="/tmp/sourcegraph-data-${BUILDKITE_JOB_ID:-$(openssl rand -hex 12)}"
+
 function docker_cleanup() {
   echo "--- docker cleanup"
   if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
@@ -26,6 +29,9 @@ function docker_cleanup() {
     docker rmi -f $(docker images -q)
   fi
   docker volume prune -f
+
+  echo "--- Deleting $DATA"
+  rm -rf "$DATA"
 }
 
 # Do a pre-run cleanup

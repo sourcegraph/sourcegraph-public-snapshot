@@ -1,0 +1,46 @@
+// Note: Import disabled until Modal migration is finished: https://github.com/sourcegraph/sourcegraph/pull/29470
+// Avoids potential duplicate import that could cause styling issues.
+// @import '@reach/dialog/styles.css';
+
+[data-reach-dialog-overlay] {
+    background-color: rgba(var(--gray-04-rgb), 0.5);
+}
+
+:global(.theme-dark) {
+    [data-reach-dialog-overlay] {
+        background-color: rgba(var(--gray-08-rgb), 0.5);
+    }
+}
+
+[data-reach-dialog-content] {
+    background-color: var(--color-bg-1);
+}
+
+.modal {
+    background-color: var(--color-bg-1);
+    width: 32rem;
+    max-width: 100vw;
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+/*
+ * Positions
+ */
+.center,
+.top-third {
+    transform: translate(-50%, -50%);
+    position: absolute;
+    top: 50%;
+    margin: 0;
+    left: 50%;
+}
+
+.top-third {
+    top: 33%;
+}
+
+.full {
+    width: 100%;
+}

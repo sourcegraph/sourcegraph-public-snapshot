@@ -29,7 +29,7 @@ import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 // This is the root Tooltip usage
 // eslint-disable-next-line no-restricted-imports
-import { Tooltip, FeedbackText } from '@sourcegraph/wildcard'
+import { Tooltip, FeedbackText, setLinkComponent, RouterLink } from '@sourcegraph/wildcard'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
@@ -173,6 +173,8 @@ const notificationClassNames = {
 }
 
 const LAST_SEARCH_CONTEXT_KEY = 'sg-last-search-context'
+
+setLinkComponent(RouterLink)
 
 const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : withActivation(Layout)
 

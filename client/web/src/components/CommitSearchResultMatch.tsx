@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import { isEqual, range } from 'lodash'
 import React from 'react'
+import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
@@ -10,7 +11,7 @@ import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIco
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 import { highlightNode } from '@sourcegraph/shared/src/util/dom'
-import { RouterLink, LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { highlightCode } from '../search/backend'
 
@@ -160,7 +161,7 @@ export class CommitSearchResultMatch extends React.Component<
                         />
                     )}
                     {this.state.HTML !== undefined ? (
-                        <RouterLink
+                        <Link
                             key={this.props.item.url}
                             to={this.props.item.url}
                             className={searchResultStyles.searchResultMatch}
@@ -173,7 +174,7 @@ export class CommitSearchResultMatch extends React.Component<
                                     dangerousInnerHTML={this.state.HTML}
                                 />
                             </code>
-                        </RouterLink>
+                        </Link>
                     ) : (
                         <>
                             <LoadingSpinner className={styles.loader} />

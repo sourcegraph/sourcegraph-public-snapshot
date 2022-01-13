@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Container, PageHeader, LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
 import { ErrorAlert } from '../../components/alerts'
@@ -62,8 +62,8 @@ export const NewOrganizationPage: React.FunctionComponent<Props> = ({ history })
                 description={
                     <>
                         An organization is a set of users with associated configuration. See{' '}
-                        <RouterLink to="/help/admin/organizations">Sourcegraph documentation</RouterLink> for
-                        information about configuring organizations.
+                        <Link to="/help/admin/organizations">Sourcegraph documentation</Link> for information about
+                        configuring organizations.
                     </>
                 }
                 className="mb-3"
@@ -110,14 +110,15 @@ export const NewOrganizationPage: React.FunctionComponent<Props> = ({ history })
                     </div>
                 </Container>
 
-                <button
+                <Button
                     type="submit"
-                    className="btn btn-primary test-create-org-submit-button"
+                    className="test-create-org-submit-button"
                     disabled={loading === true}
+                    variant="primary"
                 >
                     {loading === true && <LoadingSpinner />}
                     Create organization
-                </button>
+                </Button>
             </Form>
         </Page>
     )

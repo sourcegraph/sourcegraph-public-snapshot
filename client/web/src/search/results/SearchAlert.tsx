@@ -1,10 +1,11 @@
 import React, { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../graphql-operations'
 
@@ -38,8 +39,7 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
                 <ul className="list-unstyled">
                     {alert.proposedQueries.map(proposedQuery => (
                         <li key={proposedQuery.query}>
-                            <RouterLink
-                                className="btn btn-secondary btn-sm"
+                            <Button
                                 data-testid="proposed-query-link"
                                 to={
                                     '/search?' +
@@ -50,9 +50,12 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
                                         searchContextSpec
                                     )
                                 }
+                                variant="secondary"
+                                size="sm"
+                                as={Link}
                             >
                                 {proposedQuery.query || proposedQuery.description}
-                            </RouterLink>
+                            </Button>
                             {proposedQuery.query && proposedQuery.description && ` — ${proposedQuery.description}`}
                         </li>
                     ))}

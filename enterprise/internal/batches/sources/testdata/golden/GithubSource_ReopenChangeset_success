@@ -10,15 +10,32 @@
   "BaseRefName": "master",
   "Number": 353,
   "Author": {
-   "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+   "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
    "Login": "mrnugget",
    "URL": "https://github.com/mrnugget"
   },
+  "BaseRepository": {
+   "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Owner": {
+    "Login": "sourcegraph"
+   }
+  },
+  "HeadRepository": {
+   "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+   "Owner": {
+    "Login": "sourcegraph"
+   }
+  },
   "Participants": [
    {
-    "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+    "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
     "Login": "mrnugget",
     "URL": "https://github.com/mrnugget"
+   },
+   {
+    "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
+    "Login": "LawnGnome",
+    "URL": "https://github.com/LawnGnome"
    }
   ],
   "Labels": {
@@ -34,11 +51,11 @@
       "MessageHeadline": "Replacing fmt.Sprintf with strconv.Iota",
       "URL": "https://github.com/sourcegraph/automation-testing/commit/d965153c0b869943e935878d23a576928cc8c951",
       "Committer": {
-       "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?v=4",
        "Email": "thorsten@sourcegraph.com",
        "Name": "Thorsten Ball",
        "User": {
-        "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+        "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
         "Login": "mrnugget",
         "URL": "https://github.com/mrnugget"
        }
@@ -52,7 +69,7 @@
     "Type": "ClosedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
       "Login": "mrnugget",
       "URL": "https://github.com/mrnugget"
      },
@@ -64,11 +81,57 @@
     "Type": "ReopenedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
       "Login": "mrnugget",
       "URL": "https://github.com/mrnugget"
      },
      "CreatedAt": "2020-09-24T08:27:54Z"
+    }
+   },
+   {
+    "Type": "ClosedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+      "Login": "mrnugget",
+      "URL": "https://github.com/mrnugget"
+     },
+     "CreatedAt": "2020-11-10T16:48:33Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/353#event-3979919144"
+    }
+   },
+   {
+    "Type": "ReopenedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
+      "Login": "LawnGnome",
+      "URL": "https://github.com/LawnGnome"
+     },
+     "CreatedAt": "2021-02-18T02:11:03Z"
+    }
+   },
+   {
+    "Type": "ClosedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+      "Login": "mrnugget",
+      "URL": "https://github.com/mrnugget"
+     },
+     "CreatedAt": "2021-03-08T15:17:56Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/353#event-4421816877"
+    }
+   },
+   {
+    "Type": "ReopenedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
+      "Login": "LawnGnome",
+      "URL": "https://github.com/LawnGnome"
+     },
+     "CreatedAt": "2021-12-30T23:04:21Z"
     }
    }
   ],
@@ -81,8 +144,8 @@
        "Nodes": [
         {
          "ID": "MDEwOkNoZWNrU3VpdGUxMjAxMzM0OTIz",
-         "Status": "QUEUED",
-         "Conclusion": "",
+         "Status": "COMPLETED",
+         "Conclusion": "STALE",
          "ReceivedAt": "0001-01-01T00:00:00Z",
          "CheckRuns": {
           "Nodes": []
@@ -90,8 +153,8 @@
         },
         {
          "ID": "MDEwOkNoZWNrU3VpdGUxMjAxMzM0OTI2",
-         "Status": "QUEUED",
-         "Conclusion": "",
+         "Status": "COMPLETED",
+         "Conclusion": "STALE",
          "ReceivedAt": "0001-01-01T00:00:00Z",
          "CheckRuns": {
           "Nodes": []
@@ -110,5 +173,5 @@
   },
   "IsDraft": false,
   "CreatedAt": "2020-09-16T14:23:08Z",
-  "UpdatedAt": "2020-09-24T08:27:54Z"
+  "UpdatedAt": "2021-12-30T23:04:21Z"
  }

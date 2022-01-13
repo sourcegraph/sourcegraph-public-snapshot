@@ -7,7 +7,7 @@ import React from 'react'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { FileDecorator } from '../../tree/FileDecorator'
 
@@ -28,7 +28,7 @@ const TreeEntry: React.FunctionComponent<{
     renderedFileDecorations: React.ReactNode
     path: string
 }> = ({ isDirectory, name, url, isColumnLayout, renderedFileDecorations, path }) => (
-    <RouterLink
+    <Link
         to={url}
         className={classNames(
             'test-page-file-decorable',
@@ -53,7 +53,7 @@ const TreeEntry: React.FunctionComponent<{
             </span>
             {renderedFileDecorations}
         </div>
-    </RouterLink>
+    </Link>
 )
 
 interface TreeEntriesSectionProps extends ThemeProps {

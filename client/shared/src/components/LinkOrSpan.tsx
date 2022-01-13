@@ -1,7 +1,7 @@
 import { LocationDescriptor } from 'history'
 import * as React from 'react'
 
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 /**
  * The LinkOrSpan component renders a <Link> if the "to" property is a non-empty string; otherwise it renders the
@@ -15,9 +15,9 @@ export const LinkOrSpan: React.FunctionComponent<
 > = ({ to, className = '', children, ...otherProps }) => {
     if (to) {
         return (
-            <RouterLink to={to} className={className} {...otherProps}>
+            <Link to={to} className={className} {...otherProps}>
                 {children}
-            </RouterLink>
+            </Link>
         )
     }
 

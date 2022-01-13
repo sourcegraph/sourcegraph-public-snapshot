@@ -7,6 +7,7 @@ import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { focusable, FocusableElement } from 'tabbable'
@@ -22,7 +23,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LocalStorageSubject } from '@sourcegraph/shared/src/util/LocalStorageSubject'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -222,14 +223,14 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
             <ErrorBoundary location={props.location} render={error => <span>Component error: {error.message}</span>}>
                 <ActionItemsDivider />
                 {canScrollNegative && (
-                    <button
-                        type="button"
-                        className={classNames('btn btn-link p-0 border-0', styles.scroll, styles.listItem)}
+                    <Button
+                        className={classNames('p-0 border-0', styles.scroll, styles.listItem)}
                         onClick={onNegativeClicked}
                         tabIndex={-1}
+                        variant="link"
                     >
                         <MenuUpIcon className="icon-inline" />
-                    </button>
+                    </Button>
                 )}
                 <ActionsContainer
                     menu={ContributableMenu.EditorTitle}
@@ -282,26 +283,26 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                     )}
                 </ActionsContainer>
                 {canScrollPositive && (
-                    <button
-                        type="button"
-                        className={classNames('btn btn-link p-0 border-0', styles.scroll, styles.listItem)}
+                    <Button
+                        className={classNames('p-0 border-0', styles.scroll, styles.listItem)}
                         onClick={onPositiveClicked}
                         tabIndex={-1}
+                        variant="link"
                     >
                         <MenuDownIcon className="icon-inline" />
-                    </button>
+                    </Button>
                 )}
                 {haveExtensionsLoaded && <ActionItemsDivider />}
                 <ul className="list-unstyled m-0">
                     <li className={styles.listItem}>
-                        <RouterLink
+                        <Link
                             to="/extensions"
                             className={classNames(styles.listItem, styles.auxIcon, actionItemClassName)}
                             data-tooltip="Add extensions"
                             aria-label="Add extensions"
                         >
                             <PlusIcon className="icon-inline" />
-                        </RouterLink>
+                        </Link>
                     </li>
                 </ul>
             </ErrorBoundary>

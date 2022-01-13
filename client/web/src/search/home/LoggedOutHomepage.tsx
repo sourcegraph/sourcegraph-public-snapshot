@@ -4,7 +4,7 @@ import React, { useCallback } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
@@ -55,7 +55,7 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
             <div className={styles.searchExamples}>
                 {examples.map(example => (
                     <div key={example.query} className={styles.searchExampleCardWrapper}>
-                        <RouterLink
+                        <Link
                             to={example.to}
                             className={classNames('card', styles.searchExampleCard)}
                             onClick={searchExampleClicked(example.trackEventName)}
@@ -66,10 +66,10 @@ const SearchExamples: React.FunctionComponent<SearchExamplesProps> = ({
                                     <SyntaxHighlightedSearchQuery query={example.query} />
                                 </div>
                             </div>
-                        </RouterLink>
-                        <RouterLink to={example.to} onClick={searchExampleClicked(example.trackEventName)}>
+                        </Link>
+                        <Link to={example.to} onClick={searchExampleClicked(example.trackEventName)}>
                             {example.label}
-                        </RouterLink>
+                        </Link>
                     </div>
                 ))}
             </div>
@@ -102,19 +102,19 @@ const TipsAndTricks: React.FunctionComponent<TipsAndTricksProps> = ({
                 {examples.map(example => (
                     <div key={example.query} className={styles.tipsAndTricksExample}>
                         {example.label}
-                        <RouterLink
+                        <Link
                             to={example.to}
                             className={classNames('card', styles.tipsAndTricksCard)}
                             onClick={searchExampleClicked(example.trackEventName)}
                         >
                             <SyntaxHighlightedSearchQuery query={example.query} />
-                        </RouterLink>
+                        </Link>
                     </div>
                 ))}
             </div>
-            <RouterLink className={styles.tipsAndTricksMore} to={moreLink.href}>
+            <Link className={styles.tipsAndTricksMore} to={moreLink.href}>
                 {moreLink.label}
-            </RouterLink>
+            </Link>
         </div>
     )
 }
@@ -230,12 +230,12 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                                     src={communitySearchContext.homepageIcon}
                                     alt={`${communitySearchContext.spec} icon`}
                                 />
-                                <RouterLink
+                                <Link
                                     to={communitySearchContext.url}
                                     className={classNames(styles.loggedOutHomepageCommunitySearchContextsListingTitle)}
                                 >
                                     {communitySearchContext.title}
-                                </RouterLink>
+                                </Link>
                             </div>
                         ))}
                     </div>

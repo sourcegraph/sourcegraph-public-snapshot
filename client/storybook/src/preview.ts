@@ -6,6 +6,8 @@ import isChromatic from 'chromatic/isChromatic'
 import { ReactElement } from 'react'
 import { withDesign } from 'storybook-addon-designs'
 
+import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
+
 import { themeDark, themeLight, THEME_DARK_CLASS, THEME_LIGHT_CLASS } from './themes'
 
 const withConsoleDecorator: DecoratorFunction<ReactElement> = (storyFn, context): ReactElement =>
@@ -29,6 +31,8 @@ export const parameters = {
 }
 
 configureActions({ depth: 100, limit: 20 })
+
+setLinkComponent(AnchorLink)
 
 // Default to light theme for Chromatic and "Open canvas in new tab" button.
 // addon-dark-mode will override this if it's running.

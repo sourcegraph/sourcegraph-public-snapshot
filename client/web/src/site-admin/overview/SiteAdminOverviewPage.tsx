@@ -11,7 +11,7 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/strings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Link, Button } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorAlert } from '../../components/alerts'
@@ -179,25 +179,25 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                 {info && !isErrorLike(info) && (
                     <>
                         {info.repositories !== null && (
-                            <RouterLink
+                            <Link
                                 to="/site-admin/repositories"
                                 className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {numberWithCommas(info.repositories)}{' '}
                                 {pluralize('repository', info.repositories, 'repositories')}
-                            </RouterLink>
+                            </Link>
                         )}
                         {info.repositoryStats !== null && (
-                            <RouterLink
+                            <Link
                                 to="/site-admin/repositories"
                                 className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {BigInt(info.repositoryStats.gitDirBytes).toLocaleString()}{' '}
                                 {pluralize('byte stored', BigInt(info.repositoryStats.gitDirBytes), 'bytes stored')}
-                            </RouterLink>
+                            </Link>
                         )}
                         {info.repositoryStats !== null && (
-                            <RouterLink
+                            <Link
                                 to="/site-admin/repositories"
                                 className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
@@ -207,32 +207,32 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                                     BigInt(info.repositoryStats.indexedLinesCount),
                                     'lines of code indexed'
                                 )}
-                            </RouterLink>
+                            </Link>
                         )}
                         {info.users > 1 && (
-                            <RouterLink
+                            <Link
                                 to="/site-admin/users"
                                 className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {numberWithCommas(info.users)} {pluralize('user', info.users)}
-                            </RouterLink>
+                            </Link>
                         )}
                         {info.orgs > 1 && (
-                            <RouterLink
+                            <Link
                                 to="/site-admin/organizations"
                                 className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {numberWithCommas(info.orgs)} {pluralize('organization', info.orgs)}
-                            </RouterLink>
+                            </Link>
                         )}
                         {info.users > 1 && (
-                            <RouterLink
+                            <Link
                                 to="/site-admin/surveys"
                                 className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {numberWithCommas(info.surveyResponses.totalCount)}{' '}
                                 {pluralize('user survey response', info.surveyResponses.totalCount)}
-                            </RouterLink>
+                            </Link>
                         )}
                         {info.users > 1 &&
                             stats !== undefined &&
@@ -261,13 +261,14 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                                                 <div className="site-admin-overview-page__detail-header">
                                                     <h2>Weekly unique users</h2>
                                                     <h3>
-                                                        <RouterLink
+                                                        <Button
                                                             to="/site-admin/usage-statistics"
-                                                            className="btn btn-secondary"
+                                                            variant="secondary"
+                                                            as={Link}
                                                         >
                                                             View all usage statistics{' '}
                                                             <OpenInNewIcon className="icon-inline" />
-                                                        </RouterLink>
+                                                        </Button>
                                                     </h3>
                                                 </div>
                                             }

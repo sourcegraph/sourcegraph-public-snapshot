@@ -12,7 +12,7 @@ import React, { useCallback, useState } from 'react'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { BatchSpecListFields } from '../../../graphql-operations'
 
@@ -33,9 +33,8 @@ export const BatchSpecNode: React.FunctionComponent<BatchSpecNodeProps> = ({ nod
     return (
         <>
             <span className={styles.nodeSeparator} />
-            <button
-                type="button"
-                className="btn btn-icon"
+            <Button
+                className="btn-icon"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
@@ -44,18 +43,18 @@ export const BatchSpecNode: React.FunctionComponent<BatchSpecNodeProps> = ({ nod
                 ) : (
                     <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                 )}
-            </button>
+            </Button>
             <div className="d-flex flex-column justify-content-center align-items-center px-2 pb-1">
                 <StateIcon state={node.state} />
                 <span className="text-muted">{upperFirst(node.state.toLowerCase())}</span>
             </div>
             <div className="px-2 pb-1">
                 <h3 className="pr-2">
-                    <RouterLink className="text-muted" to={`${node.namespace.url}/batch-changes`}>
+                    <Link className="text-muted" to={`${node.namespace.url}/batch-changes`}>
                         {node.namespace.namespaceName}
-                    </RouterLink>
+                    </Link>
                     <span className="text-muted d-inline-block mx-1">/</span>
-                    <RouterLink to={`/batch-changes/executions/${node.id}`}>{node.description.name || '-'}</RouterLink>
+                    <Link to={`/batch-changes/executions/${node.id}`}>{node.description.name || '-'}</Link>
                 </h3>
                 <small className="text-muted d-block">
                     Executed by <strong>{node.creator?.username}</strong> <Timestamp date={node.createdAt} now={now} />

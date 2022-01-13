@@ -4,7 +4,7 @@ import React, { useCallback, useState } from 'react'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Button, Link } from '@sourcegraph/wildcard'
 
 import { authenticatedUser } from '../../../auth'
 import { BatchChangeFields } from '../../../graphql-operations'
@@ -56,24 +56,19 @@ export const WebhookAlert: React.FunctionComponent<Props> = ({
                 <h4>Changeset information may not be up to date</h4>
                 <p className={styles.blurb}>
                     Sourcegraph will poll for updates because{' '}
-                    <button
-                        type="button"
-                        className={classNames(styles.openLink, 'btn btn-link p-0')}
-                        onClick={toggleOpen}
-                    >
+                    <Button className={classNames(styles.openLink, 'p-0')} onClick={toggleOpen} variant="link">
                         {totalCount}{' '}
                         {pluralize('code host is not configured', totalCount, 'code hosts are not configured')}
-                    </button>{' '}
+                    </Button>{' '}
                     to use webhooks.{' '}
                     {isSiteAdmin ? (
                         <>
-                            Learn how to <RouterLink to={SITE_ADMIN_CONFIG_DOC_URL}>configure webhooks</RouterLink> or
-                            disable this warning.
+                            Learn how to <Link to={SITE_ADMIN_CONFIG_DOC_URL}>configure webhooks</Link> or disable this
+                            warning.
                         </>
                     ) : (
                         <>
-                            Ask your site admin{' '}
-                            <RouterLink to={SITE_ADMIN_CONFIG_DOC_URL}>to configure webhooks</RouterLink>.
+                            Ask your site admin <Link to={SITE_ADMIN_CONFIG_DOC_URL}>to configure webhooks</Link>.
                         </>
                     )}
                 </p>

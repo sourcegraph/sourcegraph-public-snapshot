@@ -1,7 +1,6 @@
 import classNames from 'classnames'
 import React from 'react'
-
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from 'react-router-dom'
 
 import styles from './HighlightedLink.module.scss'
 
@@ -65,9 +64,9 @@ export const HighlightedLink: React.FunctionComponent<HighlightedLinkProps> = pr
 
     return props.url ? (
         <code>
-            <RouterLink tabIndex={-1} className={styles.link} to={props.url} onClick={() => props.onClick?.()}>
+            <Link tabIndex={-1} className={styles.link} to={props.url} onClick={() => props.onClick?.()}>
                 {spans}
-            </RouterLink>
+            </Link>
         </code>
     ) : (
         <>{spans}</>

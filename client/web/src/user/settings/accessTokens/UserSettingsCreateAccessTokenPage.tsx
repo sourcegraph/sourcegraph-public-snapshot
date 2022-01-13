@@ -9,7 +9,7 @@ import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, PageHeader, LoadingSpinner, RouterLink } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -189,20 +189,23 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<Props> =
                     </div>
                 </Container>
                 <div className="mb-3">
-                    <button
+                    <Button
                         type="submit"
                         disabled={creationOrError === 'loading'}
-                        className="btn btn-primary test-create-access-token-submit"
+                        className="test-create-access-token-submit"
+                        variant="primary"
                     >
                         {creationOrError === 'loading' ? <LoadingSpinner /> : <AddIcon className="icon-inline" />}{' '}
                         Generate token
-                    </button>
-                    <RouterLink
-                        className="btn btn-secondary ml-2 test-create-access-token-cancel"
+                    </Button>
+                    <Button
+                        className="ml-2 test-create-access-token-cancel"
                         to={match.url.replace(/\/new$/, '')}
+                        variant="secondary"
+                        as={Link}
                     >
                         Cancel
-                    </RouterLink>
+                    </Button>
                 </div>
             </Form>
 

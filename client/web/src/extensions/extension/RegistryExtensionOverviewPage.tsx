@@ -4,12 +4,13 @@ import maxDate from 'date-fns/max'
 import { isObject } from 'lodash'
 import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useMemo, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 
 import { isErrorLike, isDefined } from '@sourcegraph/common'
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { isEncodedImage } from '@sourcegraph/shared/src/util/icon'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Button } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -140,9 +141,9 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                     <h3>Resources</h3>
                     <small>
                         {extension.registryExtension && (
-                            <RouterLink to={`${extension.registryExtension.url}/-/manifest`} className="d-block mb-1">
+                            <Link to={`${extension.registryExtension.url}/-/manifest`} className="d-block mb-1">
                                 Manifest (package.json)
-                            </RouterLink>
+                            </Link>
                         )}
                         {extension.manifest && !isErrorLike(extension.manifest) && extension.manifest.url && (
                             <a
@@ -181,12 +182,15 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                         <ul className="list-inline" data-testid="test-registry-extension-categories">
                             {categories.map(category => (
                                 <li key={category} className="list-inline-item mb-2">
-                                    <RouterLink
+                                    <Button
                                         to={urlToExtensionsQuery({ category })}
-                                        className="btn btn-outline-secondary btn-sm"
+                                        variant="secondary"
+                                        outline={true}
+                                        size="sm"
+                                        as={Link}
                                     >
                                         {category}
-                                    </RouterLink>
+                                    </Button>
                                 </li>
                             ))}
                         </ul>
@@ -202,12 +206,16 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                             <ul className="list-inline">
                                 {extension.manifest.tags.map(tag => (
                                     <li key={tag} className="list-inline-item mb-2">
-                                        <RouterLink
+                                        <Button
                                             to={urlToExtensionsQuery({ query: extensionsQuery({ tag }) })}
-                                            className={classNames('btn btn-outline-secondary btn-sm', styles.tag)}
+                                            className={styles.tag}
+                                            variant="secondary"
+                                            outline={true}
+                                            size="sm"
+                                            as={Link}
                                         >
                                             {tag}
-                                        </RouterLink>
+                                        </Button>
                                     </li>
                                 ))}
                             </ul>

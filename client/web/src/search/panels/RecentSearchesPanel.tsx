@@ -5,7 +5,7 @@ import { Observable } from 'rxjs'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
@@ -87,7 +87,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
             <ul className={styles.examplesList}>
                 <li className={styles.examplesListItem}>
                     <small>
-                        <RouterLink
+                        <Link
                             to={
                                 '/search?' +
                                 buildSearchURLQuery(
@@ -99,12 +99,12 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                             className="text-monospace"
                         >
                             <SyntaxHighlightedSearchQuery query="lang:c if(:[eval_match]) { :[statement_match] }" />
-                        </RouterLink>
+                        </Link>
                     </small>
                 </li>
                 <li className={styles.examplesListItem}>
                     <small>
-                        <RouterLink
+                        <Link
                             to={
                                 '/search?' +
                                 buildSearchURLQuery(
@@ -116,17 +116,17 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                             className="text-monospace"
                         >
                             <SyntaxHighlightedSearchQuery query='lang:java type:diff after:"1 week ago"' />
-                        </RouterLink>
+                        </Link>
                     </small>
                 </li>
                 <li className={styles.examplesListItem}>
                     <small>
-                        <RouterLink
+                        <Link
                             to={'/search?' + buildSearchURLQuery('lang:java', SearchPatternType.literal, false)}
                             className="text-monospace"
                         >
                             <SyntaxHighlightedSearchQuery query="lang:java" />
-                        </RouterLink>
+                        </Link>
                     </small>
                 </li>
             </ul>
@@ -156,9 +156,9 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                         <tr key={index} className={styles.resultsTableRow}>
                             <td>
                                 <small className={styles.recentQuery}>
-                                    <RouterLink to={recentSearch.url} onClick={logSearchClicked}>
+                                    <Link to={recentSearch.url} onClick={logSearchClicked}>
                                         <SyntaxHighlightedSearchQuery query={recentSearch.searchText} />
-                                    </RouterLink>
+                                    </Link>
                                 </small>
                             </td>
                             <td className={styles.resultsTableDateCol}>

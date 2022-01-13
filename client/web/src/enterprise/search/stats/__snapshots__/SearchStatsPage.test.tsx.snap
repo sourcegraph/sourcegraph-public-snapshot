@@ -167,7 +167,6 @@ exports[`SearchStatsPage renders 1`] = `
               <tr>
                 <td>
                   <a
-                    class="anchorLink"
                     href="/search?q=abc+lang:a&patternType=literal"
                   >
                     A
@@ -183,7 +182,6 @@ exports[`SearchStatsPage renders 1`] = `
               <tr>
                 <td>
                   <a
-                    class="anchorLink"
                     href="/search?q=abc+lang:b&patternType=literal"
                   >
                     B
@@ -199,7 +197,6 @@ exports[`SearchStatsPage renders 1`] = `
               <tr>
                 <td>
                   <a
-                    class="anchorLink"
                     href="/search?q=abc+lang:c&patternType=literal"
                   >
                     C
@@ -215,7 +212,6 @@ exports[`SearchStatsPage renders 1`] = `
               <tr>
                 <td>
                   <a
-                    class="anchorLink"
                     href="/search?q=abc+lang:d&patternType=literal"
                   >
                     D

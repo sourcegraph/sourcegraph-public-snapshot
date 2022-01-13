@@ -1,8 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { ListGroup, ListGroupItem } from 'reactstrap'
-
-import { RouterLink } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../batches'
 import { SidebarGroup, SidebarCollapseItems, SidebarNavItem } from '../components/Sidebar'
@@ -49,7 +48,7 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
                         </ListGroupItem>
                     ) : (
                         <ListGroupItem className="p-0" key={items[0].label}>
-                            <RouterLink
+                            <Link
                                 to={items[0].to}
                                 className={classNames(
                                     'bg-2 border-0 d-flex list-group-item-action p-2 w-100',
@@ -60,7 +59,7 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
                                     {header?.icon && <header.icon className="sidebar__icon icon-inline mr-1" />}{' '}
                                     {items[0].label}
                                 </span>
-                            </RouterLink>
+                            </Link>
                         </ListGroupItem>
                     ))
             )}

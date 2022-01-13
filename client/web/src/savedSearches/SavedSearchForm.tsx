@@ -4,7 +4,7 @@ import { Omit } from 'utility-types'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { RouterLink, Container, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Container, PageHeader, ProductStatusBadge, Button, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
@@ -149,9 +149,9 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                                     <strong>New:</strong> Watch your code for changes with code monitoring to get
                                     notifications.
                                 </div>
-                                <RouterLink to={codeMonitoringUrl} className="btn btn-primary">
+                                <Button to={codeMonitoringUrl} variant="primary" as={Link}>
                                     Go to code monitoring →
-                                </RouterLink>
+                                </Button>
                             </div>
                         </div>
                     )}
@@ -191,13 +191,14 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                         </div>
                     )}
                 </Container>
-                <button
+                <Button
                     type="submit"
                     disabled={props.loading}
-                    className={classNames(styles.submitButton, 'btn btn-primary test-saved-search-form-submit-button')}
+                    className={classNames(styles.submitButton, 'test-saved-search-form-submit-button')}
+                    variant="primary"
                 >
                     {props.submitLabel}
-                </button>
+                </Button>
 
                 {props.error && !props.loading && <ErrorAlert className="mb-3" error={props.error} />}
 
@@ -206,7 +207,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                         <ProductStatusBadge status="new" className="mr-3" />
                         <span>
                             Watch for changes to your code and trigger email notifications, webhooks, and more with{' '}
-                            <RouterLink to="/code-monitoring">code monitoring →</RouterLink>
+                            <Link to="/code-monitoring">code monitoring →</Link>
                         </span>
                     </Container>
                 )}

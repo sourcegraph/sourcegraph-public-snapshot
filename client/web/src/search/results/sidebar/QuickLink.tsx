@@ -2,7 +2,7 @@ import LinkIcon from 'mdi-react/LinkIcon'
 import React from 'react'
 
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { Settings } from '../../../schema/settings.schema'
 
@@ -12,7 +12,7 @@ export const getQuickLinks = (settingsCascade: SettingsCascadeProps['settingsCas
     const quickLinks = (isSettingsValid<Settings>(settingsCascade) && settingsCascade.final.quicklinks) || []
 
     return quickLinks.map((quickLink, index) => (
-        <RouterLink
+        <Link
             // Can't guarantee that URL, name, or description are unique, so use index as key.
             // This is safe since this list will only be updated when settings change.
             // eslint-disable-next-line react/no-array-index-key
@@ -24,6 +24,6 @@ export const getQuickLinks = (settingsCascade: SettingsCascadeProps['settingsCas
         >
             <LinkIcon className="icon-inline pr-1 flex-shrink-0" />
             {quickLink.name}
-        </RouterLink>
+        </Link>
     ))
 }

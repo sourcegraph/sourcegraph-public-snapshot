@@ -2,6 +2,7 @@ import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 
@@ -10,7 +11,6 @@ import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { RouterLink } from '@sourcegraph/wildcard'
 
 import { mutateGraphQL } from '../../../backend/graphql'
 import { HeroPage } from '../../../components/HeroPage'
@@ -94,13 +94,13 @@ export const UserSubscriptionsNewProductSubscriptionPage: React.FunctionComponen
                         Your license key will be available immediately.
                         <br />
                         <br />
-                        <RouterLink to="/terms" target="_blank">
+                        <Link to="/terms" target="_blank">
                             Terms of Service
-                        </RouterLink>{' '}
+                        </Link>{' '}
                         |{' '}
-                        <RouterLink to="/privacy" target="_blank">
+                        <Link to="/privacy" target="_blank">
                             Privacy Policy
-                        </RouterLink>
+                        </Link>
                     </small>
                 }
                 history={history}

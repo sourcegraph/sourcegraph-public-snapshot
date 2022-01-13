@@ -3,7 +3,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch, useHistory, useLocation } from 'react-router'
-import { NavLink as RouterNavLink } from 'react-router-dom'
+import { NavLink as RouterLink } from 'react-router-dom'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
@@ -11,7 +11,7 @@ import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, PageHeader, FeedbackBadge, RouterLink } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, PageHeader, FeedbackBadge, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -150,19 +150,19 @@ const TabBar: React.FunctionComponent<{ url: string; batchSpec: BatchSpecExecuti
     <div className="mb-3">
         <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
             <li className="nav-item">
-                <RouterNavLink to={`${url}/edit`} role="button" activeClassName="active" className="nav-link">
+                <RouterLink to={`${url}/edit`} role="button" activeClassName="active" className="nav-link">
                     {/* TODO: Rename to edit once this IS an editor. */}
                     <span className="text-content" data-tab-content="1. Batch spec">
                         1. Batch spec
                     </span>
-                </RouterNavLink>
+                </RouterLink>
             </li>
             <li className="nav-item">
-                <RouterNavLink to={`${url}/execution`} role="button" activeClassName="active" className="nav-link">
+                <RouterLink to={`${url}/execution`} role="button" activeClassName="active" className="nav-link">
                     <span className="text-content" data-tab-content="2. Execution">
                         2. Execution
                     </span>
-                </RouterNavLink>
+                </RouterLink>
             </li>
             <li className="nav-item">
                 {!batchSpec.applyURL && (
@@ -177,11 +177,11 @@ const TabBar: React.FunctionComponent<{ url: string; batchSpec: BatchSpecExecuti
                     </span>
                 )}
                 {batchSpec.applyURL && (
-                    <RouterNavLink to={`${url}/preview`} role="button" activeClassName="active" className="nav-link">
+                    <RouterLink to={`${url}/preview`} role="button" activeClassName="active" className="nav-link">
                         <span className="text-content" data-tab-content="3. Preview">
                             3. Preview
                         </span>
-                    </RouterNavLink>
+                    </RouterLink>
                 )}
             </li>
         </ul>
@@ -250,11 +250,11 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
             <span>
                 <div className="btn-group-vertical ml-2">
                     {(batchSpec.state === BatchSpecState.QUEUED || batchSpec.state === BatchSpecState.PROCESSING) && (
-                        <button
-                            type="button"
-                            className="btn btn-outline-secondary"
+                        <Button
                             onClick={cancelExecution}
                             disabled={isCanceling === true}
+                            outline={true}
+                            variant="secondary"
                         >
                             {isCanceling !== true && <>Cancel</>}
                             {isCanceling === true && (
@@ -262,24 +262,24 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                                     <LoadingSpinner /> Canceling
                                 </>
                             )}
-                        </button>
+                        </Button>
                     )}
                     {!location.pathname.endsWith('preview') &&
                         batchSpec.applyURL &&
                         batchSpec.state === BatchSpecState.COMPLETED && (
-                            <RouterLink to="preview" className="btn btn-primary">
+                            <Button to="preview" variant="primary" as={Link}>
                                 Preview
-                            </RouterLink>
+                            </Button>
                         )}
                     {batchSpec.viewerCanRetry && batchSpec.state !== BatchSpecState.COMPLETED && (
                         // TODO: Add a second button to allow retrying an entire batch spec,
                         // including completed jobs.
-                        <button
-                            type="button"
-                            className="btn btn-outline-secondary"
+                        <Button
                             onClick={retryExecution}
                             disabled={isRetrying === true}
                             data-tooltip={isRetrying !== true ? 'Retry all failed workspaces' : undefined}
+                            outline={true}
+                            variant="secondary"
                         >
                             {isRetrying !== true && <>Retry</>}
                             {isRetrying === true && (
@@ -287,19 +287,21 @@ const BatchSpecActions: React.FunctionComponent<BatchSpecActionsProps> = ({ batc
                                     <LoadingSpinner className="icon-inline" /> Retrying
                                 </>
                             )}
-                        </button>
+                        </Button>
                     )}
                     {!location.pathname.endsWith('preview') &&
                         batchSpec.applyURL &&
                         batchSpec.state === BatchSpecState.FAILED && (
-                            <RouterLink
-                                className="btn btn-outline-warning"
+                            <Button
                                 to="preview"
                                 data-tooltip="Execution didn't finish successfully in all workspaces. The batch spec might have less changeset specs than expected."
+                                variant="warning"
+                                outline={true}
+                                as={Link}
                             >
                                 <AlertCircleIcon className="icon-inline mb-0 mr-2 text-warning" />
                                 Preview
-                            </RouterLink>
+                            </Button>
                         )}
                 </div>
                 {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}

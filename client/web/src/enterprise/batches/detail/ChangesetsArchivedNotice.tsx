@@ -3,7 +3,7 @@ import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import React, { useEffect, useState } from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
@@ -47,7 +47,7 @@ export const ChangesetsArchivedNotice: React.FunctionComponent<ChangesetsArchive
                 </div>
                 <div className="flex-grow-1">
                     {archivedCount} {pluralize('changeset', archivedCount)} {pluralize('has', archivedCount, 'have')}{' '}
-                    been <RouterLink to="?tab=archived">archived</RouterLink>.
+                    been <Link to="?tab=archived">archived</Link>.
                 </div>
             </div>
         </DismissibleAlert>

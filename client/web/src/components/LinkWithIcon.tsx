@@ -3,7 +3,7 @@ import { kebabCase, omit } from 'lodash'
 import React from 'react'
 import { NavLink, NavLinkProps } from 'react-router-dom'
 
-import { RouterLink } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 import type { LinkProps } from '@sourcegraph/wildcard/src/components/Link'
 
 interface Props extends LinkProps, Pick<NavLinkProps, 'activeClassName'> {
@@ -24,7 +24,7 @@ interface PropsWithIconPlaceholder extends Props {
  */
 export const LinkWithIcon: React.FunctionComponent<PropsWithIcon | PropsWithIconPlaceholder> = props => {
     const { to, text, className = '', activeClassName, ...restProps } = props
-    const LinkComponent = activeClassName ? NavLink : RouterLink
+    const LinkComponent = activeClassName ? NavLink : Link
 
     // use `svg` element as a placeholder when `hasIconPlaceholder` is true
     const Icon = 'hasIconPlaceholder' in props ? 'svg' : props.icon

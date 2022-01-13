@@ -2,10 +2,11 @@ import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
-import { RouterLink, Badge } from '@sourcegraph/wildcard'
+import { Badge, Button } from '@sourcegraph/wildcard'
 import { BADGE_VARIANTS } from '@sourcegraph/wildcard/src/components/Badge/constants'
 
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -57,9 +58,7 @@ class SurveyResponseNode extends React.PureComponent<SurveyResponseNodeProps, Su
                     <div>
                         <strong>
                             {this.props.node.user ? (
-                                <RouterLink to={userURL(this.props.node.user.username)}>
-                                    {this.props.node.user.username}
-                                </RouterLink>
+                                <Link to={userURL(this.props.node.user.username)}>{this.props.node.user.username}</Link>
                             ) : this.props.node.email ? (
                                 this.props.node.email
                             ) : (
@@ -130,7 +129,7 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
                 <tr>
                     <td>
                         <strong>
-                            <RouterLink to={userURL(this.props.node.username)}>{this.props.node.username}</RouterLink>
+                            <Link to={userURL(this.props.node.username)}>{this.props.node.username}</Link>
                         </strong>
                     </td>
                     <td>
@@ -152,9 +151,9 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
                     </td>
                     <td>
                         {responses.length > 0 && (
-                            <button type="button" className="btn btn-sm btn-secondary" onClick={this.showMoreClicked}>
+                            <Button onClick={this.showMoreClicked} variant="secondary" size="sm">
                                 {this.state.displayAll ? 'Hide' : 'See all'}
-                            </button>
+                            </Button>
                         )}
                     </td>
                 </tr>

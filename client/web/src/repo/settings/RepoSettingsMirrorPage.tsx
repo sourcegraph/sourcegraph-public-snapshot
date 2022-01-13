@@ -3,12 +3,13 @@ import * as H from 'history'
 import LockIcon from 'mdi-react/LockIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { interval, Subject, Subscription } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { Container, PageHeader, LoadingSpinner, FeedbackText, RouterLink } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, FeedbackText, Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'
 import { PageTitle } from '../../components/PageTitle'
@@ -194,14 +195,13 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                 title="Check connection to remote repository"
                 description={<span>Diagnose problems cloning or updating from the remote repository.</span>}
                 action={
-                    <button
-                        type="button"
-                        className="btn btn-primary"
+                    <Button
                         disabled={this.state.loading}
                         onClick={this.checkMirrorRepositoryConnection}
+                        variant="primary"
                     >
                         Check connection
-                    </button>
+                    </Button>
                 }
                 details={
                     <>
@@ -315,7 +315,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                         {this.state.repo.viewerCanAdminister && (
                             <small className="form-text text-muted">
                                 Configure repository mirroring in{' '}
-                                <RouterLink to="/site-admin/external-services">external services</RouterLink>.
+                                <Link to="/site-admin/external-services">external services</Link>.
                             </small>
                         )}
                     </div>
@@ -348,18 +348,16 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                                         <strong>No ECDSA host key is known ... Host key verification failed?</strong>
                                     </code>{' '}
                                     See{' '}
-                                    <RouterLink to="/help/admin/repo/auth#ssh-authentication-config-keys-known-hosts">
+                                    <Link to="/help/admin/repo/auth#ssh-authentication-config-keys-known-hosts">
                                         SSH repository authentication documentation
-                                    </RouterLink>{' '}
+                                    </Link>{' '}
                                     for how to provide an SSH <code>known_hosts</code> file with the remote host's SSH
                                     host key.
                                 </li>
                                 <li className={styles.step}>
                                     Consult{' '}
-                                    <RouterLink to="/help/admin/repo/add">
-                                        Sourcegraph repositories documentation
-                                    </RouterLink>{' '}
-                                    for resolving other authentication issues (such as HTTPS certificates and SSH keys).
+                                    <Link to="/help/admin/repo/add">Sourcegraph repositories documentation</Link> for
+                                    resolving other authentication issues (such as HTTPS certificates and SSH keys).
                                 </li>
                                 <li className={styles.step}>
                                     <FeedbackText headerText="Questions?" />

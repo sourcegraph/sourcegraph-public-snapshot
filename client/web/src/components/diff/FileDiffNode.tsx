@@ -8,7 +8,7 @@ import { Observable } from 'rxjs'
 
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { RouterLink, Badge } from '@sourcegraph/wildcard'
+import { Button, Badge, Link } from '@sourcegraph/wildcard'
 
 import { FileDiffFields } from '../../graphql-operations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
@@ -99,13 +99,13 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
             <a id={anchor} aria-hidden={true} />
             <div className={classNames('test-file-diff-node', styles.fileDiffNode, className)}>
                 <div className={styles.header}>
-                    <button type="button" className="btn btn-sm btn-icon mr-2" onClick={toggleExpand}>
+                    <Button className="btn-icon mr-2" onClick={toggleExpand} size="sm">
                         {expanded ? (
                             <ChevronDownIcon className="icon-inline" />
                         ) : (
                             <ChevronRightIcon className="icon-inline" />
                         )}
-                    </button>
+                    </Button>
                     <div className={classNames('align-items-baseline', styles.headerPathStat)}>
                         {!node.oldPath && (
                             <Badge variant="success" className="text-uppercase mr-2">
@@ -123,23 +123,22 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                             </Badge>
                         )}
                         {stat}
-                        <RouterLink
-                            to={{ ...location, hash: anchor }}
-                            className={classNames('ml-2', styles.headerPath)}
-                        >
+                        <Link to={{ ...location, hash: anchor }} className={classNames('ml-2', styles.headerPath)}>
                             {path}
-                        </RouterLink>
+                        </Link>
                     </div>
                     <div className={styles.headerActions}>
                         {/* We only have a 'view' component for GitBlobs, but not for `VirtualFile`s. */}
                         {node.mostRelevantFile.__typename === 'GitBlob' && (
-                            <RouterLink
+                            <Button
                                 to={node.mostRelevantFile.url}
-                                className="btn btn-sm btn-link"
                                 data-tooltip="View file at revision"
+                                variant="link"
+                                size="sm"
+                                as={Link}
                             >
                                 View
-                            </RouterLink>
+                            </Button>
                         )}
                     </div>
                 </div>
@@ -149,9 +148,9 @@ export const FileDiffNode: React.FunctionComponent<FileDiffNodeProps> = ({
                     ) : !node.newPath && !renderDeleted ? (
                         <div className="text-muted m-2">
                             <p className="mb-0">Deleted files aren't rendered by default.</p>
-                            <button type="button" className="btn btn-link m-0 p-0" onClick={onClickToViewDeleted}>
+                            <Button className="m-0 p-0" onClick={onClickToViewDeleted} variant="link">
                                 Click here to view.
-                            </button>
+                            </Button>
                         </div>
                     ) : (
                         <FileDiffHunks

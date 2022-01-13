@@ -5,12 +5,12 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle, Tooltip } from 'reactstrap'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
-import { RouterLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { KEYBOARD_SHORTCUT_SHOW_HELP } from '../keyboardShortcuts/keyboardShortcuts'
@@ -161,20 +161,20 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                     Signed in as <strong>@{props.authenticatedUser.username}</strong>
                 </DropdownItem>
                 <DropdownItem divider={true} />
-                <RouterLink to={props.authenticatedUser.settingsURL!} className="dropdown-item">
+                <Link to={props.authenticatedUser.settingsURL!} className="dropdown-item">
                     Settings
-                </RouterLink>
+                </Link>
                 {props.showRepositorySection && (
-                    <RouterLink
+                    <Link
                         to={`/users/${props.authenticatedUser.username}/settings/repositories`}
                         className="dropdown-item"
                     >
                         Your repositories
-                    </RouterLink>
+                    </Link>
                 )}
-                <RouterLink to={`/users/${props.authenticatedUser.username}/searches`} className="dropdown-item">
+                <Link to={`/users/${props.authenticatedUser.username}/searches`} className="dropdown-item">
                     Saved searches
-                </RouterLink>
+                </Link>
                 <DropdownItem divider={true} />
                 <div className="px-2 py-1">
                     <div className="d-flex align-items-center">
@@ -212,21 +212,21 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         <DropdownItem divider={true} />
                         <DropdownItem header={true}>Your organizations</DropdownItem>
                         {props.authenticatedUser.organizations.nodes.map(org => (
-                            <RouterLink key={org.id} to={org.settingsURL || org.url} className="dropdown-item">
+                            <Link key={org.id} to={org.settingsURL || org.url} className="dropdown-item">
                                 {org.displayName || org.name}
-                            </RouterLink>
+                            </Link>
                         ))}
                     </>
                 )}
                 <DropdownItem divider={true} />
                 {props.authenticatedUser.siteAdmin && (
-                    <RouterLink to="/site-admin" className="dropdown-item">
+                    <Link to="/site-admin" className="dropdown-item">
                         Site admin
-                    </RouterLink>
+                    </Link>
                 )}
-                <RouterLink to="/help" className="dropdown-item" target="_blank" rel="noopener">
+                <Link to="/help" className="dropdown-item" target="_blank" rel="noopener">
                     Help <OpenInNewIcon className="icon-inline" />
-                </RouterLink>
+                </Link>
                 <button onClick={showKeyboardShortcutsHelp} type="button" className="dropdown-item">
                     Keyboard shortcuts
                 </button>
