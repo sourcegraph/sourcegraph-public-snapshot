@@ -21,17 +21,6 @@ type Git interface {
 	CatFile(commit string, path string) ([]byte, error)
 }
 
-type DB interface {
-	GetCommit(givenCommit string) (ancestor string, height int, present bool, err error)
-	InsertCommit(commit string, height int, ancestor string) error
-	GetBlob(hop string, path string) (id int, found bool, err error)
-	UpdateBlobHops(id int, status StatusAD, hop string) error
-	InsertBlob(blob Blob) (id int, err error)
-	AppendHop(hops []string, status StatusAD, hop string) error
-	Search(hops []string, query *string) ([]Blob, error)
-	DeleteRedundant(hop string) error
-}
-
 type ParseSymbolsFunc func(path string, bytes []byte) (symbols []string, err error)
 
 type LogEntry struct {
@@ -148,7 +137,7 @@ func (t TaskLog) Print() {
 
 var TASKLOG = NewTaskLog()
 
-func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
+func Index(git Git, db *sql.DB, parse ParseSymbolsFunc, givenCommit string) error {
 	tipCommit := NULL
 	tipHeight := 0
 	missingCount := 0
@@ -160,7 +149,7 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 	}
 	for _, commit := range revs {
 		TASKLOG.Start("GetCommit")
-		_, height, present, err := db.GetCommit(commit)
+		_, height, present, err := GetCommit(db, commit)
 		TASKLOG.Start("idle")
 		if err != nil {
 			return errors.Wrap(err, "GetCommit")
@@ -198,13 +187,13 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 		}
 
 		TASKLOG.Start("AppendHop (added)")
-		err = db.AppendHop(hops[0:r], AddedAD, entry.Commit)
+		err = AppendHop(db, hops[0:r], AddedAD, entry.Commit)
 		TASKLOG.Start("idle")
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (added)")
 		}
 		TASKLOG.Start("AppendHop (deleted)")
-		err = db.AppendHop(hops[0:r], DeletedAD, entry.Commit)
+		err = AppendHop(db, hops[0:r], DeletedAD, entry.Commit)
 		TASKLOG.Start("idle")
 		if err != nil {
 			return errors.Wrap(err, "AppendHop (deleted)")
@@ -219,7 +208,7 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 					found := false
 					for _, hop := range hops {
 						TASKLOG.Start("GetBlob")
-						id, found, err = db.GetBlob(hop, pathStatus.Path)
+						id, found, err = GetBlob(db, hop, pathStatus.Path)
 						TASKLOG.Start("idle")
 						if err != nil {
 							return errors.Wrap(err, "GetBlob")
@@ -234,7 +223,7 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 				}
 
 				TASKLOG.Start("UpdateBlobHops")
-				db.UpdateBlobHops(id, DeletedAD, entry.Commit)
+				UpdateBlobHops(db, id, DeletedAD, entry.Commit)
 				TASKLOG.Start("idle")
 			}
 
@@ -259,7 +248,7 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 					Symbols: symbols,
 				}
 				TASKLOG.Start("InsertBlob")
-				id, err := db.InsertBlob(blob)
+				id, err := InsertBlob(db, blob)
 				TASKLOG.Start("idle")
 				if err != nil {
 					return errors.Wrap(err, "InsertBlob")
@@ -269,7 +258,7 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 		}
 
 		TASKLOG.Start("DeleteRedundant")
-		err = db.DeleteRedundant(entry.Commit)
+		err = DeleteRedundant(db, entry.Commit)
 		TASKLOG.Start("idle")
 		if err != nil {
 			return errors.Wrap(err, "DeleteRedundant")
@@ -282,20 +271,20 @@ func Index(git Git, db DB, parse ParseSymbolsFunc, givenCommit string) error {
 			fmt.Println(tipCommit, r, hops, tipHeight)
 		}
 		TASKLOG.Start("InsertCommit")
-		db.InsertCommit(tipCommit, tipHeight, hops[r])
+		InsertCommit(db, tipCommit, tipHeight, hops[r])
 		TASKLOG.Start("idle")
 	}
 
 	return nil
 }
 
-func getHops(db DB, commit string) ([]string, error) {
+func getHops(db *sql.DB, commit string) ([]string, error) {
 	current := commit
 	spine := []string{current}
 
 	for {
 		TASKLOG.Start("GetCommit")
-		ancestor, _, present, err := db.GetCommit(current)
+		ancestor, _, present, err := GetCommit(db, current)
 		TASKLOG.Start("idle")
 		if err != nil {
 			return nil, errors.Wrap(err, "GetCommit")
@@ -327,15 +316,6 @@ func ruler(n int) int {
 		return 0
 	}
 	return 1 + ruler(n/2)
-}
-
-func Search(db DB, commit string, query *string) ([]Blob, error) {
-	hops, err := getHops(db, commit)
-	if err != nil {
-		return nil, err
-	}
-
-	return db.Search(hops, query)
 }
 
 type SubprocessGit struct {
@@ -460,19 +440,15 @@ func (git SubprocessGit) CatFile(commit string, path string) ([]byte, error) {
 	return fileContents, nil
 }
 
-type PostgresDB struct {
-	db *sql.DB
-}
-
-func NewPostgresDB(db *sql.DB) (*PostgresDB, error) {
+func CreateTables(db *sql.DB) error {
 	_, err := db.Exec("DROP TABLE IF EXISTS rockskip_ancestry")
 	if err != nil {
-		return nil, fmt.Errorf("dropping rockskip_ancestry: %s", err)
+		return fmt.Errorf("dropping rockskip_ancestry: %s", err)
 	}
 
 	_, err = db.Exec("DROP TABLE IF EXISTS rockskip_blobs")
 	if err != nil {
-		return nil, fmt.Errorf("dropping rockskip_blobs: %s", err)
+		return fmt.Errorf("dropping rockskip_blobs: %s", err)
 	}
 
 	_, err = db.Exec(`
@@ -482,7 +458,7 @@ func NewPostgresDB(db *sql.DB) (*PostgresDB, error) {
 			ancestor_id VARCHAR(40) NOT NULL
 		)`)
 	if err != nil {
-		return nil, fmt.Errorf("creating rockskip_ancestry: %s", err)
+		return fmt.Errorf("creating rockskip_ancestry: %s", err)
 	}
 
 	_, err = db.Exec(`
@@ -495,29 +471,29 @@ func NewPostgresDB(db *sql.DB) (*PostgresDB, error) {
 			symbols TEXT[]		  NOT NULL
 		)`)
 	if err != nil {
-		return nil, fmt.Errorf("creating rockskip_blobs: %s", err)
+		return fmt.Errorf("creating rockskip_blobs: %s", err)
 	}
 
 	_, err = db.Exec("CREATE INDEX rockskip_ancestry_commit_id ON rockskip_ancestry (commit_id)")
 	if err != nil {
-		return nil, fmt.Errorf("creating index rockskip_ancestry_commit_id: %s", err)
+		return fmt.Errorf("creating index rockskip_ancestry_commit_id: %s", err)
 	}
 
 	_, err = db.Exec("CREATE INDEX rockskip_blobs_path ON rockskip_blobs(path)")
 	if err != nil {
-		return nil, fmt.Errorf("creating index rockskip_blobs_path: %s", err)
+		return fmt.Errorf("creating index rockskip_blobs_path: %s", err)
 	}
 
 	_, err = db.Exec("CREATE INDEX rockskip_blobs_added_deleted_symbols ON rockskip_blobs USING GIN (added, deleted, symbols)")
 	if err != nil {
-		return nil, fmt.Errorf("creating index rockskip_blobs_added_deleted_symbols: %s", err)
+		return fmt.Errorf("creating index rockskip_blobs_added_deleted_symbols: %s", err)
 	}
 
-	return &PostgresDB{db: db}, nil
+	return nil
 }
 
-func (db PostgresDB) GetCommit(givenCommit string) (ancestor string, height int, present bool, err error) {
-	err = db.db.QueryRow(`
+func GetCommit(db *sql.DB, givenCommit string) (ancestor string, height int, present bool, err error) {
+	err = db.QueryRow(`
 		SELECT ancestor_id, height
 		FROM rockskip_ancestry
 		WHERE commit_id = $1
@@ -530,16 +506,16 @@ func (db PostgresDB) GetCommit(givenCommit string) (ancestor string, height int,
 	return ancestor, height, true, nil
 }
 
-func (db PostgresDB) InsertCommit(commit string, height int, ancestor string) error {
-	_, err := db.db.Exec(`
+func InsertCommit(db *sql.DB, commit string, height int, ancestor string) error {
+	_, err := db.Exec(`
 		INSERT INTO rockskip_ancestry (commit_id, height, ancestor_id)
 		VALUES ($1, $2, $3)
 	`, commit, height, ancestor)
 	return errors.Wrap(err, "InsertCommit")
 }
 
-func (db PostgresDB) GetBlob(hop string, path string) (id int, found bool, err error) {
-	err = db.db.QueryRow(`
+func GetBlob(db *sql.DB, hop string, path string) (id int, found bool, err error) {
+	err = db.QueryRow(`
 		SELECT id
 		FROM rockskip_blobs
 		WHERE path = $1 AND $2 = ANY (added) AND NOT $2 = ANY (deleted)
@@ -552,10 +528,10 @@ func (db PostgresDB) GetBlob(hop string, path string) (id int, found bool, err e
 	return id, true, nil
 }
 
-func (db PostgresDB) UpdateBlobHops(id int, status StatusAD, hop string) error {
+func UpdateBlobHops(db *sql.DB, id int, status StatusAD, hop string) error {
 	column := statusADToColumn(status)
 	// TODO also try `||` instead of `array_append``
-	_, err := db.db.Exec(fmt.Sprintf(`
+	_, err := db.Exec(fmt.Sprintf(`
 		UPDATE rockskip_blobs
 		SET %s = array_append(%s, $1)
 		WHERE id = $2
@@ -563,9 +539,9 @@ func (db PostgresDB) UpdateBlobHops(id int, status StatusAD, hop string) error {
 	return errors.Wrap(err, "UpdateBlobHops")
 }
 
-func (db PostgresDB) InsertBlob(blob Blob) (id int, err error) {
+func InsertBlob(db *sql.DB, blob Blob) (id int, err error) {
 	lastInsertId := 0
-	err = db.db.QueryRow(`
+	err = db.QueryRow(`
 		INSERT INTO rockskip_blobs (commit, path, added, deleted, symbols)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id
@@ -573,9 +549,9 @@ func (db PostgresDB) InsertBlob(blob Blob) (id int, err error) {
 	return lastInsertId, errors.Wrap(err, "InsertBlob")
 }
 
-func (db PostgresDB) AppendHop(hops []string, givenStatus StatusAD, newHop string) error {
+func AppendHop(db *sql.DB, hops []string, givenStatus StatusAD, newHop string) error {
 	column := statusADToColumn(givenStatus)
-	_, err := db.db.Exec(fmt.Sprintf(`
+	_, err := db.Exec(fmt.Sprintf(`
 		UPDATE rockskip_blobs
 		SET %s = array_append(%s, $1)
 		WHERE $2 && %s
@@ -583,11 +559,17 @@ func (db PostgresDB) AppendHop(hops []string, givenStatus StatusAD, newHop strin
 	return errors.Wrap(err, "AppendHop")
 }
 
-func (db PostgresDB) Search(hops []string, query *string) ([]Blob, error) {
-	var rows *sql.Rows
+func Search(db *sql.DB, commit string, query *string) ([]Blob, error) {
 	var err error
+
+	hops, err := getHops(db, commit)
+	if err != nil {
+		return nil, err
+	}
+
+	var rows *sql.Rows
 	if query != nil {
-		rows, err = db.db.Query(`
+		rows, err = db.Query(`
 			SELECT id, commit, path, added, deleted, symbols
 			FROM rockskip_blobs
 			WHERE
@@ -596,7 +578,7 @@ func (db PostgresDB) Search(hops []string, query *string) ([]Blob, error) {
 				AND $2 && symbols
 		`, pg.Array(hops), pg.Array([]string{*query}))
 	} else {
-		rows, err = db.db.Query(`
+		rows, err = db.Query(`
 			SELECT id, commit, path, added, deleted, symbols
 			FROM rockskip_blobs
 			WHERE
@@ -625,8 +607,8 @@ func (db PostgresDB) Search(hops []string, query *string) ([]Blob, error) {
 	return blobs, nil
 }
 
-func (db PostgresDB) DeleteRedundant(hop string) error {
-	_, err := db.db.Exec(`
+func DeleteRedundant(db *sql.DB, hop string) error {
+	_, err := db.Exec(`
 		UPDATE rockskip_blobs
 		SET added = array_remove(added, $1), deleted = array_remove(deleted, $1)
 		WHERE $2 && added AND $2 && deleted
@@ -634,16 +616,12 @@ func (db PostgresDB) DeleteRedundant(hop string) error {
 	return errors.Wrap(err, "DeleteRedundant")
 }
 
-func (db PostgresDB) Close() error {
-	return db.db.Close()
-}
-
-func (db PostgresDB) PrintInternals() error {
+func PrintInternals(db *sql.DB) error {
 	fmt.Println("Commit ancestry:")
 	fmt.Println()
 
 	// print all rows in the rockskip_ancestry table
-	rows, err := db.db.Query(`
+	rows, err := db.Query(`
 		SELECT commit_id, height, ancestor_id
 		FROM rockskip_ancestry
 		ORDER BY height ASC
@@ -667,7 +645,7 @@ func (db PostgresDB) PrintInternals() error {
 	fmt.Println("Blobs:")
 	fmt.Println()
 
-	rows, err = db.db.Query(`
+	rows, err = db.Query(`
 		SELECT id, path, added, deleted
 		FROM rockskip_blobs
 		ORDER BY id ASC

@@ -29,7 +29,8 @@ func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfi
 
 	parser := mustCreateCtagsParser(ctagsConfig)
 
-	db, err := rockskip.NewPostgresDB(mustInitializeCodeIntelDB())
+	db := mustInitializeCodeIntelDB()
+	err := rockskip.CreateTables(db)
 	if err != nil {
 		return nil, errors.Wrap(err, "rockskip.NewPostgresDB")
 	}

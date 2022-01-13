@@ -58,12 +58,12 @@ func TestIndex(t *testing.T) {
 	}
 	defer git.Close()
 
-	sqlDB, err := sql.Open("postgres", "postgres://sourcegraph:sourcegraph@localhost:5432/sourcegraph?sslmode=disable")
+	db, err := sql.Open("postgres", "postgres://sourcegraph:sourcegraph@localhost:5432/sourcegraph?sslmode=disable")
 	if err != nil {
 		t.Fatalf("🚨 sql.Open: %s", err)
 	}
 
-	db, err := NewPostgresDB(sqlDB)
+	err = CreateTables(db)
 	if err != nil {
 		t.Fatalf("🚨 NewPostgresDB: %s", err)
 	}
@@ -112,7 +112,7 @@ func TestIndex(t *testing.T) {
 	if diff := cmp.Diff(paths, expected); diff != "" {
 		fmt.Println("🚨 PathsAtCommit: unexpected paths (-got +want)")
 		fmt.Println(diff)
-		db.PrintInternals()
+		PrintInternals(db)
 		t.Fail()
 	}
 }
