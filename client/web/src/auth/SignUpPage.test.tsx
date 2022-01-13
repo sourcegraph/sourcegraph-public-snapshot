@@ -5,7 +5,6 @@ import { MemoryRouter } from 'react-router'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
-import { RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
 import { AuthenticatedUser } from '../auth'
 import { FeatureFlagName } from '../featureFlags/featureFlags'
