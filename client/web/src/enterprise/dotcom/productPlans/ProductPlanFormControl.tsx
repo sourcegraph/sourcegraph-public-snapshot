@@ -4,8 +4,8 @@ import { Observable } from 'rxjs'
 import { catchError, map, startWith, tap } from 'rxjs/operators'
 
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { RadioButton, LoadingSpinner } from '@sourcegraph/wildcard'
 

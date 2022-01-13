@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react'
 import { useHistory } from 'react-router'
 
+import { useMutation } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useMutation } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { ExecuteBatchSpecResult, ExecuteBatchSpecVariables } from '../../../graphql-operations'
 

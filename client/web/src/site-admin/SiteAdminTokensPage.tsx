@@ -5,8 +5,8 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { AuthenticatedUser } from '../auth'

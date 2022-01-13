@@ -5,8 +5,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { gql, useMutation } from '@sourcegraph/http-client'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { gql, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { Button, FlexTextArea, LoadingSpinner, useAutoFocus } from '@sourcegraph/wildcard'
 

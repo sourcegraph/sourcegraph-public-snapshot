@@ -1,7 +1,7 @@
 import { InMemoryCache } from '@apollo/client'
 
-import { TypedTypePolicies } from '../../graphql-operations'
-import { IExtensionRegistry } from '../schema'
+import { TypedTypePolicies } from '@sourcegraph/shared/src/graphql-operations'
+import { IExtensionRegistry } from '@sourcegraph/shared/src/schema'
 
 // Defines how the Apollo cache interacts with our GraphQL schema.
 // See https://www.apollographql.com/docs/react/caching/cache-configuration/#typepolicy-fields

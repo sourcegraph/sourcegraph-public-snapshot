@@ -4,7 +4,7 @@ import React from 'react'
 import { MemoryRouter } from 'react-router'
 import { of } from 'rxjs'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
 import { SiteAdminProductSubscriptionPage } from './SiteAdminProductSubscriptionPage'
 

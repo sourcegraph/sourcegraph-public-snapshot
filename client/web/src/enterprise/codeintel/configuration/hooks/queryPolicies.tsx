@@ -2,8 +2,8 @@ import { ApolloClient } from '@apollo/client'
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { getDocumentNode, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { getDocumentNode, gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
 import {
     CodeIntelligenceConfigurationPoliciesResult,

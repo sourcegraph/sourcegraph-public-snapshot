@@ -7,7 +7,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 
 import { displayRepoName } from '../components/RepoFileLink'
 import { SearchPatternType } from '../graphql-operations'
-import { SymbolKind } from '../graphql/schema'
+import { SymbolKind } from '../schema'
 
 export type SearchEvent =
     | { type: 'matches'; data: SearchMatch[] }

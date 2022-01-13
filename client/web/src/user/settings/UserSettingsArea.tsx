@@ -3,7 +3,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
-import { gql, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner } from '@sourcegraph/wildcard'

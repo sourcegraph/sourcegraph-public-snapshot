@@ -62,7 +62,7 @@ async function graphQlSchema() {
         postProcessor: code => format(code, { ...formatOptions, parser: 'typescript' }),
       }
     )
-  await writeFile(__dirname + '/src/graphql/schema.ts', typings)
+  await writeFile(__dirname + '/src/schema.ts', typings)
 }
 
 /**

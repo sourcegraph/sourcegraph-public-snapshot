@@ -4,7 +4,7 @@ import { fromFetch } from 'rxjs/fetch'
 import { filter, map } from 'rxjs/operators'
 
 import { isDefined } from '@sourcegraph/common'
-import { checkOk } from '@sourcegraph/shared/src/backend/fetch'
+import { checkOk } from '@sourcegraph/http-client'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 
 import { DiffResolvedRevisionSpec } from '../../repo'

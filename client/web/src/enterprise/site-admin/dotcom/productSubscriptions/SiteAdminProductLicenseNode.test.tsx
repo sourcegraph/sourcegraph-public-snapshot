@@ -2,7 +2,7 @@ import { render } from '@testing-library/react'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
 

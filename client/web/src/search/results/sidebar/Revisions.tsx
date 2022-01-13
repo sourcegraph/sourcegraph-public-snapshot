@@ -2,8 +2,8 @@ import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import React from 'react'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { GitRefType } from '@sourcegraph/shared/src/graphql/schema'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { GitRefType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 

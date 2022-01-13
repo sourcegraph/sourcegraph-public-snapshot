@@ -47,13 +47,13 @@ import {
 } from '@sourcegraph/codeintellify'
 import { asError, isDefined } from '@sourcegraph/common'
 import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
+import { isHTTPAuthError } from '@sourcegraph/http-client'
 import { ActionItemAction, urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
-import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,

@@ -2,15 +2,15 @@ import { from, Observable } from 'rxjs'
 import { delay, filter, map, retryWhen, switchMap } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import {
     CloneInProgressError,
     RepoNotFoundError,
     RevisionNotFoundError,
     isCloneInProgressErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { sha256 } from '@sourcegraph/shared/src/util/hashCode'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import {

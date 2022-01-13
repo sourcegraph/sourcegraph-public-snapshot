@@ -8,8 +8,8 @@ import {
     dataOrThrowErrors,
     isErrorGraphQLResult,
     gql,
-} from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+} from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { resetAllMemoizationCaches } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'

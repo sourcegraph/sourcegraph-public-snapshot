@@ -1,4 +1,4 @@
-import { IQuery } from '../schema'
+import { IQuery } from '@sourcegraph/shared/src/schema'
 
 /**
  * Hardcoded names of the queries which will be persisted to the local storage.
