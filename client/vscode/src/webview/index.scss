@@ -41,7 +41,7 @@ code {
     font-size: var(--vscode-editor-font-size) !important;
 }
 
-a {
+a, .infobar-button-link {
     color: var(--vscode-textLink-foreground) !important;
 }
 

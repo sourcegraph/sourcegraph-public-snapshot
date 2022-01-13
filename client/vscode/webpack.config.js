@@ -138,6 +138,15 @@ const webviewConfig = {
         'alias',
         'ModalVideo'
       ),
+      './RepoFileLink': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'RepoFileLink'),
+      '@sourcegraph/shared/src/components/RepoFileLink': path.resolve(
+        __dirname,
+        'src',
+        'webview',
+        'search-panel',
+        'alias',
+        'RepoFileLink'
+      ),
     },
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: ['.ts', '.tsx', '.js', '.jsx'],

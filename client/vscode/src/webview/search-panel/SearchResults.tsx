@@ -207,7 +207,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
             return (
                 <button
                     type="button"
-                    className={classNames('btn btn-sm btn-outline-secondary text-decoration-none', props.className)}
+                    className="btn btn-sm btn-outline-secondary text-decoration-none"
                     onClick={props.onNonExperimentalLinkClick}
                     disabled={props.isNonExperimentalLinkDisabled}
                 >
@@ -270,7 +270,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
                             <li className={classNames('mr-2', styles.navItem)} data-tooltip="Share results link">
                                 <button
                                     type="button"
-                                    className="btn btn-sm btn-outline-secondary text-decoration-none"
+                                    className="btn btn-sm infobar-button-link btn-outline-secondary text-decoration-none"
                                     onClick={onShareResultsClick}
                                 >
                                     <ShareOutlineIcon className="icon-inline mr-1" />
@@ -295,7 +295,7 @@ export const SearchResults = React.memo<SearchResultsProps>(
             notifySlack: false,
             slackWebhookURL: null,
         }
-
+        console.log(results)
         return (
             <div className={styles.streamingSearchResultsContainer}>
                 {/* TODO: This is a temporary searchResultsInfoBar */}

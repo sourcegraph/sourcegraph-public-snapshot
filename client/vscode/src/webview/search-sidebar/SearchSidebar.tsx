@@ -28,7 +28,17 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
     theme,
 }) => {
     // Check if there is any opened / active search panel
-    const [activeSearchPanel, setActiveSearchPanel] = useState<boolean>(false)
+    const [activeSearchPanel, setActiveSearchPanel] = useState<boolean | undefined>(undefined)
+    const [validating, setValidating] = useState(true)
+    // Check if User is currently on VS Code Desktop or VS Code Web
+    const [onDesktop, setOnDesktop] = useState<boolean | undefined>(undefined)
+    const [corsUri, setCorsUri] = useState<string | undefined>(undefined)
+    const [hasAccount, setHasAccount] = useState(false)
+    const [hasAccessToken, setHasAccessToken] = useState<boolean | undefined>(undefined)
+    const [validAccessToken, setValidAccessToken] = useState<boolean | undefined>(undefined)
+    const [localRecentSearches, setLocalRecentSearches] = useState<LocalRecentSeachProps[] | undefined>(undefined)
+    const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
+    // Search Query
     const [patternType, setPatternType] = useState<SearchPatternType>(SearchPatternType.literal)
     const [caseSensitive, setCaseSensitive] = useState<boolean>(false)
     const useQueryState: UseStore<SearchQueryState> = useMemo(() => {
@@ -104,16 +114,6 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
         }
     }, [activeQueryState, sourcegraphVSCodeExtensionAPI, useQueryState])
 
-    const [validating, setValidating] = useState(true)
-    // Check if User is currently on VS Code Desktop or VS Code Web
-    const [onDesktop, setOnDesktop] = useState<boolean | undefined>(undefined)
-    const [corsUri, setCorsUri] = useState<string | undefined>(undefined)
-    const [hasAccount, setHasAccount] = useState(false)
-    const [hasAccessToken, setHasAccessToken] = useState<boolean | undefined>(undefined)
-    const [validAccessToken, setValidAccessToken] = useState<boolean>(false)
-    const [localRecentSearches, setLocalRecentSearches] = useState<LocalRecentSeachProps[] | undefined>(undefined)
-    const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(null)
-
     // Get current access token, cros, and platform settings
     useEffect(() => {
         setValidating(true)
@@ -149,8 +149,11 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                     // TODO error handling
                 })
         }
+        if (!hasAccessToken) {
+            setValidAccessToken(false)
+        }
         // Validate Token
-        if (hasAccount && hasAccessToken && !validAccessToken) {
+        if (hasAccount && hasAccessToken && validAccessToken === undefined) {
             ;(async () => {
                 const currentUser = await platformContext
                     .requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>({
@@ -210,10 +213,35 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
         !validating &&
         onDesktop !== undefined &&
         hasAccessToken !== undefined &&
-        !activeSearchPanel &&
-        !validAccessToken
+        validAccessToken !== undefined &&
+        activeSearchPanel !== undefined
     ) {
-        return (
+        return activeSearchPanel || validAccessToken ? (
+            <>
+                {/* HISTORY SIDEBAR */}
+                <SearchHistoryPanel
+                    localRecentSearches={localRecentSearches}
+                    telemetryService={platformContext.telemetryService}
+                    authenticatedUser={authenticatedUser}
+                    platformContext={platformContext}
+                    sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                    theme={theme}
+                />
+                <BrandedSearchSidebar
+                    forceButton={true}
+                    className={styles.sidebarContainer}
+                    filters={dynamicFilters}
+                    useQueryState={useQueryState}
+                    patternType={patternType}
+                    caseSensitive={caseSensitive}
+                    settingsCascade={settingsCascade}
+                    telemetryService={{
+                        log: () => {},
+                        logViewEvent: () => {},
+                    }}
+                />
+            </>
+        ) : (
             <>
                 <OpenSearchPanelCta
                     className={styles.sidebarContainer}
@@ -228,37 +256,9 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({
                     onSubmitAccessToken={onSubmitAccessToken}
                     validAccessToken={validAccessToken}
                 />
-                {validating && <LoadingSpinner />}
             </>
         )
     }
 
-    // For v1: Add recent/saved searches/files panel(s)
-
-    return (
-        <>
-            {/* HISTORY SIDEBAR */}
-            <SearchHistoryPanel
-                localRecentSearches={localRecentSearches}
-                telemetryService={platformContext.telemetryService}
-                authenticatedUser={authenticatedUser}
-                platformContext={platformContext}
-                sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
-                theme={theme}
-            />
-            <BrandedSearchSidebar
-                forceButton={true}
-                className={styles.sidebarContainer}
-                filters={dynamicFilters}
-                useQueryState={useQueryState}
-                patternType={patternType}
-                caseSensitive={caseSensitive}
-                settingsCascade={settingsCascade}
-                telemetryService={{
-                    log: () => {},
-                    logViewEvent: () => {},
-                }}
-            />
-        </>
-    )
+    return <LoadingSpinner />
 }

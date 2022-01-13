@@ -67,5 +67,13 @@ export const AnchorLink: React.FunctionComponent<LinkProps> = ({ to, children, .
  * Invalid links includes links that start with 'sourcegraph://'
  */
 export function checkLink(uri: string): string {
-    return uri.startsWith('https') ? uri : '#'
+    // Private instance user are required to provide access token
+    // This is for users who has not provide an access token and is using dotcom by default
+    if (uri.startsWith('/sign-up?')) {
+        return 'https://sourcegraph.com/sign-up?src=VSCE'
+    }
+    if (uri.startsWith('https://')) {
+        return uri
+    }
+    return '#'
 }
