@@ -301,8 +301,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
          * Don't subscribe to this event when there wasn't an authenticated user,
          * as it could lead to an infinite loop of 401 -> reload -> 401
          */
-        this.subscriptions.add(
-            authenticatedUser
+        this.subscriptions.add(authenticatedUser
                 .pipe(
                     switchMap(authenticatedUser =>
                         authenticatedUser ? fromEvent<ErrorEvent>(window, 'error') : of(null)
