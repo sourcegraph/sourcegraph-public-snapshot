@@ -34,7 +34,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
         class="limitWidth"
       >
         <h2
-          class="pageHeading"
+          class="d-flex align-items-center pageHeading"
         >
           Easily search the code you care about.
         </h2>

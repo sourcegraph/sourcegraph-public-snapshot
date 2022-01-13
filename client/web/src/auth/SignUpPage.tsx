@@ -18,7 +18,7 @@ import { getReturnTo, maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
-interface SignUpPageProps extends ThemeProps, TelemetryProps, FeatureFlagProps {
+export interface SignUpPageProps extends ThemeProps, TelemetryProps, FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
