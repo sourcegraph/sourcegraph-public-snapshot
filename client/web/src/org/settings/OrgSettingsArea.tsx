@@ -31,6 +31,7 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
+// used to show loading circle while waiting for fflags to be loaded
 const LoadingComponent: React.FunctionComponent = () => <LoadingSpinner className="m-2" />
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
