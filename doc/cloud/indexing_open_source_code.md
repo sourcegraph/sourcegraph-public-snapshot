@@ -2,7 +2,7 @@
 
 Sourcegraph is on a mission to [make coding more accessible to the world](https://handbook.sourcegraph.com/company/strategy).
 
-In order to execute this mission, Sourcegraph has committed to indexing open source repositories from across various code hosts including GitLab and GitHub. By indexing these repositories, Sourcegraph allows any engineer to tap into the knowledge of the open source universe near-instantaneously. You can read more about our decision to do this [here](https://about.sourcegraph.com/blog/indexing-the-oss-universe-update-more-code-hosts/).
+In order to execute this mission, Sourcegraph has committed to indexing open source repositories from various code hosts including GitLab and GitHub. By indexing these repositories, Sourcegraph allows any engineer to tap into the knowledge of the open source universe near-instantaneously. You can read more about our decision to do this [here](https://about.sourcegraph.com/blog/indexing-the-oss-universe-update-more-code-hosts/).
 
 Sourcegraph's open source code index presently includes more than 2 million repositories, and searching these open source repositories is available for free on [Sourcegraph Cloud](https://sourcegraph.com/). 
 
