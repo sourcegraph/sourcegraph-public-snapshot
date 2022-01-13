@@ -296,7 +296,7 @@ describe('Search', () => {
             await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
         })
 
-        test('Clicking toggle turns off structural saerch and reverts to default pattern type', async () => {
+        test('Clicking toggle turns off structural search and reverts to default pattern type', async () => {
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=structural')

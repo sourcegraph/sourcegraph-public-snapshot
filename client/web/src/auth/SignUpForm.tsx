@@ -15,6 +15,7 @@ import {
     ValidationOptions,
     deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
+import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 import { LoaderButton } from '../components/LoaderButton'
@@ -27,6 +28,7 @@ import { OrDivider } from './OrDivider'
 import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { SignupEmailField } from './SignupEmailField'
+
 export interface SignUpArguments {
     email: string
     username: string
@@ -131,7 +133,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
     const externalAuthProviders = context.authProviders.filter(provider => !provider.isBuiltin)
 
     const onClickExternalAuthSignup = useCallback(
-        (type: AuthProvider['serviceType']): React.MouseEventHandler<HTMLAnchorElement> => () => {
+        (type: AuthProvider['serviceType']): React.MouseEventHandler<HTMLButtonElement> => () => {
             // TODO: Log events with keepalive=true to ensure they always outlive the webpage
             // https://github.com/sourcegraph/sourcegraph/issues/19174
             eventLogger.log('SignupInitiated', { type }, { type })
@@ -273,10 +275,12 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                             // Use index as key because display name may not be unique. This is OK
                             // here because this list will not be updated during this component's lifetime.
                             <div className="mb-2" key={index}>
-                                <a
+                                <Button
                                     href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
-                                    className="btn btn-secondary btn-block"
+                                    className="btn-block"
                                     onClick={onClickExternalAuthSignup(provider.serviceType)}
+                                    variant="secondary"
+                                    as="a"
                                 >
                                     {provider.serviceType === 'github' ? (
                                         <GithubIcon className="icon-inline" />
@@ -284,7 +288,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                                         <GitlabIcon className="icon-inline" />
                                     ) : null}{' '}
                                     Continue with {provider.displayName}
-                                </a>
+                                </Button>
                             </div>
                         ))}
                     </>

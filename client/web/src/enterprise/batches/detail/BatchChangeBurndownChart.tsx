@@ -236,8 +236,8 @@ const IncludeArchivedToggle: React.FunctionComponent<{
     includeArchived: boolean
     onToggle: () => void
 }> = ({ includeArchived, onToggle }) => (
-    <div className="d-flex align-items-center justify-content-between text-nowrap mb-2">
-        <label htmlFor="include-archived" className="mb-0 pt-1">
+    <div className="d-flex align-items-center justify-content-between text-nowrap mb-2 pt-1">
+        <label htmlFor="include-archived" className="mb-0">
             Include archived
         </label>
         <Toggle
@@ -246,6 +246,7 @@ const IncludeArchivedToggle: React.FunctionComponent<{
             onToggle={onToggle}
             title="Include archived changesets"
             className="ml-2"
+            display="inline"
         />
     </div>
 )

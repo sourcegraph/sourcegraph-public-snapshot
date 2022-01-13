@@ -11,7 +11,7 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
-import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
+import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
 import { authUser } from '../panels/utils'
 
@@ -50,7 +50,6 @@ describe('SearchPage', () => {
         onThemePreferenceChange: () => undefined,
         authenticatedUser: authUser,
         globbing: false,
-        parsedSearchQuery: 'r:golang/oauth2 test f:travis',
         platformContext: {} as any,
         keyboardShortcuts: [],
         searchContextsEnabled: true,
@@ -69,10 +68,6 @@ describe('SearchPage', () => {
         featureFlags: new Map(),
         extensionViews: () => null,
     }
-
-    beforeEach(() => {
-        useNavbarQueryState.setState({ searchCaseSensitivity: false })
-    })
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {
         container = render(<SearchPage {...defaultProps} isSourcegraphDotCom={true} />).container

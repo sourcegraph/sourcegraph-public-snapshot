@@ -582,15 +582,16 @@ func Frontend() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "mean_successful_sentinel_duration_5m",
-							Description: "mean successful sentinel search duration over 5m",
+							Name:        "mean_successful_sentinel_duration_1h30m",
+							Description: "mean successful sentinel search duration over 1h30m",
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
-							Query:    `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[5m])) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[5m]))`,
-							Warning:  monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
-							Critical: monitoring.Alert().GreaterOrEqual(8, nil).For(30 * time.Minute),
-							Panel:    monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
-							Owner:    monitoring.ObservableOwnerSearch,
+							Query:          `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[1h30m])) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[1h30m]))`,
+							Warning:        monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
+							Critical:       monitoring.Alert().GreaterOrEqual(8, nil).For(30 * time.Minute),
+							Panel:          monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
+							Owner:          monitoring.ObservableOwnerSearch,
+							Interpretation: `Mean search duration for all successful sentinel queries`,
 							PossibleSolutions: `
 								- Look at the breakdown by query to determine if a specific query type is being affected
 								- Check for high CPU usage on zoekt-webserver
@@ -598,18 +599,19 @@ func Frontend() *monitoring.Container {
 							`,
 						},
 						{
-							Name:        "mean_sentinel_stream_latency_5m",
-							Description: "mean sentinel stream latency over 5m",
+							Name:        "mean_sentinel_stream_latency_1h30m",
+							Description: "mean successful sentinel stream latency over 1h30m",
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
-							Query:    `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[5m])) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[5m]))`,
+							Query:    `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[1h30m])) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[1h30m]))`,
 							Warning:  monitoring.Alert().GreaterOrEqual(2, nil).For(15 * time.Minute),
 							Critical: monitoring.Alert().GreaterOrEqual(3, nil).For(30 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.NoLegend(),
 								monitoring.PanelOptions.ColorOverride("latency", "#8AB8FF"),
 							),
-							Owner: monitoring.ObservableOwnerSearch,
+							Owner:          monitoring.ObservableOwnerSearch,
+							Interpretation: `Mean time to first result for all successful streaming sentinel queries`,
 							PossibleSolutions: `
 								- Look at the breakdown by query to determine if a specific query type is being affected
 								- Check for high CPU usage on zoekt-webserver
@@ -619,15 +621,16 @@ func Frontend() *monitoring.Container {
 					},
 					{
 						{
-							Name:        "90th_percentile_successful_sentinel_duration_5m",
-							Description: "90th percentile successful sentinel search duration over 5m",
+							Name:        "90th_percentile_successful_sentinel_duration_1h30m",
+							Description: "90th percentile successful sentinel search duration over 1h30m",
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
-							Query:    `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[5m]), "source", "$1", "source", "searchblitz_(.*)")))`,
-							Warning:  monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
-							Critical: monitoring.Alert().GreaterOrEqual(10, nil).For(30 * time.Minute),
-							Panel:    monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
-							Owner:    monitoring.ObservableOwnerSearch,
+							Query:          `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[1h30m]), "source", "$1", "source", "searchblitz_(.*)")))`,
+							Warning:        monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
+							Critical:       monitoring.Alert().GreaterOrEqual(10, nil).For(30 * time.Minute),
+							Panel:          monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
+							Owner:          monitoring.ObservableOwnerSearch,
+							Interpretation: `90th percentile search duration for all successful sentinel queries`,
 							PossibleSolutions: `
 								- Look at the breakdown by query to determine if a specific query type is being affected
 								- Check for high CPU usage on zoekt-webserver
@@ -635,18 +638,19 @@ func Frontend() *monitoring.Container {
 							`,
 						},
 						{
-							Name:        "90th_percentile_sentinel_stream_latency_5m",
-							Description: "90th percentile sentinel stream latency over 5m",
+							Name:        "90th_percentile_sentinel_stream_latency_1h30m",
+							Description: "90th percentile successful sentinel stream latency over 1h30m",
 							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
 							// since these panels relate to metrics that don't exist on a customer instance.
-							Query:    `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[5m]), "source", "$1", "source", "searchblitz_(.*)")))`,
+							Query:    `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[1h30m]), "source", "$1", "source", "searchblitz_(.*)")))`,
 							Warning:  monitoring.Alert().GreaterOrEqual(4, nil).For(15 * time.Minute),
 							Critical: monitoring.Alert().GreaterOrEqual(6, nil).For(30 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.NoLegend(),
 								monitoring.PanelOptions.ColorOverride("latency", "#8AB8FF"),
 							),
-							Owner: monitoring.ObservableOwnerSearch,
+							Owner:          monitoring.ObservableOwnerSearch,
+							Interpretation: `90th percentile time to first result for all successful streaming sentinel queries`,
 							PossibleSolutions: `
 								- Look at the breakdown by query to determine if a specific query type is being affected
 								- Check for high CPU usage on zoekt-webserver
@@ -656,9 +660,9 @@ func Frontend() *monitoring.Container {
 					},
 					{
 						{
-							Name:        "mean_successful_sentinel_duration_by_query_5m",
-							Description: "mean successful sentinel search duration by query over 5m",
-							Query:       `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[5m])) by (source) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[5m])) by (source)`,
+							Name:        "mean_successful_sentinel_duration_by_query_1h30m",
+							Description: "mean successful sentinel search duration by query over 1h30m",
+							Query:       `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[1h30m])) by (source) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[1h30m])) by (source)`,
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.LegendOnRight(),
@@ -666,15 +670,13 @@ func Frontend() *monitoring.Container {
 								monitoring.PanelOptions.HoverSort("descending"),
 								monitoring.PanelOptions.Fill(0),
 							),
-							Owner: monitoring.ObservableOwnerSearch,
-							Interpretation: `
-								- The mean search duration for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
-							`,
+							Owner:          monitoring.ObservableOwnerSearch,
+							Interpretation: `Mean search duration for successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.`,
 						},
 						{
-							Name:        "mean_sentinel_stream_latency_by_query_5m",
-							Description: "mean sentinel stream latency by query over 5m",
-							Query:       `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[5m])) by (source) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[5m])) by (source)`,
+							Name:        "mean_sentinel_stream_latency_by_query_1h30m",
+							Description: "mean successful sentinel stream latency by query over 1h30m",
+							Query:       `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[1h30m])) by (source) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[1h30m])) by (source)`,
 							NoAlert:     true,
 							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
 								monitoring.PanelOptions.LegendOnRight(),
@@ -682,23 +684,111 @@ func Frontend() *monitoring.Container {
 								monitoring.PanelOptions.HoverSort("descending"),
 								monitoring.PanelOptions.Fill(0),
 							),
-							Owner: monitoring.ObservableOwnerSearch,
-							Interpretation: `
-								- The mean streaming search latency for sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.
-							`,
+							Owner:          monitoring.ObservableOwnerSearch,
+							Interpretation: `Mean time to first result for successful streaming sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.`,
 						},
 					},
 					{
 						{
-							Name:        "unsuccessful_status_rate_5m",
-							Description: "unsuccessful status rate per 5m",
-							Query:       `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="success"}[5m])) by (status)`,
+							Name:        "90th_percentile_successful_sentinel_duration_by_query_1h30m",
+							Description: "90th percentile successful sentinel search duration by query over 1h30m",
+							Query:       `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[1h30m])) by (le, source))`,
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{status}}"),
-							Owner:       monitoring.ObservableOwnerSearch,
-							Interpretation: `
-								- The rate of unsuccessful sentinel query, broken down by failure type
-							`,
+							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
+								monitoring.PanelOptions.LegendOnRight(),
+								monitoring.PanelOptions.HoverShowAll(),
+								monitoring.PanelOptions.HoverSort("descending"),
+								monitoring.PanelOptions.Fill(0),
+							),
+							Owner:          monitoring.ObservableOwnerSearch,
+							Interpretation: `90th percentile search duration for successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.`,
+						},
+						{
+							Name:        "90th_percentile_successful_stream_latency_by_query_1h30m",
+							Description: "90th percentile successful sentinel stream latency by query over 1h30m",
+							Query:       `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[1h30m])) by (le, source))`,
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
+								monitoring.PanelOptions.LegendOnRight(),
+								monitoring.PanelOptions.HoverShowAll(),
+								monitoring.PanelOptions.HoverSort("descending"),
+								monitoring.PanelOptions.Fill(0),
+							),
+							Owner:          monitoring.ObservableOwnerSearch,
+							Interpretation: `90th percentile time to first result for successful streaming sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.`,
+						},
+					},
+					{
+						{
+							Name:        "90th_percentile_unsuccessful_duration_by_query_1h30m",
+							Description: "90th percentile unsuccessful sentinel search duration by query over 1h30m",
+							Query:       "histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[1h30m])) by (le, source))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{source}}").Unit(monitoring.Seconds).With(
+								monitoring.PanelOptions.LegendOnRight(),
+								monitoring.PanelOptions.HoverShowAll(),
+								monitoring.PanelOptions.HoverSort("descending"),
+								monitoring.PanelOptions.Fill(0),
+							),
+							Owner:          monitoring.ObservableOwnerSearch,
+							Interpretation: `90th percentile search duration of _unsuccessful_ sentinel queries (by error or timeout), broken down by query. Useful for debugging how the performance of failed requests affect UX.`,
+						},
+					},
+					{
+						{
+							Name:        "75th_percentile_successful_sentinel_duration_by_query_1h30m",
+							Description: "75th percentile successful sentinel search duration by query over 1h30m",
+							Query:       `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[1h30m])) by (le, source))`,
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
+								monitoring.PanelOptions.LegendOnRight(),
+								monitoring.PanelOptions.HoverShowAll(),
+								monitoring.PanelOptions.HoverSort("descending"),
+								monitoring.PanelOptions.Fill(0),
+							),
+							Owner:          monitoring.ObservableOwnerSearch,
+							Interpretation: `75th percentile search duration of successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.`,
+						},
+						{
+							Name:        "75th_percentile_successful_stream_latency_by_query_1h30m",
+							Description: "75th percentile successful sentinel stream latency by query over 1h30m",
+							Query:       `histogram_quantile(0.75, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[1h30m])) by (le, source))`,
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
+								monitoring.PanelOptions.LegendOnRight(),
+								monitoring.PanelOptions.HoverShowAll(),
+								monitoring.PanelOptions.HoverSort("descending"),
+								monitoring.PanelOptions.Fill(0),
+							),
+							Owner:          monitoring.ObservableOwnerSearch,
+							Interpretation: `75th percentile time to first result for successful streaming sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.`,
+						},
+					},
+					{
+						{
+							Name:        "75th_percentile_unsuccessful_duration_by_query_1h30m",
+							Description: "75th percentile unsuccessful sentinel search duration by query over 1h30m",
+							Query:       "histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[1h30m])) by (le, source))",
+							NoAlert:     true,
+							Panel: monitoring.Panel().LegendFormat("{{source}}").Unit(monitoring.Seconds).With(
+								monitoring.PanelOptions.LegendOnRight(),
+								monitoring.PanelOptions.HoverShowAll(),
+								monitoring.PanelOptions.HoverSort("descending"),
+								monitoring.PanelOptions.Fill(0),
+							),
+							Owner:          monitoring.ObservableOwnerSearch,
+							Interpretation: `75th percentile search duration of _unsuccessful_ sentinel queries (by error or timeout), broken down by query. Useful for debugging how the performance of failed requests affect UX.`,
+						},
+					},
+					{
+						{
+							Name:           "unsuccessful_status_rate_1h30m",
+							Description:    "unsuccessful status rate per 1h30m",
+							Query:          `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="success"}[1h30m])) by (status)`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("{{status}}"),
+							Owner:          monitoring.ObservableOwnerSearch,
+							Interpretation: `The rate of unsuccessful sentinel queries, broken down by failure type.`,
 						},
 					},
 				},

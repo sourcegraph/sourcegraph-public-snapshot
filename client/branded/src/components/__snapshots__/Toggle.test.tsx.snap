@@ -6,7 +6,7 @@ exports[`Toggle aria 1`] = `
     aria-describedby="test-id-1"
     aria-label="test toggle"
     aria-labelledby="test-id-2"
-    class="toggle"
+    class="toggle inlineCenter"
     role="switch"
     type="button"
     value="0"
@@ -24,7 +24,7 @@ exports[`Toggle aria 1`] = `
 exports[`Toggle className 1`] = `
 <DocumentFragment>
   <button
-    class="toggle c"
+    class="toggle c inlineCenter"
     role="switch"
     type="button"
     value="0"
@@ -42,7 +42,7 @@ exports[`Toggle className 1`] = `
 exports[`Toggle disabled 1`] = `
 <DocumentFragment>
   <button
-    class="toggle"
+    class="toggle inlineCenter"
     data-testid="toggle"
     disabled=""
     role="switch"
@@ -63,7 +63,7 @@ exports[`Toggle value is false 1`] = `
 <DocumentFragment>
   <button
     aria-checked="false"
-    class="toggle"
+    class="toggle inlineCenter"
     role="switch"
     type="button"
     value="0"
@@ -82,7 +82,7 @@ exports[`Toggle value is true 1`] = `
 <DocumentFragment>
   <button
     aria-checked="true"
-    class="toggle"
+    class="toggle inlineCenter"
     role="switch"
     type="button"
     value="1"

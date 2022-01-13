@@ -1086,6 +1086,20 @@
           "description": "Slack webhook for upcoming license expiration notifications.",
           "type": "string",
           "group": "Sourcegraph.com"
+        },
+        "githubApp.cloud": {
+          "description": "The config options for Sourcegraph Cloud GitHub App.",
+          "type": "object",
+          "properties": {
+            "appID": {
+              "description": "The app ID of the GitHub App for Sourcegraph Cloud.",
+              "type": "string"
+            },
+            "privateKey": {
+              "description": "The base64-encoded private key of the GitHub App for Sourcegraph Cloud.",
+              "type": "string"
+            }
+          }
         }
       },
       "group": "Sourcegraph.com"

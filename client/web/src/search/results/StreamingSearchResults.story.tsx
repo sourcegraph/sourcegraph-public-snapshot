@@ -16,7 +16,7 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
 import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
-import { useExperimentalFeatures } from '../../stores'
+import { useExperimentalFeatures, useNavbarQueryState } from '../../stores'
 
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 
@@ -35,8 +35,6 @@ const streamingSearchResult: AggregateStreamingSearchResults = {
 }
 
 const defaultProps: StreamingSearchResultsProps = {
-    parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-
     extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
 
@@ -71,6 +69,7 @@ const { add } = storiesOf('web/search/results/StreamingSearchResults', module)
     })
     .addDecorator(Story => {
         useExperimentalFeatures.setState({ codeMonitoring: true, showSearchContext: true })
+        useNavbarQueryState.setState({ searchQueryFromURL: 'r:golang/oauth2 test f:travis' })
         return <Story />
     })
 
@@ -95,27 +94,15 @@ add('no results', () => {
     return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
 })
 
-add('diffs tab selected, user logged in', () => (
-    <WebStory>
-        {() => <StreamingSearchResults {...defaultProps} parsedSearchQuery="r:golang/oauth2 test f:travis type:diff" />}
-    </WebStory>
-))
+add('search with quotes', () => {
+    useNavbarQueryState.setState({ searchQueryFromURL: 'r:golang/oauth2 test f:travis "test"' })
+    return <WebStory>{() => <StreamingSearchResults {...defaultProps} />}</WebStory>
+})
 
-add('code tab selected, user logged in', () => (
-    <WebStory>
-        {() => <StreamingSearchResults {...defaultProps} parsedSearchQuery="r:golang/oauth2 test f:travis" />}
-    </WebStory>
-))
-
-add('search with quotes', () => (
-    <WebStory>
-        {() => <StreamingSearchResults {...defaultProps} parsedSearchQuery='r:golang/oauth2 test f:travis "test"' />}
-    </WebStory>
-))
-
-add('did you mean', () => (
-    <WebStory>{() => <StreamingSearchResults {...defaultProps} parsedSearchQuery="javascript test" />}</WebStory>
-))
+add('did you mean', () => {
+    useNavbarQueryState.setState({ searchQueryFromURL: 'javascript test' })
+    return <WebStory>{() => <StreamingSearchResults {...defaultProps} />}</WebStory>
+})
 
 add('progress with warnings', () => {
     const result: AggregateStreamingSearchResults = {
