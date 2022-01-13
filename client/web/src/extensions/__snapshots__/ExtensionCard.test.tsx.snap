@@ -68,7 +68,7 @@ exports[`ExtensionCard renders 1`] = `
           </span>
           <button
             aria-checked="false"
-            class="toggle mx-2"
+            class="toggle mx-2 inlineCenter"
             data-testid="extension-toggle-x/y"
             role="switch"
             title="Click to enable"

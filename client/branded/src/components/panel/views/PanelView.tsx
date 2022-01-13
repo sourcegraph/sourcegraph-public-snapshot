@@ -38,6 +38,7 @@ export const PanelView = React.memo<Props>(props => (
             <HierarchicalLocationsView
                 location={props.location}
                 locations={props.panelView.locationProvider}
+                maxLocationResults={props.panelView.maxLocationResults}
                 defaultGroup={props.repoName}
                 isLightTheme={props.isLightTheme}
                 fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}

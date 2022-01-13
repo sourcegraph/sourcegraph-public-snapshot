@@ -34,9 +34,9 @@ export const CardsStory: Story = () => (
             <div className="card-body">
                 <h3 className="card-title">Special title treatment</h3>
                 <p className="card-text">With supporting text below as a natural lead-in to additional content.</p>
-                <a href="https://example.com" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+                <Button href="https://example.com" target="_blank" rel="noopener noreferrer" variant="primary" as="a">
                     Go somewhere
-                </a>
+                </Button>
             </div>
         </div>
     </>

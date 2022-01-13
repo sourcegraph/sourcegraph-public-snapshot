@@ -71,7 +71,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
         <button
           aria-checked="true"
           aria-labelledby="code-monitoring-form-actions-enable-toggle"
-          class="toggle mr-2"
+          class="toggle mr-2 inlineCenter"
           role="switch"
           title="Enabled"
           type="button"

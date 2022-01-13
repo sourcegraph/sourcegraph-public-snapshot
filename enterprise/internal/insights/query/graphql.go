@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/opentracing/opentracing-go"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -99,6 +101,8 @@ type GqlSearchResponse struct {
 
 // search executes the given search query.
 func Search(ctx context.Context, query string) (*GqlSearchResponse, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "InsightsSearch")
+	defer func() { span.Finish() }()
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(graphQLQuery{
 		Query:     gqlSearchQuery,
@@ -119,6 +123,13 @@ func Search(ctx context.Context, query string) (*GqlSearchResponse, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	if span != nil {
+		carrier := opentracing.HTTPHeadersCarrier(req.Header)
+		span.Tracer().Inject(
+			span.Context(),
+			opentracing.HTTPHeaders,
+			carrier)
+	}
 
 	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
 	if err != nil {

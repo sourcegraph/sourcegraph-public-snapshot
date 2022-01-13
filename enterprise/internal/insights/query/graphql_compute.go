@@ -6,6 +6,10 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/opentracing/opentracing-go/log"
+
+	"github.com/opentracing/opentracing-go"
+
 	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
@@ -41,9 +45,16 @@ type gqlComputeSearchResponse struct {
 }
 
 // ComputeSearch executes the given search query.
-func ComputeSearch(ctx context.Context, query string) ([]ComputeResult, error) {
+func ComputeSearch(ctx context.Context, query string) (results []ComputeResult, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "InsightsComputeSearch")
+	defer func() {
+		span.LogFields(
+			log.Int("resultCount", len(results)),
+		)
+		span.Finish()
+	}()
 	var buf bytes.Buffer
-	err := json.NewEncoder(&buf).Encode(graphQLQuery{
+	err = json.NewEncoder(&buf).Encode(graphQLQuery{
 		Query:     computeSearchQuery,
 		Variables: gqlSearchVars{Query: query},
 	})
@@ -51,7 +62,7 @@ func ComputeSearch(ctx context.Context, query string) ([]ComputeResult, error) {
 		return nil, errors.Wrap(err, "Encode")
 	}
 
-	url, err := gqlURL("InsightsSearch")
+	url, err := gqlURL("InsightsComputeSearch")
 	if err != nil {
 		return nil, errors.Wrap(err, "constructing frontend URL")
 	}
@@ -62,6 +73,13 @@ func ComputeSearch(ctx context.Context, query string) ([]ComputeResult, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	if span != nil {
+		carrier := opentracing.HTTPHeadersCarrier(req.Header)
+		span.Tracer().Inject(
+			span.Context(),
+			opentracing.HTTPHeaders,
+			carrier)
+	}
 
 	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
 	if err != nil {
@@ -77,7 +95,6 @@ func ComputeSearch(ctx context.Context, query string) ([]ComputeResult, error) {
 		return nil, errors.Errorf("graphql: errors: %v", res.Errors)
 	}
 
-	var results []ComputeResult
 	for _, raw := range res.Data.Compute {
 		decoded, err := decodeComputeResult(raw)
 		if err != nil {

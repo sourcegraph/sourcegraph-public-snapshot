@@ -49,22 +49,6 @@ func Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path stri
 		return nil, err
 	}
 
-	if fi.Mode()&os.ModeSymlink != 0 {
-		// Deref symlink.
-		b, err := readFileBytes(ctx, repo, commit, path, 0)
-		if err != nil {
-			return nil, err
-		}
-		// Resolve relative links from the directory path is in
-		symlink := filepath.Join(filepath.Dir(path), string(b))
-		fi2, err := lStat(ctx, repo, commit, symlink)
-		if err != nil {
-			return nil, err
-		}
-		fi2.(*util.FileInfo).Name_ = fi.Name()
-		return fi2, nil
-	}
-
 	return fi, nil
 }
 
