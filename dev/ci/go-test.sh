@@ -21,6 +21,8 @@ function go_test() {
   # shellcheck disable=SC2064
   trap "rm \"$tmpfile\"" EXIT
 
+  set +eo pipefail # so we still get the result if the test failed
+  local test_exit_code
   # shellcheck disable=SC2086
   go test \
     -timeout 10m \
@@ -29,6 +31,9 @@ function go_test() {
     -race \
     -v \
     $test_packages | tee "$tmpfile"
+  # Save the test exit code so we can return it after submitting the test run to the analytics.
+  test_exit_code="${PIPESTATUS[0]}"
+  set -eo pipefail # resume being strict about errors
 
   local xml
   xml=$(go-junit-report <"$tmpfile")
@@ -61,6 +66,8 @@ EOF
     --header "Authorization: Token token=\"$BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY\";" \
     --header 'Content-Type: application/json' \
     --data-binary @-
+
+  return "$test_exit_code"
 }
 
 if [ "$1" == "-h" ]; then
