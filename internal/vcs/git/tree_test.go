@@ -34,7 +34,11 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 
-	symlinks := []string{"link1", "dir1/link2"}
+	// map of path to size of content
+	symlinks := map[string]int64{
+		"link1":      5, // file1
+		"dir1/link2": 8, // ../file1
+	}
 
 	dir := InitGitRepository(t, gitCommands...)
 	repo := api.RepoName(filepath.Base(dir))
@@ -69,7 +73,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	}
 
 	// Check symlinks are links
-	for _, symlink := range symlinks {
+	for symlink := range symlinks {
 		fi, err := lStat(ctx, repo, commitID, symlink)
 		if err != nil {
 			t.Fatalf("fs.lStat(%s): %s", symlink, err)
@@ -99,20 +103,19 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		t.Fatal("readdir did not return link1")
 	}
 
-	// links stat should follow the link to file1.
-	for _, symlink := range symlinks {
+	for symlink, size := range symlinks {
 		fi, err := Stat(ctx, repo, commitID, symlink)
 		if err != nil {
 			t.Fatalf("fs.Stat(%s): %s", symlink, err)
 		}
-		if !fi.Mode().IsRegular() {
-			t.Errorf("%s Stat !IsRegular (mode: %o)", symlink, fi.Mode())
+		if fi.Mode()&fs.ModeSymlink == 0 {
+			t.Errorf("%s Stat is not a symlink (mode: %o)", symlink, fi.Mode())
 		}
 		if fi.Name() != symlink {
 			t.Errorf("got Name %q, want %q", fi.Name(), symlink)
 		}
-		if fi.Size() != 0 {
-			t.Errorf("got %s Size %d, want %d", symlink, fi.Size(), 0)
+		if fi.Size() != size {
+			t.Errorf("got %s Size %d, want %d", symlink, fi.Size(), size)
 		}
 	}
 }
