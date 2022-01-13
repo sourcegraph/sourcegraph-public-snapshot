@@ -155,7 +155,7 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 {
   "url": "%s",
   "githubAppInstallationID": "%d",
-  "repositoryQuery": ["affiliated"]
+  "repos": []
 }
 `, apiURL.String(), installationID),
 				NamespaceOrgID: org.ID,
