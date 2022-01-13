@@ -1,5 +1,7 @@
 import assert from 'assert'
 
+import delay from 'delay'
+
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -357,6 +359,8 @@ describe('Code insight edit insight page', () => {
             '[data-testid="line-chart__content"] [data-line-name="Imports of new graphql-operations types"] circle'
         )
 
+        // Wait until all floating UI (like combobox suggestion panel) is rendered in a right position)
+        await delay(100)
         await percySnapshotWithVariants(driver.page, 'Code insights edit page with search-based insight creation UI')
 
         // Gather all filled inputs within a creation UI form.
