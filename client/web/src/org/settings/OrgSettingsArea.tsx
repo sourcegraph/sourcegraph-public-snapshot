@@ -31,7 +31,7 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
-const WaitingComponent: React.FunctionComponent = () => <LoadingSpinner className="m-2" />
+const LoadingComponent: React.FunctionComponent = () => <LoadingSpinner className="m-2" />
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
     location: H.Location
@@ -43,7 +43,7 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}>, ThemeProps {
  * an organization's settings.
  */
 export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
-    // we can ignore the loading and error states in this case
+    // we can ignore the error states in this case
     // if there is an error, we will not show the code host connections and repository screens
     // same for until the feature flag value is loaded (which in practice should be fast)
     const { data, loading } = useQuery<OrgFeatureFlagValueResult, OrgFeatureFlagValueVariables>(
@@ -170,7 +170,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                     )}
                                 />,
                             ]}
-                            <Route component={loading ? WaitingComponent : NotFoundPage} />
+                            <Route component={loading ? LoadingComponent : NotFoundPage} />
                         </Switch>
                     </React.Suspense>
                 </ErrorBoundary>
