@@ -1768,14 +1768,10 @@ func subRepoFilterFunc(ctx context.Context, checker authz.SubRepoPermissionCheck
 			}
 		}
 		// We don't want to spam our logs or return sensitive authz related errors to the
-		// user so we'll return generic error and log an error summary.
+		// user so we'll return generic error and log something more specific.
 		if errs.Len() == 0 {
 			return filtered, nil
 		}
-		//errs.ErrorFormat = func(errors []error) string {
-		//	return fmt.Sprintf("sub-repo permissions. %d errors. Example: %s", errs.Len(), errors[0].Error())
-		//}
-		log15.Error("Checking sub-repo permissions", "count", errs.Len(), "sample", errs.Errors[0].Error())
 		return filtered, errors.New("subRepoFilterFunc")
 	}
 }
