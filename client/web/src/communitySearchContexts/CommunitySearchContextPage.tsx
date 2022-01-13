@@ -24,7 +24,7 @@ import { Button } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { ParsedSearchQueryProps, SearchContextInputProps, SearchContextProps } from '../search'
+import { SearchContextInputProps, SearchContextProps } from '../search'
 import { submitSearch } from '../search/helpers'
 import { SearchPageInput } from '../search/home/SearchPageInput'
 import { useNavbarQueryState } from '../stores'
@@ -40,7 +40,6 @@ export interface CommunitySearchContextPageProps
         ThemePreferenceProps,
         ActivationProps,
         TelemetryProps,
-        ParsedSearchQueryProps,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
