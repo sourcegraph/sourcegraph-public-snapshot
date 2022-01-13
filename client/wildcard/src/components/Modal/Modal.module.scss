@@ -1,14 +1,12 @@
 @import '@reach/dialog/styles.css';
 
 [data-reach-dialog-overlay] {
-    // var(--gray-04) at 0.5 opacity
-    background-color: rgba(219, 226, 240, 0.5);
+    background-color: rgba(var(--gray-04-rgb), 0.5);
 }
 
 :global(.theme-dark) {
     [data-reach-dialog-overlay] {
-        // var(--gray-08) at 0.5 opacity
-        background-color: rgba(52, 58, 77, 0.5);
+        background-color: rgba(var(--gray-08-rgb), 0.5);
     }
 }
 
