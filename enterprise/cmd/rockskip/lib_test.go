@@ -29,17 +29,21 @@ func NewCtags() (Ctags, error) {
 	}, nil
 }
 
-func (ctags Ctags) Parse(path string, bytes []byte) (symbols []string, err error) {
-	return []string{"hi"}, nil
-	// symbols = []string{}
-	// entries, err := ctags.parser.Parse(path, bytes)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// for _, entry := range entries {
-	// 	symbols = append(symbols, entry.Name)
-	// }
-	// return symbols, nil
+func (ctags Ctags) Parse(path string, bytes []byte) (symbols []Symbol, err error) {
+	symbols = []Symbol{}
+	entries, err := ctags.parser.Parse(path, bytes)
+	if err != nil {
+		return nil, err
+	}
+	for _, entry := range entries {
+		symbols = append(symbols, Symbol{
+			Name:   entry.Name,
+			Parent: entry.Parent,
+			Kind:   entry.Kind,
+			Line:   entry.Line,
+		})
+	}
+	return symbols, nil
 }
 
 func (ctags Ctags) Close() {

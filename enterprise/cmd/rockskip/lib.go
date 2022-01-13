@@ -3,6 +3,8 @@ package rockskip
 import (
 	"bufio"
 	"database/sql"
+	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os/exec"
@@ -21,7 +23,29 @@ type Git interface {
 	CatFile(commit string, path string) ([]byte, error)
 }
 
-type ParseSymbolsFunc func(path string, bytes []byte) (symbols []string, err error)
+type Symbol struct {
+	Name   string `json:"name"`
+	Parent string `json:"parent"`
+	Kind   string `json:"kind"`
+	Line   int    `json:"line"`
+}
+
+type Symbols []Symbol
+
+func (symbols Symbols) Value() (driver.Value, error) {
+	return json.Marshal(symbols)
+}
+
+func (symbols *Symbols) Scan(value interface{}) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("scan symbol: expected []byte")
+	}
+
+	return json.Unmarshal(bytes, &symbols)
+}
+
+type ParseSymbolsFunc func(path string, bytes []byte) (symbols []Symbol, err error)
 
 type LogEntry struct {
 	Commit       string
@@ -43,7 +67,7 @@ type Blob struct {
 	Path    string
 	Added   []string
 	Deleted []string
-	Symbols []string
+	Symbols []Symbol
 }
 
 type StatusAMD int
@@ -471,12 +495,13 @@ func CreateTables(db Queryable) error {
 
 	_, err = db.Exec(`
 		CREATE TABLE rockskip_blobs (
-			id      SERIAL        PRIMARY KEY,
-			commit  VARCHAR(40)   NOT NULL,
-			path    TEXT          NOT NULL,
-			added   VARCHAR(40)[] NOT NULL,
-			deleted VARCHAR(40)[] NOT NULL,
-			symbols TEXT[]        NOT NULL
+			id           SERIAL        PRIMARY KEY,
+			commit       VARCHAR(40)   NOT NULL,
+			path         TEXT          NOT NULL,
+			added        VARCHAR(40)[] NOT NULL,
+			deleted      VARCHAR(40)[] NOT NULL,
+			symbol_names TEXT[]        NOT NULL,
+			symbol_data  JSONB         NOT NULL
 		)`)
 	if err != nil {
 		return fmt.Errorf("creating rockskip_blobs: %s", err)
@@ -492,7 +517,7 @@ func CreateTables(db Queryable) error {
 		return fmt.Errorf("creating index rockskip_blobs_path: %s", err)
 	}
 
-	_, err = db.Exec("CREATE INDEX rockskip_blobs_added_deleted_symbols ON rockskip_blobs USING GIN (added, deleted, symbols)")
+	_, err = db.Exec("CREATE INDEX rockskip_blobs_added_deleted_symbols ON rockskip_blobs USING GIN (added, deleted, symbol_names)")
 	if err != nil {
 		return fmt.Errorf("creating index rockskip_blobs_added_deleted_symbols: %s", err)
 	}
@@ -548,12 +573,17 @@ func UpdateBlobHops(db Queryable, id int, status StatusAD, hop string) error {
 }
 
 func InsertBlob(db Queryable, blob Blob) (id int, err error) {
+	symbolNames := []string{}
+	for _, symbol := range blob.Symbols {
+		symbolNames = append(symbolNames, symbol.Name)
+	}
+
 	lastInsertId := 0
 	err = db.QueryRow(`
-		INSERT INTO rockskip_blobs (commit, path, added, deleted, symbols)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO rockskip_blobs (commit, path, added, deleted, symbol_names, symbol_data)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id
-	`, blob.Commit, blob.Path, pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(blob.Symbols)).Scan(&lastInsertId)
+	`, blob.Commit, blob.Path, pg.Array(blob.Added), pg.Array(blob.Deleted), pg.Array(symbolNames), Symbols(blob.Symbols)).Scan(&lastInsertId)
 	return lastInsertId, errors.Wrap(err, "InsertBlob")
 }
 
@@ -578,16 +608,16 @@ func Search(db Queryable, commit string, query *string) ([]Blob, error) {
 	var rows *sql.Rows
 	if query != nil {
 		rows, err = db.Query(`
-			SELECT id, commit, path, added, deleted, symbols
+			SELECT id, commit, path, added, deleted, symbol_data
 			FROM rockskip_blobs
 			WHERE
 				$1 && added
 				AND NOT $1 && deleted
-				AND $2 && symbols
+				AND $2 && symbol_names
 		`, pg.Array(hops), pg.Array([]string{*query}))
 	} else {
 		rows, err = db.Query(`
-			SELECT id, commit, path, added, deleted, symbols
+			SELECT id, commit, path, added, deleted, symbol_data
 			FROM rockskip_blobs
 			WHERE
 				$1 && added
@@ -605,8 +635,8 @@ func Search(db Queryable, commit string, query *string) ([]Blob, error) {
 		var commit string
 		var path string
 		var added, deleted []string
-		var symbols []string
-		err = rows.Scan(&id, &commit, &path, pg.Array(&added), pg.Array(&deleted), pg.Array(&symbols))
+		var symbols Symbols
+		err = rows.Scan(&id, &commit, &path, pg.Array(&added), pg.Array(&deleted), &symbols)
 		if err != nil {
 			return nil, errors.Wrap(err, "Search: Scan")
 		}

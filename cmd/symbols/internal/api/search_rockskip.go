@@ -61,15 +61,20 @@ func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfi
 		repoToMutexMutex.Unlock()
 		defer mutex.Unlock()
 
-		var parse rockskip.ParseSymbolsFunc = func(path string, bytes []byte) (symbols []string, err error) {
+		var parse rockskip.ParseSymbolsFunc = func(path string, bytes []byte) (symbols []rockskip.Symbol, err error) {
 			entries, err := parser.Parse(path, bytes)
 			if err != nil {
 				return nil, err
 			}
 
-			symbols = []string{}
+			symbols = []rockskip.Symbol{}
 			for _, entry := range entries {
-				symbols = append(symbols, entry.Name)
+				symbols = append(symbols, rockskip.Symbol{
+					Name:   entry.Name,
+					Parent: entry.Parent,
+					Kind:   entry.Kind,
+					Line:   entry.Line,
+				})
 			}
 
 			return symbols, nil
@@ -93,16 +98,11 @@ func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfi
 		for _, blob := range blobs {
 			for _, symbol := range blob.Symbols {
 				res = append(res, result.Symbol{
-					Name:        symbol,
-					Path:        blob.Path,
-					Line:        1,
-					Kind:        "",
-					Language:    "",
-					Parent:      "",
-					ParentKind:  "",
-					Signature:   "",
-					Pattern:     "",
-					FileLimited: false,
+					Name:   symbol.Name,
+					Path:   blob.Path,
+					Line:   symbol.Line,
+					Kind:   symbol.Kind,
+					Parent: symbol.Parent,
 				})
 			}
 		}
