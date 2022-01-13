@@ -7,8 +7,6 @@ import { QueryState } from '@sourcegraph/shared/src/search/helpers'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
-import { LocalRecentSeachProps } from '../../localStorageService'
-
 import { SearchSidebarMediator } from './search-sidebar/mediator'
 
 /**
@@ -62,6 +60,8 @@ export interface SourcegraphVSCodeExtensionAPI
     getLocalRecentSearch: () => LocalRecentSeachProps[]
     // Update Last Selected Search Context in Local Storage
     setLocalRecentSearch: (searches: LocalRecentSeachProps[]) => Promise<boolean>
+    // Display File Tree when repo is clicked
+    displayFileTree: (setting: boolean) => void
     // For extension host sidebar
     // mainThreadAPI methods
 }

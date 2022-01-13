@@ -110,6 +110,7 @@ const webviewConfig = {
   },
   resolve: {
     alias: {
+      path: require.resolve('path-browserify'),
       './Link': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'Link'),
       '@sourcegraph/shared/src/components/Link': path.resolve(
         __dirname,

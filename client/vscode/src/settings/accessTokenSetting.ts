@@ -11,11 +11,6 @@ export function accessTokenSetting(): string | undefined {
         return fromSettings
     }
 
-    const environmentVariable = process.env.SRC_ACCESS_TOKEN
-    if (environmentVariable && !invalidAccessTokens.has(environmentVariable)) {
-        return environmentVariable
-    }
-
     return undefined
 }
 

@@ -183,7 +183,7 @@ export function initializeExtensionHostWebview({
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src vscode-resource: vscode-webview: data: https:; script-src blob: vscode-webview: 'nonce-${nonce}'; style-src data: vscode-resource: ${
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src vscode-resource: vscode-webview: data: https:; script-src blob: vscode-webview: 'nonce-${nonce}' https:; style-src data: vscode-resource: ${
         webviewView.webview.cspSource
     } http: https: data:; connect-src 'self' http: https:; font-src vscode-resource: vscode-webview: https:;">
         <title>Sourcegraph Extension Host</title>

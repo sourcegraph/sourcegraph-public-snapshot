@@ -130,6 +130,11 @@ export const SearchResults = React.memo<SearchResultsProps>(
                         return sourcegraphVSCodeExtensionAPI.openFile(sourcegraphUri.uri)
                     }
                     case 'repo': {
+                        // Display file tree
+                        sourcegraphVSCodeExtensionAPI
+                            .displayFileTree(true)
+                            .then(() => {})
+                            .catch(() => {})
                         searchActions.setQuery({ query: `repo:^${result.repository}$` })
                         getFiles({
                             repoName: result.repository,

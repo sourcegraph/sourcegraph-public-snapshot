@@ -79,8 +79,12 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, 
             event?.preventDefault()
             setOpenRepoFileTree(false)
             searchActions.submitQuery()
+            sourcegraphVSCodeExtensionAPI
+                .displayFileTree(false)
+                .then(() => {})
+                .catch(() => {})
         },
-        [searchActions]
+        [searchActions, sourcegraphVSCodeExtensionAPI]
     )
 
     const fetchSuggestions = useCallback(

@@ -78,12 +78,15 @@
         {
           "type": "webview",
           "id": "sourcegraph.searchSidebar",
-          "name": "Sourcegraph Search"
+          "name": "Sourcegraph Search",
+          "visibility": "visible",
+          "when": "!sourcegraph.showFileTree"
         },
         {
           "id": "sourcegraph.files",
           "name": "Files",
-          "visibility": "collapsed"
+          "visibility": "visible",
+          "when": "sourcegraph.showFileTree"
         },
         {
           "type": "webview",

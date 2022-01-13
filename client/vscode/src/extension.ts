@@ -142,6 +142,9 @@ export function activate(context: vscode.ExtensionContext): void {
         // Get last selected search context from Setting
         getLocalRecentSearch: () => storageManager.getLocalRecentSearch(),
         setLocalRecentSearch: (searches: LocalRecentSeachProps[]) => storageManager.setLocalRecentSearch(searches),
+        // Show File Tree
+        displayFileTree: (setting: boolean) =>
+            vscode.commands.executeCommand('setContext', 'sourcegraph.showFileTree', setting),
     }
 
     // Track current active webview panel to make sure only one panel exists at a time
@@ -168,7 +171,7 @@ export function activate(context: vscode.ExtensionContext): void {
                 webviewPanel.onDidDispose(() => {
                     sourcegraphVSCodeSearchWebviewAPI[releaseProxy]()
                     currentActiveWebviewPanel = undefined
-                    vscode.commands.executeCommand('workbench.action.closeSidebar').then(
+                    vscode.commands.executeCommand('workbench.view.explorer').then(
                         () => {},
                         error => {
                             console.error(error)
@@ -197,6 +200,7 @@ export function activate(context: vscode.ExtensionContext): void {
                         sourcegraphVSCodeExtensionAPI,
                         webviewView,
                     })
+
                     // Bring search panel back if it was previously closed on sidebar visibility change
                     webviewView.onDidChangeVisibility(() => {
                         if (webviewView.visible) {
@@ -210,12 +214,6 @@ export function activate(context: vscode.ExtensionContext): void {
                     })
                     webviewView.onDidDispose(() => {
                         sourcegraphVSCodeSearchSidebarAPI[releaseProxy]()
-                        vscode.commands.executeCommand('workbench.action.closeSidebar').then(
-                            () => {},
-                            error => {
-                                console.error(error)
-                            }
-                        )
                     })
                 },
             },

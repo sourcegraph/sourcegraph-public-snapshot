@@ -35,13 +35,6 @@ export let Link: React.FunctionComponent<LinkProps> = ({ to, children, ...props 
     </a>
 )
 
-if (process.env.NODE_ENV !== 'production') {
-    // Fail with helpful message if setLinkComponent has not been called when the <Link> component is used.
-    Link = () => {
-        throw new Error('No Link component set. You must call setLinkComponent to set the Link component to use.')
-    }
-}
-
 /**
  * Sets (globally) the component to use for links. This must be set at initialization time.
  *
