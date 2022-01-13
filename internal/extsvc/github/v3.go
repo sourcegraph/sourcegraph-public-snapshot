@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/google/go-github/v41/github"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -724,4 +725,13 @@ func (c *V3Client) Fork(ctx context.Context, owner, repo string, org *string) (*
 	}
 
 	return convertRestRepo(restRepo), nil
+}
+
+// GetAppInstallation gets information of a GitHub App installation.
+func (c *V3Client) GetAppInstallation(ctx context.Context, installationID int64) (*github.Installation, error) {
+	var ins github.Installation
+	if err := c.requestGet(ctx, fmt.Sprintf("app/installations/%d", installationID), &ins); err != nil {
+		return nil, err
+	}
+	return &ins, nil
 }

@@ -5,14 +5,13 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
-	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
+	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -21,7 +20,7 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(db database.DB) http.Handler {
+func NewHandler(db database.DB, githubAppCloudSetupHandler http.Handler) http.Handler {
 	session.SetSessionStore(session.NewRedisStore(func() bool {
 		return globals.ExternalURL().Scheme == "https"
 	}))
@@ -67,6 +66,9 @@ func NewHandler(db database.DB) http.Handler {
 
 	// Ping retrieval
 	r.Get(router.LatestPing).Handler(trace.Route(http.HandlerFunc(latestPingHandler(db))))
+
+	// Sourcegraph Cloud GitHub App setup
+	r.Get(router.SetupGitHubAppCloud).Handler(trace.Route(githubAppCloudSetupHandler))
 
 	r.Get(router.Editor).Handler(trace.Route(errorutil.Handler(serveEditor(db))))
 
