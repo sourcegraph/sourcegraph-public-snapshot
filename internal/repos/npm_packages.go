@@ -25,9 +25,9 @@ import (
 // A NPMPackagesSource creates git repositories from `*-sources.tar.gz` files of
 // published NPM dependencies from the JS ecosystem.
 type NPMPackagesSource struct {
-	svc     *types.ExternalService
-	config  *schema.NPMPackagesConnection
-	dbStore NPMPackagesRepoStore
+	svc        *types.ExternalService
+	connection schema.NPMPackagesConnection
+	dbStore    NPMPackagesRepoStore
 }
 
 // NewNPMPackagesSource returns a new NPMSource from the given external
@@ -37,7 +37,7 @@ func NewNPMPackagesSource(svc *types.ExternalService) (*NPMPackagesSource, error
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return &NPMPackagesSource{svc: svc, config: &c /*dbStore initialized in SetDB */}, nil
+	return &NPMPackagesSource{svc: svc, connection: c /*dbStore initialized in SetDB */}, nil
 }
 
 var _ Source = &NPMPackagesSource{}
@@ -48,7 +48,7 @@ var _ Source = &NPMPackagesSource{}
 // [FIXME: deduplicate-listed-repos] The current implementation will return
 // multiple repos with the same URL if there are different versions of it.
 func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceResult) {
-	npmPackages, err := npmPackages(*s.config)
+	npmPackages, err := npmPackages(s.connection)
 	if err != nil {
 		results <- SourceResult{Err: err}
 		return
@@ -86,7 +86,7 @@ func (s *NPMPackagesSource) ListRepos(ctx context.Context, results chan SourceRe
 				continue
 			}
 			npmDependency := reposource.NPMDependency{Package: *parsedDbPackage, Version: dbDep.Version}
-			if err = npm.Exists(ctx, s.config, npmDependency); err != nil {
+			if err = npm.Exists(ctx, s.connection, npmDependency); err != nil {
 				log15.Warn("failed to resolve npm dependency", "package", npmDependency.PackageManagerSyntax(), "message", err)
 				continue
 			}

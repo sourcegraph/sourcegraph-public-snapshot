@@ -49,13 +49,13 @@ func TestNoMaliciousFilesNPM(t *testing.T) {
 
 	createMaliciousTgz(t, tgzPath)
 
-	s := NPMPackagesSyncer{
-		Config:  &schema.NPMPackagesConnection{Dependencies: []string{}},
-		DBStore: NewMockDBStore(),
-	}
+	s := NewNPMPackagesSyncer(
+		schema.NPMPackagesConnection{Dependencies: []string{}},
+		NewMockDBStore(),
+	)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancel now  to prevent any network IO
-	err = s.commitTgz(ctx, reposource.NPMDependency{}, extractPath, tgzPath, s.Config)
+	err = s.commitTgz(ctx, reposource.NPMDependency{}, extractPath, tgzPath)
 	assert.NotNil(t, err)
 
 	dirEntries, err := os.ReadDir(extractPath)
@@ -93,10 +93,10 @@ func TestNPMCloneCommand(t *testing.T) {
 	defer func() { assert.Nil(t, os.Remove(tgzPath2)) }()
 
 	npm.NPMBinary = npmScript(t, dir)
-	s := NPMPackagesSyncer{
-		Config:  &schema.NPMPackagesConnection{Dependencies: []string{}},
-		DBStore: NewMockDBStore(),
-	}
+	s := NewNPMPackagesSyncer(
+		schema.NPMPackagesConnection{Dependencies: []string{}},
+		NewMockDBStore(),
+	)
 	bareGitDirectory := path.Join(dir, "git")
 	s.runCloneCommand(t, bareGitDirectory, []string{exampleNPMVersionedPackage})
 	checkSingleTag := func() {
@@ -149,7 +149,7 @@ func TestNPMCloneCommand(t *testing.T) {
 
 	// Now run the same tests with the database output instead.
 	mockStore := NewStrictMockDBStore()
-	s.DBStore = mockStore
+	s.dbStore = mockStore
 
 	mockStore.GetNPMDependencyReposFunc.PushReturn([]dbstore.NPMDependencyRepo{
 		{"example", exampleNPMVersion, 0},
@@ -216,7 +216,7 @@ fi
 func (s NPMPackagesSyncer) runCloneCommand(t *testing.T, bareGitDirectory string, dependencies []string) {
 	t.Helper()
 	packageURL := vcs.URL{URL: url.URL{Path: exampleNPMPackageURL}}
-	s.Config.Dependencies = dependencies
+	s.connection.Dependencies = dependencies
 	cmd, err := s.CloneCommand(context.Background(), &packageURL, bareGitDirectory)
 	assert.Nil(t, err)
 	assert.Nil(t, cmd.Run())
