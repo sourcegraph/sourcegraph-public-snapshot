@@ -20,7 +20,14 @@ import {
 } from 'rxjs/operators'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
-import { asError, isErrorLike } from '@sourcegraph/common'
+import {
+    getCodeElementsInRange,
+    HoveredToken,
+    locateTarget,
+    findPositionsFromEvents,
+    createHoverifier,
+} from '@sourcegraph/codeintellify'
+import { asError, isErrorLike, isDefined } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -29,8 +36,6 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { createHoverifier, findPositionsFromEvents } from '@sourcegraph/shared/src/codeintellify'
-import { getCodeElementsInRange, HoveredToken, locateTarget } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
@@ -39,7 +44,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { isDefined, property } from '@sourcegraph/shared/src/util/types'
+import { property } from '@sourcegraph/shared/src/util/types'
 import {
     AbsoluteRepoFile,
     FileSpec,

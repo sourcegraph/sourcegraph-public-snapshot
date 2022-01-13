@@ -353,6 +353,7 @@ Referenced by:
  worker_hostname          | text                                         |           | not null | ''::text
  ui_publication_state     | batch_changes_changeset_ui_publication_state |           |          | 
  last_heartbeat_at        | timestamp with time zone                     |           |          | 
+ external_fork_namespace  | citext                                       |           |          | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -1542,6 +1543,24 @@ Associates a repository with the set of LSIF upload identifiers that can serve i
 **is_default_branch**: Whether the specified branch is the default of the repository. Always false for tags.
 
 **upload_id**: The identifier of the upload visible from the tip of the specified branch or tag.
+
+# Table "public.migration_logs"
+```
+            Column             |           Type           | Collation | Nullable |                  Default                   
+-------------------------------+--------------------------+-----------+----------+--------------------------------------------
+ id                            | integer                  |           | not null | nextval('migration_logs_id_seq'::regclass)
+ migration_logs_schema_version | integer                  |           | not null | 
+ schema                        | text                     |           | not null | 
+ version                       | integer                  |           | not null | 
+ up                            | boolean                  |           | not null | 
+ started_at                    | timestamp with time zone |           | not null | 
+ finished_at                   | timestamp with time zone |           |          | 
+ success                       | boolean                  |           |          | 
+ error_message                 | text                     |           |          | 
+Indexes:
+    "migration_logs_pkey" PRIMARY KEY, btree (id)
+
+```
 
 # Table "public.names"
 ```
@@ -2783,6 +2802,8 @@ Foreign-key constraints:
  external_title           | text                                         |           |          | 
  worker_hostname          | text                                         |           |          | 
  ui_publication_state     | batch_changes_changeset_ui_publication_state |           |          | 
+ last_heartbeat_at        | timestamp with time zone                     |           |          | 
+ external_fork_namespace  | citext                                       |           |          | 
 
 ```
 
@@ -2824,7 +2845,9 @@ Foreign-key constraints:
     c.syncer_error,
     c.external_title,
     c.worker_hostname,
-    c.ui_publication_state
+    c.ui_publication_state,
+    c.last_heartbeat_at,
+    c.external_fork_namespace
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1

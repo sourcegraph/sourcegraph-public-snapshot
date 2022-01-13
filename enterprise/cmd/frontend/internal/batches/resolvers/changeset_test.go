@@ -173,10 +173,19 @@ func TestChangesetResolver(t *testing.T) {
 		ReconcilerState:     btypes.ReconcilerStateQueued,
 	})
 
+	forkedChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:                  repo.ID,
+		ExternalServiceType:   "github",
+		ExternalID:            "98765",
+		ExternalForkNamespace: "user",
+		PublicationState:      btypes.ChangesetPublicationStateUnpublished,
+		ReconcilerState:       btypes.ReconcilerStateQueued,
+	})
+
 	scheduledChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
-		ExternalID:          "98765",
+		ExternalID:          "987654",
 		PublicationState:    btypes.ChangesetPublicationStateUnpublished,
 		ReconcilerState:     btypes.ReconcilerStateScheduled,
 	})
@@ -298,11 +307,23 @@ func TestChangesetResolver(t *testing.T) {
 			},
 		},
 		{
+			name:      "forked changeset",
+			changeset: forkedChangeset,
+			want: apitest.Changeset{
+				Typename:      "ExternalChangeset",
+				ExternalID:    "98765",
+				ForkNamespace: "user",
+				Repository:    apitest.Repository{Name: string(repo.Name)},
+				Labels:        []apitest.Label{},
+				State:         string(btypes.ChangesetStateProcessing),
+			},
+		},
+		{
 			name:      "scheduled changeset",
 			changeset: scheduledChangeset,
 			want: apitest.Changeset{
 				Typename:           "ExternalChangeset",
-				ExternalID:         "98765",
+				ExternalID:         "987654",
 				Repository:         apitest.Repository{Name: string(repo.Name)},
 				Labels:             []apitest.Label{},
 				State:              string(btypes.ChangesetStateScheduled),
@@ -351,6 +372,7 @@ query($changeset: ID!) {
       body
 
       externalID
+      forkNamespace
       state
       reviewState
       checkState

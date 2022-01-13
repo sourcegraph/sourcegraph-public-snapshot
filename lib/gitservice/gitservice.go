@@ -22,6 +22,12 @@ var uploadPackArgs = []string{
 	// fetch of a commit. Safe to do, since this is only used internally.
 	"-c", "uploadpack.allowAnySHA1InWant=true",
 
+	// The maximum size of memory that is consumed by each thread in git-pack-objects[1]
+	// for pack window memory when no limit is given on the command line.
+	//
+	// Important for large monorepos to not run into memory issues when cloned.
+	"-c", "pack.windowMemory=100m",
+
 	"upload-pack",
 
 	"--stateless-rpc", "--strict",

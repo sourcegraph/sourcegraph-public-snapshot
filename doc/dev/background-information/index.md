@@ -37,7 +37,6 @@
 - [Developing a worker](workers.md)
 - [Developing an out-of-band migration](oobmigrations.md)
 - [Developing a background routine](backgroundroutine.md)
-- [High-performance SQL](sql.md)
 - [Code host connections on local dev environment](code-host.md)
 
 ## [Languages](languages/index.md)
@@ -51,6 +50,13 @@
 ### [Extended guides](languages/extended_guide/index.md)
 
 - [Terraform Extended Guide](languages/extended_guide/terraform.md)
+
+## [SQL](sql/index.md)
+
+- [Migrations](sql/migrations.md)
+- High-performance guides
+  - [Batch operations](sql/batch_operations.md)
+  - [Materialized cache](sql/materialized_cache.md)
 
 ## Testing
 

@@ -47,6 +47,8 @@ var ignoreLegacyKubernetesFields = map[string]struct{}{
 	"useAlertManager":       {},
 }
 
+const RedactedSecret = "REDACTED"
+
 // problemKind represents the kind of a configuration problem.
 type problemKind string
 
@@ -188,13 +190,94 @@ func Validate(input conftypes.RawUnified) (problems Problems, err error) {
 // ValidateSite is like Validate, except it only validates the site configuration.
 func ValidateSite(input string) (messages []string, err error) {
 	raw := Raw()
-	raw.Site = input
+	unredacted, err := UnredactSecrets(input, raw)
+	if err != nil {
+		return nil, err
+	}
+	raw.Site = unredacted
 
 	problems, err := Validate(raw)
 	if err != nil {
 		return nil, err
 	}
 	return problems.Messages(), nil
+}
+
+func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
+	newCfg, err := ParseConfig(conftypes.RawUnified{
+		Site: input,
+	})
+	if err != nil {
+		return input, err
+	}
+	oldCfg, err := ParseConfig(raw)
+	if err != nil {
+		return input, err
+	}
+	oldSecrets := getSecretsMap(oldCfg)
+	for _, ap := range newCfg.AuthProviders {
+		if ap.Openidconnect != nil && ap.Openidconnect.ClientSecret == RedactedSecret {
+			ap.Openidconnect.ClientSecret = oldSecrets[ap.Openidconnect.ClientID]
+		}
+		if ap.Github != nil && ap.Github.ClientSecret == RedactedSecret {
+			ap.Github.ClientSecret = oldSecrets[ap.Github.ClientID]
+		}
+		if ap.Gitlab != nil && ap.Gitlab.ClientSecret == RedactedSecret {
+			ap.Gitlab.ClientSecret = oldSecrets[ap.Gitlab.ClientID]
+		}
+	}
+	unredactedSite, err := jsonc.Edit(input, newCfg.AuthProviders, "auth.providers")
+	if err != nil {
+		return input, err
+	}
+	if newCfg.ExecutorsAccessToken == RedactedSecret {
+		unredactedSite, err = jsonc.Edit(unredactedSite, oldCfg.ExecutorsAccessToken, "executors.accessToken")
+	}
+	return unredactedSite, err
+}
+
+func getSecretsMap(cfg *Unified) map[string]string {
+	secretsMap := make(map[string]string, len(cfg.AuthProviders))
+	for _, ap := range cfg.AuthProviders {
+		if ap.Openidconnect != nil {
+			secretsMap[ap.Openidconnect.ClientID] = ap.Openidconnect.ClientSecret
+		}
+		if ap.Github != nil {
+			secretsMap[ap.Github.ClientID] = ap.Github.ClientSecret
+		}
+		if ap.Gitlab != nil {
+			secretsMap[ap.Gitlab.ClientID] = ap.Gitlab.ClientSecret
+		}
+	}
+	return secretsMap
+}
+
+func RedactSecrets(raw conftypes.RawUnified) (conftypes.RawUnified, error) {
+	cfg, err := ParseConfig(raw)
+	if err != nil {
+		return raw, err
+	}
+	for _, ap := range cfg.AuthProviders {
+		if ap.Openidconnect != nil {
+			ap.Openidconnect.ClientSecret = RedactedSecret
+		}
+		if ap.Github != nil {
+			ap.Github.ClientSecret = RedactedSecret
+		}
+		if ap.Gitlab != nil {
+			ap.Gitlab.ClientSecret = RedactedSecret
+		}
+	}
+	newSite, err := jsonc.Edit(raw.Site, cfg.AuthProviders, "auth.providers")
+	if err != nil {
+		return raw, err
+	}
+	if cfg.ExecutorsAccessToken != "" {
+		newSite, err = jsonc.Edit(newSite, RedactedSecret, "executors.accessToken")
+	}
+	return conftypes.RawUnified{
+		Site: newSite,
+	}, err
 }
 
 func ValidateSetting(input string) (problems []string, err error) {

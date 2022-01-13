@@ -2,7 +2,7 @@ import Dialog from '@reach/dialog'
 import React, { useCallback, useState } from 'react'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
@@ -69,23 +69,24 @@ export const RemoveCredentialModal: React.FunctionComponent<RemoveCredentialModa
                 )}
 
                 <div className="d-flex justify-content-end pt-1">
-                    <button
-                        type="button"
+                    <Button
                         disabled={isLoading === true}
-                        className="btn btn-outline-secondary mr-2"
+                        className="mr-2"
                         onClick={onCancel}
+                        outline={true}
+                        variant="secondary"
                     >
                         Cancel
-                    </button>
-                    <button
-                        type="button"
+                    </Button>
+                    <Button
                         disabled={isLoading === true}
-                        className="btn btn-danger test-remove-credential-modal-submit"
+                        className="test-remove-credential-modal-submit"
                         onClick={onDelete}
+                        variant="danger"
                     >
                         {isLoading === true && <LoadingSpinner />}
                         Remove credentials
-                    </button>
+                    </Button>
                 </div>
             </div>
         </Dialog>

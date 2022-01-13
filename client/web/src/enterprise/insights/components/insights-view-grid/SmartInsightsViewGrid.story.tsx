@@ -32,6 +32,7 @@ const insights: Insight[] = [
         series: [],
         visibility: 'personal',
         step: { weeks: 2 },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
     },
     {
         id: 'searchInsights.insight.Backend_2',
@@ -41,6 +42,7 @@ const insights: Insight[] = [
         series: [],
         visibility: 'personal',
         step: { weeks: 2 },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
     },
 ]
 
@@ -83,6 +85,7 @@ const insightsWithManyLines: Insight[] = [
         series: [{ id: '', query: '', stroke: '', name: '' }],
         visibility: 'personal',
         step: { weeks: 2 },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
     },
     {
         id: 'searchInsights.insight.Backend_2',
@@ -92,6 +95,7 @@ const insightsWithManyLines: Insight[] = [
         series: [],
         visibility: 'personal',
         step: { weeks: 2 },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
     },
     {
         id: 'searchInsights.insight.Backend_3',
@@ -108,6 +112,7 @@ const insightsWithManyLines: Insight[] = [
         ],
         visibility: 'personal',
         step: { weeks: 2 },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
     },
     {
         id: 'searchInsights.insight.Backend_4',
@@ -117,6 +122,7 @@ const insightsWithManyLines: Insight[] = [
         series: [{ id: '', query: '', stroke: '', name: '' }],
         visibility: 'personal',
         step: { weeks: 2 },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
     },
     {
         id: 'searchInsights.insight.Backend_5',
@@ -147,6 +153,7 @@ const insightsWithManyLines: Insight[] = [
         ],
         visibility: 'personal',
         step: { weeks: 2 },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
     },
     {
         id: 'searchInsights.insight.Backend_6',
@@ -156,6 +163,7 @@ const insightsWithManyLines: Insight[] = [
         series: [{ id: '', query: '', stroke: '', name: '' }],
         visibility: 'personal',
         step: { weeks: 2 },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
     },
     {
         id: 'searchInsights.insight.Backend_7',
@@ -165,6 +173,7 @@ const insightsWithManyLines: Insight[] = [
         series: [{ id: '', query: '', stroke: '', name: '' }],
         visibility: 'personal',
         step: { weeks: 2 },
+        filters: { excludeRepoRegexp: '', includeRepoRegexp: '' },
     },
 ]
 

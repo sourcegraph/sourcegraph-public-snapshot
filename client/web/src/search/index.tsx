@@ -5,7 +5,7 @@ import { map } from 'rxjs/operators'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { ISavedSearch } from '@sourcegraph/shared/src/graphql/schema'
 import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
-import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
+import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { replaceRange } from '@sourcegraph/shared/src/util/strings'
@@ -147,8 +147,11 @@ export interface ParsedSearchQueryProps {
     parsedSearchQuery: string
 }
 
-export interface PatternTypeProps {
+export interface SearchPatternTypeProps {
     patternType: SearchPatternType
+}
+
+export interface SearchPatternTypeMutationProps {
     setPatternType: (patternType: SearchPatternType) => void
 }
 

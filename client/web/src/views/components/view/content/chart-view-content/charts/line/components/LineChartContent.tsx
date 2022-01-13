@@ -151,13 +151,13 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
             const activeDatumIndex = hoveredDatum?.index
             const line = series.find(line => line.dataKey === info.key)
 
-            if (!info.event || !line || !isValidNumber(activeDatumIndex)) {
+            if (!info.event || !line || !hoveredDatum?.datum || !isValidNumber(activeDatumIndex)) {
                 return
             }
 
             onDatumZoneClick({
                 originEvent: info.event as MouseEvent<unknown>,
-                link: line?.linkURLs?.[activeDatumIndex],
+                link: line?.linkURLs?.[+hoveredDatum.datum.x] ?? line?.linkURLs?.[activeDatumIndex],
             })
         },
         [series, onDatumZoneClick, hoveredDatum]
@@ -216,7 +216,10 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
         ...otherHandlers,
     }
 
-    const hoveredDatumLink = hoveredDatum?.line?.linkURLs?.[hoveredDatum?.index]
+    const hoveredDatumLinks = hoveredDatum?.line?.linkURLs ?? {}
+    const hoveredDatumLink = hoveredDatum
+        ? hoveredDatumLinks[+hoveredDatum.datum.x] ?? hoveredDatumLinks[hoveredDatum.index]
+        : null
     const rootClasses = classNames(styles.content, { [styles.contentWithCursor]: !!hoveredDatumLink })
 
     return (

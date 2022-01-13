@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
 
@@ -87,6 +89,7 @@ func NewWorker(ctx context.Context, workerStore dbworkerstore.Store, insightsSto
 		limiter:         limiter,
 		metadadataStore: store.NewInsightStore(insightsStore.Handle().DB()),
 		seriesCache:     sharedCache,
+		computeSearch:   query.ComputeSearch,
 	}, options)
 }
 

@@ -9,7 +9,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container } from '@sourcegraph/wildcard'
+import { Container, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields } from '../../../graphql-operations'
@@ -248,7 +248,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                 <div>
                     <div className="d-flex justify-content-between my-4">
                         <div>
-                            <button
+                            <Button
                                 type="submit"
                                 disabled={
                                     !formCompletion.actionCompleted ||
@@ -257,29 +257,25 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                                     !hasChangedFields
                                 }
                                 data-testid="submit-monitor"
-                                className="btn btn-primary mr-2 test-submit-monitor"
+                                className="mr-2 test-submit-monitor"
+                                variant="primary"
                             >
                                 {submitButtonLabel}
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
-                                onClick={onCancel}
-                                data-testid="cancel-monitor"
-                            >
+                            </Button>
+                            <Button onClick={onCancel} data-testid="cancel-monitor" variant="secondary">
                                 Cancel
-                            </button>
+                            </Button>
                         </div>
                         {showDeleteButton && (
                             <div>
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-danger"
+                                <Button
                                     onClick={toggleDeleteModal}
                                     data-testid="delete-monitor"
+                                    outline={true}
+                                    variant="danger"
                                 >
                                     Delete
-                                </button>
+                                </Button>
                             </div>
                         )}
                     </div>

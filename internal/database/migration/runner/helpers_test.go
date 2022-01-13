@@ -11,20 +11,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 )
 
-var testSchemas = []*schemas.Schema{
-	makeTestSchema("well-formed"),
-	makeTestSchema("query-error"),
+func makeTestSchemas(t *testing.T) []*schemas.Schema {
+	return []*schemas.Schema{
+		makeTestSchema(t, "well-formed"),
+		makeTestSchema(t, "query-error"),
+	}
 }
 
-func makeTestSchema(name string) *schemas.Schema {
+func makeTestSchema(t *testing.T, name string) *schemas.Schema {
 	fs, err := fs.Sub(testdata.Content, name)
 	if err != nil {
-		panic(fmt.Sprintf("malformed migration definitions %q: %s", name, err))
+		t.Fatalf("malformed migration definitions %q: %s", name, err)
 	}
 
 	definitions, err := definition.ReadDefinitions(fs)
 	if err != nil {
-		panic(fmt.Sprintf("malformed migration definitions %q: %s", name, err))
+		t.Fatalf("malformed migration definitions %q: %s", name, err)
 	}
 
 	return &schemas.Schema{
@@ -37,7 +39,7 @@ func makeTestSchema(name string) *schemas.Schema {
 
 func overrideSchemas(t *testing.T) {
 	liveSchemas := schemas.Schemas
-	schemas.Schemas = testSchemas
+	schemas.Schemas = makeTestSchemas(t)
 	t.Cleanup(func() { schemas.Schemas = liveSchemas })
 }
 
@@ -59,7 +61,8 @@ func testStoreWithVersion(version int, dirty bool) *MockStore {
 	return store
 }
 
-func testRunner(store Store) *Runner {
+func makeTestRunner(t *testing.T, store Store) *Runner {
+	testSchemas := makeTestSchemas(t)
 	storeFactories := make(map[string]StoreFactory, len(testSchemas))
 
 	for _, testSchema := range testSchemas {

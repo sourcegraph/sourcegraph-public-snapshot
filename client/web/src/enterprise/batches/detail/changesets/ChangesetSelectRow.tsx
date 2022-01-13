@@ -4,6 +4,7 @@ import React, { useMemo, useContext } from 'react'
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button } from '@sourcegraph/wildcard'
 
 import { AllChangesetIDsVariables, Scalars } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
@@ -205,9 +206,9 @@ export const ChangesetSelectRow: React.FunctionComponent<ChangesetSelectRowProps
                         areAllVisibleSelected() &&
                         allChangesetIDs &&
                         allChangesetIDs.length > selected.size && (
-                            <button type="button" className="btn btn-link py-0 px-1" onClick={selectAll}>
+                            <Button className="py-0 px-1" onClick={selectAll} variant="link">
                                 (Select all{allChangesetIDs !== undefined && ` ${allChangesetIDs.length}`})
-                            </button>
+                            </Button>
                         )}
                 </div>
                 <div className="w-100 d-block d-md-none" />

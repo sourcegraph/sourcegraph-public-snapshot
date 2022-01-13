@@ -383,15 +383,26 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) SetTosAccepted(ctx context.Context) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only the authenticated user can accept the terms of service.
-	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
+func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *struct{ UserID *graphql.ID }) (*EmptyResponse, error) {
+	var affectedUserID int32
+	if args.UserID != nil {
+		var err error
+		affectedUserID, err = UnmarshalUserID(*args.UserID)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
+		if err != nil {
+			return nil, err
+		}
 
-	if err != nil {
-		return nil, err
+		affectedUserID = user.ID
 	}
-	if user == nil {
-		return nil, errors.New("no authenticated user")
+
+	// 🚨 SECURITY: Only the user and admins are allowed to set the Terms of Service accepted flag.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, affectedUserID); err != nil {
+		return nil, err
 	}
 
 	tosAccepted := true
@@ -399,7 +410,7 @@ func (r *schemaResolver) SetTosAccepted(ctx context.Context) (*EmptyResponse, er
 		TosAccepted: &tosAccepted,
 	}
 
-	if err := database.Users(r.db).Update(ctx, user.ID, update); err != nil {
+	if err := database.Users(r.db).Update(ctx, affectedUserID, update); err != nil {
 		return nil, err
 	}
 

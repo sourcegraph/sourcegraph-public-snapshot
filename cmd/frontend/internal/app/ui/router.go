@@ -78,9 +78,9 @@ const (
 	routeViews                   = "views"
 	routeDevToolTime             = "devtooltime"
 
-	routeSearchStream   = "search.stream"
-	routeSearchConsole  = "search.console"
-	routeSearchNotebook = "search.notebook"
+	routeSearchStream  = "search.stream"
+	routeSearchConsole = "search.console"
+	routeNotebooks     = "search.notebook"
 
 	// Legacy redirects
 	routeLegacyLogin                   = "login"
@@ -136,7 +136,6 @@ func newRouter() *mux.Router {
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
 	r.Path("/search/stream").Methods("GET").Name(routeSearchStream)
 	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
-	r.Path("/search/notebook").Methods("GET").Name(routeSearchNotebook)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
 	r.Path("/welcome").Methods("GET").Name(routeWelcome)
@@ -144,6 +143,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/batch-changes").Methods("GET").Name(routeBatchChanges)
 	r.PathPrefix("/code-monitoring").Methods("GET").Name(routeCodeMonitoring)
 	r.PathPrefix("/contexts").Methods("GET").Name(routeContexts)
+	r.PathPrefix("/notebooks").Methods("GET").Name(routeNotebooks)
 	r.PathPrefix("/organizations").Methods("GET").Name(routeOrganizations)
 	r.PathPrefix("/settings").Methods("GET").Name(routeSettings)
 	r.PathPrefix("/site-admin").Methods("GET").Name(routeSiteAdmin)
@@ -271,7 +271,7 @@ func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbac
 		return brandNameSubtitle(mux.Vars(r)["username"])
 	}, nil, noIndex)))
 	router.Get(routeSearchConsole).Handler(brandedIndex("Search console"))
-	router.Get(routeSearchNotebook).Handler(brandedIndex("Search Notebook"))
+	router.Get(routeNotebooks).Handler(brandedIndex("Notebooks"))
 
 	// Legacy redirects
 	if envvar.SourcegraphDotComMode() {

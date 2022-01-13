@@ -22,6 +22,7 @@ export class EventLogger implements TelemetryService {
     private lastSourceURL?: string
     private deviceID = ''
     private eventID = 0
+    private listeners: Set<(eventName: string) => void> = new Set()
 
     private readonly cookieSettings: CookieAttributes = {
         // 365 days expiry, but renewed on activity.
@@ -83,6 +84,9 @@ export class EventLogger implements TelemetryService {
      * search queries. The contents of this parameter are sent to our analytics systems.
      */
     public log(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
+        for (const listener of this.listeners) {
+            listener(eventLabel)
+        }
         if (window.context?.userAgentIsBot || !eventLabel) {
             return
         }
@@ -213,6 +217,11 @@ export class EventLogger implements TelemetryService {
         this.anonymousUserID = anonymousUserID
         this.cohortID = cohortID
         this.deviceID = deviceID
+    }
+
+    public addEventLogListener(callback: (eventName: string) => void): () => void {
+        this.listeners.add(callback)
+        return () => this.listeners.delete(callback)
     }
 }
 

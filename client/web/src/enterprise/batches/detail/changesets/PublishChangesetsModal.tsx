@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../components/alerts'
 import { Scalars } from '../../../../graphql-operations'
@@ -70,18 +70,19 @@ export const PublishChangesetsModal: React.FunctionComponent<PublishChangesetsMo
             </Form>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
             <div className="d-flex justify-content-end">
-                <button
-                    type="button"
+                <Button
                     disabled={isLoading === true}
-                    className="btn btn-outline-secondary mr-2"
+                    className="mr-2"
                     onClick={onCancel}
+                    outline={true}
+                    variant="secondary"
                 >
                     Cancel
-                </button>
-                <button type="button" onClick={onSubmit} disabled={isLoading === true} className="btn btn-primary">
+                </Button>
+                <Button onClick={onSubmit} disabled={isLoading === true} variant="primary">
                     {isLoading === true && <LoadingSpinner />}
                     Publish
-                </button>
+                </Button>
             </div>
         </Dialog>
     )

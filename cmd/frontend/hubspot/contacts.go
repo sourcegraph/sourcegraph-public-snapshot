@@ -45,6 +45,7 @@ type ContactProperties struct {
 	FirstSourceURL  string `json:"first_source_url"`
 	LastSourceURL   string `json:"last_source_url"`
 	DatabaseID      int32  `json:"database_id"`
+	HasAgreedToToS  bool   `json:"has_agreed_to_tos_and_pp"`
 }
 
 // ContactResponse represents HubSpot user properties returned
@@ -65,6 +66,7 @@ func newAPIValues(h *ContactProperties) *apiProperties {
 	apiProps.set("first_source_url", h.FirstSourceURL)
 	apiProps.set("last_source_url", h.LastSourceURL)
 	apiProps.set("database_id", h.DatabaseID)
+	apiProps.set("has_agreed_to_tos_and_pp", h.HasAgreedToToS)
 	return apiProps
 }
 

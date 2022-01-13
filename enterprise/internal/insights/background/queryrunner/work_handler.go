@@ -39,6 +39,8 @@ type workHandler struct {
 
 	mu          sync.RWMutex
 	seriesCache map[string]*types.InsightSeries
+
+	computeSearch func(context.Context, string) ([]query.ComputeResult, error)
 }
 
 func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
@@ -71,13 +73,53 @@ func (r *workHandler) fetchSeries(ctx context.Context, seriesID string) (*types.
 	return &result[0], nil
 }
 
+func (r *workHandler) generateComputeRecordings(ctx context.Context, job *Job) (_ []store.RecordSeriesPointArgs, err error) {
+	results, err := r.computeSearch(ctx, job.SearchQuery)
+	if err != nil {
+		return nil, err
+	}
+	recordTime := time.Now()
+	if job.RecordTime != nil {
+		recordTime = *job.RecordTime
+	}
+
+	var recordings []store.RecordSeriesPointArgs
+	groupedByRepo := query.GroupByRepository(results)
+	for repoKey, byRepo := range groupedByRepo {
+		groupedByCapture := query.GroupByCaptureMatch(byRepo)
+		repoId, idErr := graphqlbackend.UnmarshalRepositoryID(graphql.ID(repoKey))
+		if idErr != nil {
+			err = multierror.Append(err, errors.Wrap(idErr, "UnmarshalRepositoryIDCapture"))
+			continue
+		}
+		for _, group := range groupedByCapture {
+			capture := group.Value
+			recordings = append(recordings, ToRecording(job, float64(group.Count), recordTime, byRepo[0].RepoName(), repoId, &capture)...)
+		}
+	}
+	return recordings, nil
+}
+
+func (r *workHandler) handleComputeSearch(ctx context.Context, job *Job) (err error) {
+	if store.PersistMode(job.PersistMode) != store.RecordMode {
+		return nil
+	}
+	recordings, err := r.generateComputeRecordings(ctx, job)
+	if err != nil {
+		return err
+	}
+	if recordErr := r.insightsStore.RecordSeriesPoints(ctx, recordings); recordErr != nil {
+		err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPointsCapture"))
+	}
+	return err
+}
+
 func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
 	defer func() {
 		if err != nil {
 			log15.Error("insights.queryrunner.workHandler", "error", err)
 		}
 	}()
-
 	err = r.limiter.Wait(ctx)
 	if err != nil {
 		return err
@@ -93,6 +135,9 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	}
 
 	// Actually perform the search query.
+	if !series.JustInTime && series.GeneratedFromCaptureGroups {
+		return r.handleComputeSearch(ctx, job)
+	}
 	//
 	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
 	// repository on Sourcegraph - so we must be careful to only record insightful information that
@@ -200,7 +245,7 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 			continue
 		}
 
-		args := ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID)
+		args := ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID, nil)
 		if recordErr := tx.RecordSeriesPoints(ctx, args); recordErr != nil {
 			err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
 		}
@@ -208,7 +253,7 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	return err
 }
 
-func ToRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID) []store.RecordSeriesPointArgs {
+func ToRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID, capture *string) []store.RecordSeriesPointArgs {
 	args := make([]store.RecordSeriesPointArgs, 0, len(record.DependentFrames)+1)
 	base := store.RecordSeriesPointArgs{
 		SeriesID: record.SeriesID,
@@ -216,6 +261,7 @@ func ToRecording(record *Job, value float64, recordTime time.Time, repoName stri
 			SeriesID: record.SeriesID,
 			Time:     recordTime,
 			Value:    value,
+			Capture:  capture,
 		},
 		RepoName:    &repoName,
 		RepoID:      &repoID,

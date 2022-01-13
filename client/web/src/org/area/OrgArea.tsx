@@ -24,7 +24,6 @@ import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
 import { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
-import { PatternTypeProps } from '../../search'
 import { RouteDescriptor } from '../../util/contributions'
 
 import { OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
@@ -91,8 +90,7 @@ interface Props
         BreadcrumbsProps,
         BreadcrumbSetters,
         ExtensionsControllerProps,
-        BatchChangesProps,
-        Omit<PatternTypeProps, 'setPatternType'> {
+        BatchChangesProps {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 
@@ -122,8 +120,7 @@ export interface OrgAreaPageProps
         NamespaceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        BatchChangesProps,
-        Omit<PatternTypeProps, 'setPatternType'> {
+        BatchChangesProps {
     /** The org that is the subject of the page. */
     org: OrgAreaOrganizationFields
 
@@ -232,7 +229,6 @@ export class OrgArea extends React.Component<Props> {
             settingsCascade: this.props.settingsCascade,
             isLightTheme: this.props.isLightTheme,
             namespace: this.state.orgOrError,
-            patternType: this.props.patternType,
             telemetryService: this.props.telemetryService,
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
             batchChangesEnabled: this.props.batchChangesEnabled,
