@@ -28,7 +28,9 @@ Some insights generate and persist time series data, while others calculate thei
 
 Common use cases for managing persisted insights with the API:
 
-- Genearating and exporting time series data
+- Creating insights over large individual repositories (big "monorepos") that won't complete before erroring out without being run on the more robust persisted system 
+- Creating insights over all repositories, to optionally filter later
+- Creating insights with data that you want to be able to export via the GraphQL API```
 
 Common use cases for managing just-in-time insights with the API:
 
