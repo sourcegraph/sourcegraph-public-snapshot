@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -76,6 +77,16 @@ func Init(
 	return nil
 }
 
+func checkIfUserCanInstallGitHubApp(ctx context.Context, db database.DB, userID int32) error {
+	enabled, err := db.FeatureFlags().GetUserFlags(ctx, userID)
+	if err != nil {
+		return err
+	} else if !enabled["github-app-cloud"] {
+		return errors.New("Sourcegraph Cloud GitHub App setup is not enabled for the authenticated user")
+	}
+	return nil
+}
+
 type githubClient interface {
 	GetAppInstallation(ctx context.Context, installationID int64) (*gogithub.Installation, error)
 }
@@ -85,6 +96,14 @@ func newGitHubAppCloudSetupHandler(db database.DB, apiURL *url.URL, client githu
 		if !envvar.SourcegraphDotComMode() {
 			w.WriteHeader(http.StatusNotFound)
 			_, _ = w.Write([]byte("Sourcegraph Cloud GitHub App setup is only available on sourcegraph.com"))
+			return
+		}
+
+		actor := actor.FromContext(r.Context())
+		err := checkIfUserCanInstallGitHubApp(r.Context(), db, actor.UID)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
 
