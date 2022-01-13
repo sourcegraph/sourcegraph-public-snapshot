@@ -11,16 +11,15 @@ import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
 import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
 import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
 import {
     Controller as ExtensionsController,
     createController as createExtensionsController,
 } from '@sourcegraph/shared/src/extensions/controller'
-import { GraphQLClient } from '@sourcegraph/shared/src/graphql/graphql'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'

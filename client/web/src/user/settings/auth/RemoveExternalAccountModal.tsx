@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { Button } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'

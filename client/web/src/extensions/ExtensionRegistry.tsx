@@ -5,8 +5,8 @@ import { debounce, delay, map, switchMap, takeUntil, tap, distinctUntilChanged }
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { ConfiguredRegistryExtension, isExtensionEnabled } from '@sourcegraph/shared/src/extensions/extension'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 import { Settings, SettingsCascadeProps, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'

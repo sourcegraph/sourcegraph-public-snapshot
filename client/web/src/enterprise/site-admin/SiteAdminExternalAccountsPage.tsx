@@ -5,8 +5,8 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { Button } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'

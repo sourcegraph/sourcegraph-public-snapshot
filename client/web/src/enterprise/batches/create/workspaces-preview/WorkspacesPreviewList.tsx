@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import {
     useConnection,
     UseConnectionResult,

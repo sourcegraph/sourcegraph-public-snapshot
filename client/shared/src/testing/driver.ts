@@ -27,10 +27,10 @@ import { Key } from 'ts-key-enum'
 import webExt from 'web-ext'
 
 import { isDefined } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql, GraphQLResult } from '@sourcegraph/http-client'
 
 import { ExternalServiceKind } from '../graphql-operations'
-import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
-import { IMutation, IQuery, IRepository } from '../graphql/schema'
+import { IMutation, IQuery, IRepository } from '../schema'
 import { Settings } from '../settings/settings'
 
 import { getConfig } from './config'

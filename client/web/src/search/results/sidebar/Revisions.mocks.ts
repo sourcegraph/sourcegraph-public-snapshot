@@ -1,7 +1,7 @@
 import { MockedResponse } from '@apollo/client/testing'
 import { GraphQLError } from 'graphql'
 
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { getDocumentNode } from '@sourcegraph/http-client'
 
 import { GitRefType } from '../../../../../shared/src/graphql-operations'
 import {

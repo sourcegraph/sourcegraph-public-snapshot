@@ -5,7 +5,7 @@
 // (see https://github.com/sourcegraph/sourcegraph/issues/21200).
 import create from 'zustand'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'

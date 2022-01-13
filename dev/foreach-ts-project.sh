@@ -17,6 +17,7 @@ DIRS=(
   client/browser
   client/build-config
   client/common
+  client/http-client
   client/codeintellify
   client/wildcard
   client/template-parser

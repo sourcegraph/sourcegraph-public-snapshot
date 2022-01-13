@@ -6,7 +6,7 @@ import { DropdownMenu, UncontrolledDropdown } from 'reactstrap'
 import { Observable, of, throwError } from 'rxjs'
 import sinon from 'sinon'
 
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { mockGetUserSearchContextNamespaces } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 

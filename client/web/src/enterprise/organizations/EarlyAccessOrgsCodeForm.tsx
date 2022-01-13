@@ -1,8 +1,8 @@
 import React, { FunctionComponent, useCallback, useState } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { gql, useLazyQuery, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
-import { IFeatureFlagOverride } from '@sourcegraph/shared/src/graphql/schema'
+import { gql, useLazyQuery, useMutation } from '@sourcegraph/http-client'
+import { IFeatureFlagOverride } from '@sourcegraph/shared/src/schema'
 import { Input } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'

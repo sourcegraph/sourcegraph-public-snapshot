@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import React, { useCallback, useState, useMemo } from 'react'
 import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
-import { Namespace } from '@sourcegraph/shared/src/graphql/schema'
+import { Namespace } from '@sourcegraph/shared/src/schema'
 
 import { AuthenticatedUser } from '../../auth'
 

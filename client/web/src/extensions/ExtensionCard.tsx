@@ -5,8 +5,8 @@ import { Link } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { ConfiguredRegistryExtension, splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import {
     ExtensionHeaderColor,
     ExtensionManifest,

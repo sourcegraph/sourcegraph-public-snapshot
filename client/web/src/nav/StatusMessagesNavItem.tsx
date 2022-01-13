@@ -12,6 +12,7 @@ import { Observable, Subscription, of } from 'rxjs'
 import { catchError, map, repeatWhen, delay, distinctUntilChanged, switchMap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import {
     CloudAlertIconRefresh,
     CloudSyncIconRefresh,
@@ -19,7 +20,6 @@ import {
 } from '@sourcegraph/shared/src/components/icons'
 
 import { Link } from '../../../shared/src/components/Link'
-import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import { repeatUntil } from '../../../shared/src/util/rxjs/repeatUntil'
 import { requestGraphQL } from '../backend/graphql'
 import { ErrorAlert } from '../components/alerts'

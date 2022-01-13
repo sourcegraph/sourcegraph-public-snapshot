@@ -1,7 +1,7 @@
 import * as H from 'history'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { CharacterRange } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'

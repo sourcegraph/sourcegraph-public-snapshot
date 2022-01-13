@@ -6,7 +6,7 @@ import { Omit } from 'utility-types'
 
 import { createAggregateError } from '@sourcegraph/common'
 
-import { checkOk } from '../backend/fetch'
+import { checkOk } from '../http-status-error'
 
 import { GRAPHQL_URI } from './constants'
 

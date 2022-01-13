@@ -4,8 +4,8 @@ import { noop } from 'lodash'
 import React from 'react'
 import { MATCH_ANY_PARAMETERS, WildcardMockedResponse, WildcardMockLink } from 'wildcard-mock-link'
 
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graphql-operations'
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/apollo'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 

@@ -5,7 +5,7 @@ import { Observable } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ALLOW_NAVIGATION } from '@sourcegraph/web/src/components/AwayPrompt'
 import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
