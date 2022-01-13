@@ -36,8 +36,14 @@ var (
 )
 
 type NPMPackagesSyncer struct {
-	Config  *schema.NPMPackagesConnection
-	DBStore repos.NPMPackagesRepoStore
+	connection schema.NPMPackagesConnection
+	dbStore    repos.NPMPackagesRepoStore
+}
+
+func NewNPMPackagesSyncer(
+	connection schema.NPMPackagesConnection,
+	dbStore repos.NPMPackagesRepoStore) NPMPackagesSyncer {
+	return NPMPackagesSyncer{connection, dbStore}
 }
 
 var _ VCSSyncer = &NPMPackagesSyncer{}
@@ -55,7 +61,7 @@ func (s *NPMPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL)
 	}
 
 	for _, dependency := range dependencies {
-		if err := npm.Exists(ctx, s.Config, dependency); err != nil {
+		if err := npm.Exists(ctx, s.connection, dependency); err != nil {
 			return err
 		}
 	}
@@ -161,7 +167,7 @@ func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 			}
 			configDependency := *depPtr
 
-			if err := npm.Exists(ctx, s.Config, configDependency); err != nil {
+			if err := npm.Exists(ctx, s.connection, configDependency); err != nil {
 				if errors.Is(err, context.DeadlineExceeded) {
 					timedout = append(timedout, configDependency)
 					continue
@@ -184,7 +190,7 @@ func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 	if err != nil {
 		return nil, err
 	}
-	dbDeps, err := s.DBStore.GetNPMDependencyRepos(ctx, dbstore.GetNPMDependencyReposOpts{
+	dbDeps, err := s.dbStore.GetNPMDependencyRepos(ctx, dbstore.GetNPMDependencyReposOpts{
 		ArtifactName: parsedPackage.PackageSyntax(),
 	})
 	if err != nil {
@@ -217,10 +223,10 @@ func (s *NPMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 }
 
 func (s *NPMPackagesSyncer) npmDependencies() []string {
-	if s.Config == nil || s.Config.Dependencies == nil {
+	if s.connection.Dependencies == nil {
 		return nil
 	}
-	return s.Config.Dependencies
+	return s.connection.Dependencies
 }
 
 // gitPushDependencyTag pushes a git tag to the given bareGitDirectory path. The
@@ -234,7 +240,7 @@ func (s *NPMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	}
 	defer os.RemoveAll(tmpDirectory)
 
-	sourceCodePath, err := npm.FetchSources(ctx, s.Config, dependency)
+	sourceCodePath, err := npm.FetchSources(ctx, s.connection, dependency)
 	if err != nil {
 		return err
 	}
@@ -245,7 +251,7 @@ func (s *NPMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 		return err
 	}
 
-	err = s.commitTgz(ctx, dependency, tmpDirectory, sourceCodePath, s.Config)
+	err = s.commitTgz(ctx, dependency, tmpDirectory, sourceCodePath)
 	if err != nil {
 		return err
 	}
@@ -279,7 +285,7 @@ func (s *NPMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 // commitTgz creates a git commit in the given working directory that adds all
 // the file contents of the given tgz file.
 func (s *NPMPackagesSyncer) commitTgz(ctx context.Context, dependency reposource.NPMDependency,
-	workingDirectory, sourceCodeTgzPath string, connection *schema.NPMPackagesConnection) error {
+	workingDirectory, sourceCodeTgzPath string) error {
 	if err := decompressTgz(sourceCodeTgzPath, workingDirectory); err != nil {
 		return errors.Wrapf(err, "failed to decompress gzipped tarball for %s to %v", dependency.PackageManagerSyntax(), sourceCodeTgzPath)
 	}

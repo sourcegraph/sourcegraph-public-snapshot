@@ -72,13 +72,13 @@ func init() {
 	}
 }
 
-func FetchSources(ctx context.Context, config *schema.NPMPackagesConnection, dependency reposource.NPMDependency) (filename string, err error) {
+func FetchSources(ctx context.Context, connection schema.NPMPackagesConnection, dependency reposource.NPMDependency) (filename string, err error) {
 	ctx, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.PackageManagerSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	npmJsonOutput, err := runNPMCommand(ctx, config, "pack", dependency.PackageManagerSyntax(), "--json")
+	npmJsonOutput, err := runNPMCommand(ctx, connection, "pack", dependency.PackageManagerSyntax(), "--json")
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to fetch sources for %s", dependency.PackageManagerSyntax())
 	}
@@ -92,7 +92,7 @@ func FetchSources(ctx context.Context, config *schema.NPMPackagesConnection, dep
 	return output, err
 }
 
-func Exists(ctx context.Context, config *schema.NPMPackagesConnection, dependency reposource.NPMDependency) (err error) {
+func Exists(ctx context.Context, connection schema.NPMPackagesConnection, dependency reposource.NPMDependency) (err error) {
 	if operations == nil {
 		fmt.Println("operations is nil!")
 	}
@@ -103,7 +103,7 @@ func Exists(ctx context.Context, config *schema.NPMPackagesConnection, dependenc
 
 	out, err := runNPMCommand(
 		ctx,
-		config,
+		connection,
 		"view",
 		dependency.PackageManagerSyntax())
 	if err != nil {
@@ -117,12 +117,12 @@ func Exists(ctx context.Context, config *schema.NPMPackagesConnection, dependenc
 	return nil
 }
 
-func runNPMCommand(ctx context.Context, config *schema.NPMPackagesConnection, args ...string) (output string, err error) {
+func runNPMCommand(ctx context.Context, connection schema.NPMPackagesConnection, args ...string) (output string, err error) {
 	ctx, cancel := context.WithTimeout(ctx, invocTimeout)
 	defer cancel()
 
 	ctx, trace, endObservation := operations.runCommand.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("registry", config.Registry),
+		otlog.String("registry", connection.Registry),
 		otlog.String("args", strings.Join(args, ", ")),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -141,7 +141,7 @@ func runNPMCommand(ctx context.Context, config *schema.NPMPackagesConnection, ar
 	//     defer func(){ errLogout := npmLoginToken.Logout(); if err == nil { err = errLogout } }()
 	//     npmLoginToken.doStuff(...)
 
-	registry := config.Registry
+	registry := connection.Registry
 	if len(registry) != 0 {
 		cmd.Env = append(
 			cmd.Env, fmt.Sprintf("%s=%s", npmConfigRegistryEnvVar, registry))
