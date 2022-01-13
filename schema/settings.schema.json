@@ -299,6 +299,10 @@
       "minimum": 0,
       "default": 0
     },
+    "codeIntelligence.maxPanelResults": {
+      "description": "Maximum number of references/definitions (or other code intelligence results provided by extensions) shown in the panel. If not set a default value will be used to ensure best performance.",
+      "type": "integer"
+    },
     "search.contextLines": {
       "description": "The default number of lines to show as context below and above search results. Default is 1.",
       "type": "integer",
