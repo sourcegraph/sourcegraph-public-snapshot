@@ -4,6 +4,7 @@ import (
 	"context"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -46,6 +47,24 @@ type SubRepoPermissionChecker interface {
 // initialisation time, services that require this client should initialise it in
 // their main function.
 var DefaultSubRepoPermsChecker SubRepoPermissionChecker = &noopPermsChecker{}
+
+// DEBUG REMOVE BEFORE MERGE
+
+func init() {
+	checker := NewMockSubRepoPermissionChecker()
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content RepoContent) (Perms, error) {
+		if strings.Contains(content.Path, "_test.go") {
+			return None, nil
+		}
+		return Read, nil
+	})
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	//DefaultSubRepoPermsChecker = checker
+}
+
+// DEBUG REMOVE BEFORE MERGE
 
 type noopPermsChecker struct{}
 
