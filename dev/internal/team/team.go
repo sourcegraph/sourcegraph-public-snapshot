@@ -137,7 +137,7 @@ func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammat
 	r.cachedTeamOnce.Do(func() {
 		team, err := fetchTeamData(ctx)
 		if err != nil {
-			onceErr = fmt.Errorf("fetchTeamData: %+w", err)
+			onceErr = fmt.Errorf("fetchTeamData: %w", err)
 			return
 		}
 
@@ -157,7 +157,7 @@ func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammat
 		// Populate Slack details
 		slackUsers, err := r.slack.GetUsers()
 		if err != nil {
-			onceErr = fmt.Errorf("slack.GetUsers: %+w", err)
+			onceErr = fmt.Errorf("slack.GetUsers: %w", err)
 			return
 		}
 		for _, user := range slackUsers {
@@ -180,18 +180,18 @@ func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammat
 func fetchTeamData(ctx context.Context) (map[string]*Teammate, error) {
 	resp, err := ctxhttp.Get(ctx, http.DefaultClient, teamDataURL)
 	if err != nil {
-		return nil, fmt.Errorf("Get: %+w", err)
+		return nil, fmt.Errorf("Get: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("ReadAll: %+w", err)
+		return nil, fmt.Errorf("ReadAll: %w", err)
 	}
 
 	team := map[string]*Teammate{}
 	if err = yaml.Unmarshal(body, &team); err != nil {
-		return nil, fmt.Errorf("Unmarshal: %+w", err)
+		return nil, fmt.Errorf("Unmarshal: %w", err)
 	}
 	for id, tm := range team {
 		tm.Key = id
