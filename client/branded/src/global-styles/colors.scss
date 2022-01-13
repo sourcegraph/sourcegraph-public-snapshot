@@ -61,6 +61,10 @@ $theme-colors: (
     --gray-12: #14171f;
     --black: #0f111a;
 
+    // Used for translucent Modal background
+    --gray-04-rgb: 219, 226, 240;
+    --gray-08-rgb: 52, 58, 77;
+
     // Other root palette colors.
     --blue: #{$blue};
     --indigo: #{$indigo};
