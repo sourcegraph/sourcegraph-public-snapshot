@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { Form } from 'reactstrap'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
@@ -10,7 +10,7 @@ import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/s
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { ParsedSearchQueryProps, SearchContextInputProps, CaseSensitivityProps, SearchPatternTypeProps } from '..'
+import { SearchContextInputProps, CaseSensitivityProps, SearchPatternTypeProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
@@ -36,7 +36,6 @@ interface Props
         ActivationProps,
         KeyboardShortcutsProps,
         TelemetryProps,
-        ParsedSearchQueryProps,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         Pick<SubmitSearchParameters, 'source'>,
         SearchContextInputProps {
@@ -51,6 +50,7 @@ interface Props
     /** A query fragment to be prepended to queries. This will not appear in the input until a search is submitted. */
     hiddenQueryPrefix?: string
     autoFocus?: boolean
+    showOnboardingTour?: boolean
 }
 
 const queryStateSelector = (
@@ -77,19 +77,11 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     const quickLinks =
         (isSettingsValid<Settings>(props.settingsCascade) && props.settingsCascade.final.quicklinks) || []
 
-    // This component is also used on the CommunitySearchContextPage.
-    // The search onboarding tour should only be shown on the homepage.
-    const isHomepage = useMemo(() => props.location.pathname === '/search' && !props.parsedSearchQuery, [
-        props.location.pathname,
-        props.parsedSearchQuery,
-    ])
-    const showOnboardingTour = useExperimentalFeatures(features => features.showOnboardingTour ?? false) && isHomepage
-
     const tourContainer = useRef<HTMLDivElement>(null)
 
     const { shouldFocusQueryInput, ...onboardingTourQueryInputProps } = useSearchOnboardingTour({
         ...props,
-        showOnboardingTour,
+        showOnboardingTour: props.showOnboardingTour ?? false,
         queryState: userQueryState,
         setQueryState: setUserQueryState,
         stepsContainer: tourContainer.current ?? undefined,
@@ -153,7 +145,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         queryState={userQueryState}
                         onChange={setUserQueryState}
                         onSubmit={onSubmit}
-                        autoFocus={showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
+                        autoFocus={props.showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
                     />
                 </div>
                 <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />
