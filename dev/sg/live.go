@@ -110,7 +110,6 @@ func printDeployedVersion(e environment) error {
 
 		var emoji = "  "
 		var style = output.StylePending
-
 		if sha[0:len(buildSha)] == buildSha {
 			emoji = "🚀"
 			style = output.StyleLogo
