@@ -196,7 +196,8 @@ query InsightViews($id: ID, $filters: InsightViewFiltersInput) {
 Example variables:
 
 ```json
-{ "id": "aW5zaWdodF92aWV3OiIyMkVIR2pXOTFkSzNOanpmM2hyWnU3WDJwMlgi",
+{ 
+  "id": "aW5zaWdodF92aWV3OiIyMkVIR2pXOTFkSzNOanpmM2hyWnU3WDJwMlgi",
   "filters": {
     "includeRepoRegex": "sourcegraph/sourcegraph",
     "excludeRepoRegex": "sourcegraph/handbook"
@@ -298,7 +299,9 @@ mutation DeleteInsightView($id: ID!) {
 Example variables:
 
 ```json
-{ "id": "aW5zaWdodF92aWV3OiIyMkVIR2pXOTFkSzNOanpmM2hyWnU3WDJwMlgi" }
+{ 
+  "id": "aW5zaWdodF92aWV3OiIyMkVIR2pXOTFkSzNOanpmM2hyWnU3WDJwMlgi" 
+}
 ```
 
 ## Managing dashboards
