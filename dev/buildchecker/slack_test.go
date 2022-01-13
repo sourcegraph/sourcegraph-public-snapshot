@@ -17,15 +17,14 @@ func TestSlackSummary(t *testing.T) {
 		s := slackSummary(true, []CommitInfo{
 			{Commit: "a", Author: "bob", AuthorSlackUser: "123"},
 			{Commit: "b", Author: "alice", AuthorSlackUser: "124"},
-			{Commit: "c", Author: "no_github", AuthorSlackUser: ""},
+			{Commit: "c", Author: "no_slack", AuthorSlackUser: ""},
 		})
 		t.Log(s)
 		assert.Contains(t, s, "locked")
-		assert.Contains(t, s, "bob")
+		// If Slack user is available, mention only the Slack user
 		assert.Contains(t, s, "<@123>")
-		assert.Contains(t, s, "alice")
 		assert.Contains(t, s, "<@124>")
-		assert.Contains(t, s, "no_github")
-		assert.Contains(t, s, ":warning: Cannot find Slack user :warning:")
+		// If no Slack user is available, note the author (user not found is implicit)
+		assert.Contains(t, s, "no_slack")
 	})
 }
