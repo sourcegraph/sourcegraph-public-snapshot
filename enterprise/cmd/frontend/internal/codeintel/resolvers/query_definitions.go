@@ -81,8 +81,8 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 		return nil, err
 	}
 	trace.Log(
-		log.Int("numDefinitionUploads", len(uploads)),
-		log.String("definitionUploads", uploadIDsToString(uploads)),
+		log.Int("numXrepoDefinitionUploads", len(uploads)),
+		log.String("xrepoDefinitionUploads", uploadIDsToString(uploads)),
 	)
 
 	// Perform the moniker search
@@ -90,7 +90,7 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	if err != nil {
 		return nil, err
 	}
-	trace.Log(log.Int("numLocations", len(locations)))
+	trace.Log(log.Int("numXrepoLocations", len(locations)))
 
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
 	// locations within the repository the user is browsing so that it appears all definitions
@@ -100,7 +100,7 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	if err != nil {
 		return nil, err
 	}
-	trace.Log(log.Int("numAdjustedLocations", len(adjustedLocations)))
+	trace.Log(log.Int("numAdjustedXrepoLocations", len(adjustedLocations)))
 
 	return adjustedLocations, nil
 }
