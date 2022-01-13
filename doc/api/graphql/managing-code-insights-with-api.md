@@ -69,7 +69,7 @@ Example variables:
       },
       "timeScope": {
         "stepInterval": {
-          "unit": MONTH,
+          "unit": "MONTH",
           "value": 1
         }
       }
@@ -85,7 +85,7 @@ Example variables:
       },
       "timeScope": {
         "stepInterval": {
-          "unit": MONTH,
+          "unit": "MONTH",
           "value": 1
         }
       }
@@ -123,7 +123,7 @@ Example variables:
     },
     "presentationOptions": {
       "title": "Language usage for Sourcegraph",
-      "otherThreshold": .3
+      "otherThreshold": 0.3
     }
   }
 }
@@ -143,48 +143,50 @@ Notes on the return object:
 
 ```gql
 query InsightViews($id: ID, $filters: InsightViewFiltersInput) {
-  nodes {
-    id,
-    dataSeries {
-      label,
-      points {
-        dateTime,
-        value
-      },
-      status {
-        pendingJobs,
-        completedJobs,
-        failedJobs,
-        backfillQueuedAt
-      }
-    }
-    dataSeriesDefinitions {
-      ... on SearchInsightDataSeriesDefinition {
-        seriesId,
-        query,
-        repositoryScope {
-          repositories
+  insightViews(id: $id, filters: $filters) {
+    nodes {
+      id,
+      dataSeries {
+        label,
+        points {
+          dateTime,
+          value
+        },
+        status {
+          pendingJobs,
+          completedJobs,
+          failedJobs,
+          backfillQueuedAt
         }
-        timeScope {
-          ... on InsightIntervalTimeScope {
-            unit,
-            value
+      }
+      dataSeriesDefinitions {
+        ... on SearchInsightDataSeriesDefinition {
+          seriesId,
+          query,
+          repositoryScope {
+            repositories
+          }
+          timeScope {
+            ... on InsightIntervalTimeScope {
+              unit,
+              value
+            }
           }
         }
       }
-    }
-    presentation {
-      ... on LineChartInsightViewPresentation {
-        title,
-        seriesPresentation {
-          seriesId,
-          label,
-          color
+      presentation {
+        ... on LineChartInsightViewPresentation {
+          title,
+          seriesPresentation {
+            seriesId,
+            label,
+            color
+          }
+        },
+        ... on PieChartInsightViewPresentation {
+          title,
+          otherThreshold
         }
-      },
-      ... on PieChartInsightViewPresentation {
-        title,
-        otherThreshold
       }
     }
   }
@@ -207,13 +209,15 @@ Example variables:
 The query below will list all of the Code Insights that you can see based on [permissions](#permissions-and-visibility). The query and return object is the same as for reading a single Code Insight. All input parameters are optional, and can be used for cursor-based pagination and repository filtering.
 
 ```gql
-query InsightViews($first: int, $after: String, $filters: InsightViewFiltersInput) {
-  nodes {
-    id
-  },
-  pageInfo {
-    endCursor,
-    hasNextPage
+query InsightViews($first: Int, $after: String, $filters: InsightViewFiltersInput) {
+  insightViews(first: $first, after: $after, filters: $filters) {
+    nodes {
+      id
+    },
+    pageInfo {
+      endCursor,
+      hasNextPage
+    }
   }
 }
 ```
@@ -223,7 +227,7 @@ Example variables:
 ```json
 {
   "first": 10,
-  "after": "aW5zaWdodF92aWV3OiIyM1l3WHpmSkVhY2Juc0RvWVE5N0FtRU9Wbkki",
+  "after": "aW5zaWdodF92aWV3OiIyM1l3WHpmSkVhY2Juc0RvWVE5N0FtRU9Wbkki"
 }
 ```
 
@@ -259,7 +263,7 @@ This is an example of updating the Code Insight from the creation mutation examp
       "title": "Javascript weekly"
     },
     "dataSeries": [{
-      "seriesId": "series-id-1",
+      "seriesId": "23cu2Xs5cGttsdATpbq2dIOhkBd",
       "query": "lang:javascript",
       "options": {
         "label": "javascript",
@@ -270,7 +274,7 @@ This is an example of updating the Code Insight from the creation mutation examp
       },
       "timeScope": {
         "stepInterval": {
-          "unit": WEEK,
+          "unit": "WEEK",
           "value": 1
         }
       }
@@ -294,7 +298,7 @@ mutation DeleteInsightView($id: ID!) {
 Example variables:
 
 ```json
-{ "id": "insight-id-1" }
+{ "id": "aW5zaWdodF92aWV3OiIyMkVIR2pXOTFkSzNOanpmM2hyWnU3WDJwMlgi" }
 ```
 
 ## Managing dashboards
@@ -325,6 +329,7 @@ Example variables:
       "global": true
     }
   }
+}
 ```
 
 ### Adding and removing Code Insights from a dashboard
@@ -342,7 +347,7 @@ mutation AddInsightViewToDashboard($input: AddInsightViewToDashboardInput!) {
 ```
 
 ```gql
-mutation RemoveInsightViewFromDashboard($input: RemoveInsightViewToDashboardInput!) {
+mutation RemoveInsightViewFromDashboard($input: RemoveInsightViewFromDashboardInput!) {
   removeInsightViewFromDashboard(input: $input) {
     dashboard { 
       id
@@ -359,4 +364,5 @@ Example variables:
     "insightViewId": "aW5zaWdodF92aWV3OiIyMkVIR2pXOTFkSzNOanpmM2hyWnU3WDJwMlgi",
     "dashboardId": "ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjoxNDV9"
   }
+}
 ```
