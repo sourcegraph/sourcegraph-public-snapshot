@@ -457,8 +457,8 @@ type Document struct {
 
 	//
 	// (Required) The path to the text document relative to the directory supplied
-	// in the associated `Index.project_root`. This value should not begin with a
-	// directory separator.
+	// in the associated `Metadata.project_root`. This value should not begin with
+	// a directory separator.
 	RelativePath string `protobuf:"bytes,1,opt,name=relative_path,json=relativePath,proto3" json:"relative_path,omitempty"`
 	//
 	// (Optional) A set of occurrences that provide additional intelligence for

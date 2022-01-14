@@ -13,7 +13,7 @@ encoding of a document is delcared by the associated index's
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-|  **relative_path** | string | (Required) The path to the text document relative to the directory supplied in the associated `Index.project_root`. This value should not begin with a directory separator.
+|  **relative_path** | string | (Required) The path to the text document relative to the directory supplied in the associated `Metadata.project_root`. This value should not begin with a directory separator.
 | repeated **occurrences** | Occurrence | (Optional) A set of occurrences that provide additional intelligence for some selection of source text within the document.
 | repeated **symbols** | Symbol | Symbols that are defined within this document.
 

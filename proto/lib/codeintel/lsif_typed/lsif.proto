@@ -54,8 +54,8 @@ message ToolInfo {
 message Document {
   /**
    * (Required) The path to the text document relative to the directory supplied
-   * in the associated `Index.project_root`. This value should not begin with a
-   * directory separator.
+   * in the associated `Metadata.project_root`. This value should not begin with
+   * a directory separator.
    */
   string relative_path = 1;
 
