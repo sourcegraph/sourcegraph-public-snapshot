@@ -17,6 +17,7 @@ import { SourcegraphIcon } from './icons'
 import { getReturnTo, maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
+import { VsCodeSignUpPage } from './VsCodeSignUpPage'
 
 export interface SignUpPageProps extends ThemeProps, TelemetryProps, FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
@@ -74,6 +75,20 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
 
             return Promise.resolve()
         })
+
+    if (query.get('vs-code')) {
+        return (
+            <VsCodeSignUpPage
+                source={query.get('src')}
+                onSignUp={handleSignUp}
+                isLightTheme={isLightTheme}
+                showEmailForm={query.has(ShowEmailFormQueryParameter)}
+                context={context}
+                telemetryService={telemetryService}
+                featureFlags={featureFlags}
+            />
+        )
+    }
 
     if (context.sourcegraphDotComMode) {
         return (
