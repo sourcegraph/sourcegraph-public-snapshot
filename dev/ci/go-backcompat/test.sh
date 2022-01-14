@@ -86,6 +86,7 @@ PROTECTED_FILES=(
   ./migrations
   ./dev/ci/go-test.sh
   ./dev/ci/go-backcompat
+  ./.buildkite/hooks
 )
 
 # Check out the previous code then immediately restore whatever
