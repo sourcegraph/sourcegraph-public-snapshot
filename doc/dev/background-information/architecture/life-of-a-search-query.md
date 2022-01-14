@@ -10,11 +10,11 @@ There are a few ways to perform a search with Sourcegraph:
 2. Typing a query into your browser's location bar after configuring a [browser search engine shortcut](https://docs.sourcegraph.com/integration/browser_search_engine).
 3. Using the [src CLI command](https://github.com/sourcegraph/src-cli).
 
-In all cases, clients use the [search query](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%5Cbsearch%5C%28+file:schema.graphql&patternType=regexp) in our GraphQL API that is exposed by our [frontend](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/frontend) service.
+Clients use either the [Streaming API](../../../api/stream_api/index.md) or the [search query](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%5Cbsearch%5C%28+file:schema.graphql&patternType=regexp) in our GraphQL API. Both are exposed in our [frontend](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/frontend) service.
 
 ## Frontend
 
-The frontend uses a [Streaming API](../../../api/stream_api/index.md). The frontend implements it [here](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+func+%28h+*streamHandler%29+ServeHTTP). The Streaming API is used by the browser. Historically we served results via [GraphQL](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+func+%28r+*schemaResolver%29+Search%28) and there are still many clients who use this API. Internally Sourcegraph search is streaming based.
+The frontend implements the Streaming API [here](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+func+%28h+*streamHandler%29+ServeHTTP). The Streaming API is used by the browser. Historically we served results via [GraphQL](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+func+%28r+*schemaResolver%29+Search%28) and there are still many clients who use this API. Internally Sourcegraph search is streaming based.
 
 First, the frontend takes the query and [creates a plan of jobs](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+func+%28r+*searchResolver%29+toSearchInputs&patternType=literal) to execute concurrently. A job is a specific query against a backend. For example [here we convert a Sourcegraph query into a Zoekt query](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+func+querytozoektquery&patternType=literal) for our indexed search backend. The comments in the job creation function are worth reading for more details.
 
