@@ -13,7 +13,7 @@ First, query the user's ID by using their email address or user name
 
 Example:
 
-```json
+```graphql
 {
   user(email: "someone@gmail.com") {
     id
@@ -21,7 +21,7 @@ Example:
 }
 ```
 
-```json
+```graphql
 {
   user(username: "username") {    
   id
@@ -31,7 +31,7 @@ Example:
 
 Once you've got a user's ID use the `updateUser` mutation query, to change user metadata. An example of updating a user's username can be found below:
 
-```json
+```graphql
 mutation {
   updateUser(user: "REDACTED", username: "doombot") {
     username
@@ -41,7 +41,7 @@ mutation {
 > NOTE: `REDACTED` is a place holder for a user ID
 
 This query will return the username after altering the user's username data as seen below:
-```json
+```graphql
 {
   "data": {
     "updateUser": {
@@ -64,7 +64,7 @@ First, query the user's ID by using their email address or user name, as seen [a
 
 Example:
 
-```json
+```graphql
 {
   user(email: "someone@gmail.com") {
     id
@@ -72,7 +72,7 @@ Example:
 }
 ```
 
-```json
+```graphql
 {
   user(username: "username") {    
   id
@@ -84,7 +84,7 @@ Next, plug the user ID into either Option A. or B. to delete the account.
 
 Option A) example:
 
-```json
+```graphql
 mutation {
   deleteUser(user: "THE_USER_ID") {
     alwaysNil
@@ -94,7 +94,7 @@ mutation {
 
 Option B) example, include `hard: true`:
 
-```json
+```graphql
 mutation {
   deleteUser(user: "THE_USER_ID" hard: true) {
     alwaysNil
@@ -106,7 +106,7 @@ mutation {
 
 Example:
 
-```json
+```graphql
 {
   "errors": [
     {
