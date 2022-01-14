@@ -3,12 +3,12 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { GitRefType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
-import { SyntaxHighlightedSearchQuery } from '../../../components/SyntaxHighlightedSearchQuery'
 import {
     SearchSidebarGitRefsResult,
     SearchSidebarGitRefsVariables,

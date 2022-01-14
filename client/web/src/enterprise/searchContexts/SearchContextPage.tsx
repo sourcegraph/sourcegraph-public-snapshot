@@ -6,6 +6,7 @@ import { RouteComponentProps } from 'react-router'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
@@ -19,7 +20,6 @@ import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Badge, Container, PageHeader, LoadingSpinner, useObservable, Button } from '@sourcegraph/wildcard'
 
-import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { SearchContextProps } from '../../search'
 
 import styles from './SearchContextPage.module.scss'
