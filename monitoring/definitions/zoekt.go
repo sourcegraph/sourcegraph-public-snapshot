@@ -10,17 +10,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func ZoektIndexServer() *monitoring.Container {
+func Zoekt() *monitoring.Container {
 	const (
-		containerName        = "zoekt-indexserver"
-		bundledContainerName = "indexed-search"
+		indexServerContainerName = "zoekt-indexserver"
+		webserverContainerName   = "zoekt-webserver"
+		bundledContainerName     = "indexed-search"
 	)
 
 	return &monitoring.Container{
-		Name: "zoekt-indexserver",
-
-		Title:                    "Zoekt Index Server",
-		Description:              "Indexes repositories and populates the search index.",
+		Name:                     "zoekt",
+		Title:                    "Zoekt",
+		Description:              "Indexes repositories, populates the search index, and responds to indexed search queries.",
 		NoSourcegraphDebugServer: true,
 		Variables: []monitoring.ContainerVariable{
 			{
@@ -159,6 +159,22 @@ func ZoektIndexServer() *monitoring.Container {
 								sustained periods of errors is there an underlying issue. When sustained
 								this indicates repositories will not get updated indexes.
 							`,
+						},
+					},
+				},
+			},
+			{
+				Title: "Search requests",
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:              "indexed_search_request_errors",
+							Description:       "indexed search request errors every 5m by code",
+							Query:             `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,
+							Warning:           monitoring.Alert().GreaterOrEqual(5, nil).For(5 * time.Minute),
+							Panel:             monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
+							Owner:             monitoring.ObservableOwnerSearchCore,
+							PossibleSolutions: "none",
 						},
 					},
 				},
@@ -459,10 +475,23 @@ func ZoektIndexServer() *monitoring.Container {
 
 			// Note:
 			// zoekt_indexserver and zoekt_webserver are deployed together as part of the indexed-search service
-			// We show pod availability here for both the webserver and indexserver as they are bundled together.
 
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
+			shared.NewContainerMonitoringGroup(indexServerContainerName, monitoring.ObservableOwnerSearchCore, &shared.ContainerMonitoringGroupOptions{
+				CustomTitle: fmt.Sprintf("[%s] %s", indexServerContainerName, shared.TitleContainerMonitoring),
+			}),
+			shared.NewContainerMonitoringGroup(webserverContainerName, monitoring.ObservableOwnerSearchCore, &shared.ContainerMonitoringGroupOptions{
+				CustomTitle: fmt.Sprintf("[%s] %s", webserverContainerName, shared.TitleContainerMonitoring),
+			}),
+
+			shared.NewProvisioningIndicatorsGroup(indexServerContainerName, monitoring.ObservableOwnerSearchCore, &shared.ContainerProvisioningIndicatorsGroupOptions{
+				CustomTitle: fmt.Sprintf("[%s] %s", indexServerContainerName, shared.TitleProvisioningIndicators),
+			}),
+			shared.NewProvisioningIndicatorsGroup(webserverContainerName, monitoring.ObservableOwnerSearchCore, &shared.ContainerProvisioningIndicatorsGroupOptions{
+				CustomTitle: fmt.Sprintf("[%s] %s", webserverContainerName, shared.TitleProvisioningIndicators),
+			}),
+
+			// Note:
+			// We show pod availability here for both the webserver and indexserver as they are bundled together.
 			shared.NewKubernetesMonitoringGroup(bundledContainerName, monitoring.ObservableOwnerSearchCore, nil),
 		},
 	}
