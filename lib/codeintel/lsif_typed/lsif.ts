@@ -789,7 +789,7 @@ export namespace lib.codeintel.lsif_typed {
             range?: number[];
             symbol_uri?: string;
             symbol_role?: Occurrence.Role;
-            symbol_documentation?: string[];
+            override_documentation?: string[];
             highlight?: Occurrence.Highlight;
         }) {
             super();
@@ -804,8 +804,8 @@ export namespace lib.codeintel.lsif_typed {
                 if ("symbol_role" in data && data.symbol_role != undefined) {
                     this.symbol_role = data.symbol_role;
                 }
-                if ("symbol_documentation" in data && data.symbol_documentation != undefined) {
-                    this.symbol_documentation = data.symbol_documentation;
+                if ("override_documentation" in data && data.override_documentation != undefined) {
+                    this.override_documentation = data.override_documentation;
                 }
                 if ("highlight" in data && data.highlight != undefined) {
                     this.highlight = data.highlight;
@@ -830,10 +830,10 @@ export namespace lib.codeintel.lsif_typed {
         set symbol_role(value: Occurrence.Role) {
             pb_1.Message.setField(this, 3, value);
         }
-        get symbol_documentation() {
+        get override_documentation() {
             return pb_1.Message.getField(this, 4) as string[];
         }
-        set symbol_documentation(value: string[]) {
+        set override_documentation(value: string[]) {
             pb_1.Message.setField(this, 4, value);
         }
         get highlight() {
@@ -846,7 +846,7 @@ export namespace lib.codeintel.lsif_typed {
             range?: number[];
             symbol_uri?: string;
             symbol_role?: Occurrence.Role;
-            symbol_documentation?: string[];
+            override_documentation?: string[];
             highlight?: Occurrence.Highlight;
         }) {
             const message = new Occurrence({});
@@ -859,8 +859,8 @@ export namespace lib.codeintel.lsif_typed {
             if (data.symbol_role != null) {
                 message.symbol_role = data.symbol_role;
             }
-            if (data.symbol_documentation != null) {
-                message.symbol_documentation = data.symbol_documentation;
+            if (data.override_documentation != null) {
+                message.override_documentation = data.override_documentation;
             }
             if (data.highlight != null) {
                 message.highlight = data.highlight;
@@ -872,7 +872,7 @@ export namespace lib.codeintel.lsif_typed {
                 range?: number[];
                 symbol_uri?: string;
                 symbol_role?: Occurrence.Role;
-                symbol_documentation?: string[];
+                override_documentation?: string[];
                 highlight?: Occurrence.Highlight;
             } = {};
             if (this.range != null) {
@@ -884,8 +884,8 @@ export namespace lib.codeintel.lsif_typed {
             if (this.symbol_role != null) {
                 data.symbol_role = this.symbol_role;
             }
-            if (this.symbol_documentation != null) {
-                data.symbol_documentation = this.symbol_documentation;
+            if (this.override_documentation != null) {
+                data.override_documentation = this.override_documentation;
             }
             if (this.highlight != null) {
                 data.highlight = this.highlight;
@@ -902,8 +902,8 @@ export namespace lib.codeintel.lsif_typed {
                 writer.writeString(2, this.symbol_uri);
             if (this.symbol_role !== undefined)
                 writer.writeEnum(3, this.symbol_role);
-            if (this.symbol_documentation !== undefined)
-                writer.writeRepeatedString(4, this.symbol_documentation);
+            if (this.override_documentation !== undefined)
+                writer.writeRepeatedString(4, this.override_documentation);
             if (this.highlight !== undefined)
                 writer.writeEnum(5, this.highlight);
             if (!w)

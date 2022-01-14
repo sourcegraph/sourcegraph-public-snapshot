@@ -6,12 +6,15 @@
 
 ### Document
 
-Document defines information about a particular source file.
+A representation a text document decorated with addiditonal intelligence.
+There is currently no meaningful support for binary documents. The character
+encoding of a document is delcared by the associated index's
+`Metadata.text_document_encoding` field.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-|  **relative_path** | string | Relative path to the `Index.project_root` directory.
-| repeated **occurrences** | Occurrence | Symbol occurrences that appear in this file.
+|  **relative_path** | string | (Required) The path to the text document relative to the directory supplied in the associated `Index.project_root`. This value should not begin with a directory separator.
+| repeated **occurrences** | Occurrence | (Optional) A set of occurrences that provide additional intelligence for some selection of source text within the document.
 | repeated **symbols** | Symbol | Symbols that are defined within this document.
 
 
@@ -56,37 +59,51 @@ need to write custom logic that decodes one LSIF `Value` at a time.
 | 2 | POSITION_ENCODING_UTF16 | 
 ### Occurrence
 
-Occurrence associates a source position with a symbol and/or highlighting
-information.
+An occurrence associates a selection of source text with additional code
+intelligence, such as highlighting rules or answers to common code
+navigation queries such as finding hover text, definitions, references,
+or implementations of the symbol at a specific source text position.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| repeated **range** | int32 | The source position of this occurrence. Must be exactly three or four elements:
+| repeated **range** | int32 | (Required) A range of contiguous characters in the enclosing text document expressed a half-open interval (start inclusive; end exclusive).
 |  **symbol_uri** | string | (optional) References the `Symbol.uri` field. Can be empty if this is only a highlighting occurrence.
 |  **symbol_role** | Role | (optional) Is the symbol_uri defined or referenced at this occurrence?
-| repeated **symbol_documentation** | string | (optional) Markdown-formatted documentation for this specific range.  If empty, the `Symbol.documentation` field is used instead. One example where this field might be useful is when the symbol represents a generic function (with abstract type parameters such as `List<T>`) and at this occurrence we know the exact values (such as `List<String>`).
+| repeated **override_documentation** | string | (Optional) Range-specific overrides for the documentation string defiend in the referenced symbol. This useful when the definition of a symbol may be parameteric, but the usage of a symbol may have refined typing information in the signature that would be more useful to display.
 |  **highlight** | Highlight | (optional) What syntax highlighting class should be used for this range?
 
 Additional notes on **range**:
 
-The source position of this occurrence. Must be exactly three or four
-elements:
+(Required) A range of contiguous characters in the enclosing text
+document expressed a half-open interval (start inclusive; end exclusive).
 
-- Four elements: `[startLine, startCharacter, endLine, endCharacter]`
-- Three elements: `[startLine, startCharacter, endCharacter] (endLine ==
-startLine)`
+Both line and character offsets are zero-based. Make sure to adjust line
+and character values before displaying them in an editor-like UI as
+editors conventionally count from one.
 
-Line numbers and characters are always 0-based. Make sure to increment the
-line/character values before displaying them in an editor-like UI because
-editors conventionally use 1-based numbers.
+Lines exceeding the document line count or characters exceeding the
+length of the target line will be interpreted as the maximum valid value
+given the text document contents (and according to its encoding).
 
-Ranges appear frequently in real-world LSIF payloads, the `repeated int32`
-encoding was chosen over the LSP `Range(start:Position,end:Position)`
-encoding for performance reasons.  Benchmarks reveal that this change alone
-reduces the total payload size by ~2x in both compressed JSON or Protobuf
-encoding. This encoding is admittedly more embarrassing to work with in
-some programming languages but we hope the increased performance
-improvements make up for it.
+Special values like -1 to indicate the end of a line are not allowed. If
+you want to specify a range that contains a line including the line
+ending character(s) then use an end position denoting the start of the
+next line. For example: `[5, 23, 6, 0]`.
+
+This value must have exactly three or four elements of either the form
+`[a, b, d]` or `[a, b, c, d]` where `a` is the starting line, `b` is the
+starting column, `c` is the ending line, and `d` is the ending column.
+The three-element form should only be used when `a = c`, i.e., the case
+of single-line ranges. The initial encoding of ranges in this spec used a
+`Range` message type that mirrors the structure of the equivalent type in
+LSP. Benchmarks revealed we were able to reduce the total payload size of
+the entire index by up to ~2x by using a `repeated int32` encoding
+instead, which has an efficient packed encoding in Protobuf binary
+payloads. efficient encoding. This value must have exactly three or four
+elements of either the form `[a, b, d]` or `[a, b, c, d]` where `a` is
+the starting line, `b` is the starting column, `c` is the ending line,
+and `d` is the ending column. The three-element form should be used if
+and only if `a = c`, i.e., the case of single-line ranges.
 
 
 
