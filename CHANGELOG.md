@@ -32,6 +32,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Issue preventing searches from completing when certain patterns contain `@`. [#29489](https://github.com/sourcegraph/sourcegraph/pull/29489)
 - The grafana dashboard for "successful search request duration" reports the time for streaming search which is used by the browser. Previously it reported the GraphQL time which the browser no longer uses. [#29625](https://github.com/sourcegraph/sourcegraph/pull/29625)
+- A regression introduced in 3.35 causing Code Insights that are run over all repositories to not query against repositories that have permissions enabled. These restricted repositories remain filtered when a user views a chart based on their user permissions. This may cause global Insights to undercount for data points generated after upgrading to 3.35. [](https://github.com/sourcegraph/sourcegraph/pull/29725)
 
 ### Removed
 
