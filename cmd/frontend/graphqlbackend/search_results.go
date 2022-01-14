@@ -377,7 +377,7 @@ var (
 	searchLatencyHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_search_response_latency_seconds",
 		Help:    "Search response latencies in seconds that have ended in the given status (success, error, timeout, partial_timeout).",
-		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 20, 30},
 	}, []string{"status", "alert_type", "source", "request_name"})
 )
 
