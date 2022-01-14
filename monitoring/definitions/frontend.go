@@ -543,7 +543,7 @@ func Frontend() *monitoring.Container {
 						{
 							Name:           "org_members_latency_p99",
 							Description:    "99 percentile latency of API requests to list organisation members",
-							Query:          `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_count{route="OrganizationMembers"}[5m])) by (le))`,
+							Query:          `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="OrganizationMembers"}[5m])) by (le))`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.Number),
 							Owner:          monitoring.ObservableOwnerCoreApplication,

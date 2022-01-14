@@ -2365,7 +2365,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101701`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_count{route="OrganizationMembers"}[5m])) by (le))`
+Query: `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="OrganizationMembers"}[5m])) by (le))`
 
 </details>
 
