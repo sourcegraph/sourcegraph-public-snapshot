@@ -41,9 +41,11 @@ once in the stream. Other field values may appear in any order.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
+|  **version** | ProtocolVersion | Which version of this protocol was used to generate this index?
 |  **tool_info** | ToolInfo | Information about the tool that produced this index.
 |  **project_root** | string | URI-encoded absolute path to the root directory of this index. All documents in this index must appear in a subdirectory of this root directory.
 |  **text_document_encoding** | TextEncoding | Text encoding of the source files on disk that are referenced from `Document.relative_path`.
+
 
 
 
@@ -92,7 +94,7 @@ Docker container, JVM dependency, or a Cargo crate.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-|  **package** | string | The unique identifier of this package that can be referenced from `SymbolInformation.package`. Not intended to be displayed to humans but it's recommended to use a human-readable format to aid with debugging.
+|  **package** | string | The unique identifier of this package that can be referenced from `SymbolInformation.package`. Not intended to be displayed to humans but it's recommended to use a human-readable format to aid with debugging. Must have a stable value between different invocations of the indexer.
 |  **name** | string | Name of this package, for example "@types/react" or "com.google.guava:guava".
 |  **version** | string | Version of this package, for example "0.1.0" or "2.1.5".
 |  **manager** | string | Package manager, for example "npm", "maven" or "cargo".
@@ -127,5 +129,7 @@ docstring or what package it's defined it.
 | ---- | ---- | ----------- |
 |  **name** | string | Name of the indexer that produced this index.
 |  **version** | string | Version of the indexer that produced this index.
+| repeated **arguments** | string | Command-line arguments that were used to invoke this indexer.
+
 
 
