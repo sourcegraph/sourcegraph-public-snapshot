@@ -960,6 +960,99 @@ func TestIsContextError(t *testing.T) {
 	}
 }
 
+// Detailed filtering tests are below in TestSubRepoFilterFunc, this test is more
+// of an integration test to ensure that things are threaded through correctly
+// from the resolver
+func TestSubRepoFiltering(t *testing.T) {
+	tts := []struct {
+		name        string
+		searchQuery string
+		wantCount   int
+		checker     func() authz.SubRepoPermissionChecker
+	}{
+		{
+			name:        "simple search without filtering",
+			searchQuery: "foo",
+			wantCount:   3,
+		},
+		{
+			name:        "simple search with filtering",
+			searchQuery: "foo ",
+			wantCount:   2,
+			checker: func() authz.SubRepoPermissionChecker {
+				checker := authz.NewMockSubRepoPermissionChecker()
+				checker.EnabledFunc.SetDefaultHook(func() bool {
+					return true
+				})
+				// We'll just block the third file
+				checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+					if strings.Contains(content.Path, "3") {
+						return authz.None, nil
+					}
+					return authz.Read, nil
+				})
+				return checker
+			},
+		},
+	}
+
+	zoektFileMatches := generateZoektMatches(3)
+	mockZoekt := &searchbackend.FakeSearcher{
+		Repos: []*zoekt.RepoListEntry{},
+		Result: &zoekt.SearchResult{
+			Files: zoektFileMatches,
+		},
+	}
+
+	for _, tt := range tts {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.checker != nil {
+				old := authz.DefaultSubRepoPermsChecker
+				t.Cleanup(func() { authz.DefaultSubRepoPermsChecker = old })
+				authz.DefaultSubRepoPermsChecker = tt.checker()
+			}
+
+			p, err := query.Pipeline(query.InitLiteral(tt.searchQuery))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			repos := database.NewMockRepoStore()
+			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
+			repos.CountFunc.SetDefaultReturn(0, nil)
+
+			db := database.NewMockDB()
+			db.ReposFunc.SetDefaultReturn(repos)
+			db.EventLogsFunc.SetDefaultHook(func() database.EventLogStore {
+				return database.NewMockEventLogStore()
+			})
+
+			resolver := searchResolver{
+				SearchInputs: &run.SearchInputs{
+					Plan:         p,
+					Query:        p.ToParseTree(),
+					UserSettings: &schema.Settings{},
+				},
+				zoekt: mockZoekt,
+				db:    db,
+			}
+
+			ctx := context.Background()
+			ctx = actor.WithActor(ctx, &actor.Actor{
+				UID: 1,
+			})
+			rr, err := resolver.Results(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(rr.Matches) != tt.wantCount {
+				t.Fatalf("Want %d matches, got %d", tt.wantCount, len(rr.Matches))
+			}
+		})
+	}
+}
+
 func TestSubRepoFilterFunc(t *testing.T) {
 	unauthorizedFileName := "README.md"
 	errorFileName := "file.go"
