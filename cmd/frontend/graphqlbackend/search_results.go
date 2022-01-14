@@ -872,18 +872,6 @@ func (r *searchResolver) toSearchInputs(q query.Q) ([]run.Job, search.RepoOption
 	return jobs, repoOptions, args.Timeout, nil
 }
 
-// evaluateLeaf performs a single search operation and corresponds to the
-// evaluation of leaf expression in a query.
-func (r *searchResolver) evaluateLeaf(ctx context.Context, jobs []run.Job, repoOptions search.RepoOptions, timeout time.Duration) (_ *SearchResults, err error) {
-	tr, ctx := trace.New(ctx, "evaluateLeaf", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	return r.resultsWithTimeoutSuggestion(ctx, jobs, repoOptions, timeout)
-}
-
 // intersect returns the intersection of two sets of search result content
 // matches, based on whether a single file path contains content matches in both sets.
 func intersect(left, right *SearchResults) *SearchResults {
@@ -1104,14 +1092,14 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, q query.
 			if err != nil {
 				return &SearchResults{}, err
 			}
-			return r.evaluateLeaf(ctx, jobs, repoOptions, timeout)
+			return r.evaluateJobs(ctx, jobs, repoOptions, timeout)
 		}
 	case query.Pattern:
 		jobs, repoOptions, timeout, err := r.toSearchInputs(q.ToParseTree())
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateLeaf(ctx, jobs, repoOptions, timeout)
+		return r.evaluateJobs(ctx, jobs, repoOptions, timeout)
 	case query.Parameter:
 		// evaluatePatternExpression does not process Parameter nodes.
 		return &SearchResults{}, nil
@@ -1127,7 +1115,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchRe
 		if err != nil {
 			return &SearchResults{}, err
 		}
-		return r.evaluateLeaf(ctx, jobs, repoOptions, timeout)
+		return r.evaluateJobs(ctx, jobs, repoOptions, timeout)
 	}
 	return r.evaluatePatternExpression(ctx, q)
 }
@@ -1458,10 +1446,17 @@ func searchResultsToFileNodes(matches []result.Match) ([]query.Node, error) {
 	return nodes, nil
 }
 
-// resultsWithTimeoutSuggestion calls doResults, and in case of deadline
-// exceeded returns a search alert with a did-you-mean link for the same
+// evaluateJobs is a toplevel function that runs search jobs to yield results.
+// Search jobs represent terminal nodes in the evaluation tree. If the deadline
+// is exceeded, returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
-func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context, jobs []run.Job, repoOptions search.RepoOptions, timeout time.Duration) (*SearchResults, error) {
+func (r *searchResolver) evaluateJobs(ctx context.Context, jobs []run.Job, repoOptions search.RepoOptions, timeout time.Duration) (_ *SearchResults, err error) {
+	tr, ctx := trace.New(ctx, "evaluateJobs", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	start := time.Now()
 	rr, err := r.doResults(ctx, jobs, repoOptions, timeout)
 
