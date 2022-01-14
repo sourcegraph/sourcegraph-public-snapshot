@@ -90,6 +90,9 @@ type ContainerProvisioningIndicatorsGroupOptions struct {
 
 	// ShortTermMemoryUsage transforms the default observable used to construct the short-term memory usage panel.
 	ShortTermMemoryUsage ObservableOption
+
+	// CustomTitle, if provided, provides a custom title for this provisioning group that will be displayed in Grafana.
+	CustomTitle string
 }
 
 // NewProvisioningIndicatorsGroup creates a group containing panels displaying
@@ -100,8 +103,13 @@ func NewProvisioningIndicatorsGroup(containerName string, owner monitoring.Obser
 		options = &ContainerProvisioningIndicatorsGroupOptions{}
 	}
 
+	title := TitleProvisioningIndicators
+	if options.CustomTitle != "" {
+		title = options.CustomTitle
+	}
+
 	return monitoring.Group{
-		Title:  TitleProvisioningIndicators,
+		Title:  title,
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{

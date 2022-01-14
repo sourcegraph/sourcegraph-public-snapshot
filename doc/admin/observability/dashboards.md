@@ -12896,13 +12896,13 @@ Query: `sum by(app) (up{app=~".*syntect-server"}) / count by (app) (up{app=~".*s
 
 <br />
 
-## Zoekt Index Server
+## Zoekt
 
-<p class="subtitle">Indexes repositories and populates the search index.</p>
+<p class="subtitle">Indexes repositories, populates the search index, and responds to indexed search queries.</p>
 
-To see this dashboard, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver` on your Sourcegraph instance.
+To see this dashboard, visit `/-/debug/grafana/d/zoekt/zoekt` on your Sourcegraph instance.
 
-#### zoekt-indexserver: total_repos_aggregate
+#### zoekt: total_repos_aggregate
 
 <p class="subtitle">Total number of repos (aggregate)</p>
 
@@ -12917,7 +12917,7 @@ Legend:
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100000` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100000` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12930,7 +12930,7 @@ Query: `sum(index_num_assigned)`
 
 <br />
 
-#### zoekt-indexserver: total_repos_per_instance
+#### zoekt: total_repos_per_instance
 
 <p class="subtitle">Total number of repos (per instance)</p>
 
@@ -12945,7 +12945,7 @@ Legend:
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100001` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100001` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12958,7 +12958,7 @@ Query: `sum by (instance) (index_num_assigned{instance=~`${instance:regex}`})`
 
 <br />
 
-#### zoekt-indexserver: repo_index_success_speed
+#### zoekt: repo_index_success_speed
 
 <p class="subtitle">Successful indexing durations</p>
 
@@ -12966,7 +12966,7 @@ Latency increases can indicate bottlenecks in the indexserver.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100010` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100010` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -12979,7 +12979,7 @@ Query: `sum by (le, state) (increase(index_repo_seconds_bucket{state="success"}[
 
 <br />
 
-#### zoekt-indexserver: repo_index_fail_speed
+#### zoekt: repo_index_fail_speed
 
 <p class="subtitle">Failed indexing durations</p>
 
@@ -12987,7 +12987,7 @@ Failures happening after a long time indicates timeouts.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100011` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100011` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13000,13 +13000,13 @@ Query: `sum by (le, state) (increase(index_repo_seconds_bucket{state="fail"}[$__
 
 <br />
 
-#### zoekt-indexserver: average_resolve_revision_duration
+#### zoekt: average_resolve_revision_duration
 
 <p class="subtitle">Average resolve revision duration over 5m</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-average-resolve-revision-duration) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-average-resolve-revision-duration) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100020` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100020` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13019,7 +13019,7 @@ Query: `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_
 
 <br />
 
-#### zoekt-indexserver: get_index_options_error_increase
+#### zoekt: get_index_options_error_increase
 
 <p class="subtitle">The number of repositories we failed to get indexing options over 5m</p>
 
@@ -13031,9 +13031,9 @@ This value can spike up during deployments/etc. Only if you encounter
 sustained periods of errors is there an underlying issue. When sustained
 this indicates repositories will not get updated indexes.
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-get-index-options-error-increase) for 2 alerts related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-get-index-options-error-increase) for 2 alerts related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100021` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100021` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13046,9 +13046,30 @@ Query: `sum(increase(get_index_options_error_total[5m]))`
 
 <br />
 
-### Zoekt Index Server: Indexing results
+### Zoekt: Search requests
 
-#### zoekt-indexserver: repo_index_state_aggregate
+#### zoekt: indexed_search_request_errors
+
+<p class="subtitle">Indexed search request errors every 5m by code</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexed-search-request-errors) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`
+
+</details>
+
+<br />
+
+### Zoekt: Indexing results
+
+#### zoekt: repo_index_state_aggregate
 
 <p class="subtitle">Index results state count over 5m (aggregate)</p>
 
@@ -13065,7 +13086,7 @@ Legend:
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100200` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13078,7 +13099,7 @@ Query: `sum by (state) (increase(index_repo_seconds_count[5m]))`
 
 <br />
 
-#### zoekt-indexserver: repo_index_state_per_instance
+#### zoekt: repo_index_state_per_instance
 
 <p class="subtitle">Index results state count over 5m (per instance)</p>
 
@@ -13097,7 +13118,7 @@ Legend:
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100201` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13110,9 +13131,9 @@ Query: `sum by (instance, state) (increase(index_repo_seconds_count{instance=~`$
 
 <br />
 
-### Zoekt Index Server: Indexing queue statistics
+### Zoekt: Indexing queue statistics
 
-#### zoekt-indexserver: indexed_queue_size_aggregate
+#### zoekt: indexed_queue_size_aggregate
 
 <p class="subtitle"># of outstanding index jobs (aggregate)</p>
 
@@ -13120,7 +13141,7 @@ A queue that is constantly growing could be a leading indicator of a bottleneck 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100300` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13133,7 +13154,7 @@ Query: `sum(index_queue_len)`
 
 <br />
 
-#### zoekt-indexserver: indexed_queue_size_per_instance
+#### zoekt: indexed_queue_size_per_instance
 
 <p class="subtitle"># of outstanding index jobs (per instance)</p>
 
@@ -13141,7 +13162,7 @@ A queue that is constantly growing could be a leading indicator of a bottleneck 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100201` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100301` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13154,9 +13175,9 @@ Query: `index_queue_len{instance=~`${instance:regex}`}`
 
 <br />
 
-### Zoekt Index Server: Compound shards (experimental)
+### Zoekt: Compound shards (experimental)
 
-#### zoekt-indexserver: compound_shards_aggregate
+#### zoekt: compound_shards_aggregate
 
 <p class="subtitle"># of compound shards (aggregate)</p>
 
@@ -13166,7 +13187,7 @@ This number should be consistent if the number of indexed repositories doesn`t c
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13179,7 +13200,7 @@ Query: `sum(index_number_compound_shards) by (app)`
 
 <br />
 
-#### zoekt-indexserver: compound_shards_per_instance
+#### zoekt: compound_shards_per_instance
 
 <p class="subtitle"># of compound shards (per instance)</p>
 
@@ -13189,7 +13210,7 @@ This number should be consistent if the number of indexed repositories doesn`t c
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100401` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13202,7 +13223,7 @@ Query: `sum(index_number_compound_shards{instance=~`${instance:regex}`}) by (ins
 
 <br />
 
-#### zoekt-indexserver: average_shard_merging_duration_success
+#### zoekt: average_shard_merging_duration_success
 
 <p class="subtitle">Average successful shard merging duration over 1 hour</p>
 
@@ -13213,7 +13234,7 @@ Since the target compound shard size is set on start of zoekt-indexserver, the a
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100310` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100410` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13226,7 +13247,7 @@ Query: `sum(rate(index_shard_merging_duration_seconds_sum{error="false"}[1h])) /
 
 <br />
 
-#### zoekt-indexserver: average_shard_merging_duration_error
+#### zoekt: average_shard_merging_duration_error
 
 <p class="subtitle">Average failed shard merging duration over 1 hour</p>
 
@@ -13236,7 +13257,7 @@ This curve should be flat. Any deviation should be investigated.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100311` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100411` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13249,7 +13270,7 @@ Query: `sum(rate(index_shard_merging_duration_seconds_sum{error="true"}[1h])) / 
 
 <br />
 
-#### zoekt-indexserver: shard_merging_errors_aggregate
+#### zoekt: shard_merging_errors_aggregate
 
 <p class="subtitle">Number of errors during shard merging (aggregate)</p>
 
@@ -13257,7 +13278,7 @@ Number of errors during shard merging aggregated over all instances.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100320` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100420` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13270,7 +13291,7 @@ Query: `sum(index_shard_merging_duration_seconds_count{error="true"}) by (app)`
 
 <br />
 
-#### zoekt-indexserver: shard_merging_errors_per_instance
+#### zoekt: shard_merging_errors_per_instance
 
 <p class="subtitle">Number of errors during shard merging (per instance)</p>
 
@@ -13278,7 +13299,7 @@ Number of errors during shard merging per instance.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100321` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100421` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13291,7 +13312,7 @@ Query: `sum(index_shard_merging_duration_seconds_count{instance=~`${instance:reg
 
 <br />
 
-#### zoekt-indexserver: shard_merging_merge_running_per_instance
+#### zoekt: shard_merging_merge_running_per_instance
 
 <p class="subtitle">If shard merging is running (per instance)</p>
 
@@ -13299,7 +13320,7 @@ Set to 1 if shard merging is running.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100330` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100430` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13312,7 +13333,7 @@ Query: `max by (instance) (index_shard_merging_running{instance=~`${instance:reg
 
 <br />
 
-#### zoekt-indexserver: shard_merging_vacuum_running_per_instance
+#### zoekt: shard_merging_vacuum_running_per_instance
 
 <p class="subtitle">If vacuum is running (per instance)</p>
 
@@ -13320,7 +13341,7 @@ Set to 1 if vacuum is running.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100331` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100431` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13333,9 +13354,9 @@ Query: `max by (instance) (index_vacuum_running{instance=~`${instance:regex}`})`
 
 <br />
 
-### Zoekt Index Server: Network I/O pod metrics (only available on Kubernetes)
+### Zoekt: Network I/O pod metrics (only available on Kubernetes)
 
-#### zoekt-indexserver: network_sent_bytes_aggregate
+#### zoekt: network_sent_bytes_aggregate
 
 <p class="subtitle">Transmission rate over 5m (aggregate)</p>
 
@@ -13343,7 +13364,7 @@ The rate of bytes sent over the network across all Zoekt pods
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100400` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100500` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13356,7 +13377,7 @@ Query: `sum(rate(container_network_transmit_bytes_total{container_label_io_kuber
 
 <br />
 
-#### zoekt-indexserver: network_received_packets_per_instance
+#### zoekt: network_received_packets_per_instance
 
 <p class="subtitle">Transmission rate over 5m (per instance)</p>
 
@@ -13364,7 +13385,7 @@ The amount of bytes sent over the network by individual Zoekt pods
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100401` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100501` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13377,7 +13398,7 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_
 
 <br />
 
-#### zoekt-indexserver: network_received_bytes_aggregate
+#### zoekt: network_received_bytes_aggregate
 
 <p class="subtitle">Receive rate over 5m (aggregate)</p>
 
@@ -13385,7 +13406,7 @@ The amount of bytes received from the network across Zoekt pods
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100410` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100510` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13398,7 +13419,7 @@ Query: `sum(rate(container_network_receive_bytes_total{container_label_io_kubern
 
 <br />
 
-#### zoekt-indexserver: network_received_bytes_per_instance
+#### zoekt: network_received_bytes_per_instance
 
 <p class="subtitle">Receive rate over 5m (per instance)</p>
 
@@ -13406,7 +13427,7 @@ The amount of bytes received from the network by individual Zoekt pods
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100411` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100511` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13419,7 +13440,7 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_
 
 <br />
 
-#### zoekt-indexserver: network_transmitted_packets_dropped_by_instance
+#### zoekt: network_transmitted_packets_dropped_by_instance
 
 <p class="subtitle">Transmit packet drop rate over 5m (by instance)</p>
 
@@ -13427,7 +13448,7 @@ An increase in dropped packets could be a leading indicator of network saturatio
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100420` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100520` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13440,7 +13461,7 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_
 
 <br />
 
-#### zoekt-indexserver: network_transmitted_packets_errors_per_instance
+#### zoekt: network_transmitted_packets_errors_per_instance
 
 <p class="subtitle">Errors encountered while transmitting over 5m (per instance)</p>
 
@@ -13448,7 +13469,7 @@ An increase in transmission errors could indicate a networking issue
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100421` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100521` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13461,7 +13482,7 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_
 
 <br />
 
-#### zoekt-indexserver: network_received_packets_dropped_by_instance
+#### zoekt: network_received_packets_dropped_by_instance
 
 <p class="subtitle">Receive packet drop rate over 5m (by instance)</p>
 
@@ -13469,7 +13490,7 @@ An increase in dropped packets could be a leading indicator of network saturatio
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100422` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100522` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13482,7 +13503,7 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_
 
 <br />
 
-#### zoekt-indexserver: network_transmitted_packets_errors_by_instance
+#### zoekt: network_transmitted_packets_errors_by_instance
 
 <p class="subtitle">Errors encountered while receiving over 5m (per instance)</p>
 
@@ -13490,7 +13511,7 @@ An increase in errors while receiving could indicate a networking issue.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100423` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100523` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13503,9 +13524,9 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_
 
 <br />
 
-### Zoekt Index Server: Container monitoring (not available on server)
+### Zoekt: [zoekt-indexserver] Container monitoring (not available on server)
 
-#### zoekt-indexserver: container_missing
+#### zoekt: container_missing
 
 <p class="subtitle">Container missing</p>
 
@@ -13521,7 +13542,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100500` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100600` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13534,13 +13555,13 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^zoekt-indexserver.
 
 <br />
 
-#### zoekt-indexserver: container_cpu_usage
+#### zoekt: container_cpu_usage
 
 <p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-container-cpu-usage) for 1 alert related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100501` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100601` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13553,13 +13574,13 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-indexserver.
 
 <br />
 
-#### zoekt-indexserver: container_memory_usage
+#### zoekt: container_memory_usage
 
 <p class="subtitle">Container memory usage by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-container-memory-usage) for 1 alert related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100502` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100602` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13572,7 +13593,7 @@ Query: `cadvisor_container_memory_usage_percentage_total{name=~"^zoekt-indexserv
 
 <br />
 
-#### zoekt-indexserver: fs_io_operations
+#### zoekt: fs_io_operations
 
 <p class="subtitle">Filesystem reads and writes rate by instance over 1h</p>
 
@@ -13581,7 +13602,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100503` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100603` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
@@ -13594,133 +13615,9 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^zoekt-indexserver.*"
 
 <br />
 
-### Zoekt Index Server: Provisioning indicators (not available on server)
+### Zoekt: [zoekt-webserver] Container monitoring (not available on server)
 
-#### zoekt-indexserver: provisioning_container_cpu_usage_long_term
-
-<p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
-
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100600` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-indexserver.*"}[1d])`
-
-</details>
-
-<br />
-
-#### zoekt-indexserver: provisioning_container_memory_usage_long_term
-
-<p class="subtitle">Container memory usage (1d maximum) by instance</p>
-
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100601` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^zoekt-indexserver.*"}[1d])`
-
-</details>
-
-<br />
-
-#### zoekt-indexserver: provisioning_container_cpu_usage_short_term
-
-<p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
-
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100610` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-indexserver.*"}[5m])`
-
-</details>
-
-<br />
-
-#### zoekt-indexserver: provisioning_container_memory_usage_short_term
-
-<p class="subtitle">Container memory usage (5m maximum) by instance</p>
-
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100611` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^zoekt-indexserver.*"}[5m])`
-
-</details>
-
-<br />
-
-### Zoekt Index Server: Kubernetes monitoring (only available on Kubernetes)
-
-#### zoekt-indexserver: pods_available_percentage
-
-<p class="subtitle">Percentage pods available</p>
-
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-indexserver-pods-available-percentage) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/zoekt-indexserver/zoekt-indexserver?viewPanel=100700` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by(app) (up{app=~".*indexed-search"}) / count by (app) (up{app=~".*indexed-search"}) * 100`
-
-</details>
-
-<br />
-
-## Zoekt Web Server
-
-<p class="subtitle">Serves indexed search requests using the search index.</p>
-
-To see this dashboard, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver` on your Sourcegraph instance.
-
-#### zoekt-webserver: indexed_search_request_errors
-
-<p class="subtitle">Indexed search request errors every 5m by code</p>
-
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-indexed-search-request-errors) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?viewPanel=100000` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`
-
-</details>
-
-<br />
-
-### Zoekt Web Server: Container monitoring (not available on server)
-
-#### zoekt-webserver: container_missing
+#### zoekt: container_missing
 
 <p class="subtitle">Container missing</p>
 
@@ -13736,7 +13633,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?viewPanel=100100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100700` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13749,13 +13646,13 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^zoekt-webserver.*"
 
 <br />
 
-#### zoekt-webserver: container_cpu_usage
+#### zoekt: container_cpu_usage
 
 <p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-container-cpu-usage) for 1 alert related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?viewPanel=100101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100701` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13768,13 +13665,13 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-webserver.*"
 
 <br />
 
-#### zoekt-webserver: container_memory_usage
+#### zoekt: container_memory_usage
 
 <p class="subtitle">Container memory usage by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-container-memory-usage) for 1 alert related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?viewPanel=100102` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100702` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13787,7 +13684,7 @@ Query: `cadvisor_container_memory_usage_percentage_total{name=~"^zoekt-webserver
 
 <br />
 
-#### zoekt-webserver: fs_io_operations
+#### zoekt: fs_io_operations
 
 <p class="subtitle">Filesystem reads and writes rate by instance over 1h</p>
 
@@ -13796,7 +13693,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?viewPanel=100103` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100703` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
@@ -13809,15 +13706,93 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^zoekt-webserver.*"}[
 
 <br />
 
-### Zoekt Web Server: Provisioning indicators (not available on server)
+### Zoekt: [zoekt-indexserver] Provisioning indicators (not available on server)
 
-#### zoekt-webserver: provisioning_container_cpu_usage_long_term
+#### zoekt: provisioning_container_cpu_usage_long_term
 
 <p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?viewPanel=100200` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100800` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-indexserver.*"}[1d])`
+
+</details>
+
+<br />
+
+#### zoekt: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">Container memory usage (1d maximum) by instance</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100801` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^zoekt-indexserver.*"}[1d])`
+
+</details>
+
+<br />
+
+#### zoekt: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100810` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^zoekt-indexserver.*"}[5m])`
+
+</details>
+
+<br />
+
+#### zoekt: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">Container memory usage (5m maximum) by instance</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100811` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^zoekt-indexserver.*"}[5m])`
+
+</details>
+
+<br />
+
+### Zoekt: [zoekt-webserver] Provisioning indicators (not available on server)
+
+#### zoekt: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100900` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13830,13 +13805,13 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 <br />
 
-#### zoekt-webserver: provisioning_container_memory_usage_long_term
+#### zoekt: provisioning_container_memory_usage_long_term
 
 <p class="subtitle">Container memory usage (1d maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?viewPanel=100201` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100901` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13849,13 +13824,13 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^z
 
 <br />
 
-#### zoekt-webserver: provisioning_container_cpu_usage_short_term
+#### zoekt: provisioning_container_cpu_usage_short_term
 
 <p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?viewPanel=100210` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100910` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13868,13 +13843,13 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^zoek
 
 <br />
 
-#### zoekt-webserver: provisioning_container_memory_usage_short_term
+#### zoekt: provisioning_container_memory_usage_short_term
 
 <p class="subtitle">Container memory usage (5m maximum) by instance</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#zoekt-webserver-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?viewPanel=100211` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100911` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
 
@@ -13882,6 +13857,27 @@ To see this panel, visit `/-/debug/grafana/d/zoekt-webserver/zoekt-webserver?vie
 <summary>Technical details</summary>
 
 Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^zoekt-webserver.*"}[5m])`
+
+</details>
+
+<br />
+
+### Zoekt: Kubernetes monitoring (only available on Kubernetes)
+
+#### zoekt: pods_available_percentage
+
+<p class="subtitle">Percentage pods available</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#zoekt-pods-available-percentage) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=101000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by(app) (up{app=~".*indexed-search"}) / count by (app) (up{app=~".*indexed-search"}) * 100`
 
 </details>
 
