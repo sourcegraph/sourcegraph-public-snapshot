@@ -32,15 +32,21 @@ message Index {
 }
 
 message Metadata {
+  // Which version of this protocol was used to generate this index?
+  ProtocolVersion version = 1;
   // Information about the tool that produced this index.
-  ToolInfo tool_info = 1;
+  ToolInfo tool_info = 2;
   // URI-encoded absolute path to the root directory of this index. All
   // documents in this index must appear in a subdirectory of this root
   // directory.
-  string project_root = 2;
+  string project_root = 3;
   // Text encoding of the source files on disk that are referenced from
   // `Document.relative_path`.
-  TextEncoding text_document_encoding = 3;
+  TextEncoding text_document_encoding = 4;
+}
+
+enum ProtocolVersion {
+    UnspecifiedProtocolVersion = 0;
 }
 
 enum TextEncoding {
@@ -54,6 +60,8 @@ message ToolInfo {
   string name = 1;
   // Version of the indexer that produced this index.
   string version = 2;
+  // Command-line arguments that were used to invoke this indexer.
+  repeated string arguments = 3;
 }
 
 // Document defines the metadata about a source file on disk.
@@ -74,6 +82,7 @@ message PackageInformation {
   // The unique identifier of this package that can be referenced from
   // `SymbolInformation.package`. Not intended to be displayed to humans but
   // it's recommended to use a human-readable format to aid with debugging.
+  // Must have a stable value between different invocations of the indexer.
   string package = 1;
   // Name of this package, for example "@types/react" or
   // "com.google.guava:guava".
