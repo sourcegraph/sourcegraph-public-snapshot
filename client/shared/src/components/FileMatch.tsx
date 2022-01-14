@@ -65,7 +65,6 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
 
 const sumHighlightRanges = (count: number, item: MatchItem): number => count + item.highlightRanges.length
 
-const BY_ZOEKT_RANKING = 'by-zoekt-ranking'
 const BY_LINE_RANKING = 'by-line-number'
 const DEFAULT_CONTEXT = 1
 
