@@ -29,9 +29,7 @@ once in the stream. Other field values may appear in any order.
 | ---- | ---- | ----------- |
 |  **metadata** | Metadata | Metadata about this index.
 | repeated **document** | Document | Documents that belong to this index.
-| repeated **packages** | PackageInformation | Packages that are both referenced and defined by this index.
 | repeated **external_symbols** | SymbolInformation | Symbols that are referenced from this index and not defined in this index.
-
 
 
 
@@ -87,21 +85,6 @@ improvements make up for it.
 
 
 
-### PackageInformation
-
-PackageInformation defines a publishable artifact such as an npm package,
-Docker container, JVM dependency, or a Cargo crate.
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-|  **package** | string | The unique identifier of this package that can be referenced from `SymbolInformation.package`. Not intended to be displayed to humans but it's recommended to use a human-readable format to aid with debugging. Must have a stable value between different invocations of the indexer.
-|  **name** | string | Name of this package, for example "@types/react" or "com.google.guava:guava".
-|  **version** | string | Version of this package, for example "0.1.0" or "2.1.5".
-|  **manager** | string | Package manager, for example "npm", "maven" or "cargo".
-
-
-
-
 ### SymbolInformation
 
 SymbolInformation defines metadata about a symbol, such as the symbol's
@@ -111,7 +94,7 @@ docstring or what package it's defined it.
 | ---- | ---- | ----------- |
 |  **symbol** | string | The unique dentifier of this symbol, which can be referenced from `Occurence.symbol`.
 | repeated **documentation** | string | (optional, but strongly recommended) The markdown-formatted documentation for this symbol. This field is repeated to allow different kinds of documentation.  For example, it's nice to include both the signature of a method (parameters and return type) along with the accompanying docstring.
-|  **package** | string | (optional) To enable cross-index navigation, specify which package this symbol is defined in. The index must have a `PackageInformation` message with a matching `PackageInformation.package` value.
+|  **package** | string | (optional) To enable cross-index navigation, specify which package this symbol is defined in. A package must be encoded as a space-separated string with the value `"$manager $name $version"` where: - `$manager` is the name of the package manager, for example `npm`. - `$name` is the name of the package, for example `react`. - `$version` is the version of the package, for example `1.2.0`.
 | repeated **reference_symbols** | string | (optional) When resolving "Find references", this field documents what other symbols should be included together with this symbol. For example, consider the following TypeScript code that defines two symbols `Animal#sound()` and `Dog#sound()`: ```ts interface Animal {           ^^^^^^ definition Animal#   sound(): string   ^^^^^ definition Animal#sound() } class Dog implements Animal {       ^^^ definition Dog#, implementation_symbols = Animal#   public sound(): string { return "woof" }          ^^^^^ definition Dog#sound(), references_symbols = Animal#sound(), implementation_symbols = Animal#sound() } const animal: Animal = new Dog()               ^^^^^^ reference Animal# console.log(animal.sound())                    ^^^^^ reference Animal#sound() ``` Doing "Find references" on the symbol `Animal#sound()` should return references to the `Dog#sound()` method as well. Vice-versa, doing "Find references" on the `Dog#sound()` method should include references to the `Animal#sound()` method as well.
 | repeated **implementation_symbols** | string | (optional) Similar to `references_symbols` but for "Go to implementation". It's common for the `implementation_symbols` and `references_symbols` fields have the same values but that's not always the case. In the TypeScript example above, observe that `implementation_symbols` has the value `"Animal#"` for the "Dog#" symbol while `references_symbols` is empty. When requesting "Find references" on the "Animal#" symbol we don't want to include references to "Dog#" even if "Go to implementation" on the "Animal#" symbol should navigate to the "Dog#" symbol.
 | repeated **type_definition_symbols** | string | (optional) Similar to `references_symbols` but for "Go to type definition".

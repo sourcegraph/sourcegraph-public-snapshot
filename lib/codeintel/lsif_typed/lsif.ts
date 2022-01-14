@@ -36,20 +36,16 @@ export namespace lib.codeintel.lsif_typed {
         constructor(data?: any[] | {
             metadata?: Metadata;
             document?: Document[];
-            packages?: PackageInformation[];
             external_symbols?: SymbolInformation[];
         }) {
             super();
-            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [2, 3, 4], []);
+            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [2, 3], []);
             if (!Array.isArray(data) && typeof data == "object") {
                 if ("metadata" in data && data.metadata != undefined) {
                     this.metadata = data.metadata;
                 }
                 if ("document" in data && data.document != undefined) {
                     this.document = data.document;
-                }
-                if ("packages" in data && data.packages != undefined) {
-                    this.packages = data.packages;
                 }
                 if ("external_symbols" in data && data.external_symbols != undefined) {
                     this.external_symbols = data.external_symbols;
@@ -68,22 +64,15 @@ export namespace lib.codeintel.lsif_typed {
         set document(value: Document[]) {
             pb_1.Message.setRepeatedWrapperField(this, 2, value);
         }
-        get packages() {
-            return pb_1.Message.getRepeatedWrapperField(this, PackageInformation, 3) as PackageInformation[];
-        }
-        set packages(value: PackageInformation[]) {
-            pb_1.Message.setRepeatedWrapperField(this, 3, value);
-        }
         get external_symbols() {
-            return pb_1.Message.getRepeatedWrapperField(this, SymbolInformation, 4) as SymbolInformation[];
+            return pb_1.Message.getRepeatedWrapperField(this, SymbolInformation, 3) as SymbolInformation[];
         }
         set external_symbols(value: SymbolInformation[]) {
-            pb_1.Message.setRepeatedWrapperField(this, 4, value);
+            pb_1.Message.setRepeatedWrapperField(this, 3, value);
         }
         static fromObject(data: {
             metadata?: ReturnType<typeof Metadata.prototype.toObject>;
             document?: ReturnType<typeof Document.prototype.toObject>[];
-            packages?: ReturnType<typeof PackageInformation.prototype.toObject>[];
             external_symbols?: ReturnType<typeof SymbolInformation.prototype.toObject>[];
         }) {
             const message = new Index({});
@@ -92,9 +81,6 @@ export namespace lib.codeintel.lsif_typed {
             }
             if (data.document != null) {
                 message.document = data.document.map(item => Document.fromObject(item));
-            }
-            if (data.packages != null) {
-                message.packages = data.packages.map(item => PackageInformation.fromObject(item));
             }
             if (data.external_symbols != null) {
                 message.external_symbols = data.external_symbols.map(item => SymbolInformation.fromObject(item));
@@ -105,7 +91,6 @@ export namespace lib.codeintel.lsif_typed {
             const data: {
                 metadata?: ReturnType<typeof Metadata.prototype.toObject>;
                 document?: ReturnType<typeof Document.prototype.toObject>[];
-                packages?: ReturnType<typeof PackageInformation.prototype.toObject>[];
                 external_symbols?: ReturnType<typeof SymbolInformation.prototype.toObject>[];
             } = {};
             if (this.metadata != null) {
@@ -113,9 +98,6 @@ export namespace lib.codeintel.lsif_typed {
             }
             if (this.document != null) {
                 data.document = this.document.map((item: Document) => item.toObject());
-            }
-            if (this.packages != null) {
-                data.packages = this.packages.map((item: PackageInformation) => item.toObject());
             }
             if (this.external_symbols != null) {
                 data.external_symbols = this.external_symbols.map((item: SymbolInformation) => item.toObject());
@@ -130,10 +112,8 @@ export namespace lib.codeintel.lsif_typed {
                 writer.writeMessage(1, this.metadata, () => this.metadata.serialize(writer));
             if (this.document !== undefined)
                 writer.writeRepeatedMessage(2, this.document, (item: Document) => item.serialize(writer));
-            if (this.packages !== undefined)
-                writer.writeRepeatedMessage(3, this.packages, (item: PackageInformation) => item.serialize(writer));
             if (this.external_symbols !== undefined)
-                writer.writeRepeatedMessage(4, this.external_symbols, (item: SymbolInformation) => item.serialize(writer));
+                writer.writeRepeatedMessage(3, this.external_symbols, (item: SymbolInformation) => item.serialize(writer));
             if (!w)
                 return writer.getResultBuffer();
         }
@@ -150,10 +130,7 @@ export namespace lib.codeintel.lsif_typed {
                         reader.readMessage(message.document, () => pb_1.Message.addToRepeatedWrapperField(message, 2, Document.deserialize(reader), Document));
                         break;
                     case 3:
-                        reader.readMessage(message.packages, () => pb_1.Message.addToRepeatedWrapperField(message, 3, PackageInformation.deserialize(reader), PackageInformation));
-                        break;
-                    case 4:
-                        reader.readMessage(message.external_symbols, () => pb_1.Message.addToRepeatedWrapperField(message, 4, SymbolInformation.deserialize(reader), SymbolInformation));
+                        reader.readMessage(message.external_symbols, () => pb_1.Message.addToRepeatedWrapperField(message, 3, SymbolInformation.deserialize(reader), SymbolInformation));
                         break;
                     default: reader.skipField();
                 }
@@ -524,141 +501,6 @@ export namespace lib.codeintel.lsif_typed {
         }
         static deserializeBinary(bytes: Uint8Array): Document {
             return Document.deserialize(bytes);
-        }
-    }
-    export class PackageInformation extends pb_1.Message {
-        constructor(data?: any[] | {
-            package?: string;
-            name?: string;
-            version?: string;
-            manager?: string;
-        }) {
-            super();
-            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], []);
-            if (!Array.isArray(data) && typeof data == "object") {
-                if ("package" in data && data.package != undefined) {
-                    this.package = data.package;
-                }
-                if ("name" in data && data.name != undefined) {
-                    this.name = data.name;
-                }
-                if ("version" in data && data.version != undefined) {
-                    this.version = data.version;
-                }
-                if ("manager" in data && data.manager != undefined) {
-                    this.manager = data.manager;
-                }
-            }
-        }
-        get package() {
-            return pb_1.Message.getField(this, 1) as string;
-        }
-        set package(value: string) {
-            pb_1.Message.setField(this, 1, value);
-        }
-        get name() {
-            return pb_1.Message.getField(this, 2) as string;
-        }
-        set name(value: string) {
-            pb_1.Message.setField(this, 2, value);
-        }
-        get version() {
-            return pb_1.Message.getField(this, 3) as string;
-        }
-        set version(value: string) {
-            pb_1.Message.setField(this, 3, value);
-        }
-        get manager() {
-            return pb_1.Message.getField(this, 4) as string;
-        }
-        set manager(value: string) {
-            pb_1.Message.setField(this, 4, value);
-        }
-        static fromObject(data: {
-            package?: string;
-            name?: string;
-            version?: string;
-            manager?: string;
-        }) {
-            const message = new PackageInformation({});
-            if (data.package != null) {
-                message.package = data.package;
-            }
-            if (data.name != null) {
-                message.name = data.name;
-            }
-            if (data.version != null) {
-                message.version = data.version;
-            }
-            if (data.manager != null) {
-                message.manager = data.manager;
-            }
-            return message;
-        }
-        toObject() {
-            const data: {
-                package?: string;
-                name?: string;
-                version?: string;
-                manager?: string;
-            } = {};
-            if (this.package != null) {
-                data.package = this.package;
-            }
-            if (this.name != null) {
-                data.name = this.name;
-            }
-            if (this.version != null) {
-                data.version = this.version;
-            }
-            if (this.manager != null) {
-                data.manager = this.manager;
-            }
-            return data;
-        }
-        serialize(): Uint8Array;
-        serialize(w: pb_1.BinaryWriter): void;
-        serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
-            const writer = w || new pb_1.BinaryWriter();
-            if (typeof this.package === "string" && this.package.length)
-                writer.writeString(1, this.package);
-            if (typeof this.name === "string" && this.name.length)
-                writer.writeString(2, this.name);
-            if (typeof this.version === "string" && this.version.length)
-                writer.writeString(3, this.version);
-            if (typeof this.manager === "string" && this.manager.length)
-                writer.writeString(4, this.manager);
-            if (!w)
-                return writer.getResultBuffer();
-        }
-        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): PackageInformation {
-            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new PackageInformation();
-            while (reader.nextField()) {
-                if (reader.isEndGroup())
-                    break;
-                switch (reader.getFieldNumber()) {
-                    case 1:
-                        message.package = reader.readString();
-                        break;
-                    case 2:
-                        message.name = reader.readString();
-                        break;
-                    case 3:
-                        message.version = reader.readString();
-                        break;
-                    case 4:
-                        message.manager = reader.readString();
-                        break;
-                    default: reader.skipField();
-                }
-            }
-            return message;
-        }
-        serializeBinary(): Uint8Array {
-            return this.serialize();
-        }
-        static deserializeBinary(bytes: Uint8Array): PackageInformation {
-            return PackageInformation.deserialize(bytes);
         }
     }
     export class SymbolInformation extends pb_1.Message {
