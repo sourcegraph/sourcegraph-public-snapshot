@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from 'react'
 
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
@@ -10,7 +11,6 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Link } from '@sourcegraph/wildcard'
 
 import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '..'
-import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 
 import styles from './DidYouMean.module.scss'
 

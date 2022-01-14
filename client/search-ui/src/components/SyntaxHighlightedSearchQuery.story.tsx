@@ -1,15 +1,16 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+
 import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
-import { WebStory } from './WebStory'
 
 const { add } = storiesOf('web/SyntaxHighlightedSearchQuery', module).addParameters({
     chromatic: { viewports: [480] },
 })
 
 add('Examples', () => (
-    <WebStory>
+    <BrandedStory>
         {() => (
             <p>
                 <SyntaxHighlightedSearchQuery query="test AND spec" />
@@ -19,5 +20,5 @@ add('Examples', () => (
                 <SyntaxHighlightedSearchQuery query="test -lang:ts" />
             </p>
         )}
-    </WebStory>
+    </BrandedStory>
 ))

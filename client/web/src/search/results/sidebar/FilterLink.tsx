@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -9,7 +10,6 @@ import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/s
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { Button } from '@sourcegraph/wildcard'
 
-import { SyntaxHighlightedSearchQuery } from '../../../components/SyntaxHighlightedSearchQuery'
 import { Settings } from '../../../schema/settings.schema'
 
 import { getFiltersOfKind } from './helpers'
