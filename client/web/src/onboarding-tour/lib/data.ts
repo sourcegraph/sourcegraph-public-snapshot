@@ -90,7 +90,7 @@ export const ONBOARDING_STEP_ITEMS: Omit<OnboardingTourStepItem, 'isCompleted'>[
     {
         id: 'TourBrowserExtensions',
         group: TOOLS,
-        title: 'Browser extensions',
+        title: 'Browser extentions',
         to: 'https://docs.sourcegraph.com/integration/browser_extension',
     },
 ]
