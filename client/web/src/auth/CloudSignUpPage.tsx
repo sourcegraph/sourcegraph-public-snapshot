@@ -3,7 +3,7 @@ import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
-import { useQuery } from '@sourcegraph/shared/src/graphql/graphql'
+import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ProductStatusBadge } from '@sourcegraph/wildcard'
