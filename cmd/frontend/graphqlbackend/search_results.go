@@ -1883,11 +1883,12 @@ func subRepoFilterFunc(ctx context.Context, checker authz.SubRepoPermissionCheck
 				filtered.Results = append(filtered.Results, r)
 			}
 		}
-		// We don't want to spam our logs or return sensitive authz related errors to the
-		// user so we'll return generic error and log something more specific.
 		if errs.Len() == 0 {
 			return filtered, nil
 		}
+		// We don't want to return sensitive authz information or exluded paths to the
+		// user so we'll return generic error and log something more specific.
+		log15.Warn("Applying sub-repo permissions to search results", "error", errs)
 		return filtered, errors.New("subRepoFilterFunc")
 	}
 }
