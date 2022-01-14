@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import React, { FunctionComponent } from 'react'
+
 import { Link } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../components/DismissibleAlert'

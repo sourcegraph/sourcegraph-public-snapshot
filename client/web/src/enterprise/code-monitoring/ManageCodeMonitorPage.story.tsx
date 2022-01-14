@@ -34,7 +34,6 @@ add('Example', () => (
 add('Disabled toggles', () => {
     const monitor = cloneDeep(mockCodeMonitor) // Deep clone so we can manipulate this object
     monitor.node.enabled = false
-    monitor.node.actions.enabled = false
     monitor.node.actions.nodes[0].enabled = false
 
     return (

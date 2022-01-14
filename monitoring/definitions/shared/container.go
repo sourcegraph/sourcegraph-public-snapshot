@@ -100,6 +100,9 @@ type ContainerMonitoringGroupOptions struct {
 
 	// IOUsage transforms the default observable used to construct the IO usage panel.
 	IOUsage ObservableOption
+
+	// CustomTitle, if provided, provides a custom title for this monitoring group that will be displayed in Grafana.
+	CustomTitle string
 }
 
 // NewContainerMonitoringGroup creates a group containing panels displaying
@@ -110,8 +113,13 @@ func NewContainerMonitoringGroup(containerName string, owner monitoring.Observab
 		options = &ContainerMonitoringGroupOptions{}
 	}
 
+	title := TitleContainerMonitoring
+	if options.CustomTitle != "" {
+		title = options.CustomTitle
+	}
+
 	return monitoring.Group{
-		Title:  TitleContainerMonitoring,
+		Title:  title,
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{

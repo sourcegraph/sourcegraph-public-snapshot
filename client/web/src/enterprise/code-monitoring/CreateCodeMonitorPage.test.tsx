@@ -37,11 +37,11 @@ describe('CreateCodeMonitorPage', () => {
     }
     let clock: sinon.SinonFakeTimers
 
-    beforeAll(() => {
+    beforeEach(() => {
         clock = sinon.useFakeTimers()
     })
 
-    afterAll(() => {
+    afterEach(() => {
         clock.restore()
     })
 
@@ -70,6 +70,10 @@ describe('CreateCodeMonitorPage', () => {
         userEvent.click(screen.getByTestId('form-action-toggle-email-notification'))
 
         userEvent.click(screen.getByTestId('submit-action'))
+
+        act(() => {
+            clock.tick(600)
+        })
 
         userEvent.click(screen.getByTestId('submit-monitor'))
 
@@ -105,6 +109,10 @@ describe('CreateCodeMonitorPage', () => {
         userEvent.click(screen.getByTestId('form-action-toggle-email-notification'))
         userEvent.click(screen.getByTestId('submit-action'))
 
+        act(() => {
+            clock.tick(600)
+        })
+
         // Pressing enter calls createCodeMonitor when all sections are complete
         userEvent.click(screen.getByTestId('submit-monitor'))
 
@@ -114,6 +122,6 @@ describe('CreateCodeMonitorPage', () => {
     test('Actions area button is disabled while trigger is incomplete', () => {
         renderWithRouter(<CreateCodeMonitorPage {...props} />)
         const actionButton = screen.getByTestId('form-action-toggle-email-notification')
-        expect(actionButton).toBeDisabled()
+        expect(actionButton).toHaveClass('disabled')
     })
 })

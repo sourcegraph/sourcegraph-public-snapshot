@@ -117,6 +117,7 @@ describe('ManageCodeMonitorPage', () => {
         expect(submitButton).toBeDisabled()
 
         userEvent.type(screen.getByTestId('name-input'), 'Test code monitor updated')
+
         expect(submitButton).toBeEnabled()
     })
 

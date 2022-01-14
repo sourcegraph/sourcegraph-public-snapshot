@@ -83,15 +83,18 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMoni
                 },
                 { id: codeMonitor.trigger.id, update: { query: codeMonitor.trigger.query } },
                 codeMonitor.actions.nodes.map(action => ({
-                    email: {
-                        id: action.id,
-                        update: {
-                            enabled: action.enabled,
-                            priority: MonitorEmailPriority.NORMAL,
-                            recipients: [authenticatedUser.id],
-                            header: '',
-                        },
-                    },
+                    email:
+                        action.__typename === 'MonitorEmail'
+                            ? {
+                                  id: action.id || null, // Convert empty string to null so action is created
+                                  update: {
+                                      enabled: action.enabled,
+                                      priority: MonitorEmailPriority.NORMAL,
+                                      recipients: [authenticatedUser.id],
+                                      header: '',
+                                  },
+                              }
+                            : undefined,
                 }))
             ),
         [authenticatedUser.id, match.params.id, updateCodeMonitor]

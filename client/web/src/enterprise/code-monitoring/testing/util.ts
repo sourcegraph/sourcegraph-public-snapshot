@@ -41,10 +41,13 @@ export const mockCodeMonitor = {
         enabled: true,
         owner: { id: 'test-id', namespaceName: 'test-user' },
         actions: {
-            id: 'test-0',
-            enabled: true,
             nodes: [
-                { id: 'test-action-0', enabled: true, recipients: { nodes: [{ id: 'baz-0', url: '/user/test' }] } },
+                {
+                    __typename: 'MonitorEmail',
+                    id: 'test-action-0',
+                    enabled: true,
+                    recipients: { nodes: [{ id: 'baz-0', url: '/user/test' }] },
+                },
             ],
         },
         trigger: { id: 'test-0', query: 'test' },

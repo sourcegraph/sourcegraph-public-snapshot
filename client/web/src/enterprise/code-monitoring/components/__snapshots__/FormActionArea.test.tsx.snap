@@ -91,20 +91,24 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
         Enabled
       </span>
     </div>
-    <div>
-      <button
-        class="btn btn-secondary mr-1 test-submit-action"
-        data-testid="submit-action"
-        type="submit"
-      >
-        Continue
-      </button>
-      <button
-        class="btn btn-outline-secondary"
-        type="button"
-      >
-        Cancel
-      </button>
+    <div
+      class="d-flex justify-content-between"
+    >
+      <div>
+        <button
+          class="btn btn-secondary mr-1 test-submit-action"
+          data-testid="submit-action"
+          type="submit"
+        >
+          Continue
+        </button>
+        <button
+          class="btn btn-outline-secondary"
+          type="button"
+        >
+          Cancel
+        </button>
+      </div>
     </div>
   </div>
   <small
