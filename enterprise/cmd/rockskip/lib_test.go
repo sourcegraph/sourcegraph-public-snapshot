@@ -1,7 +1,6 @@
 package rockskip
 
 import (
-	"database/sql"
 	"fmt"
 	"os/exec"
 	"sort"
@@ -10,6 +9,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-ctags"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 type Ctags struct {
@@ -62,10 +63,7 @@ func TestIndex(t *testing.T) {
 	}
 	defer git.Close()
 
-	db, err := sql.Open("postgres", "postgres://sourcegraph:sourcegraph@localhost:5432/sourcegraph?sslmode=disable")
-	if err != nil {
-		t.Fatalf("🚨 sql.Open: %s", err)
-	}
+	db := dbtest.NewDB(t)
 
 	defer db.Close()
 	parser, err := NewCtags()
