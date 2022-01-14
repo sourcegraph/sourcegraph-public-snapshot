@@ -191,7 +191,7 @@ message Occurrence {
   // a highlighting occurrence.
   string symbol_uri = 2;
   // (optional) Is the symbol_uri defined or referenced at this occurrence?
-  SymbolRole symbol_role = 3;
+  int32 symbol_role = 3;
   // (optional) Markdown-formatted documentation for this specific range.  If
   // empty, the `Symbol.documentation` field is used instead. One example
   // where this field might be useful is when the symbol represents a generic

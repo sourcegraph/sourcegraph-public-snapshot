@@ -797,7 +797,7 @@ export namespace lib.codeintel.lsif_typed {
         constructor(data?: any[] | {
             range?: number[];
             symbol_uri?: string;
-            symbol_role?: SymbolRole;
+            symbol_role?: number;
             symbol_documentation?: string[];
             syntax_kind?: SyntaxKind;
         }) {
@@ -834,9 +834,9 @@ export namespace lib.codeintel.lsif_typed {
             pb_1.Message.setField(this, 2, value);
         }
         get symbol_role() {
-            return pb_1.Message.getField(this, 3) as SymbolRole;
+            return pb_1.Message.getField(this, 3) as number;
         }
-        set symbol_role(value: SymbolRole) {
+        set symbol_role(value: number) {
             pb_1.Message.setField(this, 3, value);
         }
         get symbol_documentation() {
@@ -854,7 +854,7 @@ export namespace lib.codeintel.lsif_typed {
         static fromObject(data: {
             range?: number[];
             symbol_uri?: string;
-            symbol_role?: SymbolRole;
+            symbol_role?: number;
             symbol_documentation?: string[];
             syntax_kind?: SyntaxKind;
         }) {
@@ -880,7 +880,7 @@ export namespace lib.codeintel.lsif_typed {
             const data: {
                 range?: number[];
                 symbol_uri?: string;
-                symbol_role?: SymbolRole;
+                symbol_role?: number;
                 symbol_documentation?: string[];
                 syntax_kind?: SyntaxKind;
             } = {};
@@ -910,7 +910,7 @@ export namespace lib.codeintel.lsif_typed {
             if (typeof this.symbol_uri === "string" && this.symbol_uri.length)
                 writer.writeString(2, this.symbol_uri);
             if (this.symbol_role !== undefined)
-                writer.writeEnum(3, this.symbol_role);
+                writer.writeInt32(3, this.symbol_role);
             if (this.symbol_documentation !== undefined)
                 writer.writeRepeatedString(4, this.symbol_documentation);
             if (this.syntax_kind !== undefined)
@@ -931,7 +931,7 @@ export namespace lib.codeintel.lsif_typed {
                         message.symbol_uri = reader.readString();
                         break;
                     case 3:
-                        message.symbol_role = reader.readEnum();
+                        message.symbol_role = reader.readInt32();
                         break;
                     case 4:
                         pb_1.Message.addToRepeatedField(message, 4, reader.readString());
