@@ -10,16 +10,3 @@
         visibility: visible;
     }
 }
-
-.link {
-    --link-color: var(--body-color);
-    --link-hover-color: var(--body-color);
-    --link-hover-decoration: none;
-
-    color: var(--body-color);
-
-    &:hover {
-        color: var(--body-color);
-        text-decoration: none;
-    }
-}

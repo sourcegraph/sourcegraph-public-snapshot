@@ -127,7 +127,7 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                                 <Link
                                     key={item.path}
                                     to={item.path}
-                                    className={classNames('dropdown-item', styles.link)}
+                                    className="dropdown-item"
                                     onClick={closeDropdown}
                                     role="menuitem"
                                 >
