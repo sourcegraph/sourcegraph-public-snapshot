@@ -143,73 +143,91 @@ export namespace lib.codeintel.lsif_typed {
     }
     export class Metadata extends pb_1.Message {
         constructor(data?: any[] | {
+            protocol_version?: Metadata.ProtocolVersion;
             tool_info?: ToolInfo;
             project_root?: string;
-            position_encoding?: Metadata.PositionEncoding;
+            text_document_encoding?: Metadata.TextDocumentEncoding;
         }) {
             super();
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], []);
             if (!Array.isArray(data) && typeof data == "object") {
+                if ("protocol_version" in data && data.protocol_version != undefined) {
+                    this.protocol_version = data.protocol_version;
+                }
                 if ("tool_info" in data && data.tool_info != undefined) {
                     this.tool_info = data.tool_info;
                 }
                 if ("project_root" in data && data.project_root != undefined) {
                     this.project_root = data.project_root;
                 }
-                if ("position_encoding" in data && data.position_encoding != undefined) {
-                    this.position_encoding = data.position_encoding;
+                if ("text_document_encoding" in data && data.text_document_encoding != undefined) {
+                    this.text_document_encoding = data.text_document_encoding;
                 }
             }
         }
+        get protocol_version() {
+            return pb_1.Message.getField(this, 1) as Metadata.ProtocolVersion;
+        }
+        set protocol_version(value: Metadata.ProtocolVersion) {
+            pb_1.Message.setField(this, 1, value);
+        }
         get tool_info() {
-            return pb_1.Message.getWrapperField(this, ToolInfo, 1) as ToolInfo;
+            return pb_1.Message.getWrapperField(this, ToolInfo, 2) as ToolInfo;
         }
         set tool_info(value: ToolInfo) {
-            pb_1.Message.setWrapperField(this, 1, value);
+            pb_1.Message.setWrapperField(this, 2, value);
         }
         get project_root() {
-            return pb_1.Message.getField(this, 2) as string;
+            return pb_1.Message.getField(this, 3) as string;
         }
         set project_root(value: string) {
-            pb_1.Message.setField(this, 2, value);
-        }
-        get position_encoding() {
-            return pb_1.Message.getField(this, 3) as Metadata.PositionEncoding;
-        }
-        set position_encoding(value: Metadata.PositionEncoding) {
             pb_1.Message.setField(this, 3, value);
         }
+        get text_document_encoding() {
+            return pb_1.Message.getField(this, 4) as Metadata.TextDocumentEncoding;
+        }
+        set text_document_encoding(value: Metadata.TextDocumentEncoding) {
+            pb_1.Message.setField(this, 4, value);
+        }
         static fromObject(data: {
+            protocol_version?: Metadata.ProtocolVersion;
             tool_info?: ReturnType<typeof ToolInfo.prototype.toObject>;
             project_root?: string;
-            position_encoding?: Metadata.PositionEncoding;
+            text_document_encoding?: Metadata.TextDocumentEncoding;
         }) {
             const message = new Metadata({});
+            if (data.protocol_version != null) {
+                message.protocol_version = data.protocol_version;
+            }
             if (data.tool_info != null) {
                 message.tool_info = ToolInfo.fromObject(data.tool_info);
             }
             if (data.project_root != null) {
                 message.project_root = data.project_root;
             }
-            if (data.position_encoding != null) {
-                message.position_encoding = data.position_encoding;
+            if (data.text_document_encoding != null) {
+                message.text_document_encoding = data.text_document_encoding;
             }
             return message;
         }
         toObject() {
             const data: {
+                protocol_version?: Metadata.ProtocolVersion;
                 tool_info?: ReturnType<typeof ToolInfo.prototype.toObject>;
                 project_root?: string;
-                position_encoding?: Metadata.PositionEncoding;
+                text_document_encoding?: Metadata.TextDocumentEncoding;
             } = {};
+            if (this.protocol_version != null) {
+                data.protocol_version = this.protocol_version;
+            }
             if (this.tool_info != null) {
                 data.tool_info = this.tool_info.toObject();
             }
             if (this.project_root != null) {
                 data.project_root = this.project_root;
             }
-            if (this.position_encoding != null) {
-                data.position_encoding = this.position_encoding;
+            if (this.text_document_encoding != null) {
+                data.text_document_encoding = this.text_document_encoding;
             }
             return data;
         }
@@ -217,12 +235,14 @@ export namespace lib.codeintel.lsif_typed {
         serialize(w: pb_1.BinaryWriter): void;
         serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
             const writer = w || new pb_1.BinaryWriter();
+            if (this.protocol_version !== undefined)
+                writer.writeEnum(1, this.protocol_version);
             if (this.tool_info !== undefined)
-                writer.writeMessage(1, this.tool_info, () => this.tool_info.serialize(writer));
+                writer.writeMessage(2, this.tool_info, () => this.tool_info.serialize(writer));
             if (typeof this.project_root === "string" && this.project_root.length)
-                writer.writeString(2, this.project_root);
-            if (this.position_encoding !== undefined)
-                writer.writeEnum(3, this.position_encoding);
+                writer.writeString(3, this.project_root);
+            if (this.text_document_encoding !== undefined)
+                writer.writeEnum(4, this.text_document_encoding);
             if (!w)
                 return writer.getResultBuffer();
         }
@@ -233,13 +253,16 @@ export namespace lib.codeintel.lsif_typed {
                     break;
                 switch (reader.getFieldNumber()) {
                     case 1:
-                        reader.readMessage(message.tool_info, () => message.tool_info = ToolInfo.deserialize(reader));
+                        message.protocol_version = reader.readEnum();
                         break;
                     case 2:
-                        message.project_root = reader.readString();
+                        reader.readMessage(message.tool_info, () => message.tool_info = ToolInfo.deserialize(reader));
                         break;
                     case 3:
-                        message.position_encoding = reader.readEnum();
+                        message.project_root = reader.readString();
+                        break;
+                    case 4:
+                        message.text_document_encoding = reader.readEnum();
                         break;
                     default: reader.skipField();
                 }
@@ -254,25 +277,32 @@ export namespace lib.codeintel.lsif_typed {
         }
     }
     export namespace Metadata {
-        export enum PositionEncoding {
-            POSITION_ENCODING_UNSPECIFIED = 0,
-            POSITION_ENCODING_UTF8 = 1,
-            POSITION_ENCODING_UTF16 = 2
+        export enum ProtocolVersion {
+            UnspecifiedProtocolVersion = 0
+        }
+        export enum TextDocumentEncoding {
+            UnspecifiedEncoding = 0,
+            UTF8 = 1,
+            UTF16 = 2
         }
     }
     export class ToolInfo extends pb_1.Message {
         constructor(data?: any[] | {
             name?: string;
             version?: string;
+            arguments?: string[];
         }) {
             super();
-            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], []);
+            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [3], []);
             if (!Array.isArray(data) && typeof data == "object") {
                 if ("name" in data && data.name != undefined) {
                     this.name = data.name;
                 }
                 if ("version" in data && data.version != undefined) {
                     this.version = data.version;
+                }
+                if ("arguments" in data && data.arguments != undefined) {
+                    this.arguments = data.arguments;
                 }
             }
         }
@@ -288,9 +318,16 @@ export namespace lib.codeintel.lsif_typed {
         set version(value: string) {
             pb_1.Message.setField(this, 2, value);
         }
+        get arguments() {
+            return pb_1.Message.getField(this, 3) as string[];
+        }
+        set arguments(value: string[]) {
+            pb_1.Message.setField(this, 3, value);
+        }
         static fromObject(data: {
             name?: string;
             version?: string;
+            arguments?: string[];
         }) {
             const message = new ToolInfo({});
             if (data.name != null) {
@@ -299,18 +336,25 @@ export namespace lib.codeintel.lsif_typed {
             if (data.version != null) {
                 message.version = data.version;
             }
+            if (data.arguments != null) {
+                message.arguments = data.arguments;
+            }
             return message;
         }
         toObject() {
             const data: {
                 name?: string;
                 version?: string;
+                arguments?: string[];
             } = {};
             if (this.name != null) {
                 data.name = this.name;
             }
             if (this.version != null) {
                 data.version = this.version;
+            }
+            if (this.arguments != null) {
+                data.arguments = this.arguments;
             }
             return data;
         }
@@ -322,6 +366,8 @@ export namespace lib.codeintel.lsif_typed {
                 writer.writeString(1, this.name);
             if (typeof this.version === "string" && this.version.length)
                 writer.writeString(2, this.version);
+            if (this.arguments !== undefined)
+                writer.writeRepeatedString(3, this.arguments);
             if (!w)
                 return writer.getResultBuffer();
         }
@@ -336,6 +382,9 @@ export namespace lib.codeintel.lsif_typed {
                         break;
                     case 2:
                         message.version = reader.readString();
+                        break;
+                    case 3:
+                        pb_1.Message.addToRepeatedField(message, 3, reader.readString());
                         break;
                     default: reader.skipField();
                 }

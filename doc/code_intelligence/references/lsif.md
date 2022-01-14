@@ -3,7 +3,17 @@
 
 # LSIF Typed protocol reference
 
+An index contains one or more pieces of information about a given piece of
+source code or software artifact. Complementary information can be merged
+together from multiple sources to provide a unified code intelligence
+experience.
 
+Programs producing a file of this format is an "indexer" and may operate
+somewhere on the spectrum between precision, such as indexes produced by
+compiler-backed indexers, and heurstics, such as indexes produced by local
+syntax-directed analysis for scope rules.
+
+See the `Index` message for additional documentation.
 ### Document
 
 Document defines information about a particular source file.
@@ -18,14 +28,25 @@ Document defines information about a particular source file.
 
 ### Index
 
-Index represents an LSIF index. An index can be consumed in a streaming
-fashion by consuming one value at a time. In Java, use `parseDelimetedFrom`
-to consume the index in a streaming fashion. For other languages like Go, you
-need to write custom logic that decodes one LSIF `Value` at a time.
+A representation of an index that can be emitted and consumed as as single
+message payload. An index may also be represented by a length-prefixed stream
+of index messages with the following ordering constraints:
+
+1. The first message in the stream must provide metadata, and must be the
+only message to do so.
+2. If a document references a symbol, the associated symbol information, if
+it exists, must have preceeded the document in the stream. This allows a
+document to be fully-processed once encountered. Note that symbols may
+reference each other, and a symbol object may not be logically "closed" until
+the end of the stream and some use cases will still be required to read the
+stream to completion.
+
+These constraints allow the index to be processed with minimal bookkeeping
+overhead, and allows partial processing to stop early on successful match.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-|  **metadata** | Metadata | Metadata about this index.
+|  **metadata** | Metadata | (Required) Metadata about this index such as tool and protocol versioning and identification of the indexing environment.
 | repeated **document** | Document | Documents that belong to this index or the packages that are defined by this index.
 | repeated **package** | Package | Packages that are either referenced from this index or the packages that are defined by this index.
 | repeated **external_symbols** | Symbol | Symbols that are defined outside of this index but are referenced from inside this index.
@@ -35,25 +56,38 @@ need to write custom logic that decodes one LSIF `Value` at a time.
 
 ### Metadata
 
-
+Metadata contains tool and protocol version information, indexer
+self-identification, and data that encodes the indexing environment. Unlike
+the other messages defined in this index, the contents of this message may
+not be "stable" bewteen indexer invocations producing the same logical index
+For example, `Metadata.project_root` encodes the local working directory.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-|  **tool_info** | ToolInfo | 
-|  **project_root** | string | URI-encoded absolute path to the root directory of this index. All documents in this index must appear in a subdirectory of this root directory.
-|  **position_encoding** | PositionEncoding | 
+|  **protocol_version** | ProtocolVersion | (Required) An explicit version of the encoding used for this index. Changes to this value may change the interpretation of parsed strings (such as symbol identifiers) in tools consuming the index.
+|  **tool_info** | ToolInfo | (Required) Information about the tool that created the index.
+|  **project_root** | string | (Required) A URI-encoded absolute path to the root directory of this index. The documents also contained in the associated index are defined relative to this directory.
+|  **text_document_encoding** | TextDocumentEncoding | (Required) The string encoding used to compute correct text selections within the text documents defining the indexed source code. Positions within text documents are expressed as zero-based line and character offsets based on the string representations of the text with the given encoding.
 
 
 
-#### PositionEncoding
 
+#### ProtocolVersion
 
+Possible index protocol versions.
 
 | Number | Name | Description |
 | ------ | ---- | ----------- |
-| 0 | POSITION_ENCODING_UNSPECIFIED | 
-| 1 | POSITION_ENCODING_UTF8 | 
-| 2 | POSITION_ENCODING_UTF16 | 
+| 0 | UnspecifiedProtocolVersion | Currently, the only version available while the protocol is in design-flux. Once we are reasonably sure about the direction of this protocol, we will create a new non-zero version and enforce a version check in consumers for safety and forwards-compatibility.
+#### TextDocumentEncoding
+
+Possible text document encodings.
+
+| Number | Name | Description |
+| ------ | ---- | ----------- |
+| 0 | UnspecifiedEncoding | (Invalid) Unknown encoding. Consumers may attempt to choose a sane default or auto-detect an encoding of text documents when rendering selections of code.
+| 1 | UTF8 | Text documents are encoded in UTF-8.
+| 2 | UTF16 | Text documents are encoded in UTF-16 (e.g., TypeScript).
 ### Occurrence
 
 Occurrence associates a source position with a symbol and/or highlighting
@@ -161,11 +195,14 @@ Symbol defines a symbol, such as a function or an interface.
 | 2 | UNIQUE_GLOBAL | 
 ### ToolInfo
 
-
+A description of the indexer (and the invocation) that produced a specific
+index.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-|  **name** | string | 
-|  **version** | string | 
+|  **name** | string | (Required) The name of the tool that created a specific index.
+|  **version** | string | (Required) The version of the tool that created a specific index.
+| repeated **arguments** | string | (Required) The list of command line arguments supplied to the indexer that created a specific index.
+
 
 
