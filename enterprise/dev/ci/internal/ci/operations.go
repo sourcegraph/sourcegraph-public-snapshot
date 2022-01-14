@@ -726,7 +726,7 @@ func publishExecutorDockerMirror(version string) operations.Operation {
 func uploadBuildeventTrace() operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":arrow_heading_up: Uploading trace to HoneyComb",
-			bk.Cmd("./enterprise/dev/upload-buildevent-report.sh"),
+			bk.Cmd("./enterprise/dev/ci/scripts/upload-buildevent-report.sh"),
 		)
 	}
 }
