@@ -798,7 +798,7 @@ export namespace lib.codeintel.lsif_typed {
             range?: number[];
             symbol_uri?: string;
             symbol_role?: number;
-            symbol_documentation?: string[];
+            override_documentation?: string[];
             syntax_kind?: SyntaxKind;
         }) {
             super();
@@ -813,8 +813,8 @@ export namespace lib.codeintel.lsif_typed {
                 if ("symbol_role" in data && data.symbol_role != undefined) {
                     this.symbol_role = data.symbol_role;
                 }
-                if ("symbol_documentation" in data && data.symbol_documentation != undefined) {
-                    this.symbol_documentation = data.symbol_documentation;
+                if ("override_documentation" in data && data.override_documentation != undefined) {
+                    this.override_documentation = data.override_documentation;
                 }
                 if ("syntax_kind" in data && data.syntax_kind != undefined) {
                     this.syntax_kind = data.syntax_kind;
@@ -839,10 +839,10 @@ export namespace lib.codeintel.lsif_typed {
         set symbol_role(value: number) {
             pb_1.Message.setField(this, 3, value);
         }
-        get symbol_documentation() {
+        get override_documentation() {
             return pb_1.Message.getField(this, 4) as string[];
         }
-        set symbol_documentation(value: string[]) {
+        set override_documentation(value: string[]) {
             pb_1.Message.setField(this, 4, value);
         }
         get syntax_kind() {
@@ -855,7 +855,7 @@ export namespace lib.codeintel.lsif_typed {
             range?: number[];
             symbol_uri?: string;
             symbol_role?: number;
-            symbol_documentation?: string[];
+            override_documentation?: string[];
             syntax_kind?: SyntaxKind;
         }) {
             const message = new Occurrence({});
@@ -868,8 +868,8 @@ export namespace lib.codeintel.lsif_typed {
             if (data.symbol_role != null) {
                 message.symbol_role = data.symbol_role;
             }
-            if (data.symbol_documentation != null) {
-                message.symbol_documentation = data.symbol_documentation;
+            if (data.override_documentation != null) {
+                message.override_documentation = data.override_documentation;
             }
             if (data.syntax_kind != null) {
                 message.syntax_kind = data.syntax_kind;
@@ -881,7 +881,7 @@ export namespace lib.codeintel.lsif_typed {
                 range?: number[];
                 symbol_uri?: string;
                 symbol_role?: number;
-                symbol_documentation?: string[];
+                override_documentation?: string[];
                 syntax_kind?: SyntaxKind;
             } = {};
             if (this.range != null) {
@@ -893,8 +893,8 @@ export namespace lib.codeintel.lsif_typed {
             if (this.symbol_role != null) {
                 data.symbol_role = this.symbol_role;
             }
-            if (this.symbol_documentation != null) {
-                data.symbol_documentation = this.symbol_documentation;
+            if (this.override_documentation != null) {
+                data.override_documentation = this.override_documentation;
             }
             if (this.syntax_kind != null) {
                 data.syntax_kind = this.syntax_kind;
@@ -911,8 +911,8 @@ export namespace lib.codeintel.lsif_typed {
                 writer.writeString(2, this.symbol_uri);
             if (this.symbol_role !== undefined)
                 writer.writeInt32(3, this.symbol_role);
-            if (this.symbol_documentation !== undefined)
-                writer.writeRepeatedString(4, this.symbol_documentation);
+            if (this.override_documentation !== undefined)
+                writer.writeRepeatedString(4, this.override_documentation);
             if (this.syntax_kind !== undefined)
                 writer.writeEnum(5, this.syntax_kind);
             if (!w)

@@ -197,7 +197,7 @@ message Occurrence {
   // where this field might be useful is when the symbol represents a generic
   // function (with abstract type parameters such as `List<T>`) and at this
   // occurrence we know the exact values (such as `List<String>`).
-  repeated string symbol_documentation = 4;
+  repeated string override_documentation = 4;
   // (optional) What syntax highlighting class should be used for this range?
   SyntaxKind syntax_kind = 5;
 }
