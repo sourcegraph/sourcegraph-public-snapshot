@@ -711,9 +711,9 @@ type Occurrence struct {
 	// The source position of this occurrence. Must be exactly three or four
 	// elements:
 	//
-	// - Four elements: [startLine, startCharacter, endLine, endCharacter]
-	// - Three elements: [startLine, startCharacter, endCharacter] (endLine ==
-	// startLine)
+	// - Four elements: `[startLine, startCharacter, endLine, endCharacter]`
+	// - Three elements: `[startLine, startCharacter, endCharacter] (endLine ==
+	// startLine)`
 	//
 	// Line numbers and characters are always 0-based. Make sure to increment the
 	// line/character values before displaying them in an editor-like UI because

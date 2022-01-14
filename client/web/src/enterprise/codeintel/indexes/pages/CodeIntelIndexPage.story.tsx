@@ -2,7 +2,7 @@ import { Meta, Story } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 
-import { LSIFUploadState } from '@sourcegraph/shared/src/graphql/schema'
+import { LSIFUploadState } from '@sourcegraph/shared/src/schema'
 
 import { WebStory } from '../../../../components/WebStory'
 import { LsifIndexFields, LSIFIndexState, LsifIndexStepsFields } from '../../../../graphql-operations'

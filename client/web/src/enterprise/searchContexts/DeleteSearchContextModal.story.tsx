@@ -3,7 +3,7 @@ import React from 'react'
 import { NEVER } from 'rxjs'
 import sinon from 'sinon'
 
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { ISearchContext } from '@sourcegraph/shared/src/schema'
 
 import { WebStory } from '../../components/WebStory'
 

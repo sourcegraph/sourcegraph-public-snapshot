@@ -7,8 +7,8 @@ import { Observable, Subject, NEVER } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
 
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { useEventObservable, useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Button, LoadingSpinner, Link } from '@sourcegraph/wildcard'
 

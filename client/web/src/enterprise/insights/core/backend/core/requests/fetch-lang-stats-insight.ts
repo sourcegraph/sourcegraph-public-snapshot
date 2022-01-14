@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../../../../../backend/graphql'
 import { LangStatsInsightContentResult, LangStatsInsightContentVariables } from '../../../../../../graphql-operations'

@@ -1,4 +1,4 @@
-import { IHighlightLineRange, NotebookBlock } from '@sourcegraph/shared/src/graphql/schema'
+import { IHighlightLineRange, NotebookBlock } from '@sourcegraph/shared/src/schema'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { CreateNotebookBlockInput, NotebookBlockType } from '../../graphql-operations'

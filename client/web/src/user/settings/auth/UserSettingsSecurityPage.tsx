@@ -4,8 +4,8 @@ import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ErrorLike, asError } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { Button, Container, PageHeader, LoadingSpinner, Link } from '@sourcegraph/wildcard'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { Container, PageHeader, LoadingSpinner, Button, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { PasswordInput } from '../../../auth/SignInSignUpCommon'

@@ -4,7 +4,7 @@ import { EMPTY, Observable } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'

@@ -16,8 +16,8 @@ import {
     UpdateInsightsDashboardInput,
 } from 'src/graphql-operations'
 
+import { fromObservableQuery } from '@sourcegraph/http-client'
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/apollo'
 
 import { BackendInsight, Insight, InsightDashboard, InsightsDashboardScope, InsightsDashboardType } from '../../types'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../../types/dashboard/virtual-dashboard'

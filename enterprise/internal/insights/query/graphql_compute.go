@@ -50,6 +50,7 @@ func ComputeSearch(ctx context.Context, query string) (results []ComputeResult, 
 	defer func() {
 		span.LogFields(
 			log.Int("resultCount", len(results)),
+			log.Error(err),
 		)
 		span.Finish()
 	}()

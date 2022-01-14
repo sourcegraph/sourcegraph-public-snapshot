@@ -6,7 +6,7 @@ import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Button, Container, PageHeader, LoadingSpinner, Link } from '@sourcegraph/wildcard'

@@ -54,6 +54,7 @@ If you want to learn more about search:
 
 - [Code search product documentation](../../../code_search/index.md)
 - [Life of a search query](life-of-a-search-query.md)
+- [Indexed ranking](indexed-ranking.md)
 
 ## Code intelligence
 

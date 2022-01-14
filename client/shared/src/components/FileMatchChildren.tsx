@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators'
 import { isErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/wildcard'
 
-import { IHighlightLineRange } from '../graphql/schema'
+import { IHighlightLineRange } from '../schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '../search/stream'
 import { SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'

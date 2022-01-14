@@ -4,7 +4,7 @@ import React from 'react'
 import { NEVER, Observable, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { IOrg, IRepository, ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { IOrg, IRepository, ISearchContext } from '@sourcegraph/shared/src/schema'
 
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'

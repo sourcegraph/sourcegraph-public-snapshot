@@ -3,7 +3,7 @@ import React, { FunctionComponent, useMemo, useState } from 'react'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
 
 import { requestGraphQL } from '../../../backend/graphql'

@@ -10,7 +10,7 @@ import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Container, PageHeader, LoadingSpinner, Button } from '@sourcegraph/wildcard'
 

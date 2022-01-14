@@ -8,7 +8,7 @@ import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

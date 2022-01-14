@@ -3,7 +3,7 @@ import { RenderResult, fireEvent } from '@testing-library/react'
 import { GraphQLError } from 'graphql'
 import React from 'react'
 
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithRouter } from '@sourcegraph/shared/src/testing/render-with-router'
 

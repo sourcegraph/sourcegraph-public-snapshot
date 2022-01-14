@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -100,11 +102,16 @@ type GqlSearchResponse struct {
 }
 
 // search executes the given search query.
-func Search(ctx context.Context, query string) (*GqlSearchResponse, error) {
+func Search(ctx context.Context, query string) (_ *GqlSearchResponse, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "InsightsSearch")
-	defer func() { span.Finish() }()
+	defer func() {
+		span.LogFields(
+			log.Error(err),
+		)
+		span.Finish()
+	}()
 	var buf bytes.Buffer
-	err := json.NewEncoder(&buf).Encode(graphQLQuery{
+	err = json.NewEncoder(&buf).Encode(graphQLQuery{
 		Query:     gqlSearchQuery,
 		Variables: gqlSearchVars{Query: query},
 	})

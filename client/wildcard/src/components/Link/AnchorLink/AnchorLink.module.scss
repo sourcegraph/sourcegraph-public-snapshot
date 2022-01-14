@@ -2,8 +2,7 @@
     --link-hover-decoration: underline;
 }
 
-// We would try to remove `:global(.btn)` in ButtonLink handle PR
-.anchor-link:not(:global(.btn)) {
+a:where(.anchor-link) {
     color: var(--link-color);
     text-decoration: none;
 

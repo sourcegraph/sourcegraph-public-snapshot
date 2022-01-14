@@ -5,7 +5,7 @@ import FolderOutlineIcon from 'mdi-react/FolderOutlineIcon'
 import React from 'react'
 
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link } from '@sourcegraph/wildcard'
 

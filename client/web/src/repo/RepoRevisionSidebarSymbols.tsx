@@ -5,7 +5,7 @@ import * as React from 'react'
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'

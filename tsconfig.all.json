@@ -6,6 +6,7 @@
     { "path": "client/common" },
     { "path": "client/shared" },
     { "path": "client/shared/src/testing" },
+    { "path": "client/http-client" },
     { "path": "client/branded" },
     { "path": "client/web" },
     { "path": "client/wildcard" },

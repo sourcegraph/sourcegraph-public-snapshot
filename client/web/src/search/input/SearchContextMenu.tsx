@@ -14,7 +14,7 @@ import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
 import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Badge, Button, Link } from '@sourcegraph/wildcard'
 

@@ -10,7 +10,7 @@ import {
     SearchContextEditInput,
     SearchContextRepositoryRevisionsInput,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'

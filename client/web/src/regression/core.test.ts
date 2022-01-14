@@ -5,7 +5,7 @@ import expect from 'expect'
 import { describe, before, beforeEach, after, afterEach, test } from 'mocha'
 import { map } from 'rxjs/operators'
 
-import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 // import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'

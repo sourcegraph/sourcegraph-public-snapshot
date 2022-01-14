@@ -2,7 +2,7 @@ import { cloneDeep, isFunction } from 'lodash'
 
 import { createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 
-import * as GQL from '../graphql/schema'
+import * as GQL from '../schema'
 import { parseJSONCOrError } from '../util/jsonc'
 
 /**
