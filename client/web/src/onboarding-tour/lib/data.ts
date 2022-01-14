@@ -84,7 +84,7 @@ export const ONBOARDING_STEP_ITEMS: Omit<OnboardingTourStepItem, 'isCompleted'>[
     {
         id: 'TourEditorExtensions',
         group: TOOLS,
-        title: 'IDE extentions',
+        title: 'IDE extensions',
         to: 'https://docs.sourcegraph.com/integration/editor',
     },
     {
