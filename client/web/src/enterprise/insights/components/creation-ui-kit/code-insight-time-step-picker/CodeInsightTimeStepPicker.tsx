@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { ChangeEvent, FocusEventHandler, forwardRef } from 'react'
+import React, { ChangeEvent, FocusEventHandler, forwardRef, ReactNode } from 'react'
 
 import { InsightStep } from '../../../pages/insights/creation/search-insight/types'
 import { FormGroup } from '../../form/form-group/FormGroup'
@@ -10,6 +10,7 @@ import styles from './CodeInsightTimeStepPicker.module.scss'
 
 interface CodeInsightTimeStepPickerProps {
     value: string | number
+    numberOfPoints: number
     name?: string
     valid?: boolean
     disabled?: boolean
@@ -34,6 +35,7 @@ export const CodeInsightTimeStepPicker = forwardRef<HTMLInputElement, CodeInsigh
             name,
             value,
             stepType,
+            numberOfPoints,
             onChange,
             onStepTypeChange,
             onBlur,
@@ -44,7 +46,7 @@ export const CodeInsightTimeStepPicker = forwardRef<HTMLInputElement, CodeInsigh
             <FormGroup
                 name="insight step group"
                 title="Granularity: distance between data points"
-                description="The prototype supports timeframe up to 7 datapoints (for example: 2 weeks x 7 = 14 weeks timeframe)"
+                description={getDescriptionText({ stepValue: +value, stepType, numberOfPoints })}
                 error={error}
                 className="mt-4"
                 labelClassName={styles.groupLabel}
@@ -116,3 +118,37 @@ export const CodeInsightTimeStepPicker = forwardRef<HTMLInputElement, CodeInsigh
         )
     }
 )
+
+interface DescriptionTextOptions {
+    numberOfPoints: number
+    stepType: InsightStep
+    stepValue: number
+}
+
+function getDescriptionText(options: DescriptionTextOptions): ReactNode {
+    const { stepType, stepValue, numberOfPoints } = options
+    // Remove s at the end of stepType value, in the singular. We need to do this
+    // because Intl accepts only singular value of units.
+    const unit = stepType.slice(0, -1)
+
+    const pastUnits = (stepValue * numberOfPoints - 1).toLocaleString('en-GB', {
+        unit,
+        style: 'unit',
+        unitDisplay: 'long',
+    })
+
+    const everyUnit = stepValue.toLocaleString('en-GB', {
+        unit,
+        style: 'unit',
+        unitDisplay: 'long',
+    })
+
+    const everyUnitText = stepValue < 2 ? everyUnit.slice(2) : everyUnit
+
+    return (
+        <span>
+            The prototype supports timeframe up to {numberOfPoints} datapoints: past <b>{pastUnits} of data</b>, one
+            datapoint every {everyUnitText}.
+        </span>
+    )
+}
