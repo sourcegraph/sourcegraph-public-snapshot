@@ -67,10 +67,6 @@ func TestIndex(t *testing.T) {
 		t.Fatalf("🚨 sql.Open: %s", err)
 	}
 
-	err = CreateTables(db)
-	if err != nil {
-		t.Fatalf("🚨 NewPostgresDB: %s", err)
-	}
 	defer db.Close()
 	parser, err := NewCtags()
 	if err != nil {

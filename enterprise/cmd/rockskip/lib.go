@@ -472,54 +472,6 @@ func (git SubprocessGit) CatFile(commit string, path string) ([]byte, error) {
 	return fileContents, nil
 }
 
-func CreateTables(db Queryable) error {
-	_, err := db.Exec("DROP TABLE IF EXISTS rockskip_ancestry")
-	if err != nil {
-		return fmt.Errorf("dropping rockskip_ancestry: %s", err)
-	}
-
-	_, err = db.Exec("DROP TABLE IF EXISTS rockskip_blobs")
-	if err != nil {
-		return fmt.Errorf("dropping rockskip_blobs: %s", err)
-	}
-
-	_, err = db.Exec(`
-		CREATE TABLE rockskip_ancestry (
-			id       VARCHAR(40) PRIMARY KEY,
-			height   INTEGER     NOT NULL,
-			ancestor VARCHAR(40) NOT NULL
-		)`)
-	if err != nil {
-		return fmt.Errorf("creating rockskip_ancestry: %s", err)
-	}
-
-	_, err = db.Exec(`
-		CREATE TABLE rockskip_blobs (
-			id           SERIAL        PRIMARY KEY,
-			commit       VARCHAR(40)   NOT NULL,
-			path         TEXT          NOT NULL,
-			added        VARCHAR(40)[] NOT NULL,
-			deleted      VARCHAR(40)[] NOT NULL,
-			symbol_names TEXT[]        NOT NULL,
-			symbol_data  JSONB         NOT NULL
-		)`)
-	if err != nil {
-		return fmt.Errorf("creating rockskip_blobs: %s", err)
-	}
-
-	_, err = db.Exec("CREATE INDEX rockskip_blobs_path ON rockskip_blobs(path)")
-	if err != nil {
-		return fmt.Errorf("creating index rockskip_blobs_path: %s", err)
-	}
-
-	_, err = db.Exec("CREATE INDEX rockskip_blobs_added_deleted_symbols ON rockskip_blobs USING GIN (added, deleted, symbol_names)")
-	if err != nil {
-		return fmt.Errorf("creating index rockskip_blobs_added_deleted_symbols: %s", err)
-	}
-
-	return nil
-}
-
 func GetCommit(db Queryable, givenCommit string) (ancestor string, height int, present bool, err error) {
 	err = db.QueryRow(`
 		SELECT ancestor, height

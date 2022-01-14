@@ -30,10 +30,6 @@ func MakeRockskipSearchFunc(operations *operations, ctagsConfig types.CtagsConfi
 	parser := mustCreateCtagsParser(ctagsConfig)
 
 	db := mustInitializeCodeIntelDB()
-	err := rockskip.CreateTables(db)
-	if err != nil {
-		return nil, errors.Wrap(err, "rockskip.NewPostgresDB")
-	}
 
 	return func(ctx context.Context, args types.SearchArgs) (results *[]result.Symbol, err error) {
 		// _, _, endObservation := operations.search.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
