@@ -18,6 +18,8 @@
     { "path": "client/extension-api" },
     { "path": "client/extension-api-types" },
     { "path": "client/storybook" },
+    { "path": "client/search" },
+    { "path": "client/search-ui" },
     { "path": "dev/release" },
     { "path": "schema" },
     { "path": "client/codeintellify" },

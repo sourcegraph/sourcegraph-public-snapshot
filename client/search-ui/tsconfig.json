@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "sourceRoot": "src",
+    "rootDir": ".",
+    "outDir": "./out",
+    "baseUrl": "./src",
+    "jsx": "react",
+  },
+  "include": ["./src/**/*", "./*.ts"],
+  "references": [
+    { "path": "../search" },
+    { "path": "../shared" },
+    { "path": "../branded" },
+    { "path": "../http-client" },
+    { "path": "../common" },
+  ],
+}
