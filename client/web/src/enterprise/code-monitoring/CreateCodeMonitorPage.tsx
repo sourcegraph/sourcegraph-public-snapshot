@@ -57,12 +57,15 @@ const AuthenticatedCreateCodeMonitorPage: React.FunctionComponent<CreateCodeMoni
                 trigger: { query: codeMonitor.trigger.query },
 
                 actions: codeMonitor.actions.nodes.map(action => ({
-                    email: {
-                        enabled: action.enabled,
-                        priority: MonitorEmailPriority.NORMAL,
-                        recipients: [authenticatedUser.id],
-                        header: '',
-                    },
+                    email:
+                        action.__typename === 'MonitorEmail'
+                            ? {
+                                  enabled: action.enabled,
+                                  priority: MonitorEmailPriority.NORMAL,
+                                  recipients: [authenticatedUser.id],
+                                  header: '',
+                              }
+                            : undefined,
                 })),
             })
         },
