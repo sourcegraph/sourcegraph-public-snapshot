@@ -6,27 +6,23 @@
  *  */
 import * as pb_1 from "google-protobuf";
 export namespace lib.codeintel.lsif_typed {
-    export class Index extends pb_1.Message {
+    export class PackedIndex extends pb_1.Message {
         constructor(data?: any[] | {
             metadata?: Metadata;
-            document?: Document[];
-            package?: Package[];
-            external_symbols?: Symbol[];
+            documents?: Document[];
+            symbol_information?: SymbolInformation[];
         }) {
             super();
-            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [2, 3, 4], []);
+            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [2, 3], []);
             if (!Array.isArray(data) && typeof data == "object") {
                 if ("metadata" in data && data.metadata != undefined) {
                     this.metadata = data.metadata;
                 }
-                if ("document" in data && data.document != undefined) {
-                    this.document = data.document;
+                if ("documents" in data && data.documents != undefined) {
+                    this.documents = data.documents;
                 }
-                if ("package" in data && data.package != undefined) {
-                    this.package = data.package;
-                }
-                if ("external_symbols" in data && data.external_symbols != undefined) {
-                    this.external_symbols = data.external_symbols;
+                if ("symbol_information" in data && data.symbol_information != undefined) {
+                    this.symbol_information = data.symbol_information;
                 }
             }
         }
@@ -36,63 +32,180 @@ export namespace lib.codeintel.lsif_typed {
         set metadata(value: Metadata) {
             pb_1.Message.setWrapperField(this, 1, value);
         }
-        get document() {
+        get documents() {
             return pb_1.Message.getRepeatedWrapperField(this, Document, 2) as Document[];
         }
-        set document(value: Document[]) {
+        set documents(value: Document[]) {
             pb_1.Message.setRepeatedWrapperField(this, 2, value);
         }
-        get package() {
-            return pb_1.Message.getRepeatedWrapperField(this, Package, 3) as Package[];
+        get symbol_information() {
+            return pb_1.Message.getRepeatedWrapperField(this, SymbolInformation, 3) as SymbolInformation[];
         }
-        set package(value: Package[]) {
+        set symbol_information(value: SymbolInformation[]) {
             pb_1.Message.setRepeatedWrapperField(this, 3, value);
-        }
-        get external_symbols() {
-            return pb_1.Message.getRepeatedWrapperField(this, Symbol, 4) as Symbol[];
-        }
-        set external_symbols(value: Symbol[]) {
-            pb_1.Message.setRepeatedWrapperField(this, 4, value);
         }
         static fromObject(data: {
             metadata?: ReturnType<typeof Metadata.prototype.toObject>;
-            document?: ReturnType<typeof Document.prototype.toObject>[];
-            package?: ReturnType<typeof Package.prototype.toObject>[];
-            external_symbols?: ReturnType<typeof Symbol.prototype.toObject>[];
+            documents?: ReturnType<typeof Document.prototype.toObject>[];
+            symbol_information?: ReturnType<typeof SymbolInformation.prototype.toObject>[];
         }) {
-            const message = new Index({});
+            const message = new PackedIndex({});
             if (data.metadata != null) {
                 message.metadata = Metadata.fromObject(data.metadata);
             }
-            if (data.document != null) {
-                message.document = data.document.map(item => Document.fromObject(item));
+            if (data.documents != null) {
+                message.documents = data.documents.map(item => Document.fromObject(item));
             }
-            if (data.package != null) {
-                message.package = data.package.map(item => Package.fromObject(item));
-            }
-            if (data.external_symbols != null) {
-                message.external_symbols = data.external_symbols.map(item => Symbol.fromObject(item));
+            if (data.symbol_information != null) {
+                message.symbol_information = data.symbol_information.map(item => SymbolInformation.fromObject(item));
             }
             return message;
         }
         toObject() {
             const data: {
                 metadata?: ReturnType<typeof Metadata.prototype.toObject>;
-                document?: ReturnType<typeof Document.prototype.toObject>[];
-                package?: ReturnType<typeof Package.prototype.toObject>[];
-                external_symbols?: ReturnType<typeof Symbol.prototype.toObject>[];
+                documents?: ReturnType<typeof Document.prototype.toObject>[];
+                symbol_information?: ReturnType<typeof SymbolInformation.prototype.toObject>[];
+            } = {};
+            if (this.metadata != null) {
+                data.metadata = this.metadata.toObject();
+            }
+            if (this.documents != null) {
+                data.documents = this.documents.map((item: Document) => item.toObject());
+            }
+            if (this.symbol_information != null) {
+                data.symbol_information = this.symbol_information.map((item: SymbolInformation) => item.toObject());
+            }
+            return data;
+        }
+        serialize(): Uint8Array;
+        serialize(w: pb_1.BinaryWriter): void;
+        serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
+            const writer = w || new pb_1.BinaryWriter();
+            if (this.metadata !== undefined)
+                writer.writeMessage(1, this.metadata, () => this.metadata.serialize(writer));
+            if (this.documents !== undefined)
+                writer.writeRepeatedMessage(2, this.documents, (item: Document) => item.serialize(writer));
+            if (this.symbol_information !== undefined)
+                writer.writeRepeatedMessage(3, this.symbol_information, (item: SymbolInformation) => item.serialize(writer));
+            if (!w)
+                return writer.getResultBuffer();
+        }
+        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): PackedIndex {
+            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new PackedIndex();
+            while (reader.nextField()) {
+                if (reader.isEndGroup())
+                    break;
+                switch (reader.getFieldNumber()) {
+                    case 1:
+                        reader.readMessage(message.metadata, () => message.metadata = Metadata.deserialize(reader));
+                        break;
+                    case 2:
+                        reader.readMessage(message.documents, () => pb_1.Message.addToRepeatedWrapperField(message, 2, Document.deserialize(reader), Document));
+                        break;
+                    case 3:
+                        reader.readMessage(message.symbol_information, () => pb_1.Message.addToRepeatedWrapperField(message, 3, SymbolInformation.deserialize(reader), SymbolInformation));
+                        break;
+                    default: reader.skipField();
+                }
+            }
+            return message;
+        }
+        serializeBinary(): Uint8Array {
+            return this.serialize();
+        }
+        static deserializeBinary(bytes: Uint8Array): PackedIndex {
+            return PackedIndex.deserialize(bytes);
+        }
+    }
+    export class IndexMessage extends pb_1.Message {
+        constructor(data?: any[] | ({} & (({
+            metadata?: Metadata;
+            document?: never;
+            symbol_information?: never;
+        } | {
+            metadata?: never;
+            document?: Document;
+            symbol_information?: never;
+        } | {
+            metadata?: never;
+            document?: never;
+            symbol_information?: SymbolInformation;
+        })))) {
+            super();
+            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], [[1, 2, 3]]);
+            if (!Array.isArray(data) && typeof data == "object") {
+                if ("metadata" in data && data.metadata != undefined) {
+                    this.metadata = data.metadata;
+                }
+                if ("document" in data && data.document != undefined) {
+                    this.document = data.document;
+                }
+                if ("symbol_information" in data && data.symbol_information != undefined) {
+                    this.symbol_information = data.symbol_information;
+                }
+            }
+        }
+        get metadata() {
+            return pb_1.Message.getWrapperField(this, Metadata, 1) as Metadata;
+        }
+        set metadata(value: Metadata) {
+            pb_1.Message.setOneofWrapperField(this, 1, [1, 2, 3], value);
+        }
+        get document() {
+            return pb_1.Message.getWrapperField(this, Document, 2) as Document;
+        }
+        set document(value: Document) {
+            pb_1.Message.setOneofWrapperField(this, 2, [1, 2, 3], value);
+        }
+        get symbol_information() {
+            return pb_1.Message.getWrapperField(this, SymbolInformation, 3) as SymbolInformation;
+        }
+        set symbol_information(value: SymbolInformation) {
+            pb_1.Message.setOneofWrapperField(this, 3, [1, 2, 3], value);
+        }
+        get value() {
+            const cases: {
+                [index: number]: "none" | "metadata" | "document" | "symbol_information";
+            } = {
+                0: "none",
+                1: "metadata",
+                2: "document",
+                3: "symbol_information"
+            };
+            return cases[pb_1.Message.computeOneofCase(this, [1, 2, 3])];
+        }
+        static fromObject(data: {
+            metadata?: ReturnType<typeof Metadata.prototype.toObject>;
+            document?: ReturnType<typeof Document.prototype.toObject>;
+            symbol_information?: ReturnType<typeof SymbolInformation.prototype.toObject>;
+        }) {
+            const message = new IndexMessage({});
+            if (data.metadata != null) {
+                message.metadata = Metadata.fromObject(data.metadata);
+            }
+            if (data.document != null) {
+                message.document = Document.fromObject(data.document);
+            }
+            if (data.symbol_information != null) {
+                message.symbol_information = SymbolInformation.fromObject(data.symbol_information);
+            }
+            return message;
+        }
+        toObject() {
+            const data: {
+                metadata?: ReturnType<typeof Metadata.prototype.toObject>;
+                document?: ReturnType<typeof Document.prototype.toObject>;
+                symbol_information?: ReturnType<typeof SymbolInformation.prototype.toObject>;
             } = {};
             if (this.metadata != null) {
                 data.metadata = this.metadata.toObject();
             }
             if (this.document != null) {
-                data.document = this.document.map((item: Document) => item.toObject());
+                data.document = this.document.toObject();
             }
-            if (this.package != null) {
-                data.package = this.package.map((item: Package) => item.toObject());
-            }
-            if (this.external_symbols != null) {
-                data.external_symbols = this.external_symbols.map((item: Symbol) => item.toObject());
+            if (this.symbol_information != null) {
+                data.symbol_information = this.symbol_information.toObject();
             }
             return data;
         }
@@ -103,16 +216,14 @@ export namespace lib.codeintel.lsif_typed {
             if (this.metadata !== undefined)
                 writer.writeMessage(1, this.metadata, () => this.metadata.serialize(writer));
             if (this.document !== undefined)
-                writer.writeRepeatedMessage(2, this.document, (item: Document) => item.serialize(writer));
-            if (this.package !== undefined)
-                writer.writeRepeatedMessage(3, this.package, (item: Package) => item.serialize(writer));
-            if (this.external_symbols !== undefined)
-                writer.writeRepeatedMessage(4, this.external_symbols, (item: Symbol) => item.serialize(writer));
+                writer.writeMessage(2, this.document, () => this.document.serialize(writer));
+            if (this.symbol_information !== undefined)
+                writer.writeMessage(3, this.symbol_information, () => this.symbol_information.serialize(writer));
             if (!w)
                 return writer.getResultBuffer();
         }
-        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): Index {
-            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new Index();
+        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): IndexMessage {
+            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new IndexMessage();
             while (reader.nextField()) {
                 if (reader.isEndGroup())
                     break;
@@ -121,13 +232,10 @@ export namespace lib.codeintel.lsif_typed {
                         reader.readMessage(message.metadata, () => message.metadata = Metadata.deserialize(reader));
                         break;
                     case 2:
-                        reader.readMessage(message.document, () => pb_1.Message.addToRepeatedWrapperField(message, 2, Document.deserialize(reader), Document));
+                        reader.readMessage(message.document, () => message.document = Document.deserialize(reader));
                         break;
                     case 3:
-                        reader.readMessage(message.package, () => pb_1.Message.addToRepeatedWrapperField(message, 3, Package.deserialize(reader), Package));
-                        break;
-                    case 4:
-                        reader.readMessage(message.external_symbols, () => pb_1.Message.addToRepeatedWrapperField(message, 4, Symbol.deserialize(reader), Symbol));
+                        reader.readMessage(message.symbol_information, () => message.symbol_information = SymbolInformation.deserialize(reader));
                         break;
                     default: reader.skipField();
                 }
@@ -137,79 +245,97 @@ export namespace lib.codeintel.lsif_typed {
         serializeBinary(): Uint8Array {
             return this.serialize();
         }
-        static deserializeBinary(bytes: Uint8Array): Index {
-            return Index.deserialize(bytes);
+        static deserializeBinary(bytes: Uint8Array): IndexMessage {
+            return IndexMessage.deserialize(bytes);
         }
     }
     export class Metadata extends pb_1.Message {
         constructor(data?: any[] | {
-            tool_info?: ToolInfo;
+            protocol_version?: Metadata.ProtocolVersion;
+            tool_info?: Metadata.ToolInfo;
             project_root?: string;
-            position_encoding?: Metadata.PositionEncoding;
+            text_document_encoding?: Metadata.Encoding;
         }) {
             super();
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], []);
             if (!Array.isArray(data) && typeof data == "object") {
+                if ("protocol_version" in data && data.protocol_version != undefined) {
+                    this.protocol_version = data.protocol_version;
+                }
                 if ("tool_info" in data && data.tool_info != undefined) {
                     this.tool_info = data.tool_info;
                 }
                 if ("project_root" in data && data.project_root != undefined) {
                     this.project_root = data.project_root;
                 }
-                if ("position_encoding" in data && data.position_encoding != undefined) {
-                    this.position_encoding = data.position_encoding;
+                if ("text_document_encoding" in data && data.text_document_encoding != undefined) {
+                    this.text_document_encoding = data.text_document_encoding;
                 }
             }
         }
-        get tool_info() {
-            return pb_1.Message.getWrapperField(this, ToolInfo, 1) as ToolInfo;
+        get protocol_version() {
+            return pb_1.Message.getField(this, 1) as Metadata.ProtocolVersion;
         }
-        set tool_info(value: ToolInfo) {
-            pb_1.Message.setWrapperField(this, 1, value);
+        set protocol_version(value: Metadata.ProtocolVersion) {
+            pb_1.Message.setField(this, 1, value);
+        }
+        get tool_info() {
+            return pb_1.Message.getWrapperField(this, Metadata.ToolInfo, 2) as Metadata.ToolInfo;
+        }
+        set tool_info(value: Metadata.ToolInfo) {
+            pb_1.Message.setWrapperField(this, 2, value);
         }
         get project_root() {
-            return pb_1.Message.getField(this, 2) as string;
+            return pb_1.Message.getField(this, 3) as string;
         }
         set project_root(value: string) {
-            pb_1.Message.setField(this, 2, value);
-        }
-        get position_encoding() {
-            return pb_1.Message.getField(this, 3) as Metadata.PositionEncoding;
-        }
-        set position_encoding(value: Metadata.PositionEncoding) {
             pb_1.Message.setField(this, 3, value);
         }
+        get text_document_encoding() {
+            return pb_1.Message.getField(this, 4) as Metadata.Encoding;
+        }
+        set text_document_encoding(value: Metadata.Encoding) {
+            pb_1.Message.setField(this, 4, value);
+        }
         static fromObject(data: {
-            tool_info?: ReturnType<typeof ToolInfo.prototype.toObject>;
+            protocol_version?: Metadata.ProtocolVersion;
+            tool_info?: ReturnType<typeof Metadata.ToolInfo.prototype.toObject>;
             project_root?: string;
-            position_encoding?: Metadata.PositionEncoding;
+            text_document_encoding?: Metadata.Encoding;
         }) {
             const message = new Metadata({});
+            if (data.protocol_version != null) {
+                message.protocol_version = data.protocol_version;
+            }
             if (data.tool_info != null) {
-                message.tool_info = ToolInfo.fromObject(data.tool_info);
+                message.tool_info = Metadata.ToolInfo.fromObject(data.tool_info);
             }
             if (data.project_root != null) {
                 message.project_root = data.project_root;
             }
-            if (data.position_encoding != null) {
-                message.position_encoding = data.position_encoding;
+            if (data.text_document_encoding != null) {
+                message.text_document_encoding = data.text_document_encoding;
             }
             return message;
         }
         toObject() {
             const data: {
-                tool_info?: ReturnType<typeof ToolInfo.prototype.toObject>;
+                protocol_version?: Metadata.ProtocolVersion;
+                tool_info?: ReturnType<typeof Metadata.ToolInfo.prototype.toObject>;
                 project_root?: string;
-                position_encoding?: Metadata.PositionEncoding;
+                text_document_encoding?: Metadata.Encoding;
             } = {};
+            if (this.protocol_version != null) {
+                data.protocol_version = this.protocol_version;
+            }
             if (this.tool_info != null) {
                 data.tool_info = this.tool_info.toObject();
             }
             if (this.project_root != null) {
                 data.project_root = this.project_root;
             }
-            if (this.position_encoding != null) {
-                data.position_encoding = this.position_encoding;
+            if (this.text_document_encoding != null) {
+                data.text_document_encoding = this.text_document_encoding;
             }
             return data;
         }
@@ -217,12 +343,14 @@ export namespace lib.codeintel.lsif_typed {
         serialize(w: pb_1.BinaryWriter): void;
         serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
             const writer = w || new pb_1.BinaryWriter();
+            if (this.protocol_version !== undefined)
+                writer.writeEnum(1, this.protocol_version);
             if (this.tool_info !== undefined)
-                writer.writeMessage(1, this.tool_info, () => this.tool_info.serialize(writer));
+                writer.writeMessage(2, this.tool_info, () => this.tool_info.serialize(writer));
             if (typeof this.project_root === "string" && this.project_root.length)
-                writer.writeString(2, this.project_root);
-            if (this.position_encoding !== undefined)
-                writer.writeEnum(3, this.position_encoding);
+                writer.writeString(3, this.project_root);
+            if (this.text_document_encoding !== undefined)
+                writer.writeEnum(4, this.text_document_encoding);
             if (!w)
                 return writer.getResultBuffer();
         }
@@ -233,13 +361,16 @@ export namespace lib.codeintel.lsif_typed {
                     break;
                 switch (reader.getFieldNumber()) {
                     case 1:
-                        reader.readMessage(message.tool_info, () => message.tool_info = ToolInfo.deserialize(reader));
+                        message.protocol_version = reader.readEnum();
                         break;
                     case 2:
-                        message.project_root = reader.readString();
+                        reader.readMessage(message.tool_info, () => message.tool_info = Metadata.ToolInfo.deserialize(reader));
                         break;
                     case 3:
-                        message.position_encoding = reader.readEnum();
+                        message.project_root = reader.readString();
+                        break;
+                    case 4:
+                        message.text_document_encoding = reader.readEnum();
                         break;
                     default: reader.skipField();
                 }
@@ -254,118 +385,140 @@ export namespace lib.codeintel.lsif_typed {
         }
     }
     export namespace Metadata {
-        export enum PositionEncoding {
-            POSITION_ENCODING_UNSPECIFIED = 0,
-            POSITION_ENCODING_UTF8 = 1,
-            POSITION_ENCODING_UTF16 = 2
+        export enum ProtocolVersion {
+            UnspecifiedProtocolVersion = 0
         }
-    }
-    export class ToolInfo extends pb_1.Message {
-        constructor(data?: any[] | {
-            name?: string;
-            version?: string;
-        }) {
-            super();
-            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], []);
-            if (!Array.isArray(data) && typeof data == "object") {
-                if ("name" in data && data.name != undefined) {
-                    this.name = data.name;
-                }
-                if ("version" in data && data.version != undefined) {
-                    this.version = data.version;
-                }
-            }
+        export enum Encoding {
+            UnspecifiedEncoding = 0,
+            UTF8 = 1,
+            UTF16 = 2
         }
-        get name() {
-            return pb_1.Message.getField(this, 1) as string;
-        }
-        set name(value: string) {
-            pb_1.Message.setField(this, 1, value);
-        }
-        get version() {
-            return pb_1.Message.getField(this, 2) as string;
-        }
-        set version(value: string) {
-            pb_1.Message.setField(this, 2, value);
-        }
-        static fromObject(data: {
-            name?: string;
-            version?: string;
-        }) {
-            const message = new ToolInfo({});
-            if (data.name != null) {
-                message.name = data.name;
-            }
-            if (data.version != null) {
-                message.version = data.version;
-            }
-            return message;
-        }
-        toObject() {
-            const data: {
+        export class ToolInfo extends pb_1.Message {
+            constructor(data?: any[] | {
                 name?: string;
                 version?: string;
-            } = {};
-            if (this.name != null) {
-                data.name = this.name;
-            }
-            if (this.version != null) {
-                data.version = this.version;
-            }
-            return data;
-        }
-        serialize(): Uint8Array;
-        serialize(w: pb_1.BinaryWriter): void;
-        serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
-            const writer = w || new pb_1.BinaryWriter();
-            if (typeof this.name === "string" && this.name.length)
-                writer.writeString(1, this.name);
-            if (typeof this.version === "string" && this.version.length)
-                writer.writeString(2, this.version);
-            if (!w)
-                return writer.getResultBuffer();
-        }
-        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): ToolInfo {
-            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new ToolInfo();
-            while (reader.nextField()) {
-                if (reader.isEndGroup())
-                    break;
-                switch (reader.getFieldNumber()) {
-                    case 1:
-                        message.name = reader.readString();
-                        break;
-                    case 2:
-                        message.version = reader.readString();
-                        break;
-                    default: reader.skipField();
+                arguments?: string[];
+            }) {
+                super();
+                pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [3], []);
+                if (!Array.isArray(data) && typeof data == "object") {
+                    if ("name" in data && data.name != undefined) {
+                        this.name = data.name;
+                    }
+                    if ("version" in data && data.version != undefined) {
+                        this.version = data.version;
+                    }
+                    if ("arguments" in data && data.arguments != undefined) {
+                        this.arguments = data.arguments;
+                    }
                 }
             }
-            return message;
-        }
-        serializeBinary(): Uint8Array {
-            return this.serialize();
-        }
-        static deserializeBinary(bytes: Uint8Array): ToolInfo {
-            return ToolInfo.deserialize(bytes);
+            get name() {
+                return pb_1.Message.getField(this, 1) as string;
+            }
+            set name(value: string) {
+                pb_1.Message.setField(this, 1, value);
+            }
+            get version() {
+                return pb_1.Message.getField(this, 2) as string;
+            }
+            set version(value: string) {
+                pb_1.Message.setField(this, 2, value);
+            }
+            get arguments() {
+                return pb_1.Message.getField(this, 3) as string[];
+            }
+            set arguments(value: string[]) {
+                pb_1.Message.setField(this, 3, value);
+            }
+            static fromObject(data: {
+                name?: string;
+                version?: string;
+                arguments?: string[];
+            }) {
+                const message = new ToolInfo({});
+                if (data.name != null) {
+                    message.name = data.name;
+                }
+                if (data.version != null) {
+                    message.version = data.version;
+                }
+                if (data.arguments != null) {
+                    message.arguments = data.arguments;
+                }
+                return message;
+            }
+            toObject() {
+                const data: {
+                    name?: string;
+                    version?: string;
+                    arguments?: string[];
+                } = {};
+                if (this.name != null) {
+                    data.name = this.name;
+                }
+                if (this.version != null) {
+                    data.version = this.version;
+                }
+                if (this.arguments != null) {
+                    data.arguments = this.arguments;
+                }
+                return data;
+            }
+            serialize(): Uint8Array;
+            serialize(w: pb_1.BinaryWriter): void;
+            serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
+                const writer = w || new pb_1.BinaryWriter();
+                if (typeof this.name === "string" && this.name.length)
+                    writer.writeString(1, this.name);
+                if (typeof this.version === "string" && this.version.length)
+                    writer.writeString(2, this.version);
+                if (this.arguments !== undefined)
+                    writer.writeRepeatedString(3, this.arguments);
+                if (!w)
+                    return writer.getResultBuffer();
+            }
+            static deserialize(bytes: Uint8Array | pb_1.BinaryReader): ToolInfo {
+                const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new ToolInfo();
+                while (reader.nextField()) {
+                    if (reader.isEndGroup())
+                        break;
+                    switch (reader.getFieldNumber()) {
+                        case 1:
+                            message.name = reader.readString();
+                            break;
+                        case 2:
+                            message.version = reader.readString();
+                            break;
+                        case 3:
+                            pb_1.Message.addToRepeatedField(message, 3, reader.readString());
+                            break;
+                        default: reader.skipField();
+                    }
+                }
+                return message;
+            }
+            serializeBinary(): Uint8Array {
+                return this.serialize();
+            }
+            static deserializeBinary(bytes: Uint8Array): ToolInfo {
+                return ToolInfo.deserialize(bytes);
+            }
         }
     }
     export class Document extends pb_1.Message {
         constructor(data?: any[] | {
             relative_path?: string;
-            occurrences?: Occurrence[];
-            symbols?: Symbol[];
+            occurrences?: Document.Occurrence[];
         }) {
             super();
-            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [2, 3], []);
+            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [2], []);
             if (!Array.isArray(data) && typeof data == "object") {
                 if ("relative_path" in data && data.relative_path != undefined) {
                     this.relative_path = data.relative_path;
                 }
                 if ("occurrences" in data && data.occurrences != undefined) {
                     this.occurrences = data.occurrences;
-                }
-                if ("symbols" in data && data.symbols != undefined) {
-                    this.symbols = data.symbols;
                 }
             }
         }
@@ -376,48 +529,34 @@ export namespace lib.codeintel.lsif_typed {
             pb_1.Message.setField(this, 1, value);
         }
         get occurrences() {
-            return pb_1.Message.getRepeatedWrapperField(this, Occurrence, 2) as Occurrence[];
+            return pb_1.Message.getRepeatedWrapperField(this, Document.Occurrence, 2) as Document.Occurrence[];
         }
-        set occurrences(value: Occurrence[]) {
+        set occurrences(value: Document.Occurrence[]) {
             pb_1.Message.setRepeatedWrapperField(this, 2, value);
-        }
-        get symbols() {
-            return pb_1.Message.getRepeatedWrapperField(this, Symbol, 3) as Symbol[];
-        }
-        set symbols(value: Symbol[]) {
-            pb_1.Message.setRepeatedWrapperField(this, 3, value);
         }
         static fromObject(data: {
             relative_path?: string;
-            occurrences?: ReturnType<typeof Occurrence.prototype.toObject>[];
-            symbols?: ReturnType<typeof Symbol.prototype.toObject>[];
+            occurrences?: ReturnType<typeof Document.Occurrence.prototype.toObject>[];
         }) {
             const message = new Document({});
             if (data.relative_path != null) {
                 message.relative_path = data.relative_path;
             }
             if (data.occurrences != null) {
-                message.occurrences = data.occurrences.map(item => Occurrence.fromObject(item));
-            }
-            if (data.symbols != null) {
-                message.symbols = data.symbols.map(item => Symbol.fromObject(item));
+                message.occurrences = data.occurrences.map(item => Document.Occurrence.fromObject(item));
             }
             return message;
         }
         toObject() {
             const data: {
                 relative_path?: string;
-                occurrences?: ReturnType<typeof Occurrence.prototype.toObject>[];
-                symbols?: ReturnType<typeof Symbol.prototype.toObject>[];
+                occurrences?: ReturnType<typeof Document.Occurrence.prototype.toObject>[];
             } = {};
             if (this.relative_path != null) {
                 data.relative_path = this.relative_path;
             }
             if (this.occurrences != null) {
-                data.occurrences = this.occurrences.map((item: Occurrence) => item.toObject());
-            }
-            if (this.symbols != null) {
-                data.symbols = this.symbols.map((item: Symbol) => item.toObject());
+                data.occurrences = this.occurrences.map((item: Document.Occurrence) => item.toObject());
             }
             return data;
         }
@@ -428,9 +567,7 @@ export namespace lib.codeintel.lsif_typed {
             if (typeof this.relative_path === "string" && this.relative_path.length)
                 writer.writeString(1, this.relative_path);
             if (this.occurrences !== undefined)
-                writer.writeRepeatedMessage(2, this.occurrences, (item: Occurrence) => item.serialize(writer));
-            if (this.symbols !== undefined)
-                writer.writeRepeatedMessage(3, this.symbols, (item: Symbol) => item.serialize(writer));
+                writer.writeRepeatedMessage(2, this.occurrences, (item: Document.Occurrence) => item.serialize(writer));
             if (!w)
                 return writer.getResultBuffer();
         }
@@ -444,10 +581,7 @@ export namespace lib.codeintel.lsif_typed {
                         message.relative_path = reader.readString();
                         break;
                     case 2:
-                        reader.readMessage(message.occurrences, () => pb_1.Message.addToRepeatedWrapperField(message, 2, Occurrence.deserialize(reader), Occurrence));
-                        break;
-                    case 3:
-                        reader.readMessage(message.symbols, () => pb_1.Message.addToRepeatedWrapperField(message, 3, Symbol.deserialize(reader), Symbol));
+                        reader.readMessage(message.occurrences, () => pb_1.Message.addToRepeatedWrapperField(message, 2, Document.Occurrence.deserialize(reader), Document.Occurrence));
                         break;
                     default: reader.skipField();
                 }
@@ -461,184 +595,279 @@ export namespace lib.codeintel.lsif_typed {
             return Document.deserialize(bytes);
         }
     }
-    export class Package extends pb_1.Message {
-        constructor(data?: any[] | {
-            uri?: string;
-            name?: string;
-            version?: string;
-            manager?: string;
-        }) {
-            super();
-            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], []);
-            if (!Array.isArray(data) && typeof data == "object") {
-                if ("uri" in data && data.uri != undefined) {
-                    this.uri = data.uri;
-                }
-                if ("name" in data && data.name != undefined) {
-                    this.name = data.name;
-                }
-                if ("version" in data && data.version != undefined) {
-                    this.version = data.version;
-                }
-                if ("manager" in data && data.manager != undefined) {
-                    this.manager = data.manager;
+    export namespace Document {
+        export class Occurrence extends pb_1.Message {
+            constructor(data?: any[] | {
+                range?: number[];
+                relatives?: Document.Occurrence.SymbolRelation[];
+                highlight_class?: Document.Occurrence.HighlightClass;
+            }) {
+                super();
+                pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [1, 2], []);
+                if (!Array.isArray(data) && typeof data == "object") {
+                    if ("range" in data && data.range != undefined) {
+                        this.range = data.range;
+                    }
+                    if ("relatives" in data && data.relatives != undefined) {
+                        this.relatives = data.relatives;
+                    }
+                    if ("highlight_class" in data && data.highlight_class != undefined) {
+                        this.highlight_class = data.highlight_class;
+                    }
                 }
             }
-        }
-        get uri() {
-            return pb_1.Message.getField(this, 1) as string;
-        }
-        set uri(value: string) {
-            pb_1.Message.setField(this, 1, value);
-        }
-        get name() {
-            return pb_1.Message.getField(this, 2) as string;
-        }
-        set name(value: string) {
-            pb_1.Message.setField(this, 2, value);
-        }
-        get version() {
-            return pb_1.Message.getField(this, 3) as string;
-        }
-        set version(value: string) {
-            pb_1.Message.setField(this, 3, value);
-        }
-        get manager() {
-            return pb_1.Message.getField(this, 4) as string;
-        }
-        set manager(value: string) {
-            pb_1.Message.setField(this, 4, value);
-        }
-        static fromObject(data: {
-            uri?: string;
-            name?: string;
-            version?: string;
-            manager?: string;
-        }) {
-            const message = new Package({});
-            if (data.uri != null) {
-                message.uri = data.uri;
+            get range() {
+                return pb_1.Message.getField(this, 1) as number[];
             }
-            if (data.name != null) {
-                message.name = data.name;
+            set range(value: number[]) {
+                pb_1.Message.setField(this, 1, value);
             }
-            if (data.version != null) {
-                message.version = data.version;
+            get relatives() {
+                return pb_1.Message.getRepeatedWrapperField(this, Document.Occurrence.SymbolRelation, 2) as Document.Occurrence.SymbolRelation[];
             }
-            if (data.manager != null) {
-                message.manager = data.manager;
+            set relatives(value: Document.Occurrence.SymbolRelation[]) {
+                pb_1.Message.setRepeatedWrapperField(this, 2, value);
             }
-            return message;
-        }
-        toObject() {
-            const data: {
-                uri?: string;
-                name?: string;
-                version?: string;
-                manager?: string;
-            } = {};
-            if (this.uri != null) {
-                data.uri = this.uri;
+            get highlight_class() {
+                return pb_1.Message.getField(this, 3) as Document.Occurrence.HighlightClass;
             }
-            if (this.name != null) {
-                data.name = this.name;
+            set highlight_class(value: Document.Occurrence.HighlightClass) {
+                pb_1.Message.setField(this, 3, value);
             }
-            if (this.version != null) {
-                data.version = this.version;
+            static fromObject(data: {
+                range?: number[];
+                relatives?: ReturnType<typeof Document.Occurrence.SymbolRelation.prototype.toObject>[];
+                highlight_class?: Document.Occurrence.HighlightClass;
+            }) {
+                const message = new Occurrence({});
+                if (data.range != null) {
+                    message.range = data.range;
+                }
+                if (data.relatives != null) {
+                    message.relatives = data.relatives.map(item => Document.Occurrence.SymbolRelation.fromObject(item));
+                }
+                if (data.highlight_class != null) {
+                    message.highlight_class = data.highlight_class;
+                }
+                return message;
             }
-            if (this.manager != null) {
-                data.manager = this.manager;
+            toObject() {
+                const data: {
+                    range?: number[];
+                    relatives?: ReturnType<typeof Document.Occurrence.SymbolRelation.prototype.toObject>[];
+                    highlight_class?: Document.Occurrence.HighlightClass;
+                } = {};
+                if (this.range != null) {
+                    data.range = this.range;
+                }
+                if (this.relatives != null) {
+                    data.relatives = this.relatives.map((item: Document.Occurrence.SymbolRelation) => item.toObject());
+                }
+                if (this.highlight_class != null) {
+                    data.highlight_class = this.highlight_class;
+                }
+                return data;
             }
-            return data;
-        }
-        serialize(): Uint8Array;
-        serialize(w: pb_1.BinaryWriter): void;
-        serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
-            const writer = w || new pb_1.BinaryWriter();
-            if (typeof this.uri === "string" && this.uri.length)
-                writer.writeString(1, this.uri);
-            if (typeof this.name === "string" && this.name.length)
-                writer.writeString(2, this.name);
-            if (typeof this.version === "string" && this.version.length)
-                writer.writeString(3, this.version);
-            if (typeof this.manager === "string" && this.manager.length)
-                writer.writeString(4, this.manager);
-            if (!w)
-                return writer.getResultBuffer();
-        }
-        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): Package {
-            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new Package();
-            while (reader.nextField()) {
-                if (reader.isEndGroup())
-                    break;
-                switch (reader.getFieldNumber()) {
-                    case 1:
-                        message.uri = reader.readString();
+            serialize(): Uint8Array;
+            serialize(w: pb_1.BinaryWriter): void;
+            serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
+                const writer = w || new pb_1.BinaryWriter();
+                if (this.range !== undefined)
+                    writer.writePackedUint32(1, this.range);
+                if (this.relatives !== undefined)
+                    writer.writeRepeatedMessage(2, this.relatives, (item: Document.Occurrence.SymbolRelation) => item.serialize(writer));
+                if (this.highlight_class !== undefined)
+                    writer.writeEnum(3, this.highlight_class);
+                if (!w)
+                    return writer.getResultBuffer();
+            }
+            static deserialize(bytes: Uint8Array | pb_1.BinaryReader): Occurrence {
+                const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new Occurrence();
+                while (reader.nextField()) {
+                    if (reader.isEndGroup())
                         break;
-                    case 2:
-                        message.name = reader.readString();
-                        break;
-                    case 3:
-                        message.version = reader.readString();
-                        break;
-                    case 4:
-                        message.manager = reader.readString();
-                        break;
-                    default: reader.skipField();
+                    switch (reader.getFieldNumber()) {
+                        case 1:
+                            message.range = reader.readPackedUint32();
+                            break;
+                        case 2:
+                            reader.readMessage(message.relatives, () => pb_1.Message.addToRepeatedWrapperField(message, 2, Document.Occurrence.SymbolRelation.deserialize(reader), Document.Occurrence.SymbolRelation));
+                            break;
+                        case 3:
+                            message.highlight_class = reader.readEnum();
+                            break;
+                        default: reader.skipField();
+                    }
+                }
+                return message;
+            }
+            serializeBinary(): Uint8Array {
+                return this.serialize();
+            }
+            static deserializeBinary(bytes: Uint8Array): Occurrence {
+                return Occurrence.deserialize(bytes);
+            }
+        }
+        export namespace Occurrence {
+            export enum HighlightClass {
+                UnspecifiedHighlightClass = 0
+            }
+            export class SymbolRelation extends pb_1.Message {
+                constructor(data?: any[] | {
+                    symbol?: string;
+                    relationship_type?: Document.Occurrence.SymbolRelation.RelationshipType;
+                    override_documentation?: string[];
+                }) {
+                    super();
+                    pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [3], []);
+                    if (!Array.isArray(data) && typeof data == "object") {
+                        if ("symbol" in data && data.symbol != undefined) {
+                            this.symbol = data.symbol;
+                        }
+                        if ("relationship_type" in data && data.relationship_type != undefined) {
+                            this.relationship_type = data.relationship_type;
+                        }
+                        if ("override_documentation" in data && data.override_documentation != undefined) {
+                            this.override_documentation = data.override_documentation;
+                        }
+                    }
+                }
+                get symbol() {
+                    return pb_1.Message.getField(this, 1) as string;
+                }
+                set symbol(value: string) {
+                    pb_1.Message.setField(this, 1, value);
+                }
+                get relationship_type() {
+                    return pb_1.Message.getField(this, 2) as Document.Occurrence.SymbolRelation.RelationshipType;
+                }
+                set relationship_type(value: Document.Occurrence.SymbolRelation.RelationshipType) {
+                    pb_1.Message.setField(this, 2, value);
+                }
+                get override_documentation() {
+                    return pb_1.Message.getField(this, 3) as string[];
+                }
+                set override_documentation(value: string[]) {
+                    pb_1.Message.setField(this, 3, value);
+                }
+                static fromObject(data: {
+                    symbol?: string;
+                    relationship_type?: Document.Occurrence.SymbolRelation.RelationshipType;
+                    override_documentation?: string[];
+                }) {
+                    const message = new SymbolRelation({});
+                    if (data.symbol != null) {
+                        message.symbol = data.symbol;
+                    }
+                    if (data.relationship_type != null) {
+                        message.relationship_type = data.relationship_type;
+                    }
+                    if (data.override_documentation != null) {
+                        message.override_documentation = data.override_documentation;
+                    }
+                    return message;
+                }
+                toObject() {
+                    const data: {
+                        symbol?: string;
+                        relationship_type?: Document.Occurrence.SymbolRelation.RelationshipType;
+                        override_documentation?: string[];
+                    } = {};
+                    if (this.symbol != null) {
+                        data.symbol = this.symbol;
+                    }
+                    if (this.relationship_type != null) {
+                        data.relationship_type = this.relationship_type;
+                    }
+                    if (this.override_documentation != null) {
+                        data.override_documentation = this.override_documentation;
+                    }
+                    return data;
+                }
+                serialize(): Uint8Array;
+                serialize(w: pb_1.BinaryWriter): void;
+                serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
+                    const writer = w || new pb_1.BinaryWriter();
+                    if (typeof this.symbol === "string" && this.symbol.length)
+                        writer.writeString(1, this.symbol);
+                    if (this.relationship_type !== undefined)
+                        writer.writeEnum(2, this.relationship_type);
+                    if (this.override_documentation !== undefined)
+                        writer.writeRepeatedString(3, this.override_documentation);
+                    if (!w)
+                        return writer.getResultBuffer();
+                }
+                static deserialize(bytes: Uint8Array | pb_1.BinaryReader): SymbolRelation {
+                    const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new SymbolRelation();
+                    while (reader.nextField()) {
+                        if (reader.isEndGroup())
+                            break;
+                        switch (reader.getFieldNumber()) {
+                            case 1:
+                                message.symbol = reader.readString();
+                                break;
+                            case 2:
+                                message.relationship_type = reader.readEnum();
+                                break;
+                            case 3:
+                                pb_1.Message.addToRepeatedField(message, 3, reader.readString());
+                                break;
+                            default: reader.skipField();
+                        }
+                    }
+                    return message;
+                }
+                serializeBinary(): Uint8Array {
+                    return this.serialize();
+                }
+                static deserializeBinary(bytes: Uint8Array): SymbolRelation {
+                    return SymbolRelation.deserialize(bytes);
                 }
             }
-            return message;
-        }
-        serializeBinary(): Uint8Array {
-            return this.serialize();
-        }
-        static deserializeBinary(bytes: Uint8Array): Package {
-            return Package.deserialize(bytes);
+            export namespace SymbolRelation {
+                export enum RelationshipType {
+                    UnspecifiedRelationshipType = 0,
+                    DefinitionOf = 1,
+                    ReferenceTo = 2
+                }
+            }
         }
     }
-    export class Symbol extends pb_1.Message {
+    export class SymbolInformation extends pb_1.Message {
         constructor(data?: any[] | {
-            uri?: string;
-            unique?: Symbol.Unique;
+            symbol?: string;
+            package?: SymbolInformation.Package;
             documentation?: string[];
-            package_uri?: string;
-            reference_symbols?: string[];
-            implementation_symbols?: string[];
+            relatives?: SymbolInformation.SymbolRelation[];
         }) {
             super();
-            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [3, 5, 6], []);
+            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [3, 4], []);
             if (!Array.isArray(data) && typeof data == "object") {
-                if ("uri" in data && data.uri != undefined) {
-                    this.uri = data.uri;
+                if ("symbol" in data && data.symbol != undefined) {
+                    this.symbol = data.symbol;
                 }
-                if ("unique" in data && data.unique != undefined) {
-                    this.unique = data.unique;
+                if ("package" in data && data.package != undefined) {
+                    this.package = data.package;
                 }
                 if ("documentation" in data && data.documentation != undefined) {
                     this.documentation = data.documentation;
                 }
-                if ("package_uri" in data && data.package_uri != undefined) {
-                    this.package_uri = data.package_uri;
-                }
-                if ("reference_symbols" in data && data.reference_symbols != undefined) {
-                    this.reference_symbols = data.reference_symbols;
-                }
-                if ("implementation_symbols" in data && data.implementation_symbols != undefined) {
-                    this.implementation_symbols = data.implementation_symbols;
+                if ("relatives" in data && data.relatives != undefined) {
+                    this.relatives = data.relatives;
                 }
             }
         }
-        get uri() {
+        get symbol() {
             return pb_1.Message.getField(this, 1) as string;
         }
-        set uri(value: string) {
+        set symbol(value: string) {
             pb_1.Message.setField(this, 1, value);
         }
-        get unique() {
-            return pb_1.Message.getField(this, 2) as Symbol.Unique;
+        get package() {
+            return pb_1.Message.getWrapperField(this, SymbolInformation.Package, 2) as SymbolInformation.Package;
         }
-        set unique(value: Symbol.Unique) {
-            pb_1.Message.setField(this, 2, value);
+        set package(value: SymbolInformation.Package) {
+            pb_1.Message.setWrapperField(this, 2, value);
         }
         get documentation() {
             return pb_1.Message.getField(this, 3) as string[];
@@ -646,79 +875,51 @@ export namespace lib.codeintel.lsif_typed {
         set documentation(value: string[]) {
             pb_1.Message.setField(this, 3, value);
         }
-        get package_uri() {
-            return pb_1.Message.getField(this, 4) as string;
+        get relatives() {
+            return pb_1.Message.getRepeatedWrapperField(this, SymbolInformation.SymbolRelation, 4) as SymbolInformation.SymbolRelation[];
         }
-        set package_uri(value: string) {
-            pb_1.Message.setField(this, 4, value);
-        }
-        get reference_symbols() {
-            return pb_1.Message.getField(this, 5) as string[];
-        }
-        set reference_symbols(value: string[]) {
-            pb_1.Message.setField(this, 5, value);
-        }
-        get implementation_symbols() {
-            return pb_1.Message.getField(this, 6) as string[];
-        }
-        set implementation_symbols(value: string[]) {
-            pb_1.Message.setField(this, 6, value);
+        set relatives(value: SymbolInformation.SymbolRelation[]) {
+            pb_1.Message.setRepeatedWrapperField(this, 4, value);
         }
         static fromObject(data: {
-            uri?: string;
-            unique?: Symbol.Unique;
+            symbol?: string;
+            package?: ReturnType<typeof SymbolInformation.Package.prototype.toObject>;
             documentation?: string[];
-            package_uri?: string;
-            reference_symbols?: string[];
-            implementation_symbols?: string[];
+            relatives?: ReturnType<typeof SymbolInformation.SymbolRelation.prototype.toObject>[];
         }) {
-            const message = new Symbol({});
-            if (data.uri != null) {
-                message.uri = data.uri;
+            const message = new SymbolInformation({});
+            if (data.symbol != null) {
+                message.symbol = data.symbol;
             }
-            if (data.unique != null) {
-                message.unique = data.unique;
+            if (data.package != null) {
+                message.package = SymbolInformation.Package.fromObject(data.package);
             }
             if (data.documentation != null) {
                 message.documentation = data.documentation;
             }
-            if (data.package_uri != null) {
-                message.package_uri = data.package_uri;
-            }
-            if (data.reference_symbols != null) {
-                message.reference_symbols = data.reference_symbols;
-            }
-            if (data.implementation_symbols != null) {
-                message.implementation_symbols = data.implementation_symbols;
+            if (data.relatives != null) {
+                message.relatives = data.relatives.map(item => SymbolInformation.SymbolRelation.fromObject(item));
             }
             return message;
         }
         toObject() {
             const data: {
-                uri?: string;
-                unique?: Symbol.Unique;
+                symbol?: string;
+                package?: ReturnType<typeof SymbolInformation.Package.prototype.toObject>;
                 documentation?: string[];
-                package_uri?: string;
-                reference_symbols?: string[];
-                implementation_symbols?: string[];
+                relatives?: ReturnType<typeof SymbolInformation.SymbolRelation.prototype.toObject>[];
             } = {};
-            if (this.uri != null) {
-                data.uri = this.uri;
+            if (this.symbol != null) {
+                data.symbol = this.symbol;
             }
-            if (this.unique != null) {
-                data.unique = this.unique;
+            if (this.package != null) {
+                data.package = this.package.toObject();
             }
             if (this.documentation != null) {
                 data.documentation = this.documentation;
             }
-            if (this.package_uri != null) {
-                data.package_uri = this.package_uri;
-            }
-            if (this.reference_symbols != null) {
-                data.reference_symbols = this.reference_symbols;
-            }
-            if (this.implementation_symbols != null) {
-                data.implementation_symbols = this.implementation_symbols;
+            if (this.relatives != null) {
+                data.relatives = this.relatives.map((item: SymbolInformation.SymbolRelation) => item.toObject());
             }
             return data;
         }
@@ -726,44 +927,34 @@ export namespace lib.codeintel.lsif_typed {
         serialize(w: pb_1.BinaryWriter): void;
         serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
             const writer = w || new pb_1.BinaryWriter();
-            if (typeof this.uri === "string" && this.uri.length)
-                writer.writeString(1, this.uri);
-            if (this.unique !== undefined)
-                writer.writeEnum(2, this.unique);
+            if (typeof this.symbol === "string" && this.symbol.length)
+                writer.writeString(1, this.symbol);
+            if (this.package !== undefined)
+                writer.writeMessage(2, this.package, () => this.package.serialize(writer));
             if (this.documentation !== undefined)
                 writer.writeRepeatedString(3, this.documentation);
-            if (typeof this.package_uri === "string" && this.package_uri.length)
-                writer.writeString(4, this.package_uri);
-            if (this.reference_symbols !== undefined)
-                writer.writeRepeatedString(5, this.reference_symbols);
-            if (this.implementation_symbols !== undefined)
-                writer.writeRepeatedString(6, this.implementation_symbols);
+            if (this.relatives !== undefined)
+                writer.writeRepeatedMessage(4, this.relatives, (item: SymbolInformation.SymbolRelation) => item.serialize(writer));
             if (!w)
                 return writer.getResultBuffer();
         }
-        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): Symbol {
-            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new Symbol();
+        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): SymbolInformation {
+            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new SymbolInformation();
             while (reader.nextField()) {
                 if (reader.isEndGroup())
                     break;
                 switch (reader.getFieldNumber()) {
                     case 1:
-                        message.uri = reader.readString();
+                        message.symbol = reader.readString();
                         break;
                     case 2:
-                        message.unique = reader.readEnum();
+                        reader.readMessage(message.package, () => message.package = SymbolInformation.Package.deserialize(reader));
                         break;
                     case 3:
                         pb_1.Message.addToRepeatedField(message, 3, reader.readString());
                         break;
                     case 4:
-                        message.package_uri = reader.readString();
-                        break;
-                    case 5:
-                        pb_1.Message.addToRepeatedField(message, 5, reader.readString());
-                        break;
-                    case 6:
-                        pb_1.Message.addToRepeatedField(message, 6, reader.readString());
+                        reader.readMessage(message.relatives, () => pb_1.Message.addToRepeatedWrapperField(message, 4, SymbolInformation.SymbolRelation.deserialize(reader), SymbolInformation.SymbolRelation));
                         break;
                     default: reader.skipField();
                 }
@@ -773,192 +964,218 @@ export namespace lib.codeintel.lsif_typed {
         serializeBinary(): Uint8Array {
             return this.serialize();
         }
-        static deserializeBinary(bytes: Uint8Array): Symbol {
-            return Symbol.deserialize(bytes);
+        static deserializeBinary(bytes: Uint8Array): SymbolInformation {
+            return SymbolInformation.deserialize(bytes);
         }
     }
-    export namespace Symbol {
-        export enum Unique {
-            UNIQUE_UNSPECIFIED = 0,
-            UNIQUE_DOCUMENT = 1,
-            UNIQUE_GLOBAL = 2
-        }
-    }
-    export class Occurrence extends pb_1.Message {
-        constructor(data?: any[] | {
-            range?: number[];
-            symbol_uri?: string;
-            symbol_role?: Occurrence.Role;
-            symbol_documentation?: string[];
-            highlight?: Occurrence.Highlight;
-        }) {
-            super();
-            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [1, 4], []);
-            if (!Array.isArray(data) && typeof data == "object") {
-                if ("range" in data && data.range != undefined) {
-                    this.range = data.range;
-                }
-                if ("symbol_uri" in data && data.symbol_uri != undefined) {
-                    this.symbol_uri = data.symbol_uri;
-                }
-                if ("symbol_role" in data && data.symbol_role != undefined) {
-                    this.symbol_role = data.symbol_role;
-                }
-                if ("symbol_documentation" in data && data.symbol_documentation != undefined) {
-                    this.symbol_documentation = data.symbol_documentation;
-                }
-                if ("highlight" in data && data.highlight != undefined) {
-                    this.highlight = data.highlight;
+    export namespace SymbolInformation {
+        export class Package extends pb_1.Message {
+            constructor(data?: any[] | {
+                package_manager?: string;
+                name?: string;
+                version?: string;
+            }) {
+                super();
+                pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], []);
+                if (!Array.isArray(data) && typeof data == "object") {
+                    if ("package_manager" in data && data.package_manager != undefined) {
+                        this.package_manager = data.package_manager;
+                    }
+                    if ("name" in data && data.name != undefined) {
+                        this.name = data.name;
+                    }
+                    if ("version" in data && data.version != undefined) {
+                        this.version = data.version;
+                    }
                 }
             }
-        }
-        get range() {
-            return pb_1.Message.getField(this, 1) as number[];
-        }
-        set range(value: number[]) {
-            pb_1.Message.setField(this, 1, value);
-        }
-        get symbol_uri() {
-            return pb_1.Message.getField(this, 2) as string;
-        }
-        set symbol_uri(value: string) {
-            pb_1.Message.setField(this, 2, value);
-        }
-        get symbol_role() {
-            return pb_1.Message.getField(this, 3) as Occurrence.Role;
-        }
-        set symbol_role(value: Occurrence.Role) {
-            pb_1.Message.setField(this, 3, value);
-        }
-        get symbol_documentation() {
-            return pb_1.Message.getField(this, 4) as string[];
-        }
-        set symbol_documentation(value: string[]) {
-            pb_1.Message.setField(this, 4, value);
-        }
-        get highlight() {
-            return pb_1.Message.getField(this, 5) as Occurrence.Highlight;
-        }
-        set highlight(value: Occurrence.Highlight) {
-            pb_1.Message.setField(this, 5, value);
-        }
-        static fromObject(data: {
-            range?: number[];
-            symbol_uri?: string;
-            symbol_role?: Occurrence.Role;
-            symbol_documentation?: string[];
-            highlight?: Occurrence.Highlight;
-        }) {
-            const message = new Occurrence({});
-            if (data.range != null) {
-                message.range = data.range;
+            get package_manager() {
+                return pb_1.Message.getField(this, 1) as string;
             }
-            if (data.symbol_uri != null) {
-                message.symbol_uri = data.symbol_uri;
+            set package_manager(value: string) {
+                pb_1.Message.setField(this, 1, value);
             }
-            if (data.symbol_role != null) {
-                message.symbol_role = data.symbol_role;
+            get name() {
+                return pb_1.Message.getField(this, 2) as string;
             }
-            if (data.symbol_documentation != null) {
-                message.symbol_documentation = data.symbol_documentation;
+            set name(value: string) {
+                pb_1.Message.setField(this, 2, value);
             }
-            if (data.highlight != null) {
-                message.highlight = data.highlight;
+            get version() {
+                return pb_1.Message.getField(this, 3) as string;
             }
-            return message;
-        }
-        toObject() {
-            const data: {
-                range?: number[];
-                symbol_uri?: string;
-                symbol_role?: Occurrence.Role;
-                symbol_documentation?: string[];
-                highlight?: Occurrence.Highlight;
-            } = {};
-            if (this.range != null) {
-                data.range = this.range;
+            set version(value: string) {
+                pb_1.Message.setField(this, 3, value);
             }
-            if (this.symbol_uri != null) {
-                data.symbol_uri = this.symbol_uri;
+            static fromObject(data: {
+                package_manager?: string;
+                name?: string;
+                version?: string;
+            }) {
+                const message = new Package({});
+                if (data.package_manager != null) {
+                    message.package_manager = data.package_manager;
+                }
+                if (data.name != null) {
+                    message.name = data.name;
+                }
+                if (data.version != null) {
+                    message.version = data.version;
+                }
+                return message;
             }
-            if (this.symbol_role != null) {
-                data.symbol_role = this.symbol_role;
+            toObject() {
+                const data: {
+                    package_manager?: string;
+                    name?: string;
+                    version?: string;
+                } = {};
+                if (this.package_manager != null) {
+                    data.package_manager = this.package_manager;
+                }
+                if (this.name != null) {
+                    data.name = this.name;
+                }
+                if (this.version != null) {
+                    data.version = this.version;
+                }
+                return data;
             }
-            if (this.symbol_documentation != null) {
-                data.symbol_documentation = this.symbol_documentation;
+            serialize(): Uint8Array;
+            serialize(w: pb_1.BinaryWriter): void;
+            serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
+                const writer = w || new pb_1.BinaryWriter();
+                if (typeof this.package_manager === "string" && this.package_manager.length)
+                    writer.writeString(1, this.package_manager);
+                if (typeof this.name === "string" && this.name.length)
+                    writer.writeString(2, this.name);
+                if (typeof this.version === "string" && this.version.length)
+                    writer.writeString(3, this.version);
+                if (!w)
+                    return writer.getResultBuffer();
             }
-            if (this.highlight != null) {
-                data.highlight = this.highlight;
-            }
-            return data;
-        }
-        serialize(): Uint8Array;
-        serialize(w: pb_1.BinaryWriter): void;
-        serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
-            const writer = w || new pb_1.BinaryWriter();
-            if (this.range !== undefined)
-                writer.writePackedInt32(1, this.range);
-            if (typeof this.symbol_uri === "string" && this.symbol_uri.length)
-                writer.writeString(2, this.symbol_uri);
-            if (this.symbol_role !== undefined)
-                writer.writeEnum(3, this.symbol_role);
-            if (this.symbol_documentation !== undefined)
-                writer.writeRepeatedString(4, this.symbol_documentation);
-            if (this.highlight !== undefined)
-                writer.writeEnum(5, this.highlight);
-            if (!w)
-                return writer.getResultBuffer();
-        }
-        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): Occurrence {
-            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new Occurrence();
-            while (reader.nextField()) {
-                if (reader.isEndGroup())
-                    break;
-                switch (reader.getFieldNumber()) {
-                    case 1:
-                        message.range = reader.readPackedInt32();
+            static deserialize(bytes: Uint8Array | pb_1.BinaryReader): Package {
+                const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new Package();
+                while (reader.nextField()) {
+                    if (reader.isEndGroup())
                         break;
-                    case 2:
-                        message.symbol_uri = reader.readString();
-                        break;
-                    case 3:
-                        message.symbol_role = reader.readEnum();
-                        break;
-                    case 4:
-                        pb_1.Message.addToRepeatedField(message, 4, reader.readString());
-                        break;
-                    case 5:
-                        message.highlight = reader.readEnum();
-                        break;
-                    default: reader.skipField();
+                    switch (reader.getFieldNumber()) {
+                        case 1:
+                            message.package_manager = reader.readString();
+                            break;
+                        case 2:
+                            message.name = reader.readString();
+                            break;
+                        case 3:
+                            message.version = reader.readString();
+                            break;
+                        default: reader.skipField();
+                    }
+                }
+                return message;
+            }
+            serializeBinary(): Uint8Array {
+                return this.serialize();
+            }
+            static deserializeBinary(bytes: Uint8Array): Package {
+                return Package.deserialize(bytes);
+            }
+        }
+        export class SymbolRelation extends pb_1.Message {
+            constructor(data?: any[] | {
+                symbol?: string;
+                relationship_type?: SymbolInformation.SymbolRelation.RelationshipType;
+            }) {
+                super();
+                pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], []);
+                if (!Array.isArray(data) && typeof data == "object") {
+                    if ("symbol" in data && data.symbol != undefined) {
+                        this.symbol = data.symbol;
+                    }
+                    if ("relationship_type" in data && data.relationship_type != undefined) {
+                        this.relationship_type = data.relationship_type;
+                    }
                 }
             }
-            return message;
+            get symbol() {
+                return pb_1.Message.getField(this, 1) as string;
+            }
+            set symbol(value: string) {
+                pb_1.Message.setField(this, 1, value);
+            }
+            get relationship_type() {
+                return pb_1.Message.getField(this, 2) as SymbolInformation.SymbolRelation.RelationshipType;
+            }
+            set relationship_type(value: SymbolInformation.SymbolRelation.RelationshipType) {
+                pb_1.Message.setField(this, 2, value);
+            }
+            static fromObject(data: {
+                symbol?: string;
+                relationship_type?: SymbolInformation.SymbolRelation.RelationshipType;
+            }) {
+                const message = new SymbolRelation({});
+                if (data.symbol != null) {
+                    message.symbol = data.symbol;
+                }
+                if (data.relationship_type != null) {
+                    message.relationship_type = data.relationship_type;
+                }
+                return message;
+            }
+            toObject() {
+                const data: {
+                    symbol?: string;
+                    relationship_type?: SymbolInformation.SymbolRelation.RelationshipType;
+                } = {};
+                if (this.symbol != null) {
+                    data.symbol = this.symbol;
+                }
+                if (this.relationship_type != null) {
+                    data.relationship_type = this.relationship_type;
+                }
+                return data;
+            }
+            serialize(): Uint8Array;
+            serialize(w: pb_1.BinaryWriter): void;
+            serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
+                const writer = w || new pb_1.BinaryWriter();
+                if (typeof this.symbol === "string" && this.symbol.length)
+                    writer.writeString(1, this.symbol);
+                if (this.relationship_type !== undefined)
+                    writer.writeEnum(2, this.relationship_type);
+                if (!w)
+                    return writer.getResultBuffer();
+            }
+            static deserialize(bytes: Uint8Array | pb_1.BinaryReader): SymbolRelation {
+                const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new SymbolRelation();
+                while (reader.nextField()) {
+                    if (reader.isEndGroup())
+                        break;
+                    switch (reader.getFieldNumber()) {
+                        case 1:
+                            message.symbol = reader.readString();
+                            break;
+                        case 2:
+                            message.relationship_type = reader.readEnum();
+                            break;
+                        default: reader.skipField();
+                    }
+                }
+                return message;
+            }
+            serializeBinary(): Uint8Array {
+                return this.serialize();
+            }
+            static deserializeBinary(bytes: Uint8Array): SymbolRelation {
+                return SymbolRelation.deserialize(bytes);
+            }
         }
-        serializeBinary(): Uint8Array {
-            return this.serialize();
-        }
-        static deserializeBinary(bytes: Uint8Array): Occurrence {
-            return Occurrence.deserialize(bytes);
-        }
-    }
-    export namespace Occurrence {
-        export enum Role {
-            ROLE_UNSPECIFIED = 0,
-            ROLE_DEFINITION = 1,
-            ROLE_REFERENCE = 2
-        }
-        export enum Highlight {
-            HIGHLIGHT_UNSPECIFIED = 0,
-            HIGHLIGHT_STRING_LITERAL = 1,
-            HIGHLIGHT_NUMERIC_LITERAL = 2,
-            HIGHLIGHT_IDENTIFIER = 3,
-            HIGHLIGHT_METHOD_IDENTIFIER = 4,
-            HIGHLIGHT_TYPE_IDENTIFIER = 5,
-            HIGHLIGHT_TERM_IDENTIFIER = 6,
-            HIGHLIGHT_LOCAL_IDENTIFIER = 7,
-            HIGHLIGHT_SHADED_IDENTIFIER = 8,
-            HIGHLIGHT_PACKAGE_IDENTIFIER = 9
+        export namespace SymbolRelation {
+            export enum RelationshipType {
+                UnspecifiedRelationshipType = 0,
+                TypeReferenceTo = 1,
+                ImplementationOf = 2
+            }
         }
     }
 }

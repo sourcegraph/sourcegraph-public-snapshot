@@ -2,9 +2,13 @@
 version: v1
 plugins:
   - remote: buf.build/library/plugins/go:v1.27.1-1
-    out: .
     opt:
       - paths=source_relative
-  - name: ts
     out: .
+  - name: ts
     path: ./node_modules/.bin/protoc-gen-ts
+    out: .
+  - name: doc
+    path: ./.bin/protoc-gen-doc
+    out: ./doc/code_intelligence/references
+    opt: doc/code_intelligence/references/lsif.sprig,lsif.md
