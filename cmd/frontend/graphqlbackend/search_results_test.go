@@ -66,7 +66,7 @@ func TestSearchResults(t *testing.T) {
 				t.Fatal("unexpected result type:", match)
 			}
 		}
-		// dedup results since we expect our clients to do dedupping
+		// dedupe results since we expect our clients to do dedupping
 		if len(resultDescriptions) > 1 {
 			sort.Strings(resultDescriptions)
 			dedup := resultDescriptions[:1]
@@ -792,9 +792,6 @@ func TestEvaluateAnd(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			srp := authz.NewMockSubRepoPermissionChecker()
-			srp.EnabledFunc.SetDefaultReturn(false)
-
 			resolver := &searchResolver{
 				db: db,
 				SearchInputs: &run.SearchInputs{
@@ -863,9 +860,6 @@ func TestSearchContext(t *testing.T) {
 			db := database.NewMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 			db.NamespacesFunc.SetDefaultReturn(ns)
-
-			srp := authz.NewMockSubRepoPermissionChecker()
-			srp.EnabledFunc.SetDefaultReturn(false)
 
 			resolver := searchResolver{
 				SearchInputs: &run.SearchInputs{
@@ -966,7 +960,7 @@ func TestIsContextError(t *testing.T) {
 	}
 }
 
-func TestSubRepoPermsFilter(t *testing.T) {
+func TestSubRepoFilterFunc(t *testing.T) {
 	unauthorizedFileName := "README.md"
 	errorFileName := "file.go"
 	var userWithSubRepoPerms int32 = 1234
