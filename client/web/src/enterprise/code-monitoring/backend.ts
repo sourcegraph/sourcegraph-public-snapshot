@@ -182,6 +182,7 @@ export const fetchCodeMonitor = (id: string): Observable<FetchCodeMonitorResult>
                     enabled
                     actions {
                         nodes {
+                            __typename
                             ... on MonitorEmail {
                                 id
                                 recipients {
