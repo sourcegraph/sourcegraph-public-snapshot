@@ -56,7 +56,7 @@ information.
 | ---- | ---- | ----------- |
 | repeated **range** | int32 | Source position of this occurrence. Must be exactly three or four elements:
 |  **symbol_uri** | string | (optional) References the `Symbol.uri` field. Can be empty if this is only a highlighting occurrence.
-|  **symbol_role** | int32 | (optional) Is the symbol_uri defined or referenced at this occurrence?
+|  **symbol_roles** | int32 | (optional) Is the symbol_uri defined or referenced at this occurrence?
 | repeated **override_documentation** | string | (optional) Markdown-formatted documentation for this specific range.  If empty, the `Symbol.documentation` field is used instead. One example where this field might be useful is when the symbol represents a generic function (with abstract type parameters such as `List<T>`) and at this occurrence we know the exact values (such as `List<String>`).
 |  **syntax_kind** | SyntaxKind | (optional) What syntax highlighting class should be used for this range?
 

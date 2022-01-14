@@ -141,8 +141,14 @@ enum SymbolRole {
   Definition = 0x1;
   // Is the symbol imported here?
   Import = 0x2;
-  // Is the symbol written here? If not, then this is a read-access.
+  // Is the symbol written here?
   WriteAccess = 0x4;
+  // Is the symbol read here?
+  ReadAccess = 0x8;
+  // Is the symbol in generated code?
+  Generated = 0x10;
+  // Is the symbol in test code?
+  Test = 0x20;
 }
 
 enum SyntaxKind {
@@ -184,7 +190,7 @@ message Occurrence {
   // a highlighting occurrence.
   string symbol_uri = 2;
   // (optional) Is the symbol_uri defined or referenced at this occurrence?
-  int32 symbol_role = 3;
+  int32 symbol_roles = 3;
   // (optional) Markdown-formatted documentation for this specific range.  If
   // empty, the `Symbol.documentation` field is used instead. One example
   // where this field might be useful is when the symbol represents a generic
