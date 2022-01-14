@@ -6,7 +6,7 @@ import { Button } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../components/WebStory'
 
-import * as Monaco from './MonacoField'
+import * as Monaco from '.'
 
 export default {
     title: 'web/insights/form/MonacoField',
