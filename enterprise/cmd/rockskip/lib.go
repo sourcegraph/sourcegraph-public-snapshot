@@ -485,9 +485,9 @@ func CreateTables(db Queryable) error {
 
 	_, err = db.Exec(`
 		CREATE TABLE rockskip_ancestry (
-			commit_id   VARCHAR(40) PRIMARY KEY,
-			height      INTEGER     NOT NULL,
-			ancestor_id VARCHAR(40) NOT NULL
+			id       VARCHAR(40) PRIMARY KEY,
+			height   INTEGER     NOT NULL,
+			ancestor VARCHAR(40) NOT NULL
 		)`)
 	if err != nil {
 		return fmt.Errorf("creating rockskip_ancestry: %s", err)
@@ -507,11 +507,6 @@ func CreateTables(db Queryable) error {
 		return fmt.Errorf("creating rockskip_blobs: %s", err)
 	}
 
-	_, err = db.Exec("CREATE INDEX rockskip_ancestry_commit_id ON rockskip_ancestry (commit_id)")
-	if err != nil {
-		return fmt.Errorf("creating index rockskip_ancestry_commit_id: %s", err)
-	}
-
 	_, err = db.Exec("CREATE INDEX rockskip_blobs_path ON rockskip_blobs(path)")
 	if err != nil {
 		return fmt.Errorf("creating index rockskip_blobs_path: %s", err)
@@ -527,9 +522,9 @@ func CreateTables(db Queryable) error {
 
 func GetCommit(db Queryable, givenCommit string) (ancestor string, height int, present bool, err error) {
 	err = db.QueryRow(`
-		SELECT ancestor_id, height
+		SELECT ancestor, height
 		FROM rockskip_ancestry
-		WHERE commit_id = $1
+		WHERE id = $1
 	`, givenCommit).Scan(&ancestor, &height)
 	if err == sql.ErrNoRows {
 		return "", 0, false, nil
@@ -541,7 +536,7 @@ func GetCommit(db Queryable, givenCommit string) (ancestor string, height int, p
 
 func InsertCommit(db Queryable, commit string, height int, ancestor string) error {
 	_, err := db.Exec(`
-		INSERT INTO rockskip_ancestry (commit_id, height, ancestor_id)
+		INSERT INTO rockskip_ancestry (id, height, ancestor)
 		VALUES ($1, $2, $3)
 	`, commit, height, ancestor)
 	return errors.Wrap(err, "InsertCommit")
@@ -660,7 +655,7 @@ func PrintInternals(db Queryable) error {
 
 	// print all rows in the rockskip_ancestry table
 	rows, err := db.Query(`
-		SELECT commit_id, height, ancestor_id
+		SELECT id, height, ancestor
 		FROM rockskip_ancestry
 		ORDER BY height ASC
 	`)
