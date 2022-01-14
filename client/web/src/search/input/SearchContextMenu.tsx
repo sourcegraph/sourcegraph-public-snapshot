@@ -15,7 +15,7 @@ import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Badge, Button } from '@sourcegraph/wildcard'
 

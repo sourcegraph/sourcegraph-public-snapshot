@@ -8,7 +8,7 @@ import { catchError, filter, switchMap, map, distinctUntilChanged } from 'rxjs/o
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 
-import * as GQL from '../graphql/schema'
+import * as GQL from '../schema'
 import { highlightNode } from '../util/dom'
 import { Repo } from '../util/url'
 

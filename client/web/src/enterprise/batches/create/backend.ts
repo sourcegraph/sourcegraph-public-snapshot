@@ -1,4 +1,4 @@
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql } from '@sourcegraph/http-client'
 
 export const GET_BATCH_CHANGE_TO_EDIT = gql`
     query GetBatchChangeToEdit($namespace: ID!, $name: String!) {

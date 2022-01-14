@@ -1,7 +1,7 @@
 import { MockedResponse } from '@apollo/client/testing'
 import { number, text } from '@storybook/addon-knobs'
 
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/apollo'
+import { getDocumentNode } from '@sourcegraph/http-client'
 
 import {
     WebhookLogFields,

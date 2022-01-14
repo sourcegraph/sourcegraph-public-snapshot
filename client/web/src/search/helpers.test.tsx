@@ -1,6 +1,6 @@
 import * as H from 'history'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 
 import { getSearchTypeFromQuery, toggleSearchType, toggleSubquery, submitSearch } from './helpers'
 import { SearchType } from './results/StreamingSearchResults'

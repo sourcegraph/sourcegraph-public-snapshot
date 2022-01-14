@@ -4,7 +4,7 @@ import expect from 'expect'
 import { describe, before, after, test } from 'mocha'
 import { ElementHandle } from 'puppeteer'
 
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { Config, getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'

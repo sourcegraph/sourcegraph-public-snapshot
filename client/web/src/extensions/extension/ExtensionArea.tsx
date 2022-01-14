@@ -6,14 +6,14 @@ import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxj
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
 import { createAggregateError, ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { gql } from '@sourcegraph/http-client'
 import {
     ConfiguredRegistryExtension,
     splitExtensionID,
     toConfiguredRegistryExtension,
 } from '@sourcegraph/shared/src/extensions/extension'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'

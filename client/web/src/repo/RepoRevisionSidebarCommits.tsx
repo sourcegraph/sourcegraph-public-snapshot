@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { createInvalidGraphQLQueryResponseError, dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { createInvalidGraphQLQueryResponseError, dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
 
 import { requestGraphQL } from '../backend/graphql'

@@ -8,8 +8,8 @@ import { catchError, map, mapTo } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
 import { asError } from '@sourcegraph/common'
+import { GraphQLResult } from '@sourcegraph/http-client'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/shared/src/components/Link'
-import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 

@@ -5,7 +5,7 @@ import React from 'react'
 import { of } from 'rxjs'
 import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
 
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/apollo'
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../components/WebStory'

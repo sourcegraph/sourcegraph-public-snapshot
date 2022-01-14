@@ -2,12 +2,12 @@ import { from } from 'rxjs'
 import { first, map, switchMap } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { SettingsEdit } from '../api/client/services/settings'
 import { Scalars } from '../graphql-operations'
-import { dataOrThrowErrors, gql } from '../graphql/graphql'
-import * as GQL from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
+import * as GQL from '../schema'
 
 /**
  * A helper function for performing an update to settings.

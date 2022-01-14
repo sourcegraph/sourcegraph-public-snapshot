@@ -34,7 +34,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- Removed unused backend service from Kubernetes deployments. [#4050](https://github.com/sourcegraph/deploy-sourcegraph/pull/4050)
 
 ## 3.35.1
 

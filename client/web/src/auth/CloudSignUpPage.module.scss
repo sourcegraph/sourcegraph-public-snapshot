@@ -64,10 +64,19 @@
     position: relative;
 }
 
-.page-heading {
+.page-heading,
+.page-heading-invited-by {
     margin: 0;
     padding-top: 1.5rem;
     padding-bottom: 1rem;
+}
+
+.page-heading-invited-by {
+    font-weight: normal;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
+    margin-top: -1.5rem;
 }
 
 .contents {
@@ -89,7 +98,8 @@
     margin-bottom: 2rem;
 }
 
-.sign-up-wrapper {
+.sign-up-wrapper,
+.sign-up-wrapper-invited-by {
     position: absolute;
     top: -7.5rem;
     right: 0;
@@ -103,6 +113,10 @@
         position: static;
         margin-top: 2rem;
     }
+}
+
+.sign-up-wrapper-invited-by {
+    top: -3.5rem;
 }
 
 .sign-up-button {
@@ -155,4 +169,9 @@
 .helper-text {
     font-size: 0.875rem;
     line-height: 1.5;
+}
+
+.avatar {
+    width: 3rem !important;
+    height: 3rem !important;
 }

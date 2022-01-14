@@ -9,7 +9,7 @@ import { CodeExcerpt, FetchFileParameters } from '@sourcegraph/shared/src/compon
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 

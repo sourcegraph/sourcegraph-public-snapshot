@@ -2,8 +2,8 @@ import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 
 import { AuthenticatedUser } from '../auth'

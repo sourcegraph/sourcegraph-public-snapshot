@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 
+import { useMutation } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useMutation } from '@sourcegraph/shared/src/graphql/graphql'
 
 import {
     CreateBatchSpecFromRawResult,

@@ -75,3 +75,4 @@ Code insights docs are actively in progress during the beta.
 
 - [Common use cases and recipes](references/common_use_cases.md)
 - [Common reasons code insights may not match search results](references/common_reasons_code_insights_may_not_match_search_results.md)
+- [Managing code insights with the API](../api/graphql/managing-code-insights-with-api.md)

@@ -8,7 +8,7 @@ import { interval, Subject, Subscription } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { Container, PageHeader, LoadingSpinner, FeedbackText, Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../components/alerts'

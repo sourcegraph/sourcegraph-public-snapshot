@@ -2,7 +2,7 @@ import { concat, Observable } from 'rxjs'
 import { map, mergeMap } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql } from '@sourcegraph/http-client'
 
 import { refreshAuthenticatedUser } from '../auth'
 import { requestGraphQL } from '../backend/graphql'

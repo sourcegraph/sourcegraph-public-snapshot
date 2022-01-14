@@ -4,7 +4,7 @@ import React from 'react'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
-import { ISiteUsagePeriod } from '@sourcegraph/shared/src/graphql/schema'
+import { ISiteUsagePeriod } from '@sourcegraph/shared/src/schema'
 
 import { PageTitle } from '../../components/PageTitle'
 

@@ -4,7 +4,7 @@ import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React from 'react'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 
 export const ProductSubscriptionHistory: React.FunctionComponent<{
     productSubscription: Pick<GQL.IProductSubscription, 'events'>

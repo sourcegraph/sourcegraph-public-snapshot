@@ -6,7 +6,7 @@ import FocusLock from 'react-focus-lock'
 import { Popover } from 'reactstrap'
 
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 
 import { SourcegraphIcon } from '../../auth/icons'
 
