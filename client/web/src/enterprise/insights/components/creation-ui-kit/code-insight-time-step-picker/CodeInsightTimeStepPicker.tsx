@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React, { ChangeEvent, FocusEventHandler, forwardRef, ReactNode } from 'react'
+import React, { ChangeEvent, FocusEventHandler, forwardRef } from 'react'
 
 import { InsightStep } from '../../../pages/insights/creation/search-insight/types'
 import { FormGroup } from '../../form/form-group/FormGroup'
@@ -7,6 +7,7 @@ import { FormInput } from '../../form/form-input/FormInput'
 import { FormRadioInput } from '../../form/form-radio-input/FormRadioInput'
 
 import styles from './CodeInsightTimeStepPicker.module.scss'
+import { getDescriptionText } from './get-interval-descrtiption-text/get-interval-description-text'
 
 interface CodeInsightTimeStepPickerProps {
     value: string | number
@@ -118,37 +119,3 @@ export const CodeInsightTimeStepPicker = forwardRef<HTMLInputElement, CodeInsigh
         )
     }
 )
-
-interface DescriptionTextOptions {
-    numberOfPoints: number
-    stepType: InsightStep
-    stepValue: number
-}
-
-function getDescriptionText(options: DescriptionTextOptions): ReactNode {
-    const { stepType, stepValue, numberOfPoints } = options
-    // Remove s at the end of stepType value, in the singular. We need to do this
-    // because Intl accepts only singular value of units.
-    const unit = stepType.slice(0, -1)
-
-    const pastUnits = (stepValue * numberOfPoints - 1).toLocaleString('en-GB', {
-        unit,
-        style: 'unit',
-        unitDisplay: 'long',
-    })
-
-    const everyUnit = stepValue.toLocaleString('en-GB', {
-        unit,
-        style: 'unit',
-        unitDisplay: 'long',
-    })
-
-    const everyUnitText = stepValue < 2 ? everyUnit.slice(2) : everyUnit
-
-    return (
-        <span>
-            The prototype supports timeframe up to {numberOfPoints} datapoints: past <b>{pastUnits} of data</b>, one
-            datapoint every {everyUnitText}.
-        </span>
-    )
-}
