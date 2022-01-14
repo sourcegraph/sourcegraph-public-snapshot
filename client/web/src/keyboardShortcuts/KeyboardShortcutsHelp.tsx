@@ -39,7 +39,13 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<Props> = ({
             {keyboardShortcutForShow.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={toggleIsOpen} />
             ))}
-            <Modal position="center" isOpen={isOpen} onDismiss={toggleIsOpen} aria-labelledby={MODAL_LABEL_ID}>
+            <Modal
+                position="center"
+                isOpen={isOpen}
+                onDismiss={toggleIsOpen}
+                aria-labelledby={MODAL_LABEL_ID}
+                containerClassName={styles.modalContainer}
+            >
                 <div className={styles.modalHeader}>
                     <h4 id={MODAL_LABEL_ID}>Keyboard shortcuts</h4>
                     <Button className="btn-icon" aria-label="Close" onClick={toggleIsOpen}>
