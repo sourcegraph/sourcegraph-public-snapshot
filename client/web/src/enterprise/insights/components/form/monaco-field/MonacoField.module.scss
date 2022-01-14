@@ -55,14 +55,6 @@
         display: none;
     }
 
-    &:global(.with-invalid-icon) {
-        &:global(.is-invalid)::before,
-        :global(.is-valid)::before {
-            // Bootstrap styles for form control with validation icon
-            padding-right: calc(1.4285714286em + 0.75rem);
-        }
-    }
-
     &--without-field-styles {
         padding: 0;
         border: none;
@@ -91,11 +83,4 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     }
-
-    //&:global(.with-invalid-icon) {
-    //    &:global(.is-invalid)::before, :global(.is-valid)::before {
-    //        // Bootstrap styles for form control with validation icon
-    //        padding-right: calc(1.4285714286em + 0.75rem);
-    //    }
-    //}
 }
