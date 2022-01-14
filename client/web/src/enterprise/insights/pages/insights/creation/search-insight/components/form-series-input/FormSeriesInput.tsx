@@ -4,10 +4,11 @@ import { noop } from 'rxjs'
 
 import { Button } from '@sourcegraph/wildcard'
 
+import { SearchPatternType } from '../../../../../../../../graphql-operations'
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { useForm } from '../../../../../../components/form/hooks/useForm'
-import { MonacoField } from '../../../../../../components/form/monaco-field/MonacoField'
+import { InsightQueryInput } from '../../../../../../components/form/query-input/InsightQueryInput'
 import { createRequiredValidator } from '../../../../../../components/form/validators'
 import { EditableDataSeries } from '../../types'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
@@ -134,7 +135,8 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
             <FormInput
                 title="Search query"
                 required={true}
-                as={MonacoField}
+                as={InsightQueryInput}
+                patternType={SearchPatternType.literal}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                 description={<QueryFieldDescription isSearchQueryDisabled={isSearchQueryDisabled} />}
                 valid={(hasQueryControlledValue || queryField.meta.touched) && queryField.meta.validState === 'VALID'}
