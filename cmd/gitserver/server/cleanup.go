@@ -50,12 +50,12 @@ const (
 // EnableGCAuto is a temporary flag that allows us to control whether or not
 // `git gc --auto` is invoked during janitorial activities. This flag will
 // likely evolve into some form of site config value in the future.
-var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "true", "Use git-gc during janitorial cleanup phases"))
+var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "false", "Use git-gc during janitorial cleanup phases"))
 
 // sg maintenance and git gc must not be enabled at the same time. However, both
 // might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
 // SRC_ENABLE_SG_MAINTENANCE.
-var enableSGMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "false", "Use sg maintenance during janitorial cleanup phases"))
+var enableSGMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "true", "Use sg maintenance during janitorial cleanup phases"))
 
 var (
 	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
