@@ -6,12 +6,35 @@
  *  */
 import * as pb_1 from "google-protobuf";
 export namespace lib.codeintel.lsif_typed {
+    export enum TextEncoding {
+        UnspecifiedTextEncoding = 0,
+        UTF8 = 1,
+        UTF16 = 2
+    }
+    export enum SymbolRole {
+        UnspecifiedSymbolRole = 0,
+        Definition = 1,
+        Import = 2,
+        WriteAccess = 4
+    }
+    export enum SyntaxKind {
+        UnspecifiedSyntaxKind = 0,
+        StringLiteral = 1,
+        NumericLiteral = 2,
+        Identifier = 3,
+        MethodIdentifier = 4,
+        TypeIdentifier = 5,
+        TermIdentifier = 6,
+        LocalIdentifier = 7,
+        ShadedIdentifier = 8,
+        PackageIdentifier = 9
+    }
     export class Index extends pb_1.Message {
         constructor(data?: any[] | {
             metadata?: Metadata;
             document?: Document[];
-            package?: Package[];
-            external_symbols?: Symbol[];
+            packages?: PackageInformation[];
+            external_symbols?: SymbolInformation[];
         }) {
             super();
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [2, 3, 4], []);
@@ -22,8 +45,8 @@ export namespace lib.codeintel.lsif_typed {
                 if ("document" in data && data.document != undefined) {
                     this.document = data.document;
                 }
-                if ("package" in data && data.package != undefined) {
-                    this.package = data.package;
+                if ("packages" in data && data.packages != undefined) {
+                    this.packages = data.packages;
                 }
                 if ("external_symbols" in data && data.external_symbols != undefined) {
                     this.external_symbols = data.external_symbols;
@@ -42,23 +65,23 @@ export namespace lib.codeintel.lsif_typed {
         set document(value: Document[]) {
             pb_1.Message.setRepeatedWrapperField(this, 2, value);
         }
-        get package() {
-            return pb_1.Message.getRepeatedWrapperField(this, Package, 3) as Package[];
+        get packages() {
+            return pb_1.Message.getRepeatedWrapperField(this, PackageInformation, 3) as PackageInformation[];
         }
-        set package(value: Package[]) {
+        set packages(value: PackageInformation[]) {
             pb_1.Message.setRepeatedWrapperField(this, 3, value);
         }
         get external_symbols() {
-            return pb_1.Message.getRepeatedWrapperField(this, Symbol, 4) as Symbol[];
+            return pb_1.Message.getRepeatedWrapperField(this, SymbolInformation, 4) as SymbolInformation[];
         }
-        set external_symbols(value: Symbol[]) {
+        set external_symbols(value: SymbolInformation[]) {
             pb_1.Message.setRepeatedWrapperField(this, 4, value);
         }
         static fromObject(data: {
             metadata?: ReturnType<typeof Metadata.prototype.toObject>;
             document?: ReturnType<typeof Document.prototype.toObject>[];
-            package?: ReturnType<typeof Package.prototype.toObject>[];
-            external_symbols?: ReturnType<typeof Symbol.prototype.toObject>[];
+            packages?: ReturnType<typeof PackageInformation.prototype.toObject>[];
+            external_symbols?: ReturnType<typeof SymbolInformation.prototype.toObject>[];
         }) {
             const message = new Index({});
             if (data.metadata != null) {
@@ -67,11 +90,11 @@ export namespace lib.codeintel.lsif_typed {
             if (data.document != null) {
                 message.document = data.document.map(item => Document.fromObject(item));
             }
-            if (data.package != null) {
-                message.package = data.package.map(item => Package.fromObject(item));
+            if (data.packages != null) {
+                message.packages = data.packages.map(item => PackageInformation.fromObject(item));
             }
             if (data.external_symbols != null) {
-                message.external_symbols = data.external_symbols.map(item => Symbol.fromObject(item));
+                message.external_symbols = data.external_symbols.map(item => SymbolInformation.fromObject(item));
             }
             return message;
         }
@@ -79,8 +102,8 @@ export namespace lib.codeintel.lsif_typed {
             const data: {
                 metadata?: ReturnType<typeof Metadata.prototype.toObject>;
                 document?: ReturnType<typeof Document.prototype.toObject>[];
-                package?: ReturnType<typeof Package.prototype.toObject>[];
-                external_symbols?: ReturnType<typeof Symbol.prototype.toObject>[];
+                packages?: ReturnType<typeof PackageInformation.prototype.toObject>[];
+                external_symbols?: ReturnType<typeof SymbolInformation.prototype.toObject>[];
             } = {};
             if (this.metadata != null) {
                 data.metadata = this.metadata.toObject();
@@ -88,11 +111,11 @@ export namespace lib.codeintel.lsif_typed {
             if (this.document != null) {
                 data.document = this.document.map((item: Document) => item.toObject());
             }
-            if (this.package != null) {
-                data.package = this.package.map((item: Package) => item.toObject());
+            if (this.packages != null) {
+                data.packages = this.packages.map((item: PackageInformation) => item.toObject());
             }
             if (this.external_symbols != null) {
-                data.external_symbols = this.external_symbols.map((item: Symbol) => item.toObject());
+                data.external_symbols = this.external_symbols.map((item: SymbolInformation) => item.toObject());
             }
             return data;
         }
@@ -104,10 +127,10 @@ export namespace lib.codeintel.lsif_typed {
                 writer.writeMessage(1, this.metadata, () => this.metadata.serialize(writer));
             if (this.document !== undefined)
                 writer.writeRepeatedMessage(2, this.document, (item: Document) => item.serialize(writer));
-            if (this.package !== undefined)
-                writer.writeRepeatedMessage(3, this.package, (item: Package) => item.serialize(writer));
+            if (this.packages !== undefined)
+                writer.writeRepeatedMessage(3, this.packages, (item: PackageInformation) => item.serialize(writer));
             if (this.external_symbols !== undefined)
-                writer.writeRepeatedMessage(4, this.external_symbols, (item: Symbol) => item.serialize(writer));
+                writer.writeRepeatedMessage(4, this.external_symbols, (item: SymbolInformation) => item.serialize(writer));
             if (!w)
                 return writer.getResultBuffer();
         }
@@ -124,10 +147,10 @@ export namespace lib.codeintel.lsif_typed {
                         reader.readMessage(message.document, () => pb_1.Message.addToRepeatedWrapperField(message, 2, Document.deserialize(reader), Document));
                         break;
                     case 3:
-                        reader.readMessage(message.package, () => pb_1.Message.addToRepeatedWrapperField(message, 3, Package.deserialize(reader), Package));
+                        reader.readMessage(message.packages, () => pb_1.Message.addToRepeatedWrapperField(message, 3, PackageInformation.deserialize(reader), PackageInformation));
                         break;
                     case 4:
-                        reader.readMessage(message.external_symbols, () => pb_1.Message.addToRepeatedWrapperField(message, 4, Symbol.deserialize(reader), Symbol));
+                        reader.readMessage(message.external_symbols, () => pb_1.Message.addToRepeatedWrapperField(message, 4, SymbolInformation.deserialize(reader), SymbolInformation));
                         break;
                     default: reader.skipField();
                 }
@@ -145,7 +168,7 @@ export namespace lib.codeintel.lsif_typed {
         constructor(data?: any[] | {
             tool_info?: ToolInfo;
             project_root?: string;
-            position_encoding?: Metadata.PositionEncoding;
+            text_document_encoding?: TextEncoding;
         }) {
             super();
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], []);
@@ -156,8 +179,8 @@ export namespace lib.codeintel.lsif_typed {
                 if ("project_root" in data && data.project_root != undefined) {
                     this.project_root = data.project_root;
                 }
-                if ("position_encoding" in data && data.position_encoding != undefined) {
-                    this.position_encoding = data.position_encoding;
+                if ("text_document_encoding" in data && data.text_document_encoding != undefined) {
+                    this.text_document_encoding = data.text_document_encoding;
                 }
             }
         }
@@ -173,16 +196,16 @@ export namespace lib.codeintel.lsif_typed {
         set project_root(value: string) {
             pb_1.Message.setField(this, 2, value);
         }
-        get position_encoding() {
-            return pb_1.Message.getField(this, 3) as Metadata.PositionEncoding;
+        get text_document_encoding() {
+            return pb_1.Message.getField(this, 3) as TextEncoding;
         }
-        set position_encoding(value: Metadata.PositionEncoding) {
+        set text_document_encoding(value: TextEncoding) {
             pb_1.Message.setField(this, 3, value);
         }
         static fromObject(data: {
             tool_info?: ReturnType<typeof ToolInfo.prototype.toObject>;
             project_root?: string;
-            position_encoding?: Metadata.PositionEncoding;
+            text_document_encoding?: TextEncoding;
         }) {
             const message = new Metadata({});
             if (data.tool_info != null) {
@@ -191,8 +214,8 @@ export namespace lib.codeintel.lsif_typed {
             if (data.project_root != null) {
                 message.project_root = data.project_root;
             }
-            if (data.position_encoding != null) {
-                message.position_encoding = data.position_encoding;
+            if (data.text_document_encoding != null) {
+                message.text_document_encoding = data.text_document_encoding;
             }
             return message;
         }
@@ -200,7 +223,7 @@ export namespace lib.codeintel.lsif_typed {
             const data: {
                 tool_info?: ReturnType<typeof ToolInfo.prototype.toObject>;
                 project_root?: string;
-                position_encoding?: Metadata.PositionEncoding;
+                text_document_encoding?: TextEncoding;
             } = {};
             if (this.tool_info != null) {
                 data.tool_info = this.tool_info.toObject();
@@ -208,8 +231,8 @@ export namespace lib.codeintel.lsif_typed {
             if (this.project_root != null) {
                 data.project_root = this.project_root;
             }
-            if (this.position_encoding != null) {
-                data.position_encoding = this.position_encoding;
+            if (this.text_document_encoding != null) {
+                data.text_document_encoding = this.text_document_encoding;
             }
             return data;
         }
@@ -221,8 +244,8 @@ export namespace lib.codeintel.lsif_typed {
                 writer.writeMessage(1, this.tool_info, () => this.tool_info.serialize(writer));
             if (typeof this.project_root === "string" && this.project_root.length)
                 writer.writeString(2, this.project_root);
-            if (this.position_encoding !== undefined)
-                writer.writeEnum(3, this.position_encoding);
+            if (this.text_document_encoding !== undefined)
+                writer.writeEnum(3, this.text_document_encoding);
             if (!w)
                 return writer.getResultBuffer();
         }
@@ -239,7 +262,7 @@ export namespace lib.codeintel.lsif_typed {
                         message.project_root = reader.readString();
                         break;
                     case 3:
-                        message.position_encoding = reader.readEnum();
+                        message.text_document_encoding = reader.readEnum();
                         break;
                     default: reader.skipField();
                 }
@@ -251,13 +274,6 @@ export namespace lib.codeintel.lsif_typed {
         }
         static deserializeBinary(bytes: Uint8Array): Metadata {
             return Metadata.deserialize(bytes);
-        }
-    }
-    export namespace Metadata {
-        export enum PositionEncoding {
-            POSITION_ENCODING_UNSPECIFIED = 0,
-            POSITION_ENCODING_UTF8 = 1,
-            POSITION_ENCODING_UTF16 = 2
         }
     }
     export class ToolInfo extends pb_1.Message {
@@ -353,7 +369,7 @@ export namespace lib.codeintel.lsif_typed {
         constructor(data?: any[] | {
             relative_path?: string;
             occurrences?: Occurrence[];
-            symbols?: Symbol[];
+            symbols?: SymbolInformation[];
         }) {
             super();
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [2, 3], []);
@@ -382,15 +398,15 @@ export namespace lib.codeintel.lsif_typed {
             pb_1.Message.setRepeatedWrapperField(this, 2, value);
         }
         get symbols() {
-            return pb_1.Message.getRepeatedWrapperField(this, Symbol, 3) as Symbol[];
+            return pb_1.Message.getRepeatedWrapperField(this, SymbolInformation, 3) as SymbolInformation[];
         }
-        set symbols(value: Symbol[]) {
+        set symbols(value: SymbolInformation[]) {
             pb_1.Message.setRepeatedWrapperField(this, 3, value);
         }
         static fromObject(data: {
             relative_path?: string;
             occurrences?: ReturnType<typeof Occurrence.prototype.toObject>[];
-            symbols?: ReturnType<typeof Symbol.prototype.toObject>[];
+            symbols?: ReturnType<typeof SymbolInformation.prototype.toObject>[];
         }) {
             const message = new Document({});
             if (data.relative_path != null) {
@@ -400,7 +416,7 @@ export namespace lib.codeintel.lsif_typed {
                 message.occurrences = data.occurrences.map(item => Occurrence.fromObject(item));
             }
             if (data.symbols != null) {
-                message.symbols = data.symbols.map(item => Symbol.fromObject(item));
+                message.symbols = data.symbols.map(item => SymbolInformation.fromObject(item));
             }
             return message;
         }
@@ -408,7 +424,7 @@ export namespace lib.codeintel.lsif_typed {
             const data: {
                 relative_path?: string;
                 occurrences?: ReturnType<typeof Occurrence.prototype.toObject>[];
-                symbols?: ReturnType<typeof Symbol.prototype.toObject>[];
+                symbols?: ReturnType<typeof SymbolInformation.prototype.toObject>[];
             } = {};
             if (this.relative_path != null) {
                 data.relative_path = this.relative_path;
@@ -417,7 +433,7 @@ export namespace lib.codeintel.lsif_typed {
                 data.occurrences = this.occurrences.map((item: Occurrence) => item.toObject());
             }
             if (this.symbols != null) {
-                data.symbols = this.symbols.map((item: Symbol) => item.toObject());
+                data.symbols = this.symbols.map((item: SymbolInformation) => item.toObject());
             }
             return data;
         }
@@ -430,7 +446,7 @@ export namespace lib.codeintel.lsif_typed {
             if (this.occurrences !== undefined)
                 writer.writeRepeatedMessage(2, this.occurrences, (item: Occurrence) => item.serialize(writer));
             if (this.symbols !== undefined)
-                writer.writeRepeatedMessage(3, this.symbols, (item: Symbol) => item.serialize(writer));
+                writer.writeRepeatedMessage(3, this.symbols, (item: SymbolInformation) => item.serialize(writer));
             if (!w)
                 return writer.getResultBuffer();
         }
@@ -447,7 +463,7 @@ export namespace lib.codeintel.lsif_typed {
                         reader.readMessage(message.occurrences, () => pb_1.Message.addToRepeatedWrapperField(message, 2, Occurrence.deserialize(reader), Occurrence));
                         break;
                     case 3:
-                        reader.readMessage(message.symbols, () => pb_1.Message.addToRepeatedWrapperField(message, 3, Symbol.deserialize(reader), Symbol));
+                        reader.readMessage(message.symbols, () => pb_1.Message.addToRepeatedWrapperField(message, 3, SymbolInformation.deserialize(reader), SymbolInformation));
                         break;
                     default: reader.skipField();
                 }
@@ -461,9 +477,9 @@ export namespace lib.codeintel.lsif_typed {
             return Document.deserialize(bytes);
         }
     }
-    export class Package extends pb_1.Message {
+    export class PackageInformation extends pb_1.Message {
         constructor(data?: any[] | {
-            uri?: string;
+            package?: string;
             name?: string;
             version?: string;
             manager?: string;
@@ -471,8 +487,8 @@ export namespace lib.codeintel.lsif_typed {
             super();
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [], []);
             if (!Array.isArray(data) && typeof data == "object") {
-                if ("uri" in data && data.uri != undefined) {
-                    this.uri = data.uri;
+                if ("package" in data && data.package != undefined) {
+                    this.package = data.package;
                 }
                 if ("name" in data && data.name != undefined) {
                     this.name = data.name;
@@ -485,10 +501,10 @@ export namespace lib.codeintel.lsif_typed {
                 }
             }
         }
-        get uri() {
+        get package() {
             return pb_1.Message.getField(this, 1) as string;
         }
-        set uri(value: string) {
+        set package(value: string) {
             pb_1.Message.setField(this, 1, value);
         }
         get name() {
@@ -510,14 +526,14 @@ export namespace lib.codeintel.lsif_typed {
             pb_1.Message.setField(this, 4, value);
         }
         static fromObject(data: {
-            uri?: string;
+            package?: string;
             name?: string;
             version?: string;
             manager?: string;
         }) {
-            const message = new Package({});
-            if (data.uri != null) {
-                message.uri = data.uri;
+            const message = new PackageInformation({});
+            if (data.package != null) {
+                message.package = data.package;
             }
             if (data.name != null) {
                 message.name = data.name;
@@ -532,13 +548,13 @@ export namespace lib.codeintel.lsif_typed {
         }
         toObject() {
             const data: {
-                uri?: string;
+                package?: string;
                 name?: string;
                 version?: string;
                 manager?: string;
             } = {};
-            if (this.uri != null) {
-                data.uri = this.uri;
+            if (this.package != null) {
+                data.package = this.package;
             }
             if (this.name != null) {
                 data.name = this.name;
@@ -555,8 +571,8 @@ export namespace lib.codeintel.lsif_typed {
         serialize(w: pb_1.BinaryWriter): void;
         serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
             const writer = w || new pb_1.BinaryWriter();
-            if (typeof this.uri === "string" && this.uri.length)
-                writer.writeString(1, this.uri);
+            if (typeof this.package === "string" && this.package.length)
+                writer.writeString(1, this.package);
             if (typeof this.name === "string" && this.name.length)
                 writer.writeString(2, this.name);
             if (typeof this.version === "string" && this.version.length)
@@ -566,14 +582,14 @@ export namespace lib.codeintel.lsif_typed {
             if (!w)
                 return writer.getResultBuffer();
         }
-        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): Package {
-            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new Package();
+        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): PackageInformation {
+            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new PackageInformation();
             while (reader.nextField()) {
                 if (reader.isEndGroup())
                     break;
                 switch (reader.getFieldNumber()) {
                     case 1:
-                        message.uri = reader.readString();
+                        message.package = reader.readString();
                         break;
                     case 2:
                         message.name = reader.readString();
@@ -592,33 +608,30 @@ export namespace lib.codeintel.lsif_typed {
         serializeBinary(): Uint8Array {
             return this.serialize();
         }
-        static deserializeBinary(bytes: Uint8Array): Package {
-            return Package.deserialize(bytes);
+        static deserializeBinary(bytes: Uint8Array): PackageInformation {
+            return PackageInformation.deserialize(bytes);
         }
     }
-    export class Symbol extends pb_1.Message {
+    export class SymbolInformation extends pb_1.Message {
         constructor(data?: any[] | {
-            uri?: string;
-            unique?: Symbol.Unique;
+            symbol?: string;
             documentation?: string[];
-            package_uri?: string;
+            package?: string;
             reference_symbols?: string[];
             implementation_symbols?: string[];
+            type_definition_symbols?: string[];
         }) {
             super();
-            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [3, 5, 6], []);
+            pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [3, 5, 6, 7], []);
             if (!Array.isArray(data) && typeof data == "object") {
-                if ("uri" in data && data.uri != undefined) {
-                    this.uri = data.uri;
-                }
-                if ("unique" in data && data.unique != undefined) {
-                    this.unique = data.unique;
+                if ("symbol" in data && data.symbol != undefined) {
+                    this.symbol = data.symbol;
                 }
                 if ("documentation" in data && data.documentation != undefined) {
                     this.documentation = data.documentation;
                 }
-                if ("package_uri" in data && data.package_uri != undefined) {
-                    this.package_uri = data.package_uri;
+                if ("package" in data && data.package != undefined) {
+                    this.package = data.package;
                 }
                 if ("reference_symbols" in data && data.reference_symbols != undefined) {
                     this.reference_symbols = data.reference_symbols;
@@ -626,19 +639,16 @@ export namespace lib.codeintel.lsif_typed {
                 if ("implementation_symbols" in data && data.implementation_symbols != undefined) {
                     this.implementation_symbols = data.implementation_symbols;
                 }
+                if ("type_definition_symbols" in data && data.type_definition_symbols != undefined) {
+                    this.type_definition_symbols = data.type_definition_symbols;
+                }
             }
         }
-        get uri() {
+        get symbol() {
             return pb_1.Message.getField(this, 1) as string;
         }
-        set uri(value: string) {
+        set symbol(value: string) {
             pb_1.Message.setField(this, 1, value);
-        }
-        get unique() {
-            return pb_1.Message.getField(this, 2) as Symbol.Unique;
-        }
-        set unique(value: Symbol.Unique) {
-            pb_1.Message.setField(this, 2, value);
         }
         get documentation() {
             return pb_1.Message.getField(this, 3) as string[];
@@ -646,10 +656,10 @@ export namespace lib.codeintel.lsif_typed {
         set documentation(value: string[]) {
             pb_1.Message.setField(this, 3, value);
         }
-        get package_uri() {
+        get package() {
             return pb_1.Message.getField(this, 4) as string;
         }
-        set package_uri(value: string) {
+        set package(value: string) {
             pb_1.Message.setField(this, 4, value);
         }
         get reference_symbols() {
@@ -664,26 +674,29 @@ export namespace lib.codeintel.lsif_typed {
         set implementation_symbols(value: string[]) {
             pb_1.Message.setField(this, 6, value);
         }
+        get type_definition_symbols() {
+            return pb_1.Message.getField(this, 7) as string[];
+        }
+        set type_definition_symbols(value: string[]) {
+            pb_1.Message.setField(this, 7, value);
+        }
         static fromObject(data: {
-            uri?: string;
-            unique?: Symbol.Unique;
+            symbol?: string;
             documentation?: string[];
-            package_uri?: string;
+            package?: string;
             reference_symbols?: string[];
             implementation_symbols?: string[];
+            type_definition_symbols?: string[];
         }) {
-            const message = new Symbol({});
-            if (data.uri != null) {
-                message.uri = data.uri;
-            }
-            if (data.unique != null) {
-                message.unique = data.unique;
+            const message = new SymbolInformation({});
+            if (data.symbol != null) {
+                message.symbol = data.symbol;
             }
             if (data.documentation != null) {
                 message.documentation = data.documentation;
             }
-            if (data.package_uri != null) {
-                message.package_uri = data.package_uri;
+            if (data.package != null) {
+                message.package = data.package;
             }
             if (data.reference_symbols != null) {
                 message.reference_symbols = data.reference_symbols;
@@ -691,28 +704,28 @@ export namespace lib.codeintel.lsif_typed {
             if (data.implementation_symbols != null) {
                 message.implementation_symbols = data.implementation_symbols;
             }
+            if (data.type_definition_symbols != null) {
+                message.type_definition_symbols = data.type_definition_symbols;
+            }
             return message;
         }
         toObject() {
             const data: {
-                uri?: string;
-                unique?: Symbol.Unique;
+                symbol?: string;
                 documentation?: string[];
-                package_uri?: string;
+                package?: string;
                 reference_symbols?: string[];
                 implementation_symbols?: string[];
+                type_definition_symbols?: string[];
             } = {};
-            if (this.uri != null) {
-                data.uri = this.uri;
-            }
-            if (this.unique != null) {
-                data.unique = this.unique;
+            if (this.symbol != null) {
+                data.symbol = this.symbol;
             }
             if (this.documentation != null) {
                 data.documentation = this.documentation;
             }
-            if (this.package_uri != null) {
-                data.package_uri = this.package_uri;
+            if (this.package != null) {
+                data.package = this.package;
             }
             if (this.reference_symbols != null) {
                 data.reference_symbols = this.reference_symbols;
@@ -720,50 +733,53 @@ export namespace lib.codeintel.lsif_typed {
             if (this.implementation_symbols != null) {
                 data.implementation_symbols = this.implementation_symbols;
             }
+            if (this.type_definition_symbols != null) {
+                data.type_definition_symbols = this.type_definition_symbols;
+            }
             return data;
         }
         serialize(): Uint8Array;
         serialize(w: pb_1.BinaryWriter): void;
         serialize(w?: pb_1.BinaryWriter): Uint8Array | void {
             const writer = w || new pb_1.BinaryWriter();
-            if (typeof this.uri === "string" && this.uri.length)
-                writer.writeString(1, this.uri);
-            if (this.unique !== undefined)
-                writer.writeEnum(2, this.unique);
+            if (typeof this.symbol === "string" && this.symbol.length)
+                writer.writeString(1, this.symbol);
             if (this.documentation !== undefined)
                 writer.writeRepeatedString(3, this.documentation);
-            if (typeof this.package_uri === "string" && this.package_uri.length)
-                writer.writeString(4, this.package_uri);
+            if (typeof this.package === "string" && this.package.length)
+                writer.writeString(4, this.package);
             if (this.reference_symbols !== undefined)
                 writer.writeRepeatedString(5, this.reference_symbols);
             if (this.implementation_symbols !== undefined)
                 writer.writeRepeatedString(6, this.implementation_symbols);
+            if (this.type_definition_symbols !== undefined)
+                writer.writeRepeatedString(7, this.type_definition_symbols);
             if (!w)
                 return writer.getResultBuffer();
         }
-        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): Symbol {
-            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new Symbol();
+        static deserialize(bytes: Uint8Array | pb_1.BinaryReader): SymbolInformation {
+            const reader = bytes instanceof pb_1.BinaryReader ? bytes : new pb_1.BinaryReader(bytes), message = new SymbolInformation();
             while (reader.nextField()) {
                 if (reader.isEndGroup())
                     break;
                 switch (reader.getFieldNumber()) {
                     case 1:
-                        message.uri = reader.readString();
-                        break;
-                    case 2:
-                        message.unique = reader.readEnum();
+                        message.symbol = reader.readString();
                         break;
                     case 3:
                         pb_1.Message.addToRepeatedField(message, 3, reader.readString());
                         break;
                     case 4:
-                        message.package_uri = reader.readString();
+                        message.package = reader.readString();
                         break;
                     case 5:
                         pb_1.Message.addToRepeatedField(message, 5, reader.readString());
                         break;
                     case 6:
                         pb_1.Message.addToRepeatedField(message, 6, reader.readString());
+                        break;
+                    case 7:
+                        pb_1.Message.addToRepeatedField(message, 7, reader.readString());
                         break;
                     default: reader.skipField();
                 }
@@ -773,24 +789,17 @@ export namespace lib.codeintel.lsif_typed {
         serializeBinary(): Uint8Array {
             return this.serialize();
         }
-        static deserializeBinary(bytes: Uint8Array): Symbol {
-            return Symbol.deserialize(bytes);
-        }
-    }
-    export namespace Symbol {
-        export enum Unique {
-            UNIQUE_UNSPECIFIED = 0,
-            UNIQUE_DOCUMENT = 1,
-            UNIQUE_GLOBAL = 2
+        static deserializeBinary(bytes: Uint8Array): SymbolInformation {
+            return SymbolInformation.deserialize(bytes);
         }
     }
     export class Occurrence extends pb_1.Message {
         constructor(data?: any[] | {
             range?: number[];
             symbol_uri?: string;
-            symbol_role?: Occurrence.Role;
+            symbol_role?: SymbolRole;
             symbol_documentation?: string[];
-            highlight?: Occurrence.Highlight;
+            syntax_kind?: SyntaxKind;
         }) {
             super();
             pb_1.Message.initialize(this, Array.isArray(data) ? data : [], 0, -1, [1, 4], []);
@@ -807,8 +816,8 @@ export namespace lib.codeintel.lsif_typed {
                 if ("symbol_documentation" in data && data.symbol_documentation != undefined) {
                     this.symbol_documentation = data.symbol_documentation;
                 }
-                if ("highlight" in data && data.highlight != undefined) {
-                    this.highlight = data.highlight;
+                if ("syntax_kind" in data && data.syntax_kind != undefined) {
+                    this.syntax_kind = data.syntax_kind;
                 }
             }
         }
@@ -825,9 +834,9 @@ export namespace lib.codeintel.lsif_typed {
             pb_1.Message.setField(this, 2, value);
         }
         get symbol_role() {
-            return pb_1.Message.getField(this, 3) as Occurrence.Role;
+            return pb_1.Message.getField(this, 3) as SymbolRole;
         }
-        set symbol_role(value: Occurrence.Role) {
+        set symbol_role(value: SymbolRole) {
             pb_1.Message.setField(this, 3, value);
         }
         get symbol_documentation() {
@@ -836,18 +845,18 @@ export namespace lib.codeintel.lsif_typed {
         set symbol_documentation(value: string[]) {
             pb_1.Message.setField(this, 4, value);
         }
-        get highlight() {
-            return pb_1.Message.getField(this, 5) as Occurrence.Highlight;
+        get syntax_kind() {
+            return pb_1.Message.getField(this, 5) as SyntaxKind;
         }
-        set highlight(value: Occurrence.Highlight) {
+        set syntax_kind(value: SyntaxKind) {
             pb_1.Message.setField(this, 5, value);
         }
         static fromObject(data: {
             range?: number[];
             symbol_uri?: string;
-            symbol_role?: Occurrence.Role;
+            symbol_role?: SymbolRole;
             symbol_documentation?: string[];
-            highlight?: Occurrence.Highlight;
+            syntax_kind?: SyntaxKind;
         }) {
             const message = new Occurrence({});
             if (data.range != null) {
@@ -862,8 +871,8 @@ export namespace lib.codeintel.lsif_typed {
             if (data.symbol_documentation != null) {
                 message.symbol_documentation = data.symbol_documentation;
             }
-            if (data.highlight != null) {
-                message.highlight = data.highlight;
+            if (data.syntax_kind != null) {
+                message.syntax_kind = data.syntax_kind;
             }
             return message;
         }
@@ -871,9 +880,9 @@ export namespace lib.codeintel.lsif_typed {
             const data: {
                 range?: number[];
                 symbol_uri?: string;
-                symbol_role?: Occurrence.Role;
+                symbol_role?: SymbolRole;
                 symbol_documentation?: string[];
-                highlight?: Occurrence.Highlight;
+                syntax_kind?: SyntaxKind;
             } = {};
             if (this.range != null) {
                 data.range = this.range;
@@ -887,8 +896,8 @@ export namespace lib.codeintel.lsif_typed {
             if (this.symbol_documentation != null) {
                 data.symbol_documentation = this.symbol_documentation;
             }
-            if (this.highlight != null) {
-                data.highlight = this.highlight;
+            if (this.syntax_kind != null) {
+                data.syntax_kind = this.syntax_kind;
             }
             return data;
         }
@@ -904,8 +913,8 @@ export namespace lib.codeintel.lsif_typed {
                 writer.writeEnum(3, this.symbol_role);
             if (this.symbol_documentation !== undefined)
                 writer.writeRepeatedString(4, this.symbol_documentation);
-            if (this.highlight !== undefined)
-                writer.writeEnum(5, this.highlight);
+            if (this.syntax_kind !== undefined)
+                writer.writeEnum(5, this.syntax_kind);
             if (!w)
                 return writer.getResultBuffer();
         }
@@ -928,7 +937,7 @@ export namespace lib.codeintel.lsif_typed {
                         pb_1.Message.addToRepeatedField(message, 4, reader.readString());
                         break;
                     case 5:
-                        message.highlight = reader.readEnum();
+                        message.syntax_kind = reader.readEnum();
                         break;
                     default: reader.skipField();
                 }
@@ -940,25 +949,6 @@ export namespace lib.codeintel.lsif_typed {
         }
         static deserializeBinary(bytes: Uint8Array): Occurrence {
             return Occurrence.deserialize(bytes);
-        }
-    }
-    export namespace Occurrence {
-        export enum Role {
-            ROLE_UNSPECIFIED = 0,
-            ROLE_DEFINITION = 1,
-            ROLE_REFERENCE = 2
-        }
-        export enum Highlight {
-            HIGHLIGHT_UNSPECIFIED = 0,
-            HIGHLIGHT_STRING_LITERAL = 1,
-            HIGHLIGHT_NUMERIC_LITERAL = 2,
-            HIGHLIGHT_IDENTIFIER = 3,
-            HIGHLIGHT_METHOD_IDENTIFIER = 4,
-            HIGHLIGHT_TYPE_IDENTIFIER = 5,
-            HIGHLIGHT_TERM_IDENTIFIER = 6,
-            HIGHLIGHT_LOCAL_IDENTIFIER = 7,
-            HIGHLIGHT_SHADED_IDENTIFIER = 8,
-            HIGHLIGHT_PACKAGE_IDENTIFIER = 9
         }
     }
 }
