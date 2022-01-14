@@ -94,14 +94,14 @@ func waitForInstallation(cmdNames map[string]struct{}, installDone chan string, 
 	stdout.Out.Write("")
 
 	waitingMessages := []string{
-"Still waiting for %s to finish installing...",
-"Yup, still waiting for %s to finish installing...",
-"Looks like we're still waiting for %s to finish installing...",
-"This is getting awkward now. We're still waiting for %s to finish installing...",
-"Nothing more to say, I guess. Come on %s ...",
-"It might be your computer? Still waiting for %s ...",
-"Anyway... how are you? (Still waiting for %s ...)",
-"Still waiting for %s to finish installing...",
+		"Still waiting for %s to finish installing...",
+		"Yup, still waiting for %s to finish installing...",
+		"Looks like we're still waiting for %s to finish installing...",
+		"This is getting awkward now. We're still waiting for %s to finish installing...",
+		"Nothing more to say, I guess. Come on %s ...",
+		"It might be your computer? Still waiting for %s ...",
+		"Anyway... how are you? (Still waiting for %s ...)",
+		"Still waiting for %s to finish installing...",
 	}
 	messageCount := 0
 
@@ -126,7 +126,7 @@ outer:
 
 			idx := messageCount
 			if idx > len(waitingMessages)-1 {
-				idx = len(waitingMessages)-1
+				idx = len(waitingMessages) - 1
 			}
 			msg := waitingMessages[idx]
 			stdout.Out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, msg, strings.Join(names, ", ")))
