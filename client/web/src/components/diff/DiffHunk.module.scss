@@ -57,15 +57,9 @@
     font-family: var(--code-font-family);
     padding: 0 0.5rem;
     &--line {
-        --link-color: var(--line-number-color);
-
         color: var(--line-number-color);
         display: block;
-
         &:hover {
-            --link-hover-color: var(--body-color);
-            --link-hover-decoration: none;
-
             color: var(--body-color);
             text-decoration: none;
         }

@@ -113,7 +113,7 @@ exports[`GlobalNavbar default 1`] = `
                 Search home
               </a>
               <a
-                class="dropdown-item link"
+                class="dropdown-item"
                 role="menuitem"
                 to="/contexts"
               >
@@ -375,7 +375,7 @@ exports[`GlobalNavbar low-profile 1`] = `
                 Search home
               </a>
               <a
-                class="dropdown-item link"
+                class="dropdown-item"
                 role="menuitem"
                 to="/contexts"
               >
