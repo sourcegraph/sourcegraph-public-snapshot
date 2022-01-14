@@ -67,7 +67,7 @@ func SearchFilesInRepos(ctx context.Context, zoektArgs zoektutil.IndexedSearchRe
 	return g.Wait()
 }
 
-// SearchFilesInRepoBatch is a convenience function around searchFilesInRepos
+// SearchFilesInReposBatch is a convenience function around searchFilesInRepos
 // which collects the results from the stream.
 func SearchFilesInReposBatch(ctx context.Context, zoektArgs zoektutil.IndexedSearchRequest, searcherArgs *search.SearcherParameters, searcherOnly bool) ([]*result.FileMatch, streaming.Stats, error) {
 	matches, stats, err := streaming.CollectStream(func(stream streaming.Sender) error {
