@@ -79,7 +79,7 @@ export function useBlobPanelViews({
         )
     )
 
-    const maxReferences = maxReferencesFromSettings(settingsCascade)
+    const maxPanelResults = maxPanelResultsFromSettings(settingsCascade)
 
     // Creates source for definition and reference panels
     const createLocationProvider = useCallback(
@@ -102,7 +102,7 @@ export function useBlobPanelViews({
                         selector: null,
                         priority,
 
-                        maxLocationResults: id === 'references' || id === 'def' ? maxReferences : undefined,
+                        maxLocationResults: id === 'references' || id === 'def' ? maxPanelResults : undefined,
                         // This disable directive is necessary because TypeScript is not yet smart
                         // enough to know that (typeof params & typeof extraParams) is P.
                         //
@@ -120,7 +120,7 @@ export function useBlobPanelViews({
                     }
                 })
             ),
-        [activeCodeEditorPositions, maxReferences]
+        [activeCodeEditorPositions, maxPanelResults]
     )
 
     // Source for history panel
@@ -203,7 +203,7 @@ export function useBlobPanelViews({
     useEffect(() => () => subscriptions.unsubscribe(), [subscriptions])
 }
 
-function maxReferencesFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): number | undefined {
+function maxPanelResultsFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): number | undefined {
     if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
         return settingsCascade.final['codeIntelligence.maxPanelResults'] as number
     }
