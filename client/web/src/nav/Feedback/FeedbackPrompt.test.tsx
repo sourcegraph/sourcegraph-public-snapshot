@@ -3,7 +3,7 @@ import { render, RenderResult, fireEvent } from '@testing-library/react'
 import { GraphQLError } from 'graphql'
 import React from 'react'
 
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 
 import { SubmitHappinessFeedbackResult, SubmitHappinessFeedbackVariables } from '../../graphql-operations'

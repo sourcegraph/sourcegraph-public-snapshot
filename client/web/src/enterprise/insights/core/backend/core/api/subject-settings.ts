@@ -1,7 +1,7 @@
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 import { requestGraphQL } from '../../../../../../backend/graphql'

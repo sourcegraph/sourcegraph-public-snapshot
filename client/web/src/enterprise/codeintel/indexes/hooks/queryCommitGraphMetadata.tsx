@@ -3,7 +3,7 @@ import { parseISO } from 'date-fns'
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { gql, getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, getDocumentNode } from '@sourcegraph/http-client'
 
 import {
     CodeIntelligenceCommitGraphMetadataResult,

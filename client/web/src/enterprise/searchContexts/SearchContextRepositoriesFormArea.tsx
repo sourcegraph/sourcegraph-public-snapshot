@@ -6,7 +6,7 @@ import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { delay, mergeMap, startWith, tap } from 'rxjs/operators'
 
-import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
+import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'

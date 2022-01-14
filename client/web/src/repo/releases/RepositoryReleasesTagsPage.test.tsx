@@ -3,7 +3,7 @@ import * as H from 'history'
 import React from 'react'
 import { of } from 'rxjs'
 
-import { IRepository, IGitRef } from '@sourcegraph/shared/src/graphql/schema'
+import { IRepository, IGitRef } from '@sourcegraph/shared/src/schema'
 
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 

@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react'
 
+import { gql } from '@sourcegraph/http-client'
 import { percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../components/PageTitle'

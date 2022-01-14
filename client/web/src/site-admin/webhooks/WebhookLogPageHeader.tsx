@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useCallback } from 'react'
 
-import { useQuery } from '@sourcegraph/shared/src/graphql/graphql'
+import { useQuery } from '@sourcegraph/http-client'
 import { Button, Select } from '@sourcegraph/wildcard'
 
 import { WebhookLogPageHeaderResult } from '../../graphql-operations'

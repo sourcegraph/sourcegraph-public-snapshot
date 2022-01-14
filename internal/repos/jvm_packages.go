@@ -75,6 +75,9 @@ func newJVMPackagesSource(svc *types.ExternalService, c *schema.JVMPackagesConne
 
 // ListRepos returns all Maven artifacts accessible to all connections
 // configured in Sourcegraph via the external services configuration.
+//
+// [FIXME: deduplicate-listed-repos] The current implementation will return
+// multiple repos with the same URL if there are different versions of it.
 func (s *JVMPackagesSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	s.listDependentRepos(ctx, results)
 }

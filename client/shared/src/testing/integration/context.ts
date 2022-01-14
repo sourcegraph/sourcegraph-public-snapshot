@@ -14,8 +14,8 @@ import { Subject, Subscription, throwError } from 'rxjs'
 import { first, timeoutWith } from 'rxjs/operators'
 
 import { asError } from '@sourcegraph/common'
+import { ErrorGraphQLResult, SuccessGraphQLResult } from '@sourcegraph/http-client'
 
-import { ErrorGraphQLResult, SuccessGraphQLResult } from '../../graphql/graphql'
 import { keyExistsIn } from '../../util/types'
 import { recordCoverage } from '../coverage'
 import { Driver } from '../driver'

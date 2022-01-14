@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
+
+	"github.com/sourcegraph/sourcegraph/dev/internal/team"
 )
 
 type CheckOptions struct {
@@ -15,9 +17,10 @@ type CheckOptions struct {
 }
 
 type CommitInfo struct {
-	Commit      string
-	SlackUserID string
-	Author      string
+	Commit string
+	Author string
+
+	AuthorSlackID string
 }
 
 type CheckResults struct {
@@ -31,7 +34,7 @@ type CheckResults struct {
 
 // CheckBuilds is the main buildchecker program. It checks the given builds for relevant
 // failures and runs lock/unlock operations on the given branch.
-func CheckBuilds(ctx context.Context, branch BranchLocker, slackUser SlackUserResolver, builds []buildkite.Build, opts CheckOptions) (results *CheckResults, err error) {
+func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.TeammateResolver, builds []buildkite.Build, opts CheckOptions) (results *CheckResults, err error) {
 	results = &CheckResults{}
 
 	// Scan for first build with a meaningful state
@@ -74,7 +77,8 @@ func CheckBuilds(ctx context.Context, branch BranchLocker, slackUser SlackUserRe
 	// annotate the failures with their author (Github handle), so we can reach them
 	// over Slack.
 	for i, info := range results.FailedCommits {
-		results.FailedCommits[i].SlackUserID, err = slackUser.ResolveByCommit(ctx, info.Commit)
+		teammate, err := teammates.ResolveByCommitAuthor(ctx, "sourcegraph", "sourcegraph", info.Commit)
+		results.FailedCommits[i].AuthorSlackID = teammate.SlackID
 		if err != nil {
 			// If we can't resolve the user, do not interrupt the process.
 			fmt.Println(fmt.Errorf("slackUserResolve: %w", err))

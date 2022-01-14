@@ -15,7 +15,7 @@ export const Footer: React.FunctionComponent<Props> = ({ onFinish }) => {
     const { setStep, currentIndex, currentStep } = useSteps()
 
     return (
-        <div className="d-flex align-items-center justify-content-end mt-4">
+        <div className="d-flex align-items-center justify-content-end mt-4 w-100">
             {!currentStep.isLastStep && (
                 <Link
                     to="https://docs.sourcegraph.com/code_search/explanations/code_visibility_on_sourcegraph_cloud"

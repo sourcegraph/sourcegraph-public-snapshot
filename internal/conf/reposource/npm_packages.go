@@ -52,9 +52,9 @@ func NewNPMPackage(scope string, name string) (*NPMPackage, error) {
 	return &NPMPackage{scope, name}, nil
 }
 
-// ParseNPMPackage is a convenience function to parse a string in a
-// 'npm/(scope/)?name' format into an NPM package.
-func ParseNPMPackage(urlPath string) (*NPMPackage, error) {
+// ParseNPMPackageFromRepoURL is a convenience function to parse a string in a
+// 'npm/(scope/)?name' format into an NPMPackage.
+func ParseNPMPackageFromRepoURL(urlPath string) (*NPMPackage, error) {
 	match := npmURLRegex.FindStringSubmatch(urlPath)
 	if match == nil {
 		return nil, errors.Errorf("expected path in npm/(scope/)?name format but found %s", urlPath)
@@ -67,6 +67,16 @@ func ParseNPMPackage(urlPath string) (*NPMPackage, error) {
 	}
 	scope, name := result["scope"], result["name"]
 	return &NPMPackage{scope, name}, nil
+}
+
+// ParseNPMPackageFromPackageSyntax is a convenience function to parse a
+// string in a '(@scope/)?name' format into an NPMPackage.
+func ParseNPMPackageFromPackageSyntax(pkg string) (*NPMPackage, error) {
+	dep, err := ParseNPMDependency(fmt.Sprintf("%s@0", pkg))
+	if err != nil {
+		return nil, err
+	}
+	return &dep.Package, nil
 }
 
 type NPMPackageSerializationHelper struct {
@@ -113,10 +123,15 @@ func (pkg *NPMPackage) CloneURL() string {
 // MatchesDependencyString checks if a dependency (= package + version pair)
 // refers to the same package as pkg.
 func (pkg NPMPackage) MatchesDependencyString(depPackageSyntax string) bool {
-	return strings.HasPrefix(depPackageSyntax, pkg.packageSyntax()+"@")
+	return strings.HasPrefix(depPackageSyntax, pkg.PackageSyntax()+"@")
 }
 
-func (pkg NPMPackage) packageSyntax() string {
+// Format a package using (@scope/)?name syntax.
+//
+// This is largely for "lower-level" code interacting with the NPM API.
+//
+// In most cases, you want to use NPMDependency's PackageManagerSyntax() instead.
+func (pkg NPMPackage) PackageSyntax() string {
 	if pkg.scope != "" {
 		return fmt.Sprintf("@%s/%s", pkg.scope, pkg.name)
 	}
@@ -130,7 +145,7 @@ func (pkg NPMPackage) packageSyntax() string {
 //
 // Reference:  https://docs.npmjs.com/cli/v8/commands/npm-install
 type NPMDependency struct {
-	NPMPackage
+	Package NPMPackage
 
 	// The version or tag (such as "latest") for a dependency.
 	//
@@ -173,7 +188,7 @@ func ParseNPMDependency(dependency string) (*NPMDependency, error) {
 // PackageManagerSyntax returns the dependency in NPM/Yarn syntax. The returned
 // string can (for example) be passed to `npm install`.
 func (d NPMDependency) PackageManagerSyntax() string {
-	return fmt.Sprintf("%s@%s", d.NPMPackage.packageSyntax(), d.Version)
+	return fmt.Sprintf("%s@%s", d.Package.PackageSyntax(), d.Version)
 }
 
 func (d NPMDependency) GitTagFromVersion() string {
@@ -185,7 +200,7 @@ func (d NPMDependency) GitTagFromVersion() string {
 // slice.
 func SortNPMDependencies(dependencies []NPMDependency) {
 	sort.Slice(dependencies, func(i, j int) bool {
-		iPkg, jPkg := dependencies[i].NPMPackage, dependencies[j].NPMPackage
+		iPkg, jPkg := dependencies[i].Package, dependencies[j].Package
 		if iPkg == jPkg {
 			return versionGreaterThan(dependencies[i].Version, dependencies[j].Version)
 		}

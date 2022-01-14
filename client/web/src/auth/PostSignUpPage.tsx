@@ -138,40 +138,44 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                     lessPadding={false}
                     className="text-left"
                     body={
-                        <div className={classNames('pb-1', styles.container)}>
-                            {hasErrors && (
-                                <div className="alert alert-danger mb-4" role="alert">
-                                    Sorry, something went wrong. Try refreshing the page or{' '}
-                                    <Link to={PageRoutes.Search}>skip to code search</Link>.
-                                </div>
-                            )}
-                            <h2>Get started with Sourcegraph</h2>
-                            <p className="text-muted pb-3">
-                                Three quick steps to add your repositories and get searching with Sourcegraph
-                            </p>
-                            <div className="mt-4 pb-3">
+                        <div className="pb-1 d-flex flex-column align-items-center w-100">
+                            <div className={styles.container}>
+                                {hasErrors && (
+                                    <div className="alert alert-danger mb-4" role="alert">
+                                        Sorry, something went wrong. Try refreshing the page or{' '}
+                                        <Link to={PageRoutes.Search}>skip to code search</Link>.
+                                    </div>
+                                )}
+                                <h2>Get started with Sourcegraph</h2>
+                                <p className="text-muted pb-3">
+                                    Three quick steps to add your repositories and get searching with Sourcegraph
+                                </p>
+                            </div>
+                            <div className="mt-4 pb-3 d-flex flex-column align-items-center">
                                 <Steps initialStep={1}>
-                                    <StepList numeric={true}>
+                                    <StepList numeric={true} className={styles.container}>
                                         <Step borderColor="purple">Connect with code hosts</Step>
                                         <Step borderColor="blue">Add repositories</Step>
                                         <Step borderColor="orange">Start searching</Step>
                                     </StepList>
                                     <StepPanels>
                                         <StepPanel>
-                                            <CodeHostsConnection
-                                                user={user}
-                                                onNavigation={(called: boolean) => {
-                                                    isOAuthCall.current = called
-                                                }}
-                                                loading={loadingServices}
-                                                onError={onError}
-                                                externalServices={externalServices}
-                                                context={context}
-                                                refetch={refetchExternalServices}
-                                            />
+                                            <div className={styles.container}>
+                                                <CodeHostsConnection
+                                                    user={user}
+                                                    onNavigation={(called: boolean) => {
+                                                        isOAuthCall.current = called
+                                                    }}
+                                                    loading={loadingServices}
+                                                    onError={onError}
+                                                    externalServices={externalServices}
+                                                    context={context}
+                                                    refetch={refetchExternalServices}
+                                                />
+                                            </div>
                                         </StepPanel>
                                         <StepPanel>
-                                            <div className="mt-5">
+                                            <div className={classNames('mt-5', styles.container)}>
                                                 <h3>Add repositories</h3>
                                                 <p className="text-muted mb-4">
                                                     Choose repositories you own or collaborate on from your code hosts.
@@ -197,6 +201,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
                                         </StepPanel>
                                         <StepPanel>
                                             <StartSearching
+                                                className={styles.container}
                                                 user={user}
                                                 repoSelectionMode={repoSelectionMode}
                                                 onUserExternalServicesOrRepositoriesUpdate={

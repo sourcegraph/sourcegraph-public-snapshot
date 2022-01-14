@@ -2,7 +2,7 @@ import { render } from '@testing-library/react'
 import { noop } from 'lodash'
 import React from 'react'
 
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 
 import { InstallBrowserExtensionAlert } from './InstallBrowserExtensionAlert'
 

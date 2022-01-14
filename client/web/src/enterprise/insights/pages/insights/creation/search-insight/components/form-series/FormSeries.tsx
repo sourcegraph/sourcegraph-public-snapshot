@@ -39,25 +39,25 @@ export interface FormSeriesProps {
      * Handler that runs every time user clicked edit on particular
      * series card.
      */
-    onEditSeriesRequest: (editSeriesIndex: number) => void
+    onEditSeriesRequest: (seriesId?: string) => void
 
     /**
      * Handler that runs every time use clicked commit (done) in
      * series edit form.
      */
-    onEditSeriesCommit: (seriesIndex: number, editedSeries: EditableDataSeries) => void
+    onEditSeriesCommit: (editedSeries: EditableDataSeries) => void
 
     /**
      * Handler that runs every time use canceled (click cancel) in
      * series edit form.
      */
-    onEditSeriesCancel: (closedCardIndex: number) => void
+    onEditSeriesCancel: (seriesId: string) => void
 
     /**
      * Handler that runs every time use removed (click remove) in
      * series card.
      */
-    onSeriesRemove: (removedSeriesIndex: number) => void
+    onSeriesRemove: (seriesId: string) => void
 }
 
 /**
@@ -81,24 +81,24 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                 line.edit ? (
                     <FormSeriesInput
                         key={line.id}
+                        series={line}
                         isSearchQueryDisabled={isBackendInsightEdit}
                         showValidationErrorsOnMount={showValidationErrorsOnMount}
                         index={index + 1}
                         cancel={series.length > 1}
                         autofocus={series.length > 1}
-                        onSubmit={seriesValues => onEditSeriesCommit(index, { ...line, ...seriesValues })}
-                        onCancel={() => onEditSeriesCancel(index)}
+                        onSubmit={onEditSeriesCommit}
+                        onCancel={() => onEditSeriesCancel(line.id)}
                         className={classNames('card card-body p-3', styles.formSeriesItem)}
                         onChange={(seriesValues, valid) => onLiveChange({ ...line, ...seriesValues }, valid, index)}
-                        {...line}
                     />
                 ) : (
                     line && (
                         <SeriesCard
-                            key={`${line.id ?? line.name}-card`}
+                            key={line.id}
                             isRemoveSeriesAvailable={!isBackendInsightEdit}
-                            onEdit={() => onEditSeriesRequest(index)}
-                            onRemove={() => onSeriesRemove(index)}
+                            onEdit={() => onEditSeriesRequest(line.id)}
+                            onRemove={() => onSeriesRemove(line.id)}
                             className={styles.formSeriesItem}
                             {...line}
                         />
@@ -110,7 +110,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                 data-testid="add-series-button"
                 type="button"
                 disabled={isBackendInsightEdit}
-                onClick={() => onEditSeriesRequest(series.length)}
+                onClick={() => onEditSeriesRequest()}
                 variant="link"
                 className={classNames(styles.formSeriesItem, styles.formSeriesAddButton, 'p-3')}
             >

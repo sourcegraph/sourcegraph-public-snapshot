@@ -5,7 +5,7 @@ import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
 import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'

@@ -1,4 +1,4 @@
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql } from '@sourcegraph/http-client'
 
 export const lsifIndexFieldsFragment = gql`
     fragment LsifIndexFields on LSIFIndex {

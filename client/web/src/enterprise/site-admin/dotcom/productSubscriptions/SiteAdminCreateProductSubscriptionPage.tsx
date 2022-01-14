@@ -8,8 +8,8 @@ import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import * as GQL from '@sourcegraph/shared/src/schema'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Button } from '@sourcegraph/wildcard'
 

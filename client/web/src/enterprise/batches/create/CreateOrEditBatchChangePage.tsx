@@ -5,7 +5,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 
-import { useMutation, useQuery } from '@sourcegraph/shared/src/graphql/apollo'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
 import {
     SettingsCascadeProps,
     SettingsOrgSubject,

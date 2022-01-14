@@ -14,11 +14,14 @@
 
     background: none;
     border: none;
-    display: inline-block;
     outline: none !important;
     padding: 0;
     position: relative;
     width: var(--toggle-width);
+
+    height: 1rem;
+    display: inline-flex;
+    align-items: center;
 
     &:focus-visible {
         /* Move focus style to the rounded bar */
@@ -45,9 +48,12 @@
     }
 }
 
+.inline-center {
+    margin-top: 0.125rem;
+}
+
 .bar {
     border-radius: 1rem;
-    top: 2px;
     left: 0;
     height: 1rem;
     width: 100%;
@@ -72,7 +78,6 @@
 
     height: 0.75rem;
     width: 0.75rem;
-    margin-top: 0.25rem;
     left: 0.125rem;
 
     position: relative;

@@ -1,6 +1,6 @@
 import { ApolloError, ApolloQueryResult, gql, MutationFunctionOptions, FetchResult, makeVar } from '@apollo/client'
 
-import { useQuery, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
+import { useQuery, useMutation } from '@sourcegraph/http-client'
 
 import {
     Maybe,

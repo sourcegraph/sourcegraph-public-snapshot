@@ -1,6 +1,6 @@
 import { MockedResponse } from '@apollo/client/testing'
 
-import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { getDocumentNode } from '@sourcegraph/http-client'
 
 import { RepositoriesForPopoverResult, RepositoryPopoverFields } from '../../graphql-operations'
 

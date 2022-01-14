@@ -11,7 +11,12 @@
     "rootDir": ".",
     "outDir": "./out",
   },
+  "references": [
+    { "path": "../common" },
+    { "path": "../codeintellify" },
+    { "path": "../template-parser" },
+    { "path": "../http-client" },
+  ],
   "include": ["**/*", ".*", "./src/**/*.json"],
   "exclude": ["../../node_modules", "./node_modules", "./out", "./src/end-to-end"],
-  "references": [{ "path": "../common" }, { "path": "../codeintellify" }, { "path": "../template-parser" }],
 }

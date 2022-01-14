@@ -7,7 +7,7 @@ import GitlabIcon from 'mdi-react/GitlabIcon'
 import React, { useEffect, useState } from 'react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
+import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { Button } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
