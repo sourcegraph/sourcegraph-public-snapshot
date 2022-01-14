@@ -8,3 +8,7 @@ plugins:
   - name: ts
     out: .
     path: ./node_modules/.bin/protoc-gen-ts
+  - name: doc
+    path: ./.bin/protoc-gen-doc
+    out: ./doc/code_intelligence/references
+    opt: doc/code_intelligence/references/lsif.sprig,lsif.md
