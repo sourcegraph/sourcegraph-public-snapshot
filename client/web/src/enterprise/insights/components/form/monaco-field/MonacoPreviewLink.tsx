@@ -21,7 +21,7 @@ export const MonacoPreviewLink: React.FunctionComponent<MonacoPreviewLinkProps> 
 
     return (
         <Button className={classNames(styles.previewLink, className)} to={queryURL} variant="link" as={Link}>
-            Preview results <LinkExternalIcon size={14} className={styles.previewLink} />
+            Preview results <LinkExternalIcon size={18} className={styles.previewLink} />
         </Button>
     )
 }
