@@ -25,7 +25,7 @@ Zoekt [ranks](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.
 - down rank generated code :: This code is usually the least interesting in results.
 - down rank vendored code :: Developers are normally looking for code written by their organisation.
 - down rank test code :: Developers normally prefer results in non-test code over test code.
-- up rank lots of symbols :: These files are usually edited a lot.
+- up rank files with lots of symbols :: These files are usually edited a lot.
 - up rank small files :: if you have similiar symbol levels, prefer the shorter file.
 - up rank short names :: The closer to the project root the likely more important you are.
 - up rank branch count :: if the same document appears on multiple branches its likely more important.
