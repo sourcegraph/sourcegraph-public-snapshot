@@ -44,6 +44,13 @@ func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cm
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	cmdNames := make(map[string]struct{}, len(cmds))
+	for _, c := range cmds {
+		cmdNames[c.Name] = struct{}{}
+	}
+	installDone := make(chan string, len(cmds))
+	okayToStart := make(chan struct{})
+
 	for i, cmd := range cmds {
 		wg.Add(1)
 
@@ -51,7 +58,7 @@ func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cm
 			defer wg.Done()
 			var err error
 			for first := true; cmd.ContinueWatchOnExit || first; first = false {
-				if err = runWatch(ctx, cmd, root, globalEnv, ch, verbose); err != nil {
+				if err = runWatch(ctx, cmd, root, globalEnv, ch, verbose, installDone, okayToStart); err != nil {
 					if errors.Is(err, ctx.Err()) { // if error caused by context, terminate
 						return
 					}
@@ -69,6 +76,7 @@ func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cm
 		}(cmd, chs[i])
 	}
 
+	waitForInstallation(cmdNames, installDone, okayToStart)
 	wg.Wait()
 
 	select {
@@ -78,6 +86,59 @@ func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cm
 	default:
 		return nil
 	}
+}
+
+func waitForInstallation(cmdNames map[string]struct{}, installDone chan string, okayToStart chan struct{}) {
+	stdout.Out.Write("")
+	stdout.Out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Waiting for %d commands to finish installation...", len(cmdNames)))
+	stdout.Out.Write("")
+
+	waitingMessages := []string{
+		"Still waiting for %s to finish installing...",
+		"Yup, still waiting for %s to finish installing...",
+		"Looks like we're still waiting for %s to finish installing...",
+		"This is getting awkward now. We're still waiting for %s to finish installing...",
+		"Nothing more to say, I guess. Come on %s ...",
+		"It might be your computer? Still waiting for %s ...",
+		"Anyway... how are you? (Still waiting for %s ...)",
+		"Still waiting for %s to finish installing...",
+	}
+	messageCount := 0
+
+	const tickInterval = 15 * time.Second
+	ticker := time.NewTicker(tickInterval)
+
+outer:
+	for {
+		select {
+		case cmdName := <-installDone:
+			ticker.Reset(tickInterval)
+			delete(cmdNames, cmdName)
+			if len(cmdNames) == 0 {
+				break outer
+			}
+
+		case <-ticker.C:
+			names := []string{}
+			for name := range cmdNames {
+				names = append(names, name)
+			}
+
+			idx := messageCount
+			if idx > len(waitingMessages)-1 {
+				idx = len(waitingMessages) - 1
+			}
+			msg := waitingMessages[idx]
+			stdout.Out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, msg, strings.Join(names, ", ")))
+			messageCount += 1
+		}
+	}
+
+	stdout.Out.Write("")
+	stdout.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Everything installed! Booting up the system! Hold on to your butts!"))
+	stdout.Out.Write("")
+	close(okayToStart)
+
 }
 
 // failedRun is returned by run when a command failed to run and run exits
@@ -177,7 +238,16 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 	}
 }
 
-func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[string]string, reload <-chan struct{}, verbose bool) error {
+func runWatch(
+	ctx context.Context,
+	cmd Command,
+	root string,
+	globalEnv map[string]string,
+	reload <-chan struct{},
+	verbose bool,
+	installDone chan string,
+	okayToStart chan struct{},
+) error {
 	printDebug := func(f string, args ...interface{}) {
 		if !verbose {
 			return
@@ -236,6 +306,12 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 				md5changed = md5hash != newHash
 				md5hash = newHash
 			}
+
+		}
+
+		if !startedOnce {
+			installDone <- cmd.Name
+			<-okayToStart
 		}
 
 		if cmd.CheckBinary == "" || md5changed {
