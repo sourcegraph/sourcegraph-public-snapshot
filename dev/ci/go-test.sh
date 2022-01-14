@@ -67,6 +67,8 @@ EOF
     --header 'Content-Type: application/json' \
     --data-binary @-
 
+  echo -e "\n--- :information_source: Succesfully uploaded test results to Buildkite analytics"
+
   return "$test_exit_code"
 }
 
