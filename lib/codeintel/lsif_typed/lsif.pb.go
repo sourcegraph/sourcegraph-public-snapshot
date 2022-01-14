@@ -312,21 +312,12 @@ func (Occurrence_Highlight) EnumDescriptor() ([]byte, []int) {
 }
 
 //
-// A representation of an index that can be emitted and consumed as as single
-// message payload. An index may also be represented by a length-prefixed stream
-// of index messages with the following ordering constraints:
-//
-// 1. The first message in the stream must provide metadata, and must be the
-// only message to do so.
-// 2. If a document references a symbol, the associated symbol information, if
-// it exists, must have preceeded the document in the stream. This allows a
-// document to be fully-processed once encountered. Note that symbols may
-// reference each other, and a symbol object may not be logically "closed" until
-// the end of the stream and some use cases will still be required to read the
-// stream to completion.
-//
-// These constraints allow the index to be processed with minimal bookkeeping
-// overhead, and allows partial processing to stop early on successful match.
+// Index represents a complete LSIF index for a workspace this is rooted at a
+// single directory. An Index message payload may be very large and it's
+// therefore recommended to emit and consume an Index payload one field value at
+// a time. To permit streaming consumption of an Index payload, the `metadata`
+// field must appear at the start of the stream and must only appear once in the
+// stream. Other field values may appear in any order.
 type Index struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
