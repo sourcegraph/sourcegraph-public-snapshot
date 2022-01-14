@@ -55,6 +55,11 @@
         display: none;
     }
 
+    :global(.monaco-editor),
+    :global(.monaco-editor-background) {
+        background-color: var(--input-bg) !important;
+    }
+
     &--without-field-styles {
         padding: 0;
         border: none;
