@@ -2,6 +2,11 @@
     --link-hover-decoration: underline;
 }
 
+// To fix TS build error
+.anchor-link {
+    --link-hover-decoration: underline;
+}
+
 a:where(.anchor-link) {
     color: var(--link-color);
     text-decoration: none;
