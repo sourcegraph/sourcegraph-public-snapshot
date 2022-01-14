@@ -22,7 +22,7 @@ const MonacoFieldContext = createContext<Context>({ renderedWithinFocusContainer
 
 const MONACO_CONTAINER_MARK = { renderedWithinFocusContainer: true }
 
-const MonacoFocusContainer = forwardRef((props, reference) => {
+export const MonacoFocusContainer = forwardRef((props, reference) => {
     const { as: Component = 'div', className, children, ...otherProps } = props
 
     return (
@@ -54,14 +54,14 @@ const MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
     },
 }
 
-interface MonacoFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur'> {
+export interface MonacoFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur'> {
     value: string
     patternType?: SearchPatternType
     onBlur?: () => void
     onChange?: (value: string) => void
 }
 
-const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props, reference) => {
+export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props, reference) => {
     const {
         value,
         className,
@@ -99,26 +99,13 @@ const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props, refer
             placeholder={placeholder}
             onSubmit={noop}
             className={classNames(className, styles.monacoField, 'form-control', 'with-invalid-icon', {
-                [styles.monacoFieldWithPlaceholder]: !value,
                 [styles.focusContainer]: !renderedWithinFocusContainer,
                 [styles.monacoFieldWithoutFieldStyles]: renderedWithinFocusContainer,
             })}
             editorOptions={monacoOptions}
+            editorClassName={classNames(styles.editor, { [styles.editorWithPlaceholder]: !value })}
             autoFocus={autoFocus}
             onBlur={onBlur}
         />
     )
 })
-
-const Root = MonacoFocusContainer
-const Field = MonacoField
-
-export {
-    MonacoFocusContainer,
-    MonacoField,
-    //
-    Root,
-    Field
-}
-
-export type { MonacoFieldProps }

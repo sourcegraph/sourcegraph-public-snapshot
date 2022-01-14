@@ -55,24 +55,11 @@
         display: none;
     }
 
-    &::before {
-        content: attr(data-placeholder);
-        display: none;
-        position: absolute;
-        z-index: 1;
-        color: var(--text-muted);
-        width: 100%;
-        top: 50%;
-        transform: translateY(-50%);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        background-color: transparent;
-        pointer-events: none;
-    }
-
-    &--with-placeholder {
-        &::before {
-            display: block;
+    &:global(.with-invalid-icon) {
+        &:global(.is-invalid)::before,
+        :global(.is-valid)::before {
+            // Bootstrap styles for form control with validation icon
+            padding-right: calc(1.4285714286em + 0.75rem);
         }
     }
 
@@ -81,4 +68,34 @@
         border: none;
         box-shadow: none;
     }
+}
+
+.editor {
+    position: relative;
+
+    &--with-placeholder::before {
+        display: block !important;
+    }
+
+    &::before {
+        content: attr(data-placeholder);
+        display: none;
+        position: absolute;
+        z-index: 1;
+        color: var(--text-muted);
+        height: 100%;
+        width: 100%;
+        padding-right: 0.5rem;
+        pointer-events: none;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    //&:global(.with-invalid-icon) {
+    //    &:global(.is-invalid)::before, :global(.is-valid)::before {
+    //        // Bootstrap styles for form control with validation icon
+    //        padding-right: calc(1.4285714286em + 0.75rem);
+    //    }
+    //}
 }
