@@ -79,6 +79,72 @@ the following:
   determine if an instance goes down.
 - Database migrations are handled automatically on update when they are necessary.
 
+## Database Migrations
+
+> NOTE: This feature is only available in versions `3.36` and later
+
+By default, when you execute `kubectl-apply-all.sh` a `migrator` Job should be created that will perform the database migrations before applying the updates to the rest of the Kubernetes manifests. This job will block execution of subsequent `kubectl` commands and _must_ succeed before continuing. Sourcegraph will check that the database is migrated appropriately on startup and error if it's not.
+
+In some situations, administrators may wish to migrate their databases before upgrading the rest of the system such as when working with large databases. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
+
+To execute the database migrations independently, run the following commands in your fork of `deploy-sourcegraph` (substituting in the version you'd like to migrate to) before updating your local checkout of `deploy-sourcegraph`. All manifests should be at their existing, deployed versions.
+
+> NOTE: These values will work for a standard deployment of Sourcegraph with all three databases running in-cluster. If you've customized your deployment (e.g., using an external database service), you will have to modify the environment variables in `base/migrator/migrator.Job.yaml` accordingly.
+
+```bash
+
+# This will output the current migration version for the frontend db
+kubectl exec $(kubectl get pod -l app=pgsql -o jsonpath="{.items[0].metadata.name}") -c pgsql -- psql -U sg -c "SELECT * FROM schema_migrations;"
+
+  version   | dirty 
+------------+-------
+ 1528395964 | f
+(1 row)
+
+
+# This will output the current migration version for the codeintel db
+kubectl exec $(kubectl get pod -l app=codeintel-db -o jsonpath="{.items[0].metadata.name}") -c pgsql -- psql -U sg -c "SELECT * FROM codeintel_schema_migrations;"
+
+  version   | dirty 
+------------+-------
+ 1000000030 | f
+(1 row)
+
+# This will output the current migration version for the codeinsights db
+kubectl exec $(kubectl get pod -l app=codeinsights-db -o jsonpath="{.items[0].metadata.name}") -- psql -U postgres -c "SELECT * FROM codeinsights_schema_migrations;"
+
+  version   | dirty 
+------------+-------
+ 1000000024 | f
+(1 row)
+
+
+# Update the "image" value of the migrator container in the manifest
+export SOURCEGRAPH_VERSION="the version you're upgrading to"
+yq eval -i '.spec.template.spec.containers[0].image = strenv(SOURCEGRAPH_VERSION)' base/migrator/migrator.Job.yaml
+
+./kubectl-apply-all
+```
+
+You should see something that looks like:
+> job.batch "migrator" deleted
+> job.batch/migrator created
+> job.batch/migrator condition met
+
+printed on your terminal.
+
+The log output of the `migrator` container should look like:
+> t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=frontend version=1528395964 dirty=false
+> t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeintel version=1000000030 dirty=false
+> t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
+> t=2022-01-14T23:47:47+0000 lvl=info msg="Checked current version" schema=codeinsights version=1000000024 dirty=false
+> t=2022-01-14T23:47:47+0000 lvl=info msg="Upgrading schema" schema=codeinsights
+
+
+You are now safe to upgrade Sourcegraph.
+
+
+
 ### Troubleshooting
 
 See the [troubleshooting page](troubleshoot.md).
