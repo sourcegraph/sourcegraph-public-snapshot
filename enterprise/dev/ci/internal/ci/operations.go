@@ -15,6 +15,7 @@ import (
 
 var goAthensProxyURL = "http://athens-athens-proxy"
 
+// TODO Trigger change
 // CoreTestOperationsOptions should be used ONLY to adjust the behaviour of specific steps,
 // e.g. by adding flags, and not as a condition for adding steps or commands.
 type CoreTestOperationsOptions struct {
