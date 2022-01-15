@@ -186,6 +186,63 @@ docker-compose up -d
 
 You can see what's changed in the [Sourcegraph changelog](../../../CHANGELOG.md).
 
+### Database Migrations
+
+> NOTE: This feature is only available in versions `3.36` and later
+
+The `migrator` container in the `docker-compose.yaml` file will automatically run on startup and migrate the databases if any changes are required, however administrators may wish to migrate their databases before upgrading the rest of the system when working with large databases. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
+
+To execute the database migrations independently, run the following command (substituting in the version you'd like to migrate to):
+
+```bash
+export SOURCEGRAPH_VERSION="the version you're upgrading to"
+
+# This will output the current migration version for the frontend db
+docker exec -it pgsql psql -U sg -c "SELECT * FROM schema_migrations;" 
+##   version   | dirty 
+## ------------+-------
+##  1528395959 | f
+## (1 row)
+
+# This will output the current migration version for the codeintel db
+docker exec -it codeintel-db psql -U sg -c "SELECT * FROM codeintel_schema_migrations;"
+##  version   | dirty 
+##------------+-------
+## 1000000030 | f
+##(1 row)
+
+export SOURCEGRAPH_VERSION="122149_2021-12-17_1f7179c"
+
+for DATABASE in frontend codeintel; do
+	docker run --rm --name migrator_$SOURCEGRAPH_VERSION \
+		-e PGHOST='pgsql' \
+		-e PGPORT='5432' \
+		-e PGUSER='sg' \
+		-e PGPASSWORD='sg' \
+		-e PGDATABASE='sg' \
+		-e PGSSLMODE='disable' \
+		-e CODEINTEL_PGHOST='codeintel-db' \
+		-e CODEINTEL_PGPORT='5432' \
+		-e CODEINTEL_PGUSER='sg' \
+		-e CODEINTEL_PGPASSWORD='sg' \
+		-e CODEINTEL_PGDATABASE='sg' \
+		-e CODEINTEL_PGSSLMODE='disable' \
+		--network=docker-compose_sourcegraph \
+	sourcegraph/migrator:$SOURCEGRAPH_VERSION \
+	up -db $DATABASE;
+done
+```
+
+> NOTE: These values will work for a standard docker-compose deployment of Sourcegraph. If you've customized your deployment (e.g., using an external database service), you will have to modify the environment variables accordingly.
+
+Once the `migrator` has run, you should see output similar to:
+> sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Checked current version" schema=frontend version=1528395959 dirty=false
+> sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Upgrading schema" schema=frontend
+> sourcegraph-migrator  | t=2021-12-21T03:25:49+0000 lvl=info msg="Running up migration" schema=frontend migrationID=1528395960
+> sourcegraph-migrator exited with code 0
+
+You are now safe to upgrade Sourcegraph.
+
 ## Monitoring
 
 You can monitor the health of a deployment in several ways:
