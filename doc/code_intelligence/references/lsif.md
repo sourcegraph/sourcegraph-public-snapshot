@@ -6,30 +6,30 @@
 
 ### Document
 
-Document defines information about a particular source file.
+Document defines the metadata about a source file on disk.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-|  **relative_path** | string | Relative path to the `Index.project_root` directory.
-| repeated **occurrences** | Occurrence | Symbol occurrences that appear in this file.
-| repeated **symbols** | Symbol | Symbols that are defined within this document.
+|  **relative_path** | string | (Required) Path to the text document relative to the directory supplied in the associated `Metadata.project_root`. Not URI-encoded. This value should not begin with a directory separator.
+| repeated **occurrences** | Occurrence | Occurrences that appear in this file.
+| repeated **symbols** | SymbolInformation | Symbols that are defined within this document.
 
 
 
 ### Index
 
-Index represents an LSIF index. An index can be consumed in a streaming
-fashion by consuming one value at a time. In Java, use `parseDelimetedFrom`
-to consume the index in a streaming fashion. For other languages like Go, you
-need to write custom logic that decodes one LSIF `Value` at a time.
+Index represents a complete LSIF index for a workspace this is rooted at a
+single directory. An Index message payload can have a large memory footprint
+and it's therefore recommended to emit and consume an Index payload one field
+value at a time.  To permit streaming consumption of an Index payload, the
+`metadata` field must appear at the start of the stream and must only appear
+once in the stream. Other field values may appear in any order.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 |  **metadata** | Metadata | Metadata about this index.
-| repeated **document** | Document | Documents that belong to this index or the packages that are defined by this index.
-| repeated **package** | Package | Packages that are either referenced from this index or the packages that are defined by this index.
-| repeated **external_symbols** | Symbol | Symbols that are defined outside of this index but are referenced from inside this index.
-
+| repeated **document** | Document | Documents that belong to this index.
+| repeated **external_symbols** | SymbolInformation | Symbols that are referenced from this index and not defined in this index.
 
 
 
@@ -39,21 +39,14 @@ need to write custom logic that decodes one LSIF `Value` at a time.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-|  **tool_info** | ToolInfo | 
+|  **version** | ProtocolVersion | Which version of this protocol was used to generate this index?
+|  **tool_info** | ToolInfo | Information about the tool that produced this index.
 |  **project_root** | string | URI-encoded absolute path to the root directory of this index. All documents in this index must appear in a subdirectory of this root directory.
-|  **position_encoding** | PositionEncoding | 
+|  **text_document_encoding** | TextEncoding | Text encoding of the source files on disk that are referenced from `Document.relative_path`.
 
 
 
-#### PositionEncoding
 
-
-
-| Number | Name | Description |
-| ------ | ---- | ----------- |
-| 0 | POSITION_ENCODING_UNSPECIFIED | 
-| 1 | POSITION_ENCODING_UTF8 | 
-| 2 | POSITION_ENCODING_UTF16 | 
 ### Occurrence
 
 Occurrence associates a source position with a symbol and/or highlighting
@@ -61,111 +54,65 @@ information.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| repeated **range** | int32 | The source position of this occurrence. Must be exactly three or four elements:
+| repeated **range** | int32 | Source position of this occurrence. Must be exactly three or four elements:
 |  **symbol_uri** | string | (optional) References the `Symbol.uri` field. Can be empty if this is only a highlighting occurrence.
-|  **symbol_role** | Role | (optional) Is the symbol_uri defined or referenced at this occurrence?
-| repeated **symbol_documentation** | string | (optional) Markdown-formatted documentation for this specific range.  If empty, the `Symbol.documentation` field is used instead. One example where this field might be useful is when the symbol represents a generic function (with abstract type parameters such as `List<T>`) and at this occurrence we know the exact values (such as `List<String>`).
-|  **highlight** | Highlight | (optional) What syntax highlighting class should be used for this range?
+|  **symbol_roles** | int32 | (optional) Is the symbol_uri defined or referenced at this occurrence?
+| repeated **override_documentation** | string | (optional) Markdown-formatted documentation for this specific range.  If empty, the `Symbol.documentation` field is used instead. One example where this field might be useful is when the symbol represents a generic function (with abstract type parameters such as `List<T>`) and at this occurrence we know the exact values (such as `List<String>`).
+|  **syntax_kind** | SyntaxKind | (optional) What syntax highlighting class should be used for this range?
 
 Additional notes on **range**:
 
-The source position of this occurrence. Must be exactly three or four
+Source position of this occurrence. Must be exactly three or four
 elements:
 
 - Four elements: `[startLine, startCharacter, endLine, endCharacter]`
-- Three elements: `[startLine, startCharacter, endCharacter] (endLine ==
-startLine)`
+- Three elements: `[startLine, startCharacter, endCharacter]`. The end line
+  is inferred to have the same value as the start line.
 
 Line numbers and characters are always 0-based. Make sure to increment the
 line/character values before displaying them in an editor-like UI because
 editors conventionally use 1-based numbers.
 
-Ranges appear frequently in real-world LSIF payloads, the `repeated int32`
-encoding was chosen over the LSP `Range(start:Position,end:Position)`
-encoding for performance reasons.  Benchmarks reveal that this change alone
-reduces the total payload size by ~2x in both compressed JSON or Protobuf
-encoding. This encoding is admittedly more embarrassing to work with in
-some programming languages but we hope the increased performance
+Historical note: the original draft of this schema had a `Range` message
+type with `start` and `end` fields of type `Position`, mirroring LSP.
+Benchmarks revealed that this encoding was inefficient and that we could
+reduce the total payload size of an index by 50% by using `repeated int32`
+instead.  The `repeated int32` encoding is admittedly more embarrassing to
+work with in some programming languages but we hope the performance
 improvements make up for it.
 
 
 
 
 
-#### Highlight
+### SymbolInformation
 
-
-
-| Number | Name | Description |
-| ------ | ---- | ----------- |
-| 0 | HIGHLIGHT_UNSPECIFIED | 
-| 1 | HIGHLIGHT_STRING_LITERAL | 
-| 2 | HIGHLIGHT_NUMERIC_LITERAL | 
-| 3 | HIGHLIGHT_IDENTIFIER | 
-| 4 | HIGHLIGHT_METHOD_IDENTIFIER | 
-| 5 | HIGHLIGHT_TYPE_IDENTIFIER | 
-| 6 | HIGHLIGHT_TERM_IDENTIFIER | 
-| 7 | HIGHLIGHT_LOCAL_IDENTIFIER | 
-| 8 | HIGHLIGHT_SHADED_IDENTIFIER | 
-| 9 | HIGHLIGHT_PACKAGE_IDENTIFIER | 
-#### Role
-
-
-
-| Number | Name | Description |
-| ------ | ---- | ----------- |
-| 0 | ROLE_UNSPECIFIED | 
-| 1 | ROLE_DEFINITION | 
-| 2 | ROLE_REFERENCE | 
-### Package
-
-Package defines a publishable artifact such as an npm package, Docker
-container, JVM dependency, or a Cargo crate.
+SymbolInformation defines metadata about a symbol, such as the symbol's
+docstring or what package it's defined it.
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-|  **uri** | string | The unique identifier of this package that can be referenced from `Symbol.package_uri`.  This URI is not intended to be displayed to humans, but it's recommended to use a human-readable format to aid with debugging.
-|  **name** | string | Name of this package, for example "@types/react" or "com.google.guava:guava".
-|  **version** | string | Version of this package, for example "0.1.0" or "2.1.5".
-|  **manager** | string | Package manager, for example "npm", "maven" or "cargo".
-
-
-
-
-### Symbol
-
-Symbol defines a symbol, such as a function or an interface.
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-|  **uri** | string | The identifier of this symbol, which can be referenced from Occurence. An empty uri means this symbol can be ignored.
-|  **unique** | Unique | Determines whether this symbol is local to a single document or if can be referenced from multiple documents. Document symbols (`Document.symbols`) can be either local or global. External symbols (`Index.external_symbols`) must be global.
+|  **symbol** | string | The unique dentifier of this symbol, which can be referenced from `Occurence.symbol`.
 | repeated **documentation** | string | (optional, but strongly recommended) The markdown-formatted documentation for this symbol. This field is repeated to allow different kinds of documentation.  For example, it's nice to include both the signature of a method (parameters and return type) along with the accompanying docstring.
-|  **package_uri** | string | (optional) Links to the original package that defines this symbol to enable navigation across different LSIF indexes (whether they come from different projects or git repositories). This field must be non-empty for toplevel symbols (`Value.value`).
-| repeated **reference_symbols** | string | (optional) Symbols that should be included together with this symbol when resolving "find references".  For example, the symbol of a TypeScript or Java method that implements an interface method should list the interface method here.
-| repeated **implementation_symbols** | string | (optional) Symbols that are "implemented" by this symbol. For example, the symbol of a TypeScript or Java class that implements an interface should list the interface here.
+|  **package** | string | (optional) To enable cross-index navigation, specify which package this symbol is defined in. A package must be encoded as a space-separated string with the value `"$manager $name $version"` where: - `$manager` is the name of the package manager, for example `npm`. - `$name` is the name of the package, for example `react`. - `$version` is the version of the package, for example `1.2.0`.
+| repeated **reference_symbols** | string | (optional) When resolving "Find references", this field documents what other symbols should be included together with this symbol. For example, consider the following TypeScript code that defines two symbols `Animal#sound()` and `Dog#sound()`: ```ts interface Animal {           ^^^^^^ definition Animal#   sound(): string   ^^^^^ definition Animal#sound() } class Dog implements Animal {       ^^^ definition Dog#, implementation_symbols = Animal#   public sound(): string { return "woof" }          ^^^^^ definition Dog#sound(), references_symbols = Animal#sound(), implementation_symbols = Animal#sound() } const animal: Animal = new Dog()               ^^^^^^ reference Animal# console.log(animal.sound())                    ^^^^^ reference Animal#sound() ``` Doing "Find references" on the symbol `Animal#sound()` should return references to the `Dog#sound()` method as well. Vice-versa, doing "Find references" on the `Dog#sound()` method should include references to the `Animal#sound()` method as well.
+| repeated **implementation_symbols** | string | (optional) Similar to `references_symbols` but for "Go to implementation". It's common for the `implementation_symbols` and `references_symbols` fields have the same values but that's not always the case. In the TypeScript example above, observe that `implementation_symbols` has the value `"Animal#"` for the "Dog#" symbol while `references_symbols` is empty. When requesting "Find references" on the "Animal#" symbol we don't want to include references to "Dog#" even if "Go to implementation" on the "Animal#" symbol should navigate to the "Dog#" symbol.
+| repeated **type_definition_symbols** | string | (optional) Similar to `references_symbols` but for "Go to type definition".
 
 
 
 
 
 
-#### Unique
-
-
-
-| Number | Name | Description |
-| ------ | ---- | ----------- |
-| 0 | UNIQUE_UNSPECIFIED | 
-| 1 | UNIQUE_DOCUMENT | 
-| 2 | UNIQUE_GLOBAL | 
 ### ToolInfo
 
 
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-|  **name** | string | 
-|  **version** | string | 
+|  **name** | string | Name of the indexer that produced this index.
+|  **version** | string | Version of the indexer that produced this index.
+| repeated **arguments** | string | Command-line arguments that were used to invoke this indexer.
+
 
 
