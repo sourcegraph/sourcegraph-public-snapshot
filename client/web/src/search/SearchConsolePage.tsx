@@ -7,11 +7,11 @@ import { BehaviorSubject } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
+import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
-import { MonacoEditor } from '../components/MonacoEditor'
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
 
