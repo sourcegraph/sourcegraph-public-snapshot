@@ -57,7 +57,12 @@
     max-width: 12rem;
     color: var(--color-bg-1);
 
-    &-with-scroll {
+    &--tooltip-like {
+        min-width: auto;
+        padding: 0.5rem;
+    }
+
+    &--with-scroll {
         max-height: 8rem;
         overflow: auto;
     }
@@ -81,4 +86,90 @@
 .trigger-anchor {
     border: 1px solid #000000;
     padding: 3rem;
+}
+
+.positions-container {
+    width: 25rem;
+    height: 25rem;
+    position: relative;
+    padding: 10rem;
+}
+
+.positions-target {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--secondary);
+}
+
+.position-marker {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: var(--secondary);
+    position: absolute;
+    border: 2px solid var(--primary);
+
+    &--active {
+        border: 2px solid var(--alert-border-color);
+        background-color: var(--primary);
+    }
+
+    &--top {
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+
+        &-start {
+            left: calc(50% - 4rem);
+        }
+
+        &-end {
+            left: calc(50% + 4rem);
+        }
+    }
+
+    &--right {
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
+
+        &-start {
+            top: calc(50% - 4rem);
+        }
+
+        &-end {
+            top: calc(50% + 4rem);
+        }
+    }
+
+    &--bottom {
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+
+        &-start {
+            left: calc(50% - 4rem);
+        }
+
+        &-end {
+            left: calc(50% + 4rem);
+        }
+    }
+
+    &--left {
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+
+        &-start {
+            top: calc(50% - 4rem);
+        }
+
+        &-end {
+            top: calc(50% + 4rem);
+        }
+    }
 }

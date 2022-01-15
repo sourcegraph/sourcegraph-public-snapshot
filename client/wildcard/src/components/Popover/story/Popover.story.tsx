@@ -4,10 +4,10 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Position } from '@sourcegraph/wildcard'
 
 import * as Popover from '../Popover'
-import { Point, Position } from '../tether'
+import { Point } from '../tether'
 
 import styles from './Popover.story.module.scss'
 
@@ -15,6 +15,130 @@ export default {
     title: 'wildcard/Popover',
     decorators: [story => <BrandedStory styles={webStyles}>{() => story()}</BrandedStory>],
 } as Meta
+
+export const PositionSettingsGallery = () => {
+    const [position, setPosition] = useState(Position.top)
+
+    return (
+        <div className={classNames(styles.container, 'd-flex justify-content-center align-items-center')}>
+            <div className={styles.positionsContainer}>
+                <Popover.Root open={true}>
+                    <Popover.Trigger className={styles.positionsTarget} as="div">
+                        Target
+                    </Popover.Trigger>
+
+                    <Popover.Content
+                        position={position}
+                        focusLocked={false}
+                        className={classNames(styles.floating, styles.floatingTooltipLike)}
+                    >
+                        Position {position}
+                    </Popover.Content>
+                </Popover.Root>
+
+                <button
+                    className={classNames(
+                        styles.positionMarker,
+                        styles.positionMarkerTop,
+                        styles.positionMarkerTopStart,
+                        { [styles.positionMarkerActive]: position === Position.topStart }
+                    )}
+                    onClick={() => setPosition(Position.topStart)}
+                />
+                <button
+                    className={classNames(styles.positionMarker, styles.positionMarkerTop, {
+                        [styles.positionMarkerActive]: position === Position.top,
+                    })}
+                    onClick={() => setPosition(Position.top)}
+                />
+                <button
+                    className={classNames(
+                        styles.positionMarker,
+                        styles.positionMarkerTop,
+                        styles.positionMarkerTopEnd,
+                        { [styles.positionMarkerActive]: position === Position.topEnd }
+                    )}
+                    onClick={() => setPosition(Position.topEnd)}
+                />
+
+                <button
+                    className={classNames(
+                        styles.positionMarker,
+                        styles.positionMarkerRight,
+                        styles.positionMarkerRightStart,
+                        { [styles.positionMarkerActive]: position === Position.rightStart }
+                    )}
+                    onClick={() => setPosition(Position.rightStart)}
+                />
+                <button
+                    className={classNames(styles.positionMarker, styles.positionMarkerRight, {
+                        [styles.positionMarkerActive]: position === Position.right,
+                    })}
+                    onClick={() => setPosition(Position.right)}
+                />
+                <button
+                    className={classNames(
+                        styles.positionMarker,
+                        styles.positionMarkerRight,
+                        styles.positionMarkerRightEnd,
+                        { [styles.positionMarkerActive]: position === Position.rightEnd }
+                    )}
+                    onClick={() => setPosition(Position.rightEnd)}
+                />
+
+                <button
+                    className={classNames(
+                        styles.positionMarker,
+                        styles.positionMarkerBottom,
+                        styles.positionMarkerBottomStart,
+                        { [styles.positionMarkerActive]: position === Position.bottomStart }
+                    )}
+                    onClick={() => setPosition(Position.bottomStart)}
+                />
+                <button
+                    className={classNames(styles.positionMarker, styles.positionMarkerBottom, {
+                        [styles.positionMarkerActive]: position === Position.bottom,
+                    })}
+                    onClick={() => setPosition(Position.bottom)}
+                />
+                <button
+                    className={classNames(
+                        styles.positionMarker,
+                        styles.positionMarkerBottom,
+                        styles.positionMarkerBottomEnd,
+                        { [styles.positionMarkerActive]: position === Position.bottomEnd }
+                    )}
+                    onClick={() => setPosition(Position.bottomEnd)}
+                />
+
+                <button
+                    className={classNames(
+                        styles.positionMarker,
+                        styles.positionMarkerLeft,
+                        styles.positionMarkerLeftStart,
+                        { [styles.positionMarkerActive]: position === Position.leftStart }
+                    )}
+                    onClick={() => setPosition(Position.leftStart)}
+                />
+                <button
+                    className={classNames(styles.positionMarker, styles.positionMarkerLeft, {
+                        [styles.positionMarkerActive]: position === Position.left,
+                    })}
+                    onClick={() => setPosition(Position.left)}
+                />
+                <button
+                    className={classNames(
+                        styles.positionMarker,
+                        styles.positionMarkerLeft,
+                        styles.positionMarkerLeftEnd,
+                        { [styles.positionMarkerActive]: position === Position.leftEnd }
+                    )}
+                    onClick={() => setPosition(Position.leftEnd)}
+                />
+            </div>
+        </div>
+    )
+}
 
 export const StandardExample = () => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
@@ -24,7 +148,7 @@ export const StandardExample = () => (
                     Hello
                 </Popover.Trigger>
 
-                <Popover.Content position={Position.rightTop} className={styles.floating}>
+                <Popover.Content position={Position.rightStart} className={styles.floating}>
                     Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
                     Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
                     career and his mother was a homemaker.[6] In the early years of his life his family moved to Kharkiv
@@ -53,7 +177,7 @@ export const WithCustomAnchor = () => {
                         </Popover.Trigger>
                     </div>
 
-                    <Popover.Content position={Position.rightTop} className={styles.floating}>
+                    <Popover.Content position={Position.rightStart} className={styles.floating}>
                         Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
                         Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
                         career and his mother was a homemaker.[6] In the early years of his life his family moved to
@@ -89,7 +213,7 @@ export const WithControlledState = () => {
                         Target
                     </Popover.Trigger>
 
-                    <Popover.Content position={Position.rightTop} className={styles.floating}>
+                    <Popover.Content position={Position.rightStart} className={styles.floating}>
                         Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
                         Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
                         career and his mother was a homemaker.[6] In the early years of his life his family moved to
@@ -117,7 +241,7 @@ export const WithNestedScrollParents = () => (
                         </Popover.Trigger>
                     </div>
 
-                    <Popover.Content position={Position.rightTop} className={styles.floating}>
+                    <Popover.Content position={Position.rightStart} className={styles.floating}>
                         Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
                         Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
                         career and his mother was a homemaker.[6] In the early years of his life his family moved to
@@ -167,7 +291,7 @@ export const WithVirtualTarget = () => {
                 <Popover.Content
                     open={true}
                     pin={virtualElement}
-                    position={Position.rightTop}
+                    position={Position.rightStart}
                     className={classNames(styles.floating, styles.floatingWithNonEvents)}
                 >
                     Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
@@ -189,7 +313,7 @@ export const WithTail = () => (
                     Hello
                 </Popover.Trigger>
 
-                <Popover.Content tail={true} position={Position.rightTop} className={styles.floating}>
+                <Popover.Content tail={true} position={Position.rightStart} className={styles.floating}>
                     Limonov was born in the Soviet Union, in Dzerzhinsk, an industrial town in the Gorky Oblast (now
                     Nizhny Novgorod Oblast). Limonov's father—then in the military service – was in a state security
                     career and his mother was a homemaker.[6] In the early years of his life his family moved to Kharkiv
