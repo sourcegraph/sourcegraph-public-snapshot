@@ -72,10 +72,9 @@ export function getMarkerRotation(marker: Rectangle, position: Position): Marker
             markerAngle,
         }
     }
-        return {
-            markerOrigin: createPoint(0, 0),
-            rotatedMarker: marker,
-            markerAngle,
-        }
-
+    return {
+        markerOrigin: createPoint(0, 0),
+        rotatedMarker: marker,
+        markerAngle,
+    }
 }

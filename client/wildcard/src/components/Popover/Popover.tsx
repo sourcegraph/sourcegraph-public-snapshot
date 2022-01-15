@@ -115,7 +115,7 @@ interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' | 'marke
 }
 
 const PopoverContent: React.FunctionComponent<PopoverContentProps> = props => {
-    const { open, children, ...otherProps } = props
+    const { open, children, role = 'dialog', 'aria-modal': ariaModel = true, ...otherProps } = props
     const { isOpen, targetElement, anchor, setOpen } = useContext(PopoverContext)
 
     const reference = useRef<HTMLDivElement>(null)
@@ -137,7 +137,13 @@ const PopoverContent: React.FunctionComponent<PopoverContentProps> = props => {
     }
 
     return (
-        <FloatingPanel {...otherProps} ref={reference} target={anchor?.current ?? targetElement}>
+        <FloatingPanel
+            ref={reference}
+            target={anchor?.current ?? targetElement}
+            role={role}
+            aria-modal={ariaModel}
+            {...otherProps}
+        >
             <FocusLock returnFocus={true}>{children}</FocusLock>
         </FloatingPanel>
     )

@@ -7,7 +7,9 @@ import { createTether, Flipping, Overlapping, Position, Tether } from '../tether
 
 import styles from './FloatingPanel.module.scss'
 
-export interface FloatingPanelProps extends Omit<Tether, 'target' | 'element' | 'marker'> {
+export interface FloatingPanelProps
+    extends Omit<Tether, 'target' | 'element' | 'marker'>,
+        React.HTMLAttributes<HTMLDivElement> {
     /**
      * Reference on target HTML element in the DOM.
      * Renders nothing if target isn't specified.
@@ -19,8 +21,6 @@ export interface FloatingPanelProps extends Omit<Tether, 'target' | 'element' | 
      * floating panel.
      */
     tail?: boolean
-
-    className?: string
 }
 
 /**
@@ -40,7 +40,7 @@ export const FloatingPanel = forwardRef<HTMLDivElement, PropsWithChildren<Floati
         windowPadding,
         constraintPadding,
         constraint,
-        className = '',
+        ...otherProps
     } = props
 
     const containerReference = useRef(document.createElement('div'))
@@ -99,8 +99,9 @@ export const FloatingPanel = forwardRef<HTMLDivElement, PropsWithChildren<Floati
     return createPortal(
         <>
             <div
+                {...otherProps}
                 ref={useMergeRefs([tooltipReferenceCallback, reference])}
-                className={classNames(styles.floatingPanel, 'dropdown-menu', className)}
+                className={classNames(styles.floatingPanel, 'dropdown-menu', otherProps.className)}
             >
                 {props.children}
             </div>
