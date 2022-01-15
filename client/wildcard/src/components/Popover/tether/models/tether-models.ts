@@ -1,12 +1,5 @@
 import { Rectangle } from './geometry/rectangle'
 
-export enum Side {
-    top = 'top',
-    right = 'right',
-    bottom = 'bottom',
-    left = 'left',
-}
-
 /**
  * Describes padding (offset) of tooltip element and target element.
  */
@@ -68,16 +61,16 @@ export enum Flipping {
  * Describes all possible initial values for tooltip's position.
  */
 export enum Position {
-    topLeft = 'topLeft',
-    topCenter = 'topCenter',
-    topRight = 'topRight',
-    leftTop = 'leftTop',
-    leftMiddle = 'leftMiddle',
-    leftBottom = 'leftBottom',
-    rightTop = 'rightTop',
-    rightMiddle = 'rightMiddle',
-    rightBottom = 'rightBottom',
-    bottomLeft = 'bottomLeft',
-    bottomCenter = 'bottomCenter',
-    bottomRight = 'bottomRight',
+    topStart = 'topStart',
+    top = 'top',
+    topEnd = 'topEnd',
+    leftStart = 'leftStart',
+    left = 'left',
+    leftEnd = 'leftEnd',
+    rightStart = 'rightStart',
+    right = 'right',
+    rightEnd = 'rightEnd',
+    bottomStart = 'bottomStart',
+    bottom = 'bottom',
+    bottomEnd = 'bottomEnd',
 }

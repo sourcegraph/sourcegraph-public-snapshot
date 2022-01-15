@@ -112,10 +112,11 @@ const PopoverTrigger = forwardRef((props, reference) => {
 
 interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' | 'marker'> {
     open?: boolean
+    focusLocked?: boolean
 }
 
 const PopoverContent: React.FunctionComponent<PopoverContentProps> = props => {
-    const { open, children, role = 'dialog', 'aria-modal': ariaModel = true, ...otherProps } = props
+    const { open, children, role = 'dialog', 'aria-modal': ariaModel = true, focusLocked = true, ...otherProps } = props
     const { isOpen, targetElement, anchor, setOpen } = useContext(PopoverContext)
 
     const reference = useRef<HTMLDivElement>(null)
@@ -144,7 +145,7 @@ const PopoverContent: React.FunctionComponent<PopoverContentProps> = props => {
             aria-modal={ariaModel}
             {...otherProps}
         >
-            <FocusLock returnFocus={true}>{children}</FocusLock>
+            {focusLocked ? <FocusLock returnFocus={true}>{children}</FocusLock> : children}
         </FloatingPanel>
     )
 }

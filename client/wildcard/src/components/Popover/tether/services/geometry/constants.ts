@@ -1,102 +1,102 @@
 import { createPoint } from '../../models/geometry/point'
-import { Position, Side } from '../../models/tether-models'
+import { Position } from '../../models/tether-models'
 
 /**
  * Static position preferences settings for each possible pre-defined position.
  */
 export const POSITION_VARIANTS = {
-    [Position.topLeft]: {
-        positionSides: Side.top,
+    [Position.topStart]: {
+        positionSides: Position.top,
         rotationAngle: 0,
-        opposite: Position.bottomLeft,
+        opposite: Position.bottomStart,
         elementAttachments: createPoint(0, 1),
         targetAttachments: createPoint(0, 0),
         targetOffset: createPoint(0, 1),
     },
-    [Position.topCenter]: {
-        positionSides: Side.top,
+    [Position.top]: {
+        positionSides: Position.top,
         rotationAngle: 0,
-        opposite: Position.bottomCenter,
+        opposite: Position.bottom,
         elementAttachments: createPoint(0.5, 1),
         targetAttachments: createPoint(0.5, 0),
         targetOffset: createPoint(0, 1),
     },
-    [Position.topRight]: {
-        positionSides: Side.top,
+    [Position.topEnd]: {
+        positionSides: Position.top,
         rotationAngle: 0,
-        opposite: Position.bottomRight,
+        opposite: Position.bottomEnd,
         elementAttachments: createPoint(1, 1),
         targetAttachments: createPoint(1, 0),
         targetOffset: createPoint(0, 1),
     },
-    [Position.rightTop]: {
-        positionSides: Side.right,
+    [Position.rightStart]: {
+        positionSides: Position.right,
         rotationAngle: 90,
-        opposite: Position.leftTop,
+        opposite: Position.leftStart,
         elementAttachments: createPoint(0, 0),
         targetAttachments: createPoint(1, 0),
         targetOffset: createPoint(1, 0),
     },
-    [Position.rightMiddle]: {
-        positionSides: Side.right,
+    [Position.right]: {
+        positionSides: Position.right,
         rotationAngle: 90,
-        opposite: Position.leftMiddle,
+        opposite: Position.left,
         elementAttachments: createPoint(0, 0.5),
         targetAttachments: createPoint(1, 0.5),
         targetOffset: createPoint(1, 0),
     },
-    [Position.rightBottom]: {
-        positionSides: Side.right,
+    [Position.rightEnd]: {
+        positionSides: Position.right,
         rotationAngle: 90,
-        opposite: Position.leftBottom,
+        opposite: Position.leftEnd,
         elementAttachments: createPoint(0, 1),
         targetAttachments: createPoint(1, 1),
         targetOffset: createPoint(1, 0),
     },
-    [Position.bottomLeft]: {
-        positionSides: Side.bottom,
+    [Position.bottomStart]: {
+        positionSides: Position.bottom,
         rotationAngle: 180,
-        opposite: Position.topLeft,
+        opposite: Position.topStart,
         elementAttachments: createPoint(0, 0),
         targetAttachments: createPoint(0, 1),
         targetOffset: createPoint(0, 1),
     },
-    [Position.bottomCenter]: {
-        positionSides: Side.bottom,
+    [Position.bottom]: {
+        positionSides: Position.bottom,
         rotationAngle: 180,
-        opposite: Position.topCenter,
+        opposite: Position.top,
         elementAttachments: createPoint(0.5, 0),
         targetAttachments: createPoint(0.5, 1),
         targetOffset: createPoint(0, 1),
     },
-    [Position.bottomRight]: {
-        positionSides: Side.bottom,
+    [Position.bottomEnd]: {
+        positionSides: Position.bottom,
         rotationAngle: 180,
-        opposite: Position.topRight,
+        opposite: Position.topEnd,
         elementAttachments: createPoint(1, 0),
         targetAttachments: createPoint(1, 1),
         targetOffset: createPoint(0, 1),
     },
-    [Position.leftTop]: {
-        positionSides: Side.left,
+    [Position.leftStart]: {
+        positionSides: Position.left,
         rotationAngle: 270,
-        opposite: Position.rightTop,
+        opposite: Position.rightStart,
         elementAttachments: createPoint(1, 0),
         targetAttachments: createPoint(0, 0),
         targetOffset: createPoint(1, 0),
     },
-    [Position.leftMiddle]: {
-        positionSides: Side.left,
+    [Position.left]: {
+        positionSides: Position.left,
         rotationAngle: 270,
-        opposite: Position.rightMiddle,
+        opposite: Position.right,
         elementAttachments: createPoint(1, 0.5),
         targetAttachments: createPoint(0, 0.5),
         targetOffset: createPoint(1, 0),
     },
-    [Position.leftBottom]: {
-        positionSides: Side.left,
+    [Position.leftEnd]: {
+        positionSides: Position.left,
         rotationAngle: 270,
-        opposite: Position.rightBottom,
+        opposite: Position.rightEnd,
         elementAttachments: createPoint(1, 1),
         targetAttachments: createPoint(0, 1),
         targetOffset: createPoint(1, 0),

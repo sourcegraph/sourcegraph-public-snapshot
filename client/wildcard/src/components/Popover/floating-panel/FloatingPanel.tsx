@@ -31,7 +31,7 @@ export const FloatingPanel = forwardRef<HTMLDivElement, PropsWithChildren<Floati
     const {
         target,
         tail,
-        position = Position.bottomLeft,
+        position = Position.bottomStart,
         overlapping = Overlapping.none,
         flipping = Flipping.all,
         pin = null,
@@ -100,6 +100,7 @@ export const FloatingPanel = forwardRef<HTMLDivElement, PropsWithChildren<Floati
         <>
             <div
                 {...otherProps}
+                key={position}
                 ref={useMergeRefs([tooltipReferenceCallback, reference])}
                 className={classNames(styles.floatingPanel, 'dropdown-menu', otherProps.className)}
             >

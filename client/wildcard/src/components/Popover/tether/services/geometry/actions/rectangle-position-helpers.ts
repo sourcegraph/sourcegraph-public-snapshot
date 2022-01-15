@@ -10,7 +10,7 @@ export function getPositions(position: Position, flipping: Flipping): Position[]
     const positions = [position, POSITION_VARIANTS[position].opposite]
 
     if (flipping === Flipping.all) {
-        positions.push(Position.topLeft, Position.rightTop, Position.bottomLeft, Position.leftTop)
+        positions.push(Position.topStart, Position.rightStart, Position.bottomStart, Position.leftStart)
     }
 
     return positions

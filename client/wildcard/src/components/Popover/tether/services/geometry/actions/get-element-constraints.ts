@@ -1,6 +1,6 @@
 import { createPoint } from '../../../models/geometry/point'
 import { createRectangleFromPoints, Rectangle } from '../../../models/geometry/rectangle'
-import { Overlapping, Position, Side } from '../../../models/tether-models'
+import { Overlapping, Position } from '../../../models/tether-models'
 import { POSITION_VARIANTS } from '../constants'
 
 /**
@@ -46,13 +46,13 @@ export function getElementConstraint(
     let yEnd = constraint.bottom
 
     if (overlapping === Overlapping.none) {
-        if (side === Side.top) {
+        if (side === Position.top) {
             yStart = Math.min(target.top, constraint.top)
             yEnd = Math.min(target.top, constraint.bottom)
-        } else if (side === Side.right) {
+        } else if (side === Position.right) {
             xStart = Math.max(target.right, constraint.left)
             xEnd = Math.max(target.right, constraint.right)
-        } else if (side === Side.bottom) {
+        } else if (side === Position.bottom) {
             yStart = Math.max(target.bottom, constraint.top)
             yEnd = Math.max(target.bottom, constraint.bottom)
         } else {

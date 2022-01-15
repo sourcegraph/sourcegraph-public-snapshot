@@ -6,7 +6,7 @@ import { Tether, TetherLayout } from './types'
 
 export function getLayout(tether: Tether): TetherLayout {
     const {
-        position = Position.topCenter,
+        position = Position.top,
         flipping = Flipping.opposite,
         overlapping = Overlapping.none,
         windowPadding = EMPTY_RECTANGLE,

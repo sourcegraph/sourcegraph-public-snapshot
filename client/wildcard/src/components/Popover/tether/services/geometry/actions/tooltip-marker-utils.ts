@@ -1,6 +1,6 @@
 import { createPoint, Point } from '../../../models/geometry/point'
 import { createRectangle, createRectangleFromPoints, Rectangle } from '../../../models/geometry/rectangle'
-import { Position, Side } from '../../../models/tether-models'
+import { Position } from '../../../models/tether-models'
 import { POSITION_VARIANTS } from '../constants'
 
 /**
@@ -21,15 +21,15 @@ export function getMarkerConstraint(element: Rectangle, marker: Rectangle, posit
     const deltaX = Math.floor(Math.min(marker.width, Math.floor((element.width - marker.width) / 2)))
     const deltaY = Math.floor(Math.min(marker.height, Math.floor((element.height - marker.height) / 2)))
 
-    if (side === Side.top) {
+    if (side === Position.top) {
         xStart = element.left + deltaX
         xEnd = element.right - deltaX
         yEnd = element.bottom + marker.height
-    } else if (side === Side.right) {
+    } else if (side === Position.right) {
         xStart = element.left - marker.width
         yStart = element.top + deltaY
         yEnd = element.bottom - deltaY
-    } else if (side === Side.bottom) {
+    } else if (side === Position.bottom) {
         xStart = element.left + deltaX
         xEnd = element.right - deltaX
         yStart = element.top - marker.height
