@@ -24,6 +24,7 @@ jobs:
           - client/web
           - client/wildcard
           - client/common
+          - client/http-client
           - client/codeintellify
           - client/template-parser
     steps:
