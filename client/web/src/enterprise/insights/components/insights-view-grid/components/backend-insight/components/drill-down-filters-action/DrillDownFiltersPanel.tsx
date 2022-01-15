@@ -2,8 +2,6 @@ import classNames from 'classnames'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React, { DOMAttributes, useRef } from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
-
 import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
 
 import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
@@ -59,7 +57,11 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 <FilterOutlineIcon className={styles.filterIcon} size="1rem" />
             </PopoverTrigger>
 
-            <PopoverContent position={Position.rightTop} aria-label="Drill-down filters panel">
+            <PopoverContent
+                position={Position.rightTop}
+                aria-label="Drill-down filters panel"
+                onMouseDown={handleMouseDown}
+            >
                 <DrillDownFiltersPanel
                     initialFiltersValue={initialFiltersValue}
                     originalFiltersValue={originalFiltersValue}
