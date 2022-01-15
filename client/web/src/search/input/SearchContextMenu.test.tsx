@@ -6,11 +6,11 @@ import { DropdownMenu, UncontrolledDropdown } from 'reactstrap'
 import { Observable, of, throwError } from 'rxjs'
 import sinon from 'sinon'
 
+import { ListSearchContextsResult, SearchContextFields } from '@sourcegraph/search'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import { mockGetUserSearchContextNamespaces } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
-
-import { ListSearchContextsResult, SearchContextFields } from '../../graphql-operations'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
@@ -112,6 +112,7 @@ describe('SearchContextMenu', () => {
         closeMenu: () => {},
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
         searchContextsEnabled: true,
+        platformContext: NOOP_PLATFORM_CONTEXT,
     }
 
     const RealIntersectionObserver = window.IntersectionObserver

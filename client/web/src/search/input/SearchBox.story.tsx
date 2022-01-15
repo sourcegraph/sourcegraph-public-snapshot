@@ -7,6 +7,7 @@ import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
 import { SearchPatternType } from '../../graphql-operations'
@@ -45,6 +46,7 @@ const defaultProps: SearchBoxProps = {
     authenticatedUser: null,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    platformContext: NOOP_PLATFORM_CONTEXT,
 }
 
 add(

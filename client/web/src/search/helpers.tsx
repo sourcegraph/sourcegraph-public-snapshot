@@ -1,5 +1,6 @@
 import * as H from 'history'
 
+import { CaseSensitivityProps, SearchContextProps, SearchPatternTypeProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -10,8 +11,6 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { SearchType } from './results/StreamingSearchResults'
-
-import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '.'
 
 export interface SubmitSearchParameters
     extends Partial<Pick<ActivationProps, 'activation'>>,

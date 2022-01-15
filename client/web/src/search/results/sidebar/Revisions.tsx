@@ -3,6 +3,7 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { QueryUpdate } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { GitRefType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -15,7 +16,6 @@ import {
     SearchSidebarGitRefFields,
 } from '../../../graphql-operations'
 import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
-import { QueryUpdate } from '../../../stores/navbarSearchQueryState'
 
 import { FilterLink } from './FilterLink'
 import styles from './SearchSidebarSection.module.scss'

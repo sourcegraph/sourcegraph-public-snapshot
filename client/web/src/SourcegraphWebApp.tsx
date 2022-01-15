@@ -12,6 +12,19 @@ import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxj
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
+import {
+    fetchAutoDefinedSearchContexts,
+    getUserSearchContextNamespaces,
+    SearchContextProps,
+    fetchSearchContexts,
+    fetchSearchContext,
+    fetchSearchContextBySpec,
+    createSearchContext,
+    updateSearchContext,
+    deleteSearchContext,
+    isSearchContextSpecAvailable,
+    getAvailableSearchContextSpecOrDefault,
+} from '@sourcegraph/search'
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
 import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -58,25 +71,8 @@ import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
-import {
-    parseSearchURL,
-    getAvailableSearchContextSpecOrDefault,
-    isSearchContextSpecAvailable,
-    SearchContextProps,
-} from './search'
-import {
-    fetchSavedSearches,
-    fetchRecentSearches,
-    fetchRecentFileViews,
-    fetchAutoDefinedSearchContexts,
-    fetchSearchContexts,
-    fetchSearchContext,
-    createSearchContext,
-    updateSearchContext,
-    deleteSearchContext,
-    getUserSearchContextNamespaces,
-    fetchSearchContextBySpec,
-} from './search/backend'
+import { parseSearchURL } from './search'
+import { fetchSavedSearches, fetchRecentSearches, fetchRecentFileViews } from './search/backend'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { SearchStack } from './search/SearchStack'
 import { TemporarySettingsProvider } from './settings/temporary/TemporarySettingsProvider'
@@ -495,16 +491,18 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
         const { defaultSearchContextSpec } = this.state
         this.subscriptions.add(
-            getAvailableSearchContextSpecOrDefault({ spec, defaultSpec: defaultSearchContextSpec }).subscribe(
-                availableSearchContextSpecOrDefault => {
-                    this.setState({ selectedSearchContextSpec: availableSearchContextSpecOrDefault })
-                    localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
+            getAvailableSearchContextSpecOrDefault({
+                spec,
+                defaultSpec: defaultSearchContextSpec,
+                platformContext: this.platformContext,
+            }).subscribe(availableSearchContextSpecOrDefault => {
+                this.setState({ selectedSearchContextSpec: availableSearchContextSpecOrDefault })
+                localStorage.setItem(LAST_SEARCH_CONTEXT_KEY, availableSearchContextSpecOrDefault)
 
-                    this.setWorkspaceSearchContext(availableSearchContextSpecOrDefault).catch(error => {
-                        console.error('Error sending search context to extensions', error)
-                    })
-                }
-            )
+                this.setWorkspaceSearchContext(availableSearchContextSpecOrDefault).catch(error => {
+                    console.error('Error sending search context to extensions', error)
+                })
+            })
         )
     }
 

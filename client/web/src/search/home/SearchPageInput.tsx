@@ -4,13 +4,13 @@ import { Form } from 'reactstrap'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
+import { SearchContextInputProps, CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { SearchContextInputProps, CaseSensitivityProps, SearchPatternTypeProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
@@ -36,7 +36,7 @@ interface Props
         ActivationProps,
         KeyboardShortcutsProps,
         TelemetryProps,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         Pick<SubmitSearchParameters, 'source'>,
         SearchContextInputProps {
     authenticatedUser: AuthenticatedUser | null

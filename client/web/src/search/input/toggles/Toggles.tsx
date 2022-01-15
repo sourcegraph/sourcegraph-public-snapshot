@@ -5,11 +5,16 @@ import RegexIcon from 'mdi-react/RegexIcon'
 import React, { useCallback } from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
+import {
+    SearchPatternTypeProps,
+    CaseSensitivityProps,
+    SearchContextProps,
+    SearchPatternTypeMutationProps,
+} from '@sourcegraph/search'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
-import { SearchPatternTypeProps, CaseSensitivityProps, SearchContextProps, SearchPatternTypeMutationProps } from '../..'
 import { SearchPatternType } from '../../../graphql-operations'
 import { KEYBOARD_SHORTCUT_COPY_FULL_QUERY } from '../../../keyboardShortcuts/keyboardShortcuts'
 import { isMacPlatform } from '../../../util'

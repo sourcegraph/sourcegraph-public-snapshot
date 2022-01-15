@@ -3,7 +3,15 @@ import React, { useCallback, useMemo } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { catchError } from 'rxjs/operators'
 
+import {
+    SearchContextProps,
+    ListSearchContextsResult,
+    ListSearchContextsVariables,
+    SearchContextFields,
+    SearchContextsOrderBy,
+} from '@sourcegraph/search'
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -12,22 +20,16 @@ import {
 import { Badge, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import {
-    ListSearchContextsResult,
-    ListSearchContextsVariables,
-    SearchContextFields,
-    SearchContextsOrderBy,
-} from '../../graphql-operations'
-import { SearchContextProps } from '../../search'
 
 import { SearchContextNode, SearchContextNodeProps } from './SearchContextNode'
 import styles from './SearchContextsListTab.module.scss'
 
 export interface SearchContextsListTabProps
     extends Pick<
-        SearchContextProps,
-        'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
-    > {
+            SearchContextProps,
+            'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
+        >,
+        PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
 }
@@ -38,6 +40,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
     getUserSearchContextNamespaces,
     fetchSearchContexts,
     fetchAutoDefinedSearchContexts,
+    platformContext,
 }) => {
     const queryConnection = useCallback(
         (args: Partial<ListSearchContextsVariables>) => {
@@ -57,13 +60,17 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                 namespaces,
                 orderBy,
                 descending,
+                platformContext,
             })
         },
-        [authenticatedUser, fetchSearchContexts, getUserSearchContextNamespaces]
+        [authenticatedUser, fetchSearchContexts, getUserSearchContextNamespaces, platformContext]
     )
 
     const autoDefinedSearchContexts = useObservable(
-        useMemo(() => fetchAutoDefinedSearchContexts().pipe(catchError(() => [])), [fetchAutoDefinedSearchContexts])
+        useMemo(() => fetchAutoDefinedSearchContexts(platformContext).pipe(catchError(() => [])), [
+            fetchAutoDefinedSearchContexts,
+            platformContext,
+        ])
     )
 
     const ownerNamespaceFilterValues: FilteredConnectionFilterValue[] = authenticatedUser

@@ -2,11 +2,12 @@ import classNames from 'classnames'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useState } from 'react'
 
+import { SearchContextInputProps } from '@sourcegraph/search'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { QueryState, SubmitSearchProps } from '../helpers'
 
@@ -20,7 +21,8 @@ export interface SearchBoxProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'submitSearch'>,
         ThemeProps,
         SearchContextInputProps,
-        TelemetryProps {
+        TelemetryProps,
+        PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
     showSearchContext: boolean

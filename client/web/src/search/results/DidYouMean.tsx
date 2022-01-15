@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from 'react'
 
+import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -9,8 +10,6 @@ import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { createLiteral, Pattern, Token } from '@sourcegraph/shared/src/search/query/token'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-
-import { CaseSensitivityProps, SearchPatternTypeProps, SearchContextProps } from '..'
 
 import styles from './DidYouMean.module.scss'
 
