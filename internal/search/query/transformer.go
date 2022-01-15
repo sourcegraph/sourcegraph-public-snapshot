@@ -771,3 +771,34 @@ func PatternToFile(b Basic) Basic {
 	}
 	return b
 }
+
+func convertOrToRegexp(nodes []Node) []Node {
+	isPattern := func(node Node) bool {
+		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
+			return true
+		}
+		return false
+	}
+	new := []Node{}
+	for _, node := range nodes {
+		switch v := node.(type) {
+		case Operator:
+			if v.Kind == Or {
+				patterns, other := partition(v.Operands, isPattern)
+				var values []string
+				for _, node := range patterns {
+					values = append(values, node.(Pattern).Value)
+				}
+				valueString := strings.Join(values, "|")
+				new = append(new, Pattern{Value: valueString})
+				rest := convertOrToRegexp(other)
+				new = newOperator(append(new, rest...), Or)
+			} else {
+				new = append(new, newOperator(convertOrToRegexp(v.Operands), v.Kind)...)
+			}
+		case Parameter, Pattern:
+			new = append(new, node)
+		}
+	}
+	return new
+}

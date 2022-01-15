@@ -436,6 +436,55 @@ func TestExpandOr(t *testing.T) {
 	}
 }
 
+func Test_convertOrToRegexp(t *testing.T) {
+	cases := []struct {
+		input string
+		want  string
+	}{
+		{
+			input: "foo or bar",
+			want:  `"foo|bar"`,
+		},
+		{
+			input: "(foo or (bar or baz))",
+			want:  `"foo|bar|baz"`,
+		},
+		{
+			input: "repo:foobar foo or (bar or baz)",
+			want:  `(or "bar|baz" (and "repo:foobar" "foo"))`,
+		},
+		{
+			input: "(foo or (bar or baz)) and foobar",
+			want:  `(and "foo|bar|baz" "foobar")`,
+		},
+		{
+			input: "(foo or (bar and baz))",
+			want:  `(or "foo" (and "bar" "baz"))`,
+		},
+		{
+			input: "foo or (bar and baz) or foobar",
+			want:  `(or "foo|foobar" (and "bar" "baz"))`,
+		},
+		{
+			input: "repo:foo or repo:bar",
+			want:  `(or "" "repo:foo" "repo:bar")`, // Needs fix: check should handle not adding empty node
+		},
+		{
+			input: "repo:a b or repo:c d",         // Filters are unsupported, function only deals with pure patterns.
+			want:  `(or "repo:a" "repo:c" "b|d")`, // WRONG
+		},
+	}
+	for _, c := range cases {
+		t.Run("Map query", func(t *testing.T) {
+			query, _ := ParseRegexp(c.input)
+			got := toString(convertOrToRegexp(query))
+			if diff := cmp.Diff(c.want, got); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
 func TestMap(t *testing.T) {
 	cases := []struct {
 		input string
